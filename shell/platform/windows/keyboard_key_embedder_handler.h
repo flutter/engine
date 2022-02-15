@@ -55,10 +55,9 @@ class KeyboardKeyEmbedderHandler
   // Use `map_vk_to_scan` to define how the class should get map a virtual key
   // to a scan code. It's typically Win32's MapVirtualKey, but can also be
   // nullptr (for UWP).
-  explicit KeyboardKeyEmbedderHandler(
-      SendEventHandler send_event,
-      GetKeyStateHandler get_key_state,
-      MapVirtualKeyToScanCode map_vk_to_scan);
+  explicit KeyboardKeyEmbedderHandler(SendEventHandler send_event,
+                                      GetKeyStateHandler get_key_state,
+                                      MapVirtualKeyToScanCode map_vk_to_scan);
 
   virtual ~KeyboardKeyEmbedderHandler();
 

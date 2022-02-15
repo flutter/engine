@@ -402,7 +402,6 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
     assert(key_info.logical_key != 0);
     if (key_info.check_pressed) {
       SHORT state = get_key_state_(virtual_key);
-      printf("# PreSynth 0x%x (0x%x)\n", virtual_key, state);fflush(stdout);
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();
       bool should_pressed = state & kStateMaskPressed;
@@ -471,10 +470,8 @@ void KeyboardKeyEmbedderHandler::InitCriticalKeys(
                          createCheckedKey(VK_LMENU, false, true, false));
   critical_keys_.emplace(VK_RMENU,
                          createCheckedKey(VK_RMENU, true, true, false));
-  critical_keys_.emplace(VK_LWIN,
-                         createCheckedKey(VK_LWIN, true, true, false));
-  critical_keys_.emplace(VK_RWIN,
-                         createCheckedKey(VK_RWIN, true, true, false));
+  critical_keys_.emplace(VK_LWIN, createCheckedKey(VK_LWIN, true, true, false));
+  critical_keys_.emplace(VK_RWIN, createCheckedKey(VK_RWIN, true, true, false));
 
   critical_keys_.emplace(VK_CAPITAL,
                          createCheckedKey(VK_CAPITAL, false, true, true));

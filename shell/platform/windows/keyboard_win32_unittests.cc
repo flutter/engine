@@ -23,7 +23,6 @@
 #include <functional>
 #include <list>
 #include <vector>
-#include <list>
 
 using testing::_;
 using testing::Invoke;
@@ -429,7 +428,8 @@ class KeyboardTester {
           return window_ ? window_->GetKeyState(virtual_key) : 0;
         },
         [this](UINT virtual_key, bool extended) -> SHORT {
-          return map_virtual_key_layout_(virtual_key, extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
+          return map_virtual_key_layout_(
+              virtual_key, extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
         });
     view_->SetEngine(GetTestEngine(
         [&callback_handler = callback_handler_](
@@ -1716,8 +1716,8 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LSHIFT, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalShiftLeft, kLogicalShiftLeft, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
+                       kLogicalShiftLeft, "", kSynthesized);
   clear_key_calls();
 
   // ShiftRight
@@ -1725,14 +1725,16 @@ TEST(KeyboardTest, SynthesizeModifiers) {
       KeyStateChange{VK_RSHIFT, true, true}, event1});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
-                       kPhysicalShiftRight, kLogicalShiftRight, "", kSynthesized);
+                       kPhysicalShiftRight, kLogicalShiftRight, "",
+                       kSynthesized);
   clear_key_calls();
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RSHIFT, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalShiftRight, kLogicalShiftRight, "", kSynthesized);
+                       kPhysicalShiftRight, kLogicalShiftRight, "",
+                       kSynthesized);
   clear_key_calls();
 
   // ControlLeft
@@ -1740,14 +1742,16 @@ TEST(KeyboardTest, SynthesizeModifiers) {
       KeyStateChange{VK_LCONTROL, true, true}, event1});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
-                       kPhysicalControlLeft, kLogicalControlLeft, "", kSynthesized);
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kSynthesized);
   clear_key_calls();
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LCONTROL, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalControlLeft, kLogicalControlLeft, "", kSynthesized);
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kSynthesized);
   clear_key_calls();
 
   // ControlRight
@@ -1755,29 +1759,31 @@ TEST(KeyboardTest, SynthesizeModifiers) {
       KeyStateChange{VK_RCONTROL, true, true}, event1});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
-                       kPhysicalControlRight, kLogicalControlRight, "", kSynthesized);
+                       kPhysicalControlRight, kLogicalControlRight, "",
+                       kSynthesized);
   clear_key_calls();
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RCONTROL, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalControlRight, kLogicalControlRight, "", kSynthesized);
+                       kPhysicalControlRight, kLogicalControlRight, "",
+                       kSynthesized);
   clear_key_calls();
 
   // AltLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LMENU, true, true}, event1});
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
-                       kPhysicalAltLeft, kLogicalAltLeft, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalAltLeft,
+                       kLogicalAltLeft, "", kSynthesized);
   clear_key_calls();
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LMENU, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalAltLeft, kLogicalAltLeft, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltLeft,
+                       kLogicalAltLeft, "", kSynthesized);
   clear_key_calls();
 
   // AltRight
@@ -1791,13 +1797,13 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RMENU, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalAltRight, kLogicalAltRight, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kSynthesized);
   clear_key_calls();
 
   // MetaLeft
-  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
-      KeyStateChange{VK_LWIN, true, true}, event1});
+  tester.InjectKeyboardChanges(
+      std::vector<KeyboardChange>{KeyStateChange{VK_LWIN, true, true}, event1});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalMetaLeft, kLogicalMetaLeft, "", kSynthesized);
@@ -1806,13 +1812,13 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LWIN, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalMetaLeft, kLogicalMetaLeft, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaLeft,
+                       kLogicalMetaLeft, "", kSynthesized);
   clear_key_calls();
 
   // MetaRight
-  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
-      KeyStateChange{VK_RWIN, true, true}, event1});
+  tester.InjectKeyboardChanges(
+      std::vector<KeyboardChange>{KeyStateChange{VK_RWIN, true, true}, event1});
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalMetaRight, kLogicalMetaRight, "", kSynthesized);
@@ -1821,8 +1827,8 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RWIN, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalMetaRight, kLogicalMetaRight, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaRight,
+                       kLogicalMetaRight, "", kSynthesized);
   clear_key_calls();
 
   // CapsLock, phase 0 -> 2 -> 0.
@@ -1832,8 +1838,8 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_EQ(key_calls.size(), 3);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalCapsLock, kLogicalCapsLock, "", kSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp,
-                       kPhysicalCapsLock, kLogicalCapsLock, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalCapsLock,
+                       kLogicalCapsLock, "", kSynthesized);
   clear_key_calls();
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1841,8 +1847,8 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_EQ(key_calls.size(), 3);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalCapsLock, kLogicalCapsLock, "", kSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp,
-                       kPhysicalCapsLock, kLogicalCapsLock, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalCapsLock,
+                       kLogicalCapsLock, "", kSynthesized);
   clear_key_calls();
 
   // ScrollLock, phase 0 -> 1 -> 3
@@ -1873,23 +1879,19 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   // 4 keycalls with an extra pair of key down and up.
   // https://github.com/flutter/flutter/issues/98533
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
-                       kPhysicalNumLock, kLogicalNumLock, "",
-                       kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalNumLock,
+                       kLogicalNumLock, "", kSynthesized);
   clear_key_calls();
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_NUMLOCK, false, true}, event2});
   EXPECT_EQ(key_calls.size(), 4);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalNumLock, kLogicalNumLock, "",
-                       kSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown,
-                       kPhysicalNumLock, kLogicalNumLock, "",
-                       kSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[2], kFlutterKeyEventTypeUp,
-                       kPhysicalNumLock, kLogicalNumLock, "",
-                       kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalNumLock,
+                       kLogicalNumLock, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown, kPhysicalNumLock,
+                       kLogicalNumLock, "", kSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[2], kFlutterKeyEventTypeUp, kPhysicalNumLock,
+                       kLogicalNumLock, "", kSynthesized);
   clear_key_calls();
 }
 
