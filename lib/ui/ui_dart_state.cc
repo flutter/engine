@@ -11,9 +11,9 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_message_handler.h"
 
-#if defined(OS_ANDROID)
+#if defined(FML_OS_ANDROID)
 #include <android/log.h>
-#elif defined(OS_IOS)
+#elif defined(FML_OS_IOS)
 extern "C" {
 // Cannot import the syslog.h header directly because of macro collision.
 extern void syslog(int, const char*, ...);
@@ -77,10 +77,6 @@ UIDartState::~UIDartState() {
 
 const std::string& UIDartState::GetAdvisoryScriptURI() const {
   return context_.advisory_script_uri;
-}
-
-const std::string& UIDartState::GetAdvisoryScriptEntrypoint() const {
-  return context_.advisory_script_entrypoint;
 }
 
 void UIDartState::DidSetIsolate() {
@@ -169,13 +165,6 @@ fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
   return context_.snapshot_delegate;
 }
 
-fml::WeakPtr<GrDirectContext> UIDartState::GetResourceContext() const {
-  if (!context_.io_manager) {
-    return {};
-  }
-  return context_.io_manager->GetResourceContext();
-}
-
 fml::WeakPtr<ImageDecoder> UIDartState::GetImageDecoder() const {
   return context_.image_decoder;
 }
@@ -216,10 +205,10 @@ void UIDartState::LogMessage(const std::string& tag,
     log_message_callback_(tag, message);
   } else {
     // Fall back to previous behavior if unspecified.
-#if defined(OS_ANDROID)
+#if defined(FML_OS_ANDROID)
     __android_log_print(ANDROID_LOG_INFO, tag.c_str(), "%.*s",
                         (int)message.size(), message.c_str());
-#elif defined(OS_IOS)
+#elif defined(FML_OS_IOS)
     std::stringstream stream;
     if (tag.size() > 0) {
       stream << tag << ": ";

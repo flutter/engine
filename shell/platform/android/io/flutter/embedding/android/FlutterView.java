@@ -9,9 +9,13 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
@@ -137,6 +141,25 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         public void onAccessibilityChanged(
             boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
           resetWillNotDraw(isAccessibilityEnabled, isTouchExplorationEnabled);
+        }
+      };
+
+  private final ContentObserver systemSettingsObserver =
+      new ContentObserver(new Handler(Looper.getMainLooper())) {
+        @Override
+        public void onChange(boolean selfChange) {
+          super.onChange(selfChange);
+          if (flutterEngine == null) {
+            return;
+          }
+          Log.v(TAG, "System settings changed. Sending user settings to Flutter.");
+          sendUserSettingsToFlutter();
+        }
+
+        @Override
+        public boolean deliverSelfNotifications() {
+          // The Flutter app may change system settings.
+          return true;
         }
       };
 
@@ -768,7 +791,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             + viewportMetrics.viewInsetBottom);
 
     sendViewportMetricsToFlutter();
-
     return newInsets;
   }
 
@@ -842,21 +864,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
 
     return textInputPlugin.createInputConnection(this, keyboardManager, outAttrs);
-  }
-
-  /**
-   * Allows a {@code View} that is not currently the input connection target to invoke commands on
-   * the {@link android.view.inputmethod.InputMethodManager}, which is otherwise disallowed.
-   *
-   * <p>Returns true to allow non-input-connection-targets to invoke methods on {@code
-   * InputMethodManager}, or false to exclusively allow the input connection target to invoke such
-   * methods.
-   */
-  @Override
-  public boolean checkInputConnectionProxy(View view) {
-    return flutterEngine != null
-        ? flutterEngine.getPlatformViewsController().checkInputConnectionProxy(view)
-        : super.checkInputConnectionProxy(view);
   }
 
   /**
@@ -1149,6 +1156,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
+    getContext()
+        .getContentResolver()
+        .registerContentObserver(
+            Settings.System.getUriFor(Settings.System.TEXT_SHOW_PASSWORD),
+            false,
+            systemSettingsObserver);
+
     localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
@@ -1189,6 +1203,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     for (FlutterEngineAttachmentListener listener : flutterEngineAttachmentListeners) {
       listener.onFlutterEngineDetachedFromFlutterView();
     }
+
+    getContext().getContentResolver().unregisterContentObserver(systemSettingsObserver);
 
     flutterEngine.getPlatformViewsController().detachFromView();
 
@@ -1394,6 +1410,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
+        .setBrieflyShowPassword(
+            Settings.System.getInt(
+                    getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1)
+                == 1)
         .setUse24HourFormat(DateFormat.is24HourFormat(getContext()))
         .setPlatformBrightness(brightness)
         .send();

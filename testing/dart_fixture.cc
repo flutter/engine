@@ -49,10 +49,10 @@ void DartFixture::SetSnapshotsAndAssets(Settings& settings) {
   // snapshots will be present in the application AOT dylib.
   if (DartVM::IsRunningPrecompiledCode()) {
     FML_CHECK(PrepareSettingsForAOTWithSymbols(settings, aot_symbols_));
-#if OS_LINUX
+#if FML_OS_LINUX
     settings.vmservice_snapshot_library_path.emplace_back(fml::paths::JoinPaths(
         {GetTestingAssetsPath(), "libvmservice_snapshot.so"}));
-#endif  // OS_LINUX
+#endif  // FML_OS_LINUX
   } else {
     settings.application_kernels = [this]() -> Mappings {
       std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
@@ -72,6 +72,10 @@ void DartFixture::SetSnapshotsAndAssets(Settings& settings) {
 void DartFixture::AddNativeCallback(std::string name,
                                     Dart_NativeFunction callback) {
   native_resolver_->AddNativeCallback(std::move(name), callback);
+}
+
+void DartFixture::AddFfiNativeCallback(std::string name, void* callback_ptr) {
+  native_resolver_->AddFfiNativeCallback(std::move(name), callback_ptr);
 }
 
 }  // namespace flutter::testing
