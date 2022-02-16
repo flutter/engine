@@ -964,7 +964,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
                     handleUndo:(FlutterUndoRedoDirection)direction {
-  NSLog(@"Undo invoke handleUndo");
   NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
   [_textInputChannel.get() invokeMethod:@"TextInputClient.handleUndo" arguments:@[ action ]];
 }
