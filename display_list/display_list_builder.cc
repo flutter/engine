@@ -66,7 +66,6 @@ DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
     : cull_rect_(cull_rect) {
   layer_stack_.emplace_back();
   current_layer_ = &layer_stack_.back();
-  current_color_filter_.reset(new DlNoColorFilter());
 }
 
 DisplayListBuilder::~DisplayListBuilder() {
@@ -137,45 +136,46 @@ void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
 }
 void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   if (filter == nullptr) {
-    filter = &DlNoColorFilter::instance;
-  }
-  void* pod;
-  switch (filter->type()) {
-    case DlColorFilter::kNone:
-      current_color_filter_.reset(new DlNoColorFilter());
-      Push<ClearColorFilterOp>(0, 0);
-      break;
-    case DlColorFilter::kBlend: {
-      const DlBlendColorFilter* blend_filter = filter->asABlendFilter();
-      FML_DCHECK(blend_filter);
-      current_color_filter_.reset(new DlBlendColorFilter(blend_filter));
-      pod = Push<SetColorFilterOp>(blend_filter->size(), 0);
-      new (pod) DlBlendColorFilter(blend_filter);
-      break;
+    if (!current_color_filter_) {
+      return;
     }
-    case DlColorFilter::kMatrix: {
-      const DlMatrixColorFilter* matrix_filter = filter->asAMatrixFilter();
-      FML_DCHECK(matrix_filter);
-      current_color_filter_.reset(new DlMatrixColorFilter(matrix_filter));
-      pod = Push<SetColorFilterOp>(matrix_filter->size(), 0);
-      new (pod) DlMatrixColorFilter(matrix_filter->asAMatrixFilter());
-      break;
+    current_color_filter_ = nullptr;
+    Push<ClearColorFilterOp>(0, 0);
+  } else {
+    if (current_color_filter_ && *current_color_filter_ == *filter) {
+      return;
     }
-    case DlColorFilter::kSrgbToLinearGamma:
-      current_color_filter_.reset(new DlSrgbToLinearGammaColorFilter());
-      pod = Push<SetColorFilterOp>(filter->size(), 0);
-      new (pod) DlSrgbToLinearGammaColorFilter();
-      break;
-    case DlColorFilter::kLinearToSrgbGamma:
-      current_color_filter_.reset(new DlLinearToSrgbGammaColorFilter());
-      pod = Push<SetColorFilterOp>(filter->size(), 0);
-      new (pod) DlLinearToSrgbGammaColorFilter();
-      break;
-    case DlColorFilter::kUnknown: {
-      const sk_sp<SkColorFilter> sk_filter = filter->sk_filter();
-      current_color_filter_.reset(new DlUnknownColorFilter(sk_filter));
-      Push<SetSkColorFilterOp>(0, 0, sk_filter);
-      break;
+    current_color_filter_ = filter->shared();
+    switch (filter->type()) {
+      case DlColorFilter::kBlend: {
+        const DlBlendColorFilter* blend_filter = filter->asBlend();
+        FML_DCHECK(blend_filter);
+        void* pod = Push<SetColorFilterOp>(blend_filter->size(), 0);
+        new (pod) DlBlendColorFilter(blend_filter);
+        break;
+      }
+      case DlColorFilter::kMatrix: {
+        const DlMatrixColorFilter* matrix_filter = filter->asMatrix();
+        FML_DCHECK(matrix_filter);
+        void* pod = Push<SetColorFilterOp>(matrix_filter->size(), 0);
+        new (pod) DlMatrixColorFilter(matrix_filter);
+        break;
+      }
+      case DlColorFilter::kSrgbToLinearGamma: {
+        void* pod = Push<SetColorFilterOp>(filter->size(), 0);
+        new (pod) DlSrgbToLinearGammaColorFilter();
+        break;
+      }
+      case DlColorFilter::kLinearToSrgbGamma: {
+        void* pod = Push<SetColorFilterOp>(filter->size(), 0);
+        new (pod) DlLinearToSrgbGammaColorFilter();
+        break;
+      }
+      case DlColorFilter::kUnknown: {
+        const sk_sp<SkColorFilter> sk_filter = filter->sk_filter();
+        Push<SetSkColorFilterOp>(0, 0, sk_filter);
+        break;
+      }
     }
   }
   UpdateCurrentOpacityCompatibility();
@@ -251,8 +251,12 @@ void DisplayListBuilder::setAttributesFromPaint(
     // we must clear it because it is a second potential color filter
     // that is composed with the paint's color filter.
     setInvertColors(false);
-    DlColorFilter filter = DlColorFilter::From(paint.getColorFilter());
-    setColorFilter(&filter);
+    SkColorFilter* color_filter = paint.getColorFilter();
+    if (color_filter) {
+      setColorFilter(DlColorFilter::From(color_filter).get());
+    } else {
+      setColorFilter(nullptr);
+    }
   }
   if (flags.applies_image_filter()) {
     setImageFilter(sk_ref_sp(paint.getImageFilter()));

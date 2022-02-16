@@ -96,10 +96,14 @@ static const sk_sp<SkImageFilter> TestImageFilter1 =
     SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr, nullptr);
 static const sk_sp<SkImageFilter> TestImageFilter2 =
     SkImageFilters::Blur(5.0, 5.0, SkTileMode::kClamp, nullptr, nullptr);
-static const DlColorFilter TestColorFilter1 =
-    DlMatrixColorFilter(rotate_color_matrix);
-static const DlColorFilter TestColorFilter2 =
-    DlMatrixColorFilter(invert_color_matrix);
+static const DlBlendColorFilter TestBlendColorFilter1(SK_ColorRED,
+                                                      SkBlendMode::kDstATop);
+static const DlBlendColorFilter TestBlendColorFilter2(SK_ColorBLUE,
+                                                      SkBlendMode::kDstATop);
+static const DlBlendColorFilter TestBlendColorFilter3(SK_ColorRED,
+                                                      SkBlendMode::kDstIn);
+static const DlMatrixColorFilter TestMatrixColorFilter1(rotate_color_matrix);
+static const DlMatrixColorFilter TestMatrixColorFilter2(invert_color_matrix);
 static const sk_sp<SkPathEffect> TestPathEffect1 =
     SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
 static const sk_sp<SkPathEffect> TestPathEffect2 =
@@ -343,8 +347,13 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetColorFilter", {
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestColorFilter1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestColorFilter2);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestBlendColorFilter1);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestBlendColorFilter2);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestBlendColorFilter3);}},
+      {0, 96, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestMatrixColorFilter1);}},
+      {0, 96, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestMatrixColorFilter2);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(DlSrgbToLinearGammaColorFilter::instance.get());}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(DlLinearToSrgbGammaColorFilter::instance.get());}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(nullptr);}},
     }
   },
@@ -992,7 +1001,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 1, 0,
   };
   // clang-format on
-  DlColorFilter base_color_filter = DlMatrixColorFilter(color_matrix);
+  DlMatrixColorFilter base_color_filter(color_matrix);
   // clang-format off
   const float alpha_matrix[] = {
     0, 0, 0, 0, 0,
@@ -1001,7 +1010,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 0, 1,
   };
   // clang-format on
-  DlColorFilter alpha_color_filter = DlMatrixColorFilter(alpha_matrix);
+  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
 
   {
     // No tricky stuff, just verifying drawing a rect produces rect bounds
@@ -1251,28 +1260,6 @@ TEST(DisplayList, DisplayListImageFilterRefHandling) {
   };
 
   ImageFilterRefTester tester;
-  tester.test();
-  ASSERT_TRUE(tester.ref_is_unique());
-}
-
-TEST(DisplayList, DisplayListColorFilterRefHandling) {
-  class ColorFilterRefTester : public virtual AttributeRefTester {
-   public:
-    void setRefToPaint(SkPaint& paint) const override {
-      paint.setColorFilter(color_filter);
-    }
-    void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      DlUnknownColorFilter unknown_filter(color_filter);
-      builder.setColorFilter(&unknown_filter);
-    }
-    bool ref_is_unique() const override { return color_filter->unique(); }
-
-   private:
-    sk_sp<SkColorFilter> color_filter =
-        SkColorFilters::Blend(SK_ColorBLUE, SkBlendMode::kSrcIn);
-  };
-
-  ColorFilterRefTester tester;
   tester.test();
   ASSERT_TRUE(tester.ref_is_unique());
 }
@@ -1756,7 +1743,7 @@ TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
 
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setColorFilter(&TestColorFilter1);
+  builder.setColorFilter(&TestMatrixColorFilter1);
   builder.saveLayer(nullptr, true);
   builder.setColorFilter(nullptr);
   builder.drawRect({10, 10, 20, 20});
@@ -1805,7 +1792,7 @@ TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
   builder.saveLayer(nullptr, true);
-  builder.setColorFilter(&TestColorFilter1);
+  builder.setColorFilter(&TestMatrixColorFilter1);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 

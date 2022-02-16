@@ -187,7 +187,7 @@ struct ClearColorFilterOp final : DLOp {
   ClearColorFilterOp() {}
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.setColorFilter(&DlNoColorFilter::instance);
+    dispatcher.setColorFilter(nullptr);
   }
 };
 
@@ -197,20 +197,22 @@ struct SetColorFilterOp final : DLOp {
   SetColorFilterOp() {}
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.setColorFilter(reinterpret_cast<const DlColorFilter*>(this + 1));
+    const DlColorFilter* filter =
+        reinterpret_cast<const DlColorFilter*>(this + 1);
+    dispatcher.setColorFilter(filter);
   }
 };
 
 struct SetSkColorFilterOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetSkColorFilter;
 
-  SetSkColorFilterOp(sk_sp<SkColorFilter> filter)
-      : filter(std::make_unique<DlUnknownColorFilter>(filter)) {}
+  SetSkColorFilterOp(sk_sp<SkColorFilter> filter) : filter(filter) {}
 
-  std::unique_ptr<const DlUnknownColorFilter> filter;
+  sk_sp<SkColorFilter> filter;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.setColorFilter(filter.get());
+    DlUnknownColorFilter dl_filter(filter);
+    dispatcher.setColorFilter(&dl_filter);
   }
 };
 

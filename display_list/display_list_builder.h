@@ -94,9 +94,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
     }
   }
   void setColorFilter(const DlColorFilter* filter) override {
-    if (!DlColorFilter::Equals(current_color_filter_.get(), filter)) {
-      onSetColorFilter(filter);
-    }
+    // onSetColorFilter will deal with whether the filter is new
+    onSetColorFilter(filter);
   }
   void setPathEffect(sk_sp<SkPathEffect> effect) override {
     if (current_path_effect_ != effect) {
@@ -339,10 +338,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   void UpdateCurrentOpacityCompatibility() {
-    current_opacity_compatibility_ =                              //
-        current_color_filter_->type() == DlColorFilter::kNone &&  //
-        !current_invert_colors_ &&                                //
-        current_blender_ == nullptr &&                            //
+    current_opacity_compatibility_ =         //
+        current_color_filter_ == nullptr &&  //
+        !current_invert_colors_ &&           //
+        current_blender_ == nullptr &&       //
         IsOpacityCompatible(current_blend_mode_);
   }
 
@@ -411,7 +410,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   SkBlendMode current_blend_mode_ = SkBlendMode::kSrcOver;
   sk_sp<SkBlender> current_blender_;
   sk_sp<SkShader> current_shader_;
-  std::unique_ptr<DlColorFilter> current_color_filter_;
+  std::shared_ptr<const DlColorFilter> current_color_filter_;
   sk_sp<SkImageFilter> current_image_filter_;
   sk_sp<SkPathEffect> current_path_effect_;
   sk_sp<SkMaskFilter> current_mask_filter_;

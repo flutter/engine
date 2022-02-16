@@ -80,7 +80,7 @@ void SkPaintDispatchHelper::setImageFilter(sk_sp<SkImageFilter> filter) {
   paint_.setImageFilter(filter);
 }
 void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
-  color_filter_ = filter->shared();
+  color_filter_ = filter ? filter->shared() : nullptr;
   paint_.setColorFilter(makeColorFilter());
 }
 void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
@@ -98,12 +98,12 @@ sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
   if (!invert_colors_) {
     return color_filter_ ? color_filter_->sk_filter() : nullptr;
   }
+  sk_sp<SkColorFilter> invert_filter =
+      SkColorFilters::Matrix(invert_color_matrix);
   if (color_filter_) {
-    sk_sp<SkColorFilter> invert_filter =
-        SkColorFilters::Matrix(invert_color_matrix);
-    return invert_filter->makeComposed(color_filter_->sk_filter());
+    invert_filter = invert_filter->makeComposed(color_filter_->sk_filter());
   }
-  return SkColorFilters::Matrix(invert_color_matrix);
+  return invert_filter;
 }
 
 void SkMatrixDispatchHelper::translate(SkScalar tx, SkScalar ty) {
@@ -267,7 +267,7 @@ void DisplayListBoundsCalculator::setImageFilter(sk_sp<SkImageFilter> filter) {
   image_filter_ = std::move(filter);
 }
 void DisplayListBoundsCalculator::setColorFilter(const DlColorFilter* filter) {
-  color_filter_ = filter->shared();
+  color_filter_ = filter ? filter->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::setPathEffect(sk_sp<SkPathEffect> effect) {
   path_effect_ = std::move(effect);

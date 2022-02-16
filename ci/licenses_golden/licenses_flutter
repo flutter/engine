@@ -52,6 +52,7 @@ FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.h
 FILE: ../../../flutter/display_list/display_list_canvas_recorder.cc
 FILE: ../../../flutter/display_list/display_list_canvas_recorder.h
 FILE: ../../../flutter/display_list/display_list_canvas_unittests.cc
+FILE: ../../../flutter/display_list/display_list_color_filter_unittests.cc
 FILE: ../../../flutter/display_list/display_list_color_filter.cc
 FILE: ../../../flutter/display_list/display_list_color_filter.h
 FILE: ../../../flutter/display_list/display_list_complexity.cc

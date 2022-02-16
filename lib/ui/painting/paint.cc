@@ -234,7 +234,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
       } else {
         ColorFilter* decoded_color_filter =
             tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
-        builder->setColorFilter(decoded_color_filter->filter());
+        builder->setColorFilter(decoded_color_filter->filter().get());
       }
     }
 

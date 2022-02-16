@@ -40,8 +40,8 @@ fml::RefPtr<ColorFilter> ColorFilter::Create() {
 }
 
 void ColorFilter::initMode(int color, int blend_mode) {
-  filter_.reset(new DlBlendColorFilter(static_cast<SkColor>(color),
-                                       static_cast<SkBlendMode>(blend_mode)));
+  filter_ = std::make_shared<DlBlendColorFilter>(
+      static_cast<SkColor>(color), static_cast<SkBlendMode>(blend_mode));
 }
 
 void ColorFilter::initMatrix(const tonic::Float32List& color_matrix) {
@@ -56,15 +56,15 @@ void ColorFilter::initMatrix(const tonic::Float32List& color_matrix) {
   matrix[9] *= 1.0f / 255;
   matrix[14] *= 1.0f / 255;
   matrix[19] *= 1.0f / 255;
-  filter_.reset(new DlMatrixColorFilter(matrix));
+  filter_ = std::make_shared<DlMatrixColorFilter>(matrix);
 }
 
 void ColorFilter::initLinearToSrgbGamma() {
-  filter_.reset(&DlLinearToSrgbGammaColorFilter::instance);
+  filter_ = DlLinearToSrgbGammaColorFilter::instance;
 }
 
 void ColorFilter::initSrgbToLinearGamma() {
-  filter_.reset(&DlSrgbToLinearGammaColorFilter::instance);
+  filter_ = DlSrgbToLinearGammaColorFilter::instance;
 }
 
 ColorFilter::~ColorFilter() = default;

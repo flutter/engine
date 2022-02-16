@@ -836,7 +836,7 @@ class CanvasCompareTester {
           0, 0, 0, 0.5, 0,
       };
       // clang-format on
-      DlColorFilter filter = DlMatrixColorFilter(rotate_alpha_color_matrix);
+      DlMatrixColorFilter filter(rotate_alpha_color_matrix);
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
@@ -1141,7 +1141,7 @@ class CanvasCompareTester {
          1.0,  1.0,  1.0, 1.0,   0,
       };
       // clang-format on
-      DlColorFilter filter = DlMatrixColorFilter(rotate_color_matrix);
+      DlMatrixColorFilter filter(rotate_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
         RenderWith(testP, env, tolerance,

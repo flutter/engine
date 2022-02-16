@@ -35,7 +35,7 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
 
   ~ColorFilter() override;
 
-  const DlColorFilter* filter() const { return filter_.get(); }
+  std::shared_ptr<const DlColorFilter> filter() const { return filter_; }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

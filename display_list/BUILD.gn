@@ -42,6 +42,7 @@ source_set("unittests") {
 
   sources = [
     "display_list_canvas_unittests.cc",
+    "display_list_color_filter_unittests.cc",
     "display_list_unittests.cc",
   ]
 
