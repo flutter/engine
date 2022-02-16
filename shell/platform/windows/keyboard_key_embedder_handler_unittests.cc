@@ -66,6 +66,11 @@ class TestKeystate {
   std::map<int, SHORT> state_;
 };
 
+UINT DefaultMapVkToScan(UINT virtual_key, bool extended) {
+  return MapVirtualKey(virtual_key,
+                       extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
+}
+
 }  // namespace
 
 namespace testing {
@@ -125,7 +130,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // Press KeyA.
   handler->KeyboardHook(
@@ -193,7 +198,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // Press NumPad1.
   key_state.Set(VK_NUMPAD1, true);
@@ -265,7 +270,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ImeEventsAreIgnored) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // Press A in an IME
   last_handled = false;
@@ -339,7 +344,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByExtendedBit) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // Press Ctrl left.
   last_handled = false;
@@ -432,7 +437,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByVirtualKey) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // Press Shift left.
   last_handled = false;
@@ -523,7 +528,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, RepeatedDownIsIgnored) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
   last_handled = false;
 
   // Press A (should yield a normal event)
@@ -571,7 +576,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, AbruptRepeatIsConvertedToDown) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
   last_handled = false;
 
   key_state.Set(kVirtualKeyA, true);
@@ -625,7 +630,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, AbruptUpIsIgnored) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
   last_handled = false;
 
   // KeyA's key down is missed.
@@ -658,7 +663,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncPressingState) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // A key down of control left is missed.
   key_state.Set(VK_LCONTROL, true);
@@ -746,7 +751,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // The NumLock is desynchronized by toggled on
   key_state.Set(VK_NUMLOCK, false, true);
@@ -867,7 +872,7 @@ TEST(KeyboardKeyEmbedderHandlerTest,
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // When NumLock is down
   key_state.Set(VK_NUMLOCK, true, true);
@@ -929,7 +934,7 @@ TEST(KeyboardKeyEmbedderHandlerTest,
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // NumLock is toggled somewhere else
   // key_state.Set(VK_NUMLOCK, false, true);
@@ -984,7 +989,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeWithInitialTogglingState) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // NumLock key down
   key_state.Set(VK_NUMLOCK, true, false);
@@ -1017,7 +1022,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SysKeyPress) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-          key_state.Getter());
+          key_state.Getter(), DefaultMapVkToScan);
 
   // Press KeyAltLeft.
   key_state.Set(VK_LMENU, true);
