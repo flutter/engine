@@ -713,6 +713,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+@property(nonatomic, assign) NSUndoManager* undoManagerOverride;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -1966,6 +1967,17 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   }
 }
 
+- (void)setUndoManager:(NSUndoManager*)undoManager {
+  self.undoManagerOverride = undoManager;
+}
+
+- (NSUndoManager*)undoManager {
+  if (self.undoManagerOverride != nil) {
+    return self.undoManagerOverride;
+  }
+  return super.undoManager;
+}
+
 @end
 
 /**
@@ -2060,6 +2072,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_autofillContext release];
   [_scribbleElements release];
   [self resetUndoManager];
+  if (_undoManager != nil) {
+    [_undoManager release];
+  }
   [super dealloc];
 }
 
@@ -2542,47 +2557,53 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 #pragma mark - Methods related to UndoManager support
+- (NSUndoManager*)undoManager {
+  if (_undoManager != nil) {
+    return _undoManager;
+  }
+  return _viewController.undoManager;
+}
+
 - (void)resetUndoManager API_AVAILABLE(ios(9.0)) {
-  [_viewController.undoManager removeAllActionsWithTarget:self];
+  [self.undoManager removeAllActionsWithTarget:self];
 }
 
 - (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction API_AVAILABLE(ios(9.0)) {
-  _viewController.undoManager.groupsByEvent = NO;
-  [_viewController.undoManager beginUndoGrouping];
-  [_viewController.undoManager
-      registerUndoWithTarget:self
-                     handler:^(id target) {
-                       // register undo with opposite direction
-                       FlutterUndoRedoDirection newDirection =
-                           (direction == FlutterUndoRedoDirectionRedo)
-                               ? FlutterUndoRedoDirectionUndo
-                               : FlutterUndoRedoDirectionRedo;
-                       [target registerUndoWithDirection:newDirection];
-                       // invoke method on delegate
-                       [_undoManagerDelegate flutterTextInputPlugin:self handleUndo:direction];
-                     }];
-  [_viewController.undoManager endUndoGrouping];
-  _viewController.undoManager.groupsByEvent = YES;
+  self.undoManager.groupsByEvent = NO;
+  [self.undoManager beginUndoGrouping];
+  [self.undoManager registerUndoWithTarget:self
+                                   handler:^(id target) {
+                                     // register undo with opposite direction
+                                     FlutterUndoRedoDirection newDirection =
+                                         (direction == FlutterUndoRedoDirectionRedo)
+                                             ? FlutterUndoRedoDirectionUndo
+                                             : FlutterUndoRedoDirectionRedo;
+                                     [target registerUndoWithDirection:newDirection];
+                                     // invoke method on delegate
+                                     [_undoManagerDelegate flutterTextInputPlugin:self
+                                                                       handleUndo:direction];
+                                   }];
+  [self.undoManager endUndoGrouping];
+  self.undoManager.groupsByEvent = YES;
 }
 
 - (void)registerRedo API_AVAILABLE(ios(9.0)) {
-  _viewController.undoManager.groupsByEvent = NO;
-  [_viewController.undoManager beginUndoGrouping];
-  [_viewController.undoManager
+  self.undoManager.groupsByEvent = NO;
+  [self.undoManager beginUndoGrouping];
+  [self.undoManager
       registerUndoWithTarget:self
                      handler:^(id target) {
                        // register undo with opposite direction
                        [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
                      }];
-  [_viewController.undoManager endUndoGrouping];
-  _viewController.undoManager.groupsByEvent = YES;
-  [_viewController.undoManager undo];
+  [self.undoManager endUndoGrouping];
+  self.undoManager.groupsByEvent = YES;
+  [self.undoManager undo];
 }
 
 - (void)setUndoState:(NSDictionary*)dictionary API_AVAILABLE(ios(9.0)) {
   BOOL canUndo = [dictionary[@"canUndo"] boolValue];
   BOOL canRedo = [dictionary[@"canRedo"] boolValue];
-  NSLog(@"setUndoState canUndo: %d, canRedo: %d", canUndo, canRedo);
 
   [self resetUndoManager];
 

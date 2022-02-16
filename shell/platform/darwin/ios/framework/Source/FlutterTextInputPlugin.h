@@ -34,6 +34,7 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 @property(nonatomic, assign) UIViewController* viewController;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
 @property(nonatomic, assign) id<FlutterUndoManagerDelegate> undoManagerDelegate;
+@property(nonatomic, strong) NSUndoManager* undoManager;
 @property(nonatomic, strong)
     NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 
@@ -157,6 +158,7 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
+- (void)setUndoManager:(NSUndoManager*)undoManager;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

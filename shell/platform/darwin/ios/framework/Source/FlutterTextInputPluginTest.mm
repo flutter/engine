@@ -1866,4 +1866,152 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotNil([flutterEngine.textInputPlugin hostView]);
 }
 
+#pragma mark - UndoManager - Utilities
+
+#pragma mark - UndoManager - Tests
+
+- (void)testEnsureUndoEnabledOnInsert {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  NSUndoManager* undoManager = OCMClassMock([NSUndoManager class]);
+  inputView.undoManager = undoManager;
+  OCMStub([undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
+  OCMStub([undoManager removeAllActionsWithTarget:inputView]);
+
+  OCMExpect([undoManager canUndo]).andReturn(NO);
+  [inputView insertText:@"1"];
+  // If undo is not already enabled, register and remove an undo action.
+  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
+  XCTestExpectation* expectation = [[XCTestExpectation alloc]
+      initWithDescription:@"Invokes removeAllActionsWithTarget after delay"];
+
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.02 * (double)NSEC_PER_SEC),
+                 dispatch_get_main_queue(), ^{
+                   OCMVerify(times(1), [undoManager removeAllActionsWithTarget:inputView]);
+                   [expectation fulfill];
+                 });
+
+  [self waitForExpectations:@[ expectation ] timeout:1.0];
+
+  OCMExpect([undoManager canUndo]).andReturn(YES);
+  [inputView insertText:@"2"];
+  // If undo is already enabled, do nothing.
+  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
+}
+
+- (void)testEnsureUndoEnabledOnDelete {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView.text setString:@"12"];
+
+  NSUndoManager* undoManager = OCMClassMock([NSUndoManager class]);
+  inputView.undoManager = undoManager;
+  OCMStub([undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
+  OCMStub([undoManager removeAllActionsWithTarget:inputView]);
+
+  OCMExpect([undoManager canUndo]).andReturn(NO);
+  [inputView deleteBackward];
+
+  // If undo is not already enabled, register and remove an undo action.
+  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
+  XCTestExpectation* expectation = [[XCTestExpectation alloc]
+      initWithDescription:@"Invokes removeAllActionsWithTarget after delay"];
+
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.02 * (double)NSEC_PER_SEC),
+                 dispatch_get_main_queue(), ^{
+                   OCMVerify(times(1), [undoManager removeAllActionsWithTarget:inputView]);
+                   [expectation fulfill];
+                 });
+
+  [self waitForExpectations:@[ expectation ] timeout:1.0];
+
+  OCMExpect([undoManager canUndo]).andReturn(YES);
+  [inputView deleteBackward];
+  // If undo is already enabled, do nothing.
+  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
+}
+
+- (void)testSetUndoState {
+  NSUndoManager* undoManager = OCMClassMock([NSUndoManager class]);
+  textInputPlugin.undoManager = undoManager;
+  textInputPlugin.undoManagerDelegate = engine;
+
+  __block int registerUndoCount = 0;
+  __block void (^undoHandler)(id target);
+  OCMStub([undoManager registerUndoWithTarget:textInputPlugin handler:[OCMArg any]])
+      .andDo(^(NSInvocation* invocation) {
+        registerUndoCount++;
+        __weak void (^handler)(id target);
+        [invocation retainArguments];
+        [invocation getArgument:&handler atIndex:3];
+        undoHandler = handler;
+      });
+  __block int removeAllActionsCount = 0;
+  OCMStub([undoManager removeAllActionsWithTarget:textInputPlugin])
+      .andDo(^(NSInvocation* invocation) {
+        removeAllActionsCount++;
+      });
+  __block int delegateUndoCount = 0;
+  OCMStub([engine flutterTextInputPlugin:[OCMArg any] handleUndo:FlutterUndoRedoDirectionUndo])
+      .andDo(^(NSInvocation* invocation) {
+        delegateUndoCount++;
+      });
+  __block int delegateRedoCount = 0;
+  OCMStub([engine flutterTextInputPlugin:[OCMArg any] handleUndo:FlutterUndoRedoDirectionRedo])
+      .andDo(^(NSInvocation* invocation) {
+        delegateRedoCount++;
+      });
+  __block int undoCount = 0;
+  OCMStub([undoManager undo]).andDo(^(NSInvocation* invocation) {
+    undoCount++;
+    undoHandler(textInputPlugin);
+  });
+
+  // If canUndo and canRedo are false, only removeAllActionsWithTarget is called.
+  FlutterMethodCall* setUndoStateCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setUndoState"
+                                        arguments:@{@"canUndo" : @NO, @"canRedo" : @NO}];
+  [textInputPlugin handleMethodCall:setUndoStateCall
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssertEqual(1, removeAllActionsCount);
+  XCTAssertEqual(0, registerUndoCount);
+
+  // If canUndo is true, an undo will be registered.
+  setUndoStateCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setUndoState"
+                                        arguments:@{@"canUndo" : @YES, @"canRedo" : @NO}];
+  [textInputPlugin handleMethodCall:setUndoStateCall
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssertEqual(2, removeAllActionsCount);
+  XCTAssertEqual(1, registerUndoCount);
+
+  // Invoking the undo handler will invoke the handleUndo delegate method with "undo".
+  undoHandler(textInputPlugin);
+  XCTAssertEqual(1, delegateUndoCount);
+  XCTAssertEqual(0, delegateRedoCount);
+  XCTAssertEqual(2, registerUndoCount);
+
+  // Invoking the redo handler will invoke the handleUndo delegate method with "redo".
+  undoHandler(textInputPlugin);
+  XCTAssertEqual(1, delegateUndoCount);
+  XCTAssertEqual(1, delegateRedoCount);
+  XCTAssertEqual(3, registerUndoCount);
+
+  // If canRedo is true, an undo will be registered and undo will be called.
+  setUndoStateCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setUndoState"
+                                        arguments:@{@"canUndo" : @NO, @"canRedo" : @YES}];
+  [textInputPlugin handleMethodCall:setUndoStateCall
+                             result:^(id _Nullable result){
+                             }];
+  XCTAssertEqual(3, removeAllActionsCount);
+  XCTAssertEqual(5, registerUndoCount);
+  XCTAssertEqual(1, undoCount);
+
+  // Invoking the redo handler will invoke the handleUndo delegate method with "redo".
+  undoHandler(textInputPlugin);
+  XCTAssertEqual(1, delegateUndoCount);
+  XCTAssertEqual(2, delegateRedoCount);
+}
+
 @end
