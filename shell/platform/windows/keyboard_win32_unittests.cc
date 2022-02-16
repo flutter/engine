@@ -2340,9 +2340,8 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
       WmKeyUpInfo{VK_BACK, kScanCodeBackspace, kNotExtended}.Build(
           kWmResultZero),
       WmKeyDownInfo{VK_PACKET, 0, kNotExtended, kWasUp}.Build(kWmResultDefault),
-      WmCharInfo{0xe0/*'à'*/, 0, kNotExtended, kWasUp}.Build(kWmResultZero),
-      WmKeyUpInfo{VK_PACKET, 0, kNotExtended}.Build(kWmResultDefault)
-  });
+      WmCharInfo{0xe0 /*'à'*/, 0, kNotExtended, kWasUp}.Build(kWmResultZero),
+      WmKeyUpInfo{VK_PACKET, 0, kNotExtended}.Build(kWmResultDefault)});
 
   // The Backspace event has not responded yet, therefore the char message must
   // hold. This is because when the framework is handling the Backspace event,
