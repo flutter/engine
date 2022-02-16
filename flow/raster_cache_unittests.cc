@@ -605,6 +605,31 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
   }
 }
 
+TEST(RasterCache, RasterCacheKeyHashFunction) {
+  RasterCacheKey::Map<int> map;
+  auto hash_function = map.hash_function();
+  SkMatrix matrix = SkMatrix::I();
+  uint64_t id = 5;
+  RasterCacheKey layer_key(id, RasterCacheKeyType::kLayer, matrix);
+  RasterCacheKey picture_key(id, RasterCacheKeyType::kPicture, matrix);
+  RasterCacheKey display_list_key(id, RasterCacheKeyType::kDisplayList, matrix);
+
+  auto layer_hash_code = hash_function(layer_key);
+  ASSERT_EQ(layer_hash_code, fml::HashCombine(id, RasterCacheKeyType::kLayer));
+
+  auto picture_hash_code = hash_function(picture_key);
+  ASSERT_EQ(picture_hash_code,
+            fml::HashCombine(id, RasterCacheKeyType::kPicture));
+
+  auto display_list_hash_code = hash_function(display_list_key);
+  ASSERT_EQ(display_list_hash_code,
+            fml::HashCombine(id, RasterCacheKeyType::kDisplayList));
+
+  ASSERT_NE(layer_hash_code, picture_hash_code);
+  ASSERT_NE(layer_hash_code, display_list_hash_code);
+  ASSERT_NE(picture_hash_code, display_list_hash_code);
+}
+
 }  // namespace testing
 
 }  // namespace flutter
