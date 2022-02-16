@@ -80,6 +80,7 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputPlugin* textInputPlugin;
 
   FlutterViewController* viewController;
+  NSUndoManager* undoManager;
 }
 
 - (void)setUp {
@@ -91,11 +92,16 @@ FLUTTER_ASSERT_ARC
   viewController = [FlutterViewController new];
   textInputPlugin.viewController = viewController;
 
+  undoManager = OCMClassMock([NSUndoManager class]);
+  textInputPlugin.undoManager = undoManager;
+  textInputPlugin.undoManagerDelegate = engine;
+
   // Clear pasteboard between tests.
   UIPasteboard.generalPasteboard.items = @[];
 }
 
 - (void)tearDown {
+  [undoManager removeAllActionsWithTarget:textInputPlugin];
   textInputPlugin = nil;
   engine = nil;
   [textInputPlugin.autofillContext removeAllObjects];
@@ -103,6 +109,7 @@ FLUTTER_ASSERT_ARC
   [[[[textInputPlugin textInputView] superview] subviews]
       makeObjectsPerformSelector:@selector(removeFromSuperview)];
   viewController = nil;
+  undoManager = nil;
   [super tearDown];
 }
 
@@ -1872,7 +1879,6 @@ FLUTTER_ASSERT_ARC
 
 - (void)testEnsureUndoEnabledOnInsert {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
-  NSUndoManager* undoManager = OCMClassMock([NSUndoManager class]);
   inputView.undoManager = undoManager;
   OCMStub([undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
   OCMStub([undoManager removeAllActionsWithTarget:inputView]);
@@ -1902,7 +1908,6 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView.text setString:@"12"];
 
-  NSUndoManager* undoManager = OCMClassMock([NSUndoManager class]);
   inputView.undoManager = undoManager;
   OCMStub([undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
   OCMStub([undoManager removeAllActionsWithTarget:inputView]);
@@ -1930,10 +1935,6 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testSetUndoState {
-  NSUndoManager* undoManager = OCMClassMock([NSUndoManager class]);
-  textInputPlugin.undoManager = undoManager;
-  textInputPlugin.undoManagerDelegate = engine;
-
   __block int registerUndoCount = 0;
   __block void (^undoHandler)(id target);
   OCMStub([undoManager registerUndoWithTarget:textInputPlugin handler:[OCMArg any]])
