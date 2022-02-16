@@ -32,8 +32,8 @@ static constexpr int kMaxPendingEvents = 1000;
 // the Flutter framework thinking that CtrlLeft is still pressed.
 //
 // To resolve this, Flutter recognizes this fake CtrlLeft down event using the
-// following AltRight down event. Flutter then synthesizes a CtrlLeft key up
-// event immediately after the corresponding AltRight key up event.
+// following AltRight down event. Flutter then forges a CtrlLeft key up event
+// immediately after the corresponding AltRight key up event.
 //
 // One catch is that it is impossible to distinguish the fake CtrlLeft down
 // from a normal CtrlLeft down (followed by a AltRight down), since they
@@ -72,23 +72,6 @@ static bool IsKeyDownCtrlLeft(int action, int virtual_key) {
 #else
   return virtual_key == VK_LCONTROL &&
          (action == WM_KEYDOWN || action == WM_SYSKEYDOWN);
-#endif
-}
-
-// Returns true if this key is a key down event of ShiftRight.
-//
-// This is a temporary solution to
-// https://github.com/flutter/flutter/issues/81674, and forces ShiftRight
-// KeyDown events to not be redispatched regardless of the framework's response.
-//
-// If a ShiftRight KeyDown event is not handled by the framework and is
-// redispatched, Win32 will not send its following KeyUp event and keeps
-// recording ShiftRight as being pressed.
-static bool IsKeyDownShiftRight(int virtual_key, bool was_down) {
-#ifdef WINUWP
-  return false;
-#else
-  return virtual_key == VK_RSHIFT && !was_down;
 #endif
 }
 
@@ -136,6 +119,13 @@ KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
 void KeyboardManagerWin32::RedispatchEvent(
     std::unique_ptr<PendingEvent> event) {
   for (const Win32Message& message : event->session) {
+    // Never redispatch sys keys, because their original messages have been
+    // passed to the system default processor.
+    const bool is_syskey =
+        message.action == WM_SYSKEYDOWN || message.action == WM_SYSKEYUP;
+    if (is_syskey) {
+      continue;
+    }
     pending_redispatches_.push_back(message);
     UINT result = window_delegate_->Win32DispatchMessage(
         message.action, message.wparam, message.lparam);
@@ -212,34 +202,17 @@ void KeyboardManagerWin32::HandleOnKeyResult(
     std::unique_ptr<PendingEvent> event,
     bool handled,
     std::list<PendingText>::iterator pending_text) {
-  // First, patch |handled|, because some key events must always be treated as
-  // handled.
-  //
-  // Redispatching dead keys events makes Win32 ignore the dead key state
-  // and redispatches a normal character without combining it with the
-  // next letter key.
-  //
-  // Redispatching sys events is impossible due to the limitation of
-  // |SendInput|.
-  const bool is_syskey =
-      event->action == WM_SYSKEYDOWN || event->action == WM_SYSKEYUP;
-  const bool real_handled = handled || IsDeadKey(event->character) ||
-                            is_syskey ||
-                            IsKeyDownShiftRight(event->key, event->was_down);
-
-  // For handled events, that's all.
-  if (real_handled) {
-    if (pending_text != pending_texts_.end()) {
+  if (pending_text != pending_texts_.end()) {
+    if (pending_text->placeholder || handled) {
       pending_texts_.erase(pending_text);
+    } else {
+      pending_text->ready = true;
     }
-    return;
+    DispatchReadyTexts();
   }
 
-  // For unhandled events, dispatch them to OnText.
-
-  if (pending_text != pending_texts_.end()) {
-    pending_text->ready = true;
-    DispatchReadyTexts();
+  if (handled) {
+    return;
   }
 
   RedispatchEvent(std::move(event));
@@ -327,10 +300,12 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
         //
         // Checking `character` filters out non-printable event characters.
         std::list<PendingText>::iterator pending_text;
-        if (action == WM_CHAR && character != 0) {
+        if (action == WM_CHAR) {
+          bool valid = character != 0 && IsPrintable(wparam);
           pending_texts_.push_back(PendingText{
               .ready = false,
               .content = text,
+              .placeholder = !valid,
           });
           pending_text = std::prev(pending_texts_.end());
         } else {
@@ -358,7 +333,7 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       // Also filter out ASCII control characters, which are sent as WM_CHAR
       // events for all control key shortcuts.
       current_session_.clear();
-      if (action == WM_CHAR && IsPrintable(wparam)) {
+      if (action == WM_CHAR) {
         pending_texts_.push_back(PendingText{
             .ready = true,
             .content = text,
@@ -372,6 +347,9 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP: {
+      if (wparam == VK_PACKET) {
+        return false;
+      }
       current_session_.clear();
       current_session_.push_back(
           Win32Message{.action = action, .wparam = wparam, .lparam = lparam});
@@ -439,14 +417,6 @@ UINT KeyboardManagerWin32::PeekNextMessageType(UINT wMsgFilterMin,
     return 0;
   }
   return next_message.message;
-}
-
-uint64_t KeyboardManagerWin32::ComputeEventHash(const PendingEvent& event) {
-  // Calculate a key event ID based on the scan code of the key pressed,
-  // and the flags we care about.
-  return event.scancode | (((event.action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0) |
-                            (event.extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
-                           << 16);
 }
 
 }  // namespace flutter
