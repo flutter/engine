@@ -9,14 +9,21 @@
 namespace flutter {
 namespace testing {
 
+static const float matrix[20] = {
+    1,  2,  3,  4,  5,   //
+    6,  7,  8,  9,  10,  //
+    11, 12, 13, 14, 15,  //
+    16, 17, 18, 19, 20,  //
+};
+
 TEST(DisplayListColorFilter, FromSkiaNullFilter) {
   std::shared_ptr<DlColorFilter> filter = DlColorFilter::From(nullptr);
   ASSERT_EQ(filter, nullptr);
 }
 
 TEST(DisplayListColorFilter, FromSkiaBlendFilter) {
-  sk_sp<SkColorFilter> sk_filter = SkColorFilters::Blend(SK_ColorRED,
-                                                         SkBlendMode::kDstATop);
+  sk_sp<SkColorFilter> sk_filter =
+      SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kDstATop);
   std::shared_ptr<DlColorFilter> filter = DlColorFilter::From(sk_filter);
   DlBlendColorFilter dl_filter(SK_ColorRED, SkBlendMode::kDstATop);
   ASSERT_EQ(filter->type(), DlColorFilter::kBlend);
@@ -28,12 +35,6 @@ TEST(DisplayListColorFilter, FromSkiaBlendFilter) {
 }
 
 TEST(DisplayListColorFilter, FromSkiaMatrixFilter) {
-  float matrix[20] = {
-    1, 2, 3, 4, 5,       //
-    6, 7, 8, 9, 10,      //
-    11, 12, 13, 14, 15,  //
-    16, 17, 18, 19, 20,  //
-  };
   sk_sp<SkColorFilter> sk_filter = SkColorFilters::Matrix(matrix);
   std::shared_ptr<DlColorFilter> filter = DlColorFilter::From(sk_filter);
   DlMatrixColorFilter dl_filter(matrix);
@@ -64,9 +65,12 @@ TEST(DisplayListColorFilter, FromSkiaLinearToSrgbFilter) {
 }
 
 TEST(DisplayListColorFilter, FromSkiaUnrecognizedFilter) {
-  sk_sp<SkColorFilter> sk_inputA = SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kOverlay);
-  sk_sp<SkColorFilter> sk_inputB = SkColorFilters::Blend(SK_ColorBLUE, SkBlendMode::kScreen);
-  sk_sp<SkColorFilter> sk_filter = SkColorFilters::Compose(sk_inputA, sk_inputB);
+  sk_sp<SkColorFilter> sk_inputA =
+      SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kOverlay);
+  sk_sp<SkColorFilter> sk_inputB =
+      SkColorFilters::Blend(SK_ColorBLUE, SkBlendMode::kScreen);
+  sk_sp<SkColorFilter> sk_filter =
+      SkColorFilters::Compose(sk_inputA, sk_inputB);
   std::shared_ptr<DlColorFilter> filter = DlColorFilter::From(sk_filter);
   ASSERT_EQ(filter->type(), DlColorFilter::kUnknown);
   ASSERT_EQ(filter->asBlend(), nullptr);
@@ -83,7 +87,8 @@ TEST(DisplayListColorFilter, BlendShared) {
 }
 
 TEST(DisplayListColorFilter, BlendAsBlend) {
-  DlBlendColorFilter filter = DlBlendColorFilter(SK_ColorRED, SkBlendMode::kDstATop);
+  DlBlendColorFilter filter =
+      DlBlendColorFilter(SK_ColorRED, SkBlendMode::kDstATop);
   ASSERT_NE(filter.asBlend(), nullptr);
   ASSERT_EQ(filter.asBlend(), &filter);
 }
@@ -118,87 +123,55 @@ TEST(DisplayListColorFilter, BlendNotEquals) {
 }
 
 TEST(DisplayListColorFilter, MatrixConstructor) {
-  float matrix[20] = {
-    1, 2, 3, 4, 5,       //
-    6, 7, 8, 9, 10,      //
-    11, 12, 13, 14, 15,  //
-    16, 17, 18, 19, 20,  //
-  };
   DlMatrixColorFilter filter(matrix);
 }
 
 TEST(DisplayListColorFilter, MatrixShared) {
-  float matrix[20] = {
-    1, 2, 3, 4, 5,       //
-    6, 7, 8, 9, 10,      //
-    11, 12, 13, 14, 15,  //
-    16, 17, 18, 19, 20,  //
-  };
   DlMatrixColorFilter filter(matrix);
   ASSERT_EQ(*filter.shared(), filter);
 }
 
 TEST(DisplayListColorFilter, MatrixAsMatrix) {
-  float matrix[20] = {
-    1, 2, 3, 4, 5,       //
-    6, 7, 8, 9, 10,      //
-    11, 12, 13, 14, 15,  //
-    16, 17, 18, 19, 20,  //
-  };
   DlMatrixColorFilter filter(matrix);
   ASSERT_NE(filter.asMatrix(), nullptr);
   ASSERT_EQ(filter.asMatrix(), &filter);
 }
 
 TEST(DisplayListColorFilter, MatrixContents) {
-  float matrix[20] = {
-     1,  2,  3,  4,  5,  //
-     6,  7,  8,  9, 10,  //
-    11, 12, 13, 14, 15,  //
-    16, 17, 18, 19, 20,  //
-  };
-  DlMatrixColorFilter filter(matrix);
+  float matrix_[20];
+  memcpy(matrix_, matrix, sizeof(matrix_));
+  DlMatrixColorFilter filter(matrix_);
 
   // Test deref operator []
   for (int i = 0; i < 20; i++) {
-    ASSERT_EQ(filter[i], matrix[i]);
+    ASSERT_EQ(filter[i], matrix_[i]);
   }
 
   // Test get_matrix
   float matrix2[20];
   filter.get_matrix(matrix2);
   for (int i = 0; i < 20; i++) {
-    ASSERT_EQ(matrix2[i], matrix[i]);
+    ASSERT_EQ(matrix2[i], matrix_[i]);
   }
 
   // Test perturbing original array does not affect filter
-  float original_value = matrix[4];
-  matrix[4] += 101;
+  float original_value = matrix_[4];
+  matrix_[4] += 101;
   ASSERT_EQ(filter[4], original_value);
 }
 
 TEST(DisplayListColorFilter, MatrixEquals) {
-  float matrix[20] = {
-    1, 2, 3, 4, 5,       //
-    6, 7, 8, 9, 10,      //
-    11, 12, 13, 14, 15,  //
-    16, 17, 18, 19, 20,  //
-  };
   DlMatrixColorFilter filter1(matrix);
   DlMatrixColorFilter filter2(matrix);
   ASSERT_EQ(filter1, filter2);
 }
 
 TEST(DisplayListColorFilter, MatrixNotEquals) {
-  float matrix[20] = {
-    1, 2, 3, 4, 5,       //
-    6, 7, 8, 9, 10,      //
-    11, 12, 13, 14, 15,  //
-    16, 17, 18, 19, 20,  //
-  };
-  DlMatrixColorFilter filter1(matrix);
-  matrix[4] += 101;
-  DlMatrixColorFilter filter2(matrix);
+  float matrix_[20];
+  memcpy(matrix_, matrix, sizeof(matrix_));
+  DlMatrixColorFilter filter1(matrix_);
+  matrix_[4] += 101;
+  DlMatrixColorFilter filter2(matrix_);
   ASSERT_NE(filter1, filter2);
 }
 
@@ -273,8 +246,10 @@ TEST(DisplayListColorFilter, UnknownNotEquals) {
   // Even though the filter is the same, it is a different instance
   // and we cannot currently tell them apart because the Skia
   // ColorFilter objects do not implement ==
-  DlUnknownColorFilter filter1(SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kDstATop));
-  DlUnknownColorFilter filter2(SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kDstATop));
+  DlUnknownColorFilter filter1(
+      SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kDstATop));
+  DlUnknownColorFilter filter2(
+      SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kDstATop));
   ASSERT_TRUE(filter1 != filter2);
   ASSERT_TRUE(filter2 != filter1);
   ASSERT_FALSE(filter1 == filter2);
