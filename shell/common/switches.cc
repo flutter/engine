@@ -294,6 +294,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.enable_software_rendering =
       command_line.HasOption(FlagForSwitch(Switch::EnableSoftwareRendering));
 
+  settings.route =
+      command_line.HasOption(FlagForSwitch(Switch::Route));
+
   settings.endless_trace_buffer =
       command_line.HasOption(FlagForSwitch(Switch::EndlessTraceBuffer));
 
