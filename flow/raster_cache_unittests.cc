@@ -610,52 +610,24 @@ TEST(RasterCache, RasterCacheKeyHashFunction) {
   auto hash_function = map.hash_function();
   SkMatrix matrix = SkMatrix::I();
   uint64_t id = 5;
-  RasterCacheKey layer_key(id, RasterCacheKeyKind::kLayer, matrix);
-  RasterCacheKey picture_key(id, RasterCacheKeyKind::kPicture, matrix);
-  RasterCacheKey display_list_key(id, RasterCacheKeyKind::kDisplayList, matrix);
+  RasterCacheKey layer_key(id, RasterCacheKeyType::kLayer, matrix);
+  RasterCacheKey picture_key(id, RasterCacheKeyType::kPicture, matrix);
+  RasterCacheKey display_list_key(id, RasterCacheKeyType::kDisplayList, matrix);
 
   auto layer_hash_code = hash_function(layer_key);
-  ASSERT_EQ(layer_hash_code, fml::HashCombine(id, RasterCacheKeyKind::kLayer));
+  ASSERT_EQ(layer_hash_code, fml::HashCombine(id, RasterCacheKeyType::kLayer));
 
   auto picture_hash_code = hash_function(picture_key);
   ASSERT_EQ(picture_hash_code,
-            fml::HashCombine(id, RasterCacheKeyKind::kPicture));
+            fml::HashCombine(id, RasterCacheKeyType::kPicture));
 
   auto display_list_hash_code = hash_function(display_list_key);
   ASSERT_EQ(display_list_hash_code,
-            fml::HashCombine(id, RasterCacheKeyKind::kDisplayList));
-}
+            fml::HashCombine(id, RasterCacheKeyType::kDisplayList));
 
-TEST(RasterCache, RasterCacheKeySameID) {
-  RasterCacheKey::Map<int> map;
-  SkMatrix matrix = SkMatrix::I();
-  uint64_t id = 5;
-  RasterCacheKey layer_key(id, RasterCacheKeyKind::kLayer, matrix);
-  RasterCacheKey picture_key(id, RasterCacheKeyKind::kPicture, matrix);
-  RasterCacheKey display_list_key(id, RasterCacheKeyKind::kDisplayList, matrix);
-  map[layer_key] = 100;
-  map[picture_key] = 200;
-  map[display_list_key] = 300;
-
-  ASSERT_EQ(map[layer_key], 100);
-  ASSERT_EQ(map[picture_key], 200);
-  ASSERT_EQ(map[display_list_key], 300);
-}
-
-TEST(RasterCache, RasterCacheKeySameKind) {
-  RasterCacheKey::Map<int> map;
-  RasterCacheKeyKind kind = RasterCacheKeyKind::kDisplayList;
-  SkMatrix matrix = SkMatrix::I();
-  RasterCacheKey first_key(5, kind, matrix);
-  RasterCacheKey second_key(10, kind, matrix);
-  RasterCacheKey third_key(15, kind, matrix);
-  map[first_key] = 50;
-  map[second_key] = 100;
-  map[third_key] = 150;
-
-  ASSERT_EQ(map[first_key], 50);
-  ASSERT_EQ(map[second_key], 100);
-  ASSERT_EQ(map[third_key], 150);
+  ASSERT_NE(layer_hash_code, picture_hash_code);
+  ASSERT_NE(layer_hash_code, display_list_hash_code);
+  ASSERT_NE(picture_hash_code, display_list_hash_code);
 }
 
 }  // namespace testing

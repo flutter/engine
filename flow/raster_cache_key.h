@@ -13,30 +13,30 @@
 
 namespace flutter {
 
-enum class RasterCacheKeyKind { kLayer, kPicture, kDisplayList };
+enum class RasterCacheKeyType { kLayer, kPicture, kDisplayList };
 
 class RasterCacheKey {
  public:
-  RasterCacheKey(uint64_t id, RasterCacheKeyKind kind, const SkMatrix& ctm)
-      : id_(id), kind_(kind), matrix_(ctm) {
+  RasterCacheKey(uint64_t id, RasterCacheKeyType type, const SkMatrix& ctm)
+      : id_(id), type_(type), matrix_(ctm) {
     matrix_[SkMatrix::kMTransX] = 0;
     matrix_[SkMatrix::kMTransY] = 0;
   }
 
   uint64_t id() const { return id_; }
-  RasterCacheKeyKind kind() const { return kind_; }
+  RasterCacheKeyType type() const { return type_; }
   const SkMatrix& matrix() const { return matrix_; }
 
   struct Hash {
     std::size_t operator()(RasterCacheKey const& key) const {
-      return fml::HashCombine(key.id_, key.kind_);
+      return fml::HashCombine(key.id_, key.type_);
     }
   };
 
   struct Equal {
     constexpr bool operator()(const RasterCacheKey& lhs,
                               const RasterCacheKey& rhs) const {
-      return lhs.id_ == rhs.id_ && lhs.kind_ == rhs.kind_ &&
+      return lhs.id_ == rhs.id_ && lhs.type_ == rhs.type_ &&
              lhs.matrix_ == rhs.matrix_;
     }
   };
@@ -47,7 +47,7 @@ class RasterCacheKey {
  private:
   uint64_t id_;
 
-  RasterCacheKeyKind kind_;
+  RasterCacheKeyType type_;
 
   // ctm where only fractional (0-1) translations are preserved:
   //   matrix_ = ctm;
