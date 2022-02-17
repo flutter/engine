@@ -15,8 +15,14 @@ class SendTextFocusSemantics extends Scenario {
   /// Constructor for `SendTextFocusScemantics`.
   SendTextFocusSemantics(PlatformDispatcher dispatcher) : super(dispatcher);
 
+  bool _firstFrameDrawn = false;
+
   @override
   void onBeginFrame(Duration duration) {
+    // Only draw once.
+    if (_firstFrameDrawn) {
+      return;
+    }
     // Doesn't matter what we draw. Just paint white.
     final SceneBuilder builder = SceneBuilder();
     final PictureRecorder recorder = PictureRecorder();
@@ -76,6 +82,7 @@ class SendTextFocusSemantics extends Scenario {
         additionalActions: Int32List(0),
       )).build()
     );
+    _firstFrameDrawn = true;
   }
 
   // We don't really care about the touch itself. It's just a way for the

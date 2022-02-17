@@ -68,9 +68,7 @@ FLUTTER_ASSERT_ARC
   // The new TextInputSemanticsObject now has keyboard focus (the only trait accessible through
   // UI tests on a XCUIElement).
   textInputSemanticsObject = self.application.textFields[@"focused flutter textfield"];
-  if (![textInputSemanticsObject waitForExistenceWithTimeout:timeout]) {
-    NSLog(@"%@", self.application);
-  }
+  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:timeout]);
   XCTAssertEqualObjects([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @YES);
 
   // The delegate UITextInput is also inserted on the window but we make only the
