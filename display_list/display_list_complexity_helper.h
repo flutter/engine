@@ -19,7 +19,7 @@ namespace flutter {
 // wrong decision, but the rationale here is that with the smaller numbers,
 // we have:
 //
-// a) More noise
+// a) More noise.
 // b) Less absolute difference. If the constant we've chosen is out by 50%
 //    on a measurement that is 0.001ms, that's less of an issue than if
 //    the measurement is 15ms.

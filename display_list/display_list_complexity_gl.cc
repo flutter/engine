@@ -55,7 +55,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawLine(const SkPoint& p0,
   float non_hairline_penalty = 1.0f;
   unsigned int aa_penalty = 1;
 
-  // The non-hairline penalty is insignificant when AA is on
+  // The non-hairline penalty is insignificant when AA is on.
   if (!IsHairline() && !IsAntiAliased()) {
     non_hairline_penalty = 1.15f;
   }
@@ -67,7 +67,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawLine(const SkPoint& p0,
   // sqrt() calls.
   SkScalar distance = abs(p0.x() - p1.x()) + abs(p0.y() - p1.y());
 
-  // The baseline complexity is for a hairline stroke with no AA
+  // The baseline complexity is for a hairline stroke with no AA.
   // m = 1/40
   // c = 13
   unsigned int complexity =
@@ -98,7 +98,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawRect(const SkRect& rect) {
     // c = 0
     complexity = area * 2 / 175;
   } else {
-    // Take the average of the width and height
+    // Take the average of the width and height.
     unsigned int length = (rect.width() + rect.height()) / 2;
 
     if (IsAntiAliased()) {
@@ -142,7 +142,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawOval(
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kFill_Style) {
-    // With filled styles, there is no significant AA penalty
+    // With filled styles, there is no significant AA penalty.
     // m = 1/6000
     // c = 0
     complexity = area / 30;
@@ -152,7 +152,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawOval(
       // c = 0
       complexity = area / 20;
     } else {
-      // Take the average of the width and height
+      // Take the average of the width and height.
       unsigned int length = (bounds.width() + bounds.height()) / 2;
 
       // m = 1/75
@@ -182,12 +182,12 @@ void DisplayListGLComplexityCalculator::GLHelper::drawCircle(
     // c = 50
     complexity = (area + 26250) * 8 / 105;
 
-    // Penalty of around 8% when AA is disabled
+    // Penalty of around 8% when AA is disabled.
     if (!IsAntiAliased()) {
       complexity *= 1.08f;
     }
   } else {
-    // Hairline vs non-hairline has no significant performance difference
+    // Hairline vs non-hairline has no significant performance difference.
     if (IsAntiAliased()) {
       // m = 1/3
       // c = 10
@@ -210,9 +210,9 @@ void DisplayListGLComplexityCalculator::GLHelper::drawRRect(
 
   // Drawing RRects is split into three performance tiers:
   //
-  // 1) All stroked styles without AA *except* simple/symmetric RRects
-  // 2) All filled styles and symmetric stroked styles w/AA
-  // 3) Remaining stroked styles with AA
+  // 1) All stroked styles without AA *except* simple/symmetric RRects.
+  // 2) All filled styles and symmetric stroked styles w/AA.
+  // 3) Remaining stroked styles with AA.
   //
   // 1) and 3) scale linearly with length, 2) scales with area.
 
@@ -228,11 +228,11 @@ void DisplayListGLComplexityCalculator::GLHelper::drawRRect(
     // c = 0.5
     complexity = (area + 1600) / 80;
   } else {
-    // Take the average of the width and height
+    // Take the average of the width and height.
     unsigned int length = (rrect.width() + rrect.height()) / 2;
 
     // There is some difference between hairline and non-hairline performance
-    // but the spread is relatively inconsistent and it's pretty much a wash
+    // but the spread is relatively inconsistent and it's pretty much a wash.
     if (IsAntiAliased()) {
       // m = 1/25
       // c = 1
@@ -254,10 +254,10 @@ void DisplayListGLComplexityCalculator::GLHelper::drawDRRect(
     return;
   }
   // There are roughly four classes here:
-  // a) Filled style
-  // b) Complex RRect type with AA enabled and filled style
-  // c) Stroked style with AA enabled
-  // d) Stroked style with AA disabled
+  // a) Filled style.
+  // b) Complex RRect type with AA enabled and filled style.
+  // c) Stroked style with AA enabled.
+  // d) Stroked style with AA disabled.
   //
   // a) and b) scale linearly with the area, c) and d) scale linearly with
   // a single dimension (length). In all cases, the dimensions refer to
@@ -312,7 +312,8 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPath(const SkPath& path) {
   unsigned int complexity;
 
   if (IsAntiAliased()) {
-    // There seems to be a fixed cost of around 1ms for calling drawPath with AA
+    // There seems to be a fixed cost of around 1ms for calling drawPath with
+    // AA.
     complexity = 200000;
 
     line_verb_cost = 235;
@@ -320,7 +321,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPath(const SkPath& path) {
     conic_verb_cost = 365;
     cubic_verb_cost = 725;
   } else {
-    // There seems to be a fixed cost of around 0.25ms for calling drawPath
+    // There seems to be a fixed cost of around 0.25ms for calling drawPath.
     // without AA
     complexity = 50000;
 
@@ -344,10 +345,10 @@ void DisplayListGLComplexityCalculator::GLHelper::drawArc(
   if (IsComplex()) {
     return;
   }
-  // Hairline vs non-hairline makes no difference to the performance
-  // Stroked styles without AA scale linearly with the log of the diameter
-  // Stroked styles with AA scale linearly with the area
-  // Filled styles scale lienarly with the area
+  // Hairline vs non-hairline makes no difference to the performance.
+  // Stroked styles without AA scale linearly with the log of the diameter.
+  // Stroked styles with AA scale linearly with the area.
+  // Filled styles scale lienarly with the area.
   unsigned int area = oval_bounds.width() * oval_bounds.height();
   unsigned int complexity;
 
@@ -367,9 +368,9 @@ void DisplayListGLComplexityCalculator::GLHelper::drawArc(
       // m = 15
       // c = -100
       // This should never go negative though, so use std::max to ensure
-      // c is never larger than 15*log_diameter
+      // c is never larger than 15*log_diameter.
       //
-      // Pre-multiply by 15 here so we get a little bit more precision
+      // Pre-multiply by 15 here so we get a little bit more precision.
       unsigned int log_diameter = 15 * log(diameter);
       complexity = (log_diameter - std::max(log_diameter, 100u)) * 200 / 9;
     }
@@ -400,7 +401,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
   if (IsAntiAliased()) {
     if (mode == SkCanvas::kPoints_PointMode) {
       if (IsHairline()) {
-        // This is a special case, it triggers an extremely fast path
+        // This is a special case, it triggers an extremely fast path.
         // m = 1/4500
         // c = 0
         complexity = count * 400 / 9;
@@ -432,7 +433,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
     }
   } else {
     if (mode == SkCanvas::kPoints_PointMode) {
-      // Hairline vs non hairline makes no difference for points without AA
+      // Hairline vs non hairline makes no difference for points without AA.
       // m = 1/18000
       // c = 0.25
       complexity = (count + 4500) * 100 / 9;
@@ -464,8 +465,8 @@ void DisplayListGLComplexityCalculator::GLHelper::drawVertices(
   // There is currently no way for us to get the VertexMode from the SkVertices
   // object, but for future reference:
   //
-  // TriangleStrip is roughly 25% more expensive than TriangleFan
-  // TriangleFan is roughly 5% more expensive than Triangles
+  // TriangleStrip is roughly 25% more expensive than TriangleFan.
+  // TriangleFan is roughly 5% more expensive than Triangles.
 
   // There is currently no way for us to get the vertex count from an SkVertices
   // object, so we have to estimate it from the approximate size.
@@ -511,11 +512,12 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImage(
 
   if (!image->isTextureBacked()) {
     // We can't square the area here as we'll overflow, so let's approximate
-    // by taking the calculated complexity score and applying a multiplier to it
+    // by taking the calculated complexity score and applying a multiplier to
+    // it.
     //
     // (complexity * area / 60000) + 4000 gives a reasonable approximation with
     // AA (complexity * area / 19000) gives a reasonable approximation without
-    // AA
+    // AA.
     float multiplier;
     if (IsAntiAliased()) {
       multiplier = area / 60000.0f;
@@ -537,7 +539,8 @@ void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
   if (IsComplex()) {
     return;
   }
-  // Two main groups here - texture-backed and non-texture-backed images
+  // Two main groups here - texture-backed and non-texture-backed images.
+  //
   // Within each group, they all perform within a few % of each other *except*
   // when we have a strict constraint and anti-aliasing enabled.
 
@@ -583,7 +586,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImageNine(
   // c = 3
   unsigned int complexity = (area + 10800) / 9;
 
-  // Uploading incurs about a 40% performance penalty
+  // Uploading incurs about a 40% performance penalty.
   if (!image->isTextureBacked()) {
     complexity *= 1.4f;
   }
@@ -609,8 +612,8 @@ void DisplayListGLComplexityCalculator::GLHelper::drawTextBlob(
     return;
   }
   // There are two classes here, hairline vs non-hairline.
-  // Hairline scales loglinearly with the number of glyphs
-  // Non-hairline scales linearly
+  // Hairline scales loglinearly with the number of glyphs.
+  // Non-hairline scales linearly.
 
   // Unfortunately there is currently no way for us to figure out the glyph
   // count from an SkTextBlob. We will need to figure out a better solution
