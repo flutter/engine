@@ -37,58 +37,17 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
       image_info_(CreateImageInfo()),
       row_bytes_(std::nullopt) {}
 
-void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
-  Dart_Handle callback_handle = Dart_GetNativeArgument(args, 2);
+Dart_Handle ImageDescriptor::initEncoded(Dart_Handle descriptor_handle,
+                                         ImmutableBuffer* immutable_buffer,
+                                         Dart_Handle callback_handle) {
   if (!Dart_IsClosure(callback_handle)) {
-    Dart_SetReturnValue(args, tonic::ToDart("Callback must be a function"));
-    return;
+    return tonic::ToDart("Callback must be a function");
   }
-
-  Dart_Handle descriptor_handle = Dart_GetNativeArgument(args, 0);
-  ImmutableBuffer* immutable_buffer =
-      tonic::DartConverter<ImmutableBuffer*>::FromDart(
-          Dart_GetNativeArgument(args, 1));
 
   if (!immutable_buffer) {
-    Dart_SetReturnValue(args,
-                        tonic::ToDart("Buffer parameter must not be null"));
-    return;
+    return tonic::ToDart("Buffer parameter must not be null");
   }
 
-  // This has to be valid because this method is called from Dart.
-  auto dart_state = UIDartState::Current();
-  auto registry = dart_state->GetImageGeneratorRegistry();
-
-  if (!registry) {
-    Dart_SetReturnValue(
-        args, tonic::ToDart("Failed to access the internal image decoder "
-                            "registry on this isolate. Please file a bug on "
-                            "https://github.com/flutter/flutter/issues."));
-    return;
-  }
-
-  auto generator =
-      registry->CreateCompatibleGenerator(immutable_buffer->data());
-
-  if (!generator) {
-    // No compatible image decoder was found.
-    Dart_SetReturnValue(args, tonic::ToDart("Invalid image data"));
-    return;
-  }
-
-  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
-      immutable_buffer->data(), std::move(generator));
-
-  FML_DCHECK(descriptor);
-
-  descriptor->AssociateWithDartWrapper(descriptor_handle);
-  tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
-}
-
-Dart_Handle ImageDescriptor::initEncodedHandle(
-    Dart_Handle descriptor_handle,
-    ImmutableBuffer* immutable_buffer,
-    Dart_Handle callback_handle) {
   // This has to be valid because this method is called from Dart.
   auto dart_state = UIDartState::Current();
   auto registry = dart_state->GetImageGeneratorRegistry();

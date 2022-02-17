@@ -21,22 +21,14 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ImmutableBuffer);
 
 ImmutableBuffer::~ImmutableBuffer() {}
 
-void ImmutableBuffer::init(Dart_NativeArguments args) {
-  Dart_Handle callback_handle = Dart_GetNativeArgument(args, 2);
+void ImmutableBuffer::init(Dart_Handle buffer_handle,
+                           Dart_Handle data,
+                           Dart_Handle callback_handle) {
   if (!Dart_IsClosure(callback_handle)) {
-    Dart_SetReturnValue(args, tonic::ToDart("Callback must be a function"));
+    Dart_ThrowException(tonic::ToDart("Callback must be a function"));
     return;
   }
 
-  Dart_Handle buffer_handle = Dart_GetNativeArgument(args, 0);
-  Dart_Handle data = Dart_GetNativeArgument(args, 1);
-
-  initHandle(buffer_handle, data, callback_handle);
-}
-
-void ImmutableBuffer::initHandle(Dart_Handle buffer_handle,
-                                 Dart_Handle data,
-                                 Dart_Handle callback_handle) {
   tonic::Uint8List dataList = tonic::Uint8List(data);
 
   auto sk_data = MakeSkDataWithCopy(dataList.data(), dataList.num_elements());

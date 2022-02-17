@@ -138,38 +138,10 @@ void DartRuntimeHooks::Install(bool is_ui_isolate,
   InitDartIO(builtin, script_uri);
 }
 
-void _Logger_PrintDebugString(Dart_NativeArguments args) {
-#ifndef NDEBUG
-  _Logger_PrintString(args);
-#endif
-}
-
 void DartRuntimeHooks::Logger_PrintDebugString(std::string message) {
 #ifndef NDEBUG
   DartRuntimeHooks::Logger_PrintString(message);
 #endif
-}
-
-// Implementation of native functions which are used for some
-// test/debug functionality in standalone dart mode.
-void _Logger_PrintString(Dart_NativeArguments args) {
-  // Obtain the log buffer from Dart code.
-  std::string message;
-  {
-    Dart_Handle str = Dart_GetNativeArgument(args, 0);
-    uint8_t* chars = nullptr;
-    intptr_t length = 0;
-    Dart_Handle result = Dart_StringToUTF8(str, &chars, &length);
-    if (Dart_IsError(result)) {
-      Dart_PropagateError(result);
-      return;
-    }
-    if (length > 0) {
-      message = std::string{reinterpret_cast<const char*>(chars),
-                            static_cast<size_t>(length)};
-    }
-  }
-  DartRuntimeHooks::Logger_PrintString(message);
 }
 
 void DartRuntimeHooks::Logger_PrintString(std::string message) {
@@ -191,11 +163,6 @@ void DartRuntimeHooks::Logger_PrintString(std::string message) {
                               log.size());
     Dart_ServiceSendDataEvent("Stdout", "WriteEvent", newline, sizeof(newline));
   }
-}
-
-void _ScheduleMicrotask(Dart_NativeArguments args) {
-  Dart_Handle closure = Dart_GetNativeArgument(args, 0);
-  DartRuntimeHooks::ScheduleMicrotask(closure);
 }
 
 void DartRuntimeHooks::ScheduleMicrotask(Dart_Handle closure) {
@@ -275,11 +242,6 @@ static std::string GetFunctionName(Dart_Handle func) {
   return DartConverter<std::string>::FromDart(result);
 }
 
-void _GetCallbackHandle(Dart_NativeArguments args) {
-  Dart_Handle func = Dart_GetNativeArgument(args, 0);
-  Dart_SetReturnValue(args, DartRuntimeHooks::GetCallbackHandle(func));
-}
-
 Dart_Handle DartRuntimeHooks::GetCallbackHandle(Dart_Handle func) {
   std::string name = GetFunctionName(func);
   std::string class_name = GetFunctionClassName(func);
@@ -294,12 +256,6 @@ Dart_Handle DartRuntimeHooks::GetCallbackHandle(Dart_Handle func) {
   }
   return DartConverter<int64_t>::ToDart(
       DartCallbackCache::GetCallbackHandle(name, class_name, library_path));
-}
-
-void _GetCallbackFromHandle(Dart_NativeArguments args) {
-  Dart_Handle h = Dart_GetNativeArgument(args, 0);
-  Dart_SetReturnValue(args, DartRuntimeHooks::GetCallbackFromHandle(
-                                DartConverter<int64_t>::FromDart(h)));
 }
 
 Dart_Handle DartRuntimeHooks::GetCallbackFromHandle(int64_t handle) {

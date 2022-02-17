@@ -62,8 +62,8 @@ typedef CanvasPath Path;
   V(SemanticsUpdateBuilder::CreateOrThrow, 1)                             \
   /* Other */                                                             \
   V(FontCollection::LoadFontFromListOrThrow, 3)                           \
-  V(ImageDescriptor::initEncodedHandle, 3)                                \
-  V(ImmutableBuffer::initHandle, 3)                                       \
+  V(ImageDescriptor::initEncoded, 3)                                      \
+  V(ImmutableBuffer::init, 3)                                             \
   V(ImageDescriptor::initRaw, 6)                                          \
   V(IsolateNameServerNatives::LookupPortByName, 1)                        \
   V(IsolateNameServerNatives::RegisterPortWithName, 2)                    \
@@ -182,7 +182,7 @@ typedef CanvasPath Path;
   V(Path, addArc, 7)                                   \
   V(Path, addOval, 5)                                  \
   V(Path, addPath, 4)                                  \
-  V(Path, addPathWithMatrixHandle, 5)                  \
+  V(Path, addPathWithMatrix, 5)                        \
   V(Path, addPolygon, 3)                               \
   V(Path, addRRect, 2)                                 \
   V(Path, addRect, 5)                                  \
@@ -194,7 +194,7 @@ typedef CanvasPath Path;
   V(Path, contains, 3)                                 \
   V(Path, cubicTo, 7)                                  \
   V(Path, extendWithPath, 4)                           \
-  V(Path, extendWithPathAndMatrixHandle, 5)            \
+  V(Path, extendWithPathAndMatrix, 5)                  \
   V(Path, getBounds, 1)                                \
   V(Path, getFillType, 1)                              \
   V(Path, lineTo, 3)                                   \
@@ -210,7 +210,7 @@ typedef CanvasPath Path;
   V(Path, reset, 1)                                    \
   V(Path, setFillType, 2)                              \
   V(Path, shift, 4)                                    \
-  V(Path, transformHandle, 3)                          \
+  V(Path, transform, 3)                                \
   V(PictureRecorder, endRecording, 2)                  \
   V(Picture, GetAllocationSize, 1)                     \
   V(Picture, dispose, 1)                               \

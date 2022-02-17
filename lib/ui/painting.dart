@@ -2563,7 +2563,7 @@ class Path extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>('Path::addPath')
   external void _addPath(Path path, double dx, double dy);
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>('Path::addPathWithMatrixHandle')
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>('Path::addPathWithMatrix')
   external void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix);
 
   /// Adds the sub-paths of `path`, offset by `offset`, to this path.
@@ -2587,7 +2587,7 @@ class Path extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>('Path::extendWithPath')
   external void _extendWithPath(Path path, double dx, double dy);
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>('Path::extendWithPathAndMatrixHandle')
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>('Path::extendWithPathAndMatrix')
   external void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix);
 
   /// Closes the last sub-path, as if a straight line had been drawn
@@ -2637,7 +2637,7 @@ class Path extends NativeFieldWrapperClass1 {
     return path;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Path::transformHandle')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Path::transform')
   external void _transform(Path outPath, Float64List matrix4);
 
   /// Computes the bounding rectangle for this path.
@@ -5597,7 +5597,7 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     }).then((_) => instance);
   }
 
-  @FfiNative<Void Function(Handle, Handle, Handle)>('ImmutableBuffer::initHandle')
+  @FfiNative<Void Function(Handle, Handle, Handle)>('ImmutableBuffer::init')
   external void _init(Uint8List list, _Callback<void> callback);
 
   /// The length, in bytes, of the underlying data.
@@ -5656,7 +5656,7 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
     }).then((_) => descriptor);
   }
 
-  @FfiNative<Handle Function(Handle, Pointer<Void>, Handle)>('ImageDescriptor::initEncodedHandle')
+  @FfiNative<Handle Function(Handle, Pointer<Void>, Handle)>('ImageDescriptor::initEncoded')
   external String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback);
 
   /// Creates an image descriptor from raw image pixels.

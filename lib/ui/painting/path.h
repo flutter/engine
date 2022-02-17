@@ -96,42 +96,24 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   void addRRect(const RRect& rrect);
   void addPath(CanvasPath* path, double dx, double dy);
 
-  void addPathWithMatrixHandle(CanvasPath* path,
+  void addPathWithMatrix(CanvasPath* path,
                                double dx,
                                double dy,
-                               Dart_Handle matrix4_handle) {
-    tonic::Float64List matrix4(matrix4_handle);
-    addPathWithMatrix(path, dx, dy, matrix4);
-  }
-  void addPathWithMatrix(CanvasPath* path,
-                         double dx,
-                         double dy,
-                         tonic::Float64List& matrix4);
+                               Dart_Handle matrix4_handle);
 
   void extendWithPath(CanvasPath* path, double dx, double dy);
 
-  void extendWithPathAndMatrixHandle(CanvasPath* path,
-                                     double dx,
-                                     double dy,
-                                     Dart_Handle matrix4_handle) {
-    tonic::Float64List matrix4(matrix4_handle);
-    extendWithPathAndMatrix(path, dx, dy, matrix4);
-  }
   void extendWithPathAndMatrix(CanvasPath* path,
                                double dx,
                                double dy,
-                               tonic::Float64List& matrix4);
+                               Dart_Handle matrix4_handle);
 
   void close();
   void reset();
   bool contains(double x, double y);
   void shift(Dart_Handle path_handle, double dx, double dy);
 
-  void transformHandle(Dart_Handle path_handle, Dart_Handle matrix4_handle) {
-    tonic::Float64List matrix4(matrix4_handle);
-    transform(path_handle, matrix4);
-  }
-  void transform(Dart_Handle path_handle, tonic::Float64List& matrix4);
+  void transform(Dart_Handle path_handle, Dart_Handle matrix4_handle);
 
   tonic::Float32List getBounds();
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
@@ -140,8 +122,6 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   const SkPath& path() const { return tracked_path_->path; }
 
   size_t GetAllocationSize() const override;
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   CanvasPath();
