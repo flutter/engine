@@ -23,7 +23,7 @@ public interface PlatformViewsAccessibilityDelegate {
    * <p>Accessibility events originating in platform views belonging to this delegate will be
    * delegated to this accessibility bridge.
    */
-  void attachAccessibilityBridge(AccessibilityBridge accessibilityBridge);
+  void attachAccessibilityBridge(@NonNull AccessibilityBridge accessibilityBridge);
 
   /**
    * Detaches the current accessibility bridge.
