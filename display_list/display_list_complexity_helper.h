@@ -61,6 +61,34 @@ namespace flutter {
 // c) If a specific draw op is logarithmic in complexity, do a best fit
 //    onto a linear equation within the range we expect to see the variables
 //    fall within.
+//
+// As an example of the above, let's say we have some data that looks like the
+// complexity is something like O(n^1/3). We would like to avoid anything too
+// expensive to calculate, so taking the cube root of the value to try and
+// calculate the time cost should be avoided.
+//
+// In this case, the approach would be to take a straight line approximation
+// that maps closely in the range of n where we feel it is most likely to occur.
+// For example, if this were drawLine, and n were the line length, and we
+// expected the line lengths to typically be between 50 and 100, then we would
+// figure out the equation of the straight line graph that approximates the
+// n^1/3 curve, and if possible try and choose an approximation that is more
+// representative in the range of [50, 100] for n.
+//
+// Once that's done, we can develop the formula as follows:
+//
+// Take y = mx + c (straight line graph chosen as per guidelines above).
+// Divide by however many ops the benchmark ran for a single pass.
+// Multiply by 200,000 to normalise 0.0005ms = 100.
+// Simplify down the formula.
+//
+// So if we had m = 1/5 and c = 0, and the drawLines benchmark ran 10,000
+// drawLine calls per iteration:
+//
+//   y (time taken) = x (line length) / 5
+//   y = x / 5 * 200,000 / 10,000
+//   y = x / 5 * 20
+//   y = 4x
 
 class ComplexityCalculatorHelper
     : public virtual Dispatcher,
