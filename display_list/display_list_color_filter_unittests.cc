@@ -83,6 +83,7 @@ TEST(DisplayListColorFilter, BlendConstructor) {
 
 TEST(DisplayListColorFilter, BlendShared) {
   DlBlendColorFilter filter(SK_ColorRED, SkBlendMode::kDstATop);
+  ASSERT_NE(filter.shared().get(), &filter);
   ASSERT_EQ(*filter.shared(), filter);
 }
 
@@ -128,6 +129,7 @@ TEST(DisplayListColorFilter, MatrixConstructor) {
 
 TEST(DisplayListColorFilter, MatrixShared) {
   DlMatrixColorFilter filter(matrix);
+  ASSERT_NE(filter.shared().get(), &filter);
   ASSERT_EQ(*filter.shared(), filter);
 }
 
@@ -181,6 +183,7 @@ TEST(DisplayListColorFilter, SrgbToLinearConstructor) {
 
 TEST(DisplayListColorFilter, SrgbToLinearShared) {
   DlSrgbToLinearGammaColorFilter filter;
+  ASSERT_NE(filter.shared().get(), &filter);
   ASSERT_EQ(*filter.shared(), filter);
 }
 
@@ -201,6 +204,7 @@ TEST(DisplayListColorFilter, LinearToSrgbConstructor) {
 
 TEST(DisplayListColorFilter, LinearToSrgbShared) {
   DlLinearToSrgbGammaColorFilter filter;
+  ASSERT_NE(filter.shared().get(), &filter);
   ASSERT_EQ(*filter.shared(), filter);
 }
 
@@ -221,6 +225,7 @@ TEST(DisplayListColorFilter, UnknownConstructor) {
 
 TEST(DisplayListColorFilter, UnknownShared) {
   DlUnknownColorFilter filter(SkColorFilters::LinearToSRGBGamma());
+  ASSERT_NE(filter.shared().get(), &filter);
   ASSERT_EQ(*filter.shared(), filter);
 }
 
