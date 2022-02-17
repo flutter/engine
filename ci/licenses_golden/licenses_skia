@@ -1,4 +1,4 @@
-Signature: f33349c06e09e6885da5b9ac34921883
+Signature: b69c5e5ed9054418b69d5ac63329f801
 
 UNUSED LICENSES:
 
@@ -2084,6 +2084,7 @@ FILE: ../../../third_party/skia/src/gpu/GrStyle.cpp
 FILE: ../../../third_party/skia/src/gpu/GrStyle.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxy.h
+FILE: ../../../third_party/skia/src/gpu/GrSwizzle.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTextureProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureRenderTargetProxy.cpp
@@ -2093,7 +2094,6 @@ FILE: ../../../third_party/skia/src/gpu/GrWindowRectangles.h
 FILE: ../../../third_party/skia/src/gpu/GrWindowRectsState.h
 FILE: ../../../third_party/skia/src/gpu/SurfaceContext.cpp
 FILE: ../../../third_party/skia/src/gpu/SurfaceContext.h
-FILE: ../../../third_party/skia/src/gpu/Swizzle.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DPipelineStateDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrShadowGeoProc.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrShadowGeoProc.h
@@ -3374,6 +3374,7 @@ FILE: ../../../third_party/skia/src/gpu/GrProgramInfo.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxyView.h
+FILE: ../../../third_party/skia/src/gpu/GrSwizzle.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTextureResolveManager.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureResolveRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTextureResolveRenderTask.h
@@ -3382,7 +3383,6 @@ FILE: ../../../third_party/skia/src/gpu/GrTransferFromRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrUtil.h
 FILE: ../../../third_party/skia/src/gpu/GrWaitRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrWaitRenderTask.h
-FILE: ../../../third_party/skia/src/gpu/Swizzle.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuadBuffer.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuadUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuadUtils.h
@@ -6517,6 +6517,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+FILE: ../../../third_party/skia/gm/palette.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google Inc.
 
