@@ -178,7 +178,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeDisplayList(
 void RasterCache::Prepare(PrerollContext* context,
                           Layer* layer,
                           const SkMatrix& ctm) {
-  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyType::kLayer, ctm);
+  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyKind::kLayer, ctm);
   Entry& entry = cache_[cache_key];
   entry.access_count++;
   entry.used_this_frame = true;
@@ -242,7 +242,7 @@ bool RasterCache::Prepare(PrerollContext* context,
     return false;
   }
 
-  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyType::kPicture,
+  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyKind::kPicture,
                            transformation_matrix);
 
   // Creates an entry, if not present prior.
@@ -297,7 +297,7 @@ bool RasterCache::Prepare(PrerollContext* context,
   }
 
   RasterCacheKey cache_key(display_list->unique_id(),
-                           RasterCacheKeyType::kDisplayList,
+                           RasterCacheKeyKind::kDisplayList,
                            transformation_matrix);
 
   // Creates an entry, if not present prior.
@@ -323,13 +323,13 @@ bool RasterCache::Prepare(PrerollContext* context,
 }
 
 void RasterCache::Touch(Layer* layer, const SkMatrix& ctm) {
-  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyType::kLayer, ctm);
+  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyKind::kLayer, ctm);
   Touch(cache_key);
 }
 
 void RasterCache::Touch(SkPicture* picture,
                         const SkMatrix& transformation_matrix) {
-  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyType::kPicture,
+  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyKind::kPicture,
                            transformation_matrix);
   Touch(cache_key);
 }
@@ -337,7 +337,7 @@ void RasterCache::Touch(SkPicture* picture,
 void RasterCache::Touch(DisplayList* display_list,
                         const SkMatrix& transformation_matrix) {
   RasterCacheKey cache_key(display_list->unique_id(),
-                           RasterCacheKeyType::kDisplayList,
+                           RasterCacheKeyKind::kDisplayList,
                            transformation_matrix);
   Touch(cache_key);
 }
@@ -353,7 +353,7 @@ void RasterCache::Touch(const RasterCacheKey& cache_key) {
 bool RasterCache::Draw(const SkPicture& picture,
                        SkCanvas& canvas,
                        const SkPaint* paint) const {
-  RasterCacheKey cache_key(picture.uniqueID(), RasterCacheKeyType::kPicture,
+  RasterCacheKey cache_key(picture.uniqueID(), RasterCacheKeyKind::kPicture,
                            canvas.getTotalMatrix());
   return Draw(cache_key, canvas, paint);
 }
@@ -362,7 +362,7 @@ bool RasterCache::Draw(const DisplayList& display_list,
                        SkCanvas& canvas,
                        const SkPaint* paint) const {
   RasterCacheKey cache_key(display_list.unique_id(),
-                           RasterCacheKeyType::kDisplayList,
+                           RasterCacheKeyKind::kDisplayList,
                            canvas.getTotalMatrix());
   return Draw(cache_key, canvas, paint);
 }
@@ -370,7 +370,7 @@ bool RasterCache::Draw(const DisplayList& display_list,
 bool RasterCache::Draw(const Layer* layer,
                        SkCanvas& canvas,
                        const SkPaint* paint) const {
-  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyType::kLayer,
+  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyKind::kLayer,
                            canvas.getTotalMatrix());
   return Draw(cache_key, canvas, paint);
 }
@@ -406,19 +406,22 @@ void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
   std::vector<RasterCacheKey::Map<Entry>::iterator> dead;
 
   for (auto it = cache.begin(); it != cache.end(); ++it) {
-    RasterCacheKeyType type = it->first.type();
     Entry& entry = it->second;
 
     if (!entry.used_this_frame) {
       dead.push_back(it);
     } else if (entry.image) {
-      if (type == RasterCacheKeyType::kPicture ||
-          type == RasterCacheKeyType::kDisplayList) {
-        picture_metrics.in_use_count++;
-        picture_metrics.in_use_bytes += entry.image->image_bytes();
-      } else if (type == RasterCacheKeyType::kLayer) {
-        layer_metrics.in_use_count++;
-        layer_metrics.in_use_bytes += entry.image->image_bytes();
+      RasterCacheKeyKind kind = it->first.kind();
+      switch (kind) {
+        case RasterCacheKeyKind::kPicture:
+        case RasterCacheKeyKind::kDisplayList:
+          picture_metrics.in_use_count++;
+          picture_metrics.in_use_bytes += entry.image->image_bytes();
+          break;
+        case RasterCacheKeyKind::kLayer:
+          layer_metrics.in_use_count++;
+          layer_metrics.in_use_bytes += entry.image->image_bytes();
+          break;
       }
     }
     entry.used_this_frame = false;
@@ -426,14 +429,17 @@ void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
 
   for (auto it : dead) {
     if (it->second.image) {
-      RasterCacheKeyType type = it->first.type();
-      if (type == RasterCacheKeyType::kPicture ||
-          type == RasterCacheKeyType::kDisplayList) {
-        picture_metrics.eviction_count++;
-        picture_metrics.eviction_bytes += it->second.image->image_bytes();
-      } else if (type == RasterCacheKeyType::kLayer) {
-        layer_metrics.eviction_count++;
-        layer_metrics.eviction_bytes += it->second.image->image_bytes();
+      RasterCacheKeyKind kind = it->first.kind();
+      switch (kind) {
+        case RasterCacheKeyKind::kPicture:
+        case RasterCacheKeyKind::kDisplayList:
+          picture_metrics.eviction_count++;
+          picture_metrics.eviction_bytes += it->second.image->image_bytes();
+          break;
+        case RasterCacheKeyKind::kLayer:
+          layer_metrics.eviction_count++;
+          layer_metrics.eviction_bytes += it->second.image->image_bytes();
+          break;
       }
     }
     cache.erase(it);
@@ -463,7 +469,7 @@ size_t RasterCache::GetCachedEntriesCount() const {
 size_t RasterCache::GetLayerCachedEntriesCount() const {
   size_t layer_cached_entries_count = 0;
   for (const auto& item : cache_) {
-    if (item.first.type() == RasterCacheKeyType::kLayer) {
+    if (item.first.kind() == RasterCacheKeyKind::kLayer) {
       layer_cached_entries_count++;
     }
   }
@@ -473,8 +479,8 @@ size_t RasterCache::GetLayerCachedEntriesCount() const {
 size_t RasterCache::GetPictureCachedEntriesCount() const {
   size_t picture_cached_entries_count = 0;
   for (const auto& item : cache_) {
-    if (item.first.type() == RasterCacheKeyType::kPicture ||
-        item.first.type() == RasterCacheKeyType::kDisplayList) {
+    if (item.first.kind() == RasterCacheKeyKind::kPicture ||
+        item.first.kind() == RasterCacheKeyKind::kDisplayList) {
       picture_cached_entries_count++;
     }
   }
@@ -509,7 +515,7 @@ void RasterCache::TraceStatsToTimeline() const {
 size_t RasterCache::EstimateLayerCacheByteSize() const {
   size_t layer_cache_bytes = 0;
   for (const auto& item : cache_) {
-    if (item.first.type() == RasterCacheKeyType::kLayer && item.second.image) {
+    if (item.first.kind() == RasterCacheKeyKind::kLayer && item.second.image) {
       layer_cache_bytes += item.second.image->image_bytes();
     }
   }
@@ -519,8 +525,8 @@ size_t RasterCache::EstimateLayerCacheByteSize() const {
 size_t RasterCache::EstimatePictureCacheByteSize() const {
   size_t picture_cache_bytes = 0;
   for (const auto& item : cache_) {
-    if ((item.first.type() == RasterCacheKeyType::kPicture ||
-         item.first.type() == RasterCacheKeyType::kDisplayList) &&
+    if ((item.first.kind() == RasterCacheKeyKind::kPicture ||
+         item.first.kind() == RasterCacheKeyKind::kDisplayList) &&
         item.second.image) {
       picture_cache_bytes += item.second.image->image_bytes();
     }
