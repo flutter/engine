@@ -54,15 +54,14 @@ FLUTTER_ASSERT_ARC
   NSKeyedArchiver* archiver = [[NSKeyedArchiver alloc] initRequiringSecureCoding:YES];
   [flutterViewController encodeRestorableStateWithCoder:archiver];
 
-  XCTAssertEqual([restorationPlugin restorationData], archiver.encodedData);
-
   [restorationPlugin setRestorationData:nil];
 
   NSKeyedUnarchiver* unarchiver =
       [[NSKeyedUnarchiver alloc] initForReadingWithData:archiver.encodedData];
   [flutterViewController decodeRestorableStateWithCoder:unarchiver];
 
-  XCTAssertEqual([restorationPlugin restorationData], archiver.encodedData);
+  XCTAssert([[restorationPlugin restorationData] isEqualToData:data],
+            "Restoration state data must be equal");
 }
 
 - (void)testRestorationEnabledWaitsForData {
