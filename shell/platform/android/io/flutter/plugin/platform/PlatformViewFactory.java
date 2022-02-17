@@ -13,7 +13,7 @@ public abstract class PlatformViewFactory {
   private final MessageCodec<Object> createArgsCodec;
 
   /** @param createArgsCodec the codec used to decode the args parameter of {@link #create}. */
-  public PlatformViewFactory(@NonNull MessageCodec<Object> createArgsCodec) {
+  public PlatformViewFactory(@Nullable MessageCodec<Object> createArgsCodec) {
     this.createArgsCodec = createArgsCodec;
   }
 
@@ -31,7 +31,7 @@ public abstract class PlatformViewFactory {
   public abstract PlatformView create(@Nullable Context context, int viewId, @Nullable Object args);
 
   /** Returns the codec to be used for decoding the args parameter of {@link #create}. */
-  @NonNull
+  @Nullable
   public final MessageCodec<Object> getCreateArgsCodec() {
     return createArgsCodec;
   }
