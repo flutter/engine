@@ -27,7 +27,7 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
   std::lock_guard lock(mutex_);
   // Destroy current layers in the pool if the frame size has changed.
   if (requested_frame_size_ != current_frame_size_) {
-    DestroyLayersUnsafe(jni_facade);
+    DestroyLayersLocked(jni_facade);
   }
   intptr_t gr_context_key = reinterpret_cast<intptr_t>(gr_context);
   // Allocate a new surface if there isn't one available.
@@ -86,10 +86,10 @@ bool SurfacePool::HasLayers() {
 void SurfacePool::DestroyLayers(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
   std::lock_guard lock(mutex_);
-  DestroyLayersUnsafe(jni_facade);
+  DestroyLayersLocked(jni_facade);
 }
 
-void SurfacePool::DestroyLayersUnsafe(
+void SurfacePool::DestroyLayersLocked(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
   if (layers_.size() == 0) {
     return;

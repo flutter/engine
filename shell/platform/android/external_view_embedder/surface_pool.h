@@ -103,7 +103,7 @@ class SurfacePool {
   // Used to guard public methods.
   std::mutex mutex_;
 
-  void DestroyLayersUnsafe(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  void DestroyLayersLocked(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 };
 
 }  // namespace flutter
