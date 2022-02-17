@@ -43,7 +43,6 @@ struct OverlayLayer {
   intptr_t gr_context_key;
 };
 
-// This class isn't thread safe.
 class SurfacePool {
  public:
   SurfacePool();
@@ -101,8 +100,10 @@ class SurfacePool {
   // The frame size to be used by future layers.
   SkISize requested_frame_size_;
 
-  // Used to guard layers_ since it's a read/write vector.
-  std::mutex layers_mutex_;
+  // Used to guard public methods.
+  std::mutex mutex_;
+
+  void DestroyLayersUnsafe(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 };
 
 }  // namespace flutter
