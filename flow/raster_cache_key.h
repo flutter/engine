@@ -15,6 +15,8 @@ namespace flutter {
 
 enum class RasterCacheKeyType { kLayer, kPicture, kDisplayList };
 
+enum class RasterCacheKeyKind { kLayerMetrics, kPictureMetrics };
+
 class RasterCacheKey {
  public:
   RasterCacheKey(uint64_t id, RasterCacheKeyType type, const SkMatrix& ctm)
@@ -26,6 +28,16 @@ class RasterCacheKey {
   uint64_t id() const { return id_; }
   RasterCacheKeyType type() const { return type_; }
   const SkMatrix& matrix() const { return matrix_; }
+
+  RasterCacheKeyKind kind() const {
+    switch (type_) {
+      case RasterCacheKeyType::kPicture:
+      case RasterCacheKeyType::kDisplayList:
+        return RasterCacheKeyKind::kPictureMetrics;
+      case RasterCacheKeyType::kLayer:
+        return RasterCacheKeyKind::kLayerMetrics;
+    }
+  }
 
   struct Hash {
     std::size_t operator()(RasterCacheKey const& key) const {

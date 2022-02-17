@@ -406,19 +406,21 @@ void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
   std::vector<RasterCacheKey::Map<Entry>::iterator> dead;
 
   for (auto it = cache.begin(); it != cache.end(); ++it) {
-    RasterCacheKeyType type = it->first.type();
     Entry& entry = it->second;
 
     if (!entry.used_this_frame) {
       dead.push_back(it);
     } else if (entry.image) {
-      if (type == RasterCacheKeyType::kPicture ||
-          type == RasterCacheKeyType::kDisplayList) {
-        picture_metrics.in_use_count++;
-        picture_metrics.in_use_bytes += entry.image->image_bytes();
-      } else if (type == RasterCacheKeyType::kLayer) {
-        layer_metrics.in_use_count++;
-        layer_metrics.in_use_bytes += entry.image->image_bytes();
+      RasterCacheKeyKind kind = it->first.kind();
+      switch (kind) {
+        case RasterCacheKeyKind::kPictureMetrics:
+          picture_metrics.in_use_count++;
+          picture_metrics.in_use_bytes += entry.image->image_bytes();
+          break;
+        case RasterCacheKeyKind::kLayerMetrics:
+          layer_metrics.in_use_count++;
+          layer_metrics.in_use_bytes += entry.image->image_bytes();
+          break;
       }
     }
     entry.used_this_frame = false;
@@ -426,14 +428,16 @@ void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
 
   for (auto it : dead) {
     if (it->second.image) {
-      RasterCacheKeyType type = it->first.type();
-      if (type == RasterCacheKeyType::kPicture ||
-          type == RasterCacheKeyType::kDisplayList) {
-        picture_metrics.eviction_count++;
-        picture_metrics.eviction_bytes += it->second.image->image_bytes();
-      } else if (type == RasterCacheKeyType::kLayer) {
-        layer_metrics.eviction_count++;
-        layer_metrics.eviction_bytes += it->second.image->image_bytes();
+      RasterCacheKeyKind kind = it->first.kind();
+      switch (kind) {
+        case RasterCacheKeyKind::kPictureMetrics:
+          picture_metrics.eviction_count++;
+          picture_metrics.eviction_bytes += it->second.image->image_bytes();
+          break;
+        case RasterCacheKeyKind::kLayerMetrics:
+          layer_metrics.eviction_count++;
+          layer_metrics.eviction_bytes += it->second.image->image_bytes();
+          break;
       }
     }
     cache.erase(it);
@@ -463,7 +467,7 @@ size_t RasterCache::GetCachedEntriesCount() const {
 size_t RasterCache::GetLayerCachedEntriesCount() const {
   size_t layer_cached_entries_count = 0;
   for (const auto& item : cache_) {
-    if (item.first.type() == RasterCacheKeyType::kLayer) {
+    if (item.first.kind() == RasterCacheKeyKind::kLayerMetrics) {
       layer_cached_entries_count++;
     }
   }
@@ -473,8 +477,7 @@ size_t RasterCache::GetLayerCachedEntriesCount() const {
 size_t RasterCache::GetPictureCachedEntriesCount() const {
   size_t picture_cached_entries_count = 0;
   for (const auto& item : cache_) {
-    if (item.first.type() == RasterCacheKeyType::kPicture ||
-        item.first.type() == RasterCacheKeyType::kDisplayList) {
+    if (item.first.kind() == RasterCacheKeyKind::kPictureMetrics) {
       picture_cached_entries_count++;
     }
   }
@@ -509,7 +512,8 @@ void RasterCache::TraceStatsToTimeline() const {
 size_t RasterCache::EstimateLayerCacheByteSize() const {
   size_t layer_cache_bytes = 0;
   for (const auto& item : cache_) {
-    if (item.first.type() == RasterCacheKeyType::kLayer && item.second.image) {
+    if (item.first.kind() == RasterCacheKeyKind::kLayerMetrics &&
+        item.second.image) {
       layer_cache_bytes += item.second.image->image_bytes();
     }
   }
@@ -519,8 +523,7 @@ size_t RasterCache::EstimateLayerCacheByteSize() const {
 size_t RasterCache::EstimatePictureCacheByteSize() const {
   size_t picture_cache_bytes = 0;
   for (const auto& item : cache_) {
-    if ((item.first.type() == RasterCacheKeyType::kPicture ||
-         item.first.type() == RasterCacheKeyType::kDisplayList) &&
+    if (item.first.kind() == RasterCacheKeyKind::kPictureMetrics &&
         item.second.image) {
       picture_cache_bytes += item.second.image->image_bytes();
     }
