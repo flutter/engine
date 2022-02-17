@@ -28,13 +28,9 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   FML_FRIEND_MAKE_REF_COUNTED(SceneBuilder);
 
  public:
-  static fml::RefPtr<SceneBuilder> Create() {
-    return fml::MakeRefCounted<SceneBuilder>();
-  }
-
   static void CreateOrThrow(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
-    auto res = Create();
+    auto res = fml::MakeRefCounted<SceneBuilder>();
     res->AssociateWithDartWrapper(wrapper);
   }
 
@@ -135,8 +131,6 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   const std::vector<std::shared_ptr<ContainerLayer>>& layer_stack() {
     return layer_stack_;
   }
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   SceneBuilder();

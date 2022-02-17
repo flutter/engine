@@ -19,18 +19,7 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImmutableBuffer);
 
-#define FOR_EACH_BINDING(V)   \
-  V(ImmutableBuffer, dispose) \
-  V(ImmutableBuffer, length)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
 ImmutableBuffer::~ImmutableBuffer() {}
-
-void ImmutableBuffer::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({{"ImmutableBuffer_init", ImmutableBuffer::init, 3, true},
-                     FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
 
 void ImmutableBuffer::init(Dart_NativeArguments args) {
   Dart_Handle callback_handle = Dart_GetNativeArgument(args, 2);

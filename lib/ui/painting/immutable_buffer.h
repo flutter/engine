@@ -64,8 +64,6 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
 
   size_t GetAllocationSize() const override;
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
  private:
   explicit ImmutableBuffer(sk_sp<SkData> data) : data_(std::move(data)) {}
 

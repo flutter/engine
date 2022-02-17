@@ -14,10 +14,6 @@
 #include "third_party/tonic/typed_data/typed_list.h"
 #include "txt/font_collection.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class FontCollection {
@@ -25,8 +21,6 @@ class FontCollection {
   FontCollection();
 
   ~FontCollection();
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
   std::shared_ptr<txt::FontCollection> GetFontCollection() const;
 

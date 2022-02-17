@@ -14,7 +14,6 @@ namespace flutter {
 class DartRuntimeHooks {
  public:
   static void Install(bool is_ui_isolate, const std::string& script_uri);
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
   static void Logger_PrintDebugString(std::string message);
 

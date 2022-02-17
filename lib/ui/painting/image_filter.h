@@ -20,7 +20,6 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
 
  public:
   ~ImageFilter() override;
-  static fml::RefPtr<ImageFilter> Create();
   static void CreateOrThrow(Dart_Handle wrapper);
 
   static SkSamplingOptions SamplingFromIndex(int filterQualityIndex);

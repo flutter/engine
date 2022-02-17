@@ -48,19 +48,4 @@ bool IsolateNameServerNatives::RemovePortNameMapping(const std::string& name) {
   return true;
 }
 
-#define FOR_EACH_BINDING(V)                         \
-  V(IsolateNameServerNatives, LookupPortByName)     \
-  V(IsolateNameServerNatives, RegisterPortWithName) \
-  V(IsolateNameServerNatives, RemovePortNameMapping)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK_STATIC)
-
-#define DART_REGISTER_NATIVE_STATIC_(CLASS, METHOD) \
-  DART_REGISTER_NATIVE_STATIC(CLASS, METHOD),
-
-void IsolateNameServerNatives::RegisterNatives(
-    tonic::DartLibraryNatives* natives) {
-  natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE_STATIC_)});
-}
-
 }  // namespace flutter

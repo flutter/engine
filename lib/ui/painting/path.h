@@ -13,10 +13,6 @@
 #include "third_party/skia/include/pathops/SkPathOps.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
@@ -45,7 +41,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   static void CreateOrThrow(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
-    auto res = CreateNew(wrapper);
+    auto res = fml::MakeRefCounted<CanvasPath>();
     res->AssociateWithDartWrapper(wrapper);
   }
 

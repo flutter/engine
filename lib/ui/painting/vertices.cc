@@ -31,17 +31,9 @@ void DecodeInts(const tonic::Int32List& ints, T* out) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Vertices);
 
-#define FOR_EACH_BINDING(V) V(Vertices, init)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
 Vertices::Vertices() {}
 
 Vertices::~Vertices() {}
-
-void Vertices::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
 
 bool Vertices::init(Dart_Handle vertices_handle,
                     SkVertices::VertexMode vertex_mode,

@@ -9,10 +9,6 @@
 #include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class Vertices : public RefCountedDartWrappable<Vertices> {
@@ -21,8 +17,6 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
 
  public:
   ~Vertices() override;
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
   static bool init(Dart_Handle vertices_handle,
                    SkVertices::VertexMode vertex_mode,

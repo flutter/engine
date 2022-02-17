@@ -19,53 +19,7 @@ namespace flutter {
 
 typedef CanvasPath Path;
 
-static void Path_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&CanvasPath::CreateNew, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
-
-#define FOR_EACH_BINDING(V)          \
-  V(Path, addArc)                    \
-  V(Path, addOval)                   \
-  V(Path, addPath)                   \
-  V(Path, addPolygon)                \
-  V(Path, addRect)                   \
-  V(Path, addRRect)                  \
-  V(Path, arcTo)                     \
-  V(Path, arcToPoint)                \
-  V(Path, close)                     \
-  V(Path, conicTo)                   \
-  V(Path, contains)                  \
-  V(Path, cubicTo)                   \
-  V(Path, extendWithPath)            \
-  V(Path, extendWithPathAndMatrix)   \
-  V(Path, getFillType)               \
-  V(Path, lineTo)                    \
-  V(Path, moveTo)                    \
-  V(Path, quadraticBezierTo)         \
-  V(Path, relativeArcToPoint)        \
-  V(Path, relativeConicTo)           \
-  V(Path, relativeCubicTo)           \
-  V(Path, relativeLineTo)            \
-  V(Path, relativeMoveTo)            \
-  V(Path, relativeQuadraticBezierTo) \
-  V(Path, reset)                     \
-  V(Path, setFillType)               \
-  V(Path, shift)                     \
-  V(Path, transform)                 \
-  V(Path, getBounds)                 \
-  V(Path, addPathWithMatrix)         \
-  V(Path, op)                        \
-  V(Path, clone)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void CanvasPath::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({{"Path_constructor", Path_constructor, 1, true},
-                     FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
 
 CanvasPath::CanvasPath()
     : path_tracker_(UIDartState::Current()->GetVolatilePathTracker()),

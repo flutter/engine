@@ -4383,10 +4383,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::saveLayerWithoutBoundsHandle')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::saveLayerWithoutBounds')
   external void _saveLayerWithoutBounds(List<dynamic>? paintObjects, ByteData paintData);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::saveLayerHandle')
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::saveLayer')
   external void _saveLayer(double left, double top, double right, double bottom, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Pops the current save stack, if there is anything to pop.
@@ -4525,7 +4525,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawLineHandle')
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawLine')
   external void _drawLine(double x1, double y1, double x2, double y2, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Fills the canvas with the given [Paint].
@@ -4537,7 +4537,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPaint(paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::drawPaintHandle')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::drawPaint')
   external void _drawPaint(List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
@@ -4548,7 +4548,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawRectHandle')
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawRect')
   external void _drawRect(double left, double top, double right, double bottom, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
@@ -4559,7 +4559,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawRRect(rrect._getValue32(), paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>('Canvas::drawRRectHandle')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>('Canvas::drawRRect')
   external void _drawRRect(Float32List rrect, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a shape consisting of the difference between two rounded rectangles
@@ -4574,7 +4574,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawDRRect(outer._getValue32(), inner._getValue32(), paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>('Canvas::drawDRRectHandle')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>('Canvas::drawDRRect')
   external void _drawDRRect(Float32List outer, Float32List inner, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws an axis-aligned oval that fills the given axis-aligned rectangle
@@ -4586,7 +4586,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawOvalHandle')
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawOval')
   external void _drawOval(double left, double top, double right, double bottom, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a circle centered at the point given by the first argument and
@@ -4599,7 +4599,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle)>('Canvas::drawCircleHandle')
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle)>('Canvas::drawCircle')
   external void _drawCircle(double x, double y, double radius, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draw an arc scaled to fit inside the given rectangle.
@@ -4619,7 +4619,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, useCenter, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Bool, Handle, Handle)>('Canvas::drawArcHandle')
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Bool, Handle, Handle)>('Canvas::drawArc')
   external void _drawArc(
       double left,
       double top,
@@ -4642,7 +4642,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPath(path, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Handle, Handle)>('Canvas::drawPathHandle')
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Handle, Handle)>('Canvas::drawPath')
   external void _drawPath(Path path, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
@@ -4654,7 +4654,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle, Handle, Int32)>('Canvas::drawImageHandle')
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle, Handle, Int32)>('Canvas::drawImage')
   external void _drawImage(_Image image, double x, double y, List<dynamic>? paintObjects, ByteData paintData, int filterQualityIndex);
 
   /// Draws the subset of the given image described by the `src` argument into
@@ -4699,7 +4699,7 @@ class Canvas extends NativeFieldWrapperClass1 {
           Double,
           Handle,
           Handle,
-          Int32)>('Canvas::drawImageRectHandle')
+          Int32)>('Canvas::drawImageRect')
   external void _drawImageRect(
       _Image image,
       double srcLeft,
@@ -4760,7 +4760,7 @@ class Canvas extends NativeFieldWrapperClass1 {
           Double,
           Handle,
           Handle,
-          Int32)>('Canvas::drawImageNineHandle')
+          Int32)>('Canvas::drawImageNine')
   external void _drawImageNine(
       _Image image,
       double centerLeft,
@@ -4844,7 +4844,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPoints(paint._objects, paint._data, pointMode.index, points);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Handle)>('Canvas::drawPointsHandle')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Handle)>('Canvas::drawPoints')
   external void _drawPoints(List<dynamic>? paintObjects, ByteData paintData, int pointMode, Float32List points);
 
   /// Draws the set of [Vertices] onto the canvas.
@@ -4875,7 +4875,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle, Handle)>('Canvas::drawVerticesHandle')
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle, Handle)>('Canvas::drawVertices')
   external void _drawVertices(Vertices vertices, int blendMode, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws many parts of an image - the [atlas] - onto the canvas.
@@ -5225,7 +5225,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>(
-      'Canvas::drawAtlasHandle')
+      'Canvas::drawAtlas')
   external void _drawAtlas(
       List<dynamic>? paintObjects,
       ByteData paintData,

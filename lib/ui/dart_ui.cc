@@ -39,54 +39,6 @@
 using tonic::ToDart;
 
 namespace flutter {
-namespace {
-
-static tonic::DartLibraryNatives* g_natives;
-
-Dart_NativeFunction GetNativeFunction(Dart_Handle name,
-                                      int argument_count,
-                                      bool* auto_setup_scope) {
-  return g_natives->GetNativeFunction(name, argument_count, auto_setup_scope);
-}
-
-const uint8_t* GetSymbol(Dart_NativeFunction native_function) {
-  return g_natives->GetSymbol(native_function);
-}
-
-}  // namespace
-
-void DartUI::InitForGlobal() {
-  if (!g_natives) {
-    g_natives = new tonic::DartLibraryNatives();
-    Canvas::RegisterNatives(g_natives);
-    CanvasGradient::RegisterNatives(g_natives);
-    CanvasImage::RegisterNatives(g_natives);
-    CanvasPath::RegisterNatives(g_natives);
-    CanvasPathMeasure::RegisterNatives(g_natives);
-    Codec::RegisterNatives(g_natives);
-    ColorFilter::RegisterNatives(g_natives);
-    DartRuntimeHooks::RegisterNatives(g_natives);
-    EngineLayer::RegisterNatives(g_natives);
-    FontCollection::RegisterNatives(g_natives);
-    FragmentProgram::RegisterNatives(g_natives);
-    ImageDescriptor::RegisterNatives(g_natives);
-    ImageFilter::RegisterNatives(g_natives);
-    ImageShader::RegisterNatives(g_natives);
-    ImmutableBuffer::RegisterNatives(g_natives);
-    IsolateNameServerNatives::RegisterNatives(g_natives);
-    NativeStringAttribute::RegisterNatives(g_natives);
-    Paragraph::RegisterNatives(g_natives);
-    ParagraphBuilder::RegisterNatives(g_natives);
-    Picture::RegisterNatives(g_natives);
-    PictureRecorder::RegisterNatives(g_natives);
-    Scene::RegisterNatives(g_natives);
-    SceneBuilder::RegisterNatives(g_natives);
-    SemanticsUpdate::RegisterNatives(g_natives);
-    SemanticsUpdateBuilder::RegisterNatives(g_natives);
-    Vertices::RegisterNatives(g_natives);
-    PlatformConfiguration::RegisterNatives(g_natives);
-  }
-}
 
 typedef CanvasImage Image;
 typedef CanvasPathMeasure PathMeasure;
@@ -145,30 +97,30 @@ typedef CanvasPath Path;
   V(Canvas, clipPath, 3)                               \
   V(Canvas, clipRect, 7)                               \
   V(Canvas, clipRRect, 3)                              \
-  V(Canvas, drawArcHandle, 10)                         \
-  V(Canvas, drawAtlasHandle, 10)                       \
-  V(Canvas, drawCircleHandle, 6)                       \
+  V(Canvas, drawArc, 10)                               \
+  V(Canvas, drawAtlas, 10)                             \
+  V(Canvas, drawCircle, 6)                             \
   V(Canvas, drawColor, 3)                              \
-  V(Canvas, drawDRRectHandle, 5)                       \
-  V(Canvas, drawImageHandle, 7)                        \
-  V(Canvas, drawImageNineHandle, 13)                   \
-  V(Canvas, drawImageRectHandle, 13)                   \
-  V(Canvas, drawLineHandle, 7)                         \
-  V(Canvas, drawOvalHandle, 7)                         \
-  V(Canvas, drawPaintHandle, 3)                        \
-  V(Canvas, drawPathHandle, 4)                         \
+  V(Canvas, drawDRRect, 5)                             \
+  V(Canvas, drawImage, 7)                              \
+  V(Canvas, drawImageNine, 13)                         \
+  V(Canvas, drawImageRect, 13)                         \
+  V(Canvas, drawLine, 7)                               \
+  V(Canvas, drawOval, 7)                               \
+  V(Canvas, drawPaint, 3)                              \
+  V(Canvas, drawPath, 4)                               \
   V(Canvas, drawPicture, 2)                            \
-  V(Canvas, drawPointsHandle, 5)                       \
-  V(Canvas, drawRRectHandle, 4)                        \
-  V(Canvas, drawRectHandle, 7)                         \
+  V(Canvas, drawPoints, 5)                             \
+  V(Canvas, drawRRect, 4)                              \
+  V(Canvas, drawRect, 7)                               \
   V(Canvas, drawShadow, 5)                             \
-  V(Canvas, drawVerticesHandle, 5)                     \
+  V(Canvas, drawVertices, 5)                           \
   V(Canvas, getSaveCount, 1)                           \
   V(Canvas, restore, 1)                                \
   V(Canvas, rotate, 2)                                 \
   V(Canvas, save, 1)                                   \
-  V(Canvas, saveLayerHandle, 7)                        \
-  V(Canvas, saveLayerWithoutBoundsHandle, 3)           \
+  V(Canvas, saveLayer, 7)                              \
+  V(Canvas, saveLayerWithoutBounds, 3)                 \
   V(Canvas, scale, 3)                                  \
   V(Canvas, skew, 3)                                   \
   V(Canvas, transform, 2)                              \
@@ -311,15 +263,9 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
 }
 
 void DartUI::InitForIsolate() {
-  FML_DCHECK(g_natives);
   auto lib = Dart_LookupLibrary(ToDart("dart:ui"));
-  Dart_Handle result =
-      Dart_SetNativeResolver(lib, GetNativeFunction, GetSymbol);
-  if (Dart_IsError(result)) {
-    Dart_PropagateError(result);
-  }
   // Set up FFI Native resolver for dart:ui.
-  result = Dart_SetFfiNativeResolver(lib, ResolveFfiNativeFunction);
+  Dart_Handle result = Dart_SetFfiNativeResolver(lib, ResolveFfiNativeFunction);
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
   }

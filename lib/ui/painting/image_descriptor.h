@@ -120,8 +120,6 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
     return sizeof(ImageDescriptor) + sizeof(SkImageInfo) + buffer_->size();
   }
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
  private:
   ImageDescriptor(sk_sp<SkData> buffer,
                   const SkImageInfo& image_info,

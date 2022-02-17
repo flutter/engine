@@ -9,10 +9,6 @@
 
 #include "third_party/dart/runtime/include/dart_api.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class IsolateNameServerNatives {
@@ -21,7 +17,6 @@ class IsolateNameServerNatives {
   static bool RegisterPortWithName(Dart_Handle port_handle,
                                    const std::string& name);
   static bool RemovePortNameMapping(const std::string& name);
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 };
 
 }  // namespace flutter

@@ -15,28 +15,10 @@ using tonic::ToDart;
 
 namespace flutter {
 
-static void ImageShader_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&ImageShader::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageShader);
 
-#define FOR_EACH_BINDING(V) V(ImageShader, initWithImage)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void ImageShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"ImageShader_constructor", ImageShader_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
-fml::RefPtr<ImageShader> ImageShader::Create() {
-  return fml::MakeRefCounted<ImageShader>();
-}
-
 void ImageShader::CreateOrThrow(Dart_Handle wrapper) {
-  auto res = Create();
+  auto res = fml::MakeRefCounted<ImageShader>();
   res->AssociateWithDartWrapper(wrapper);
 }
 

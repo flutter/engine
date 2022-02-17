@@ -17,10 +17,6 @@
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 class CanvasImage;
 
@@ -28,15 +24,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(Canvas);
 
-  PaintData place_holder;
-
  public:
-  static fml::RefPtr<Canvas> Create(PictureRecorder* recorder,
-                                    double left,
-                                    double top,
-                                    double right,
-                                    double bottom);
-
   static void CreateOrThrow(Dart_Handle wrapper,
                             PictureRecorder* recorder,
                             double left,
@@ -47,28 +35,15 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   ~Canvas() override;
 
   void save();
-  void saveLayerWithoutBounds(const Paint& paint, const PaintData& paint_data);
-  void saveLayerWithoutBoundsHandle(Dart_Handle paint_objects,
-                                    Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    saveLayerWithoutBounds(paint, place_holder);
-  }
+  void saveLayerWithoutBounds(Dart_Handle paint_objects,
+                              Dart_Handle paint_data);
 
   void saveLayer(double left,
                  double top,
                  double right,
                  double bottom,
-                 const Paint& paint,
-                 const PaintData& paint_data);
-  void saveLayerHandle(double left,
-                       double top,
-                       double right,
-                       double bottom,
-                       Dart_Handle paint_objects,
-                       Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    saveLayer(left, top, right, bottom, paint, place_holder);
-  }
+                 Dart_Handle paint_objects,
+                 Dart_Handle paint_data);
 
   void restore();
   int getSaveCount();
@@ -94,95 +69,39 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                 double y1,
                 double x2,
                 double y2,
-                const Paint& paint,
-                const PaintData& paint_data);
-  void drawLineHandle(double x1,
-                      double y1,
-                      double x2,
-                      double y2,
-                      Dart_Handle paint_objects,
-                      Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawLine(x1, y1, x2, y2, paint, place_holder);
-  }
+                Dart_Handle paint_objects,
+                Dart_Handle paint_data);
 
-  void drawPaint(const Paint& paint, const PaintData& paint_data);
-  void drawPaintHandle(Dart_Handle paint_objects, Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawPaint(paint, place_holder);
-  }
+  void drawPaint(Dart_Handle paint_objects, Dart_Handle paint_data);
 
   void drawRect(double left,
                 double top,
                 double right,
                 double bottom,
-                const Paint& paint,
-                const PaintData& paint_data);
-  void drawRectHandle(double left,
-                      double top,
-                      double right,
-                      double bottom,
-                      Dart_Handle paint_objects,
-                      Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawRect(left, top, right, bottom, paint, place_holder);
-  }
+                Dart_Handle paint_objects,
+                Dart_Handle paint_data);
 
   void drawRRect(const RRect& rrect,
-                 const Paint& paint,
-                 const PaintData& paint_data);
-  void drawRRectHandle(const RRect& rrect,
-                       Dart_Handle paint_objects,
-                       Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawRRect(rrect, paint, place_holder);
-  }
+                 Dart_Handle paint_objects,
+                 Dart_Handle paint_data);
 
   void drawDRRect(const RRect& outer,
                   const RRect& inner,
-                  const Paint& paint,
-                  const PaintData& paint_data);
-  void drawDRRectHandle(const RRect& outer,
-                        const RRect& inner,
-                        Dart_Handle paint_objects,
-                        Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawDRRect(outer, inner, paint, place_holder);
-  }
+                  Dart_Handle paint_objects,
+                  Dart_Handle paint_data);
 
   void drawOval(double left,
                 double top,
                 double right,
                 double bottom,
-                const Paint& paint,
-                const PaintData& paint_data);
-  void drawOvalHandle(double left,
-                      double top,
-                      double right,
-                      double bottom,
-                      Dart_Handle paint_objects,
-                      Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawOval(left, top, right, bottom, paint, place_holder);
-  }
+                Dart_Handle paint_objects,
+                Dart_Handle paint_data);
 
   void drawCircle(double x,
                   double y,
                   double radius,
-                  const Paint& paint,
-                  const PaintData& paint_data);
-  void drawCircleHandle(double x,
-                        double y,
-                        double radius,
-                        Dart_Handle paint_objects,
-                        Dart_Handle paint_data) {
-    if (!canvas_) {
-      return;
-    }
-    Paint paint(paint_objects, paint_data);
-    SkPaint sk_paint;
-    canvas_->drawCircle(x, y, radius, *paint.paint(sk_paint));
-  }
+                  Dart_Handle paint_objects,
+                  Dart_Handle paint_data);
 
   void drawArc(double left,
                double top,
@@ -191,47 +110,19 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                double startAngle,
                double sweepAngle,
                bool useCenter,
-               const Paint& paint,
-               const PaintData& paint_data);
-  void drawArcHandle(double left,
-                     double top,
-                     double right,
-                     double bottom,
-                     double startAngle,
-                     double sweepAngle,
-                     bool useCenter,
-                     Dart_Handle paint_objects,
-                     Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawArc(left, top, right, bottom, startAngle, sweepAngle, useCenter, paint,
-            place_holder);
-  }
+               Dart_Handle paint_objects,
+               Dart_Handle paint_data);
 
   void drawPath(const CanvasPath* path,
-                const Paint& paint,
-                const PaintData& paint_data);
-  void drawPathHandle(const CanvasPath* path,
-                      Dart_Handle paint_objects,
-                      Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawPath(path, paint, place_holder);
-  }
+                Dart_Handle paint_objects,
+                Dart_Handle paint_data);
 
   void drawImage(const CanvasImage* image,
                  double x,
                  double y,
-                 const Paint& paint,
-                 const PaintData& paint_data,
+                 Dart_Handle paint_objects,
+                 Dart_Handle paint_data,
                  int filterQualityIndex);
-  void drawImageHandle(const CanvasImage* image,
-                       double x,
-                       double y,
-                       Dart_Handle paint_objects,
-                       Dart_Handle paint_data,
-                       int filterQualityIndex) {
-    Paint paint(paint_objects, paint_data);
-    drawImage(image, x, y, paint, place_holder, filterQualityIndex);
-  }
 
   void drawImageRect(const CanvasImage* image,
                      double src_left,
@@ -242,26 +133,9 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                      double dst_top,
                      double dst_right,
                      double dst_bottom,
-                     const Paint& paint,
-                     const PaintData& paint_data,
+                     Dart_Handle paint_objects,
+                     Dart_Handle paint_data,
                      int filterQualityIndex);
-  void drawImageRectHandle(const CanvasImage* image,
-                           double src_left,
-                           double src_top,
-                           double src_right,
-                           double src_bottom,
-                           double dst_left,
-                           double dst_top,
-                           double dst_right,
-                           double dst_bottom,
-                           Dart_Handle paint_objects,
-                           Dart_Handle paint_data,
-                           int filterQualityIndex) {
-    Paint paint(paint_objects, paint_data);
-    drawImageRect(image, src_left, src_top, src_right, src_bottom, dst_left,
-                  dst_top, dst_right, dst_bottom, paint, place_holder,
-                  filterQualityIndex);
-  }
 
   void drawImageNine(const CanvasImage* image,
                      double center_left,
@@ -272,26 +146,9 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                      double dst_top,
                      double dst_right,
                      double dst_bottom,
-                     const Paint& paint,
-                     const PaintData& paint_data,
+                     Dart_Handle paint_objects,
+                     Dart_Handle paint_data,
                      int bitmapSamplingIndex);
-  void drawImageNineHandle(const CanvasImage* image,
-                           double center_left,
-                           double center_top,
-                           double center_right,
-                           double center_bottom,
-                           double dst_left,
-                           double dst_top,
-                           double dst_right,
-                           double dst_bottom,
-                           Dart_Handle paint_objects,
-                           Dart_Handle paint_data,
-                           int bitmapSamplingIndex) {
-    Paint paint(paint_objects, paint_data);
-    drawImageNine(image, center_left, center_top, center_right, center_bottom,
-                  dst_left, dst_top, dst_right, dst_bottom, paint, place_holder,
-                  bitmapSamplingIndex);
-  }
 
   void drawPicture(Picture* picture);
 
@@ -300,32 +157,18 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   // Float32List, we cannot re-enter the VM to unwrap objects. That means we
   // either need to process the paint argument first.
 
-  void drawPoints(const Paint& paint,
-                  const PaintData& paint_data,
+  void drawPoints(Dart_Handle paint_objects,
+                  Dart_Handle paint_data,
                   SkCanvas::PointMode point_mode,
                   const tonic::Float32List& points);
-  void drawPointsHandle(Dart_Handle paint_objects,
-                        Dart_Handle paint_data,
-                        SkCanvas::PointMode point_mode,
-                        const tonic::Float32List& points) {
-    Paint paint(paint_objects, paint_data);
-    drawPoints(paint, place_holder, point_mode, points);
-  }
 
   void drawVertices(const Vertices* vertices,
                     SkBlendMode blend_mode,
-                    const Paint& paint,
-                    const PaintData& paint_data);
-  void drawVerticesHandle(const Vertices* vertices,
-                          SkBlendMode blend_mode,
-                          Dart_Handle paint_objects,
-                          Dart_Handle paint_data) {
-    Paint paint(paint_objects, paint_data);
-    drawVertices(vertices, blend_mode, paint, place_holder);
-  }
+                    Dart_Handle paint_objects,
+                    Dart_Handle paint_data);
 
-  void drawAtlas(const Paint& paint,
-                 const PaintData& paint_data,
+  void drawAtlas(Dart_Handle paint_objects,
+                 Dart_Handle paint_data,
                  int filterQualityIndex,
                  CanvasImage* atlas,
                  const tonic::Float32List& transforms,
@@ -333,19 +176,6 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                  const tonic::Int32List& colors,
                  SkBlendMode blend_mode,
                  const tonic::Float32List& cull_rect);
-  void drawAtlasHandle(Dart_Handle paint_objects,
-                       Dart_Handle paint_data,
-                       int filterQualityIndex,
-                       CanvasImage* atlas,
-                       const tonic::Float32List& transforms,
-                       const tonic::Float32List& rects,
-                       const tonic::Int32List& colors,
-                       SkBlendMode blend_mode,
-                       const tonic::Float32List& cull_rect) {
-    Paint paint(paint_objects, paint_data);
-    drawAtlas(paint, place_holder, filterQualityIndex, atlas, transforms, rects,
-              colors, blend_mode, cull_rect);
-  }
 
   void drawShadow(const CanvasPath* path,
                   SkColor color,
@@ -354,8 +184,6 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
 
   SkCanvas* canvas() const { return canvas_; }
   void Invalidate();
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   explicit Canvas(SkCanvas* canvas);

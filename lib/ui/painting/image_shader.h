@@ -14,10 +14,6 @@
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class ImageShader : public Shader {
@@ -26,7 +22,6 @@ class ImageShader : public Shader {
 
  public:
   ~ImageShader() override;
-  static fml::RefPtr<ImageShader> Create();
   static void CreateOrThrow(Dart_Handle wrapper);
 
   void initWithImage(CanvasImage* image,
@@ -36,8 +31,6 @@ class ImageShader : public Shader {
                      const tonic::Float64List& matrix4);
 
   sk_sp<SkShader> shader(SkSamplingOptions) override;
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
   int width();
   int height();

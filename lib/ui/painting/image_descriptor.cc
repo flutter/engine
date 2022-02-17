@@ -17,22 +17,6 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageDescriptor);
 
-#define FOR_EACH_BINDING(V)            \
-  V(ImageDescriptor, initRaw)          \
-  V(ImageDescriptor, instantiateCodec) \
-  V(ImageDescriptor, width)            \
-  V(ImageDescriptor, height)           \
-  V(ImageDescriptor, bytesPerPixel)    \
-  V(ImageDescriptor, dispose)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void ImageDescriptor::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"ImageDescriptor_initEncoded", ImageDescriptor::initEncoded, 3, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
 const SkImageInfo ImageDescriptor::CreateImageInfo() const {
   FML_DCHECK(generator_);
   return generator_->GetInfo();

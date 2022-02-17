@@ -11,10 +11,6 @@
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 // TODO: update this if/when Skia adds Decal mode skbug.com/7638
@@ -26,7 +22,6 @@ class CanvasGradient : public Shader {
 
  public:
   ~CanvasGradient() override;
-  static fml::RefPtr<CanvasGradient> Create();
   static void CreateOrThrow(Dart_Handle wrapper);
 
   void initLinear(const tonic::Float32List& end_points,
@@ -66,8 +61,6 @@ class CanvasGradient : public Shader {
   sk_sp<SkShader> shader(SkSamplingOptions) override {
     return sk_shader_.skia_object();
   }
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   CanvasGradient();

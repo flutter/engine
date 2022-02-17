@@ -420,15 +420,6 @@ class PlatformConfiguration final {
   void ReportTimings(std::vector<int64_t> timings);
 
   //----------------------------------------------------------------------------
-  /// @brief      Registers the native handlers for Dart functions that this
-  ///             class handles.
-  ///
-  /// @param[in] natives The natives registry that the functions will be
-  ///                    registered with.
-  ///
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-  //----------------------------------------------------------------------------
   /// @brief      Retrieves the Window with the given ID managed by the
   ///             `PlatformConfiguration`.
   ///

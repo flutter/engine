@@ -33,23 +33,6 @@ using tonic::ToDart;
 
 namespace flutter {
 
-#define REGISTER_FUNCTION(name, count) {"" #name, name, count, true},
-#define DECLARE_FUNCTION(name, count) \
-  extern void name(Dart_NativeArguments args);
-
-#define BUILTIN_NATIVE_LIST(V)   \
-  V(_Logger_PrintString, 1)      \
-  V(_Logger_PrintDebugString, 1) \
-  V(_ScheduleMicrotask, 1)       \
-  V(_GetCallbackHandle, 1)       \
-  V(_GetCallbackFromHandle, 1)
-
-BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
-
-void DartRuntimeHooks::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({BUILTIN_NATIVE_LIST(REGISTER_FUNCTION)});
-}
-
 static void PropagateIfError(Dart_Handle result) {
   if (Dart_IsError(result)) {
     FML_LOG(ERROR) << "Dart Error: " << ::Dart_GetError(result);

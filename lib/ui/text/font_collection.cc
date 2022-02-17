@@ -25,28 +25,6 @@
 
 namespace flutter {
 
-namespace {
-
-void __LoadFontFromList(tonic::Uint8List& font_data,  // NOLINT
-                        Dart_Handle callback,
-                        std::string family_name) {
-  FontCollection& font_collection = UIDartState::Current()
-                                        ->platform_configuration()
-                                        ->client()
-                                        ->GetFontCollection();
-  font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
-                                   family_name);
-  font_data.Release();
-  tonic::DartInvoke(callback, {tonic::ToDart(0)});
-}
-
-void _LoadFontFromList(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  tonic::DartCallStatic(__LoadFontFromList, args);
-}
-
-}  // namespace
-
 FontCollection::FontCollection()
     : collection_(std::make_shared<txt::FontCollection>()) {
   dynamic_font_manager_ = sk_make_sp<txt::DynamicFontManager>();
@@ -56,12 +34,6 @@ FontCollection::FontCollection()
 FontCollection::~FontCollection() {
   collection_.reset();
   SkGraphics::PurgeFontCache();
-}
-
-void FontCollection::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({
-      {"loadFontFromList", _LoadFontFromList, 3, true},
-  });
 }
 
 std::shared_ptr<txt::FontCollection> FontCollection::GetFontCollection() const {
@@ -179,7 +151,14 @@ void FontCollection::LoadFontFromListOrThrow(Dart_Handle font_data_handle,
                                              std::string family_name) {
   tonic::Uint8List font_data(font_data_handle);
   UIDartState::ThrowIfUIOperationsProhibited();
-  __LoadFontFromList(font_data, callback, family_name);
+  FontCollection& font_collection = UIDartState::Current()
+                                        ->platform_configuration()
+                                        ->client()
+                                        ->GetFontCollection();
+  font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
+                                   family_name);
+  font_data.Release();
+  tonic::DartInvoke(callback, {tonic::ToDart(0)});
 }
 
 }  // namespace flutter

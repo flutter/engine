@@ -21,13 +21,9 @@ class SemanticsUpdateBuilder
   FML_FRIEND_MAKE_REF_COUNTED(SemanticsUpdateBuilder);
 
  public:
-  static fml::RefPtr<SemanticsUpdateBuilder> Create() {
-    return fml::MakeRefCounted<SemanticsUpdateBuilder>();
-  }
-
   static void CreateOrThrow(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
-    auto res = Create();
+    auto res = fml::MakeRefCounted<SemanticsUpdateBuilder>();
     res->AssociateWithDartWrapper(wrapper);
   }
 
@@ -75,8 +71,6 @@ class SemanticsUpdateBuilder
                           int overrideId);
 
   void build(Dart_Handle semantics_update_handle);
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   explicit SemanticsUpdateBuilder();

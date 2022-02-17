@@ -135,41 +135,7 @@ const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
 }  // namespace
 
-static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&ParagraphBuilder::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
-
-#define FOR_EACH_BINDING(V)           \
-  V(ParagraphBuilder, pushStyle)      \
-  V(ParagraphBuilder, pop)            \
-  V(ParagraphBuilder, addText)        \
-  V(ParagraphBuilder, addPlaceholder) \
-  V(ParagraphBuilder, build)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void ParagraphBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"ParagraphBuilder_constructor", ParagraphBuilder_constructor, 9, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
-fml::RefPtr<ParagraphBuilder> ParagraphBuilder::Create(
-    const tonic::Int32List& encoded,
-    Dart_Handle strutData,
-    const std::string& fontFamily,
-    const std::vector<std::string>& strutFontFamilies,
-    double fontSize,
-    double height,
-    const std::u16string& ellipsis,
-    const std::string& locale) {
-  return fml::MakeRefCounted<ParagraphBuilder>(encoded, strutData, fontFamily,
-                                               strutFontFamilies, fontSize,
-                                               height, ellipsis, locale);
-}
 
 void ParagraphBuilder::CreateOrThrow(
     Dart_Handle wrapper,
@@ -182,8 +148,9 @@ void ParagraphBuilder::CreateOrThrow(
     const std::u16string& ellipsis,
     const std::string& locale) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  auto res = Create(encoded, strutData, fontFamily, strutFontFamilies, fontSize,
-                    height, ellipsis, locale);
+  auto res = fml::MakeRefCounted<ParagraphBuilder>(
+      encoded, strutData, fontFamily, strutFontFamilies, fontSize, height,
+      ellipsis, locale);
   res->AssociateWithDartWrapper(wrapper);
 }
 

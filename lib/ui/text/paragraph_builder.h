@@ -13,10 +13,6 @@
 #include "flutter/third_party/txt/src/txt/paragraph_builder.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class Paragraph;
@@ -26,16 +22,6 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   FML_FRIEND_MAKE_REF_COUNTED(ParagraphBuilder);
 
  public:
-  static fml::RefPtr<ParagraphBuilder> Create(
-      const tonic::Int32List& encoded,
-      Dart_Handle strutData,
-      const std::string& fontFamily,
-      const std::vector<std::string>& strutFontFamilies,
-      double fontSize,
-      double height,
-      const std::u16string& ellipsis,
-      const std::string& locale);
-
   static void CreateOrThrow(Dart_Handle wrapper,
                             const tonic::Int32List& encoded,
                             Dart_Handle strutData,
@@ -80,8 +66,6 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                              unsigned baseline);
 
   void build(Dart_Handle paragraph_handle);
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   explicit ParagraphBuilder(const tonic::Int32List& encoded,

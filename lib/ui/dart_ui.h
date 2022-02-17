@@ -11,7 +11,6 @@ namespace flutter {
 
 class DartUI {
  public:
-  static void InitForGlobal();
   static void InitForIsolate();
 
  private:

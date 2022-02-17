@@ -11,10 +11,6 @@
 
 using tonic::DartPersistentValue;
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 // A handle to an SkCodec object.
@@ -25,7 +21,6 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
   FML_FRIEND_MAKE_REF_COUNTED(ColorFilter);
 
  public:
-  static fml::RefPtr<ColorFilter> Create();
   static void CreateOrThrow(Dart_Handle wrapper);
 
   // Flutter still defines the matrix to be biased by 255 in the last column
@@ -41,8 +36,6 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
   ~ColorFilter() override;
 
   sk_sp<SkColorFilter> filter() const { return filter_; }
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   sk_sp<SkColorFilter> filter_;
