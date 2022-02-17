@@ -12,7 +12,7 @@ namespace flutter {
 class DisplayListMetalComplexityCalculator
     : public DisplayListComplexityCalculator {
  public:
-  static DisplayListComplexityCalculator* GetInstance();
+  static DisplayListMetalComplexityCalculator* GetInstance();
 
   unsigned int Compute(DisplayList* display_list) override {
     MetalHelper helper(ceiling_);
@@ -25,7 +25,9 @@ class DisplayListMetalComplexityCalculator
     return complexity_score > 200000u;
   }
 
-  void SetComplexityCeiling(unsigned int ceiling) { ceiling_ = ceiling; }
+  void SetComplexityCeiling(unsigned int ceiling) override {
+    ceiling_ = ceiling;
+  }
 
  private:
   class MetalHelper : public ComplexityCalculatorHelper {

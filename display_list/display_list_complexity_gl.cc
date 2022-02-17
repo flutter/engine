@@ -17,7 +17,7 @@ namespace flutter {
 DisplayListGLComplexityCalculator*
     DisplayListGLComplexityCalculator::instance_ = nullptr;
 
-DisplayListComplexityCalculator*
+DisplayListGLComplexityCalculator*
 DisplayListGLComplexityCalculator::GetInstance() {
   if (instance_ == nullptr) {
     instance_ = new DisplayListGLComplexityCalculator();
@@ -70,7 +70,8 @@ void DisplayListGLComplexityCalculator::GLHelper::drawLine(const SkPoint& p0,
   // The baseline complexity is for a hairline stroke with no AA
   // m = 1/40
   // c = 13
-  unsigned int complexity = (distance + 520) / 2;
+  unsigned int complexity =
+      ((distance + 520) / 2) * non_hairline_penalty * aa_penalty;
 
   AccumulateComplexity(complexity);
 }

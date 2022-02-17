@@ -12,7 +12,7 @@ namespace flutter {
 class DisplayListGLComplexityCalculator
     : public DisplayListComplexityCalculator {
  public:
-  static DisplayListComplexityCalculator* GetInstance();
+  static DisplayListGLComplexityCalculator* GetInstance();
 
   unsigned int Compute(DisplayList* display_list) override {
     GLHelper helper(ceiling_);
@@ -25,7 +25,9 @@ class DisplayListGLComplexityCalculator
     return complexity_score > 200000u;
   }
 
-  void SetComplexityCeiling(unsigned int ceiling) { ceiling_ = ceiling; }
+  void SetComplexityCeiling(unsigned int ceiling) override {
+    ceiling_ = ceiling;
+  }
 
  private:
   class GLHelper : public ComplexityCalculatorHelper {

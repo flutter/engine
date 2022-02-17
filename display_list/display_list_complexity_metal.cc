@@ -17,7 +17,7 @@ namespace flutter {
 DisplayListMetalComplexityCalculator*
     DisplayListMetalComplexityCalculator::instance_ = nullptr;
 
-DisplayListComplexityCalculator*
+DisplayListMetalComplexityCalculator*
 DisplayListMetalComplexityCalculator::GetInstance() {
   if (instance_ == nullptr) {
     instance_ = new DisplayListMetalComplexityCalculator();
