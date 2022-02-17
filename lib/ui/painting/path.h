@@ -97,9 +97,9 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   void addPath(CanvasPath* path, double dx, double dy);
 
   void addPathWithMatrix(CanvasPath* path,
-                               double dx,
-                               double dy,
-                               Dart_Handle matrix4_handle);
+                         double dx,
+                         double dy,
+                         Dart_Handle matrix4_handle);
 
   void extendWithPath(CanvasPath* path, double dx, double dy);
 
