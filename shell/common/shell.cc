@@ -872,8 +872,6 @@ void Shell::OnPlatformViewDestroyed() {
   // On Android, the external view embedder may post a task to the platform
   // thread, and wait until it completes if overlay surfaces must be released.
   // However, the platform thread might be blocked when Dart is initializing.
-  // This is due to ViewTreeObserver.OnPreDrawListener#onPreDraw() returning
-  // false.
   // In this situation, calling TeardownExternalViewEmbedder is safe because no
   // platform views have been created before Flutter renders the first frame.
   // Overall, the longer term plan is to remove this implementation once
