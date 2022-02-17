@@ -360,5 +360,29 @@ TEST(MockWindow, UnknownPointerTypeSkipsDirectManipulation) {
   window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
+TEST(MockWindow, WindowOnMinimized) {
+  MockWindow window;
+  window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
+
+  EXPECT_CALL(window, OnMinimized()).Times(1);
+  window.InjectWindowMessage(WM_SIZE, SIZE_MINIMIZED, MAKEWPARAM(0, 0));
+
+  // notify only when window size is different.
+  EXPECT_CALL(window, OnMinimized()).Times(0);
+  window.InjectWindowMessage(WM_SIZE, SIZE_MINIMIZED, MAKEWPARAM(0, 0));
+}
+
+TEST(MockWindow, WindowOnRestoredFromMinimized) {
+  MockWindow window;
+  window.InjectWindowMessage(WM_SIZE, SIZE_MINIMIZED, MAKEWPARAM(0, 0));
+
+  EXPECT_CALL(window, OnRestoredFromMinimized()).Times(1);
+  window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
+
+  // notify only when window size is different.
+  EXPECT_CALL(window, OnRestoredFromMinimized()).Times(0);
+  window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
+}
+
 }  // namespace testing
 }  // namespace flutter
