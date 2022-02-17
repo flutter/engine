@@ -33,6 +33,9 @@ vars = {
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
   'canvaskit_cipd_instance': '8MSYGWVWzrTJIoVL00ZquruZs-weuwLBy1kt1AawJiIC',
 
+  # Activate the Emscripten SDK by default.
+  'activate_emsdk': True,
+
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
   # Dart SDK's DEPS file for that revision of Dart. The DEPS file for
@@ -155,7 +158,7 @@ deps = {
    # Chromium-style dependencies.
 
   'src/third_party/icu':
-   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '2e0f2989441ec2f55abec30f48e89981dbac2c34',
+   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '1fa4e3959ec6637182b7318ac1d382799454806d',
 
   'src/third_party/khronos':
    Var('chromium_git') + '/chromium/src/third_party/khronos.git' + '@' + '7122230e90547962e0f0c627f62eeed3c701f275',
@@ -367,6 +370,9 @@ deps = {
 
   'src/third_party/colorama/src':
    Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
+
+   'src/third_party/emsdk':
+   Var('skia_git') + '/external/github.com/emscripten-core/emsdk.git' + '@' + 'fc645b7626ebf86530dbd82fbece74d457e7ae07',
 
   'src/third_party/expat':
    Var('chromium_git') + '/external/github.com/libexpat/libexpat.git' + '@' + 'a28238bdeebc087071777001245df1876a11f5ee',
@@ -737,6 +743,15 @@ hooks = [
       Var('host_os'),
       '--fuchsia-sdk-path',
       Var('fuchsia_sdk_path'),
+    ]
+  },
+  {
+    'name': 'Activate Emscripten SDK',
+    'pattern': '.',
+    'condition': 'activate_emsdk',
+    'action': [
+      'python3',
+      'src/flutter/tools/activate_emsdk.py',
     ]
   },
   {
