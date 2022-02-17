@@ -19,11 +19,11 @@ class DisplayListComplexityCalculator {
   virtual ~DisplayListComplexityCalculator() = default;
 
   // Returns a calculated complexity score for a given DisplayList object
-  virtual unsigned int compute(DisplayList* display_list) = 0;
+  virtual unsigned int Compute(DisplayList* display_list) = 0;
 
   // Returns whether a given complexity score meets the threshold for
   // cacheability for this particular ComplexityCalculator
-  virtual bool should_be_cached(unsigned int complexity_score) = 0;
+  virtual bool ShouldBeCached(unsigned int complexity_score) = 0;
 };
 
 class DisplayListNaiveComplexityCalculator
@@ -31,11 +31,11 @@ class DisplayListNaiveComplexityCalculator
  public:
   static DisplayListComplexityCalculator* GetInstance();
 
-  unsigned int compute(DisplayList* display_list) override {
+  unsigned int Compute(DisplayList* display_list) override {
     return display_list->op_count(true);
   }
 
-  bool should_be_cached(unsigned int complexity_score) override {
+  bool ShouldBeCached(unsigned int complexity_score) override {
     return complexity_score > 5u;
   }
 

@@ -14,13 +14,13 @@ class DisplayListGLComplexityCalculator
  public:
   static DisplayListComplexityCalculator* GetInstance();
 
-  unsigned int compute(DisplayList* display_list) override {
+  unsigned int Compute(DisplayList* display_list) override {
     GLHelper helper(ceiling_);
     display_list->Dispatch(helper);
     return helper.ComplexityScore();
   }
 
-  bool should_be_cached(unsigned int complexity_score) override {
+  bool ShouldBeCached(unsigned int complexity_score) override {
     // Set cache threshold at 1ms
     return complexity_score > 200000u;
   }
