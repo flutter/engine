@@ -294,9 +294,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.enable_software_rendering =
       command_line.HasOption(FlagForSwitch(Switch::EnableSoftwareRendering));
 
-  settings.route =
-      command_line.HasOption(FlagForSwitch(Switch::Route));
-
   settings.endless_trace_buffer =
       command_line.HasOption(FlagForSwitch(Switch::EndlessTraceBuffer));
 
@@ -358,6 +355,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   std::string vm_snapshot_data_filename;
   command_line.GetOptionValue(FlagForSwitch(Switch::VmSnapshotData),
                               &vm_snapshot_data_filename);
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::Route),
+                              &settings.route);
 
   std::string vm_snapshot_instr_filename;
   command_line.GetOptionValue(FlagForSwitch(Switch::VmSnapshotInstructions),
