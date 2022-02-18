@@ -1,4 +1,4 @@
-Signature: 08b1b4d73467a965b272f207f1578a83
+Signature: f318355d3e76f1eeb8401e5a4175f0da
 
 UNUSED LICENSES:
 
@@ -6099,7 +6099,6 @@ FILE: ../../../third_party/skia/experimental/graphite/src/ResourceCache.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ResourceCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.h
-FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxyView.h
 FILE: ../../../third_party/skia/experimental/graphite/src/UploadTask.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/UploadTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h
@@ -6518,7 +6517,9 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
-FILE: ../../../third_party/skia/gm/palette.cpp
+FILE: ../../../third_party/skia/src/utils/SkBlitterTrace.h
+FILE: ../../../third_party/skia/src/utils/SkBlitterTraceCommon.h
+FILE: ../../../third_party/skia/src/utils/SkCycles.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google Inc.
 
