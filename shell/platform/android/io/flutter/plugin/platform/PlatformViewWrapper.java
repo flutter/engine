@@ -187,7 +187,7 @@ class PlatformViewWrapper extends FrameLayout {
 
   @Override
   public ViewParent invalidateChildInParent(int[] location, Rect dirty) {
-    invalidate(dirty);
+    invalidate();
     return super.invalidateChildInParent(location, dirty);
   }
 
