@@ -12,6 +12,7 @@ enabled_branches:
 platform_properties:
   linux:
     properties:
+      clobber: "true" # TODO(chillers): remove before landing
       caches: >-
         [
           {"name":"builder_linux_engine","path":"builder"},
@@ -28,6 +29,7 @@ platform_properties:
       os: Linux
   mac:
     properties:
+      clobber: "true" # TODO(chillers): remove before landing
       caches: >-
         [
           {"name":"flutter_cocoapods","path":"cocoapods"},
@@ -46,6 +48,7 @@ platform_properties:
       xcode: 12c33 # xcode 12.3
   windows:
     properties:
+      clobber: "true" # TODO(chillers): remove before landing
       caches: >-
         [
           {"name":"builder_win_engine","path":"builder"},
