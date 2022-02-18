@@ -96,7 +96,10 @@ class ComplexityCalculatorHelper
       public virtual IgnoreTransformDispatchHelper {
  public:
   ComplexityCalculatorHelper(unsigned int ceiling)
-      : is_complex_(false), ceiling_(ceiling), save_layer_count_(0) {}
+      : is_complex_(false),
+        ceiling_(ceiling),
+        save_layer_count_(0),
+        complexity_score_(0) {}
 
   virtual ~ComplexityCalculatorHelper() = default;
 
