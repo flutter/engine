@@ -20,6 +20,7 @@
 #elif defined(OS_FUCHSIA)
 #include <lib/zx/thread.h>
 #elif defined(FML_OS_LINUX) || defined(FML_OS_ANDROID)
+#include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #else
@@ -78,14 +79,44 @@ void Thread::SetCurrentThreadName(const Thread::ThreadConfig& config) {
 }
 
 std::string Thread::GetCurrentName() {
+  // If a thread name has been set, use that. Otherwise, gets the thread name
+  // from kernel.
+  if (tls_thread_name.get() == nullptr) {
+    // |prctl| requires 16 bytes, |pthread_getname_np| requires 64 on macOS.
+    constexpr size_t kBufferLen = 64;
+    char thread_name[kBufferLen] = {0};
+#if defined(FML_OS_MACOSX)
+    int err = pthread_getname_np(pthread_self(), thread_name, kBufferLen);
+    if (err != 0) {
+      FML_LOG(ERROR) << "pthread_getname_np, errno=" << err;
+    }
+#elif defined(FML_OS_LINUX) || defined(FML_OS_ANDROID)
+    int err = prctl(PR_GET_NAME, thread_name);
+    if (err != 0) {
+      FML_LOG(ERROR) << "prctl, errno=" << err;
+    }
+#elif defined(OS_FUCHSIA)
+    zx_status_t status = zx::thread::self()->get_property(
+        ZX_PROP_NAME, thread_name, sizeof(thread_name));
+    if (status != ZX_OK) {
+      FML_LOG(ERROR) << "Failed to get thread name for sysmem.";
+    }
+#else
+    FML_DCHECK(false) << "Please add support for your platform.";
+#endif
+
+    tls_thread_name.reset(new std::string(thread_name));
+  }
   return *(tls_thread_name.get());
 }
 
 PlatformThreadId Thread::GetCurrentId() {
 #if defined(FML_OS_MACOSX)
   uint64_t thread_id = kInvalidThreadId;
-  errno = pthread_threadid_np(pthread_self(), &thread_id);
-  FML_DCHECK(errno == 0) << "pthread_threadid_np, errno=" << errno;
+  int err = pthread_threadid_np(pthread_self(), &thread_id);
+  if (err != 0) {
+    FML_LOG(ERROR) << "pthread_threadid_np, errno=" << err;
+  }
   return thread_id;
 #elif defined(FML_OS_WIN)
   return ::GetCurrentThreadId();
