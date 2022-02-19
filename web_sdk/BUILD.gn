@@ -567,7 +567,7 @@ _kernel_worker("flutter_dartdevc_kernel_sdk_outline_sound") {
 
 # Archives Flutter Web SDK
 zip_bundle("flutter_web_sdk_archive") {
-  output = "flutter-web-sdk-${host_os}-${target_cpu}.zip"
+  output = "flutter-web-sdk-${host_os_cpu_name}.zip"
   deps = [
     ":flutter_dartdevc_canvaskit_html_kernel_sdk",
     ":flutter_dartdevc_canvaskit_html_kernel_sdk_sound",
