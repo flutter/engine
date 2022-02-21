@@ -29,11 +29,17 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);
+  TryToPrepareRasterCache(context, this, matrix);
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
+
+  if (context.raster_cache &&
+      context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+    return;
+  }
 
   SkPaint paint;
   paint.setColorFilter(filter_);
