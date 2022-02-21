@@ -21,7 +21,7 @@ out_dir = os.path.join(buildroot_dir, 'out')
 golden_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'resources')
 fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_party', 'fonts')
 roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
-font_subset_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'font-subset')
+font_subset_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'linux-x64', 'font-subset')
 
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*'
 
