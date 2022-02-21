@@ -22,7 +22,7 @@ class CanvasGradient : public Shader {
 
  public:
   ~CanvasGradient() override;
-  static void CreateOrThrow(Dart_Handle wrapper);
+  static void Create(Dart_Handle wrapper);
 
   void initLinear(const tonic::Float32List& end_points,
                   const tonic::Int32List& colors,

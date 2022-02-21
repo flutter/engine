@@ -17,7 +17,7 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageShader);
 
-void ImageShader::CreateOrThrow(Dart_Handle wrapper) {
+void ImageShader::Create(Dart_Handle wrapper) {
   auto res = fml::MakeRefCounted<ImageShader>();
   res->AssociateWithDartWrapper(wrapper);
 }

@@ -21,7 +21,7 @@ class SemanticsUpdateBuilder
   FML_FRIEND_MAKE_REF_COUNTED(SemanticsUpdateBuilder);
 
  public:
-  static void CreateOrThrow(Dart_Handle wrapper) {
+  static void Create(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
     auto res = fml::MakeRefCounted<SemanticsUpdateBuilder>();
     res->AssociateWithDartWrapper(wrapper);

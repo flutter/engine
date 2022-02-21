@@ -129,34 +129,29 @@ void FontCollection::RegisterTestFonts() {
   collection_->DisableFontFallback();
 }
 
-void FontCollection::LoadFontFromList(const uint8_t* font_data,
-                                      int length,
+void FontCollection::LoadFontFromList(Dart_Handle font_data_handle,
+                                      Dart_Handle callback,
                                       std::string family_name) {
-  std::unique_ptr<SkStreamAsset> font_stream =
-      std::make_unique<SkMemoryStream>(font_data, length, true);
-  sk_sp<SkTypeface> typeface =
-      SkTypeface::MakeFromStream(std::move(font_stream));
-  txt::TypefaceFontAssetProvider& font_provider =
-      dynamic_font_manager_->font_provider();
-  if (family_name.empty()) {
-    font_provider.RegisterTypeface(typeface);
-  } else {
-    font_provider.RegisterTypeface(typeface, family_name);
-  }
-  collection_->ClearFontFamilyCache();
-}
-
-void FontCollection::LoadFontFromListOrThrow(Dart_Handle font_data_handle,
-                                             Dart_Handle callback,
-                                             std::string family_name) {
   tonic::Uint8List font_data(font_data_handle);
   UIDartState::ThrowIfUIOperationsProhibited();
   FontCollection& font_collection = UIDartState::Current()
                                         ->platform_configuration()
                                         ->client()
                                         ->GetFontCollection();
-  font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
-                                   family_name);
+
+  std::unique_ptr<SkStreamAsset> font_stream = std::make_unique<SkMemoryStream>(
+      font_data.data(), font_data.num_elements(), true);
+  sk_sp<SkTypeface> typeface =
+      SkTypeface::MakeFromStream(std::move(font_stream));
+  txt::TypefaceFontAssetProvider& font_provider =
+      font_collection.dynamic_font_manager_->font_provider();
+  if (family_name.empty()) {
+    font_provider.RegisterTypeface(typeface);
+  } else {
+    font_provider.RegisterTypeface(typeface, family_name);
+  }
+  font_collection.collection_->ClearFontFamilyCache();
+
   font_data.Release();
   tonic::DartInvoke(callback, {tonic::ToDart(0)});
 }

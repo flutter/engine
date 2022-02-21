@@ -24,9 +24,9 @@ class CanvasPathMeasure : public RefCountedDartWrappable<CanvasPathMeasure> {
 
  public:
   ~CanvasPathMeasure() override;
-  static void CreateOrThrow(Dart_Handle wrapper,
-                            const CanvasPath* path,
-                            bool forceClosed);
+  static void Create(Dart_Handle wrapper,
+                     const CanvasPath* path,
+                     bool forceClosed);
 
   void setPath(const CanvasPath* path, bool isClosed);
   float getLength(int contour_index);

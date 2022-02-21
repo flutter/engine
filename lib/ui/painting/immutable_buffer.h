@@ -37,9 +37,9 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
   ///
   /// `callback_handle` is expected to be a void callback to signal when the
   /// copy has completed.
-  static void init(Dart_Handle buffer_handle,
-                   Dart_Handle data,
-                   Dart_Handle callback_handle);
+  static Dart_Handle init(Dart_Handle buffer_handle,
+                          Dart_Handle data,
+                          Dart_Handle callback_handle);
 
   /// The length of the data in bytes.
   size_t length() const {

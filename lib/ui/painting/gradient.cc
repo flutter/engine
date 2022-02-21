@@ -16,7 +16,7 @@ typedef CanvasGradient
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Gradient);
 
-void CanvasGradient::CreateOrThrow(Dart_Handle wrapper) {
+void CanvasGradient::Create(Dart_Handle wrapper) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = fml::MakeRefCounted<CanvasGradient>();
   res->AssociateWithDartWrapper(wrapper);

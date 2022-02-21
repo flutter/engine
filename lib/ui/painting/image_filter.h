@@ -20,7 +20,7 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
 
  public:
   ~ImageFilter() override;
-  static void CreateOrThrow(Dart_Handle wrapper);
+  static void Create(Dart_Handle wrapper);
 
   static SkSamplingOptions SamplingFromIndex(int filterQualityIndex);
   static SkFilterMode FilterModeFromIndex(int index);

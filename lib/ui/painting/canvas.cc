@@ -30,12 +30,12 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
 
-void Canvas::CreateOrThrow(Dart_Handle wrapper,
-                           PictureRecorder* recorder,
-                           double left,
-                           double top,
-                           double right,
-                           double bottom) {
+void Canvas::Create(Dart_Handle wrapper,
+                    PictureRecorder* recorder,
+                    double left,
+                    double top,
+                    double right,
+                    double bottom) {
   UIDartState::ThrowIfUIOperationsProhibited();
 
   if (!recorder) {

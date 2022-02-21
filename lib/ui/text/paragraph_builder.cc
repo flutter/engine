@@ -137,16 +137,15 @@ const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
 
-void ParagraphBuilder::CreateOrThrow(
-    Dart_Handle wrapper,
-    const tonic::Int32List& encoded,
-    Dart_Handle strutData,
-    const std::string& fontFamily,
-    const std::vector<std::string>& strutFontFamilies,
-    double fontSize,
-    double height,
-    const std::u16string& ellipsis,
-    const std::string& locale) {
+void ParagraphBuilder::Create(Dart_Handle wrapper,
+                              const tonic::Int32List& encoded,
+                              Dart_Handle strutData,
+                              const std::string& fontFamily,
+                              const std::vector<std::string>& strutFontFamilies,
+                              double fontSize,
+                              double height,
+                              const std::u16string& ellipsis,
+                              const std::string& locale) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = fml::MakeRefCounted<ParagraphBuilder>(
       encoded, strutData, fontFamily, strutFontFamilies, fontSize, height,

@@ -66,7 +66,7 @@ fml::RefPtr<FragmentShader> FragmentProgram::shader(
   return FragmentShader::Create(shader, std::move(sk_shader));
 }
 
-void FragmentProgram::CreateOrThrow(Dart_Handle wrapper) {
+void FragmentProgram::Create(Dart_Handle wrapper) {
   auto res = fml::MakeRefCounted<FragmentProgram>();
   res->AssociateWithDartWrapper(wrapper);
 }

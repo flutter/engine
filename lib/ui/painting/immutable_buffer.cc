@@ -21,12 +21,11 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ImmutableBuffer);
 
 ImmutableBuffer::~ImmutableBuffer() {}
 
-void ImmutableBuffer::init(Dart_Handle buffer_handle,
-                           Dart_Handle data,
-                           Dart_Handle callback_handle) {
+Dart_Handle ImmutableBuffer::init(Dart_Handle buffer_handle,
+                                  Dart_Handle data,
+                                  Dart_Handle callback_handle) {
   if (!Dart_IsClosure(callback_handle)) {
-    Dart_ThrowException(tonic::ToDart("Callback must be a function"));
-    return;
+    return tonic::ToDart("Callback must be a function");
   }
 
   tonic::Uint8List dataList = tonic::Uint8List(data);
@@ -36,6 +35,8 @@ void ImmutableBuffer::init(Dart_Handle buffer_handle,
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
   buffer->AssociateWithDartWrapper(buffer_handle);
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
+
+  return Dart_Null();
 }
 
 size_t ImmutableBuffer::GetAllocationSize() const {

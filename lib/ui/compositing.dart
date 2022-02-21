@@ -216,7 +216,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
     _constructor();
   }
 
-  @FfiNative<Void Function(Handle)>('SceneBuilder::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('SceneBuilder::Create')
   external void _constructor();
 
   // Layers used in this scene.

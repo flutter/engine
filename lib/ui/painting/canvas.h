@@ -25,12 +25,12 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   FML_FRIEND_MAKE_REF_COUNTED(Canvas);
 
  public:
-  static void CreateOrThrow(Dart_Handle wrapper,
-                            PictureRecorder* recorder,
-                            double left,
-                            double top,
-                            double right,
-                            double bottom);
+  static void Create(Dart_Handle wrapper,
+                     PictureRecorder* recorder,
+                     double left,
+                     double top,
+                     double right,
+                     double bottom);
 
   ~Canvas() override;
 

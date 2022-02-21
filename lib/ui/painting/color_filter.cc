@@ -16,7 +16,7 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ColorFilter);
 
-void ColorFilter::CreateOrThrow(Dart_Handle wrapper) {
+void ColorFilter::Create(Dart_Handle wrapper) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = fml::MakeRefCounted<ColorFilter>();
   res->AssociateWithDartWrapper(wrapper);

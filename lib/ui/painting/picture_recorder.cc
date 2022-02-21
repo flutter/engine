@@ -16,7 +16,7 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, PictureRecorder);
 
-void PictureRecorder::CreateOrThrow(Dart_Handle wrapper) {
+void PictureRecorder::Create(Dart_Handle wrapper) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = fml::MakeRefCounted<PictureRecorder>();
   res->AssociateWithDartWrapper(wrapper);

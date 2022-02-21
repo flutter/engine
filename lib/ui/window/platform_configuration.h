@@ -198,44 +198,6 @@ class PlatformConfigurationClient {
   ///
   virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
 
-  //----------------------------------------------------------------------------
-  // API exposed as FFI calls in Dart.
-  //
-  // These are probably not supposed to be called directly, and should instead
-  // be called through their sibling API in `PlatformConfiguration` or
-  // `PlatformConfigurationClient`.
-  //
-  // These are intentionally undocumented. Refer instead to the sibling methods
-  // above.
-  //----------------------------------------------------------------------------
-
-  static std::string DefaultRouteNameOrThrow();
-
-  static void ScheduleFrameOrThrow();
-
-  static void RenderOrThrow(Scene* scene);
-
-  static void UpdateSemanticsOrThrow(SemanticsUpdate* update);
-
-  static void SetNeedsReportTimingsOrThrow(bool value);
-
-  static Dart_Handle GetPersistentIsolateDataOrThrow();
-
-  static Dart_Handle ComputePlatformResolvedLocaleOrThrow(
-      Dart_Handle supportedLocalesHandle);
-
-  static void SetIsolateDebugNameOrThrow(const std::string name);
-
-  static void ReportUnhandledExceptionOrThrow(std::string error_name,
-                                              std::string stack_trace);
-
-  static Dart_Handle SendPlatformMessage(const std::string& name,
-                                         Dart_Handle callback,
-                                         Dart_Handle data_handle);
-
-  static void RespondToPlatformMessage(int response_id,
-                                       const tonic::DartByteData& data);
-
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -468,6 +430,46 @@ class PlatformConfiguration final {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
+};
+
+//----------------------------------------------------------------------------
+// API exposed as FFI calls in Dart.
+//
+// These are probably not supposed to be called directly, and should instead
+// be called through their sibling API in `PlatformConfiguration` or
+// `PlatformConfigurationClient`.
+//
+// These are intentionally undocumented. Refer instead to the sibling methods
+// above.
+//----------------------------------------------------------------------------
+class PlatformConfigurationNativeApi {
+ public:
+  static std::string DefaultRouteName();
+
+  static void ScheduleFrame();
+
+  static void Render(Scene* scene);
+
+  static void UpdateSemantics(SemanticsUpdate* update);
+
+  static void SetNeedsReportTimings(bool value);
+
+  static Dart_Handle GetPersistentIsolateData();
+
+  static Dart_Handle ComputePlatformResolvedLocale(
+      Dart_Handle supportedLocalesHandle);
+
+  static void SetIsolateDebugName(const std::string name);
+
+  static void ReportUnhandledException(std::string error_name,
+                                       std::string stack_trace);
+
+  static Dart_Handle SendPlatformMessage(const std::string& name,
+                                         Dart_Handle callback,
+                                         Dart_Handle data_handle);
+
+  static void RespondToPlatformMessage(int response_id,
+                                       const tonic::DartByteData& data);
 };
 
 }  // namespace flutter

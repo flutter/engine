@@ -2299,7 +2299,7 @@ class Path extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   Path() { _constructor(); }
 
-  @FfiNative<Void Function(Handle)>('Path::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('Path::Create')
   external void _constructor();
 
   /// Avoids creating a new native backing for the path for methods that will
@@ -2901,7 +2901,7 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     _constructor(path, forceClosed);
   }
 
-  @FfiNative<Void Function(Handle, Pointer<Void>, Bool)>('PathMeasure::CreateOrThrow')
+  @FfiNative<Void Function(Handle, Pointer<Void>, Bool)>('PathMeasure::Create')
   external void _constructor(Path path, bool forceClosed);
 
   double length(int contourIndex) {
@@ -3272,7 +3272,7 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
   /// the values used for the filter.
   final ColorFilter creator;
 
-  @FfiNative<Void Function(Handle)>('ColorFilter::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('ColorFilter::Create')
   external void _constructor();
 
   @FfiNative<Void Function(Pointer<Void>, Int32, Int32)>('ColorFilter::initMode', isLeaf: true)
@@ -3446,7 +3446,7 @@ class _ComposeImageFilter implements ImageFilter {
 /// ImageFilter, because we want ImageFilter to be efficiently comparable, so that
 /// widgets can check for ImageFilter equality to avoid repainting.
 class _ImageFilter extends NativeFieldWrapperClass1 {
-  @FfiNative<Void Function(Handle)>('ImageFilter::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('ImageFilter::Create')
   external void _constructor();
 
   /// Creates an image filter that applies a Gaussian blur.
@@ -3649,7 +3649,7 @@ Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
 ///  * [Gradient](https://api.flutter.dev/flutter/painting/Gradient-class.html), the class in the [painting] library.
 ///
 class Gradient extends Shader {
-  @FfiNative<Void Function(Handle)>('Gradient::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('Gradient::Create')
   external void _constructor();
 
   /// Creates a linear gradient from `from` to `to`.
@@ -3879,7 +3879,7 @@ class ImageShader extends Shader {
     _initWithImage(image._image, tmx.index, tmy.index, filterQuality?.index ?? -1, matrix4);
   }
 
-  @FfiNative<Void Function(Handle)>('ImageShader::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('ImageShader::Create')
   external void _constructor();
 
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32, Handle)>('ImageShader::initWithImage')
@@ -3928,7 +3928,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   late final int _uniformFloatCount;
   late final int _samplerCount;
 
-  @FfiNative<Void Function(Handle)>('FragmentProgram::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('FragmentProgram::Create')
   external void _constructor();
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>('FragmentProgram::init')
@@ -4245,7 +4245,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
 
-  @FfiNative<Void Function(Handle, Pointer<Void>, Double, Double, Double, Double)>('Canvas::CreateOrThrow')
+  @FfiNative<Void Function(Handle, Pointer<Void>, Double, Double, Double, Double)>('Canvas::Create')
   external void _constructor(PictureRecorder recorder, double left, double top, double right, double bottom);
 
   // The underlying Skia SkCanvas is owned by the PictureRecorder used to create this Canvas.
@@ -5345,7 +5345,7 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   PictureRecorder() { _constructor(); }
 
-  @FfiNative<Void Function(Handle)>('PictureRecorder::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('PictureRecorder::Create')
   external void _constructor();
 
   /// Whether this object is currently recording commands.
@@ -5593,12 +5593,12 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
   static Future<ImmutableBuffer> fromUint8List(Uint8List list) {
     final ImmutableBuffer instance = ImmutableBuffer._(list.length);
     return _futurize((_Callback<void> callback) {
-      instance._init(list, callback);
+      return instance._init(list, callback);
     }).then((_) => instance);
   }
 
-  @FfiNative<Void Function(Handle, Handle, Handle)>('ImmutableBuffer::init')
-  external void _init(Uint8List list, _Callback<void> callback);
+  @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::init')
+  external String? _init(Uint8List list, _Callback<void> callback);
 
   /// The length, in bytes, of the underlying data.
   final int length;

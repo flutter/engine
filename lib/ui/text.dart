@@ -2838,7 +2838,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
           _encodeLocale(style._locale));
   }
 
-  @FfiNative<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double,Handle, Handle)>('ParagraphBuilder::CreateOrThrow')
+  @FfiNative<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double,Handle, Handle)>('ParagraphBuilder::Create')
   external void _constructor(
       Int32List encoded,
       ByteData? strutData,
@@ -3075,5 +3075,5 @@ FutureOr<void> _sendFontChangeMessage() async {
   }
 }
 
-@FfiNative<Void Function(Handle, Handle, Handle)>('FontCollection::LoadFontFromListOrThrow')
+@FfiNative<Void Function(Handle, Handle, Handle)>('FontCollection::LoadFontFromList')
 external void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily);

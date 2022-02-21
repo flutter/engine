@@ -15,7 +15,7 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFilter);
 
-void ImageFilter::CreateOrThrow(Dart_Handle wrapper) {
+void ImageFilter::Create(Dart_Handle wrapper) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = fml::MakeRefCounted<ImageFilter>();
   res->AssociateWithDartWrapper(wrapper);

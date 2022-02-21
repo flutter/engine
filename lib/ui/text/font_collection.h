@@ -30,13 +30,9 @@ class FontCollection {
 
   void RegisterTestFonts();
 
-  void LoadFontFromList(const uint8_t* font_data,
-                        int length,
-                        std::string family_name);
-
-  static void LoadFontFromListOrThrow(Dart_Handle font_data_handle,
-                                      Dart_Handle callback,
-                                      std::string family_name);
+  static void LoadFontFromList(Dart_Handle font_data_handle,
+                               Dart_Handle callback,
+                               std::string family_name);
 
  private:
   std::shared_ptr<txt::FontCollection> collection_;

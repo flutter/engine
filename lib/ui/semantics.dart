@@ -755,7 +755,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   SemanticsUpdateBuilder() { _constructor(); }
 
-  @FfiNative<Void Function(Handle)>('SemanticsUpdateBuilder::CreateOrThrow')
+  @FfiNative<Void Function(Handle)>('SemanticsUpdateBuilder::Create')
   external void _constructor();
 
   /// Update the information associated with the node with the given `id`.

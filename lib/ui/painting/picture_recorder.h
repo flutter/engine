@@ -18,7 +18,7 @@ class PictureRecorder : public RefCountedDartWrappable<PictureRecorder> {
   FML_FRIEND_MAKE_REF_COUNTED(PictureRecorder);
 
  public:
-  static void CreateOrThrow(Dart_Handle wrapper);
+  static void Create(Dart_Handle wrapper);
 
   ~PictureRecorder() override;
 

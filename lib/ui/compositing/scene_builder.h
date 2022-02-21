@@ -28,7 +28,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   FML_FRIEND_MAKE_REF_COUNTED(SceneBuilder);
 
  public:
-  static void CreateOrThrow(Dart_Handle wrapper) {
+  static void Create(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
     auto res = fml::MakeRefCounted<SceneBuilder>();
     res->AssociateWithDartWrapper(wrapper);

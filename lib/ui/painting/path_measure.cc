@@ -19,9 +19,9 @@ typedef CanvasPathMeasure PathMeasure;
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, PathMeasure);
 
-void CanvasPathMeasure::CreateOrThrow(Dart_Handle wrapper,
-                                      const CanvasPath* path,
-                                      bool forceClosed) {
+void CanvasPathMeasure::Create(Dart_Handle wrapper,
+                               const CanvasPath* path,
+                               bool forceClosed) {
   UIDartState::ThrowIfUIOperationsProhibited();
   fml::RefPtr<CanvasPathMeasure> pathMeasure =
       fml::MakeRefCounted<CanvasPathMeasure>();

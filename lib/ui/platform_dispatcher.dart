@@ -490,7 +490,7 @@ class PlatformDispatcher {
 
   void _nativeSetNeedsReportTimings(bool value) => __nativeSetNeedsReportTimings(value);
 
-  @FfiNative<Void Function(Bool)>('PlatformConfigurationClient::SetNeedsReportTimingsOrThrow')
+  @FfiNative<Void Function(Bool)>('PlatformConfigurationNativeApi::SetNeedsReportTimings')
   external static void __nativeSetNeedsReportTimings(bool value);
 
   // Called from the engine, via hooks.dart
@@ -522,7 +522,7 @@ class PlatformDispatcher {
   String? _sendPlatformMessage(String name,PlatformMessageResponseCallback? callback, ByteData? data) =>
       __sendPlatformMessage(name, callback, data);
 
-  @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationClient::SendPlatformMessage')
+  @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPlatformMessage')
   external static String? __sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data);
 
   /// Called whenever this platform dispatcher receives a message from a
@@ -551,7 +551,7 @@ class PlatformDispatcher {
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData? data) => __respondToPlatformMessage(responseId, data);
 
-  @FfiNative<Void Function(IntPtr, Handle)>('PlatformConfigurationClient::RespondToPlatformMessage')
+  @FfiNative<Void Function(IntPtr, Handle)>('PlatformConfigurationNativeApi::RespondToPlatformMessage')
   external static void __respondToPlatformMessage(int responseId, ByteData? data);
 
   /// Wraps the given [callback] in another callback that ensures that the
@@ -611,7 +611,7 @@ class PlatformDispatcher {
   /// Note that this does not rename any child isolates of the root.
   void setIsolateDebugName(String name) => _setIsolateDebugName(name);
 
-  @FfiNative<Void Function(Handle)>('PlatformConfigurationClient::SetIsolateDebugNameOrThrow')
+  @FfiNative<Void Function(Handle)>('PlatformConfigurationNativeApi::SetIsolateDebugName')
   external static void _setIsolateDebugName(String name);
 
   /// The embedder can specify data that the isolate can request synchronously
@@ -625,7 +625,7 @@ class PlatformDispatcher {
   /// platform channel may be used.
   ByteData? getPersistentIsolateData() => _getPersistentIsolateData();
 
-  @FfiNative<Handle Function()>('PlatformConfigurationClient::GetPersistentIsolateDataOrThrow')
+  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::GetPersistentIsolateData')
   external static ByteData? _getPersistentIsolateData();
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
@@ -637,7 +637,7 @@ class PlatformDispatcher {
   ///    scheduling of frames.
   void scheduleFrame() => _scheduleFrame();
 
-  @FfiNative<Void Function()>('PlatformConfigurationClient::ScheduleFrameOrThrow')
+  @FfiNative<Void Function()>('PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
@@ -680,7 +680,7 @@ class PlatformDispatcher {
   /// semantics update cannot be used further.
   void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
 
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationClient::UpdateSemanticsOrThrow')
+  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(SemanticsUpdate update);
 
   /// The system-reported default locale of the device.
@@ -742,7 +742,7 @@ class PlatformDispatcher {
 
   List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) => __computePlatformResolvedLocale(supportedLocalesData);
 
-  @FfiNative<Handle Function(Handle)>('PlatformConfigurationClient::ComputePlatformResolvedLocaleOrThrow')
+  @FfiNative<Handle Function(Handle)>('PlatformConfigurationNativeApi::ComputePlatformResolvedLocale')
   external static List<String> __computePlatformResolvedLocale(List<String?> supportedLocalesData);
 
   /// A callback that is invoked whenever [locale] changes value.
@@ -1038,7 +1038,7 @@ class PlatformDispatcher {
   ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
 
-  @FfiNative<Handle Function()>('PlatformConfigurationClient::DefaultRouteNameOrThrow')
+  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
 }
 

@@ -22,7 +22,7 @@ class ImageShader : public Shader {
 
  public:
   ~ImageShader() override;
-  static void CreateOrThrow(Dart_Handle wrapper);
+  static void Create(Dart_Handle wrapper);
 
   void initWithImage(CanvasImage* image,
                      SkTileMode tmx,
