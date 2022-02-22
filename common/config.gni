@@ -87,8 +87,15 @@ if (flutter_prebuilt_dart_sdk) {
     _target_os_name = "windows"
   }
 
+  _host_os_name = host_os
+  if (_host_os_name == "mac") {
+    _host_os_name = "macos"
+  } else if (_host_os_name == "win" || _host_os_name == "winuwp") {
+    _host_os_name = "windows"
+  }
+
   _target_prebuilt_dart_sdk_config = "$_target_os_name-$target_cpu"
-  _host_prebuilt_dart_sdk_config = "$full_platform_name"
+  _host_prebuilt_dart_sdk_config = "$_host_os_name-$host_cpu"
   _target_prebuilt_dart_sdk_archive = "//flutter/prebuilts/dartsdk-$_target_prebuilt_dart_sdk_config-release.zip"
   _host_prebuilt_dart_sdk_archive =
       "//flutter/prebuilts/dartsdk-$_host_prebuilt_dart_sdk_config-release.zip"
