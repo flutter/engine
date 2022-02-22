@@ -15,12 +15,14 @@ import sys
 from zipfile import ZipFile
 
 
-
+# Dictionary to map the platform name to the output directory
+# of the font artifacts.
 PLATFORM_2_PATH = {
     'darwin': 'darwin-x64',
     'linux': 'linux-x64',
     'cygwin': 'windows-x64',
-    'win': 'windows-x64'
+    'win': 'windows-x64',
+    'win32': 'windows-64',
 }
 
 
