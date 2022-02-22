@@ -69,9 +69,9 @@ if (is_ios || is_mac) {
 # A combo of host os name and cpu is used in several locations to
 # generate the names of the archived artifacts.
 _platform_name = host_os
-if (_host_os_name == "mac") {
+if (_platform_name == "mac") {
   _platform_name = "darwin"
-} else if (_host_os_name == "win" || _host_os_name == "winuwp") {
+} else if (_platform_name == "win" || _platform_name == "winuwp") {
   _platform_name = "windows"
 }
 
