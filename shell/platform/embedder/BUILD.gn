@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/toolchain/clang.gni")
+import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
@@ -23,6 +24,10 @@ shell_gpu_configuration("embedder_gpu_configuration") {
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
+
+config("embedder_header_config") {
+  include_dirs = [ "." ]
+}
 
 # Template for the embedder build. Used to allow building it multiple times with
 # different flags.
@@ -104,10 +109,18 @@ template("embedder_source_set") {
       deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
 
+    if (embedder_enable_vulkan) {
+      sources += [
+        "embedder_surface_vulkan.cc",
+        "embedder_surface_vulkan.h",
+      ]
+    }
+
     public_deps = [ ":embedder_headers" ]
 
     public_configs += [
       ":embedder_gpu_configuration_config",
+      ":embedder_header_config",
       "//flutter:config",
     ]
   }
@@ -162,6 +175,8 @@ test_fixtures("fixtures") {
     "fixtures/dpr_noxform.png",
     "fixtures/dpr_xform.png",
     "fixtures/gradient.png",
+    "fixtures/vk_dpr_noxform.png",
+    "fixtures/vk_gradient.png",
     "fixtures/gradient_metal.png",
     "fixtures/external_texture_metal.png",
     "fixtures/gradient_xform.png",
@@ -244,6 +259,13 @@ if (enable_unittests) {
     }
 
     if (test_enable_vulkan) {
+      sources += [
+        "tests/embedder_test_compositor_vulkan.cc",
+        "tests/embedder_test_compositor_vulkan.h",
+        "tests/embedder_test_context_vulkan.cc",
+        "tests/embedder_test_context_vulkan.h",
+      ]
+
       deps += [
         "//flutter/testing:vulkan",
         "//flutter/vulkan",
@@ -403,5 +425,25 @@ group("flutter_engine") {
     if (is_mac && !embedder_for_target) {
       deps += [ ":flutter_embedder_framework" ]
     }
+  }
+}
+
+if (host_os == "linux") {
+  zip_bundle("linux-embedder-archive") {
+    output = "${host_os}-${target_cpu}/${host_os}-${target_cpu}-embedder"
+    deps = [
+      "//flutter/shell/platform/embedder:copy_headers",
+      "//flutter/shell/platform/embedder:flutter_engine_library",
+    ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_embedder.h"
+        destination = "flutter_embedder.h"
+      },
+      {
+        source = "$root_out_dir/libflutter_engine.so"
+        destination = "libflutter_engine.so"
+      },
+    ]
   }
 }

@@ -632,6 +632,13 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   platform_view_ = std::move(platform_view);
   platform_message_handler_ = platform_view_->GetPlatformMessageHandler();
+  route_messages_through_platform_thread_.store(true);
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [self = weak_factory_.GetWeakPtr()] {
+        if (self) {
+          self->route_messages_through_platform_thread_.store(false);
+        }
+      });
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
   io_manager_ = io_manager;
@@ -755,12 +762,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         waiting_for_first_frame.store(true);
       });
 
-  // TODO(91717): This probably isn't necessary. The engine should be able to
-  // handle things here via normal lifecycle messages.
-  // https://github.com/flutter/flutter/issues/91717
   auto ui_task = [engine = engine_->GetWeakPtr()] {
     if (engine) {
-      engine->OnOutputSurfaceCreated();
+      engine->ScheduleFrame();
     }
   };
 
@@ -856,28 +860,36 @@ void Shell::OnPlatformViewDestroyed() {
       rasterizer->EnableThreadMergerIfNeeded();
       rasterizer->Teardown();
     }
-    // Step 3: Tell the IO thread to complete its remaining work.
+    // Step 2: Tell the IO thread to complete its remaining work.
     fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
   };
 
-  // TODO(91717): This probably isn't necessary. The engine should be able to
-  // handle things here via normal lifecycle messages.
-  // https://github.com/flutter/flutter/issues/91717
-  auto ui_task = [engine = engine_->GetWeakPtr()]() {
-    if (engine) {
-      engine->OnOutputSurfaceDestroyed();
-    }
-  };
-
-  // Step 1: Post a task onto the UI thread to tell the engine that its output
-  // surface is about to go away.
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
-
-  // Step 2: Post a task to the Raster thread (possibly this thread) to tell the
+  // Step 1: Post a task to the Raster thread (possibly this thread) to tell the
   // rasterizer the output surface is going away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                     raster_task);
   latch.Wait();
+  // On Android, the external view embedder may post a task to the platform
+  // thread, and wait until it completes if overlay surfaces must be released.
+  // However, the platform thread might be blocked when Dart is initializing.
+  // In this situation, calling TeardownExternalViewEmbedder is safe because no
+  // platform views have been created before Flutter renders the first frame.
+  // Overall, the longer term plan is to remove this implementation once
+  // https://github.com/flutter/flutter/issues/96679 is fixed.
+  rasterizer_->TeardownExternalViewEmbedder();
+}
+
+// |PlatformView::Delegate|
+void Shell::OnPlatformViewScheduleFrame() {
+  TRACE_EVENT0("flutter", "Shell::OnPlatformViewScheduleFrame");
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr()]() {
+    if (engine) {
+      engine->ScheduleFrame();
+    }
+  });
 }
 
 // |PlatformView::Delegate|
@@ -1084,7 +1096,7 @@ void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
+void Shell::OnAnimatorNotifyIdle(fml::TimePoint deadline) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
@@ -1183,7 +1195,30 @@ void Shell::OnEngineHandlePlatformMessage(
   }
 
   if (platform_message_handler_) {
-    platform_message_handler_->HandlePlatformMessage(std::move(message));
+    if (route_messages_through_platform_thread_) {
+      // We route messages through the platform thread temporarily when the
+      // shell is being initialized to be backwards compatible with setting
+      // message handlers in the same event as starting the isolate, but after
+      // it is started.
+      auto ui_task_runner = task_runners_.GetUITaskRunner();
+      task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
+          [weak_platform_message_handler =
+               std::weak_ptr<PlatformMessageHandler>(platform_message_handler_),
+           message = std::move(message), ui_task_runner]() mutable {
+            ui_task_runner->PostTask(fml::MakeCopyable(
+                [weak_platform_message_handler, message = std::move(message),
+                 ui_task_runner]() mutable {
+                  auto platform_message_handler =
+                      weak_platform_message_handler.lock();
+                  if (platform_message_handler) {
+                    platform_message_handler->HandlePlatformMessage(
+                        std::move(message));
+                  }
+                }));
+          }));
+    } else {
+      platform_message_handler_->HandlePlatformMessage(std::move(message));
+    }
   } else {
     task_runners_.GetPlatformTaskRunner()->PostTask(
         fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
@@ -1870,6 +1905,10 @@ fml::TimePoint Shell::GetCurrentTimePoint() {
 const std::shared_ptr<PlatformMessageHandler>&
 Shell::GetPlatformMessageHandler() const {
   return platform_message_handler_;
+}
+
+const VsyncWaiter& Shell::GetVsyncWaiter() const {
+  return engine_->GetVsyncWaiter();
 }
 
 }  // namespace flutter

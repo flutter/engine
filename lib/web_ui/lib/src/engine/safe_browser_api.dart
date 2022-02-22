@@ -200,34 +200,41 @@ html.CanvasElement? tryCreateCanvasElement(int width, int height) {
     'createElement',
     <dynamic>['CANVAS'],
   );
-  if (canvas != null) {
-    try {
-      canvas.width = width;
-      canvas.height = height;
-    } catch (e) {
-      // It seems the tribal knowledge of why we anticipate an exception while
-      // setting width/height on a non-null canvas and why it's OK to return
-      // null in this case has been lost. Kudos to the one who can recover it
-      // and leave a proper comment here!
-      return null;
-    }
-    return canvas;
+  if (canvas == null) {
+    return null;
   }
+  try {
+    canvas.width = width;
+    canvas.height = height;
+  } catch (e) {
+    // It seems the tribal knowledge of why we anticipate an exception while
+    // setting width/height on a non-null canvas and why it's OK to return null
+    // in this case has been lost. Kudos to the one who can recover it and leave
+    // a proper comment here!
+    return null;
+  }
+  return canvas;
 }
 
 @JS('window.ImageDecoder')
 external Object? get _imageDecoderConstructor;
 
-/// Hides `image_web_codecs.dart` behind a flag.
-// TODO(yjbanov): https://github.com/flutter/flutter/issues/95277
-const bool _imageDecoderExperimentEnabled = bool.fromEnvironment(
-  'EXPERIMENTAL_IMAGE_DECODER',
-  defaultValue: false,
+/// Environment variable that allows the developer to opt out of using browser's
+/// `ImageDecoder` API, and use the WASM codecs bundled with CanvasKit.
+///
+/// While all reported severe issues with `ImageDecoder` have been fixed, this
+/// API remains relatively new. This option will allow developers to opt out of
+/// it, if they hit a severe bug that we did not anticipate.
+// TODO(yjbanov): remove this flag once we're fully confident in the new API.
+//                https://github.com/flutter/flutter/issues/95277
+const bool _browserImageDecodingEnabled = bool.fromEnvironment(
+  'BROWSER_IMAGE_DECODING_ENABLED',
+  defaultValue: true,
 );
 
 /// Whether the current browser supports `ImageDecoder`.
 bool browserSupportsImageDecoder =
-  _imageDecoderExperimentEnabled &&
+  _browserImageDecodingEnabled &&
   _imageDecoderConstructor != null &&
   browserEngine == BrowserEngine.blink;
 
@@ -807,12 +814,14 @@ class GlContext {
 
   /// Returns image data in a form that can be used to create Canvas
   /// context patterns.
-  Object? readPatternData() {
+  Object? readPatternData(bool isOpaque) {
     // When using OffscreenCanvas and transferToImageBitmap is supported by
     // browser create ImageBitmap otherwise use more expensive canvas
-    // allocation.
+    // allocation. However, transferToImageBitmap does not properly preserve
+    // the alpha channel, so only use it if the pattern is opaque.
     if (_canvas != null &&
-        js_util.hasProperty(_canvas!, 'transferToImageBitmap')) {
+        js_util.hasProperty(_canvas!, 'transferToImageBitmap') &&
+        isOpaque) {
       // TODO(yjbanov): find out why we need to call getContext and ignore the return value.
       js_util.callMethod<void>(_canvas!, 'getContext', <dynamic>['webgl2']);
       final Object? imageBitmap = js_util.callMethod(_canvas!, 'transferToImageBitmap',

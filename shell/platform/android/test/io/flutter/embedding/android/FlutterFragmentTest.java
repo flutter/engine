@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.FragmentActivity;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -23,12 +24,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterFragmentTest {
   boolean isDelegateAttached;
 
@@ -38,6 +38,7 @@ public class FlutterFragmentTest {
     fragment.setDelegate(new FlutterActivityAndFragmentDelegate(fragment));
 
     assertEquals("main", fragment.getDartEntrypointFunctionName());
+    assertNull(fragment.getDartEntrypointLibraryUri());
     assertEquals("/", fragment.getInitialRoute());
     assertArrayEquals(new String[] {}, fragment.getFlutterShellArgs().toArray());
     assertTrue(fragment.shouldAttachEngineToActivity());
@@ -54,6 +55,7 @@ public class FlutterFragmentTest {
     FlutterFragment fragment =
         FlutterFragment.withNewEngine()
             .dartEntrypoint("custom_entrypoint")
+            .dartLibraryUri("package:foo/bar.dart")
             .initialRoute("/custom/route")
             .shouldAttachEngineToActivity(false)
             .handleDeeplinking(true)
@@ -63,6 +65,7 @@ public class FlutterFragmentTest {
     fragment.setDelegate(new FlutterActivityAndFragmentDelegate(fragment));
 
     assertEquals("custom_entrypoint", fragment.getDartEntrypointFunctionName());
+    assertEquals("package:foo/bar.dart", fragment.getDartEntrypointLibraryUri());
     assertEquals("/custom/route", fragment.getInitialRoute());
     assertArrayEquals(new String[] {}, fragment.getFlutterShellArgs().toArray());
     assertFalse(fragment.shouldAttachEngineToActivity());
@@ -208,6 +211,15 @@ public class FlutterFragmentTest {
     verify(mockDelegate, times(1)).onDetach();
     verify(mockDelegate, times(1)).release();
     assertFalse(mockDelegate.isAttached());
+  }
+
+  @Test
+  public void itReturnsExclusiveAppComponent() {
+    FlutterFragment fragment = FlutterFragment.createDefault();
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fragment);
+    fragment.setDelegate(delegate);
+
+    assertEquals(fragment.getExclusiveAppComponent(), delegate);
   }
 
   @Test

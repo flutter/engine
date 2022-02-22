@@ -25,7 +25,6 @@
 #include "flutter/shell/common/platform_message_handler.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -72,6 +71,12 @@ class PlatformView {
     ///             intermediate resources.
     ///
     virtual void OnPlatformViewDestroyed() = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform needs to schedule a
+    ///             frame to regenerate the layer tree and redraw the surface.
+    ///
+    virtual void OnPlatformViewScheduleFrame() = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the specified callback needs to
@@ -479,6 +484,12 @@ class PlatformView {
   virtual void NotifyDestroyed();
 
   //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to schedule a frame. In response to this
+  ///             call, the framework may need to start generating a new frame.
+  ///
+  void ScheduleFrame();
+
+  //----------------------------------------------------------------------------
   /// @brief      Used by the shell to obtain a Skia GPU context that is capable
   ///             of operating on the IO thread. The context must be in the same
   ///             share-group as the Skia GPU context used on the render thread.
@@ -804,7 +815,6 @@ class PlatformView {
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;
   PointerDataPacketConverter pointer_data_packet_converter_;
-  SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
  private:

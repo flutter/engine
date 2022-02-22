@@ -17,6 +17,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/common/variable_refresh_rate_display.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
@@ -32,6 +33,37 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
+
+/// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
+/// Using iOS platform thread API to configure thread priority
+static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
+  // set thread name
+  fml::Thread::SetCurrentThreadName(config);
+
+  // set thread priority
+  switch (config.priority) {
+    case fml::Thread::ThreadPriority::BACKGROUND: {
+      [[NSThread currentThread] setThreadPriority:0];
+      break;
+    }
+    case fml::Thread::ThreadPriority::NORMAL: {
+      [[NSThread currentThread] setThreadPriority:0.5];
+      break;
+    }
+    case fml::Thread::ThreadPriority::RASTER:
+    case fml::Thread::ThreadPriority::DISPLAY: {
+      [[NSThread currentThread] setThreadPriority:1.0];
+      sched_param param;
+      int policy;
+      pthread_t thread = pthread_self();
+      if (!pthread_getschedparam(thread, &policy, &param)) {
+        param.sched_priority = 50;
+        pthread_setschedparam(thread, policy, &param);
+      }
+      break;
+    }
+  }
+}
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
@@ -530,10 +562,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
-  _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
-  _textInputPlugin.get().textInputDelegate = self;
-  _textInputPlugin.get().indirectScribbleDelegate = self;
-  [_textInputPlugin.get() setupIndirectScribbleInteraction:self.viewController];
+  FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
+  _textInputPlugin.reset(textInputPlugin);
+  textInputPlugin.indirectScribbleDelegate = self;
+  [textInputPlugin setupIndirectScribbleInteraction:self.viewController];
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
 
@@ -612,11 +644,30 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   uint32_t threadHostType = flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::RASTER |
                             flutter::ThreadHost::Type::IO;
+
   if ([FlutterEngine isProfilerEnabled]) {
     threadHostType = threadHostType | flutter::ThreadHost::Type::Profiler;
   }
-  return {threadLabel.UTF8String,  // label
-          threadHostType};
+
+  flutter::ThreadHost::ThreadHostConfig host_config(threadLabel.UTF8String, threadHostType,
+                                                    IOSPlatformThreadConfigSetter);
+
+  host_config.ui_config =
+      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                    flutter::ThreadHost::Type::UI, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::DISPLAY);
+
+  host_config.raster_config =
+      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                    flutter::ThreadHost::Type::RASTER, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::RASTER);
+
+  host_config.io_config =
+      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                    flutter::ThreadHost::Type::IO, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::BACKGROUND);
+
+  return (flutter::ThreadHost){host_config};
 }
 
 static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSString* libraryURI) {
@@ -699,9 +750,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)initializeDisplays {
-  double refresh_rate = [DisplayLinkManager displayRefreshRate];
+  const flutter::VsyncWaiterIOS& vsync_waiter_ios =
+      static_cast<const flutter::VsyncWaiterIOS&>(_shell->GetVsyncWaiter());
   std::vector<std::unique_ptr<flutter::Display>> displays;
-  displays.push_back(std::make_unique<flutter::Display>(refresh_rate));
+  displays.push_back(std::make_unique<flutter::VariableRefreshRateDisplay>(vsync_waiter_ios));
   _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, std::move(displays));
 }
 
@@ -950,14 +1002,28 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                              channel.UTF8String, flutter::CopyNSDataToMapping(message), response);
 
   _shell->GetPlatformView()->DispatchPlatformMessage(std::move(platformMessage));
+  // platformMessage takes ownership of response.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
+}
+
+- (NSObject<FlutterTaskQueue>*)makeBackgroundTaskQueue {
+  return flutter::PlatformMessageHandlerIos::MakeBackgroundTaskQueue();
 }
 
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
                                           binaryMessageHandler:
                                               (FlutterBinaryMessageHandler)handler {
+  return [self setMessageHandlerOnChannel:channel binaryMessageHandler:handler taskQueue:nil];
+}
+
+- (FlutterBinaryMessengerConnection)
+    setMessageHandlerOnChannel:(NSString*)channel
+          binaryMessageHandler:(FlutterBinaryMessageHandler)handler
+                     taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   NSParameterAssert(channel);
   if (_shell && _shell->IsSetup()) {
-    self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
+    self.iosPlatformView->GetPlatformMessageHandlerIos()->SetMessageHandler(channel.UTF8String,
+                                                                            handler, taskQueue);
     return _connections->AquireConnection(channel.UTF8String);
   } else {
     NSAssert(!handler, @"Setting a message handler before the FlutterEngine has been run.");
@@ -970,7 +1036,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   if (_shell && _shell->IsSetup()) {
     std::string channel = _connections->CleanupConnection(connection);
     if (!channel.empty()) {
-      self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.c_str(), nil);
+      self.iosPlatformView->GetPlatformMessageHandlerIos()->SetMessageHandler(channel.c_str(), nil,
+                                                                              nil);
     }
   }
 }

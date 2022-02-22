@@ -50,8 +50,6 @@ Engine::Engine(
       settings_(std::move(settings)),
       animator_(std::move(animator)),
       runtime_controller_(std::move(runtime_controller)),
-      activity_running_(true),
-      have_surface_(false),
       font_collection_(font_collection),
       image_decoder_(task_runners, image_decoder_task_runner, io_manager),
       task_runners_(std::move(task_runners)),
@@ -121,15 +119,15 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*font_collection=*/font_collection_,
       /*runtime_controller=*/nullptr);
   result->runtime_controller_ = runtime_controller_->Spawn(
-      *result,                               // runtime delegate
-      settings_.advisory_script_uri,         // advisory script uri
-      settings_.advisory_script_entrypoint,  // advisory script entrypoint
-      settings_.idle_notification_callback,  // idle notification callback
-      settings_.isolate_create_callback,     // isolate create callback
-      settings_.isolate_shutdown_callback,   // isolate shutdown callback
-      settings_.persistent_isolate_data,     // persistent isolate data
-      io_manager,                            // io_manager
-      result->GetImageDecoderWeakPtr()       // imageDecoder
+      *result,                              // runtime delegate
+      settings.advisory_script_uri,         // advisory script uri
+      settings.advisory_script_entrypoint,  // advisory script entrypoint
+      settings.idle_notification_callback,  // idle notification callback
+      settings.isolate_create_callback,     // isolate create callback
+      settings.isolate_shutdown_callback,   // isolate shutdown callback
+      settings.persistent_isolate_data,     // persistent isolate data
+      io_manager,                           // io_manager
+      result->GetImageDecoderWeakPtr()      // imageDecoder
   );
   result->initial_route_ = initial_route;
   return result;
@@ -252,8 +250,9 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
-void Engine::NotifyIdle(int64_t deadline) {
-  auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
+void Engine::NotifyIdle(fml::TimePoint deadline) {
+  auto trace_event = std::to_string(deadline.ToEpochDelta().ToMicroseconds() -
+                                    Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
                trace_event.c_str());
   runtime_controller_->NotifyIdle(deadline);
@@ -279,31 +278,9 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
   return runtime_controller_->GetLastError();
 }
 
-void Engine::OnOutputSurfaceCreated() {
-  have_surface_ = true;
-  ScheduleFrame();
-}
-
-void Engine::OnOutputSurfaceDestroyed() {
-  have_surface_ = false;
-  StopAnimator();
-}
-
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
-  bool dimensions_changed =
-      viewport_metrics_.physical_height != metrics.physical_height ||
-      viewport_metrics_.physical_width != metrics.physical_width ||
-      viewport_metrics_.device_pixel_ratio != metrics.device_pixel_ratio;
-  viewport_metrics_ = metrics;
-  runtime_controller_->SetViewportMetrics(viewport_metrics_);
-  if (animator_) {
-    if (dimensions_changed) {
-      animator_->SetDimensionChangePending();
-    }
-    if (have_surface_) {
-      ScheduleFrame();
-    }
-  }
+  runtime_controller_->SetViewportMetrics(metrics);
+  ScheduleFrame();
 }
 
 void Engine::DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) {
@@ -338,20 +315,12 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
   std::string state(reinterpret_cast<const char*>(data.GetMapping()),
                     data.GetSize());
-  if (state == "AppLifecycleState.paused" ||
-      state == "AppLifecycleState.detached") {
-    activity_running_ = false;
-    StopAnimator();
-  } else if (state == "AppLifecycleState.resumed" ||
-             state == "AppLifecycleState.inactive") {
-    activity_running_ = true;
-    StartAnimatorIfPossible();
-  }
 
   // Always schedule a frame when the app does become active as per API
   // recommendation
   // https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622956-applicationdidbecomeactive?language=objc
-  if (state == "AppLifecycleState.resumed" && have_surface_) {
+  if (state == "AppLifecycleState.resumed" ||
+      state == "AppLifecycleState.inactive") {
     ScheduleFrame();
   }
   runtime_controller_->SetLifecycleState(state);
@@ -426,8 +395,7 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
   std::string jsonData(reinterpret_cast<const char*>(data.GetMapping()),
                        data.GetSize());
-  if (runtime_controller_->SetUserSettingsData(std::move(jsonData)) &&
-      have_surface_) {
+  if (runtime_controller_->SetUserSettingsData(std::move(jsonData))) {
     ScheduleFrame();
   }
 }
@@ -454,16 +422,6 @@ void Engine::SetAccessibilityFeatures(int32_t flags) {
   runtime_controller_->SetAccessibilityFeatures(flags);
 }
 
-void Engine::StopAnimator() {
-  animator_->Stop();
-}
-
-void Engine::StartAnimatorIfPossible() {
-  if (activity_running_ && have_surface_) {
-    animator_->Start();
-  }
-}
-
 std::string Engine::DefaultRouteName() {
   if (!initial_route_.empty()) {
     return initial_route_;
@@ -472,7 +430,6 @@ std::string Engine::DefaultRouteName() {
 }
 
 void Engine::ScheduleFrame(bool regenerate_layer_tree) {
-  StartAnimatorIfPossible();
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
@@ -598,6 +555,10 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
     runtime_controller_->LoadDartDeferredLibraryError(loading_unit_id,
                                                       error_message, transient);
   }
+}
+
+const VsyncWaiter& Engine::GetVsyncWaiter() const {
+  return animator_->GetVsyncWaiter();
 }
 
 }  // namespace flutter

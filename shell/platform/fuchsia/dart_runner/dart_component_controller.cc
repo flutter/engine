@@ -34,6 +34,7 @@
 #include "third_party/tonic/dart_microtask_queue.h"
 #include "third_party/tonic/dart_state.h"
 #include "third_party/tonic/logging/dart_error.h"
+#include "third_party/tonic/logging/dart_invoke.h"
 
 #include "builtin_libraries.h"
 #include "logging.h"
@@ -400,8 +401,13 @@ bool DartComponentController::Main() {
   Dart_EnterIsolate(isolate_);
   Dart_EnterScope();
 
-  Dart_Handle dart_arguments =
-      Dart_NewListOf(Dart_CoreType_String, arguments.size());
+  Dart_Handle corelib = Dart_LookupLibrary(ToDart("dart:core"));
+  Dart_Handle string_type =
+      Dart_GetNonNullableType(corelib, ToDart("String"), 0, NULL);
+
+  Dart_Handle dart_arguments = Dart_NewListOfTypeFilled(
+      string_type, Dart_EmptyString(), arguments.size());
+
   if (Dart_IsError(dart_arguments)) {
     FX_LOGF(ERROR, LOG_TAG, "Failed to allocate Dart arguments list: %s",
             Dart_GetError(dart_arguments));
@@ -413,12 +419,28 @@ bool DartComponentController::Main() {
         Dart_ListSetAt(dart_arguments, i, ToDart(arguments.at(i))));
   }
 
-  Dart_Handle argv[] = {
-      dart_arguments,
-  };
+  Dart_Handle user_main = Dart_GetField(Dart_RootLibrary(), ToDart("main"));
 
-  Dart_Handle main_result = Dart_Invoke(Dart_RootLibrary(), ToDart("main"),
-                                        dart_utils::ArraySize(argv), argv);
+  if (Dart_IsError(user_main)) {
+    FX_LOGF(ERROR, LOG_TAG,
+            "Failed to locate user_main in the root library: %s",
+            Dart_GetError(user_main));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle fuchsia_lib = Dart_LookupLibrary(tonic::ToDart("dart:fuchsia"));
+
+  if (Dart_IsError(fuchsia_lib)) {
+    FX_LOGF(ERROR, LOG_TAG, "Failed to locate dart:fuchsia: %s",
+            Dart_GetError(fuchsia_lib));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle main_result = tonic::DartInvokeField(
+      fuchsia_lib, "_runUserMainForDartRunner", {user_main, dart_arguments});
+
   if (Dart_IsError(main_result)) {
     auto dart_state = tonic::DartState::Current();
     if (!dart_state->has_set_return_code()) {

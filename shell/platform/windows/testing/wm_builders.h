@@ -16,14 +16,13 @@ constexpr LRESULT kWmResultZero = 0;
 constexpr LRESULT kWmResultDefault = 0xDEADC0DE;
 constexpr LRESULT kWmResultDontCheck = 0xFFFF1234;
 
-// A struc to hold simulated events that will be delivered after the framework
+// A struct to hold simulated events that will be delivered after the framework
 // response is handled.
 struct Win32Message {
   UINT message;
   WPARAM wParam;
   LPARAM lParam;
   LRESULT expected_result;
-  HWND hWnd;
 };
 
 typedef enum WmFieldExtended {
@@ -64,12 +63,8 @@ typedef struct WmKeyDownInfo {
 
   uint16_t repeat_count = 1;
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
-                     HWND hWnd = NULL);
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck);
 } WmKeyDownInfo;
-
-// Win32Message BuildMessage(WmKeyDownInfo info, LRESULT expected_result =
-// kWmResultDontCheck, HWND hWnd = NULL);
 
 // WM_KEYUP  messages.
 //
@@ -89,8 +84,12 @@ typedef struct WmKeyUpInfo {
 
   // uint16_t repeat_count;  // Always 1.
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
-                     HWND hWnd = NULL);
+  // Set this flag to enforce prev_state to be 0.
+  //
+  // This occurs in rare cases when the message is synthesized.
+  bool overwrite_prev_state_0;
+
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck);
 } WmKeyUpInfo;
 
 // WM_CHAR  messages.
@@ -111,9 +110,34 @@ typedef struct WmCharInfo {
 
   uint16_t repeat_count = 1;
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
-                     HWND hWnd = NULL);
+  // The 25th bit of the LParam.
+  //
+  // Some messages are sent with bit25 set. Its meaning is yet unknown.
+  bool bit25 = 0;
+
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck);
 } WmCharInfo;
+
+// WM_SYSKEYDOWN  messages.
+//
+// See https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-syskeydown.
+typedef struct WmSysKeyDownInfo {
+  uint32_t key;
+
+  uint8_t scan_code;
+
+  WmFieldExtended extended;
+
+  WmFieldPrevState prev_state;
+
+  // WmFieldTransitionState transition; // Always 0.
+
+  WmFieldContext context;
+
+  uint16_t repeat_count = 1;
+
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck);
+} WmSysKeyDownInfo;
 
 // WM_SYSKEYUP  messages.
 //
@@ -133,8 +157,7 @@ typedef struct WmSysKeyUpInfo {
 
   // uint16_t repeat_count;  // Always 1.
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
-                     HWND hWnd = NULL);
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck);
 } WmSysKeyUpInfo;
 
 // WM_DEADCHAR messages.
@@ -155,8 +178,7 @@ typedef struct WmDeadCharInfo {
 
   uint16_t repeat_count = 1;
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
-                     HWND hWnd = NULL);
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck);
 } WmDeadCharInfo;
 
 }  // namespace testing

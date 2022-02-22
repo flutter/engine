@@ -7,7 +7,6 @@ import 'dart:io' as io;
 
 import 'package:path/path.dart' as pathlib;
 import 'package:pool/pool.dart';
-import 'package:web_test_utils/goldens.dart';
 
 import '../environment.dart';
 import '../exceptions.dart';
@@ -20,17 +19,12 @@ import '../utils.dart';
 ///
 ///  * canvaskit/   - CanvasKit artifacts
 ///  * assets/      - test fonts
-///  * goldens/     - the goldens fetched from flutter/goldens
 ///  * host/        - compiled test host page and static artifacts
 ///  * test/        - compiled test code
 ///  * test_images/ - test images copied from Skis sources.
 class CompileTestsStep implements PipelineStep {
-  CompileTestsStep({
-    this.skipGoldensRepoFetch = false,
-    this.testFiles,
-  });
+  CompileTestsStep({this.testFiles});
 
-  final bool skipGoldensRepoFetch;
   final List<FilePath>? testFiles;
 
   @override
@@ -47,9 +41,6 @@ class CompileTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await environment.webUiBuildDir.create();
-    if (!skipGoldensRepoFetch) {
-      await fetchGoldensRepo();
-    }
     await copyCanvasKitFiles();
     await buildHostPage();
     await copyTestFonts();
@@ -258,14 +249,6 @@ Future<bool> compileUnitTest(FilePath input, { required bool forCanvasKit }) asy
     '-DFLUTTER_WEB_AUTO_DETECT=false',
     '-DFLUTTER_WEB_USE_SKIA=$forCanvasKit',
 
-    // Enable the image decoder experiment in tests so we can test the new
-    // functionality. WASM decoders are still tested by forcing the value of
-    // `browserSupportsImageDecoder` to false in the test. See also:
-    //
-    // lib/web_ui/test/canvaskit/image_golden_test.dart
-    // TODO(yjbanov): https://github.com/flutter/flutter/issues/95277
-    '-DEXPERIMENTAL_IMAGE_DECODER=true',
-
     '-O2',
     '-o',
     targetFileName, // target path.
@@ -364,12 +347,4 @@ Future<void> buildHostPage() async {
 
   // Record the timestamp to avoid rebuilding unless the file changes.
   timestampFile.writeAsStringSync(timestamp);
-}
-
-Future<void> fetchGoldensRepo() async {
-  print('INFO: Fetching goldens repo');
-  final GoldensRepoFetcher goldensRepoFetcher = GoldensRepoFetcher(
-      environment.webUiGoldensRepositoryDirectory,
-      pathlib.join(environment.webUiDevDir.path, 'goldens_lock.yaml'));
-  await goldensRepoFetcher.fetch();
 }

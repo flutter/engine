@@ -341,7 +341,7 @@ class PlatformDispatcher {
   //  * pointer_data.cc
   //  * pointer.dart
   //  * AndroidTouchProcessor.java
-  static const int _kPointerDataFieldCount = 29;
+  static const int _kPointerDataFieldCount = 35;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
@@ -381,6 +381,12 @@ class PlatformDispatcher {
         platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
         scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        scale: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        rotation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       ));
       assert(offset == (i + 1) * _kPointerDataFieldCount);
     }
@@ -826,6 +832,16 @@ class PlatformDispatcher {
     _onTextScaleFactorChangedZone = Zone.current;
   }
 
+  /// Whether briefly displaying the characters as you type in obscured text
+  /// fields is enabled in system settings.
+  ///
+  /// See also:
+  ///
+  ///  * [EditableText.obscureText], which when set to true hides the text in
+  ///    the text field.
+  bool get brieflyShowPassword => _brieflyShowPassword;
+  bool _brieflyShowPassword = true;
+
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to
   /// [Brightness.light].
@@ -857,6 +873,11 @@ class PlatformDispatcher {
 
     final double textScaleFactor = (data['textScaleFactor'] as num).toDouble();
     final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat'] as bool;
+    // This field is optional.
+    final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
+    if (brieflyShowPassword != null) {
+      _brieflyShowPassword = brieflyShowPassword;
+    }
     final Brightness platformBrightness =
     data['platformBrightness'] as String == 'dark' ? Brightness.dark : Brightness.light;
     final PlatformConfiguration previousConfiguration = configuration;

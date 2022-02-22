@@ -16,11 +16,11 @@
 
 namespace flutter {
 
-PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+PlatformViewIOS::AccessibilityBridgeManager::AccessibilityBridgeManager(
     const std::function<void(bool)>& set_semantics_enabled)
-    : AccessibilityBridgePtr(set_semantics_enabled, nullptr) {}
+    : AccessibilityBridgeManager(set_semantics_enabled, nullptr) {}
 
-PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+PlatformViewIOS::AccessibilityBridgeManager::AccessibilityBridgeManager(
     const std::function<void(bool)>& set_semantics_enabled,
     AccessibilityBridge* bridge)
     : accessibility_bridge_(bridge), set_semantics_enabled_(set_semantics_enabled) {
@@ -29,20 +29,14 @@ PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
   }
 }
 
-PlatformViewIOS::AccessibilityBridgePtr::~AccessibilityBridgePtr() {
-  if (accessibility_bridge_) {
-    set_semantics_enabled_(false);
-  }
+void PlatformViewIOS::AccessibilityBridgeManager::Set(std::unique_ptr<AccessibilityBridge> bridge) {
+  accessibility_bridge_ = std::move(bridge);
+  set_semantics_enabled_(true);
 }
 
-void PlatformViewIOS::AccessibilityBridgePtr::reset(AccessibilityBridge* bridge) {
-  if (accessibility_bridge_) {
-    set_semantics_enabled_(false);
-  }
-  accessibility_bridge_.reset(bridge);
-  if (accessibility_bridge_) {
-    set_semantics_enabled_(true);
-  }
+void PlatformViewIOS::AccessibilityBridgeManager::Clear() {
+  set_semantics_enabled_(false);
+  accessibility_bridge_.reset();
 }
 
 PlatformViewIOS::PlatformViewIOS(
@@ -53,7 +47,8 @@ PlatformViewIOS::PlatformViewIOS(
     : PlatformView(delegate, std::move(task_runners)),
       ios_context_(context),
       platform_views_controller_(platform_views_controller),
-      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }) {}
+      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }),
+      platform_message_handler_(new PlatformMessageHandlerIos(task_runners)) {}
 
 PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
@@ -67,13 +62,9 @@ PlatformViewIOS::PlatformViewIOS(
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
-PlatformMessageRouter& PlatformViewIOS::GetPlatformMessageRouter() {
-  return platform_message_router_;
-}
-
 // |PlatformView|
 void PlatformViewIOS::HandlePlatformMessage(std::unique_ptr<flutter::PlatformMessage> message) {
-  platform_message_router_.HandlePlatformMessage(std::move(message));
+  platform_message_handler_->HandlePlatformMessage(std::move(message));
 }
 
 fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
@@ -86,7 +77,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
-    accessibility_bridge_.reset();
+    accessibility_bridge_.Clear();
   }
   owner_controller_ = owner_controller;
 
@@ -98,7 +89,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
                                                           queue:[NSOperationQueue mainQueue]
                                                      usingBlock:^(NSNotification* note) {
                                                        // Implicit copy of 'this' is fine.
-                                                       accessibility_bridge_.reset();
+                                                       accessibility_bridge_.Clear();
                                                        owner_controller_.reset();
                                                      }] retain]);
 
@@ -122,7 +113,7 @@ void PlatformViewIOS::attachView() {
   FML_DCHECK(ios_surface_ != nullptr);
 
   if (accessibility_bridge_) {
-    accessibility_bridge_.reset(new AccessibilityBridge(
+    accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
         owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   }
 }
@@ -169,10 +160,10 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_.reset(new AccessibilityBridge(
+    accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
         owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
-    accessibility_bridge_.reset();
+    accessibility_bridge_.Clear();
   } else {
     PlatformView::SetSemanticsEnabled(enabled);
   }
@@ -188,7 +179,7 @@ void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
                                       flutter::CustomAccessibilityActionUpdates actions) {
   FML_DCHECK(owner_controller_);
   if (accessibility_bridge_) {
-    accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
+    accessibility_bridge_.get()->UpdateSemantics(std::move(update), std::move(actions));
     [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
                                                         object:owner_controller_.get()];
   }
@@ -201,7 +192,7 @@ std::unique_ptr<VsyncWaiter> PlatformViewIOS::CreateVSyncWaiter() {
 
 void PlatformViewIOS::OnPreEngineRestart() const {
   if (accessibility_bridge_) {
-    accessibility_bridge_->clearState();
+    accessibility_bridge_.get()->clearState();
   }
   if (!owner_controller_) {
     return;

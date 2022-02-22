@@ -1,4 +1,4 @@
-Signature: 3c6fae7f2cca0297d09ee887ea61c56b
+Signature: a0d430b6532eea48e2dec8cada4bb5c9
 
 UNUSED LICENSES:
 
@@ -151,38 +151,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 ====================================================================================================
-
-====================================================================================================
-ORIGIN: ../../../third_party/pkg/when/LICENSE
-TYPE: LicenseType.bsd
-----------------------------------------------------------------------------------------------------
-Copyright 2015, the Dart project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 USED LICENSES:
 
@@ -259,8 +227,8 @@ LIBRARY: fuchsia-vulkan
 LIBRARY: khronos
 LIBRARY: libwebp
 LIBRARY: pkg
-LIBRARY: vulkan
 LIBRARY: vulkan-deps
+LIBRARY: vulkan-headers
 LIBRARY: wuffs
 ORIGIN: ../../../flutter/third_party/txt/LICENSE
 TYPE: LicenseType.apache
@@ -1203,6 +1171,13 @@ FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xcha
 FILE: ../../../third_party/expat/expat/fuzz/xml_parse_fuzzer.c
 FILE: ../../../third_party/expat/expat/fuzz/xml_parsebuffer_fuzzer.c
 FILE: ../../../third_party/fuchsia-vulkan/cmake/cmake_uninstall.cmake.in
+FILE: ../../../third_party/fuchsia-vulkan/include/vk_video/vulkan_video_codec_h264std.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vk_video/vulkan_video_codec_h264std_decode.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vk_video/vulkan_video_codec_h264std_encode.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vk_video/vulkan_video_codec_h265std.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vk_video/vulkan_video_codec_h265std_decode.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vk_video/vulkan_video_codec_h265std_encode.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vk_video/vulkan_video_codecs_common.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vk_icd.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vk_layer.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vk_platform.h
@@ -1213,12 +1188,17 @@ FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_android.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_beta.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_core.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_directfb.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_enums.hpp
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_fuchsia.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_funcs.hpp
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_ggp.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_handles.hpp
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_ios.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_macos.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_metal.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_raii.hpp
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_screen.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_structs.hpp
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_vi.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_wayland.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_win32.h
@@ -1278,19 +1258,28 @@ FILE: ../../../third_party/pkg/quiver/lib/src/time/duration_unit_constants.dart
 FILE: ../../../third_party/pkg/quiver/lib/src/time/util.dart
 FILE: ../../../third_party/pkg/quiver/lib/strings.dart
 FILE: ../../../third_party/pkg/quiver/lib/time.dart
-FILE: ../../../third_party/vulkan/include/vulkan/vk_platform.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_android.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_core.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_fuchsia.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_ios.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_macos.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_vi.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_wayland.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_win32.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xcb.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xlib.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xlib_xrandr.h
+FILE: ../../../third_party/vulkan-headers/cmake/cmake_uninstall.cmake.in
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_icd.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_layer.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_platform.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_sdk_platform.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan.hpp
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_android.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_core.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_fuchsia.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_ggp.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_ios.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_macos.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_metal.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_vi.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_wayland.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_win32.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_xcb.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_xlib.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_xlib_xrandr.h
+FILE: ../../../third_party/vulkan-headers/registry/validusage.json
+FILE: ../../../third_party/vulkan-headers/registry/vk.xml
 FILE: ../../../third_party/wuffs/release/c/wuffs-v0.2.c
 FILE: ../../../third_party/wuffs/release/c/wuffs-v0.3.c
 ----------------------------------------------------------------------------------------------------
@@ -9225,6 +9214,8 @@ FILE: ../../../third_party/dart/runtime/.clang-tidy
 FILE: ../../../third_party/dart/runtime/CPPLINT.cfg
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_arm.S
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_arm64.S
+FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_riscv32.S
+FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_riscv64.S
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_x64.S
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_x64_win.S
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_x86.S
@@ -9273,20 +9264,38 @@ FILE: ../../../third_party/dart/runtime/tools/wiki/styles/style.scss
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/auto-refresh.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/favicon.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/page.html
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_android.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_ios.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_macos.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm_android.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm_ios.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/ia32_android.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/ia32_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/ia32_win.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_ios.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_macos.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/riscv64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/riscv64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm64_linux.expect
@@ -9297,6 +9306,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm_l
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/x64_macos.expect
@@ -9311,6 +9322,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/x64_macos.expect
@@ -9325,6 +9338,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128byte
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_macos.expect
@@ -9339,6 +9354,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytes
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_macos.expect
@@ -9353,6 +9370,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytes
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/x64_macos.expect
@@ -9379,6 +9398,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_macos.expect
@@ -9393,6 +9414,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesP
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_macos.expect
@@ -9407,6 +9430,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_macos.expect
@@ -9421,6 +9446,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_macos.expect
@@ -9435,6 +9462,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLa
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_macos.expect
@@ -9449,6 +9478,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floata
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_macos.expect
@@ -9463,6 +9494,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_macos.expect
@@ -9477,6 +9510,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8ar
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_macos.expect
@@ -9491,6 +9526,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x1
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/x64_macos.expect
@@ -9505,6 +9542,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesH
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/x64_macos.expect
@@ -9519,6 +9558,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPa
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/x64_macos.expect
@@ -9804,6 +9845,8 @@ FILE: ../../../third_party/dart/benchmarks/FfiAsTypedList/dart/FfiAsTypedList.da
 FILE: ../../../third_party/dart/benchmarks/FfiAsTypedList/dart2/FfiAsTypedList.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart/IsolateFibonacci.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart2/IsolateFibonacci.dart
+FILE: ../../../third_party/dart/benchmarks/MapCopy/dart/MapCopy.dart
+FILE: ../../../third_party/dart/benchmarks/MapCopy/dart2/MapCopy.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/MapLookup.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/MapLookup.dart
@@ -9836,18 +9879,34 @@ FILE: ../../../third_party/dart/runtime/bin/virtual_memory.h
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_posix.cc
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_win.cc
+FILE: ../../../third_party/dart/runtime/vm/code_patcher_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/code_patcher_riscv_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_compiler_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/relocation_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/cpu_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/cpu_riscv.h
+FILE: ../../../third_party/dart/runtime/vm/debugger_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/safepoint_test.cc
+FILE: ../../../third_party/dart/runtime/vm/instructions_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/instructions_riscv.h
+FILE: ../../../third_party/dart/runtime/vm/instructions_riscv_test.cc
 FILE: ../../../third_party/dart/runtime/vm/message_snapshot.cc
 FILE: ../../../third_party/dart/runtime/vm/message_snapshot.h
 FILE: ../../../third_party/dart/runtime/vm/object_graph_copy.cc
 FILE: ../../../third_party/dart/runtime/vm/object_graph_copy.h
+FILE: ../../../third_party/dart/runtime/vm/object_riscv_test.cc
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.cc
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.h
+FILE: ../../../third_party/dart/runtime/vm/runtime_entry_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/stack_frame_riscv.h
+FILE: ../../../third_party/dart/runtime/vm/stub_code_riscv_test.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_android_arm.S
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.h
@@ -9858,6 +9917,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/late_helper.dar
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/core/enum.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/abi.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/abi_specific.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/allocation.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/union.dart
 ----------------------------------------------------------------------------------------------------
@@ -10037,6 +10097,72 @@ FILE: ../../../third_party/dart/sdk/lib/internal/lowering.dart
 FILE: ../../../third_party/dart/sdk/lib/io/network_policy.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google LLC nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
+ORIGIN: ../../../third_party/dart/benchmarks/Iterators/dart/Iterators.dart + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/benchmarks/Iterators/dart/Iterators.dart
+FILE: ../../../third_party/dart/benchmarks/Iterators/dart/data.dart
+FILE: ../../../third_party/dart/benchmarks/Iterators/dart2/Iterators.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/bool.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/date_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/developer.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/expando_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/function.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/hash_factories.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/identical_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/immutable_map.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/internal_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/list.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/math_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/object_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/print_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/timer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/type.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/c_type.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/native_finalizer.dart
+FILE: ../../../third_party/dart/sdk/lib/wasm/wasm_types.dart
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2022, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -10299,7 +10425,6 @@ FILE: ../../../third_party/dart/runtime/lib/isolate.cc
 FILE: ../../../third_party/dart/runtime/lib/mirrors.cc
 FILE: ../../../third_party/dart/runtime/lib/regexp.cc
 FILE: ../../../third_party/dart/runtime/lib/stopwatch.cc
-FILE: ../../../third_party/dart/runtime/lib/weak_property.cc
 FILE: ../../../third_party/dart/runtime/platform/assert.cc
 FILE: ../../../third_party/dart/runtime/platform/assert.h
 FILE: ../../../third_party/dart/runtime/platform/floating_point.h
@@ -10586,7 +10711,6 @@ FILE: ../../../third_party/dart/sdk/lib/core/core.dart
 FILE: ../../../third_party/dart/sdk/lib/core/double.dart
 FILE: ../../../third_party/dart/sdk/lib/core/errors.dart
 FILE: ../../../third_party/dart/sdk/lib/core/exceptions.dart
-FILE: ../../../third_party/dart/sdk/lib/core/expando.dart
 FILE: ../../../third_party/dart/sdk/lib/core/identical.dart
 FILE: ../../../third_party/dart/sdk/lib/core/int.dart
 FILE: ../../../third_party/dart/sdk/lib/core/invocation.dart
@@ -10599,6 +10723,7 @@ FILE: ../../../third_party/dart/sdk/lib/core/regexp.dart
 FILE: ../../../third_party/dart/sdk/lib/core/string.dart
 FILE: ../../../third_party/dart/sdk/lib/core/type.dart
 FILE: ../../../third_party/dart/sdk/lib/core/uri.dart
+FILE: ../../../third_party/dart/sdk/lib/core/weak.dart
 FILE: ../../../third_party/dart/sdk/lib/html/dart2js/html_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/html/dartium/nativewrappers.dart
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions.dart
@@ -10749,6 +10874,10 @@ FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/unlin
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/vm.dart
 FILE: ../../../third_party/dart/runtime/platform/allocation.h
 FILE: ../../../third_party/dart/runtime/platform/growable_array.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_riscv.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_riscv_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/locations_helpers.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/locations_helpers_arm.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/locations_helpers_test.cc
@@ -10758,6 +10887,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowg
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/prologue_builder.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/prologue_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/jit/jit_call_specializer.h
+FILE: ../../../third_party/dart/runtime/vm/constants_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_riscv.h
 FILE: ../../../third_party/dart/runtime/vm/constants_x86.h
 FILE: ../../../third_party/dart/runtime/vm/debugger_api_impl_test.h
 FILE: ../../../third_party/dart/runtime/vm/dwarf.cc
@@ -10781,6 +10912,8 @@ FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_test.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_unsupported.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/mixin_test.cc
+FILE: ../../../third_party/dart/runtime/vm/simulator_riscv.cc
+FILE: ../../../third_party/dart/runtime/vm/simulator_riscv.h
 FILE: ../../../third_party/dart/runtime/vm/stack_trace.cc
 FILE: ../../../third_party/dart/runtime/vm/stack_trace.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_android.cc
@@ -14510,7 +14643,7 @@ THE SOFTWARE.
 
 ====================================================================================================
 LIBRARY: glfw
-ORIGIN: ../../../third_party/glfw/COPYING.txt
+ORIGIN: ../../../third_party/glfw/LICENSE.md
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/.appveyor.yml
 FILE: ../../../third_party/glfw/CMake/MacOSXBundleInfo.plist.in
@@ -14550,10 +14683,10 @@ FILE: ../../../third_party/glfw/src/input.c
 FILE: ../../../third_party/glfw/src/internal.h
 FILE: ../../../third_party/glfw/src/linux_joystick.c
 FILE: ../../../third_party/glfw/src/monitor.c
+FILE: ../../../third_party/glfw/src/posix_thread.c
+FILE: ../../../third_party/glfw/src/posix_thread.h
 FILE: ../../../third_party/glfw/src/posix_time.c
 FILE: ../../../third_party/glfw/src/posix_time.h
-FILE: ../../../third_party/glfw/src/posix_tls.c
-FILE: ../../../third_party/glfw/src/posix_tls.h
 FILE: ../../../third_party/glfw/src/vulkan.c
 FILE: ../../../third_party/glfw/src/wgl_context.c
 FILE: ../../../third_party/glfw/src/wgl_context.h
@@ -14561,8 +14694,8 @@ FILE: ../../../third_party/glfw/src/win32_init.c
 FILE: ../../../third_party/glfw/src/win32_joystick.c
 FILE: ../../../third_party/glfw/src/win32_monitor.c
 FILE: ../../../third_party/glfw/src/win32_platform.h
+FILE: ../../../third_party/glfw/src/win32_thread.c
 FILE: ../../../third_party/glfw/src/win32_time.c
-FILE: ../../../third_party/glfw/src/win32_tls.c
 FILE: ../../../third_party/glfw/src/win32_window.c
 FILE: ../../../third_party/glfw/src/x11_init.c
 FILE: ../../../third_party/glfw/src/x11_monitor.c
@@ -14571,7 +14704,7 @@ FILE: ../../../third_party/glfw/src/x11_window.c
 FILE: ../../../third_party/glfw/src/xkb_unicode.c
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2002-2006 Marcus Geelnard
-Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14604,7 +14737,7 @@ FILE: ../../../third_party/glfw/src/cocoa_window.m
 FILE: ../../../third_party/glfw/src/nsgl_context.h
 FILE: ../../../third_party/glfw/src/nsgl_context.m
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2009-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2009-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14631,9 +14764,13 @@ LIBRARY: glfw
 ORIGIN: ../../../third_party/glfw/src/cocoa_joystick.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/cocoa_joystick.h
+FILE: ../../../third_party/glfw/src/mappings.h
+FILE: ../../../third_party/glfw/src/mappings.h.in
+FILE: ../../../third_party/glfw/src/null_joystick.c
+FILE: ../../../third_party/glfw/src/null_joystick.h
 FILE: ../../../third_party/glfw/src/win32_joystick.h
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14661,7 +14798,7 @@ ORIGIN: ../../../third_party/glfw/src/cocoa_joystick.m
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/cocoa_joystick.m
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2009-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2009-2016 Camilla Löwy <elmindreda@glfw.org>
 Copyright (c) 2012 Torsten Walluhn <tw@mad-cad.net>
 
 This software is provided 'as-is', without any express or implied
@@ -14690,7 +14827,7 @@ ORIGIN: ../../../third_party/glfw/src/glfw_config.h.in
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/glfw_config.h.in
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2010-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2010-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14747,14 +14884,17 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: glfw
-ORIGIN: ../../../third_party/glfw/src/mir_init.c
+ORIGIN: ../../../third_party/glfw/src/null_init.c
 TYPE: LicenseType.zlib
-FILE: ../../../third_party/glfw/src/mir_init.c
-FILE: ../../../third_party/glfw/src/mir_monitor.c
-FILE: ../../../third_party/glfw/src/mir_platform.h
-FILE: ../../../third_party/glfw/src/mir_window.c
+FILE: ../../../third_party/glfw/src/null_init.c
+FILE: ../../../third_party/glfw/src/null_monitor.c
+FILE: ../../../third_party/glfw/src/null_platform.h
+FILE: ../../../third_party/glfw/src/null_window.c
+FILE: ../../../third_party/glfw/src/osmesa_context.c
+FILE: ../../../third_party/glfw/src/osmesa_context.h
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2014-2015 Brandon Schaefer <brandon.schaefer@canonical.com>
+Copyright (c) 2016 Google Inc.
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14783,7 +14923,7 @@ TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/window.c
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2002-2006 Marcus Geelnard
-Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 Copyright (c) 2012 Torsten Walluhn <tw@mad-cad.net>
 
 This software is provided 'as-is', without any express or implied
@@ -14833,8 +14973,6 @@ FILE: ../../../third_party/harfbuzz/docs/usermanual-utilities.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-what-is-harfbuzz.xml
 FILE: ../../../third_party/harfbuzz/docs/version.xml.in
 FILE: ../../../third_party/harfbuzz/harfbuzz.doap
-FILE: ../../../third_party/harfbuzz/meson-cc-tests/intel-atomic-primitives-test.c
-FILE: ../../../third_party/harfbuzz/meson-cc-tests/solaris-atomic-operations.c
 FILE: ../../../third_party/harfbuzz/meson.build
 FILE: ../../../third_party/harfbuzz/perf/fonts/Amiri-Regular.ttf
 FILE: ../../../third_party/harfbuzz/perf/fonts/NotoNastaliqUrdu-Regular.ttf
@@ -14855,7 +14993,7 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-joining-list.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-tag-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ucd-table.hh
@@ -14863,17 +15001,12 @@ FILE: ../../../third_party/harfbuzz/src/hb-unicode-emoji-table.hh
 FILE: ../../../third_party/harfbuzz/src/meson.build
 FILE: ../../../third_party/harfbuzz/src/update-unicode-tables.make
 FILE: ../../../third_party/harfbuzz/subprojects/cairo.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/expat.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/fontconfig.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/freetype2.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/glib.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/google-benchmark.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/libffi.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/libpng.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/pixman.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/proxy-libintl.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/packagefiles/ragel/meson.build
+FILE: ../../../third_party/harfbuzz/subprojects/ragel.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/ttf-parser.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/zlib.wrap
 ----------------------------------------------------------------------------------------------------
 HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
@@ -14888,72 +15021,12 @@ Copyright © 2008,2010  Nokia Corporation and/or its subsidiary(-ies)
 Copyright © 2009  Keith Stribley
 Copyright © 2009  Martin Hosken and SIL International
 Copyright © 2007  Chris Wilson
-Copyright © 2006  Behdad Esfahbod
+Copyright © 2005,2006,2020,2021  Behdad Esfahbod
 Copyright © 2005  David Turner
 Copyright © 2004,2007,2008,2009,2010  Red Hat, Inc.
 Copyright © 1998-2004  David Turner and Werner Lemberg
 
 For full copyright notices consult the individual files in the package.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/dump-indic-data.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/dump-indic-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-khmer-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-myanmar-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-use-data.cc
-FILE: ../../../third_party/harfbuzz/src/hb-aat-map.hh
-FILE: ../../../third_party/harfbuzz/src/hb-array.hh
-FILE: ../../../third_party/harfbuzz/src/hb-map.cc
-FILE: ../../../third_party/harfbuzz/src/hb-map.h
-FILE: ../../../third_party/harfbuzz/src/hb-map.hh
-FILE: ../../../third_party/harfbuzz/src/hb-meta.hh
-FILE: ../../../third_party/harfbuzz/src/hb-null.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-deprecated.h
-FILE: ../../../third_party/harfbuzz/src/hb-ot-face.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language-static.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.hh
-FILE: ../../../third_party/harfbuzz/src/hb-static.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-input.hh
-FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
-FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset.h
-FILE: ../../../third_party/harfbuzz/src/hb-subset.hh
-FILE: ../../../third_party/harfbuzz/src/test-iter.cc
-FILE: ../../../third_party/harfbuzz/src/test-ot-name.cc
-FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2018  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
 
 Permission is hereby granted, without written agreement and without
 license or royalty fees, to use, copy, modify, and distribute this
@@ -15222,6 +15295,62 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-map.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-map.hh
+FILE: ../../../third_party/harfbuzz/src/hb-array.hh
+FILE: ../../../third_party/harfbuzz/src/hb-map.cc
+FILE: ../../../third_party/harfbuzz/src/hb-map.h
+FILE: ../../../third_party/harfbuzz/src/hb-map.hh
+FILE: ../../../third_party/harfbuzz/src/hb-meta.hh
+FILE: ../../../third_party/harfbuzz/src/hb-null.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-deprecated.h
+FILE: ../../../third_party/harfbuzz/src/hb-ot-face.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language-static.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.hh
+FILE: ../../../third_party/harfbuzz/src/hb-static.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset.h
+FILE: ../../../third_party/harfbuzz/src/hb-subset.hh
+FILE: ../../../third_party/harfbuzz/src/test-iter.cc
+FILE: ../../../third_party/harfbuzz/src/test-ot-name.cc
+FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-algs.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-algs.hh
@@ -15290,6 +15419,39 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-bimap.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2019 Adobe Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-bit-page.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-bit-page.hh
+FILE: ../../../third_party/harfbuzz/src/hb-bit-set-invertible.hh
+FILE: ../../../third_party/harfbuzz/src/hb-bit-set.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2012,2017  Google, Inc.
+Copyright © 2021 Behdad Esfahbod
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -15687,7 +15849,6 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-config.hh
 FILE: ../../../third_party/harfbuzz/src/hb-pool.hh
 FILE: ../../../third_party/harfbuzz/src/test-algs.cc
-FILE: ../../../third_party/harfbuzz/src/test-meta.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2019  Facebook, Inc.
 
@@ -16209,6 +16370,37 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2011,2012,2013  Google, Inc.
+Copyright © 2021  Khaled Hosny
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-open-file.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-open-file.hh
@@ -16364,6 +16556,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colrv1-closure.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Ebrahim Byagowi
@@ -17010,6 +17203,36 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-post-table-v2subset.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-post-table-v2subset.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-common.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.cc
@@ -17048,7 +17271,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2015  Mozilla Foundation.
 Copyright © 2015  Google, Inc.
@@ -17082,6 +17304,36 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.cc
 FILE: ../../../third_party/harfbuzz/src/hb-uniscribe.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011,2012,2013  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Behdad Esfahbod.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17253,13 +17505,15 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-priority-queue.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
+FILE: ../../../third_party/harfbuzz/src/hb-priority-queue.hh
+FILE: ../../../third_party/harfbuzz/src/hb-repacker.hh
+FILE: ../../../third_party/harfbuzz/src/test-array.cc
+FILE: ../../../third_party/harfbuzz/src/test-priority-queue.cc
+FILE: ../../../third_party/harfbuzz/src/test-repacker.cc
 ----------------------------------------------------------------------------------------------------
-Copyright © 2007,2008,2009,2010  Red Hat, Inc.
-Copyright © 2012,2018  Google, Inc.
-Copyright © 2019  Facebook, Inc.
+Copyright © 2020  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17284,11 +17538,13 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-set.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-set.hh
+FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
 ----------------------------------------------------------------------------------------------------
-Copyright © 2012,2017  Google, Inc.
+Copyright © 2007,2008,2009,2010  Red Hat, Inc.
+Copyright © 2012,2018  Google, Inc.
+Copyright © 2019  Facebook, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17515,35 +17771,6 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/test-array.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/test-array.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2020  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
@@ -17603,6 +17830,37 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/test-map.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/test-map.cc
+FILE: ../../../third_party/harfbuzz/src/test-set.cc
+FILE: ../../../third_party/harfbuzz/src/test-vector.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Behdad Esfahbod
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: icu
 ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
@@ -17625,8 +17883,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17639,10 +17895,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -17654,6 +17908,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -17757,8 +18012,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17771,10 +18024,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -17786,6 +18037,146 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
+FILE: ../../../third_party/icu/source/data/in/unames.icu
+FILE: ../../../third_party/icu/source/data/in/uprops.icu
+FILE: ../../../third_party/icu/source/data/in/uts46.nrm
+FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/gb18030.ucm
+FILE: ../../../third_party/icu/source/data/mappings/ibm866-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-10-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-13-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-14-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-15-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-16-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-2-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-3-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-4-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-6-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-7-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-8-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-r-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-u-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/macintosh-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/shift_jis-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1250-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1251-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1252-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1253-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1254-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1255-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1256-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1257-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
+FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
+FILE: ../../../third_party/icu/source/tools/tzcode/asctime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/ialloc.c
+FILE: ../../../third_party/icu/source/tools/tzcode/localtime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/private.h
+FILE: ../../../third_party/icu/source/tools/tzcode/scheck.c
+FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
+FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
+FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
+FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2016 and later: Unicode, Inc. and others.
+License & terms of use: http://www.unicode.org/copyright.html
+Copyright (c) 2015 International Business Machines Corporation
+and others. All Rights Reserved.
+
+Project: https://github.com/rober42539/lao-dictionary
+Dictionary: https://github.com/rober42539/lao-dictionary/laodict.txt
+License: https://github.com/rober42539/lao-dictionary/LICENSE.txt
+         (copied below)
+
+	This file is derived from the above dictionary version of Nov 22, 2020
+
+ Copyright (C) 2013 Brian Eugene Wilson, Robert Martin Campbell.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer. Redistributions in binary
+ form must reproduce the above copyright notice, this list of conditions and
+ the following disclaimer in the documentation and/or other materials
+ provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: icu
+ORIGIN: ../../../third_party/icu/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/icu/DIR_METADATA
+FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
+FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/common/icudtb.dat
+FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
+FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
+FILE: ../../../third_party/icu/fuzzers/icu_appendable_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
+FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/ardatepattern.patch
+FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/gb_table.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
+FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
+FILE: ../../../third_party/icu/patches/locale1.patch
+FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
+FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/unused-var.patch
+FILE: ../../../third_party/icu/patches/wordbrk.patch
+FILE: ../../../third_party/icu/patches/wpo.patch
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
+FILE: ../../../third_party/icu/source/data/in/nfc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
+FILE: ../../../third_party/icu/source/data/in/pnames.icu
+FILE: ../../../third_party/icu/source/data/in/ubidi.icu
+FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -17894,8 +18285,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17908,10 +18297,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -17923,6 +18310,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18030,8 +18418,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18044,10 +18430,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18059,148 +18443,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
-FILE: ../../../third_party/icu/source/data/in/ulayout.icu
-FILE: ../../../third_party/icu/source/data/in/unames.icu
-FILE: ../../../third_party/icu/source/data/in/uprops.icu
-FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/gb18030.ucm
-FILE: ../../../third_party/icu/source/data/mappings/ibm866-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-10-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-13-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-14-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-15-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-16-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-2-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-3-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-4-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-5-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-6-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-7-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-8-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/koi8-r-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/koi8-u-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/macintosh-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/shift_jis-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1250-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1251-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1252-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1253-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1254-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1255-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1256-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1257-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
-FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
-FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
-FILE: ../../../third_party/icu/source/tools/tzcode/asctime.c
-FILE: ../../../third_party/icu/source/tools/tzcode/ialloc.c
-FILE: ../../../third_party/icu/source/tools/tzcode/localtime.c
-FILE: ../../../third_party/icu/source/tools/tzcode/private.h
-FILE: ../../../third_party/icu/source/tools/tzcode/scheck.c
-FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
-FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
-FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
-FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/tzres/metaZones.res
-FILE: ../../../third_party/icu/tzres/timezoneTypes.res
-FILE: ../../../third_party/icu/tzres/zoneinfo64.res
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013 International Business Machines Corporation
-and others. All Rights Reserved.
-
-Project: https://github.com/veer66/lao-dictionary
-Dictionary: https://github.com/veer66/lao-dictionary/blob/master/Lao-Dictionary.txt
-License: https://github.com/veer66/lao-dictionary/blob/master/Lao-Dictionary-LICENSE.txt
-             (copied below)
-
- This file is derived from the above dictionary, with slight
- modifications.
-
- Copyright (C) 2013 Brian Eugene Wilson, Robert Martin Campbell.
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification,
- are permitted provided that the following conditions are met:
-
-Redistributions of source code must retain the above copyright notice, this
- list of conditions and the following disclaimer. Redistributions in
- binary form must reproduce the above copyright notice, this list of
- conditions and the following disclaimer in the documentation and/or
- other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: icu
-ORIGIN: ../../../third_party/icu/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/DIR_METADATA
-FILE: ../../../third_party/icu/android/icudtl.dat
-FILE: ../../../third_party/icu/android_small/icudtl.dat
-FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
-FILE: ../../../third_party/icu/cast/brkitr.patch
-FILE: ../../../third_party/icu/cast/icudtl.dat
-FILE: ../../../third_party/icu/chromeos/icudtl.dat
-FILE: ../../../third_party/icu/common/icudtb.dat
-FILE: ../../../third_party/icu/common/icudtl.dat
-FILE: ../../../third_party/icu/flutter/brkitr.patch
-FILE: ../../../third_party/icu/flutter/icudtl.dat
-FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
-FILE: ../../../third_party/icu/fuzzers/icu_appendable_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
-FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
-FILE: ../../../third_party/icu/patches/ardatepattern.patch
-FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/configure.patch
-FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
-FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/iso2022jp.patch
-FILE: ../../../third_party/icu/patches/isvalidenum.patch
-FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/locale1.patch
-FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
-FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
-FILE: ../../../third_party/icu/patches/unused-var.patch
-FILE: ../../../third_party/icu/patches/wordbrk.patch
-FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
-FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
-FILE: ../../../third_party/icu/source/data/in/nfc.nrm
-FILE: ../../../third_party/icu/source/data/in/nfkc.nrm
-FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
-FILE: ../../../third_party/icu/source/data/in/pnames.icu
-FILE: ../../../third_party/icu/source/data/in/ubidi.icu
-FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18313,8 +18556,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18327,10 +18568,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18342,6 +18581,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18450,8 +18690,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18464,10 +18702,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18479,6 +18715,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18586,8 +18823,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18600,10 +18835,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18615,6 +18848,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18695,8 +18929,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18709,10 +18941,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18724,6 +18954,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18871,8 +19102,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18885,10 +19114,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18900,6 +19127,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -19108,6 +19336,7 @@ ORIGIN: ../../../third_party/icu/source/common/unicode/appendable.h
 TYPE: LicenseType.icu
 FILE: ../../../third_party/icu/APIChangeReport.html
 FILE: ../../../third_party/icu/source/Doxyfile.in
+FILE: ../../../third_party/icu/source/common/BUILD.unused
 FILE: ../../../third_party/icu/source/common/appendable.cpp
 FILE: ../../../third_party/icu/source/common/bmpset.cpp
 FILE: ../../../third_party/icu/source/common/bmpset.h
@@ -19143,6 +19372,8 @@ FILE: ../../../third_party/icu/source/common/dictionarydata.cpp
 FILE: ../../../third_party/icu/source/common/dictionarydata.h
 FILE: ../../../third_party/icu/source/common/dtintrv.cpp
 FILE: ../../../third_party/icu/source/common/edits.cpp
+FILE: ../../../third_party/icu/source/common/emojiprops.cpp
+FILE: ../../../third_party/icu/source/common/emojiprops.h
 FILE: ../../../third_party/icu/source/common/errorcode.cpp
 FILE: ../../../third_party/icu/source/common/filteredbrk.cpp
 FILE: ../../../third_party/icu/source/common/filterednormalizer2.cpp
@@ -19174,6 +19405,8 @@ FILE: ../../../third_party/icu/source/common/locutil.cpp
 FILE: ../../../third_party/icu/source/common/locutil.h
 FILE: ../../../third_party/icu/source/common/lsr.cpp
 FILE: ../../../third_party/icu/source/common/lsr.h
+FILE: ../../../third_party/icu/source/common/lstmbe.cpp
+FILE: ../../../third_party/icu/source/common/lstmbe.h
 FILE: ../../../third_party/icu/source/common/messageimpl.h
 FILE: ../../../third_party/icu/source/common/messagepattern.cpp
 FILE: ../../../third_party/icu/source/common/msvcres.h
@@ -19556,6 +19789,8 @@ FILE: ../../../third_party/icu/source/data/coll/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/curr/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/dtd/cldr-35.1/common/dtd/ldml.dtd
 FILE: ../../../third_party/icu/source/data/dtd/cldr-35.1/common/dtd/ldmlICU.dtd
+FILE: ../../../third_party/icu/source/data/dtd/cldr-40/common/dtd/ldml.dtd
+FILE: ../../../third_party/icu/source/data/dtd/cldr-40/common/dtd/ldmlICU.dtd
 FILE: ../../../third_party/icu/source/data/icupkg.inc.in
 FILE: ../../../third_party/icu/source/data/lang/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/locales/LOCALE_DEPS.json
@@ -19751,6 +19986,7 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-950-2000.ucm
 FILE: ../../../third_party/icu/source/data/misc/icudata.rc
 FILE: ../../../third_party/icu/source/data/rbnf/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/region/LOCALE_DEPS.json
+FILE: ../../../third_party/icu/source/data/unidata/norm2/BUILD.unused
 FILE: ../../../third_party/icu/source/data/unit/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/zone/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/extra/scrptrun/scrptrun.cpp
@@ -19762,6 +19998,7 @@ FILE: ../../../third_party/icu/source/extra/uconv/uconv.1.in
 FILE: ../../../third_party/icu/source/extra/uconv/uconv.cpp
 FILE: ../../../third_party/icu/source/extra/uconv/unicode/uwmsg.h
 FILE: ../../../third_party/icu/source/extra/uconv/uwmsg.c
+FILE: ../../../third_party/icu/source/i18n/BUILD.unused
 FILE: ../../../third_party/icu/source/i18n/alphaindex.cpp
 FILE: ../../../third_party/icu/source/i18n/anytrans.cpp
 FILE: ../../../third_party/icu/source/i18n/anytrans.h
@@ -20289,6 +20526,7 @@ FILE: ../../../third_party/icu/source/io/uscanf_p.cpp
 FILE: ../../../third_party/icu/source/io/ustdio.cpp
 FILE: ../../../third_party/icu/source/io/ustream.cpp
 FILE: ../../../third_party/icu/source/python/icutools/databuilder/filtration_schema.json
+FILE: ../../../third_party/icu/source/stubdata/BUILD.unused
 FILE: ../../../third_party/icu/source/stubdata/stubdata.cpp
 FILE: ../../../third_party/icu/source/tools/ctestfw/ctest.c
 FILE: ../../../third_party/icu/source/tools/ctestfw/datamap.cpp
@@ -20324,6 +20562,7 @@ FILE: ../../../third_party/icu/source/tools/gencolusb/extract_unsafe_backwards.c
 FILE: ../../../third_party/icu/source/tools/gencolusb/verify_uset.cpp
 FILE: ../../../third_party/icu/source/tools/gendict/gendict.1.in
 FILE: ../../../third_party/icu/source/tools/gendict/gendict.cpp
+FILE: ../../../third_party/icu/source/tools/gennorm2/BUILD.unused
 FILE: ../../../third_party/icu/source/tools/gennorm2/extradata.cpp
 FILE: ../../../third_party/icu/source/tools/gennorm2/extradata.h
 FILE: ../../../third_party/icu/source/tools/gennorm2/gennorm2.cpp
@@ -20363,6 +20602,8 @@ FILE: ../../../third_party/icu/source/tools/gensprep/store.c
 FILE: ../../../third_party/icu/source/tools/gentest/genres32.c
 FILE: ../../../third_party/icu/source/tools/gentest/gentest.c
 FILE: ../../../third_party/icu/source/tools/gentest/gentest.h
+FILE: ../../../third_party/icu/source/tools/icuexportdata/icuexportdata.1.in
+FILE: ../../../third_party/icu/source/tools/icuexportdata/icuexportdata.cpp
 FILE: ../../../third_party/icu/source/tools/icuinfo/icuinfo.cpp
 FILE: ../../../third_party/icu/source/tools/icuinfo/testplug.c
 FILE: ../../../third_party/icu/source/tools/icupkg/icupkg.8.in
@@ -20379,6 +20620,7 @@ FILE: ../../../third_party/icu/source/tools/pkgdata/pkgdata.1.in
 FILE: ../../../third_party/icu/source/tools/pkgdata/pkgdata.cpp
 FILE: ../../../third_party/icu/source/tools/pkgdata/pkgtypes.c
 FILE: ../../../third_party/icu/source/tools/pkgdata/pkgtypes.h
+FILE: ../../../third_party/icu/source/tools/toolutil/BUILD.unused
 FILE: ../../../third_party/icu/source/tools/toolutil/collationinfo.cpp
 FILE: ../../../third_party/icu/source/tools/toolutil/collationinfo.h
 FILE: ../../../third_party/icu/source/tools/toolutil/dbgutil.cpp
@@ -23149,6 +23391,111 @@ FILE: ../../../third_party/libpng/pngwutil.c
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: libtess2
+ORIGIN: ../../../third_party/libtess2/Contrib/nanosvg.c
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/libtess2/Contrib/nanosvg.c
+FILE: ../../../third_party/libtess2/Contrib/nanosvg.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2009 Mikko Mononen memon@inside.org
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libtess2
+ORIGIN: ../../../third_party/libtess2/Include/tesselator.h
+TYPE: LicenseType.mit
+FILE: ../../../third_party/libtess2/Include/tesselator.h
+FILE: ../../../third_party/libtess2/Source/bucketalloc.c
+FILE: ../../../third_party/libtess2/Source/bucketalloc.h
+FILE: ../../../third_party/libtess2/Source/dict.c
+FILE: ../../../third_party/libtess2/Source/dict.h
+FILE: ../../../third_party/libtess2/Source/geom.c
+FILE: ../../../third_party/libtess2/Source/geom.h
+FILE: ../../../third_party/libtess2/Source/mesh.c
+FILE: ../../../third_party/libtess2/Source/mesh.h
+FILE: ../../../third_party/libtess2/Source/priorityq.c
+FILE: ../../../third_party/libtess2/Source/priorityq.h
+FILE: ../../../third_party/libtess2/Source/sweep.c
+FILE: ../../../third_party/libtess2/Source/sweep.h
+FILE: ../../../third_party/libtess2/Source/tess.c
+FILE: ../../../third_party/libtess2/Source/tess.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) [dates of first publication] Silicon Graphics, Inc.
+All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice including the dates of first publication and either this
+permission notice or a reference to http://oss.sgi.com/projects/FreeB/ shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL SILICON GRAPHICS, INC.
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of Silicon Graphics, Inc. shall not
+be used in advertising or otherwise to promote the sale, use or other dealings in
+this Software without prior written authorization from Silicon Graphics, Inc.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libtess2
+ORIGIN: ../../../third_party/libtess2/LICENSE.txt
+TYPE: LicenseType.mit
+FILE: ../../../third_party/libtess2/Bin/bg.svg
+FILE: ../../../third_party/libtess2/Bin/fg.svg
+FILE: ../../../third_party/libtess2/premake4.lua
+----------------------------------------------------------------------------------------------------
+SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
+Copyright (C) [dates of first publication] Silicon Graphics, Inc.
+All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice including the dates of first publication and either this
+permission notice or a reference to http://oss.sgi.com/projects/FreeB/ shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL SILICON GRAPHICS, INC.
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of Silicon Graphics, Inc. shall not
+be used in advertising or otherwise to promote the sale, use or other dealings in
+this Software without prior written authorization from Silicon Graphics, Inc.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: libwebp
 ORIGIN: ../../../third_party/libwebp/COPYING
 TYPE: LicenseType.bsd
@@ -23705,42 +24052,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
 HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: pkg
-ORIGIN: ../../../third_party/pkg/when/lib/when.dart + ../../../third_party/pkg/when/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/pkg/when/lib/when.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
 LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
@@ -24641,6 +24952,41 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: sqlite
+ORIGIN: ../../../third_party/sqlite/LICENSE
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/sqlite/GIT_REVISION
+FILE: ../../../third_party/sqlite/LAST_UPDATE
+FILE: ../../../third_party/sqlite/VERSION
+FILE: ../../../third_party/sqlite/sqlite3.c
+FILE: ../../../third_party/sqlite/sqlite3.h
+----------------------------------------------------------------------------------------------------
+The source code for SQLite is in the public domain. No claim of
+copyright is made on any part of the core source code. (The
+documentation and test code is a different matter - some sections of
+documentation and test logic are governed by open-source licenses.)
+All contributors to the SQLite core software have signed affidavits
+specifically disavowing any copyright interest in the code. This means
+that anybody is able to legally do anything they want with the SQLite
+source code.
+
+There are other SQL database engines with liberal licenses that allow
+the code to be broadly and freely used. But those other engines are
+still governed by copyright law. SQLite is different in that copyright
+law simply does not apply.
+
+The source code files for other SQL database engines typically begin
+with a comment describing your legal rights to view and copy that
+file. The SQLite source code contains no license since it is not
+governed by copyright. Instead of a license, the SQLite source code
+offers a blessing:
+
+May you do good and not evil
+May you find forgiveness for yourself and forgive others
+May you share freely, never taking more than you give.
 ====================================================================================================
 
 ====================================================================================================
@@ -25546,4 +25892,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 403
+Total license count: 410
