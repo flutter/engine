@@ -20,7 +20,7 @@ PLATFORM_2_PATH = {
     'darwin': 'darwin-x64',
     'linux': 'linux-x64',
     'cygwin': 'windows-x64',
-    'wind': 'windows-64'
+    'win': 'windows-x64'
 }
 
 
