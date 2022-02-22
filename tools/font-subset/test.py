@@ -91,6 +91,8 @@ def RunCmd(cmd, codepoints, fail=False):
 
 
 def TestZip():
+  print('zzzz %s' % sys.platform)
+  print('zzzz %s' %FONT_SUBSET_ZIP)
   with ZipFile(FONT_SUBSET_ZIP, 'r') as zip:
     files = zip.namelist()
     if 'font-subset%s' % EXE not in files:
