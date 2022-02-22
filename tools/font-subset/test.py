@@ -14,6 +14,16 @@ import subprocess
 import sys
 from zipfile import ZipFile
 
+
+
+PLATFORM_2_PATH = {
+    'darwin': 'darwin-x64',
+    'linux': 'linux-x64',
+    'cygwin': 'windows-x64',
+    'wind': 'windows-64'
+}
+
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 MATERIAL_TTF = os.path.join(SCRIPT_DIR, 'fixtures', 'MaterialIcons-Regular.ttf')
@@ -24,7 +34,7 @@ FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug', 'font-subset' + EXE)
 FONT_SUBSET_ZIP = os.path.join(SRC_DIR, 'out', 'host_debug', 'zip_archives', 'font-subset.zip')
 if not os.path.isfile(FONT_SUBSET):
   FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug_unopt', 'font-subset' + EXE)
-  FONT_SUBSET_ZIP = os.path.join(SRC_DIR, 'out', 'host_debug_unopt', 'zip_archives', 'font-subset.zip')
+  FONT_SUBSET_ZIP = os.path.join(SRC_DIR, 'out', 'host_debug_unopt', 'zip_archives', PLATFORM_2_PATH.get(sys.platform, ''), 'font-subset.zip')
 if not os.path.isfile(FONT_SUBSET):
   raise Exception('Could not locate font-subset%s in host_debug or host_debug_unopt - build before running this script.' % EXE)
 
