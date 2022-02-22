@@ -43,6 +43,8 @@ import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.util.FakeKeyEvent;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Before;
@@ -1104,16 +1106,25 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testSendKeyEvent_delKeyNotConsumed() {
-    ListenableEditingState editable = sampleEditable(5, 5);
+    ListenableEditingState editable = sampleEditable(5, 5, "01234");
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
-    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+    KeyEvent downKeyUP = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL);
 
     for (int i = 0; i < 4; i++) {
-      boolean didConsume = adaptor.handleKeyEvent(downKeyDown);
+      boolean didConsume = adaptor.handleKeyEvent(downKeyUP);
       assertFalse(didConsume);
     }
     assertEquals(5, Selection.getSelectionStart(editable));
+
+    // delete character
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+    for (int i = 0; i < 5; i++) {
+      boolean didConsume = adaptor.handleKeyEvent(downKeyDown);
+      assertTrue(didConsume);
+    }
+    assertEquals(0, Selection.getSelectionStart(editable));
+    assertEquals("", editable.toString());
   }
 
   @Test
@@ -1125,6 +1136,22 @@ public class InputConnectionAdaptorTest {
     boolean didConsume = adaptor.handleKeyEvent(keyEvent);
 
     assertFalse(didConsume);
+  }
+
+  @Test
+  public void testInputKeycode() {
+    ListenableEditingState editable = sampleEditable(0, 0, "");
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    List<FakeKeyEvent> keyEvents = new ArrayList<>();
+    keyEvents.add(new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_1));
+    keyEvents.add(new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_2));
+    keyEvents.add(new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_3));
+
+    for (FakeKeyEvent keyEvent : keyEvents) {
+      adaptor.handleKeyEvent(keyEvent);
+    }
+    assertEquals("123", editable.toString());
   }
 
   @Test

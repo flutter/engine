@@ -287,6 +287,8 @@ class InputConnectionAdaptor extends BaseInputConnection
         return handleVerticalMovement(false, event.isShiftPressed());
         // When the enter key is pressed on a non-multiline field, consider it a
         // submit instead of a newline.
+      } else if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
+        return handleDelete();
       } else if ((event.getKeyCode() == KeyEvent.KEYCODE_ENTER
               || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)
           && (InputType.TYPE_TEXT_FLAG_MULTI_LINE & mEditorInfo.inputType) == 0) {
@@ -297,12 +299,12 @@ class InputConnectionAdaptor extends BaseInputConnection
         final int selStart = Selection.getSelectionStart(mEditable);
         final int selEnd = Selection.getSelectionEnd(mEditable);
         final int character = event.getUnicodeChar();
-        if (selStart < 0 || selEnd < 0 || character == 0) {
+        if (character == 0) {
           return false;
         }
 
-        final int selMin = Math.min(selStart, selEnd);
-        final int selMax = Math.max(selStart, selEnd);
+        final int selMin = Math.max(Math.min(selStart, selEnd), 0);
+        final int selMax = Math.max(Math.max(selStart, selEnd), 0);
         beginBatchEdit();
         if (selMin != selMax) mEditable.delete(selMin, selMax);
         mEditable.insert(selMin, String.valueOf((char) character));
@@ -371,6 +373,20 @@ class InputConnectionAdaptor extends BaseInputConnection
       }
       setSelection(Selection.getSelectionStart(mEditable), Selection.getSelectionEnd(mEditable));
     }
+    endBatchEdit();
+    return true;
+  }
+
+  private boolean handleDelete() {
+    final int selStart = Selection.getSelectionStart(mEditable);
+    final int selEnd = Selection.getSelectionEnd(mEditable);
+
+    if (selStart <= 0 || selEnd <= 0) {
+      return false;
+    }
+    beginBatchEdit();
+    mEditable.delete(selStart - 1, selEnd);
+    setSelection(selStart - 1, selEnd - 1);
     endBatchEdit();
     return true;
   }
