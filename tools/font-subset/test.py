@@ -33,7 +33,7 @@ IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
 EXE = '.exe' if IS_WINDOWS else ''
 BAT = '.bat' if IS_WINDOWS else ''
 FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug', 'font-subset' + EXE)
-FONT_SUBSET_ZIP = os.path.join(SRC_DIR, 'out', 'host_debug', 'zip_archives', 'font-subset.zip')
+FONT_SUBSET_ZIP = os.path.join(SRC_DIR, 'out', 'host_debug', 'zip_archives', PLATFORM_2_PATH.get(sys.platform, ''), 'font-subset.zip')
 if not os.path.isfile(FONT_SUBSET):
   FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug_unopt', 'font-subset' + EXE)
   FONT_SUBSET_ZIP = os.path.join(SRC_DIR, 'out', 'host_debug_unopt', 'zip_archives', PLATFORM_2_PATH.get(sys.platform, ''), 'font-subset.zip')
