@@ -414,7 +414,7 @@ def to_gn_args(args):
         gn_args['fuchsia_target_api_level'] = int(f.read().strip())
 
     # Impeller flags.
-    gn_args['impeller_enable_playground'] = args.enable_impeller_playground
+    # gn_args['impeller_enable_playground'] = args.enable_impeller_playground
 
     return gn_args
 
@@ -528,8 +528,8 @@ def parse_args(args):
   parser.add_argument('--fuchsia-target-api-level', dest='fuchsia_target_api_level')
 
   # Impeller flags.
-  parser.add_argument('--enable-impeller-playground', default=False, action='store_true',
-                      help='Whether impeller unit tests run in playground mode')
+  # parser.add_argument('--enable-impeller-playground', default=False, action='store_true',
+  #                     help='Whether impeller unit tests run in playground mode')
 
   # Sanitizers.
   parser.add_argument('--asan', default=False, action='store_true')

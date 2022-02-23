@@ -308,6 +308,7 @@ void Runner::Start(
   // change, so we make a copy to pass to TRACE_DURATION.
   // TODO(PT-169): Remove this copy when TRACE_DURATION reads string arguments
   // eagerly.
+  FML_LOG(INFO) << "RESOLVED URL V2: " << start_info.resolved_url();
   const std::string url_copy = start_info.resolved_url();
   TRACE_EVENT1("flutter", "Start", "url", url_copy.c_str());
 

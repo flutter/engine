@@ -34,10 +34,14 @@ template("runner") {
       "dart_component_controller_v2.h",
       "dart_runner.cc",
       "dart_runner.h",
+      "dart_test_component_controller_v2.cc",
+      "dart_test_component_controller_v2.h",
       "logging.h",
       "main.cc",
       "service_isolate.cc",
       "service_isolate.h",
+      "string_printf.cc",
+      "string_printf.h",
     ]
 
     defines = extra_defines
@@ -61,6 +65,8 @@ template("runner") {
              "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
              "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
              "$fuchsia_sdk_root/fidl:fuchsia.component.runner",
+             "$fuchsia_sdk_root/fidl:fuchsia.logger",
+             "$fuchsia_sdk_root/fidl:fuchsia.sys.test",
              "$fuchsia_sdk_root/pkg:async",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
@@ -70,10 +76,12 @@ template("runner") {
              "$fuchsia_sdk_root/pkg:fidl_cpp",
              "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
              "$fuchsia_sdk_root/pkg:sys_cpp",
+             "$fuchsia_sdk_root/pkg:sys_cpp_testing",
              "$fuchsia_sdk_root/pkg:syslog",
              "$fuchsia_sdk_root/pkg:trace",
              "$fuchsia_sdk_root/pkg:trace-provider-so",
              "$fuchsia_sdk_root/pkg:vfs_cpp",
+             "$fuchsia_sdk_root/pkg:zx",
              "//flutter/third_party/tonic",
            ] + dart_deps + extra_deps
   }

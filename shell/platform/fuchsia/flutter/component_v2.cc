@@ -116,6 +116,16 @@ ProgramMetadata ComponentV2::ParseProgramMetadata(
       result.assets_path = "pkg/" + entry.value->str();
     } else if (entry.key.compare(kArgsKey) == 0 && entry.value != nullptr) {
       ParseArgs(entry.value->str_vec(), &result);
+      FML_LOG(INFO) << "FLUTTER RUNNER PROGRAM ARGS: ";
+      std::string s;
+      for (const auto& piece : entry.value->str_vec())
+        s += piece;
+      FML_LOG(INFO) << s;
+
+      std::string d;
+      for (const auto& piece : result.expose_dirs)
+        d += piece;
+      FML_LOG(INFO) << d;
     }
   }
 

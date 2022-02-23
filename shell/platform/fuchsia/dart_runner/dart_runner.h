@@ -10,7 +10,9 @@
 #include <lib/fidl/cpp/binding_set.h>
 #include <lib/sys/cpp/component_context.h>
 
+#include "dart_test_component_controller_v2.h"
 #include "runtime/dart/utils/mapped_resource.h"
+// #include "test_component.h"
 
 namespace dart_runner {
 
@@ -33,11 +35,17 @@ class DartRunner : public fuchsia::sys::Runner,
       fidl::InterfaceRequest<fuchsia::component::runner::ComponentController>
           controller) override;
 
+  std::map<DartTestComponentControllerV2*,
+           std::shared_ptr<DartTestComponentControllerV2>>
+      test_components_;
+
   // Not owned by DartRunner.
   sys::ComponentContext* context_;
   fidl::BindingSet<fuchsia::sys::Runner> bindings_;
   fidl::BindingSet<fuchsia::component::runner::ComponentRunner>
       component_runner_bindings_;
+
+  std::shared_ptr<sys::ServiceDirectory> svc_;
 
 #if !defined(AOT_RUNTIME)
   dart_utils::MappedResource vm_snapshot_data_;
