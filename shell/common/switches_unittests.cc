@@ -51,8 +51,7 @@ TEST(SwitchesTest, RouteParsedFlag) {
       fml::CommandLineFromInitializerList({"command", "--route=/animation"});
   Settings settings = SettingsFromCommandLine(command_line);
   EXPECT_EQ(settings.route, "/animation");
-  command_line =
-      fml::CommandLineFromInitializerList({"command", "--route"});
+  command_line = fml::CommandLineFromInitializerList({"command", "--route"});
   EXPECT_TRUE(settings.route.empty());
 }
 
