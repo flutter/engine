@@ -26,22 +26,12 @@ constexpr float invert_color_matrix[20] = {
 };
 // clang-format on
 
-void SkPaintDispatchHelper::save_opacity(bool reset_and_restore) {
-  if (opacity_ >= SK_Scalar1) {
-    reset_and_restore = false;
-  }
-  save_stack_.emplace_back(opacity_, reset_and_restore);
-  if (reset_and_restore) {
-    opacity_ = SK_Scalar1;
-    setColor(current_color_);
-  }
+void SkPaintDispatchHelper::save_opacity(SkScalar child_opacity) {
+  save_stack_.emplace_back(opacity_);
+  set_opacity(child_opacity);
 }
 void SkPaintDispatchHelper::restore_opacity() {
-  SaveInfo& info = save_stack_.back();
-  if (info.restore_opacity) {
-    opacity_ = info.opacity;
-    setColor(current_color_);
-  }
+  set_opacity(save_stack_.back().opacity);
   save_stack_.pop_back();
 }
 
@@ -89,29 +79,25 @@ void SkPaintDispatchHelper::setShader(sk_sp<SkShader> shader) {
 void SkPaintDispatchHelper::setImageFilter(sk_sp<SkImageFilter> filter) {
   paint_.setImageFilter(filter);
 }
-void SkPaintDispatchHelper::setColorFilter(sk_sp<SkColorFilter> filter) {
-  color_filter_ = filter;
+void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
+  color_filter_ = filter ? filter->shared() : nullptr;
   paint_.setColorFilter(makeColorFilter());
 }
 void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
   paint_.setPathEffect(effect);
 }
-void SkPaintDispatchHelper::setMaskFilter(sk_sp<SkMaskFilter> filter) {
-  paint_.setMaskFilter(filter);
-}
-void SkPaintDispatchHelper::setMaskBlurFilter(SkBlurStyle style,
-                                              SkScalar sigma) {
-  paint_.setMaskFilter(SkMaskFilter::MakeBlur(style, sigma));
+void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
+  paint_.setMaskFilter(filter ? filter->sk_filter() : nullptr);
 }
 
-sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() {
+sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
   if (!invert_colors_) {
-    return color_filter_;
+    return color_filter_ ? color_filter_->sk_filter() : nullptr;
   }
   sk_sp<SkColorFilter> invert_filter =
       SkColorFilters::Matrix(invert_color_matrix);
   if (color_filter_) {
-    invert_filter = invert_filter->makeComposed(color_filter_);
+    invert_filter = invert_filter->makeComposed(color_filter_->sk_filter());
   }
   return invert_filter;
 }
@@ -247,7 +233,7 @@ void ClipBoundsDispatchHelper::reset(const SkRect* cull_rect) {
 DisplayListBoundsCalculator::DisplayListBoundsCalculator(
     const SkRect* cull_rect)
     : ClipBoundsDispatchHelper(cull_rect) {
-  layer_infos_.emplace_back(std::make_unique<RootLayerData>());
+  layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
   accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::setStrokeCap(SkPaint::Cap cap) {
@@ -276,42 +262,47 @@ void DisplayListBoundsCalculator::setBlender(sk_sp<SkBlender> blender) {
 void DisplayListBoundsCalculator::setImageFilter(sk_sp<SkImageFilter> filter) {
   image_filter_ = std::move(filter);
 }
-void DisplayListBoundsCalculator::setColorFilter(sk_sp<SkColorFilter> filter) {
-  color_filter_ = std::move(filter);
+void DisplayListBoundsCalculator::setColorFilter(const DlColorFilter* filter) {
+  color_filter_ = filter ? filter->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::setPathEffect(sk_sp<SkPathEffect> effect) {
   path_effect_ = std::move(effect);
 }
-void DisplayListBoundsCalculator::setMaskFilter(sk_sp<SkMaskFilter> filter) {
-  mask_filter_ = std::move(filter);
-  mask_sigma_pad_ = 0.0f;
-}
-void DisplayListBoundsCalculator::setMaskBlurFilter(SkBlurStyle style,
-                                                    SkScalar sigma) {
-  mask_sigma_pad_ = std::max(3.0f * sigma, 0.0f);
-  mask_filter_ = nullptr;
+void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
+  mask_filter_ = filter ? filter->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::save() {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  layer_infos_.emplace_back(std::make_unique<SaveData>(accumulator_));
+  layer_infos_.emplace_back(std::make_unique<LayerData>(accumulator_));
   accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            bool with_paint) {
+                                            const SaveLayerOptions options) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  if (with_paint) {
-    layer_infos_.emplace_back(std::make_unique<SaveLayerData>(
-        accumulator_, image_filter_, paint_nops_on_transparency()));
+  if (options.renders_with_attributes()) {
+    // The actual flood of the outer layer clip will occur after the
+    // (eventual) corresponding restore is called, but rather than
+    // remember this information in the LayerInfo until the restore
+    // method is processed, we just mark the unbounded state up front.
+    if (!paint_nops_on_transparency()) {
+      // We will fill the clip of the outer layer when we restore
+      AccumulateUnbounded();
+    }
+
+    layer_infos_.emplace_back(
+        std::make_unique<LayerData>(accumulator_, image_filter_));
   } else {
     layer_infos_.emplace_back(
-        std::make_unique<SaveLayerData>(accumulator_, nullptr, true));
+        std::make_unique<LayerData>(accumulator_, nullptr));
   }
+
   accumulator_ = layer_infos_.back()->layer_accumulator();
-  // Accumulate the layer in its own coordinate system and then
-  // filter and transform its bounds on restore.
-  SkMatrixDispatchHelper::reset();
+
+  // Even though Skia claims that the bounds are only a hint, they actually
+  // use them as the temporary layer bounds during rendering the layer, so
+  // we set them as if a clip operation were performed.
   if (bounds) {
     clipRect(*bounds, SkClipOp::kIntersect, false);
   }
@@ -320,24 +311,53 @@ void DisplayListBoundsCalculator::restore() {
   if (layer_infos_.size() > 1) {
     SkMatrixDispatchHelper::restore();
     ClipBoundsDispatchHelper::restore();
-    accumulator_ = layer_infos_.back()->restore_accumulator();
-    SkRect layer_bounds = layer_infos_.back()->layer_bounds();
-    // Must read unbounded state after layer_bounds
-    bool layer_unbounded = layer_infos_.back()->is_unbounded();
+
+    // Remember a few pieces of information from the current layer info
+    // for later processing.
+    LayerData* layer_info = layer_infos_.back().get();
+    BoundsAccumulator* outer_accumulator = layer_info->restore_accumulator();
+    bool is_unbounded = layer_info->is_unbounded();
+
+    // Before we pop_back we will get the current layer bounds from the
+    // current accumulator and adjust ot as required based on the filter.
+    SkRect layer_bounds = accumulator_->bounds();
+    sk_sp<SkImageFilter> filter = layer_info->filter();
+    if (filter) {
+      if (filter->canComputeFastBounds()) {
+        SkIRect filter_bounds =
+            filter->filterBounds(layer_bounds.roundOut(), matrix(),
+                                 SkImageFilter::kForward_MapDirection);
+        layer_bounds.set(filter_bounds);
+
+        // We could leave the clipping to the code below that will
+        // finally accumulate the layer bounds, but the bounds do
+        // not normally need clipping unless they were modified by
+        // entering this filtering code path.
+        if (has_clip() && !layer_bounds.intersect(clip_bounds())) {
+          layer_bounds.setEmpty();
+        }
+      } else {
+        // If the filter cannot compute bounds then it might take an
+        // unbounded amount of space. This can sometimes happen if it
+        // modifies transparent black which means its affect will not
+        // be bounded by the transparent pixels outside of the layer
+        // drawable.
+        is_unbounded = true;
+      }
+    }
+
+    // Restore the accumulator before popping the LayerInfo so that
+    // it nevers points to an out of scope instance.
+    accumulator_ = outer_accumulator;
     layer_infos_.pop_back();
 
-    // We accumulate the bounds even if the layer was unbounded because
-    // the unbounded state may be contained at a higher level, so we at
-    // least accumulate our best estimate about what we have.
-    if (!layer_bounds.isEmpty()) {
-      // We do not use AccumulateOpBounds because the layer info already
-      // applied all bounds modifications based on the attributes that
-      // were in place when it was created. Modifying the bounds further
-      // based on the current attributes would mix attribute states.
-      // The bounds are still transformed and clipped by this method.
-      AccumulateBounds(layer_bounds);
-    }
-    if (layer_unbounded) {
+    // Finally accumulate the impact of the layer into the new scope.
+    // Note that the bounds were already accumulated in device pixels
+    // and clipped to any clips involved so we do not need to go
+    // through any transforms or clips to accuulate them into this
+    // layer.
+    accumulator_->accumulate(layer_bounds);
+    if (is_unbounded) {
       AccumulateUnbounded();
     }
   }
@@ -571,15 +591,18 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
 
   if (flags.applies_mask_filter()) {
     if (mask_filter_) {
-      SkPaint p;
-      p.setMaskFilter(mask_filter_);
-      if (!p.canComputeFastBounds()) {
-        return false;
+      const DlBlurMaskFilter* blur_filter = mask_filter_->asBlur();
+      if (blur_filter) {
+        SkScalar mask_sigma_pad = blur_filter->sigma() * 3.0;
+        bounds.outset(mask_sigma_pad, mask_sigma_pad);
+      } else {
+        SkPaint p;
+        p.setMaskFilter(mask_filter_->sk_filter());
+        if (!p.canComputeFastBounds()) {
+          return false;
+        }
+        bounds = p.computeFastBounds(bounds, &bounds);
       }
-      bounds = p.computeFastBounds(bounds, &bounds);
-    }
-    if (mask_sigma_pad_ > 0.0f) {
-      bounds.outset(mask_sigma_pad_, mask_sigma_pad_);
     }
   }
 
@@ -627,8 +650,7 @@ bool DisplayListBoundsCalculator::paint_nops_on_transparency() {
   // save layer untouched out to the edge of the output surface.
   // This test assumes that the blend mode checked down below will
   // NOP on transparent black.
-  if (color_filter_ &&
-      color_filter_->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT) {
+  if (color_filter_ && color_filter_->modifies_transparent_black()) {
     return false;
   }
 

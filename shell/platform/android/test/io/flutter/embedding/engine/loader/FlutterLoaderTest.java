@@ -21,6 +21,8 @@ import static org.robolectric.Shadows.shadowOf;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.os.Bundle;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import java.util.Arrays;
 import java.util.List;
@@ -29,12 +31,11 @@ import java.util.concurrent.ExecutorService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterLoaderTest {
 
   @Test
@@ -83,6 +84,58 @@ public class FlutterLoaderTest {
             anyLong());
     List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
     assertTrue(arguments.contains(oldGenHeapArg));
+  }
+
+  @Test
+  public void itSetsLeakVMToTrueByDefault() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(RuntimeEnvironment.application);
+    flutterLoader.ensureInitializationComplete(RuntimeEnvironment.application, null);
+    shadowOf(getMainLooper()).idle();
+
+    final String leakVMArg = "--leak-vm=true";
+    ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
+    verify(mockFlutterJNI, times(1))
+        .init(
+            eq(RuntimeEnvironment.application),
+            shellArgsCaptor.capture(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyLong());
+    List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
+    assertTrue(arguments.contains(leakVMArg));
+  }
+
+  @Test
+  public void itSetsTheLeakVMFromMetaData() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+    Bundle metaData = new Bundle();
+    metaData.putBoolean("io.flutter.embedding.android.LeakVM", false);
+    RuntimeEnvironment.application.getApplicationInfo().metaData = metaData;
+
+    FlutterLoader.Settings settings = new FlutterLoader.Settings();
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(RuntimeEnvironment.application, settings);
+    flutterLoader.ensureInitializationComplete(RuntimeEnvironment.application, null);
+    shadowOf(getMainLooper()).idle();
+
+    final String leakVMArg = "--leak-vm=false";
+    ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
+    verify(mockFlutterJNI, times(1))
+        .init(
+            eq(RuntimeEnvironment.application),
+            shellArgsCaptor.capture(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyLong());
+    List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
+    assertTrue(arguments.contains(leakVMArg));
   }
 
   @Test

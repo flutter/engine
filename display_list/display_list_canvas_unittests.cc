@@ -618,6 +618,7 @@ class CaseParameters {
                        EmptyDlRenderer,
                        SK_ColorTRANSPARENT,
                        false,
+                       false,
                        false) {}
 
   CaseParameters(std::string info,
@@ -627,7 +628,8 @@ class CaseParameters {
                  DlRenderer dl_restore,
                  SkColor bg,
                  bool has_diff_clip,
-                 bool has_mutating_save_layer)
+                 bool has_mutating_save_layer,
+                 bool fuzzy_compare_components)
       : info_(info),
         bg_(bg),
         cv_setup_(cv_setup),
@@ -635,29 +637,35 @@ class CaseParameters {
         cv_restore_(cv_restore),
         dl_restore_(dl_restore),
         has_diff_clip_(has_diff_clip),
-        has_mutating_save_layer_(has_mutating_save_layer) {}
+        has_mutating_save_layer_(has_mutating_save_layer),
+        fuzzy_compare_components_(fuzzy_compare_components) {}
 
   CaseParameters with_restore(CvRenderer cv_restore,
                               DlRenderer dl_restore,
-                              bool mutating_layer) {
+                              bool mutating_layer,
+                              bool fuzzy_compare_components = false) {
     return CaseParameters(info_, cv_setup_, dl_setup_, cv_restore, dl_restore,
-                          bg_, has_diff_clip_, mutating_layer);
+                          bg_, has_diff_clip_, mutating_layer,
+                          fuzzy_compare_components);
   }
 
   CaseParameters with_bg(SkColor bg) {
     return CaseParameters(info_, cv_setup_, dl_setup_, cv_restore_, dl_restore_,
-                          bg, has_diff_clip_, has_mutating_save_layer_);
+                          bg, has_diff_clip_, has_mutating_save_layer_,
+                          fuzzy_compare_components_);
   }
 
   CaseParameters with_diff_clip() {
     return CaseParameters(info_, cv_setup_, dl_setup_, cv_restore_, dl_restore_,
-                          bg_, true, has_mutating_save_layer_);
+                          bg_, true, has_mutating_save_layer_,
+                          fuzzy_compare_components_);
   }
 
   std::string info() const { return info_; }
   SkColor bg() const { return bg_; }
   bool has_diff_clip() const { return has_diff_clip_; }
   bool has_mutating_save_layer() const { return has_mutating_save_layer_; }
+  bool fuzzy_compare_components() const { return fuzzy_compare_components_; }
 
   CvSetup cv_setup() const { return cv_setup_; }
   DlRenderer dl_setup() const { return dl_setup_; }
@@ -689,6 +697,7 @@ class CaseParameters {
   const DlRenderer dl_restore_;
   const bool has_diff_clip_;
   const bool has_mutating_save_layer_;
+  const bool fuzzy_compare_components_;
 };
 
 class CanvasCompareTester {
@@ -715,14 +724,22 @@ class CanvasCompareTester {
     SkRect rect = SkRect::MakeXYWH(RenderCenterX, RenderCenterY, 10, 10);
     SkColor alpha_layer_color = SkColorSetARGB(0x7f, 0x00, 0xff, 0xff);
     SkColor default_color = SkPaint().getColor();
-    CvRenderer cv_restore = [=](SkCanvas* cv, const SkPaint& p) {
+    CvRenderer cv_safe_restore = [=](SkCanvas* cv, const SkPaint& p) {
       // Draw another primitive to disable peephole optimizations
       cv->drawRect(RenderBounds.makeOffset(500, 500), p);
       cv->restore();
     };
-    DlRenderer dl_restore = [=](DisplayListBuilder& b) {
+    DlRenderer dl_safe_restore = [=](DisplayListBuilder& b) {
       // Draw another primitive to disable peephole optimizations
       b.drawRect(RenderBounds.makeOffset(500, 500));
+      b.restore();
+    };
+    CvRenderer cv_opt_restore = [=](SkCanvas* cv, const SkPaint& p) {
+      // Just a simple restore to allow peephole optimizations to occur
+      cv->restore();
+    };
+    DlRenderer dl_opt_restore = [=](DisplayListBuilder& b) {
+      // Just a simple restore to allow peephole optimizations to occur
       b.restore();
     };
     SkRect layer_bounds = RenderBounds.makeInset(15, 15);
@@ -756,7 +773,7 @@ class CanvasCompareTester {
                    [=](DisplayListBuilder& b) {  //
                      b.saveLayer(nullptr, false);
                    })
-                   .with_restore(cv_restore, dl_restore, false));
+                   .with_restore(cv_safe_restore, dl_safe_restore, false));
     RenderWith(testP, env, tolerance,
                CaseParameters(
                    "saveLayer no paint, with bounds",
@@ -766,7 +783,7 @@ class CanvasCompareTester {
                    [=](DisplayListBuilder& b) {  //
                      b.saveLayer(&layer_bounds, false);
                    })
-                   .with_restore(cv_restore, dl_restore, true));
+                   .with_restore(cv_safe_restore, dl_safe_restore, true));
     RenderWith(testP, env, tolerance,
                CaseParameters(
                    "saveLayer with alpha, no bounds",
@@ -780,7 +797,21 @@ class CanvasCompareTester {
                      b.saveLayer(nullptr, true);
                      b.setColor(default_color);
                    })
-                   .with_restore(cv_restore, dl_restore, true));
+                   .with_restore(cv_safe_restore, dl_safe_restore, true));
+    RenderWith(testP, env, tolerance,
+               CaseParameters(
+                   "saveLayer with peephole alpha, no bounds",
+                   [=](SkCanvas* cv, SkPaint& p) {
+                     SkPaint save_p;
+                     save_p.setColor(alpha_layer_color);
+                     cv->saveLayer(nullptr, &save_p);
+                   },
+                   [=](DisplayListBuilder& b) {
+                     b.setColor(alpha_layer_color);
+                     b.saveLayer(nullptr, true);
+                     b.setColor(default_color);
+                   })
+                   .with_restore(cv_opt_restore, dl_opt_restore, true, true));
     RenderWith(testP, env, tolerance,
                CaseParameters(
                    "saveLayer with alpha and bounds",
@@ -794,7 +825,7 @@ class CanvasCompareTester {
                      b.saveLayer(&layer_bounds, true);
                      b.setColor(default_color);
                    })
-                   .with_restore(cv_restore, dl_restore, true));
+                   .with_restore(cv_safe_restore, dl_safe_restore, true));
 
     {
       // clang-format off
@@ -805,48 +836,43 @@ class CanvasCompareTester {
           0, 0, 0, 0.5, 0,
       };
       // clang-format on
-      sk_sp<SkColorFilter> filter =
-          SkColorFilters::Matrix(rotate_alpha_color_matrix);
+      DlMatrixColorFilter filter(rotate_alpha_color_matrix);
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ColorFilter, no bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter);
+                         save_p.setColorFilter(filter.sk_filter());
                          cv->saveLayer(nullptr, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                          b.saveLayer(nullptr, true);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
-                       .with_restore(cv_restore, dl_restore, true));
+                       .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ColorFilter, no bounds Cleanup";
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ColorFilter and bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter);
+                         save_p.setColorFilter(filter.sk_filter());
                          cv->saveLayer(RenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                          b.saveLayer(&RenderBounds, true);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
-                       .with_restore(cv_restore, dl_restore, true));
+                       .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ColorFilter and bounds Cleanup";
     }
     {
       sk_sp<SkImageFilter> filter = SkImageFilters::Arithmetic(
@@ -867,7 +893,7 @@ class CanvasCompareTester {
                          b.setImageFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
-                       .with_restore(cv_restore, dl_restore, true));
+                       .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
       EXPECT_TRUE(filter->unique())
           << "saveLayer ImageFilter, no bounds Cleanup";
@@ -887,7 +913,7 @@ class CanvasCompareTester {
                          b.setImageFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
-                       .with_restore(cv_restore, dl_restore, true));
+                       .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
       EXPECT_TRUE(filter->unique())
           << "saveLayer ImageFilter and bounds Cleanup";
@@ -1115,7 +1141,7 @@ class CanvasCompareTester {
          1.0,  1.0,  1.0, 1.0,   0,
       };
       // clang-format on
-      sk_sp<SkColorFilter> filter = SkColorFilters::Matrix(rotate_color_matrix);
+      DlMatrixColorFilter filter(rotate_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
         RenderWith(testP, env, tolerance,
@@ -1123,16 +1149,15 @@ class CanvasCompareTester {
                        "ColorFilter == RotateRGB",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter);
+                         p.setColorFilter(filter.sk_filter());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                        })
                        .with_bg(bg));
       }
-      EXPECT_TRUE(filter->unique()) << "ColorFilter == RotateRGB Cleanup";
-      filter = SkColorFilters::Matrix(invert_color_matrix);
+      filter = DlMatrixColorFilter(invert_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
         RenderWith(testP, env, tolerance,
@@ -1140,7 +1165,7 @@ class CanvasCompareTester {
                        "ColorFilter == Invert",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter);
+                         p.setColorFilter(filter.sk_filter());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
@@ -1148,7 +1173,6 @@ class CanvasCompareTester {
                        })
                        .with_bg(bg));
       }
-      EXPECT_TRUE(filter->unique()) << "ColorFilter == Invert Cleanup";
     }
 
     {
@@ -1213,8 +1237,7 @@ class CanvasCompareTester {
     }
 
     {
-      sk_sp<SkMaskFilter> filter =
-          SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 5.0);
+      const DlBlurMaskFilter filter(kNormal_SkBlurStyle, 5.0);
       BoundsTolerance blur5Tolerance = tolerance.addBoundsPadding(4, 4);
       {
         // Stroked primitives need some non-trivial stroke size to be blurred
@@ -1223,30 +1246,13 @@ class CanvasCompareTester {
                        "MaskFilter == Blur 5",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
+                         p.setMaskFilter(filter.sk_filter());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
-                         b.setMaskFilter(filter);
+                         b.setMaskFilter(&filter);
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur 5 Cleanup";
-      {
-        RenderWith(testP, env, blur5Tolerance,
-                   CaseParameters(
-                       "MaskFilter == Blur(Normal, 5.0)",
-                       [=](SkCanvas*, SkPaint& p) {
-                         p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
-                       },
-                       [=](DisplayListBuilder& b) {
-                         b.setStrokeWidth(5.0);
-                         b.setMaskBlurFilter(kNormal_SkBlurStyle, 5.0);
-                       }));
-      }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur(Normal, 5.0) Cleanup";
     }
 
     {
@@ -1732,7 +1738,8 @@ class CanvasCompareTester {
       // of the embedded calls in the display list and so the op counts
       // will not be equal between the two.
       if (!testP.is_draw_display_list()) {
-        EXPECT_EQ(display_list->op_count(), sk_picture->approximateOpCount())
+        EXPECT_EQ(static_cast<int>(display_list->op_count()),
+                  sk_picture->approximateOpCount())
             << info;
       }
 
@@ -1740,7 +1747,8 @@ class CanvasCompareTester {
       display_list->RenderTo(dl_surface->canvas());
       compareToReference(dl_surface->pixmap(), sk_pixels,
                          info + " (DisplayList built directly -> surface)",
-                         &dl_bounds, &tolerance, bg);
+                         &dl_bounds, &tolerance, bg,
+                         caseP.fuzzy_compare_components());
 
       if (display_list->can_apply_group_opacity()) {
         checkGroupOpacity(env, display_list, dl_surface->pixmap(),
@@ -1760,7 +1768,8 @@ class CanvasCompareTester {
       dl_recorder.builder()->Build()->RenderTo(cv_dl_surface->canvas());
       compareToReference(cv_dl_surface->pixmap(), sk_pixels,
                          info + " (Skia calls -> DisplayList -> surface)",
-                         nullptr, nullptr, bg);
+                         nullptr, nullptr, bg,
+                         caseP.fuzzy_compare_components());
     }
 
     {
@@ -1799,8 +1808,20 @@ class CanvasCompareTester {
       display_list_x2->RenderTo(test_x2_canvas);
       compareToReference(test_x2_surface->pixmap(), ref_x2_pixels,
                          info + " (Both rendered scaled 2x)", nullptr, nullptr,
-                         bg, TestWidth2, TestHeight2, false);
+                         bg, caseP.fuzzy_compare_components(),  //
+                         TestWidth2, TestHeight2, false);
     }
+  }
+
+  static bool fuzzyCompare(uint32_t pixel_a, uint32_t pixel_b, int fudge) {
+    for (int i = 0; i < 32; i += 8) {
+      int comp_a = (pixel_a >> i) & 0xff;
+      int comp_b = (pixel_b >> i) & 0xff;
+      if (std::abs(comp_a - comp_b) > fudge) {
+        return false;
+      }
+    }
+    return true;
   }
 
   static void checkGroupOpacity(const RenderEnvironment& env,
@@ -1913,9 +1934,10 @@ class CanvasCompareTester {
                                  SkRect* bounds,
                                  const BoundsTolerance* tolerance,
                                  const SkColor bg,
+                                 bool fuzzyCompares = false,
                                  int width = TestWidth,
                                  int height = TestHeight,
-                                 bool printMismatches = false) {
+                                 bool printMismatches = true) {
     SkPMColor untouched = SkPreMultiplyColor(bg);
     ASSERT_EQ(test_pixels->width(), width) << info;
     ASSERT_EQ(test_pixels->height(), height) << info;
@@ -1951,7 +1973,9 @@ class CanvasCompareTester {
             pixels_oob++;
           }
         }
-        if (test_row[x] != ref_row[x]) {
+        bool match = fuzzyCompares ? fuzzyCompare(test_row[x], ref_row[x], 1)
+                                   : test_row[x] == ref_row[x];
+        if (!match) {
           if (printMismatches) {
             FML_LOG(ERROR) << "pix[" << x << ", " << y
                            << "] mismatch: " << std::hex << test_row[x]

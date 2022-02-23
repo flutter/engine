@@ -9,6 +9,8 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.Build;
 import android.view.View;
+import android.view.ViewGroup;
+import androidx.annotation.Nullable;
 
 public final class ViewUtils {
   /**
@@ -17,7 +19,8 @@ public final class ViewUtils {
    * <p>This method will recursively traverse up the context chain if it is a {@link ContextWrapper}
    * until it finds the first instance of the base context that is an {@link Activity}.
    */
-  public static Activity getActivity(Context context) {
+  @Nullable
+  public static Activity getActivity(@Nullable Context context) {
     if (context == null) {
       return null;
     }
@@ -44,5 +47,29 @@ public final class ViewUtils {
       return View.generateViewId();
     }
     return fallbackId;
+  }
+
+  /**
+   * Determines if the current view or any descendant view has focus.
+   *
+   * @param root The root view.
+   * @return True if the current view or any descendant view has focus.
+   */
+  public static boolean childHasFocus(@Nullable View root) {
+    if (root == null) {
+      return false;
+    }
+    if (root.hasFocus()) {
+      return true;
+    }
+    if (root instanceof ViewGroup) {
+      final ViewGroup viewGroup = (ViewGroup) root;
+      for (int idx = 0; idx < viewGroup.getChildCount(); idx++) {
+        if (childHasFocus(viewGroup.getChildAt(idx))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

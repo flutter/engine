@@ -5,8 +5,9 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_DISPATCHER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_DISPATCHER_H_
 
-#include "flutter/display_list/types.h"
-#include "flutter/fml/macros.h"
+#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_color_filter.h"
+#include "flutter/display_list/display_list_mask_filter.h"
 
 namespace flutter {
 
@@ -37,7 +38,7 @@ class Dispatcher {
   virtual void setStrokeCap(SkPaint::Cap cap) = 0;
   virtual void setStrokeJoin(SkPaint::Join join) = 0;
   virtual void setShader(sk_sp<SkShader> shader) = 0;
-  virtual void setColorFilter(sk_sp<SkColorFilter> filter) = 0;
+  virtual void setColorFilter(const DlColorFilter* filter) = 0;
   // setInvertColors does not exist in SkPaint, but is a quick way to set
   // a ColorFilter that inverts the rgb values of all rendered colors.
   // It is not reset by |setColorFilter|, but instead composed with that
@@ -46,23 +47,23 @@ class Dispatcher {
   virtual void setBlendMode(SkBlendMode mode) = 0;
   virtual void setBlender(sk_sp<SkBlender> blender) = 0;
   virtual void setPathEffect(sk_sp<SkPathEffect> effect) = 0;
-  virtual void setMaskFilter(sk_sp<SkMaskFilter> filter) = 0;
-  // setMaskBlurFilter is a quick way to set the parameters for a
-  // mask blur filter without constructing an SkMaskFilter object.
-  // It is equivalent to setMaskFilter(SkMaskFilter::MakeBlur(style, sigma)).
-  // To reset the filter use setMaskFilter(nullptr).
-  virtual void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) = 0;
+  virtual void setMaskFilter(const DlMaskFilter* filter) = 0;
   virtual void setImageFilter(sk_sp<SkImageFilter> filter) = 0;
 
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
   virtual void save() = 0;
-  // The |restore_with_paint| parameter determines whether the existing
-  // rendering attributes will be applied to the save layer surface while
-  // rendering it back to the current surface. If the parameter is false
-  // then this method is equivalent to |SkCanvas::saveLayer| with a null
-  // paint object.
-  virtual void saveLayer(const SkRect* bounds, bool restore_with_paint) = 0;
+  // The |options| parameter can specify whether the existing rendering
+  // attributes will be applied to the save layer surface while rendering
+  // it back to the current surface. If the flag is false then this method
+  // is equivalent to |SkCanvas::saveLayer| with a null paint object.
+  // The |options| parameter may contain other options that indicate some
+  // specific optimizations may be made by the underlying implementation
+  // to avoid creating a temporary layer, these optimization options will
+  // be determined as the |DisplayList| is constructed and should not be
+  // specified in calling a |DisplayListBuilder| as they will be ignored.
+  virtual void saveLayer(const SkRect* bounds,
+                         const SaveLayerOptions options) = 0;
   virtual void restore() = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;

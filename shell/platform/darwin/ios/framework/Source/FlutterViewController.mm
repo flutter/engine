@@ -120,7 +120,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   NSAssert(engine != nil, @"Engine is required");
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    _viewOpaque = YES;
+    _viewOpaque = NO;
     if (engine.viewController) {
       FML_LOG(ERROR) << "The supplied FlutterEngine " << [[engine description] UTF8String]
                      << " is already used with FlutterViewController instance "
@@ -203,7 +203,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     return;
   }
 
-  _viewOpaque = YES;
+  _viewOpaque = NO;
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   _engine = std::move(engine);
   _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
@@ -518,15 +518,17 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     FML_DCHECK(RasterTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on raster thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
-      fml::scoped_nsobject<FlutterViewController> flutterViewController(
-          [(FlutterViewController*)weakSelf.get() retain]);
-      if (flutterViewController) {
-        if (flutterViewController.get()->_splashScreenView) {
-          [flutterViewController removeSplashScreenView:^{
+      if (weakSelf) {
+        fml::scoped_nsobject<FlutterViewController> flutterViewController(
+            [(FlutterViewController*)weakSelf.get() retain]);
+        if (flutterViewController) {
+          if (flutterViewController.get()->_splashScreenView) {
+            [flutterViewController removeSplashScreenView:^{
+              [flutterViewController callViewRenderedCallback];
+            }];
+          } else {
             [flutterViewController callViewRenderedCallback];
-          }];
-        } else {
-          [flutterViewController callViewRenderedCallback];
+          }
         }
       }
     });
@@ -671,10 +673,12 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
-        [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
+        if (weakSelf) {
+          [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
+        }
       };
-  [self.keyboardManager
-      addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc] initWithSendEvent:sendEvent]];
+  [self.keyboardManager addPrimaryResponder:[[[FlutterEmbedderKeyResponder alloc]
+                                                initWithSendEvent:sendEvent] autorelease]];
   FlutterChannelKeyResponder* responder = [[[FlutterChannelKeyResponder alloc]
       initWithChannel:self.engine.keyEventChannel] autorelease];
   [self.keyboardManager addPrimaryResponder:responder];
@@ -943,6 +947,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       case flutter::PointerData::Change::kAdd:
       case flutter::PointerData::Change::kRemove:
         // We don't use kAdd/kRemove.
+        break;
+      case flutter::PointerData::Change::kPanZoomStart:
+      case flutter::PointerData::Change::kPanZoomUpdate:
+      case flutter::PointerData::Change::kPanZoomEnd:
+        // We don't send pan/zoom events here
         break;
     }
 

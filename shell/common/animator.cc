@@ -45,25 +45,6 @@ Animator::Animator(Delegate& delegate,
 
 Animator::~Animator() = default;
 
-void Animator::Stop() {
-  paused_ = true;
-}
-
-void Animator::Start() {
-  if (!paused_) {
-    return;
-  }
-
-  paused_ = false;
-  RequestFrame();
-}
-
-// Indicate that screen dimensions will be changing in order to force rendering
-// of an updated frame even if the animator is currently paused.
-void Animator::SetDimensionChangePending() {
-  dimension_change_pending_ = true;
-}
-
 void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
@@ -168,8 +149,9 @@ void Animator::BeginFrame(
           if (notify_idle_task_id == self->notify_idle_task_id_ &&
               !self->frame_scheduled_) {
             TRACE_EVENT0("flutter", "BeginFrame idle callback");
-            self->delegate_.OnAnimatorNotifyIdle(Dart_TimelineGetMicros() +
-                                                 100000);
+            self->delegate_.OnAnimatorNotifyIdle(
+                FxlToDartOrEarlier(fml::TimePoint::Now() +
+                                   fml::TimeDelta::FromMicroseconds(100000)));
           }
         },
         kNotifyIdleTaskWaitTime);
@@ -178,10 +160,6 @@ void Animator::BeginFrame(
 
 void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   has_rendered_ = true;
-  if (dimension_change_pending_ &&
-      layer_tree->frame_size() != last_layer_tree_size_) {
-    dimension_change_pending_ = false;
-  }
   last_layer_tree_size_ = layer_tree->frame_size();
 
   if (!frame_timings_recorder_) {
@@ -231,9 +209,6 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
   if (regenerate_layer_tree) {
     regenerate_layer_tree_ = true;
   }
-  if (paused_ && !dimension_change_pending_) {
-    return;
-  }
 
   if (!pending_frame_semaphore_.TryWait()) {
     // Multiple calls to Animator::RequestFrame will still result in a
@@ -274,8 +249,7 @@ void Animator::AwaitVSync() {
         }
       });
   if (has_rendered_) {
-    delegate_.OnAnimatorNotifyIdle(
-        dart_frame_deadline_.ToEpochDelta().ToMicroseconds());
+    delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
   }
 }
 
