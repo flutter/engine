@@ -22,7 +22,7 @@ PLATFORM_2_PATH = {
     'linux': 'linux-x64',
     'cygwin': 'windows-x64',
     'win': 'windows-x64',
-    'win32': 'windows-64',
+    'win32': 'windows-x32',
 }
 
 
