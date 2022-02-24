@@ -107,9 +107,7 @@ class DlAttribute {
     return type() == other.type() && equals_(other);
   }
   // Perform a content aware |!=| comparison of the ColorFilter.
-  bool operator!=(D const& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(D const& other) const { return !(*this == other); }
 
   virtual ~DlAttribute() = default;
 
