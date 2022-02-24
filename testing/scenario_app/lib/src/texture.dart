@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:ui';
 
 import 'package:scenario_app/src/scenarios.dart';
@@ -16,8 +15,7 @@ class DisplayTexture extends Scenario {
   ///
   /// The [dispatcher] parameter must not be null.
   DisplayTexture(PlatformDispatcher dispatcher)
-      : assert(dispatcher != null),
-        super(dispatcher);
+      : super(dispatcher);
 
   int get _textureId => scenarioParams['texture_id'] as int;
   double get _textureWidth =>
