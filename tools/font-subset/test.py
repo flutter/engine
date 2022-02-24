@@ -20,6 +20,7 @@ from zipfile import ZipFile
 PLATFORM_2_PATH = {
     'darwin': 'darwin-x64',
     'linux': 'linux-x64',
+    'linux2': 'linux-x64',
     'cygwin': 'windows-x64',
     'win': 'windows-x64',
     'win32': 'windows-x64',
