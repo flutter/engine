@@ -218,6 +218,56 @@ const NSDictionary* keyCodeToLogicalKey = @{
   @0x0000007e : @0x00100000304,  // ArrowUp -> arrowUp
 };
 
+const NSDictionary* verbatimPhysicalToLogicalKey = @{
+  @0x00070004 : @0x00000061,    // KeyA -> KeyA
+  @0x00070005 : @0x00000062,    // KeyB -> KeyB
+  @0x00070006 : @0x00000063,    // KeyC -> KeyC
+  @0x00070007 : @0x00000064,    // KeyD -> KeyD
+  @0x00070008 : @0x00000065,    // KeyE -> KeyE
+  @0x00070009 : @0x00000066,    // KeyF -> KeyF
+  @0x0007000a : @0x00000067,    // KeyG -> KeyG
+  @0x0007000b : @0x00000068,    // KeyH -> KeyH
+  @0x0007000c : @0x00000069,    // KeyI -> KeyI
+  @0x0007000d : @0x0000006a,    // KeyJ -> KeyJ
+  @0x0007000e : @0x0000006b,    // KeyK -> KeyK
+  @0x0007000f : @0x0000006c,    // KeyL -> KeyL
+  @0x00070010 : @0x0000006d,    // KeyM -> KeyM
+  @0x00070011 : @0x0000006e,    // KeyN -> KeyN
+  @0x00070012 : @0x0000006f,    // KeyO -> KeyO
+  @0x00070013 : @0x00000070,    // KeyP -> KeyP
+  @0x00070014 : @0x00000071,    // KeyQ -> KeyQ
+  @0x00070015 : @0x00000072,    // KeyR -> KeyR
+  @0x00070016 : @0x00000073,    // KeyS -> KeyS
+  @0x00070017 : @0x00000074,    // KeyT -> KeyT
+  @0x00070018 : @0x00000075,    // KeyU -> KeyU
+  @0x00070019 : @0x00000076,    // KeyV -> KeyV
+  @0x0007001a : @0x00000077,    // KeyW -> KeyW
+  @0x0007001b : @0x00000078,    // KeyX -> KeyX
+  @0x0007001c : @0x00000079,    // KeyY -> KeyY
+  @0x0007001d : @0x0000007a,    // KeyZ -> KeyZ
+  @0x0007001e : @0x00000031,    // Digit1 -> Digit1
+  @0x0007001f : @0x00000032,    // Digit2 -> Digit2
+  @0x00070020 : @0x00000033,    // Digit3 -> Digit3
+  @0x00070021 : @0x00000034,    // Digit4 -> Digit4
+  @0x00070022 : @0x00000035,    // Digit5 -> Digit5
+  @0x00070023 : @0x00000036,    // Digit6 -> Digit6
+  @0x00070024 : @0x00000037,    // Digit7 -> Digit7
+  @0x00070025 : @0x00000038,    // Digit8 -> Digit8
+  @0x00070026 : @0x00000039,    // Digit9 -> Digit9
+  @0x00070027 : @0x00000030,    // Digit0 -> Digit0
+  @0x0007002d : @0x0000002d,    // Minus -> Minus
+  @0x0007002e : @0x0000003d,    // Equal -> Equal
+  @0x0007002f : @0x0000005b,    // BracketLeft -> BracketLeft
+  @0x00070030 : @0x0000005d,    // BracketRight -> BracketRight
+  @0x00070031 : @0x0000005c,    // Backslash -> Backslash
+  @0x00070033 : @0x0000003b,    // Semicolon -> Semicolon
+  @0x00070034 : @0x00000022,    // Quote -> Quote
+  @0x00070035 : @0x00000060,    // Backquote -> Backquote
+  @0x00070036 : @0x0000002c,    // Comma -> Comma
+  @0x00070037 : @0x0000002e,    // Period -> Period
+  @0x00070038 : @0x0000002f,    // Slash -> Slash
+};
+
 const NSDictionary* keyCodeToModifierFlag = @{
   @0x00000038 : @(kModifierFlagShiftLeft),
   @0x0000003c : @(kModifierFlagShiftRight),

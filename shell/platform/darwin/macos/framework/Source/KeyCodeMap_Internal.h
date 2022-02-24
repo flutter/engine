@@ -20,6 +20,9 @@ extern const NSDictionary* keyCodeToPhysicalKey;
  */
 extern const NSDictionary* keyCodeToLogicalKey;
 
+// TODO
+extern const NSDictionary* verbatimPhysicalToLogicalKey;
+
 // Several mask constants. See KeyCodeMap.mm for their descriptions.
 
 /**
