@@ -234,7 +234,7 @@ public class PlatformPlugin {
 
   private void setSystemChromeChangeListener() {
     // Set up a listener to notify the framework when the system ui has changed.
-    // The Android API for overlays/insets as of API 30 provides backwrds compatibility
+    // The Android API for overlays/insets as of API 30 provides backwards compatibility
     // up through API 20, so legacy code with equivalent behavior is still used for API 19.
     if (Build.VERSION.SDK_INT <= 19) {
       setSystemChromeChangeListenerLegacy();
