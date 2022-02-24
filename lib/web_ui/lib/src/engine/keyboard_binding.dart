@@ -53,6 +53,26 @@ bool isAlphabet(int charCode) {
       || (charCode >= _kCharUpperA && charCode <= _kCharUpperZ);
 }
 
+bool _isEasciiCharacter(int? character) {
+  return character != null && character < 256;
+}
+
+// Out of `character`, check if it only contains one UTF-32 character, and
+// return the character if so, or null otherwise.
+int? _getSingleUtf32Character(String character) {
+  final RuneIterator runes = Runes(character).iterator;
+  // Invalid if there are no characters.
+  if (!runes.moveNext()) {
+    return null;
+  }
+  final int result = runes.current;
+  // Invalid if there are more than one characters.
+  if (runes.moveNext()) {
+    return null;
+  }
+  return result;
+}
+
 const String _kPhysicalCapsLock = 'CapsLock';
 
 const String _kLogicalDead = 'Dead';
@@ -347,6 +367,33 @@ class KeyboardConverter {
     _keyGuards.remove(physicalKey)?.call();
   }
 
+  static int getLogicalKey(FlutterHtmlKeyboardEvent event, String? character, int physicalKey) {
+    final String eventKey = event.key!;
+
+    if (kWebLogicalLocationMap.containsKey(event.key!)) {
+      final int? result = kWebLogicalLocationMap[eventKey]?[event.location!];
+      assert(result != null, 'Invalid modifier location: $eventKey, ${event.location}');
+      return result!;
+    }
+    if (character != null) {
+      final int? characterId = _getSingleUtf32Character(character.toLowerCase());
+      // If character is non-EASCII, use the printable physical key as logical
+      // key instead. This allows non-latin languages (such as Russian) to
+      // produce latin logical keys so that shortcuts work correctly.
+      if (!_isEasciiCharacter(characterId)) {
+        final int? result = kVerbatimPhysicalToLogicalKey[physicalKey];
+        if (result != null) {
+          return result;
+        }
+      }
+
+      return _characterToLogicalKey(character);
+    }
+    if (eventKey == _kLogicalDead)
+      return _deadKeyToLogicalKey(physicalKey, event);
+    return _otherLogicalKey(eventKey);
+  }
+
   void _handleEvent(FlutterHtmlKeyboardEvent event) {
     final Duration timeStamp = _eventTimeStampToDuration(event.timeStamp!);
 
@@ -355,18 +402,7 @@ class KeyboardConverter {
     final int physicalKey = _getPhysicalCode(event.code!);
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
     final String? character = logicalKeyIsCharacter ? eventKey : null;
-    final int logicalKey = () {
-      if (kWebLogicalLocationMap.containsKey(event.key!)) {
-        final int? result = kWebLogicalLocationMap[event.key!]?[event.location!];
-        assert(result != null, 'Invalid modifier location: ${event.key}, ${event.location}');
-        return result!;
-      }
-      if (character != null)
-        return _characterToLogicalKey(character);
-      if (eventKey == _kLogicalDead)
-        return _deadKeyToLogicalKey(physicalKey, event);
-      return _otherLogicalKey(eventKey);
-    }();
+    final int logicalKey = getLogicalKey(event, character, physicalKey);
 
     assert(event.type == 'keydown' || event.type == 'keyup');
     final bool isPhysicalDown = event.type == 'keydown' ||

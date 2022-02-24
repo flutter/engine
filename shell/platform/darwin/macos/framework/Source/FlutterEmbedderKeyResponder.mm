@@ -179,8 +179,8 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   }
 
   // If a printable key is mapped to an non-EASCII character, use the printable
-  // key as logical key instead. This allows non-latin languages (such as
-  // Russian) to produce latin logical keys so that shortcuts work correctly.
+  // physical key as logical key instead. This allows non-latin languages (such
+  // as Russian) to produce latin logical keys so that shortcuts work correctly.
   if (!IsEasciiCharacter(character)) {
     NSNumber* logicalKey = [verbatimPhysicalToLogicalKey objectForKey:@(physicalKey)];
     if (logicalKey != nil) {
