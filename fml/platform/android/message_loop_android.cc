@@ -112,7 +112,7 @@ void MessageLoopAndroid::OnEventFired() {
 
 bool MessageLoopAndroid::Register(JNIEnv* env) {
   jclass clazz = env->FindClass("android/os/Looper");
-  FML_CHECK(!clazz->is_null());
+  FML_CHECK(clazz != nullptr);
 
   g_looper_class = new fml::jni::ScopedJavaGlobalRef<jclass>(env, clazz);
   FML_CHECK(!g_looper_class->is_null());
