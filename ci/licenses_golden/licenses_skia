@@ -1,4 +1,4 @@
-Signature: ad6e639cfda4176a933c3228e5160020
+Signature: 8ac5576490ed6656e726a2c5bde435a1
 
 UNUSED LICENSES:
 
@@ -6172,7 +6172,6 @@ FILE: ../../../third_party/skia/gm/destcolor.cpp
 FILE: ../../../third_party/skia/gm/dsl_processor_test.cpp
 FILE: ../../../third_party/skia/include/private/SkSLProgramKind.h
 FILE: ../../../third_party/skia/include/private/SkStringView.h
-FILE: ../../../third_party/skia/include/private/SkTOptional.h
 FILE: ../../../third_party/skia/include/private/chromium/SkChromeRemoteGlyphCache.h
 FILE: ../../../third_party/skia/include/sksl/DSLBlock.h
 FILE: ../../../third_party/skia/include/sksl/DSLCase.h
