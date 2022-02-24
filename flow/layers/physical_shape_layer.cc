@@ -56,7 +56,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
 
-  SkRect child_paint_bounds;
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
 
   SkRect paint_bounds;

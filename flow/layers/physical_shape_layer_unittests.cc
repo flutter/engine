@@ -87,7 +87,7 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathClip) {
   layer->Add(child1);
   layer->Add(child2);
 
-  SkRect child_paint_bounds;
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
   layer->Preroll(preroll_context(), SkMatrix());
   child_paint_bounds.join(child1->paint_bounds());
   child_paint_bounds.join(child2->paint_bounds());
@@ -142,7 +142,7 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathNoClip) {
   layer->Add(child1);
   layer->Add(child2);
 
-  SkRect total_bounds;
+  SkRect total_bounds = SkRect::MakeEmpty();
   layer->Preroll(preroll_context(), SkMatrix());
   total_bounds.join(child1->paint_bounds());
   total_bounds.join(child2->paint_bounds());
