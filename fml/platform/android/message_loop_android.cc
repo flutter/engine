@@ -88,7 +88,9 @@ void MessageLoopAndroid::Run() {
   FML_DCHECK(looper_.get() == ALooper_forThread());
 
   running_ = true;
+  // Initialize the current thread as a looper.
   LooperPrepare();
+  // Run the message queue in this thread.
   LooperLoop();
 }
 
@@ -110,13 +112,9 @@ void MessageLoopAndroid::OnEventFired() {
 
 bool MessageLoopAndroid::Register(JNIEnv* env) {
   jclass clazz = env->FindClass("android/os/Looper");
-
-  if (clazz == nullptr) {
-    return false;
-  }
+  FML_CHECK(!clazz->is_null());
 
   g_looper_class = new fml::jni::ScopedJavaGlobalRef<jclass>(env, clazz);
-
   FML_CHECK(!g_looper_class->is_null());
 
   g_looper_prepare_method_ =
@@ -133,6 +131,7 @@ bool MessageLoopAndroid::Register(JNIEnv* env) {
 
   g_looper_quit_method_ =
       env->GetMethodID(g_looper_class->obj(), "quit", "()V");
+  FML_CHECK(g_looper_quit_method_ != nullptr);
 
   return true;
 }
