@@ -9,6 +9,7 @@
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/core/SkData.h"
 
 namespace flutter {
 namespace testing {
