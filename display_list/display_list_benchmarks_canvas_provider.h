@@ -8,8 +8,8 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/testing/testing.h"
 
-#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 namespace testing {
