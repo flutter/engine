@@ -59,15 +59,21 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
 
+  SkRect paint_bounds;
   if (elevation_ == 0) {
-    set_paint_bounds(path_.getBounds());
+    paint_bounds = path_.getBounds();
   } else {
     // We will draw the shadow in Paint(), so add some margin to the paint
-    // bounds to leave space for the shadow. We fill this whole region and clip
-    // children to it so we don't need to join the child paint bounds.
-    set_paint_bounds(DisplayListCanvasDispatcher::ComputeShadowBounds(
-        path_, elevation_, context->frame_device_pixel_ratio, matrix));
+    // bounds to leave space for the shadow.
+    paint_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
+        path_, elevation_, context->frame_device_pixel_ratio, matrix);
   }
+
+  if (clip_behavior_ == Clip::none) {
+    paint_bounds.join(child_paint_bounds);
+  }
+
+  set_paint_bounds(paint_bounds);
 }
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
