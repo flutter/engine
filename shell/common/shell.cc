@@ -869,11 +869,27 @@ void Shell::OnPlatformViewDestroyed() {
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                     raster_task);
   latch.Wait();
-  // On Android, the external view embedder posts a task to the platform thread,
-  // and waits until it completes.
-  // As a result, the platform thread must not be blocked prior to calling
-  // this method.
+  // On Android, the external view embedder may post a task to the platform
+  // thread, and wait until it completes if overlay surfaces must be released.
+  // However, the platform thread might be blocked when Dart is initializing.
+  // In this situation, calling TeardownExternalViewEmbedder is safe because no
+  // platform views have been created before Flutter renders the first frame.
+  // Overall, the longer term plan is to remove this implementation once
+  // https://github.com/flutter/flutter/issues/96679 is fixed.
   rasterizer_->TeardownExternalViewEmbedder();
+}
+
+// |PlatformView::Delegate|
+void Shell::OnPlatformViewScheduleFrame() {
+  TRACE_EVENT0("flutter", "Shell::OnPlatformViewScheduleFrame");
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr()]() {
+    if (engine) {
+      engine->ScheduleFrame();
+    }
+  });
 }
 
 // |PlatformView::Delegate|
