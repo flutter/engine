@@ -174,9 +174,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     void destroy();
   }
 
-  /**
-   * Paints a simple gradient onto the attached Surface.
-   */
+  /** Paints a simple gradient onto the attached Surface. */
   private static class CanvasSurfaceRenderer implements SurfaceRenderer {
     private Surface surface;
     private CountDownLatch onFirstFrame;
@@ -223,9 +221,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     public void destroy() {}
   }
 
-  /**
-   * Decodes a sample video into the attached Surface.
-   */
+  /** Decodes a sample video into the attached Surface. */
   @RequiresApi(VERSION_CODES.LOLLIPOP)
   private static class MediaSurfaceRenderer implements SurfaceRenderer {
     private final Supplier<MediaExtractor> extractorSupplier;
@@ -343,8 +339,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   }
 
   /**
-   * Takes frames from the inner SurfaceRenderer and feeds it through an ImageReader and
-   * ImageWriter pair.
+   * Takes frames from the inner SurfaceRenderer and feeds it through an ImageReader and ImageWriter
+   * pair.
    */
   @RequiresApi(VERSION_CODES.M)
   private static class ImageSurfaceRenderer implements SurfaceRenderer {
