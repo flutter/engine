@@ -7,6 +7,7 @@ package dev.flutter.scenariosui;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Build.VERSION_CODES;
+import androidx.annotation.NonNull;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.rule.ActivityTestRule;
@@ -25,7 +26,7 @@ public class ExternalTextureTests {
 
   Intent intent;
 
-  @Rule
+  @Rule @NonNull
   public ActivityTestRule<ExternalTextureFlutterActivity> activityRule =
       new ActivityTestRule<>(
           ExternalTextureFlutterActivity.class,

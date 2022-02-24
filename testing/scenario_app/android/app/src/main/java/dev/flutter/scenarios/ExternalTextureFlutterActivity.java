@@ -31,6 +31,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Supplier;
 import io.flutter.view.TextureRegistry.SurfaceTextureEntry;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("SyntheticAccessor")
 public class ExternalTextureFlutterActivity extends TestActivity {
   static final String TAG = "Scenarios";
   private static final int SURFACE_WIDTH = 192;
@@ -54,7 +56,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private SurfaceTextureEntry surfaceTextureEntry;
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     String surfaceRenderer = getIntent().getStringExtra("surface_renderer");
@@ -155,7 +157,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   }
 
   @Override
-  protected void getScenarioParams(Map<String, Object> args) {
+  protected void getScenarioParams(@NonNull Map<String, Object> args) {
     super.getScenarioParams(args);
     args.put("texture_id", textureId);
     args.put("texture_width", SURFACE_WIDTH);
@@ -249,7 +251,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
       // NOTE: MediaFormat.KEY_ROTATION was not available until 23+, but the key is still handled on
       // API 21+.
-      format.setInteger(MediaFormat.KEY_ROTATION, rotation);
+      format.setInteger("rotation-degrees", rotation);
 
       decodeThread = new Thread(this::decodeThreadMain);
       decodeThread.start();

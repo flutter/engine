@@ -87,7 +87,7 @@ public abstract class TestActivity extends TestableFlutterActivity {
    *
    * @param args The map of test arguments
    */
-  protected void getScenarioParams(Map<String, Object> args) {}
+  protected void getScenarioParams(@NonNull Map<String, Object> args) {}
 
   protected void writeTimelineData(@Nullable Uri logFile) {
     if (logFile == null) {
