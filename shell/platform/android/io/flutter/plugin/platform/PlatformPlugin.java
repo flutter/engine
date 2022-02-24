@@ -38,6 +38,7 @@ public class PlatformPlugin {
   private PlatformChannel.SystemChromeStyle currentTheme;
   private PlatformChannel.SystemUiMode currentSystemUiMode;
   private List<PlatformChannel.SystemUiOverlay> currentOverlays;
+  private androidx.core.view.OnApplyWindowInsetsListener insetsListener;
   private static final String TAG = "PlatformPlugin";
 
   /**
@@ -239,8 +240,7 @@ public class PlatformPlugin {
       setSystemChromeChangeListenerLegacy();
     } else {
       View decorView = activity.getWindow().getDecorView();
-      ViewCompat.setOnApplyWindowInsetsListener(
-          decorView,
+      insetsListener =
           new androidx.core.view.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsetsCompat onApplyWindowInsets(
@@ -260,8 +260,14 @@ public class PlatformPlugin {
               }
               return null;
             }
-          });
+          };
+      ViewCompat.setOnApplyWindowInsetsListener(decorView, insetsListener);
     }
+  }
+
+  @VisibleForTesting
+  androidx.core.view.OnApplyWindowInsetsListener getInsetsListener() {
+    return insetsListener;
   }
 
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
