@@ -455,8 +455,8 @@ public class PlatformPlugin {
     updateSystemUiOverlays();
   }
 
-  @VisibleForTesting
-  void setSystemChromeSystemUIOverlayStyle(PlatformChannel.SystemChromeStyle systemChromeStyle) {
+  private void setSystemChromeSystemUIOverlayStyle(
+      PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();
     View view = window.getDecorView();
     WindowInsetsControllerCompat windowInsetsControllerCompat =

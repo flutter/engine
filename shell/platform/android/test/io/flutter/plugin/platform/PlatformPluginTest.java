@@ -534,7 +534,7 @@ public class PlatformPluginTest {
     verify(fakeWindow, never()).setStatusBarContrastEnforced(anyBoolean());
     verify(fakeWindow, never()).setNavigationBarContrastEnforced(anyBoolean());
 
-    platformPlugin.setSystemChromeSystemUIOverlayStyle(testStyle);
+    platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(testStyle);
     platformPlugin.updateSystemUiOverlays();
 
     verify(fakeWindow, times(2)).setStatusBarColor(0xFF000000);
