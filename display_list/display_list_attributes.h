@@ -6,7 +6,6 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_ATTRIBUTES_H_
 
 #include "flutter/display_list/types.h"
-#include "flutter/fml/logging.h"
 
 namespace flutter {
 
