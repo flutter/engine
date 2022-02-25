@@ -505,6 +505,30 @@ public class PlatformPluginTest {
     verify(fakeWindowInsetsController).show(WindowInsetsCompat.Type.navigationBars());
   }
 
+  @Test
+  public void verifyUpdateSystemUiOverlaysAppliesCurrentTheme() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = mock(PlatformPlugin.class);
+    WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
+    when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
+
+    SystemChromeStyle testStyle =
+        new SystemChromeStyle(
+            0XFF000000, Brightness.LIGHT, true, 0XFFC70039, Brightness.LIGHT, 0XFF006DB3, true);
+
+    platformPlugin.updateSystemUiOverlays();
+    verify(platformPlugin, never()).setSystemChromeSystemUIOverlayStyle(testStyle);
+
+    platformPlugin.setSystemChromeSystemUIOverlayStyle(testStyle);
+    platformPlugin.updateSystemUiOverlays();
+    verify(platformPlugin).setSystemChromeSystemUIOverlayStyle(testStyle);
+  }
+
   @Config(sdk = 28)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
