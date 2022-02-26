@@ -26,6 +26,8 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
+import io.flutter.view.TextureRegistry;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Wraps a platform view to intercept gestures and project this view onto a {@link SurfaceTexture}.
@@ -52,10 +54,40 @@ class PlatformViewWrapper extends FrameLayout {
   private AndroidTouchProcessor touchProcessor;
 
   @Nullable @VisibleForTesting ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener;
+  @Nullable private TextureRegistry.SurfaceTextureEntry textureEntry;
+  private final AtomicLong pendingFramesCount = new AtomicLong(0L);
+
+  private final TextureRegistry.ImageFrameListener frameListener =
+      new TextureRegistry.ImageFrameListener() {
+        @Override
+        public void onFrameAvailable() {}
+
+        @Override
+        public void onFrameConsumed() {
+          if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+            pendingFramesCount.decrementAndGet();
+          }
+        }
+      };
+
+  private boolean shouldDrawToSurfaceNow() {
+    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+      return pendingFramesCount.get() <= 0L;
+    }
+    return true;
+  }
 
   public PlatformViewWrapper(@NonNull Context context) {
     super(context);
     setWillNotDraw(false);
+  }
+
+  public PlatformViewWrapper(
+      @NonNull Context context, @NonNull TextureRegistry.SurfaceTextureEntry textureEntry) {
+    this(context);
+    this.textureEntry = textureEntry;
+    textureEntry.setImageFrameListener(frameListener);
+    setTexture(textureEntry.surfaceTexture());
   }
 
   /**
@@ -108,6 +140,10 @@ class PlatformViewWrapper extends FrameLayout {
         canvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
       } else {
         canvas.drawColor(Color.TRANSPARENT);
+      }
+
+      if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+        pendingFramesCount.incrementAndGet();
       }
     } finally {
       surface.unlockCanvasAndPost(canvas);
@@ -202,19 +238,32 @@ class PlatformViewWrapper extends FrameLayout {
       Log.e(TAG, "Invalid texture. The platform view cannot be displayed.");
       return;
     }
-    // Override the canvas that this subtree of views will use to draw.
-    final Canvas surfaceCanvas = surface.lockHardwareCanvas();
-    try {
-      // Clear the current pixels in the canvas.
-      // This helps when a WebView renders an HTML document with transparent background.
-      if (Build.VERSION.SDK_INT >= 29) {
-        surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
-      } else {
-        surfaceCanvas.drawColor(Color.TRANSPARENT);
+    // We've observed on Android Q that we have to wait for the consumer of {@link SurfaceTexture}
+    // to consume the last image before continuing to draw, otherwise subsequent calls to
+    // {@code dequeueBuffer} to request a free buffer from the {@link BufferQueue} will fail.
+    // See https://github.com/flutter/flutter/issues/98722
+    if (!shouldDrawToSurfaceNow()) {
+      // If there are still frames that are not consumed, we will draw them next time.
+      invalidate();
+    } else {
+      // Override the canvas that this subtree of views will use to draw.
+      final Canvas surfaceCanvas = surface.lockHardwareCanvas();
+      try {
+        // Clear the current pixels in the canvas.
+        // This helps when a WebView renders an HTML document with transparent background.
+        if (Build.VERSION.SDK_INT >= 29) {
+          surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
+        } else {
+          surfaceCanvas.drawColor(Color.TRANSPARENT);
+        }
+        super.draw(surfaceCanvas);
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+          pendingFramesCount.incrementAndGet();
+        }
+      } finally {
+        surface.unlockCanvasAndPost(surfaceCanvas);
       }
-      super.draw(surfaceCanvas);
-    } finally {
-      surface.unlockCanvasAndPost(surfaceCanvas);
     }
   }
 

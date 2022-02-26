@@ -37,6 +37,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import io.flutter.Log;
@@ -886,10 +887,20 @@ public class FlutterView extends SurfaceView
     private final long id;
     private final SurfaceTextureWrapper textureWrapper;
     private boolean released;
+    @Nullable private ImageFrameListener listener;
+    private final Runnable onFrameConsumed =
+        new Runnable() {
+          @Override
+          public void run() {
+            if (listener != null) {
+              listener.onFrameConsumed();
+            }
+          }
+        };
 
     SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
       this.id = id;
-      this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture);
+      this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture, onFrameConsumed);
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         // The callback relies on being executed on the UI thread (unsynchronised read of
@@ -916,6 +927,10 @@ public class FlutterView extends SurfaceView
               // SurfaceTexture has a data race when accessing the callback, so the callback may
               // still be called by a stale reference after released==true and mNativeView==null.
               return;
+            }
+
+            if (listener != null) {
+              listener.onFrameAvailable();
             }
             mNativeView
                 .getFlutterJNI()
@@ -954,6 +969,11 @@ public class FlutterView extends SurfaceView
       surfaceTexture().setOnFrameAvailableListener(null);
       textureWrapper.release();
       mNativeView.getFlutterJNI().unregisterTexture(id);
+    }
+
+    @Override
+    public void setImageFrameListener(@Nullable ImageFrameListener listener) {
+      this.listener = listener;
     }
   }
 }
