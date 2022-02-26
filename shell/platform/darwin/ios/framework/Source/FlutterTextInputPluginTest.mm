@@ -866,6 +866,32 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 2);
 }
 
+- (void)testCanCopyPasteWithScribbleEnabled {
+  if (UI_USER_INTERFACE_IDIOM() != UIUserInterfaceIdiomPad) {
+    return;
+  }
+  if (@available(iOS 14.0, *)) {
+    NSDictionary* config = self.mutableTemplateCopy;
+    [self setClientId:123 configuration:config];
+    NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+    FlutterTextInputView* inputView = inputFields[0];
+
+    [inputView insertText:@"aaaa"];
+    [inputView selectAll:nil];
+
+    XCTAssertFalse([inputView canPerformAction:@selector(copy:) withSender:NULL]);
+    XCTAssertTrue([inputView canPerformAction:@selector(copy:) withSender:@"sender"]);
+    XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:NULL]);
+    XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:@"sender"]);
+
+    [inputView copy:NULL];
+    XCTAssertFalse([inputView canPerformAction:@selector(copy:) withSender:NULL]);
+    XCTAssertTrue([inputView canPerformAction:@selector(copy:) withSender:@"sender"]);
+    XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:NULL]);
+    XCTAssertTrue([inputView canPerformAction:@selector(paste:) withSender:@"sender"]);
+  }
+}
+
 - (void)testSetMarkedTextDuringScribbleDoesNotTriggerUpdateEditingClient {
   if (@available(iOS 14.0, *)) {
     FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
