@@ -97,6 +97,7 @@ if (host_os == "win") {
     deps = [
       "//flutter/shell/platform/common:publish_headers",
       "//flutter/shell/platform/windows:flutter_windows",
+      "//flutter/shell/platform/windows:publish_headers_windows",
     ]
     files = [
       {
