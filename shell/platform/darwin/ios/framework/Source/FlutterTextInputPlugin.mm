@@ -1048,7 +1048,7 @@ static BOOL IsScribbleAvailable() {
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
   // When scribble is available, the FlutterTextInputView will display the native toolbar unless
   // these text editing actions are disabled.
-  if (IsScribbleAvailable()) {
+  if (IsScribbleAvailable() && sender == NULL) {
     return NO;
   }
   if (action == @selector(paste:)) {
