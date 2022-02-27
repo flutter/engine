@@ -97,3 +97,45 @@ executable("client_wrapper_windows_unittests") {
     "//third_party/dart/runtime:libdart_jit",
   ]
 }
+
+if (host_os == "win") {
+  client_wrapper_file_archive_list = [
+    "core_implementations.cc",
+    "engine_method_result.cc",
+    "flutter_engine.cc",
+    "flutter_view_controller.cc",
+    "plugin_registrar.cc",
+    "README",
+    "standard_codec.cc",
+  ]
+
+  zip_bundle("client_wrapper_archive") {
+    output = "$full_platform_name/flutter-cpp-client-wrapper.zip"
+    deps = [
+      ":client_wrapper_windows",
+      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+    ]
+    tmp_files = []
+    foreach(source, client_wrapper_file_archive_list) {
+      tmp_files += [
+        {
+          source = "//flutter/shell/platform/common/client_wrapper/$source"
+          destination = "cpp_client_wrapper/$source"
+        },
+      ]
+    }
+    sources = core_cpp_client_wrapper_includes +
+              core_cpp_client_wrapper_internal_headers
+    foreach(source, sources) {
+      rebased_path =
+          rebase_path(source, "//flutter/shell/platform/common/client_wrapper")
+      tmp_files += [
+        {
+          source = source
+          destination = "cpp_client_wrapper/$rebased_path"
+        },
+      ]
+    }
+    files = tmp_files
+  }
+}
