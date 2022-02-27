@@ -115,7 +115,7 @@ if (host_os == "win") {
     deps = [
       ":client_wrapper_windows",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper",
-      "//flutter/shell/platform/common/client_wrapper:publish_wrapper_windows",
+      "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
     ]
     tmp_files = []
     foreach(source, client_wrapper_file_archive_list) {
