@@ -665,12 +665,24 @@ void testMain() {
       // DOM element is blurred.
       textEditing!.strategy.domElement!.blur();
 
-      // No connection close message sent.
-      expect(spy.messages, hasLength(0));
-      await Future<void>.delayed(Duration.zero);
-      // DOM element still keeps the focus.
-      expect(defaultTextEditingRoot.activeElement,
-          textEditing!.strategy.domElement);
+      // For ios-safari the connection is closed.
+      if (browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs) {
+        expect(spy.messages, hasLength(1));
+        expect(spy.messages[0].channel, 'flutter/textinput');
+        expect(
+            spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
+        await Future<void>.delayed(Duration.zero);
+        // DOM element loses the focus.
+        expect(defaultTextEditingRoot.activeElement, null);
+      } else {
+        // No connection close message sent.
+        expect(spy.messages, hasLength(0));
+        await Future<void>.delayed(Duration.zero);
+        // DOM element still keeps the focus.
+        expect(defaultTextEditingRoot.activeElement,
+            textEditing!.strategy.domElement);
+      }
     },
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
