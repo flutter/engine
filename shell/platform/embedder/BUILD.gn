@@ -429,7 +429,7 @@ group("flutter_engine") {
 }
 
 if (host_os == "linux" || host_os == "win") {
-  zip_bundle("linux-embedder-archive") {
+  zip_bundle("embedder-archive") {
     output = "$full_platform_name/$full_platform_name-embedder.zip"
     deps = [
       "//flutter/shell/platform/embedder:copy_headers",
