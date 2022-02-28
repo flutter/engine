@@ -27,7 +27,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'f988cba8a772f98badfa95c5e3048c95ebdfec0d',
+  'skia_revision': '1fc0c1c0f8af028accf947147b18817a0aa37964',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -372,7 +372,7 @@ deps = {
    Var('chromium_git') + '/external/github.com/libexpat/libexpat.git' + '@' + 'a28238bdeebc087071777001245df1876a11f5ee',
 
   'src/third_party/freetype2':
-   Var('flutter_git') + '/third_party/freetype2' + '@' + '1f03c1b2d7f2ae832a4fbe9d12bd96c3c15bbece',
+   Var('flutter_git') + '/third_party/freetype2' + '@' + '3234e16d2322c936f777d1ef046e689e78b6c52e',
 
   'src/third_party/root_certificates':
    Var('dart_git') + '/root_certificates.git' + '@' + Var('dart_root_certificates_rev'),
@@ -607,7 +607,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'dROOoKmsjzFPqazFnn9v59fmjoQWmnPGLv6xJn9X04UC'
+        'version': 'qGsRXn7-DuBrrYDP3CixhkSD-wp2xF_dSAvfmqlMwgwC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -617,7 +617,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '-WG2dxBr62rFjjho47I0QzT0jV-CXgLloebwdsJI_6AC'
+        'version': '_mwyhkd9Hjv0o4KlgezBRadEtweO_9n5TNBYy7eaKgQC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
