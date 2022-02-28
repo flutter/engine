@@ -867,28 +867,28 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testCanCopyPasteWithScribbleEnabled {
-  if (UI_USER_INTERFACE_IDIOM() != UIUserInterfaceIdiomPad) {
-    return;
-  }
   if (@available(iOS 14.0, *)) {
     NSDictionary* config = self.mutableTemplateCopy;
     [self setClientId:123 configuration:config];
     NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
     FlutterTextInputView* inputView = inputFields[0];
 
-    [inputView insertText:@"aaaa"];
-    [inputView selectAll:nil];
+    FlutterTextInputView* mockInputView = OCMPartialMock(inputView);
+    OCMStub([mockInputView isScribbleAvailable]).andReturn(YES);
 
-    XCTAssertFalse([inputView canPerformAction:@selector(copy:) withSender:NULL]);
-    XCTAssertTrue([inputView canPerformAction:@selector(copy:) withSender:@"sender"]);
-    XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:NULL]);
-    XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:@"sender"]);
+    [mockInputView insertText:@"aaaa"];
+    [mockInputView selectAll:nil];
 
-    [inputView copy:NULL];
-    XCTAssertFalse([inputView canPerformAction:@selector(copy:) withSender:NULL]);
-    XCTAssertTrue([inputView canPerformAction:@selector(copy:) withSender:@"sender"]);
-    XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:NULL]);
-    XCTAssertTrue([inputView canPerformAction:@selector(paste:) withSender:@"sender"]);
+    XCTAssertFalse([mockInputView canPerformAction:@selector(copy:) withSender:NULL]);
+    XCTAssertTrue([mockInputView canPerformAction:@selector(copy:) withSender:@"sender"]);
+    XCTAssertFalse([mockInputView canPerformAction:@selector(paste:) withSender:NULL]);
+    XCTAssertFalse([mockInputView canPerformAction:@selector(paste:) withSender:@"sender"]);
+
+    [mockInputView copy:NULL];
+    XCTAssertFalse([mockInputView canPerformAction:@selector(copy:) withSender:NULL]);
+    XCTAssertTrue([mockInputView canPerformAction:@selector(copy:) withSender:@"sender"]);
+    XCTAssertFalse([mockInputView canPerformAction:@selector(paste:) withSender:NULL]);
+    XCTAssertTrue([mockInputView canPerformAction:@selector(paste:) withSender:@"sender"]);
   }
 }
 
