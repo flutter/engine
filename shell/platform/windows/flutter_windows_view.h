@@ -127,12 +127,13 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void OnText(const std::u16string&) override;
 
   // |WindowBindingHandlerDelegate|
-  bool OnKey(int key,
+  void OnKey(int key,
              int scancode,
              int action,
              char32_t character,
              bool extended,
-             bool was_down) override;
+             bool was_down,
+             KeyEventCallback callback) override;
 
   // |WindowBindingHandlerDelegate|
   void OnComposeBegin() override;
@@ -179,8 +180,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // functions in unit tests.
   virtual std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
       BinaryMessenger* messenger,
-      KeyboardKeyHandler::EventDispatcher dispatch_event,
-      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state);
+      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
+      KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan);
 
   // Called to create text input plugin.
   virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
@@ -251,12 +252,13 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void SendText(const std::u16string&);
 
   // Reports a raw keyboard message to Flutter engine.
-  bool SendKey(int key,
+  void SendKey(int key,
                int scancode,
                int action,
                char32_t character,
                bool extended,
-               bool was_down);
+               bool was_down,
+               KeyEventCallback callback);
 
   // Reports an IME compose begin event.
   //

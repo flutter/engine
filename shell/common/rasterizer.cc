@@ -14,7 +14,6 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
@@ -30,8 +29,7 @@ static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
 Rasterizer::Rasterizer(Delegate& delegate)
     : delegate_(delegate),
-      compositor_context_(std::make_unique<flutter::CompositorContext>(
-          delegate.GetFrameBudget())),
+      compositor_context_(std::make_unique<flutter::CompositorContext>(*this)),
       user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
@@ -81,6 +79,12 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   }
 }
 
+void Rasterizer::TeardownExternalViewEmbedder() {
+  if (external_view_embedder_) {
+    external_view_embedder_->Teardown();
+  }
+}
+
 void Rasterizer::Teardown() {
   auto context_switch =
       surface_ ? surface_->MakeRenderContextCurrent() : nullptr;
@@ -96,10 +100,6 @@ void Rasterizer::Teardown() {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNowIfLastOne();
     raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
-  }
-
-  if (external_view_embedder_) {
-    external_view_embedder_->Teardown();
   }
 }
 
@@ -189,6 +189,9 @@ RasterStatus Rasterizer::Draw(
       };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
+  if (consume_result == PipelineConsumeResult::NoneAvailable) {
+    return RasterStatus::kFailed;
+  }
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
@@ -381,6 +384,10 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                               });
 }
 
+fml::Milliseconds Rasterizer::GetFrameBudget() const {
+  return delegate_.GetFrameBudget();
+};
+
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::unique_ptr<flutter::LayerTree> layer_tree) {
@@ -552,30 +559,35 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     compositor_context_->raster_cache().PrepareNewFrame();
     frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
-    // Disable partial repaint if external_view_embedder_ SubmitFrame is
-    // involved - ExternalViewEmbedder unconditionally clears the entire
-    // surface and also partial repaint with platform view present is something
-    // that still need to be figured out.
-    bool disable_partial_repaint =
-        external_view_embedder_ &&
-        (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+    std::unique_ptr<FrameDamage> damage;
+    if (frame->framebuffer_info().supports_partial_repaint) {
+      // Disable partial repaint if external_view_embedder_ SubmitFrame is
+      // involved - ExternalViewEmbedder unconditionally clears the entire
+      // surface and also partial repaint with platform view present is
+      // something that still need to be figured out.
+      bool force_full_repaint =
+          external_view_embedder_ &&
+          (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
-    FrameDamage damage;
-    if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
-      damage.SetPreviousLayerTree(last_layer_tree_.get());
-      damage.AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
+      damage = std::make_unique<FrameDamage>();
+      if (frame->framebuffer_info().existing_damage && !force_full_repaint) {
+        damage->SetPreviousLayerTree(last_layer_tree_.get());
+        damage->AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
+      }
     }
 
     RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false, &damage);
+        compositor_frame->Raster(layer_tree, false, damage.get());
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
 
     SurfaceFrame::SubmitInfo submit_info;
-    submit_info.frame_damage = damage.GetFrameDamage();
-    submit_info.buffer_damage = damage.GetBufferDamage();
+    if (damage) {
+      submit_info.frame_damage = damage->GetFrameDamage();
+      submit_info.buffer_damage = damage->GetBufferDamage();
+    }
 
     frame->set_submit_info(submit_info);
 

@@ -21,8 +21,10 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegate.Host;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -49,13 +51,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterActivityAndFragmentDelegateTest {
   private FlutterEngine mockFlutterEngine;
   private FlutterActivityAndFragmentDelegate.Host mockHost;
@@ -321,6 +322,25 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
+  public void itExecutesDartLibraryUriProvidedByHost() {
+    when(mockHost.getAppBundlePath()).thenReturn("/my/bundle/path");
+    when(mockHost.getDartEntrypointFunctionName()).thenReturn("myEntrypoint");
+    when(mockHost.getDartEntrypointLibraryUri()).thenReturn("package:foo/bar.dart");
+
+    DartExecutor.DartEntrypoint expectedEntrypoint =
+        new DartExecutor.DartEntrypoint("/my/bundle/path", "package:foo/bar.dart", "myEntrypoint");
+
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
+    delegate.onStart();
+
+    verify(mockFlutterEngine.getDartExecutor(), times(1))
+        .executeDartEntrypoint(eq(expectedEntrypoint));
+  }
+
+  @Test
   public void itUsesDefaultFlutterLoaderAppBundlePathWhenUnspecified() {
     // ---- Test setup ----
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
@@ -465,6 +485,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -492,6 +513,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -519,6 +541,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -546,6 +569,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -571,6 +595,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -960,6 +985,26 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
+  public void itChangesFlutterViewVisibilityWhenOnStartAndOnStop() {
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
+    delegate.onStart();
+    // Verify that the flutterView is visible.
+    assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
+    delegate.onStop();
+    // Verify that the flutterView is not visible.
+    assertEquals(View.GONE, delegate.flutterView.getVisibility());
+    delegate.onStart();
+    // Verify that the flutterView is visible.
+    assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
+  }
+
+  @Test
   public void itDoesNotDelayTheFirstDrawWhenRequestedAndWithAProvidedSplashScreen() {
     when(mockHost.provideSplashScreen())
         .thenReturn(new DrawableSplashScreen(new ColorDrawable(Color.GRAY)));
@@ -997,6 +1042,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
     when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
 

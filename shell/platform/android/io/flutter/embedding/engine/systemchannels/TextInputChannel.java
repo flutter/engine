@@ -89,9 +89,7 @@ public class TextInputChannel {
               try {
                 final JSONObject arguments = (JSONObject) args;
                 final int platformViewId = arguments.getInt("platformViewId");
-                final boolean usesVirtualDisplay =
-                    arguments.optBoolean("usesVirtualDisplay", false);
-                textInputMethodHandler.setPlatformViewClient(platformViewId, usesVirtualDisplay);
+                textInputMethodHandler.setPlatformViewClient(platformViewId);
                 result.success(null);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
@@ -216,7 +214,7 @@ public class TextInputChannel {
    */
   public void updateEditingState(
       int inputClientId,
-      String text,
+      @NonNull String text,
       int selectionStart,
       int selectionEnd,
       int composingStart,
@@ -246,7 +244,7 @@ public class TextInputChannel {
   }
 
   public void updateEditingStateWithDeltas(
-      int inputClientId, ArrayList<TextEditingDelta> batchDeltas) {
+      int inputClientId, @NonNull ArrayList<TextEditingDelta> batchDeltas) {
 
     Log.v(
         TAG,
@@ -261,7 +259,7 @@ public class TextInputChannel {
   }
 
   public void updateEditingStateWithTag(
-      int inputClientId, HashMap<String, TextEditState> editStates) {
+      int inputClientId, @NonNull HashMap<String, TextEditState> editStates) {
     Log.v(
         TAG,
         "Sending message to update editing state for "
@@ -336,7 +334,8 @@ public class TextInputChannel {
         Arrays.asList(inputClientId, "TextInputAction.unspecified"));
   }
 
-  public void performPrivateCommand(int inputClientId, String action, Bundle data) {
+  public void performPrivateCommand(
+      int inputClientId, @NonNull String action, @NonNull Bundle data) {
     HashMap<Object, Object> json = new HashMap<>();
     json.put("action", action);
     if (data != null) {
@@ -421,10 +420,8 @@ public class TextInputChannel {
      * different client is set.
      *
      * @param id the ID of the platform view to be set as a text input client.
-     * @param usesVirtualDisplay True if the platform view uses a virtual display, false if it uses
-     *     hybrid composition.
      */
-    void setPlatformViewClient(int id, boolean usesVirtualDisplay);
+    void setPlatformViewClient(int id);
 
     /**
      * Sets the size and the transform matrix of the current text input client.
@@ -434,7 +431,7 @@ public class TextInputChannel {
      * @param transform a 4x4 matrix that maps the local paint coordinate system to coordinate
      *     system of the FlutterView that owns the current client.
      */
-    void setEditableSizeAndTransform(double width, double height, double[] transform);
+    void setEditableSizeAndTransform(double width, double height, @NonNull double[] transform);
 
     // TODO(mattcarroll): javadoc
     void setEditingState(@NonNull TextEditState editingState);
@@ -451,7 +448,7 @@ public class TextInputChannel {
      *     commands.
      * @param data Any data to include with the command.
      */
-    void sendAppPrivateCommand(String action, Bundle data);
+    void sendAppPrivateCommand(@NonNull String action, @NonNull Bundle data);
 
     /**
      * Requests that spell checking is initiated for the inputted text recognized by the framework,
@@ -462,6 +459,7 @@ public class TextInputChannel {
 
   /** A text editing configuration. */
   public static class Configuration {
+    @NonNull
     public static Configuration fromJson(@NonNull JSONObject json)
         throws JSONException, NoSuchFieldException {
       final String inputActionName = json.getString("inputAction");
@@ -519,6 +517,7 @@ public class TextInputChannel {
     }
 
     public static class Autofill {
+      @NonNull
       public static Autofill fromJson(@NonNull JSONObject json)
           throws JSONException, NoSuchFieldException {
         final String uniqueIdentifier = json.getString("uniqueIdentifier");
@@ -754,6 +753,7 @@ public class TextInputChannel {
 
   /** State of an on-going text editing session. */
   public static class TextEditState {
+    @NonNull
     public static TextEditState fromJson(@NonNull JSONObject textEditState) throws JSONException {
       return new TextEditState(
           textEditState.getString("text"),

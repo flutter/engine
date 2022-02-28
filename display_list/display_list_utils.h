@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
+#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_
+#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_
 
 #include <optional>
 
@@ -56,10 +56,9 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setBlender(sk_sp<SkBlender> blender) override {}
   void setShader(sk_sp<SkShader> shader) override {}
   void setImageFilter(sk_sp<SkImageFilter> filter) override {}
-  void setColorFilter(sk_sp<SkColorFilter> filter) override {}
+  void setColorFilter(const DlColorFilter* filter) override {}
   void setPathEffect(sk_sp<SkPathEffect> effect) override {}
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override {}
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {}
+  void setMaskFilter(const DlMaskFilter* filter) override {}
 };
 
 // A utility class that will ignore all Dispatcher methods relating
@@ -91,6 +90,73 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
   // clang-format on
 };
 
+class IgnoreDrawDispatchHelper : public virtual Dispatcher {
+ public:
+  void save() override {}
+  void saveLayer(const SkRect* bounds,
+                 const SaveLayerOptions options) override {}
+  void restore() override {}
+  void drawColor(SkColor color, SkBlendMode mode) override {}
+  void drawPaint() override {}
+  void drawLine(const SkPoint& p0, const SkPoint& p1) override {}
+  void drawRect(const SkRect& rect) override {}
+  void drawOval(const SkRect& bounds) override {}
+  void drawCircle(const SkPoint& center, SkScalar radius) override {}
+  void drawRRect(const SkRRect& rrect) override {}
+  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override {}
+  void drawPath(const SkPath& path) override {}
+  void drawArc(const SkRect& oval_bounds,
+               SkScalar start_degrees,
+               SkScalar sweep_degrees,
+               bool use_center) override {}
+  void drawPoints(SkCanvas::PointMode mode,
+                  uint32_t count,
+                  const SkPoint points[]) override {}
+  void drawVertices(const sk_sp<SkVertices> vertices,
+                    SkBlendMode mode) override {}
+  void drawImage(const sk_sp<SkImage> image,
+                 const SkPoint point,
+                 const SkSamplingOptions& sampling,
+                 bool render_with_attributes) override {}
+  void drawImageRect(const sk_sp<SkImage> image,
+                     const SkRect& src,
+                     const SkRect& dst,
+                     const SkSamplingOptions& sampling,
+                     bool render_with_attributes,
+                     SkCanvas::SrcRectConstraint constraint) override {}
+  void drawImageNine(const sk_sp<SkImage> image,
+                     const SkIRect& center,
+                     const SkRect& dst,
+                     SkFilterMode filter,
+                     bool render_with_attributes) override {}
+  void drawImageLattice(const sk_sp<SkImage> image,
+                        const SkCanvas::Lattice& lattice,
+                        const SkRect& dst,
+                        SkFilterMode filter,
+                        bool render_with_attributes) override {}
+  void drawAtlas(const sk_sp<SkImage> atlas,
+                 const SkRSXform xform[],
+                 const SkRect tex[],
+                 const SkColor colors[],
+                 int count,
+                 SkBlendMode mode,
+                 const SkSamplingOptions& sampling,
+                 const SkRect* cull_rect,
+                 bool render_with_attributes) override {}
+  void drawPicture(const sk_sp<SkPicture> picture,
+                   const SkMatrix* matrix,
+                   bool render_with_attributes) override {}
+  void drawDisplayList(const sk_sp<DisplayList> display_list) override {}
+  void drawTextBlob(const sk_sp<SkTextBlob> blob,
+                    SkScalar x,
+                    SkScalar y) override {}
+  void drawShadow(const SkPath& path,
+                  const SkColor color,
+                  const SkScalar elevation,
+                  bool transparent_occluder,
+                  SkScalar dpr) override {}
+};
+
 // A utility class that will monitor the Dispatcher methods relating
 // to the rendering attributes and accumulate them into an SkPaint
 // which can be accessed at any time via paint().
@@ -112,38 +178,52 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setStrokeCap(SkPaint::Cap cap) override;
   void setStrokeJoin(SkPaint::Join join) override;
   void setShader(sk_sp<SkShader> shader) override;
-  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setColorFilter(const DlColorFilter* filter) override;
   void setInvertColors(bool invert) override;
   void setBlendMode(SkBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
   void setPathEffect(sk_sp<SkPathEffect> effect) override;
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+  void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
 
   const SkPaint& paint() { return paint_; }
+
+  /// Returns the current opacity attribute which is used to reduce
+  /// the alpha of all setColor calls encountered in the streeam
   SkScalar opacity() { return opacity_; }
+  /// Returns the combined opacity that includes both the current
+  /// opacity attribute and the alpha of the most recent color.
+  /// The most recently set color will have combined the two and
+  /// stored the combined value in the alpha of the paint.
+  SkScalar combined_opacity() { return paint_.getAlphaf(); }
+  /// Returns true iff the current opacity attribute is not opaque,
+  /// irrespective of the alpha of the current color
   bool has_opacity() { return opacity_ < SK_Scalar1; }
 
  protected:
-  void save_opacity(bool reset_and_restore);
+  void save_opacity(SkScalar opacity_for_children);
   void restore_opacity();
 
  private:
   SkPaint paint_;
   bool invert_colors_ = false;
-  sk_sp<SkColorFilter> color_filter_;
+  std::shared_ptr<const DlColorFilter> color_filter_;
 
-  sk_sp<SkColorFilter> makeColorFilter();
+  sk_sp<SkColorFilter> makeColorFilter() const;
 
   struct SaveInfo {
-    SaveInfo(SkScalar opacity, bool restore_opacity)
-        : opacity(opacity), restore_opacity(restore_opacity) {}
+    SaveInfo(SkScalar opacity) : opacity(opacity) {}
 
     SkScalar opacity;
-    bool restore_opacity;
   };
   std::vector<SaveInfo> save_stack_;
+
+  void set_opacity(SkScalar opacity) {
+    if (opacity_ != opacity) {
+      opacity_ = opacity;
+      setColor(current_color_);
+    }
+  }
 
   SkColor current_color_;
   SkScalar opacity_;
@@ -268,7 +348,7 @@ class BoundsAccumulator {
     }
   }
   void accumulate(const SkRect& r) {
-    if (r.fLeft <= r.fRight && r.fTop <= r.fBottom) {
+    if (r.fLeft < r.fRight && r.fTop < r.fBottom) {
       accumulate(r.fLeft, r.fTop);
       accumulate(r.fRight, r.fBottom);
     }
@@ -318,13 +398,12 @@ class DisplayListBoundsCalculator final
   void setBlendMode(SkBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
-  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setColorFilter(const DlColorFilter* filter) override;
   void setPathEffect(sk_sp<SkPathEffect> effect) override;
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+  void setMaskFilter(const DlMaskFilter* filter) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds, bool with_paint) override;
+  void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
   void restore() override;
 
   void drawPaint() override;
@@ -413,41 +492,37 @@ class DisplayListBoundsCalculator final
   // current accumulator based on saveLayer history
   BoundsAccumulator* accumulator_;
 
-  // A class that abstracts the information kept for a single
-  // |save| or |saveLayer|, including the root information that
-  // is kept as a base set of information for the DisplayList
-  // at the initial conditions outside of any saveLayer.
-  // See |RootLayerData|, |SaveData| and |SaveLayerData|.
+  // A class that remembers the information kept for a single
+  // |save| or |saveLayer|.
+  // Each save or saveLayer will maintain its own bounds accumulator
+  // and then accumulate that back into the surrounding accumulator
+  // during restore.
   class LayerData {
    public:
     // Construct a LayerData to push on the save stack for a |save|
     // or |saveLayer| call.
-    // There does not tend to be an actual layer in the case of
-    // a |save| call, but in order to homogenize the handling
-    // of |restore| it adds a trivial implementation of this
-    // class to the stack of saves.
     // The |outer| parameter is the |BoundsAccumulator| that was
     // in use by the stream before this layer was pushed on the
     // stack and should be returned when this layer is popped off
     // the stack.
-    // Some layers may substitute their own accumulator to compute
-    // their own local bounds while they are on the stack.
-    explicit LayerData(BoundsAccumulator* outer)
-        : outer_(outer), is_unbounded_(false) {}
-    virtual ~LayerData() = default;
+    // Some saveLayer calls will process their bounds by an
+    // |SkImageFilter| when they are restored, but for most
+    // saveLayer (and all save) calls the filter will be null.
+    explicit LayerData(BoundsAccumulator* outer,
+                       sk_sp<SkImageFilter> filter = nullptr)
+        : outer_(outer), filter_(filter), is_unbounded_(false) {}
+    ~LayerData() = default;
 
     // The accumulator to use while this layer is put in play by
     // a |save| or |saveLayer|
-    virtual BoundsAccumulator* layer_accumulator() { return outer_; }
+    BoundsAccumulator* layer_accumulator() { return &layer_accumulator_; }
 
     // The accumulator to use after this layer is removed from play
     // via |restore|
-    virtual BoundsAccumulator* restore_accumulator() { return outer_; }
+    BoundsAccumulator* restore_accumulator() { return outer_; }
 
-    // The bounds of this layer. May be empty for cases like
-    // a non-layer |save| call which uses the |outer_| accumulator
-    // to accumulate draw calls inside of it
-    virtual SkRect layer_bounds() = 0;
+    // The filter to apply to the layer bounds when it is restored
+    sk_sp<SkImageFilter> filter() { return filter_; }
 
     // is_unbounded should be set to true if we ever encounter an operation
     // on a layer that either is unrestricted (|drawColor| or |drawPaint|)
@@ -480,92 +555,20 @@ class DisplayListBoundsCalculator final
     bool is_unbounded() const { return is_unbounded_; }
 
    private:
+    BoundsAccumulator layer_accumulator_;
     BoundsAccumulator* outer_;
+    sk_sp<SkImageFilter> filter_;
     bool is_unbounded_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(LayerData);
-  };
-
-  // An intermediate implementation class that handles keeping
-  // a local accumulator for the layer, used by both |RootLayerData|
-  // and |SaveLayerData|.
-  class AccumulatorLayerData : public LayerData {
-   public:
-    BoundsAccumulator* layer_accumulator() override {
-      return &layer_accumulator_;
-    }
-
-    SkRect layer_bounds() override {
-      // Even though this layer might be unbounded, we still
-      // accumulate what bounds we have as the unbounded condition
-      // may be contained at a higher level and we at least want to
-      // account for the bounds that we do have.
-      return layer_accumulator_.bounds();
-    }
-
-   protected:
-    using LayerData::LayerData;
-    ~AccumulatorLayerData() = default;
-
-   private:
-    BoundsAccumulator layer_accumulator_;
-  };
-
-  // Used as the initial default layer info for the Calculator.
-  class RootLayerData final : public AccumulatorLayerData {
-   public:
-    RootLayerData() : AccumulatorLayerData(nullptr) {}
-    ~RootLayerData() = default;
-
-   private:
-    FML_DISALLOW_COPY_AND_ASSIGN(RootLayerData);
-  };
-
-  // Used for |save|
-  class SaveData final : public LayerData {
-   public:
-    using LayerData::LayerData;
-    ~SaveData() = default;
-
-    SkRect layer_bounds() override { return SkRect::MakeEmpty(); }
-
-   private:
-    FML_DISALLOW_COPY_AND_ASSIGN(SaveData);
-  };
-
-  // Used for |saveLayer|
-  class SaveLayerData final : public AccumulatorLayerData {
-   public:
-    SaveLayerData(BoundsAccumulator* outer,
-                  sk_sp<SkImageFilter> filter,
-                  bool paint_nops_on_transparency)
-        : AccumulatorLayerData(outer), layer_filter_(std::move(filter)) {
-      if (!paint_nops_on_transparency) {
-        set_unbounded();
-      }
-    }
-    ~SaveLayerData() = default;
-
-    SkRect layer_bounds() override {
-      SkRect bounds = AccumulatorLayerData::layer_bounds();
-      if (!ComputeFilteredBounds(bounds, layer_filter_.get())) {
-        set_unbounded();
-      }
-      return bounds;
-    }
-
-   private:
-    sk_sp<SkImageFilter> layer_filter_;
-
-    FML_DISALLOW_COPY_AND_ASSIGN(SaveLayerData);
   };
 
   std::vector<std::unique_ptr<LayerData>> layer_infos_;
 
   static constexpr SkScalar kMinStrokeWidth = 0.01;
 
-  skstd::optional<SkBlendMode> blend_mode_ = SkBlendMode::kSrcOver;
-  sk_sp<SkColorFilter> color_filter_;
+  std::optional<SkBlendMode> blend_mode_ = SkBlendMode::kSrcOver;
+  std::shared_ptr<const DlColorFilter> color_filter_;
 
   SkScalar half_stroke_width_ = kMinStrokeWidth;
   SkScalar miter_limit_ = 4.0;
@@ -574,8 +577,7 @@ class DisplayListBoundsCalculator final
   bool cap_is_square_ = false;
   sk_sp<SkImageFilter> image_filter_;
   sk_sp<SkPathEffect> path_effect_;
-  sk_sp<SkMaskFilter> mask_filter_;
-  SkScalar mask_sigma_pad_ = 0.0;
+  std::shared_ptr<const DlMaskFilter> mask_filter_;
 
   bool paint_nops_on_transparency();
 
@@ -610,4 +612,4 @@ class DisplayListBoundsCalculator final
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
+#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_

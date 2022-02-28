@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -990,4 +990,12 @@ void invalid_backingstore() {
     signalNativeTest();
   };
   PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_schedule_frame() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime){
+    signalNativeCount(beginTime.inMicroseconds);
+  };
+  signalNativeTest();
 }

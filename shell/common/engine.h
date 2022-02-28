@@ -539,15 +539,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             collection, just gives the Dart VM more hints about opportune
   ///             moments to perform collections.
   ///
-  //  TODO(chinmaygarde): This should just use fml::TimePoint instead of having
-  //  to remember that the unit is microseconds (which is no used anywhere else
-  //  in the engine).
   ///
-  /// @param[in]  deadline  The deadline as a timepoint in microseconds measured
-  ///                       against the system monotonic clock. Use
-  ///                       `Dart_TimelineGetMicros()`, for consistency.
+  /// @param[in]  deadline  The deadline is used by the VM to determine if the
+  ///                       corresponding sweep can be performed within the
+  ///                       deadline.
   ///
-  void NotifyIdle(int64_t deadline);
+  void NotifyIdle(fml::TimePoint deadline);
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
@@ -660,36 +657,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @return     The return code (if specified) by the isolate.
   ///
   std::optional<uint32_t> GetUIIsolateReturnCode();
-
-  //----------------------------------------------------------------------------
-  /// @brief      Indicates to the Flutter application that it has obtained a
-  ///             rendering surface. This is a good opportunity for the engine
-  ///             to start servicing any outstanding frame requests from the
-  ///             Flutter applications. Flutter application that have no
-  ///             rendering concerns may never get a rendering surface. In such
-  ///             cases, while their root isolate can perform as normal, any
-  ///             frame requests made by them will never be serviced and layer
-  ///             trees produced outside of frame workloads will be dropped.
-  ///
-  ///             Very close to when this call is made, the application can
-  ///             expect the updated viewport metrics. Rendering only begins
-  ///             when the Flutter application gets an output surface and a
-  ///             valid set of viewport metrics.
-  ///
-  /// @see        `OnOutputSurfaceDestroyed`
-  ///
-  void OnOutputSurfaceCreated();
-
-  //----------------------------------------------------------------------------
-  /// @brief      Indicates to the Flutter application that a previously
-  ///             acquired rendering surface has been lost. Further frame
-  ///             requests will no longer be serviced and any layer tree
-  ///             submitted for rendering will be dropped. If/when a new surface
-  ///             is acquired, a new layer tree must be generated.
-  ///
-  /// @see        `OnOutputSurfaceCreated`
-  ///
-  void OnOutputSurfaceDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for the currently running Flutter
@@ -903,6 +870,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     return runtime_controller_.get();
   }
 
+  const VsyncWaiter& GetVsyncWaiter() const;
+
  private:
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
@@ -933,10 +902,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   void SetNeedsReportTimings(bool value) override;
 
-  void StopAnimator();
-
-  void StartAnimatorIfPossible();
-
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 
   bool HandleNavigationPlatformMessage(
@@ -966,10 +931,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string last_entry_point_library_;
   std::vector<std::string> last_entry_point_args_;
   std::string initial_route_;
-  ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
-  bool activity_running_;
-  bool have_surface_;
   std::shared_ptr<FontCollection> font_collection_;
   ImageDecoder image_decoder_;
   ImageGeneratorRegistry image_generator_registry_;
