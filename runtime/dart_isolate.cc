@@ -729,7 +729,7 @@ Dart_Handle FindDartPluginRegistrantLibrary() {
     std::string library_name =
         tonic::DartConverter<std::string>::FromDart(Dart_ToString(library));
     if (EndsWith(library_name,
-                 ".dart_tool/flutter_build/dart_plugin_registrant.dart'")) {
+                 "dart_tool/flutter_build/dart_plugin_registrant.dart'")) {
       return library;
     }
   }
