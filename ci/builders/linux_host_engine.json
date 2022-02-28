@@ -19,8 +19,6 @@
             "ninja": {
                 "config": "host_debug_unopt",
                 "targets": [
-                    "flutter",
-                    "flutter/sky/packages",
                     "flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders"
                 ]
             },
