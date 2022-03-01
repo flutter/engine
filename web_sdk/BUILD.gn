@@ -27,7 +27,8 @@ web_engine_sources =
                 ],
                 "list lines")
 
-web_engine_sources += [ "//flutter/lib/web_ui/lib/src/engine.dart" ]
+web_engine_sources +=
+    [ rebase_path("//flutter/lib/web_ui/lib/src/engine.dart") ]
 
 group("web_sdk") {
   deps = [
