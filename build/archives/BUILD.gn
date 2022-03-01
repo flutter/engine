@@ -1,7 +1,7 @@
 import("//flutter/build/zip_bundle.gni")
 
 zip_bundle("artifacts") {
-  output = "$host_os_cpu_name/artifacts.zip"
+  output = "$full_platform_name/artifacts.zip"
   deps = [
     "//flutter/flutter_frontend_server:frontend_server",
     "//flutter/lib/snapshot:generate_snapshot_bin",
@@ -42,9 +42,9 @@ zip_bundle("artifacts") {
   }
 }
 
-if (host_os == "linux") {
-  group("linux-embedder") {
-    deps = [ "//flutter/shell/platform/embedder:linux-embedder-archive" ]
+if (host_os == "linux" || host_os == "win") {
+  group("embedder") {
+    deps = [ "//flutter/shell/platform/embedder:embedder-archive" ]
   }
 }
 
@@ -79,7 +79,7 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
   copy("dart_sdk_archive") {
     sources = [ prebuilt_dart_sdk_archive ]
     outputs =
-        [ "$root_out_dir/zip_archives/dart-sdk-$prebuilt_dart_sdk_config" ]
+        [ "$root_out_dir/zip_archives/dart-sdk-$prebuilt_dart_sdk_config.zip" ]
   }
 }
 
@@ -87,5 +87,43 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
 if (!is_fuchsia) {
   group("flutter_web_sdk") {
     deps = [ "//flutter/web_sdk:flutter_web_sdk_archive" ]
+  }
+}
+
+# Archives Flutter Windows Artifacts
+if (host_os == "win") {
+  zip_bundle("windows_flutter") {
+    output = "$full_platform_name-$flutter_runtime_mode/$full_platform_name-flutter.zip"
+    deps = [
+      "//flutter/shell/platform/common:publish_headers",
+      "//flutter/shell/platform/windows:flutter_windows",
+      "//flutter/shell/platform/windows:publish_headers_windows",
+    ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_export.h"
+        destination = "flutter_export.h"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.h"
+        destination = "flutter_windows.h"
+      },
+      {
+        source = "$root_out_dir/flutter_messenger.h"
+        destination = "flutter_messenger.h"
+      },
+      {
+        source = "$root_out_dir/flutter_plugin_registrar.h"
+        destination = "flutter_plugin_registrar.h"
+      },
+      {
+        source = "$root_out_dir/flutter_texture_registrar.h"
+        destination = "flutter_texture_registrar.h"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.dll"
+        destination = "flutter_windows.dll"
+      },
+    ]
   }
 }
