@@ -412,7 +412,7 @@ void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
 }
 
 void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
-                                               TextEditingDelta* delta) {
+                                               const TextEditingDelta* delta) {
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = args->GetAllocator();
   args->PushBack(client_id_, allocator);
