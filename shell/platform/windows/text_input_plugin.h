@@ -52,7 +52,8 @@ class TextInputPlugin {
   void SendStateUpdate(const TextInputModel& model);
 
   // Sends the current state of the given model to the Flutter engine.
-  void SendStateUpdateWithDelta(const TextInputModel& model, const TextEditingDelta*);
+  void SendStateUpdateWithDelta(const TextInputModel& model,
+                                const TextEditingDelta*);
 
   // Sends an action triggered by the Enter key to the Flutter engine.
   void EnterPressed(TextInputModel* model);

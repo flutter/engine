@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/string_conversion.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/fml/string_conversion.h"
 #include "flutter/shell/platform/common/text_editing_delta.h"
 
 #include <windows.h>
@@ -64,7 +64,8 @@ void TextInputPlugin::TextHook(const std::u16string& text) {
   if (active_model_ == nullptr) {
     return;
   }
-  std::u16string text_before_change = fml::Utf8ToUtf16(active_model_->GetText());
+  std::u16string text_before_change =
+      fml::Utf8ToUtf16(active_model_->GetText());
   TextRange selection_before_change = active_model_->selection();
   active_model_->AddText(text);
 
@@ -198,8 +199,8 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
   active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
   std::string text_after_change = active_model_->GetText();
   if (enable_delta_model) {
-    TextEditingDelta delta = TextEditingDelta(fml::Utf8ToUtf16(text_before_change),
-                                              composing_before_change, text);
+    TextEditingDelta delta = TextEditingDelta(
+        fml::Utf8ToUtf16(text_before_change), composing_before_change, text);
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
