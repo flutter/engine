@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/fml/string_conversion.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/common/text_editing_delta.h"
 
@@ -59,17 +60,11 @@ static constexpr char kInternalConsistencyError[] =
 
 namespace flutter {
 
-static std::u16string Utf8ToUtf16(const std::string& string) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
-      utf16_converter;
-  return utf16_converter.from_bytes(string);
-}
-
 void TextInputPlugin::TextHook(const std::u16string& text) {
   if (active_model_ == nullptr) {
     return;
   }
-  std::u16string text_before_change = Utf8ToUtf16(active_model_->GetText());
+  std::u16string text_before_change = fml::Utf8ToUtf16(active_model_->GetText());
   TextRange selection_before_change = active_model_->selection();
   active_model_->AddText(text);
 
@@ -203,7 +198,7 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
   active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
   std::string text_after_change = active_model_->GetText();
   if (enable_delta_model) {
-    TextEditingDelta delta = TextEditingDelta(Utf8ToUtf16(text_before_change),
+    TextEditingDelta delta = TextEditingDelta(fml::Utf8ToUtf16(text_before_change),
                                               composing_before_change, text);
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
