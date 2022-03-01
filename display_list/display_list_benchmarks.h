@@ -10,6 +10,7 @@
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
+#include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkVertices.h"
 
@@ -273,7 +274,7 @@ void BM_SaveLayer(benchmark::State& state,
                     ATTRIBUTES,                                         \
                     SkRRect::Type::kSimple_Type)                        \
       ->RangeMultiplier(2)                                              \
-      ->Range(16, 2048)                                                 \
+      ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
@@ -282,7 +283,7 @@ void BM_SaveLayer(benchmark::State& state,
                     ATTRIBUTES,                                         \
                     SkRRect::Type::kNinePatch_Type)                     \
       ->RangeMultiplier(2)                                              \
-      ->Range(16, 2048)                                                 \
+      ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
@@ -291,7 +292,7 @@ void BM_SaveLayer(benchmark::State& state,
                     ATTRIBUTES,                                         \
                     SkRRect::Type::kComplex_Type)                       \
       ->RangeMultiplier(2)                                              \
-      ->Range(16, 2048)                                                 \
+      ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);
 
@@ -302,7 +303,7 @@ void BM_SaveLayer(benchmark::State& state,
                     ATTRIBUTES,                                         \
                     SkRRect::Type::kSimple_Type)                        \
       ->RangeMultiplier(2)                                              \
-      ->Range(16, 2048)                                                 \
+      ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
@@ -311,7 +312,7 @@ void BM_SaveLayer(benchmark::State& state,
                     ATTRIBUTES,                                         \
                     SkRRect::Type::kNinePatch_Type)                     \
       ->RangeMultiplier(2)                                              \
-      ->Range(16, 2048)                                                 \
+      ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
@@ -320,7 +321,7 @@ void BM_SaveLayer(benchmark::State& state,
                     ATTRIBUTES,                                         \
                     SkRRect::Type::kComplex_Type)                       \
       ->RangeMultiplier(2)                                              \
-      ->Range(16, 2048)                                                 \
+      ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);
 
@@ -523,7 +524,7 @@ void BM_SaveLayer(benchmark::State& state,
 
 // SaveLayer
 #define SAVE_LAYER_BENCHMARKS(BACKEND, ATTRIBUTES)                      \
-  BENCHMARK_CAPTURE(BM_SaveLayer, BACKEND/Depth 1,                      \
+  BENCHMARK_CAPTURE(BM_SaveLayer, Depth 1/BACKEND,                      \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
                     1)                                                  \
@@ -532,7 +533,7 @@ void BM_SaveLayer(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
-  BENCHMARK_CAPTURE(BM_SaveLayer, BACKEND/Depth 8,                      \
+  BENCHMARK_CAPTURE(BM_SaveLayer, Depth 8/BACKEND,                      \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
                     8)                                                  \

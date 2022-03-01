@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegate.Host;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -50,13 +51,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterActivityAndFragmentDelegateTest {
   private FlutterEngine mockFlutterEngine;
   private FlutterActivityAndFragmentDelegate.Host mockHost;
@@ -1042,6 +1042,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
     when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
 

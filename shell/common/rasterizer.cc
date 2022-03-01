@@ -14,7 +14,6 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
@@ -30,8 +29,7 @@ static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
 Rasterizer::Rasterizer(Delegate& delegate)
     : delegate_(delegate),
-      compositor_context_(std::make_unique<flutter::CompositorContext>(
-          delegate.GetFrameBudget())),
+      compositor_context_(std::make_unique<flutter::CompositorContext>(*this)),
       user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
@@ -81,6 +79,12 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   }
 }
 
+void Rasterizer::TeardownExternalViewEmbedder() {
+  if (external_view_embedder_) {
+    external_view_embedder_->Teardown();
+  }
+}
+
 void Rasterizer::Teardown() {
   auto context_switch =
       surface_ ? surface_->MakeRenderContextCurrent() : nullptr;
@@ -96,10 +100,6 @@ void Rasterizer::Teardown() {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNowIfLastOne();
     raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
-  }
-
-  if (external_view_embedder_) {
-    external_view_embedder_->Teardown();
   }
 }
 
@@ -189,6 +189,9 @@ RasterStatus Rasterizer::Draw(
       };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
+  if (consume_result == PipelineConsumeResult::NoneAvailable) {
+    return RasterStatus::kFailed;
+  }
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
@@ -380,6 +383,10 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                                 canvas->drawImage(image, 0, 0);
                               });
 }
+
+fml::Milliseconds Rasterizer::GetFrameBudget() const {
+  return delegate_.GetFrameBudget();
+};
 
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,

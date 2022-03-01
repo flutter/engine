@@ -49,11 +49,13 @@ extern const uint8_t* observatory_assets_archive;
 namespace flutter {
 
 // Arguments passed to the Dart VM in all configurations.
-static const char* kDartLanguageArgs[] = {
+static const char* kDartAllConfigsArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
     "--lazy_async_stacks",
+    // 'mark_when_idle' appears to cause a regression, turning off for now.
+    // "--mark_when_idle",
     // clang-format on
 };
 
@@ -221,7 +223,7 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
           // This instructs the profiler to walk C++ frames, and to include
           // them in the profile.
           "--profile-vm",
-#if OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+#if FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
           // Set the profiler interrupt period to 500Hz instead of the
           // default 1000Hz on 32-bit iOS devices to reduce average and worst
           // case frame build times.
@@ -232,7 +234,7 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
           "--profile_period=2000",
 #else
           "--profile_period=1000",
-#endif  // OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+#endif  // FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
     };
   } else {
     return {"--no-profiler"};
@@ -323,7 +325,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     args.push_back(profiler_flag);
   }
 
-  PushBackAll(&args, kDartLanguageArgs, fml::size(kDartLanguageArgs));
+  PushBackAll(&args, kDartAllConfigsArgs, fml::size(kDartAllConfigsArgs));
 
   if (IsRunningPrecompiledCode()) {
     PushBackAll(&args, kDartPrecompilationArgs,
@@ -341,7 +343,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 #endif  // !OS_FUCHSIA
 
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-#if !OS_IOS && !OS_MACOSX
+#if !FML_OS_IOS && !FML_OS_MACOSX
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
@@ -361,7 +363,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   PushBackAll(&args, kDartDisableIntegerDivisionArgs,
               fml::size(kDartDisableIntegerDivisionArgs));
 #endif  // TARGET_CPU_ARM
-#endif  // !OS_IOS && !OS_MACOSX
+#endif  // !FML_OS_IOS && !FML_OS_MACOSX
 #endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
   if (enable_asserts) {
@@ -490,6 +492,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     Dart_SetDartLibrarySourcesKernel(dart_library_sources->GetMapping(),
                                      dart_library_sources->GetSize());
   }
+
+  // Update thread names now that the Dart VM is initialized.
+  concurrent_message_loop_->PostTaskToAllWorkers(
+      [] { Dart_SetThreadName("FlutterConcurrentMessageLoopWorker"); });
 }
 
 DartVM::~DartVM() {

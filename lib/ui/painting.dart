@@ -3940,7 +3940,6 @@ class Vertices extends NativeFieldWrapperClass1 {
   ///
   /// If the [indices] parameter is provided, all values in the list must be
   /// valid index values for [positions].
-  ///
   /// e.g. The [indices] parameter for a simple triangle is [0,1,2].
   Vertices(
     VertexMode mode,
@@ -3974,22 +3973,31 @@ class Vertices extends NativeFieldWrapperClass1 {
 
   /// Creates a set of vertex data for use with [Canvas.drawVertices], directly
   /// using the encoding methods of [new Vertices].
+  /// Note that this constructor uses raw typed data lists,
+  /// so it runs faster than the [Vertices()] constructor
+  /// because it doesn't require any conversion from Dart lists.
   ///
   /// The [mode] parameter must not be null.
   ///
-  /// The [positions] list is interpreted as a list of repeated pairs of x,y
-  /// coordinates. It must not be null.
+  /// The [positions] parameter is a list of triangular mesh vertices and
+  /// is interpreted as a list of repeated pairs of x,y coordinates.
+  /// It must not be null.
   ///
   /// The [textureCoordinates] list is interpreted as a list of repeated pairs
   /// of x,y coordinates, and must be the same length of [positions] if it
   /// is not null.
+  /// The [textureCoordinates] parameter is used to cutout
+  /// the image set in the image shader.
+  /// The cut part is applied to the triangular mesh.
+  /// Note that the [textureCoordinates] are the coordinates on the image.
   ///
-  /// The [colors] list is interpreted as a list of RGBA encoded colors, similar
+  /// The [colors] list is interpreted as a list of ARGB encoded colors, similar
   /// to [Color.value]. It must be half length of [positions] if it is not
   /// null.
   ///
   /// If the [indices] list is provided, all values in the list must be
   /// valid index values for [positions].
+  /// e.g. The [indices] parameter for a simple triangle is [0,1,2].
   Vertices.raw(
     VertexMode mode,
     Float32List positions, {
@@ -4676,6 +4684,17 @@ class Canvas extends NativeFieldWrapperClass1 {
 
   /// Draws the set of [Vertices] onto the canvas.
   ///
+  /// The [blendMode] parameter is used to control how the colors in
+  /// the [vertices] are combined with the colors in the [paint].
+  /// If there are no colors specified in [vertices] then the [blendMode] has
+  /// no effect. If there are colors in the [vertices],
+  /// then the color taken from the [Shader] or [Color] in the [paint] is
+  /// blended with the colors specified in the [vertices] using
+  /// the [blendMode] parameter.
+  /// For purposes of this blending,
+  /// the colors from the [paint] are considered the source and the colors from
+  /// the [vertices] are considered the destination.
+  ///
   /// All parameters must not be null.
   ///
   /// See also:
@@ -5094,6 +5113,7 @@ class Picture extends NativeFieldWrapperClass1 {
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
   Future<Image> toImage(int width, int height) {
+    assert(!_disposed);
     if (width <= 0 || height <= 0)
       throw Exception('Invalid image dimensions.');
     return _futurize(
@@ -5111,7 +5131,31 @@ class Picture extends NativeFieldWrapperClass1 {
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'Picture_dispose';
+  void dispose() {
+    assert(!_disposed);
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  void _dispose() native 'Picture_dispose';
+
+
+  bool _disposed = false;
+  /// Whether this reference to the underlying picture is [dispose]d.
+  ///
+  /// This only returns a valid value if asserts are enabled, and must not be
+  /// used otherwise.
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('Picture.debugDisposed is only available when asserts are enabled.'));
+  }
 
   /// Returns the approximate number of bytes allocated for this object.
   ///

@@ -176,8 +176,8 @@ void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
 void SceneBuilder::pushColorFilter(Dart_Handle layer_handle,
                                    const ColorFilter* color_filter,
                                    fml::RefPtr<EngineLayer> oldLayer) {
-  auto layer =
-      std::make_shared<flutter::ColorFilterLayer>(color_filter->filter());
+  auto layer = std::make_shared<flutter::ColorFilterLayer>(
+      color_filter->filter()->skia_object());
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 
@@ -266,12 +266,20 @@ void SceneBuilder::addPicture(double dx,
                               double dy,
                               Picture* picture,
                               int hints) {
+  if (!picture) {
+    // Picture::dispose was called and it has been collected.
+    return;
+  }
+
+  // Explicitly check for both conditions, since the picture object might have
+  // been disposed but not collected yet, but the display list and picture are
+  // both null.
   if (picture->picture()) {
     auto layer = std::make_unique<flutter::PictureLayer>(
         SkPoint::Make(dx, dy), UIDartState::CreateGPUObject(picture->picture()),
         !!(hints & 1), !!(hints & 2));
     AddLayer(std::move(layer));
-  } else {
+  } else if (picture->display_list()) {
     auto layer = std::make_unique<flutter::DisplayListLayer>(
         SkPoint::Make(dx, dy),
         UIDartState::CreateGPUObject(picture->display_list()), !!(hints & 1),

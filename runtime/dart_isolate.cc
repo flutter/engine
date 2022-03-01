@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <tuple>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/posix_wrappers.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
@@ -314,24 +315,11 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     return false;
   }
 
-  if (dart_isolate == nullptr) {
-    return false;
-  }
-
-  if (Dart_CurrentIsolate() != dart_isolate) {
-    return false;
-  }
+  FML_DCHECK(dart_isolate != nullptr);
+  FML_DCHECK(dart_isolate == Dart_CurrentIsolate());
 
   // After this point, isolate scopes can be safely used.
   SetIsolate(dart_isolate);
-
-  // We are entering a new scope (for the first time since initialization) and
-  // we want to restore the current scope to null when we exit out of this
-  // method. This balances the implicit Dart_EnterIsolate call made by
-  // Dart_CreateIsolateGroup (which calls the Initialize).
-  Dart_ExitIsolate();
-
-  tonic::DartIsolateScope scope(isolate());
 
   // For the root isolate set the "AppStartUp" as soon as the root isolate
   // has been initialized. This is to ensure that all the timeline events
@@ -721,6 +709,35 @@ static void InvokeDartPluginRegistrantIfAvailable(Dart_Handle library_handle) {
   tonic::LogIfError(tonic::DartInvokeField(plugin_registrant, "register", {}));
 }
 
+namespace {
+bool EndsWith(const std::string& str, const std::string& ending) {
+  if (str.size() >= ending.size()) {
+    return (0 ==
+            str.compare(str.size() - ending.size(), ending.size(), ending));
+  } else {
+    return false;
+  }
+}
+
+Dart_Handle FindDartPluginRegistrantLibrary() {
+  // TODO(99308): Instead of finding this, it could be passed down from the
+  // tool.
+  Dart_Handle libraries = Dart_GetLoadedLibraries();
+  intptr_t length = 0;
+  Dart_ListLength(libraries, &length);
+  for (intptr_t i = 0; i < length; ++i) {
+    Dart_Handle library = Dart_ListGetAt(libraries, i);
+    std::string library_name =
+        tonic::DartConverter<std::string>::FromDart(Dart_ToString(library));
+    if (EndsWith(library_name,
+                 "dart_tool/flutter_build/dart_plugin_registrant.dart'")) {
+      return library;
+    }
+  }
+  return Dart_Null();
+}
+}  // namespace
+
 bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
                                  std::optional<std::string> entrypoint,
                                  const std::vector<std::string>& args) {
@@ -739,7 +756,12 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
                                ? tonic::ToDart(entrypoint.value().c_str())
                                : tonic::ToDart("main");
 
-  InvokeDartPluginRegistrantIfAvailable(library_handle);
+  auto dart_plugin_registrant_library = FindDartPluginRegistrantLibrary();
+  if (!Dart_IsNull(dart_plugin_registrant_library)) {
+    InvokeDartPluginRegistrantIfAvailable(dart_plugin_registrant_library);
+  } else {
+    InvokeDartPluginRegistrantIfAvailable(library_handle);
+  }
 
   auto user_entrypoint_function =
       ::Dart_GetField(library_handle, entrypoint_handle);
@@ -997,7 +1019,6 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
   // only reference returned to the caller is weak.
   *child_callback_data = embedder_isolate.release();
 
-  Dart_EnterIsolate(isolate);
   return true;
 }
 
@@ -1017,15 +1038,25 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     return nullptr;
   }
 
-  // Ownership of the isolate data objects has been transferred to the Dart VM.
-  std::shared_ptr<DartIsolate> embedder_isolate(*isolate_data);
-  isolate_group_data.release();
-  isolate_data.release();
+  bool success = false;
+  {
+    // Ownership of the isolate data objects has been transferred to the Dart
+    // VM.
+    // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
+    std::shared_ptr<DartIsolate> embedder_isolate(*isolate_data);
+    isolate_group_data.release();
+    isolate_data.release();
+    // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
-  if (!InitializeIsolate(std::move(embedder_isolate), isolate, error)) {
+    success = InitializeIsolate(std::move(embedder_isolate), isolate, error);
+  }
+  if (!success) {
+    Dart_ShutdownIsolate();
     return nullptr;
   }
 
+  // Balances the implicit [Dart_EnterIsolate] by [make_isolate] above.
+  Dart_ExitIsolate();
   return isolate;
 }
 
@@ -1070,6 +1101,14 @@ void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateShutdownCallback");
+
+  // If the isolate initialization failed there will be nothing to do.
+  // This can happen e.g. during a [DartIsolateInitializeCallback] invocation
+  // that fails to initialize the VM-created isolate.
+  if (isolate_data == nullptr) {
+    return;
+  }
+
   isolate_data->get()->OnShutdownCallback();
 }
 

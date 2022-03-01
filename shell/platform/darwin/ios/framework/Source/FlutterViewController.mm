@@ -673,7 +673,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
-        [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
+        if (weakSelf) {
+          [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
+        }
       };
   [self.keyboardManager addPrimaryResponder:[[[FlutterEmbedderKeyResponder alloc]
                                                 initWithSendEvent:sendEvent] autorelease]];
@@ -945,6 +947,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       case flutter::PointerData::Change::kAdd:
       case flutter::PointerData::Change::kRemove:
         // We don't use kAdd/kRemove.
+        break;
+      case flutter::PointerData::Change::kPanZoomStart:
+      case flutter::PointerData::Change::kPanZoomUpdate:
+      case flutter::PointerData::Change::kPanZoomEnd:
+        // We don't send pan/zoom events here
         break;
     }
 

@@ -202,6 +202,10 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
 
   RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags, coverage=coverage)
 
+  RunEngineExecutable(build_dir, 'no_dart_plugin_registrant_unittests', filter, shuffle_flags, coverage=coverage)
+
+  RunEngineExecutable(build_dir, 'dart_plugin_registrant_unittests', filter, shuffle_flags, coverage=coverage)
+
   if not IsWindows():
     # https://github.com/flutter/flutter/issues/36295
     RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags, coverage=coverage)
@@ -215,8 +219,8 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
 
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags, coverage=coverage)
 
-  # The accessibility library only supports Mac for now.
-  if IsMac():
+  # The accessibility library only supports Mac and Windows.
+  if IsMac() or IsWindows():
     RunEngineExecutable(build_dir, 'accessibility_unittests', filter, shuffle_flags, coverage=coverage)
 
   # These unit-tests are Objective-C and can only run on Darwin.
@@ -232,6 +236,10 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
   if IsLinux():
     RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags, coverage=coverage)
     RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, shuffle_flags, coverage=coverage)
+
+  # Impeller tests are only supported on macOS for now.
+  if IsMac():
+    RunEngineExecutable(build_dir, 'impeller_unittests', filter, shuffle_flags, coverage=coverage)
 
 
 def RunEngineBenchmarks(build_dir, filter):
@@ -335,7 +343,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   build_dir = os.path.join(out_dir, android_variant, 'robolectric_tests', 'build')
   gradle_cache_dir = os.path.join(out_dir, android_variant, 'robolectric_tests', '.gradle')
 
-  test_class = filter if filter else 'io.flutter.FlutterTestSuite'
+  test_class = filter if filter else '*'
   command = [
     gradle_bin,
     '-Pflutter_jar=%s' % flutter_jar,
@@ -403,12 +411,12 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
   EnsureDebugUnoptSkyPackagesAreBuilt()
 
-  # Now that we have the Sky packages at the hardcoded location, run `pub get`.
+  # Now that we have the Sky packages at the hardcoded location, run `dart pub get`.
   RunEngineExecutable(
     build_dir,
-    os.path.join('dart-sdk', 'bin', 'pub'),
+    os.path.join('dart-sdk', 'bin', 'dart'),
     None,
-    flags=['get', '--offline'],
+    flags=['pub', 'get', '--offline'],
     cwd=dart_tests_dir,
   )
 
@@ -628,7 +636,8 @@ def main():
     RunBenchmarkTests(build_dir)
     RunEngineBenchmarks(build_dir, engine_filter)
 
-  if ('engine' in types or 'font-subset' in types) and args.variant != 'host_release':
+  variants_to_skip = ['host_release', 'host_profile']
+  if ('engine' in types or 'font-subset' in types) and args.variant not in variants_to_skip:
     RunCmd(['python', 'test.py'], cwd=font_subset_dir)
 
 

@@ -1,4 +1,4 @@
-Signature: ae83b21350a359a88979aea9d00e5fd9
+Signature: 96701b6d547a0327123607a63786761c
 
 UNUSED LICENSES:
 
@@ -227,8 +227,8 @@ LIBRARY: fuchsia-vulkan
 LIBRARY: khronos
 LIBRARY: libwebp
 LIBRARY: pkg
-LIBRARY: vulkan
 LIBRARY: vulkan-deps
+LIBRARY: vulkan-headers
 LIBRARY: wuffs
 ORIGIN: ../../../flutter/third_party/txt/LICENSE
 TYPE: LicenseType.apache
@@ -1258,19 +1258,28 @@ FILE: ../../../third_party/pkg/quiver/lib/src/time/duration_unit_constants.dart
 FILE: ../../../third_party/pkg/quiver/lib/src/time/util.dart
 FILE: ../../../third_party/pkg/quiver/lib/strings.dart
 FILE: ../../../third_party/pkg/quiver/lib/time.dart
-FILE: ../../../third_party/vulkan/include/vulkan/vk_platform.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_android.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_core.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_fuchsia.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_ios.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_macos.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_vi.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_wayland.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_win32.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xcb.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xlib.h
-FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xlib_xrandr.h
+FILE: ../../../third_party/vulkan-headers/cmake/cmake_uninstall.cmake.in
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_icd.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_layer.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_platform.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vk_sdk_platform.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan.hpp
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_android.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_core.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_fuchsia.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_ggp.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_ios.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_macos.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_metal.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_vi.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_wayland.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_win32.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_xcb.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_xlib.h
+FILE: ../../../third_party/vulkan-headers/include/vulkan/vulkan_xlib_xrandr.h
+FILE: ../../../third_party/vulkan-headers/registry/validusage.json
+FILE: ../../../third_party/vulkan-headers/registry/vk.xml
 FILE: ../../../third_party/wuffs/release/c/wuffs-v0.2.c
 FILE: ../../../third_party/wuffs/release/c/wuffs-v0.3.c
 ----------------------------------------------------------------------------------------------------
@@ -9255,20 +9264,38 @@ FILE: ../../../third_party/dart/runtime/tools/wiki/styles/style.scss
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/auto-refresh.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/favicon.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/page.html
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_android.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_ios.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm64_macos.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm_android.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm_ios.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/arm_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/ia32_android.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/ia32_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/ia32_win.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_ios.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_linux.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_macos.expect
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx10/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/riscv64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/doublex20/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/riscv64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/floatx20/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm64_linux.expect
@@ -9279,6 +9306,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/arm_l
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/int8x10/x64_macos.expect
@@ -9293,6 +9322,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/regress46127/x64_macos.expect
@@ -9307,6 +9338,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128byte
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_macos.expect
@@ -9321,6 +9354,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytes
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_macos.expect
@@ -9335,6 +9370,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytes
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/x64_macos.expect
@@ -9361,6 +9398,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_macos.expect
@@ -9375,6 +9414,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesP
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_macos.expect
@@ -9389,6 +9430,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_macos.expect
@@ -9403,6 +9446,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_macos.expect
@@ -9417,6 +9462,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLa
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_macos.expect
@@ -9431,6 +9478,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floata
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_macos.expect
@@ -9445,6 +9494,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_macos.expect
@@ -9459,6 +9510,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8ar
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_macos.expect
@@ -9473,6 +9526,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x1
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/x64_macos.expect
@@ -9487,6 +9542,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesH
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union16bytesHomogenousx10/x64_macos.expect
@@ -9501,6 +9558,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPa
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/ia32_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/ia32_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/riscv32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/riscv64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/x64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/union5bytesPackedx10/x64_macos.expect
@@ -10038,6 +10097,73 @@ FILE: ../../../third_party/dart/sdk/lib/internal/lowering.dart
 FILE: ../../../third_party/dart/sdk/lib/io/network_policy.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google LLC nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
+ORIGIN: ../../../third_party/dart/benchmarks/Iterators/dart/Iterators.dart + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/benchmarks/Iterators/dart/Iterators.dart
+FILE: ../../../third_party/dart/benchmarks/Iterators/dart/data.dart
+FILE: ../../../third_party/dart/benchmarks/Iterators/dart2/Iterators.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/bool.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/date_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/developer.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/expando_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/function.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/hash_factories.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/identical_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/immutable_map.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/internal_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/list.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/math_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/object_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/print_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/stack_trace_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/timer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/type.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/c_type.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/native_finalizer.dart
+FILE: ../../../third_party/dart/sdk/lib/wasm/wasm_types.dart
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2022, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -13412,8 +13538,295 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 
 ====================================================================================================
 LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/adler32.c + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/adler32.c
+FILE: ../../../third_party/zlib/adler32.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2011, 2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/crc32.c + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/crc32.c
+FILE: ../../../third_party/zlib/crc32.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/ftzconf.h + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/ftzconf.h
+FILE: ../../../third_party/freetype2/src/gzip/zutil.h
+FILE: ../../../third_party/zlib/zconf.h
+FILE: ../../../third_party/zlib/zutil.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/gzguts.h + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/gzguts.h
+FILE: ../../../third_party/zlib/gzguts.h
+FILE: ../../../third_party/zlib/gzread.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/infback.c + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/infback.c
+FILE: ../../../third_party/freetype2/src/gzip/inflate.c
+FILE: ../../../third_party/freetype2/src/gzip/inflate.h
+FILE: ../../../third_party/zlib/contrib/optimizations/inflate.c
+FILE: ../../../third_party/zlib/infback.c
+FILE: ../../../third_party/zlib/inflate.c
+FILE: ../../../third_party/zlib/inflate.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/inffast.c + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/inffast.c
+FILE: ../../../third_party/freetype2/src/gzip/inftrees.c
+FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c
+FILE: ../../../third_party/zlib/inffast.c
+FILE: ../../../third_party/zlib/inftrees.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2017 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/inffast.h + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/inffast.h
+FILE: ../../../third_party/zlib/inffast.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2003, 2010 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/inftrees.h + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/inftrees.h
+FILE: ../../../third_party/zlib/inftrees.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2005, 2010 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/crc32.h
+FILE: ../../../third_party/freetype2/src/gzip/inffixed.h
+FILE: ../../../third_party/freetype2/src/gzip/patches/freetype-zlib.diff
+FILE: ../../../third_party/freetype2/src/gzip/zlib.h
+FILE: ../../../third_party/zlib/deflate.c
+FILE: ../../../third_party/zlib/zlib.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+LIBRARY: zlib
+ORIGIN: ../../../third_party/freetype2/src/gzip/zutil.c + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/zutil.c
+FILE: ../../../third_party/zlib/zutil.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2017 Jean-loup Gailly
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
 ORIGIN: ../../../third_party/freetype2/docs/FTL.TXT
 TYPE: LicenseType.freetype
+FILE: ../../../third_party/freetype2/.gitlab-ci.yml
+FILE: ../../../third_party/freetype2/.gitmodules
 FILE: ../../../third_party/freetype2/devel/ft2build.h
 FILE: ../../../third_party/freetype2/devel/ftoption.h
 FILE: ../../../third_party/freetype2/include/freetype-flutter-config/ftmodule.h
@@ -13448,6 +13861,7 @@ FILE: ../../../third_party/freetype2/include/freetype/ftimage.h
 FILE: ../../../third_party/freetype2/include/freetype/ftincrem.h
 FILE: ../../../third_party/freetype2/include/freetype/ftlcdfil.h
 FILE: ../../../third_party/freetype2/include/freetype/ftlist.h
+FILE: ../../../third_party/freetype2/include/freetype/ftlogging.h
 FILE: ../../../third_party/freetype2/include/freetype/ftlzw.h
 FILE: ../../../third_party/freetype2/include/freetype/ftmac.h
 FILE: ../../../third_party/freetype2/include/freetype/ftmm.h
@@ -13505,9 +13919,11 @@ FILE: ../../../third_party/freetype2/include/freetype/internal/services/svtteng.
 FILE: ../../../third_party/freetype2/include/freetype/internal/services/svttglyf.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/services/svwinfnt.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/sfnt.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/svginterface.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/t1types.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/tttypes.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/wofftypes.h
+FILE: ../../../third_party/freetype2/include/freetype/otsvg.h
 FILE: ../../../third_party/freetype2/include/freetype/t1tables.h
 FILE: ../../../third_party/freetype2/include/freetype/ttnameid.h
 FILE: ../../../third_party/freetype2/include/freetype/tttables.h
@@ -13515,8 +13931,6 @@ FILE: ../../../third_party/freetype2/include/freetype/tttags.h
 FILE: ../../../third_party/freetype2/include/ft2build.h
 FILE: ../../../third_party/freetype2/meson.build
 FILE: ../../../third_party/freetype2/modules.cfg
-FILE: ../../../third_party/freetype2/src/autofit/afangles.c
-FILE: ../../../third_party/freetype2/src/autofit/afangles.h
 FILE: ../../../third_party/freetype2/src/autofit/afblue.c
 FILE: ../../../third_party/freetype2/src/autofit/afblue.cin
 FILE: ../../../third_party/freetype2/src/autofit/afblue.dat
@@ -13536,8 +13950,6 @@ FILE: ../../../third_party/freetype2/src/autofit/afindic.c
 FILE: ../../../third_party/freetype2/src/autofit/afindic.h
 FILE: ../../../third_party/freetype2/src/autofit/aflatin.c
 FILE: ../../../third_party/freetype2/src/autofit/aflatin.h
-FILE: ../../../third_party/freetype2/src/autofit/aflatin2.c
-FILE: ../../../third_party/freetype2/src/autofit/aflatin2.h
 FILE: ../../../third_party/freetype2/src/autofit/afloader.c
 FILE: ../../../third_party/freetype2/src/autofit/afloader.h
 FILE: ../../../third_party/freetype2/src/autofit/afmodule.c
@@ -13549,9 +13961,8 @@ FILE: ../../../third_party/freetype2/src/autofit/afshaper.c
 FILE: ../../../third_party/freetype2/src/autofit/afshaper.h
 FILE: ../../../third_party/freetype2/src/autofit/afstyles.h
 FILE: ../../../third_party/freetype2/src/autofit/aftypes.h
-FILE: ../../../third_party/freetype2/src/autofit/afwarp.c
-FILE: ../../../third_party/freetype2/src/autofit/afwarp.h
-FILE: ../../../third_party/freetype2/src/autofit/afwrtsys.h
+FILE: ../../../third_party/freetype2/src/autofit/afws-decl.h
+FILE: ../../../third_party/freetype2/src/autofit/afws-iter.h
 FILE: ../../../third_party/freetype2/src/autofit/autofit.c
 FILE: ../../../third_party/freetype2/src/base/ftadvanc.c
 FILE: ../../../third_party/freetype2/src/base/ftbase.c
@@ -13640,6 +14051,7 @@ FILE: ../../../third_party/freetype2/src/cid/cidriver.c
 FILE: ../../../third_party/freetype2/src/cid/cidriver.h
 FILE: ../../../third_party/freetype2/src/cid/cidtoken.h
 FILE: ../../../third_party/freetype2/src/cid/type1cid.c
+FILE: ../../../third_party/freetype2/src/dlg/dlgwrap.c
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvalid.c
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvalid.h
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvbsln.c
@@ -13764,6 +14176,15 @@ FILE: ../../../third_party/freetype2/src/raster/ftrend1.c
 FILE: ../../../third_party/freetype2/src/raster/ftrend1.h
 FILE: ../../../third_party/freetype2/src/raster/raster.c
 FILE: ../../../third_party/freetype2/src/raster/rasterrs.h
+FILE: ../../../third_party/freetype2/src/sdf/ftbsdf.c
+FILE: ../../../third_party/freetype2/src/sdf/ftsdf.c
+FILE: ../../../third_party/freetype2/src/sdf/ftsdf.h
+FILE: ../../../third_party/freetype2/src/sdf/ftsdfcommon.c
+FILE: ../../../third_party/freetype2/src/sdf/ftsdfcommon.h
+FILE: ../../../third_party/freetype2/src/sdf/ftsdferrs.h
+FILE: ../../../third_party/freetype2/src/sdf/ftsdfrend.c
+FILE: ../../../third_party/freetype2/src/sdf/ftsdfrend.h
+FILE: ../../../third_party/freetype2/src/sdf/sdf.c
 FILE: ../../../third_party/freetype2/src/sfnt/pngshim.c
 FILE: ../../../third_party/freetype2/src/sfnt/pngshim.h
 FILE: ../../../third_party/freetype2/src/sfnt/sfdriver.c
@@ -13795,6 +14216,8 @@ FILE: ../../../third_party/freetype2/src/sfnt/ttpost.c
 FILE: ../../../third_party/freetype2/src/sfnt/ttpost.h
 FILE: ../../../third_party/freetype2/src/sfnt/ttsbit.c
 FILE: ../../../third_party/freetype2/src/sfnt/ttsbit.h
+FILE: ../../../third_party/freetype2/src/sfnt/ttsvg.c
+FILE: ../../../third_party/freetype2/src/sfnt/ttsvg.h
 FILE: ../../../third_party/freetype2/src/sfnt/woff2tags.c
 FILE: ../../../third_party/freetype2/src/sfnt/woff2tags.h
 FILE: ../../../third_party/freetype2/src/smooth/ftgrays.c
@@ -13803,6 +14226,10 @@ FILE: ../../../third_party/freetype2/src/smooth/ftsmerrs.h
 FILE: ../../../third_party/freetype2/src/smooth/ftsmooth.c
 FILE: ../../../third_party/freetype2/src/smooth/ftsmooth.h
 FILE: ../../../third_party/freetype2/src/smooth/smooth.c
+FILE: ../../../third_party/freetype2/src/svg/ftsvg.c
+FILE: ../../../third_party/freetype2/src/svg/ftsvg.h
+FILE: ../../../third_party/freetype2/src/svg/svg.c
+FILE: ../../../third_party/freetype2/src/svg/svgtypes.h
 FILE: ../../../third_party/freetype2/src/truetype/truetype.c
 FILE: ../../../third_party/freetype2/src/truetype/ttdriver.c
 FILE: ../../../third_party/freetype2/src/truetype/ttdriver.h
@@ -13846,7 +14273,8 @@ FILE: ../../../third_party/freetype2/src/type42/type42.c
 FILE: ../../../third_party/freetype2/src/winfonts/fnterrs.h
 FILE: ../../../third_party/freetype2/src/winfonts/winfnt.c
 FILE: ../../../third_party/freetype2/src/winfonts/winfnt.h
-FILE: ../../../third_party/freetype2/version.sed
+FILE: ../../../third_party/freetype2/subprojects/libpng.wrap
+FILE: ../../../third_party/freetype2/subprojects/zlib.wrap
 ----------------------------------------------------------------------------------------------------
 The FreeType Project LICENSE
 
@@ -14202,93 +14630,6 @@ THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
 OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: freetype2
-ORIGIN: ../../../third_party/freetype2/src/gzip/adler32.c + ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/adler32.c
-FILE: ../../../third_party/freetype2/src/gzip/infblock.c
-FILE: ../../../third_party/freetype2/src/gzip/infblock.h
-FILE: ../../../third_party/freetype2/src/gzip/infcodes.c
-FILE: ../../../third_party/freetype2/src/gzip/infcodes.h
-FILE: ../../../third_party/freetype2/src/gzip/inflate.c
-FILE: ../../../third_party/freetype2/src/gzip/inftrees.c
-FILE: ../../../third_party/freetype2/src/gzip/inftrees.h
-FILE: ../../../third_party/freetype2/src/gzip/infutil.c
-FILE: ../../../third_party/freetype2/src/gzip/infutil.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2002 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: freetype2
-ORIGIN: ../../../third_party/freetype2/src/gzip/ftzconf.h + ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/ftzconf.h
-FILE: ../../../third_party/freetype2/src/gzip/zutil.c
-FILE: ../../../third_party/freetype2/src/gzip/zutil.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2002 Jean-loup Gailly.
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: freetype2
-ORIGIN: ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/inffixed.h
-FILE: ../../../third_party/freetype2/src/gzip/zlib.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2002 Jean-loup Gailly and Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
 
 ====================================================================================================
@@ -17758,8 +18099,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17772,10 +18111,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -17787,6 +18124,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -17890,8 +18228,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17904,10 +18240,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -17919,6 +18253,146 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
+FILE: ../../../third_party/icu/source/data/in/unames.icu
+FILE: ../../../third_party/icu/source/data/in/uprops.icu
+FILE: ../../../third_party/icu/source/data/in/uts46.nrm
+FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/gb18030.ucm
+FILE: ../../../third_party/icu/source/data/mappings/ibm866-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-10-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-13-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-14-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-15-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-16-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-2-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-3-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-4-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-6-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-7-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-8-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-r-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-u-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/macintosh-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/shift_jis-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1250-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1251-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1252-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1253-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1254-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1255-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1256-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1257-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
+FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
+FILE: ../../../third_party/icu/source/tools/tzcode/asctime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/ialloc.c
+FILE: ../../../third_party/icu/source/tools/tzcode/localtime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/private.h
+FILE: ../../../third_party/icu/source/tools/tzcode/scheck.c
+FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
+FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
+FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
+FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2016 and later: Unicode, Inc. and others.
+License & terms of use: http://www.unicode.org/copyright.html
+Copyright (c) 2015 International Business Machines Corporation
+and others. All Rights Reserved.
+
+Project: https://github.com/rober42539/lao-dictionary
+Dictionary: https://github.com/rober42539/lao-dictionary/laodict.txt
+License: https://github.com/rober42539/lao-dictionary/LICENSE.txt
+         (copied below)
+
+	This file is derived from the above dictionary version of Nov 22, 2020
+
+ Copyright (C) 2013 Brian Eugene Wilson, Robert Martin Campbell.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer. Redistributions in binary
+ form must reproduce the above copyright notice, this list of conditions and
+ the following disclaimer in the documentation and/or other materials
+ provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: icu
+ORIGIN: ../../../third_party/icu/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/icu/DIR_METADATA
+FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
+FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/common/icudtb.dat
+FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
+FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
+FILE: ../../../third_party/icu/fuzzers/icu_appendable_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
+FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/ardatepattern.patch
+FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/gb_table.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
+FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
+FILE: ../../../third_party/icu/patches/locale1.patch
+FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
+FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/unused-var.patch
+FILE: ../../../third_party/icu/patches/wordbrk.patch
+FILE: ../../../third_party/icu/patches/wpo.patch
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
+FILE: ../../../third_party/icu/source/data/in/nfc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
+FILE: ../../../third_party/icu/source/data/in/pnames.icu
+FILE: ../../../third_party/icu/source/data/in/ubidi.icu
+FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18027,8 +18501,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18041,10 +18513,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18056,6 +18526,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18163,8 +18634,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18177,10 +18646,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18192,148 +18659,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
-FILE: ../../../third_party/icu/source/data/in/ulayout.icu
-FILE: ../../../third_party/icu/source/data/in/unames.icu
-FILE: ../../../third_party/icu/source/data/in/uprops.icu
-FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/gb18030.ucm
-FILE: ../../../third_party/icu/source/data/mappings/ibm866-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-10-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-13-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-14-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-15-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-16-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-2-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-3-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-4-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-5-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-6-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-7-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-8-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/koi8-r-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/koi8-u-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/macintosh-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/shift_jis-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1250-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1251-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1252-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1253-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1254-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1255-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1256-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1257-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
-FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
-FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
-FILE: ../../../third_party/icu/source/tools/tzcode/asctime.c
-FILE: ../../../third_party/icu/source/tools/tzcode/ialloc.c
-FILE: ../../../third_party/icu/source/tools/tzcode/localtime.c
-FILE: ../../../third_party/icu/source/tools/tzcode/private.h
-FILE: ../../../third_party/icu/source/tools/tzcode/scheck.c
-FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
-FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
-FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
-FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/tzres/metaZones.res
-FILE: ../../../third_party/icu/tzres/timezoneTypes.res
-FILE: ../../../third_party/icu/tzres/zoneinfo64.res
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013 International Business Machines Corporation
-and others. All Rights Reserved.
-
-Project: https://github.com/veer66/lao-dictionary
-Dictionary: https://github.com/veer66/lao-dictionary/blob/master/Lao-Dictionary.txt
-License: https://github.com/veer66/lao-dictionary/blob/master/Lao-Dictionary-LICENSE.txt
-             (copied below)
-
- This file is derived from the above dictionary, with slight
- modifications.
-
- Copyright (C) 2013 Brian Eugene Wilson, Robert Martin Campbell.
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification,
- are permitted provided that the following conditions are met:
-
-Redistributions of source code must retain the above copyright notice, this
- list of conditions and the following disclaimer. Redistributions in
- binary form must reproduce the above copyright notice, this list of
- conditions and the following disclaimer in the documentation and/or
- other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: icu
-ORIGIN: ../../../third_party/icu/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/DIR_METADATA
-FILE: ../../../third_party/icu/android/icudtl.dat
-FILE: ../../../third_party/icu/android_small/icudtl.dat
-FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
-FILE: ../../../third_party/icu/cast/brkitr.patch
-FILE: ../../../third_party/icu/cast/icudtl.dat
-FILE: ../../../third_party/icu/chromeos/icudtl.dat
-FILE: ../../../third_party/icu/common/icudtb.dat
-FILE: ../../../third_party/icu/common/icudtl.dat
-FILE: ../../../third_party/icu/flutter/brkitr.patch
-FILE: ../../../third_party/icu/flutter/icudtl.dat
-FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
-FILE: ../../../third_party/icu/fuzzers/icu_appendable_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
-FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
-FILE: ../../../third_party/icu/patches/ardatepattern.patch
-FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/configure.patch
-FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
-FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/iso2022jp.patch
-FILE: ../../../third_party/icu/patches/isvalidenum.patch
-FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/locale1.patch
-FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
-FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
-FILE: ../../../third_party/icu/patches/unused-var.patch
-FILE: ../../../third_party/icu/patches/wordbrk.patch
-FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
-FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
-FILE: ../../../third_party/icu/source/data/in/nfc.nrm
-FILE: ../../../third_party/icu/source/data/in/nfkc.nrm
-FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
-FILE: ../../../third_party/icu/source/data/in/pnames.icu
-FILE: ../../../third_party/icu/source/data/in/ubidi.icu
-FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18446,8 +18772,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18460,10 +18784,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18475,6 +18797,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18583,8 +18906,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18597,10 +18918,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18612,6 +18931,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18719,8 +19039,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18733,10 +19051,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18748,6 +19064,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -18828,8 +19145,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -18842,10 +19157,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18857,6 +19170,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -19004,8 +19318,6 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
-FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -19018,10 +19330,8 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_operators.patch
-FILE: ../../../third_party/icu/patches/loclikely_uloc.patch
+FILE: ../../../third_party/icu/patches/lstmbe-header.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/unused-var.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19033,6 +19343,7 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/uemoji.icu
 FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
@@ -19241,6 +19552,7 @@ ORIGIN: ../../../third_party/icu/source/common/unicode/appendable.h
 TYPE: LicenseType.icu
 FILE: ../../../third_party/icu/APIChangeReport.html
 FILE: ../../../third_party/icu/source/Doxyfile.in
+FILE: ../../../third_party/icu/source/common/BUILD.unused
 FILE: ../../../third_party/icu/source/common/appendable.cpp
 FILE: ../../../third_party/icu/source/common/bmpset.cpp
 FILE: ../../../third_party/icu/source/common/bmpset.h
@@ -19276,6 +19588,8 @@ FILE: ../../../third_party/icu/source/common/dictionarydata.cpp
 FILE: ../../../third_party/icu/source/common/dictionarydata.h
 FILE: ../../../third_party/icu/source/common/dtintrv.cpp
 FILE: ../../../third_party/icu/source/common/edits.cpp
+FILE: ../../../third_party/icu/source/common/emojiprops.cpp
+FILE: ../../../third_party/icu/source/common/emojiprops.h
 FILE: ../../../third_party/icu/source/common/errorcode.cpp
 FILE: ../../../third_party/icu/source/common/filteredbrk.cpp
 FILE: ../../../third_party/icu/source/common/filterednormalizer2.cpp
@@ -19307,6 +19621,8 @@ FILE: ../../../third_party/icu/source/common/locutil.cpp
 FILE: ../../../third_party/icu/source/common/locutil.h
 FILE: ../../../third_party/icu/source/common/lsr.cpp
 FILE: ../../../third_party/icu/source/common/lsr.h
+FILE: ../../../third_party/icu/source/common/lstmbe.cpp
+FILE: ../../../third_party/icu/source/common/lstmbe.h
 FILE: ../../../third_party/icu/source/common/messageimpl.h
 FILE: ../../../third_party/icu/source/common/messagepattern.cpp
 FILE: ../../../third_party/icu/source/common/msvcres.h
@@ -19689,6 +20005,8 @@ FILE: ../../../third_party/icu/source/data/coll/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/curr/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/dtd/cldr-35.1/common/dtd/ldml.dtd
 FILE: ../../../third_party/icu/source/data/dtd/cldr-35.1/common/dtd/ldmlICU.dtd
+FILE: ../../../third_party/icu/source/data/dtd/cldr-40/common/dtd/ldml.dtd
+FILE: ../../../third_party/icu/source/data/dtd/cldr-40/common/dtd/ldmlICU.dtd
 FILE: ../../../third_party/icu/source/data/icupkg.inc.in
 FILE: ../../../third_party/icu/source/data/lang/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/locales/LOCALE_DEPS.json
@@ -19884,6 +20202,7 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-950-2000.ucm
 FILE: ../../../third_party/icu/source/data/misc/icudata.rc
 FILE: ../../../third_party/icu/source/data/rbnf/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/region/LOCALE_DEPS.json
+FILE: ../../../third_party/icu/source/data/unidata/norm2/BUILD.unused
 FILE: ../../../third_party/icu/source/data/unit/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/data/zone/LOCALE_DEPS.json
 FILE: ../../../third_party/icu/source/extra/scrptrun/scrptrun.cpp
@@ -19895,6 +20214,7 @@ FILE: ../../../third_party/icu/source/extra/uconv/uconv.1.in
 FILE: ../../../third_party/icu/source/extra/uconv/uconv.cpp
 FILE: ../../../third_party/icu/source/extra/uconv/unicode/uwmsg.h
 FILE: ../../../third_party/icu/source/extra/uconv/uwmsg.c
+FILE: ../../../third_party/icu/source/i18n/BUILD.unused
 FILE: ../../../third_party/icu/source/i18n/alphaindex.cpp
 FILE: ../../../third_party/icu/source/i18n/anytrans.cpp
 FILE: ../../../third_party/icu/source/i18n/anytrans.h
@@ -20422,6 +20742,7 @@ FILE: ../../../third_party/icu/source/io/uscanf_p.cpp
 FILE: ../../../third_party/icu/source/io/ustdio.cpp
 FILE: ../../../third_party/icu/source/io/ustream.cpp
 FILE: ../../../third_party/icu/source/python/icutools/databuilder/filtration_schema.json
+FILE: ../../../third_party/icu/source/stubdata/BUILD.unused
 FILE: ../../../third_party/icu/source/stubdata/stubdata.cpp
 FILE: ../../../third_party/icu/source/tools/ctestfw/ctest.c
 FILE: ../../../third_party/icu/source/tools/ctestfw/datamap.cpp
@@ -20457,6 +20778,7 @@ FILE: ../../../third_party/icu/source/tools/gencolusb/extract_unsafe_backwards.c
 FILE: ../../../third_party/icu/source/tools/gencolusb/verify_uset.cpp
 FILE: ../../../third_party/icu/source/tools/gendict/gendict.1.in
 FILE: ../../../third_party/icu/source/tools/gendict/gendict.cpp
+FILE: ../../../third_party/icu/source/tools/gennorm2/BUILD.unused
 FILE: ../../../third_party/icu/source/tools/gennorm2/extradata.cpp
 FILE: ../../../third_party/icu/source/tools/gennorm2/extradata.h
 FILE: ../../../third_party/icu/source/tools/gennorm2/gennorm2.cpp
@@ -20496,6 +20818,8 @@ FILE: ../../../third_party/icu/source/tools/gensprep/store.c
 FILE: ../../../third_party/icu/source/tools/gentest/genres32.c
 FILE: ../../../third_party/icu/source/tools/gentest/gentest.c
 FILE: ../../../third_party/icu/source/tools/gentest/gentest.h
+FILE: ../../../third_party/icu/source/tools/icuexportdata/icuexportdata.1.in
+FILE: ../../../third_party/icu/source/tools/icuexportdata/icuexportdata.cpp
 FILE: ../../../third_party/icu/source/tools/icuinfo/icuinfo.cpp
 FILE: ../../../third_party/icu/source/tools/icuinfo/testplug.c
 FILE: ../../../third_party/icu/source/tools/icupkg/icupkg.8.in
@@ -20512,6 +20836,7 @@ FILE: ../../../third_party/icu/source/tools/pkgdata/pkgdata.1.in
 FILE: ../../../third_party/icu/source/tools/pkgdata/pkgdata.cpp
 FILE: ../../../third_party/icu/source/tools/pkgdata/pkgtypes.c
 FILE: ../../../third_party/icu/source/tools/pkgdata/pkgtypes.h
+FILE: ../../../third_party/icu/source/tools/toolutil/BUILD.unused
 FILE: ../../../third_party/icu/source/tools/toolutil/collationinfo.cpp
 FILE: ../../../third_party/icu/source/tools/toolutil/collationinfo.h
 FILE: ../../../third_party/icu/source/tools/toolutil/dbgutil.cpp
@@ -25074,32 +25399,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/adler32.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/adler32.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2011, 2016 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/compress.c + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/compress.c + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/compress.c
 ----------------------------------------------------------------------------------------------------
@@ -25227,67 +25527,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c
-FILE: ../../../third_party/zlib/inffast.c
-FILE: ../../../third_party/zlib/inftrees.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2017 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 1995-2003, 2010 Mark Adler
 Copyright (C) 2017 ARM, Inc.
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/contrib/optimizations/inflate.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/contrib/optimizations/inflate.c
-FILE: ../../../third_party/zlib/infback.c
-FILE: ../../../third_party/zlib/inflate.c
-FILE: ../../../third_party/zlib/inflate.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2016 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -25345,32 +25590,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/crc32.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/crc32.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/crc_folding.c + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/crc_folding.c + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/crc_folding.c
 ----------------------------------------------------------------------------------------------------
@@ -25401,7 +25621,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/deflate.h + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/deflate.h + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/deflate.h
 ----------------------------------------------------------------------------------------------------
@@ -25426,7 +25646,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/fill_window_sse.c + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/fill_window_sse.c + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/fill_window_sse.c
 ----------------------------------------------------------------------------------------------------
@@ -25531,7 +25751,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/gzclose.c + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/gzclose.c + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/gzclose.c
 ----------------------------------------------------------------------------------------------------
@@ -25556,33 +25776,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/gzguts.h + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/gzguts.h
-FILE: ../../../third_party/zlib/gzread.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/gzlib.c + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/gzlib.c + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/gzlib.c
 FILE: ../../../third_party/zlib/gzwrite.c
@@ -25608,57 +25802,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/inffast.h + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/inffast.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2003, 2010 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/inftrees.h + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/inftrees.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2005, 2010 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/trees.c + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/trees.c + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/trees.c
 ----------------------------------------------------------------------------------------------------
@@ -25684,7 +25828,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/uncompr.c + ../../../third_party/zlib/zlib.h
+ORIGIN: ../../../third_party/zlib/uncompr.c + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/uncompr.c
 ----------------------------------------------------------------------------------------------------
@@ -25706,81 +25850,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/zconf.h + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/zconf.h
-FILE: ../../../third_party/zlib/zutil.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/deflate.c
-FILE: ../../../third_party/zlib/zlib.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/zutil.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/zutil.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2017 Jean-loup Gailly
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-Total license count: 409
+Total license count: 407

@@ -134,10 +134,43 @@ void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
       ? Push<SetImageFilterOp>(0, 0, std::move(filter))
       : Push<ClearImageFilterOp>(0, 0);
 }
-void DisplayListBuilder::onSetColorFilter(sk_sp<SkColorFilter> filter) {
-  (current_color_filter_ = filter)  //
-      ? Push<SetColorFilterOp>(0, 0, std::move(filter))
-      : Push<ClearColorFilterOp>(0, 0);
+void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
+  if (filter == nullptr) {
+    current_color_filter_ = nullptr;
+    Push<ClearColorFilterOp>(0, 0);
+  } else {
+    current_color_filter_ = filter->shared();
+    switch (filter->type()) {
+      case DlColorFilterType::kBlend: {
+        const DlBlendColorFilter* blend_filter = filter->asBlend();
+        FML_DCHECK(blend_filter);
+        void* pod = Push<SetColorFilterOp>(blend_filter->size(), 0);
+        new (pod) DlBlendColorFilter(blend_filter);
+        break;
+      }
+      case DlColorFilterType::kMatrix: {
+        const DlMatrixColorFilter* matrix_filter = filter->asMatrix();
+        FML_DCHECK(matrix_filter);
+        void* pod = Push<SetColorFilterOp>(matrix_filter->size(), 0);
+        new (pod) DlMatrixColorFilter(matrix_filter);
+        break;
+      }
+      case DlColorFilterType::kSrgbToLinearGamma: {
+        void* pod = Push<SetColorFilterOp>(filter->size(), 0);
+        new (pod) DlSrgbToLinearGammaColorFilter();
+        break;
+      }
+      case DlColorFilterType::kLinearToSrgbGamma: {
+        void* pod = Push<SetColorFilterOp>(filter->size(), 0);
+        new (pod) DlLinearToSrgbGammaColorFilter();
+        break;
+      }
+      case DlColorFilterType::kUnknown: {
+        Push<SetSkColorFilterOp>(0, 0, filter->skia_object());
+        break;
+      }
+    }
+  }
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
@@ -145,32 +178,24 @@ void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
       ? Push<SetPathEffectOp>(0, 0, std::move(effect))
       : Push<ClearPathEffectOp>(0, 0);
 }
-void DisplayListBuilder::onSetMaskFilter(sk_sp<SkMaskFilter> filter) {
-  current_mask_sigma_ = kInvalidSigma;
-  (current_mask_filter_ = filter)  //
-      ? Push<SetMaskFilterOp>(0, 0, std::move(filter))
-      : Push<ClearMaskFilterOp>(0, 0);
-}
-void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style,
-                                             SkScalar sigma) {
-  // Valid sigma is checked by setMaskBlurFilter
-  FML_DCHECK(mask_sigma_valid(sigma));
-  current_mask_filter_ = nullptr;
-  current_mask_style_ = style;
-  current_mask_sigma_ = sigma;
-  switch (style) {
-    case kNormal_SkBlurStyle:
-      Push<SetMaskBlurFilterNormalOp>(0, 0, sigma);
-      break;
-    case kSolid_SkBlurStyle:
-      Push<SetMaskBlurFilterSolidOp>(0, 0, sigma);
-      break;
-    case kOuter_SkBlurStyle:
-      Push<SetMaskBlurFilterOuterOp>(0, 0, sigma);
-      break;
-    case kInner_SkBlurStyle:
-      Push<SetMaskBlurFilterInnerOp>(0, 0, sigma);
-      break;
+void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
+  if (filter == nullptr) {
+    current_mask_filter_ = nullptr;
+    Push<ClearMaskFilterOp>(0, 0);
+  } else {
+    current_mask_filter_ = filter->shared();
+    switch (filter->type()) {
+      case DlMaskFilterType::kBlur: {
+        const DlBlurMaskFilter* blur_filter = filter->asBlur();
+        FML_DCHECK(blur_filter);
+        void* pod = Push<SetMaskFilterOp>(blur_filter->size(), 0);
+        new (pod) DlBlurMaskFilter(blur_filter);
+        break;
+      }
+      case DlMaskFilterType::kUnknown:
+        Push<SetSkMaskFilterOp>(0, 0, filter->skia_object());
+        break;
+    }
   }
 }
 
@@ -187,7 +212,7 @@ void DisplayListBuilder::setAttributesFromPaint(
     setColor(paint.getColor());
   }
   if (flags.applies_blend()) {
-    skstd::optional<SkBlendMode> mode_optional = paint.asBlendMode();
+    std::optional<SkBlendMode> mode_optional = paint.asBlendMode();
     if (mode_optional) {
       setBlendMode(mode_optional.value());
     } else {
@@ -211,7 +236,8 @@ void DisplayListBuilder::setAttributesFromPaint(
     // we must clear it because it is a second potential color filter
     // that is composed with the paint's color filter.
     setInvertColors(false);
-    setColorFilter(sk_ref_sp(paint.getColorFilter()));
+    SkColorFilter* color_filter = paint.getColorFilter();
+    setColorFilter(DlColorFilter::From(color_filter).get());
   }
   if (flags.applies_image_filter()) {
     setImageFilter(sk_ref_sp(paint.getImageFilter()));
@@ -220,7 +246,8 @@ void DisplayListBuilder::setAttributesFromPaint(
     setPathEffect(sk_ref_sp(paint.getPathEffect()));
   }
   if (flags.applies_mask_filter()) {
-    setMaskFilter(sk_ref_sp(paint.getMaskFilter()));
+    SkMaskFilter* mask_filter = paint.getMaskFilter();
+    setMaskFilter(DlMaskFilter::From(mask_filter).get());
   }
 }
 
@@ -237,7 +264,25 @@ void DisplayListBuilder::restore() {
     layer_stack_.pop_back();
     current_layer_ = &layer_stack_.back();
     Push<RestoreOp>(0, 1);
-    if (!layer_info.has_layer) {
+    if (layer_info.has_layer) {
+      if (layer_info.is_group_opacity_compatible()) {
+        // We are now going to go back and modify the matching saveLayer
+        // call to add the option indicating it can distribute an opacity
+        // value to its children.
+        //
+        // Note that this operation cannot and does not change the size
+        // or structure of the SaveLayerOp record. It only sets an option
+        // flag on an existing field.
+        //
+        // Note that these kinds of modification operations on data already
+        // in the DisplayList are only allowed *during* the build phase.
+        // Once built, the DisplayList records must remain read only to
+        // ensure consistency of rendering and |Equals()| behavior.
+        SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
+            storage_.get() + layer_info.save_layer_offset);
+        op->options = op->options.with_can_distribute_opacity();
+      }
+    } else {
       // For regular save() ops there was no protecting layer so we have to
       // accumulate the values into the enclosing layer.
       if (layer_info.cannot_inherit_opacity) {
@@ -249,13 +294,24 @@ void DisplayListBuilder::restore() {
   }
 }
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
-                                   bool restore_with_paint) {
+                                   const SaveLayerOptions in_options) {
+  SaveLayerOptions options = in_options.without_optimizations();
+  size_t save_layer_offset = used_;
   bounds  //
-      ? Push<SaveLayerBoundsOp>(0, 1, *bounds, restore_with_paint)
-      : Push<SaveLayerOp>(0, 1, restore_with_paint);
-  CheckLayerOpacityCompatibility(restore_with_paint);
-  layer_stack_.emplace_back(true);
+      ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
+      : Push<SaveLayerOp>(0, 1, options);
+  CheckLayerOpacityCompatibility(options.renders_with_attributes());
+  layer_stack_.emplace_back(save_layer_offset, true);
   current_layer_ = &layer_stack_.back();
+  if (options.renders_with_attributes()) {
+    // |current_opacity_compatibility_| does not take an ImageFilter into
+    // account because an individual primitive with an ImageFilter can apply
+    // opacity on top of it. But, if the layer is applying the ImageFilter
+    // then it cannot pass the opacity on.
+    if (!current_opacity_compatibility_ || current_image_filter_ != nullptr) {
+      UpdateLayerOpacityCompatibility(false);
+    }
+  }
 }
 
 void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
@@ -455,6 +511,8 @@ void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
   Push<DrawVerticesOp>(0, 1, std::move(vertices), mode);
   // DrawVertices applies its colors to the paint so we have no way
   // of controlling opacity using the current paint attributes.
+  // Although, examination of the |mode| might find some predictable
+  // cases.
   UpdateLayerOpacityCompatibility(false);
 }
 
