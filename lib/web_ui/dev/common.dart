@@ -29,13 +29,13 @@ abstract class PlatformBinding {
 
   static PlatformBinding _createInstance() {
     if (io.Platform.isLinux) {
-      return _LinuxBinding();
+      return LinuxPlatformBinding();
     }
     if (io.Platform.isMacOS) {
-      return _MacBinding();
+      return MacPlatformBinding();
     }
     if (io.Platform.isWindows) {
-      return _WindowsBinding();
+      return WindowsPlatformBinding();
     }
     throw '${io.Platform.operatingSystem} is not supported';
   }
@@ -54,7 +54,7 @@ abstract class PlatformBinding {
 const String _kBaseDownloadUrl =
     'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o';
 
-class _WindowsBinding implements PlatformBinding {
+class WindowsPlatformBinding implements PlatformBinding {
   @override
   String getChromeBuild(ChromeLock chromeLock) {
     return chromeLock.windows;
@@ -92,7 +92,7 @@ class _WindowsBinding implements PlatformBinding {
   String getCommandToRunEdge() => 'MicrosoftEdgeLauncher';
 }
 
-class _LinuxBinding implements PlatformBinding {
+class LinuxPlatformBinding implements PlatformBinding {
   @override
   String getChromeBuild(ChromeLock chromeLock) {
     return chromeLock.linux;
@@ -132,7 +132,7 @@ class _LinuxBinding implements PlatformBinding {
       throw UnsupportedError('Edge is not supported on Linux');
 }
 
-class _MacBinding implements PlatformBinding {
+class MacPlatformBinding implements PlatformBinding {
   @override
   String getChromeBuild(ChromeLock chromeLock) {
     return chromeLock.mac;
