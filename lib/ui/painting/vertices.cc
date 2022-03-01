@@ -45,10 +45,10 @@ void Vertices::RegisterNatives(tonic::DartLibraryNatives* natives) {
 
 bool Vertices::init(Dart_Handle vertices_handle,
                     SkVertices::VertexMode vertex_mode,
-                    const tonic::Float32List& positions,
-                    const tonic::Float32List& texture_coordinates,
-                    const tonic::Int32List& colors,
-                    const tonic::Uint16List& indices) {
+                    tonic::Float32List& positions,
+                    tonic::Float32List& texture_coordinates,
+                    tonic::Int32List& colors,
+                    tonic::Uint16List& indices) {
   UIDartState::ThrowIfUIOperationsProhibited();
   uint32_t builderFlags = 0;
   if (texture_coordinates.data()) {
@@ -70,22 +70,27 @@ bool Vertices::init(Dart_Handle vertices_handle,
   if (positions.data()) {
     DecodePoints(positions, builder.positions());
   }
+  positions.Release();
 
   if (texture_coordinates.data()) {
     // SkVertices::Builder assumes equal numbers of elements
     FML_DCHECK(positions.num_elements() == texture_coordinates.num_elements());
     DecodePoints(texture_coordinates, builder.texCoords());
   }
+  texture_coordinates.Release();
+
   if (colors.data()) {
     // SkVertices::Builder assumes equal numbers of elements
     FML_DCHECK(positions.num_elements() / 2 == colors.num_elements());
     DecodeInts<SkColor>(colors, builder.colors());
   }
+  colors.Release();
 
   if (indices.data()) {
     std::copy(indices.data(), indices.data() + indices.num_elements(),
               builder.indices());
   }
+  indices.Release();
 
   auto vertices = fml::MakeRefCounted<Vertices>();
   vertices->vertices_ = builder.detach();
