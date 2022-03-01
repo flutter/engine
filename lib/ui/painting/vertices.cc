@@ -70,26 +70,27 @@ bool Vertices::init(Dart_Handle vertices_handle,
   if (positions.data()) {
     DecodePoints(positions, builder.positions());
   }
-  positions.Release();
 
   if (texture_coordinates.data()) {
     // SkVertices::Builder assumes equal numbers of elements
     FML_DCHECK(positions.num_elements() == texture_coordinates.num_elements());
     DecodePoints(texture_coordinates, builder.texCoords());
   }
-  texture_coordinates.Release();
 
   if (colors.data()) {
     // SkVertices::Builder assumes equal numbers of elements
     FML_DCHECK(positions.num_elements() / 2 == colors.num_elements());
     DecodeInts<SkColor>(colors, builder.colors());
   }
-  colors.Release();
 
   if (indices.data()) {
     std::copy(indices.data(), indices.data() + indices.num_elements(),
               builder.indices());
   }
+
+  positions.Release();
+  texture_coordinates.Release();
+  colors.Release();
   indices.Release();
 
   auto vertices = fml::MakeRefCounted<Vertices>();
