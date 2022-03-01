@@ -179,15 +179,16 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
       producer_continuation_.Complete(std::move(layer_tree));
 
   if (!result.success) {
+    frame_timings_recorder_.reset();
     FML_DLOG(INFO) << "No pending continuation to commit";
     return;
   }
 
   if (!result.is_first_item) {
+    frame_timings_recorder_.reset();
     // It has been successfully pushed to the pipeline but not as the first
     // item. Eventually the 'Rasterizer' will consume it, so we don't need to
     // notify the delegate.
-    FML_DLOG(INFO) << "Not the first item in the pipeline, ignore it";
     return;
   }
 

@@ -198,7 +198,7 @@ class Pipeline {
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
-    return {/*success=*/true, /*is_first_item=*/is_first_item};
+    return {.success = true, .is_first_item = is_first_item};
   }
 
   PipelineProduceResult ProducerCommitIfEmpty(ResourcePtr resource,
@@ -209,14 +209,14 @@ class Pipeline {
         // Bail if the queue is not empty, opens up spaces to produce other
         // frames.
         empty_.Signal();
-        return {/*success=*/false, /*is_first_item=*/false};
+        return {.success = false, .is_first_item = false};
       }
       queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
-    return {/*success=*/true, /*is_first_item=*/true};
+    return {.success = true, .is_first_item = true};
   }
 
   FML_DISALLOW_COPY_AND_ASSIGN(Pipeline);
