@@ -242,7 +242,6 @@ void TextInputPlugin::HandleMethodCall(
     }
     client_id_ = client_id_json.GetInt();
     auto enable_delta_model_json = client_config.FindMember(kEnableDeltaModel);
-    assert(enable_delta_model_json->value.IsBool());
     if (enable_delta_model_json != client_config.MemberEnd() &&
         enable_delta_model_json->value.IsBool()) {
       enable_delta_model = enable_delta_model_json->value.GetBool();

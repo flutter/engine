@@ -108,6 +108,7 @@ TEST(TextInputPluginTest, VerifyComposingSendStateUpdate) {
   rapidjson::Value config(rapidjson::kObjectType);
   config.AddMember("inputAction", "done", allocator);
   config.AddMember("inputType", "text", allocator);
+  config.AddMember(kEnableDeltaModel, false, allocator);
   arguments->PushBack(config, allocator);
   auto message =
       codec.EncodeMethodCall({"TextInput.setClient", std::move(arguments)});
