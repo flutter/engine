@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.annotation.TargetApi;
 import android.hardware.display.DisplayManager;
 import android.view.Choreographer;
 import android.view.Display;
