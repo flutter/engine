@@ -52,3 +52,20 @@ void callDartPluginRegistrantFromBackgroundIsolate() async {
   }
   isolate.kill();
 }
+
+void noDartPluginRegistrantIsolate(SendPort sendPort) {
+  sendPort.send(didCallRegistrantBeforeEntrypoint);
+}
+
+@pragma('vm:entry-point')
+void dontCallDartPluginRegistrantFromBackgroundIsolate() async {
+  ReceivePort receivePort = ReceivePort();
+  Isolate isolate = await Isolate.spawn(noDartPluginRegistrantIsolate, receivePort.sendPort);
+  bool didCallEntrypoint = await receivePort.first;
+  if (didCallEntrypoint) {
+    passMessage('_PluginRegistrant.register() was called on background isolate');
+  } else {
+    passMessage('_PluginRegistrant.register() was not called on background isolate');
+  }
+  isolate.kill();
+}
