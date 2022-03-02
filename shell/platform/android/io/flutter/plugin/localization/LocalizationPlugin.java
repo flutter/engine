@@ -6,7 +6,6 @@ package io.flutter.plugin.localization;
 
 import android.content.Context;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.os.Build;
 import android.os.LocaleList;
 import androidx.annotation.NonNull;
@@ -29,24 +28,13 @@ public class LocalizationPlugin {
         public String getStringResource(@NonNull String key, @Nullable String localeString) {
           Context localContext = context;
           String stringToReturn = null;
-          Locale savedLocale = null;
 
           if (localeString != null) {
             Locale locale = localeFromString(localeString);
 
-            // setLocale and createConfigurationContext is only available on API >= 17
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-              Configuration config = new Configuration(context.getResources().getConfiguration());
-              config.setLocale(locale);
-              localContext = context.createConfigurationContext(config);
-            } else {
-              // In API < 17, we have to update the locale in Configuration.
-              Resources resources = context.getResources();
-              Configuration config = resources.getConfiguration();
-              savedLocale = config.locale;
-              config.locale = locale;
-              resources.updateConfiguration(config, null);
-            }
+            Configuration config = new Configuration(context.getResources().getConfiguration());
+            config.setLocale(locale);
+            localContext = context.createConfigurationContext(config);
           }
 
           String packageName = context.getPackageName();
@@ -54,14 +42,6 @@ public class LocalizationPlugin {
           if (resId != 0) {
             // 0 means the resource is not found.
             stringToReturn = localContext.getResources().getString(resId);
-          }
-
-          // In API < 17, we had to restore the original locale after using.
-          if (localeString != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            Resources resources = context.getResources();
-            Configuration config = resources.getConfiguration();
-            config.locale = savedLocale;
-            resources.updateConfiguration(config, null);
           }
 
           return stringToReturn;
@@ -170,6 +150,9 @@ public class LocalizationPlugin {
    * Send the current {@link Locale} configuration to Flutter.
    *
    * <p>FlutterEngine must be non-null when this method is invoked.
+   *
+   * <p>TODO(camillesimon): Remove {@link android.content.res.Configuration}'s {@code locale} when
+   * API < 24 no longer supported.
    */
   @SuppressWarnings("deprecation")
   public void sendLocalesToFlutter(@NonNull Configuration config) {
