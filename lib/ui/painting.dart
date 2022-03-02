@@ -1107,6 +1107,7 @@ class Paint {
   // The binary format must match the deserialization code in paint.cc.
 
   final ByteData _data = ByteData(_kDataByteCount);
+
   static const int _kIsAntiAliasIndex = 0;
   static const int _kColorIndex = 1;
   static const int _kBlendModeIndex = 2;
@@ -1140,10 +1141,10 @@ class Paint {
   static const int _kDataByteCount = 56;
 
   // Binary format must match the deserialization code in paint.cc.
-  List<dynamic>? _objects;
+  List<Object?>? _objects;
 
-  List<dynamic> _ensureObjectsInitialized() {
-    return _objects ??= List<dynamic>.filled(_kObjectCount, null, growable: false);
+  List<Object?> _ensureObjectsInitialized() {
+    return _objects ??= List<Object?>.filled(_kObjectCount, null, growable: false);
   }
 
   static const int _kShaderIndex = 0;
@@ -1455,8 +1456,9 @@ class Paint {
         _objects![_kImageFilterIndex] = null;
       }
     } else {
-      final List<dynamic> objects = _ensureObjectsInitialized();
-      if (objects[_kImageFilterIndex]?.creator != value) {
+      final List<Object?> objects = _ensureObjectsInitialized();
+      final _ImageFilter? imageFilter = objects[_kImageFilterIndex] as _ImageFilter?;
+      if (imageFilter?.creator != value) {
         objects[_kImageFilterIndex] = value._toNativeImageFilter();
       }
     }
@@ -4247,13 +4249,13 @@ class Canvas extends NativeFieldWrapperClass1 {
                  paint._objects, paint._data);
     }
   }
-  void _saveLayerWithoutBounds(List<dynamic>? paintObjects, ByteData paintData)
+  void _saveLayerWithoutBounds(List<Object?>? paintObjects, ByteData paintData)
       native 'Canvas_saveLayerWithoutBounds';
   void _saveLayer(double left,
                   double top,
                   double right,
                   double bottom,
-                  List<dynamic>? paintObjects,
+                  List<Object?>? paintObjects,
                   ByteData paintData) native 'Canvas_saveLayer';
 
   /// Pops the current save stack, if there is anything to pop.
@@ -4384,7 +4386,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                  double y1,
                  double x2,
                  double y2,
-                 List<dynamic>? paintObjects,
+                 List<Object?>? paintObjects,
                  ByteData paintData) native 'Canvas_drawLine';
 
   /// Fills the canvas with the given [Paint].
@@ -4395,7 +4397,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawPaint(paint._objects, paint._data);
   }
-  void _drawPaint(List<dynamic>? paintObjects, ByteData paintData) native 'Canvas_drawPaint';
+  void _drawPaint(List<Object?>? paintObjects, ByteData paintData) native 'Canvas_drawPaint';
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
   /// or stroked (or both) is controlled by [Paint.style].
@@ -4409,7 +4411,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                  double top,
                  double right,
                  double bottom,
-                 List<dynamic>? paintObjects,
+                 List<Object?>? paintObjects,
                  ByteData paintData) native 'Canvas_drawRect';
 
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
@@ -4420,7 +4422,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawRRect(rrect._getValue32(), paint._objects, paint._data);
   }
   void _drawRRect(Float32List rrect,
-                  List<dynamic>? paintObjects,
+                  List<Object?>? paintObjects,
                   ByteData paintData) native 'Canvas_drawRRect';
 
   /// Draws a shape consisting of the difference between two rounded rectangles
@@ -4436,7 +4438,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
   void _drawDRRect(Float32List outer,
                    Float32List inner,
-                   List<dynamic>? paintObjects,
+                   List<Object?>? paintObjects,
                    ByteData paintData) native 'Canvas_drawDRRect';
 
   /// Draws an axis-aligned oval that fills the given axis-aligned rectangle
@@ -4452,7 +4454,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                  double top,
                  double right,
                  double bottom,
-                 List<dynamic>? paintObjects,
+                 List<Object?>? paintObjects,
                  ByteData paintData) native 'Canvas_drawOval';
 
   /// Draws a circle centered at the point given by the first argument and
@@ -4467,7 +4469,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   void _drawCircle(double x,
                    double y,
                    double radius,
-                   List<dynamic>? paintObjects,
+                   List<Object?>? paintObjects,
                    ByteData paintData) native 'Canvas_drawCircle';
 
   /// Draw an arc scaled to fit inside the given rectangle.
@@ -4494,7 +4496,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                 double startAngle,
                 double sweepAngle,
                 bool useCenter,
-                List<dynamic>? paintObjects,
+                List<Object?>? paintObjects,
                 ByteData paintData) native 'Canvas_drawArc';
 
   /// Draws the given [Path] with the given [Paint].
@@ -4508,7 +4510,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPath(path, paint._objects, paint._data);
   }
   void _drawPath(Path path,
-                 List<dynamic>? paintObjects,
+                 List<Object?>? paintObjects,
                  ByteData paintData) native 'Canvas_drawPath';
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
@@ -4522,7 +4524,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   void _drawImage(_Image image,
                   double x,
                   double y,
-                  List<dynamic>? paintObjects,
+                  List<Object?>? paintObjects,
                   ByteData paintData,
                   int filterQualityIndex) native 'Canvas_drawImage';
 
@@ -4562,7 +4564,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                       double dstTop,
                       double dstRight,
                       double dstBottom,
-                      List<dynamic>? paintObjects,
+                      List<Object?>? paintObjects,
                       ByteData paintData,
                       int filterQualityIndex) native 'Canvas_drawImageRect';
 
@@ -4606,7 +4608,7 @@ class Canvas extends NativeFieldWrapperClass1 {
                       double dstTop,
                       double dstRight,
                       double dstBottom,
-                      List<dynamic>? paintObjects,
+                      List<Object?>? paintObjects,
                       ByteData paintData,
                       int filterQualityIndex) native 'Canvas_drawImageNine';
 
@@ -4677,7 +4679,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPoints(paint._objects, paint._data, pointMode.index, points);
   }
 
-  void _drawPoints(List<dynamic>? paintObjects,
+  void _drawPoints(List<Object?>? paintObjects,
                    ByteData paintData,
                    int pointMode,
                    Float32List points) native 'Canvas_drawPoints';
@@ -4711,7 +4713,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
   void _drawVertices(Vertices vertices,
                      int blendMode,
-                     List<dynamic>? paintObjects,
+                     List<Object?>? paintObjects,
                      ByteData paintData) native 'Canvas_drawVertices';
 
   /// Draws many parts of an image - the [atlas] - onto the canvas.
@@ -5060,7 +5062,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     );
   }
 
-  void _drawAtlas(List<dynamic>? paintObjects,
+  void _drawAtlas(List<Object?>? paintObjects,
                   ByteData paintData,
                   int filterQualityIndex,
                   _Image atlas,
