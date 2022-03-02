@@ -512,7 +512,6 @@ public class PlatformPluginTest {
   @Test
   public void configureSystemChromeChangeListener() {
     View testView = mock(View.class);
-    View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
     when(fakeWindow.getDecorView()).thenReturn(testView);
     Activity fakeActivity = mock(Activity.class);
@@ -520,16 +519,11 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
-    // WindowInsetsControllerCompat windowInsetsControllerCompat = new
-    // WindowInsetsControllerCompat(fakeWindow, testView);
     WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
     when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
 
     platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
 
-    /* All of the attemps below resulted in the call: fakePlatformCannel.systemChromeCanged(true) */
-
-    // (1) Attempt with using listnener directly (I exposed it by adding a getInsetsListener method)
     WindowInsets.Builder builder = new WindowInsets.Builder();
     builder.setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 200, 0, 200));
     WindowInsets fullScreenInsets = builder.build();
@@ -539,7 +533,7 @@ public class PlatformPluginTest {
         .onApplyWindowInsets(testView, WindowInsetsCompat.toWindowInsetsCompat(fullScreenInsets));
 
     // (1.5) Attempt with setting visibility of system bars
-    testView.getWindowInsetsController().show(WindowInsetsCompat.Type.systemBars());
+    fakeWindowInsetsController.show(WindowInsetsCompat.Type.systemBars());
     verify(fakePlatformChannel).systemChromeChanged(false);
 
     // (2) Attempt with setting systemUiMode:

@@ -240,25 +240,31 @@ public class PlatformPlugin {
       setSystemChromeChangeListenerLegacy();
     } else {
       View decorView = activity.getWindow().getDecorView();
+      Window window = activity.getWindow();
       insetsListener =
           new androidx.core.view.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsetsCompat onApplyWindowInsets(
                 View view, WindowInsetsCompat windowInsets) {
+              System.out.println(windowInsets.hasInsets());
+              System.out.println(decorView.getRootWindowInsets());
+              System.out.println(view.getRootWindowInsets());
               if (windowInsets.isVisible(WindowInsetsCompat.Type.systemBars())) {
                 // The system bars are visible. Make any desired adjustments to
                 // your UI, such as showing the action bar or other navigational
                 // controls. Another common action is to set a timer to dismiss
                 // the system bars and restore the fullscreen mode that was
                 // previously enabled.
+                System.out.println("Setting system chrome changed to false");
                 platformChannel.systemChromeChanged(false);
               } else {
                 // The system bars are NOT visible. Make any desired adjustments
                 // to your UI, such as hiding the action bar or other
                 // navigational controls.
+                System.out.println("Setting system chrome changed to true");
                 platformChannel.systemChromeChanged(true);
               }
-              return null;
+              return windowInsets;
             }
           };
       ViewCompat.setOnApplyWindowInsetsListener(decorView, insetsListener);
