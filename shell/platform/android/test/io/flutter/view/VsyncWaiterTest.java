@@ -33,6 +33,7 @@ public class VsyncWaiterTest {
     VsyncWaiter.reset();
   }
 
+  @TargetApi(17)
   @Test
   public void itSetsFpsWhenDisplayManagerUpdates() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
@@ -68,6 +69,7 @@ public class VsyncWaiterTest {
     verify(mockFlutterJNI, times(1)).onVsync(anyLong(), eq(1000000000l / 60l), eq(1l));
   }
 
+  @TargetApi(17)
   @Test
   public void itSetsFpsWhenDisplayManagerDoesNotUpdate() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);

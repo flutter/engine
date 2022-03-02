@@ -12,6 +12,7 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.FlutterJNI;
 
 // TODO(mattcarroll): add javadoc.
+@TargetApi(17)
 public class VsyncWaiter {
   class DisplayListener implements DisplayManager.DisplayListener {
     DisplayListener(DisplayManager displayManager) {
@@ -46,6 +47,7 @@ public class VsyncWaiter {
   private long refreshPeriodNanos = -1;
   private FlutterJNI flutterJNI;
 
+  @TargetApi(17)
   @NonNull
   public static VsyncWaiter getInstance(
       @NonNull DisplayManager displayManager, @NonNull FlutterJNI flutterJNI) {

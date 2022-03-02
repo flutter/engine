@@ -596,6 +596,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     BOTH
   }
 
+  @TargetApi(17)
   private ZeroSides calculateShouldZeroSides() {
     // We get both orientation and rotation because rotation is all 4
     // rotations relative to default rotation while orientation is portrait
