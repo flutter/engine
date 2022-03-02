@@ -42,6 +42,14 @@ class ResourceExtractor {
   @NonNull private final HashSet<String> mResources;
   private FutureTask mExtractTask;
 
+  // Thread pool settings are the same as default values from the deprecated android.os.AsyncTask
+  // API, which was previously used (see
+  // https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/os/AsyncTask.java#211).
+  private static final int CORE_POOL_SIZE = 1;
+  private static final int MAXIMUM_POOL_SIZE = 20;
+  private static final int BACKUP_POOL_SIZE = 5;
+  private static final int KEEP_ALIVE_SECONDS = 3;
+
   private static final ThreadFactory mThreadFactory =
       new ThreadFactory() {
         private final AtomicInteger mCount = new AtomicInteger(1);
@@ -64,9 +72,9 @@ class ResourceExtractor {
               mBackupExecutorQueue = new LinkedBlockingQueue<Runnable>();
               mBackupExecutor =
                   new ThreadPoolExecutor(
-                      5 /* BACK UP POOL SIZE */,
-                      5 /* MAX BACK UP POOL SIZE */,
-                      3 /* KEEP ALIVE SECONDS */,
+                      BACKUP_POOL_SIZE,
+                      BACKUP_POOL_SIZE,
+                      KEEP_ALIVE_SECONDS,
                       TimeUnit.SECONDS,
                       mBackupExecutorQueue,
                       mThreadFactory);
@@ -149,9 +157,9 @@ class ResourceExtractor {
 
     ThreadPoolExecutor executor =
         new ThreadPoolExecutor(
-            1 /* CORE POOL SIZE */,
-            20 /* MAX POOL SIZE */,
-            3 /* KEEP ALIVE SECONDS */,
+            CORE_POOL_SIZE,
+            MAXIMUM_POOL_SIZE,
+            KEEP_ALIVE_SECONDS,
             TimeUnit.SECONDS,
             new SynchronousQueue<Runnable>(),
             mThreadFactory);
@@ -201,8 +209,8 @@ class ResourceExtractor {
     }
   }
 
-  /// Returns true if successfully unpacked APK resources,
-  /// otherwise deletes all resources and returns false.
+  // Returns true if successfully unpacked APK resources,
+  // otherwise deletes all resources and returns false.
   @WorkerThread
   private boolean extractAPK(@NonNull File dataDir) {
     for (String asset : mResources) {
