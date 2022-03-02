@@ -4,9 +4,10 @@
 
 // TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-
 // @dart = 2.12
 part of dart.ui;
+
+// ignore_for_file: avoid_classes_with_only_static_members
 
 /// Helper functions for Dart Plugin Registrants.
 class DartPluginRegistrant {
