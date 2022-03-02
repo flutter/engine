@@ -836,48 +836,43 @@ class CanvasCompareTester {
           0, 0, 0, 0.5, 0,
       };
       // clang-format on
-      sk_sp<SkColorFilter> filter =
-          SkColorFilters::Matrix(rotate_alpha_color_matrix);
+      DlMatrixColorFilter filter(rotate_alpha_color_matrix);
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ColorFilter, no bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter);
+                         save_p.setColorFilter(filter.skia_object());
                          cv->saveLayer(nullptr, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                          b.saveLayer(nullptr, true);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
                        .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ColorFilter, no bounds Cleanup";
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ColorFilter and bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter);
+                         save_p.setColorFilter(filter.skia_object());
                          cv->saveLayer(RenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                          b.saveLayer(&RenderBounds, true);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
                        .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ColorFilter and bounds Cleanup";
     }
     {
       sk_sp<SkImageFilter> filter = SkImageFilters::Arithmetic(
@@ -1146,7 +1141,7 @@ class CanvasCompareTester {
          1.0,  1.0,  1.0, 1.0,   0,
       };
       // clang-format on
-      sk_sp<SkColorFilter> filter = SkColorFilters::Matrix(rotate_color_matrix);
+      DlMatrixColorFilter filter(rotate_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
         RenderWith(testP, env, tolerance,
@@ -1154,16 +1149,15 @@ class CanvasCompareTester {
                        "ColorFilter == RotateRGB",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter);
+                         p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                        })
                        .with_bg(bg));
       }
-      EXPECT_TRUE(filter->unique()) << "ColorFilter == RotateRGB Cleanup";
-      filter = SkColorFilters::Matrix(invert_color_matrix);
+      filter = DlMatrixColorFilter(invert_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
         RenderWith(testP, env, tolerance,
@@ -1171,7 +1165,7 @@ class CanvasCompareTester {
                        "ColorFilter == Invert",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter);
+                         p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
@@ -1179,7 +1173,6 @@ class CanvasCompareTester {
                        })
                        .with_bg(bg));
       }
-      EXPECT_TRUE(filter->unique()) << "ColorFilter == Invert Cleanup";
     }
 
     {
@@ -1244,8 +1237,7 @@ class CanvasCompareTester {
     }
 
     {
-      sk_sp<SkMaskFilter> filter =
-          SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 5.0);
+      const DlBlurMaskFilter filter(kNormal_SkBlurStyle, 5.0);
       BoundsTolerance blur5Tolerance = tolerance.addBoundsPadding(4, 4);
       {
         // Stroked primitives need some non-trivial stroke size to be blurred
@@ -1254,30 +1246,13 @@ class CanvasCompareTester {
                        "MaskFilter == Blur 5",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
+                         p.setMaskFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
-                         b.setMaskFilter(filter);
+                         b.setMaskFilter(&filter);
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur 5 Cleanup";
-      {
-        RenderWith(testP, env, blur5Tolerance,
-                   CaseParameters(
-                       "MaskFilter == Blur(Normal, 5.0)",
-                       [=](SkCanvas*, SkPaint& p) {
-                         p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
-                       },
-                       [=](DisplayListBuilder& b) {
-                         b.setStrokeWidth(5.0);
-                         b.setMaskBlurFilter(kNormal_SkBlurStyle, 5.0);
-                       }));
-      }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur(Normal, 5.0) Cleanup";
     }
 
     {

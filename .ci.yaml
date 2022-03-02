@@ -195,6 +195,13 @@ targets:
     timeout: 60
     scheduler: luci
 
+  - name: Linux clang-tidy
+    recipe: engine/engine_lint
+    properties:
+      add_recipes_cq: "true"
+    timeout: 60
+    scheduler: luci
+
   - name: Linux Arm Host Engine
     recipe: engine/engine_arm
     properties:
@@ -270,6 +277,14 @@ targets:
     timeout: 75
     scheduler: luci
 
+  - name: Mac clang-tidy
+    recipe: engine/engine_lint
+    properties:
+      add_recipes_cq: "true"
+      jazzy_version: 0.9.5
+    timeout: 75
+    scheduler: luci
+
   - name: Mac iOS Engine
     recipe: engine/engine
     properties:
@@ -280,8 +295,9 @@ targets:
     scheduler: luci
 
   - name: Mac Web Engine
-    recipe: web_engine
+    recipe: engine/web_engine
     properties:
+      add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
       dependencies: >-
         [
@@ -407,4 +423,3 @@ targets:
   - name: Linux ci_yaml engine roller
     bringup: true
     recipe: infra/ci_yaml
-    scheduler: luci

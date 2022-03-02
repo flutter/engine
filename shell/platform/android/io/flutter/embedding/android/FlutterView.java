@@ -791,7 +791,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             + viewportMetrics.viewInsetBottom);
 
     sendViewportMetricsToFlutter();
-
     return newInsets;
   }
 
@@ -868,21 +867,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Allows a {@code View} that is not currently the input connection target to invoke commands on
-   * the {@link android.view.inputmethod.InputMethodManager}, which is otherwise disallowed.
-   *
-   * <p>Returns true to allow non-input-connection-targets to invoke methods on {@code
-   * InputMethodManager}, or false to exclusively allow the input connection target to invoke such
-   * methods.
-   */
-  @Override
-  public boolean checkInputConnectionProxy(View view) {
-    return flutterEngine != null
-        ? flutterEngine.getPlatformViewsController().checkInputConnectionProxy(view)
-        : super.checkInputConnectionProxy(view);
-  }
-
-  /**
    * Invoked when a hardware key is pressed or released.
    *
    * <p>This method is typically invoked in response to the press of a physical keyboard key or a
@@ -894,7 +878,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * previous {@code keyCode} to generate a unicode combined character.
    */
   @Override
-  public boolean dispatchKeyEvent(KeyEvent event) {
+  public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
     if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
       // Tell Android to start tracking this event.
       getKeyDispatcherState().startTracking(event, this);
@@ -1003,6 +987,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * @return The view matching the accessibility id if any.
    */
   @SuppressLint("SoonBlockedPrivateApi")
+  @Nullable
   public View findViewByAccessibilityIdTraversal(int accessibilityId) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
       return findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this);
@@ -1349,7 +1334,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         });
   }
 
-  public void attachOverlaySurfaceToRender(FlutterImageView view) {
+  public void attachOverlaySurfaceToRender(@NonNull FlutterImageView view) {
     if (flutterEngine != null) {
       view.attachToRenderer(flutterEngine.getRenderer());
     }
@@ -1450,13 +1435,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   @Override
-  public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
+  public void onProvideAutofillVirtualStructure(@NonNull ViewStructure structure, int flags) {
     super.onProvideAutofillVirtualStructure(structure, flags);
     textInputPlugin.onProvideAutofillVirtualStructure(structure, flags);
   }
 
   @Override
-  public void autofill(SparseArray<AutofillValue> values) {
+  public void autofill(@NonNull SparseArray<AutofillValue> values) {
     textInputPlugin.autofill(values);
   }
 
