@@ -74,7 +74,7 @@ import java.util.Arrays;
   // to this FlutterActivityAndFragmentDelegate.
   @NonNull private Host host;
   @Nullable private FlutterEngine flutterEngine;
-  @Nullable private FlutterView flutterView;
+  @VisibleForTesting @Nullable FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
   @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
@@ -388,6 +388,12 @@ import java.util.Arrays;
     Log.v(TAG, "onStart()");
     ensureAlive();
     doInitialFlutterViewRun();
+    // This is a workaround for a bug on some OnePlus phones. The visibility of the application
+    // window is still true after locking the screen on some OnePlus phones, and shows a black
+    // screen when unlocked. We can work around this by changing the visibility of FlutterView in
+    // onStart and onStop.
+    // See https://github.com/flutter/flutter/issues/93276
+    flutterView.setVisibility(View.VISIBLE);
   }
 
   /**
@@ -417,12 +423,16 @@ import java.util.Arrays;
         initialRoute = DEFAULT_INITIAL_ROUTE;
       }
     }
+    @Nullable String libraryUri = host.getDartEntrypointLibraryUri();
     Log.v(
         TAG,
         "Executing Dart entrypoint: "
-            + host.getDartEntrypointFunctionName()
-            + ", and sending initial route: "
-            + initialRoute);
+                    + host.getDartEntrypointFunctionName()
+                    + ", library uri: "
+                    + libraryUri
+                == null
+            ? "\"\""
+            : libraryUri + ", and sending initial route: " + initialRoute);
 
     // The engine needs to receive the Flutter app's initial route before executing any
     // Dart code to ensure that the initial route arrives in time to be applied.
@@ -435,23 +445,28 @@ import java.util.Arrays;
 
     // Configure the Dart entrypoint and execute it.
     DartExecutor.DartEntrypoint entrypoint =
-        new DartExecutor.DartEntrypoint(
-            appBundlePathOverride, host.getDartEntrypointFunctionName());
+        libraryUri == null
+            ? new DartExecutor.DartEntrypoint(
+                appBundlePathOverride, host.getDartEntrypointFunctionName())
+            : new DartExecutor.DartEntrypoint(
+                appBundlePathOverride, libraryUri, host.getDartEntrypointFunctionName());
     flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
   }
 
   private String maybeGetInitialRouteFromIntent(Intent intent) {
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
-      if (data != null && !data.getPath().isEmpty()) {
+      if (data != null) {
         String fullRoute = data.getPath();
-        if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-          fullRoute += "?" + data.getQuery();
+        if (fullRoute != null && !fullRoute.isEmpty()) {
+          if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+            fullRoute += "?" + data.getQuery();
+          }
+          if (data.getFragment() != null && !data.getFragment().isEmpty()) {
+            fullRoute += "#" + data.getFragment();
+          }
+          return fullRoute;
         }
-        if (data.getFragment() != null && !data.getFragment().isEmpty()) {
-          fullRoute += "#" + data.getFragment();
-        }
-        return fullRoute;
       }
     }
     return null;
@@ -565,6 +580,12 @@ import java.util.Arrays;
     Log.v(TAG, "onStop()");
     ensureAlive();
     flutterEngine.getLifecycleChannel().appIsPaused();
+    // This is a workaround for a bug on some OnePlus phones. The visibility of the application
+    // window is still true after locking the screen on some OnePlus phones, and shows a black
+    // screen when unlocked. We can work around this by changing the visibility of FlutterView in
+    // onStart and onStop.
+    // See https://github.com/flutter/flutter/issues/93276
+    flutterView.setVisibility(View.GONE);
   }
 
   /**
@@ -914,6 +935,14 @@ import java.util.Arrays;
     @NonNull
     String getDartEntrypointFunctionName();
 
+    /**
+     * Returns the URI of the Dart library which contains the entrypoint method (example
+     * "package:foo_package/main.dart"). If null, this will default to the same library as the
+     * `main()` function in the Dart program.
+     */
+    @Nullable
+    String getDartEntrypointLibraryUri();
+
     /** Returns the path to the app bundle where the Dart code exists. */
     @NonNull
     String getAppBundlePath();
@@ -935,6 +964,20 @@ import java.util.Arrays;
      */
     @NonNull
     TransparencyMode getTransparencyMode();
+
+    /**
+     * Returns the {@link ExclusiveAppComponent<Activity>} that is associated with {@link
+     * io.flutter.embedding.engine.FlutterEngine}.
+     *
+     * <p>In the scenario where multiple {@link FlutterActivity} or {@link FlutterFragment} share
+     * the same {@link FlutterEngine}, to attach/re-attache a {@link FlutterActivity} or {@link
+     * FlutterFragment} to the shared {@link FlutterEngine}, we MUST manually invoke {@link
+     * ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)}.
+     *
+     * <p>The {@link ExclusiveAppComponent} is exposed here so that subclasses of {@link
+     * FlutterActivity} or {@link FlutterFragment} can access it.
+     */
+    ExclusiveAppComponent<Activity> getExclusiveAppComponent();
 
     @Nullable
     SplashScreen provideSplashScreen();

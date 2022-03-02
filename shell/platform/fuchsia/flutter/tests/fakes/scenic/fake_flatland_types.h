@@ -144,6 +144,8 @@ struct FakeImage {
   constexpr static fuchsia::math::RectF kDefaultSampleRegion{};
   constexpr static fuchsia::math::SizeU kDefaultDestinationSize{};
   constexpr static float kDefaultOpacity{1.f};
+  constexpr static fuchsia::ui::composition::BlendMode kDefaultBlendMode{
+      fuchsia::ui::composition::BlendMode::SRC_OVER};
 
   fuchsia::ui::composition::ContentId id{kInvalidContentId};
 
@@ -151,6 +153,7 @@ struct FakeImage {
   fuchsia::math::RectF sample_region{kDefaultSampleRegion};
   fuchsia::math::SizeU destination_size{kDefaultDestinationSize};
   float opacity{kDefaultOpacity};
+  fuchsia::ui::composition::BlendMode blend_mode{kDefaultBlendMode};
 
   zx_koid_t import_token{};
   uint32_t vmo_index{0};
@@ -162,21 +165,18 @@ struct FakeTransform {
   bool operator==(const FakeTransform& other) const;
 
   constexpr static fuchsia::math::Vec kDefaultTranslation{.x = 0, .y = 0};
-  constexpr static fuchsia::math::Rect kDefaultClipBounds{.x = 0,
-                                                          .y = 0,
-                                                          .width = 0,
-                                                          .height = 0};
   constexpr static fuchsia::ui::composition::Orientation kDefaultOrientation{
       fuchsia::ui::composition::Orientation::CCW_0_DEGREES};
 
   fuchsia::ui::composition::TransformId id{kInvalidTransformId};
 
   fuchsia::math::Vec translation{kDefaultTranslation};
-  fuchsia::math::Rect clip_bounds{kDefaultClipBounds};
+  std::optional<fuchsia::math::Rect> clip_bounds;
   fuchsia::ui::composition::Orientation orientation{kDefaultOrientation};
 
   std::vector<std::shared_ptr<FakeTransform>> children;
   std::shared_ptr<FakeContent> content;
+  size_t num_hit_regions;
 };
 
 struct FakeGraph {

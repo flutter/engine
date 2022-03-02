@@ -47,6 +47,7 @@ Future<void> main(List<String> args) async {
   await cipdConfigFile.writeAsString('''
 package: flutter/web/canvaskit_bundle
 description: A build of CanvasKit bundled with Flutter Web apps
+preserve_writable: true
 data:
   - dir: canvaskit
 ''');

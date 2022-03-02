@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/display_list.h"
+#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/flow/raster_cache.h"
-
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -14,57 +15,6 @@
 
 namespace flutter {
 namespace testing {
-namespace {
-
-sk_sp<SkPicture> GetSamplePicture() {
-  SkPictureRecorder recorder;
-  recorder.beginRecording(SkRect::MakeWH(150, 100));
-  SkPaint paint;
-  paint.setColor(SK_ColorRED);
-  recorder.getRecordingCanvas()->drawRect(SkRect::MakeXYWH(10, 10, 80, 80),
-                                          paint);
-  return recorder.finishRecordingAsPicture();
-}
-
-sk_sp<DisplayList> GetSampleDisplayList() {
-  DisplayListBuilder builder(SkRect::MakeWH(150, 100));
-  builder.setColor(SK_ColorRED);
-  builder.drawRect(SkRect::MakeXYWH(10, 10, 80, 80));
-  return builder.Build();
-}
-
-sk_sp<SkPicture> GetSampleNestedPicture() {
-  SkPictureRecorder recorder;
-  recorder.beginRecording(SkRect::MakeWH(150, 100));
-  SkCanvas* canvas = recorder.getRecordingCanvas();
-  SkPaint paint;
-  for (int y = 10; y <= 60; y += 10) {
-    for (int x = 10; x <= 60; x += 10) {
-      paint.setColor(((x + y) % 20) == 10 ? SK_ColorRED : SK_ColorBLUE);
-      canvas->drawRect(SkRect::MakeXYWH(x, y, 80, 80), paint);
-    }
-  }
-  SkPictureRecorder outer_recorder;
-  outer_recorder.beginRecording(SkRect::MakeWH(150, 100));
-  canvas = outer_recorder.getRecordingCanvas();
-  canvas->drawPicture(recorder.finishRecordingAsPicture());
-  return outer_recorder.finishRecordingAsPicture();
-}
-
-sk_sp<DisplayList> GetSampleNestedDisplayList() {
-  DisplayListBuilder builder(SkRect::MakeWH(150, 100));
-  for (int y = 10; y <= 60; y += 10) {
-    for (int x = 10; x <= 60; x += 10) {
-      builder.setColor(((x + y) % 20) == 10 ? SK_ColorRED : SK_ColorBLUE);
-      builder.drawRect(SkRect::MakeXYWH(x, y, 80, 80));
-    }
-  }
-  DisplayListBuilder outer_builder(SkRect::MakeWH(150, 100));
-  outer_builder.drawDisplayList(builder.Build());
-  return outer_builder.Build();
-}
-
-}  // namespace
 
 TEST(RasterCache, SimpleInitialization) {
   flutter::RasterCache cache;
@@ -452,12 +402,68 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   SkMatrix matrix = SkMatrix::I();
 
   auto display_list = GetSampleNestedDisplayList();
-  ASSERT_EQ(display_list->op_count(), 1);
-  ASSERT_EQ(display_list->op_count(true), 36);
+  ASSERT_EQ(display_list->op_count(), 1u);
+  ASSERT_EQ(display_list->op_count(true), 36u);
 
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             display_list.get(), false, false, matrix));
+  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+
+  cache.CleanupAfterFrame();
+  cache.PrepareNewFrame();
+
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            display_list.get(), false, false, matrix));
+  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+}
+
+TEST(RasterCache, NaiveComplexityScoringDisplayList) {
+  DisplayListComplexityCalculator* calculator =
+      DisplayListNaiveComplexityCalculator::GetInstance();
+
+  size_t threshold = 1;
+  flutter::RasterCache cache(threshold);
+
+  SkMatrix matrix = SkMatrix::I();
+
+  // Five raster ops will not be cached
+  auto display_list = GetSampleDisplayList(5);
+  unsigned int complexity_score = calculator->Compute(display_list.get());
+
+  ASSERT_EQ(complexity_score, 5u);
+  ASSERT_EQ(display_list->op_count(), 5u);
+  ASSERT_FALSE(calculator->ShouldBeCached(complexity_score));
+
+  SkCanvas dummy_canvas;
+
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             display_list.get(), false, false, matrix));
+  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+
+  cache.CleanupAfterFrame();
+  cache.PrepareNewFrame();
+
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             display_list.get(), false, false, matrix));
+  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+
+  // Six raster ops should be cached
+  display_list = GetSampleDisplayList(6);
+  complexity_score = calculator->Compute(display_list.get());
+
+  ASSERT_EQ(complexity_score, 6u);
+  ASSERT_EQ(display_list->op_count(), 6u);
+  ASSERT_TRUE(calculator->ShouldBeCached(complexity_score));
 
   cache.PrepareNewFrame();
 
@@ -541,6 +547,80 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
   }
 }
 
-}  // namespace testing
+TEST(RasterCache, RasterCacheKeyHashFunction) {
+  RasterCacheKey::Map<int> map;
+  auto hash_function = map.hash_function();
+  SkMatrix matrix = SkMatrix::I();
+  uint64_t id = 5;
+  RasterCacheKey layer_key(id, RasterCacheKeyType::kLayer, matrix);
+  RasterCacheKey picture_key(id, RasterCacheKeyType::kPicture, matrix);
+  RasterCacheKey display_list_key(id, RasterCacheKeyType::kDisplayList, matrix);
 
+  auto layer_hash_code = hash_function(layer_key);
+  ASSERT_EQ(layer_hash_code, fml::HashCombine(id, RasterCacheKeyType::kLayer));
+
+  auto picture_hash_code = hash_function(picture_key);
+  ASSERT_EQ(picture_hash_code,
+            fml::HashCombine(id, RasterCacheKeyType::kPicture));
+
+  auto display_list_hash_code = hash_function(display_list_key);
+  ASSERT_EQ(display_list_hash_code,
+            fml::HashCombine(id, RasterCacheKeyType::kDisplayList));
+}
+
+TEST(RasterCache, RasterCacheKeySameID) {
+  RasterCacheKey::Map<int> map;
+  SkMatrix matrix = SkMatrix::I();
+  uint64_t id = 5;
+  RasterCacheKey layer_key(id, RasterCacheKeyType::kLayer, matrix);
+  RasterCacheKey picture_key(id, RasterCacheKeyType::kPicture, matrix);
+  RasterCacheKey display_list_key(id, RasterCacheKeyType::kDisplayList, matrix);
+  map[layer_key] = 100;
+  map[picture_key] = 200;
+  map[display_list_key] = 300;
+
+  ASSERT_EQ(map[layer_key], 100);
+  ASSERT_EQ(map[picture_key], 200);
+  ASSERT_EQ(map[display_list_key], 300);
+}
+
+TEST(RasterCache, RasterCacheKeySameType) {
+  RasterCacheKey::Map<int> map;
+  SkMatrix matrix = SkMatrix::I();
+
+  RasterCacheKeyType type = RasterCacheKeyType::kLayer;
+  RasterCacheKey layer_first_key(5, type, matrix);
+  RasterCacheKey layer_second_key(10, type, matrix);
+  RasterCacheKey layer_third_key(15, type, matrix);
+  map[layer_first_key] = 50;
+  map[layer_second_key] = 100;
+  map[layer_third_key] = 150;
+  ASSERT_EQ(map[layer_first_key], 50);
+  ASSERT_EQ(map[layer_second_key], 100);
+  ASSERT_EQ(map[layer_third_key], 150);
+
+  type = RasterCacheKeyType::kPicture;
+  RasterCacheKey picture_first_key(20, type, matrix);
+  RasterCacheKey picture_second_key(25, type, matrix);
+  RasterCacheKey picture_third_key(30, type, matrix);
+  map[picture_first_key] = 200;
+  map[picture_second_key] = 250;
+  map[picture_third_key] = 300;
+  ASSERT_EQ(map[picture_first_key], 200);
+  ASSERT_EQ(map[picture_second_key], 250);
+  ASSERT_EQ(map[picture_third_key], 300);
+
+  type = RasterCacheKeyType::kDisplayList;
+  RasterCacheKey display_list_first_key(35, type, matrix);
+  RasterCacheKey display_list_second_key(40, type, matrix);
+  RasterCacheKey display_list_third_key(45, type, matrix);
+  map[display_list_first_key] = 350;
+  map[display_list_second_key] = 400;
+  map[display_list_third_key] = 450;
+  ASSERT_EQ(map[display_list_first_key], 350);
+  ASSERT_EQ(map[display_list_second_key], 400);
+  ASSERT_EQ(map[display_list_third_key], 450);
+}
+
+}  // namespace testing
 }  // namespace flutter

@@ -158,7 +158,14 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
   // SkParagraph text layout library
   NSNumber* enableSkParagraph = [mainBundle objectForInfoDictionaryKey:@"FLTEnableSkParagraph"];
-  settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : false;
+  settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : true;
+
+  // Leak Dart VM settings, set whether leave or clean up the VM after the last shell shuts down.
+  NSNumber* leakDartVM = [mainBundle objectForInfoDictionaryKey:@"FLTLeakDartVM"];
+  // It will change the default leak_vm value in settings only if the key exists.
+  if (leakDartVM != nil) {
+    settings.leak_vm = leakDartVM.boolValue;
+  }
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
@@ -336,25 +343,5 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 + (NSString*)defaultBundleIdentifier {
   return @"io.flutter.flutter.app";
 }
-
-#pragma mark - Settings utilities
-
-- (void)setPersistentIsolateData:(NSData*)data {
-  if (data == nil) {
-    return;
-  }
-
-  NSData* persistent_isolate_data = [data copy];
-  fml::NonOwnedMapping::ReleaseProc data_release_proc = [persistent_isolate_data](auto, auto) {
-    [persistent_isolate_data release];
-  };
-  _settings.persistent_isolate_data = std::make_shared<fml::NonOwnedMapping>(
-      static_cast<const uint8_t*>(persistent_isolate_data.bytes),  // bytes
-      persistent_isolate_data.length,                              // byte length
-      data_release_proc                                            // release proc
-  );
-}
-
-#pragma mark - PlatformData utilities
 
 @end

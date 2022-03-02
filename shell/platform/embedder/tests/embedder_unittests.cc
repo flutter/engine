@@ -31,6 +31,13 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
+#if defined(FML_OS_MACOSX)
+#include <pthread.h>
+#endif
+
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace {
 
 static uint64_t NanosFromEpoch(int millis_from_now) {
@@ -1028,9 +1035,9 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
 
   // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
   // platforms.
-#if !defined(OS_LINUX)
+#if !defined(FML_OS_LINUX)
   GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
-#endif  // OS_LINUX
+#endif  // FML_OS_LINUX
   ASSERT_TRUE(
       ImageMatchesFixture("verifyb143464703_soft_noxform.png", rendered_scene));
 }
@@ -1741,5 +1748,75 @@ TEST_F(EmbedderTest, VsyncCallbackPostedIntoFuture) {
   shutdown_latch.Wait();
 }
 
+TEST_F(EmbedderTest, CanScheduleFrame) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("can_schedule_frame");
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.Signal(); }));
+
+  fml::AutoResetWaitableEvent check_latch;
+  context.AddNativeCallback(
+      "SignalNativeCount",
+      CREATE_NATIVE_ENTRY(
+          [&check_latch](Dart_NativeArguments args) { check_latch.Signal(); }));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Wait for the application to attach the listener.
+  latch.Wait();
+
+  ASSERT_EQ(FlutterEngineScheduleFrame(engine.get()), kSuccess);
+
+  check_latch.Wait();
+}
+
+#if defined(FML_OS_MACOSX)
+
+static void MockThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
+  pthread_t tid = pthread_self();
+  struct sched_param param;
+  int policy = SCHED_OTHER;
+  switch (config.priority) {
+    case fml::Thread::ThreadPriority::DISPLAY:
+      param.sched_priority = 10;
+      break;
+    default:
+      param.sched_priority = 1;
+  }
+  pthread_setschedparam(tid, policy, &param);
+}
+
+TEST_F(EmbedderTest, EmbedderThreadHostUseCustomThreadConfig) {
+  auto thread_host =
+      flutter::EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
+          nullptr, MockThreadConfigSetter);
+
+  int ui_policy;
+  struct sched_param ui_param;
+
+  thread_host->GetTaskRunners().GetUITaskRunner()->PostTask([&] {
+    pthread_t current_thread = pthread_self();
+    pthread_getschedparam(current_thread, &ui_policy, &ui_param);
+    ASSERT_EQ(ui_param.sched_priority, 10);
+  });
+
+  int io_policy;
+  struct sched_param io_param;
+  thread_host->GetTaskRunners().GetIOTaskRunner()->PostTask([&] {
+    pthread_t current_thread = pthread_self();
+    pthread_getschedparam(current_thread, &io_policy, &io_param);
+    ASSERT_EQ(io_param.sched_priority, 1);
+  });
+}
+#endif
+
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

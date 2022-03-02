@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/examples/examples.gni")
 import("//flutter/shell/platform/config.gni")
 import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
@@ -32,14 +33,6 @@ config("export_dynamic_symbols") {
 
 if (flutter_prebuilt_dart_sdk) {
   copy_trees("_copy_trees") {
-    # There is no prebuilt Dart SDK targeting Fuchsia, but we also don't need
-    # one, so even when the build is targeting Fuchsia, use the prebuilt
-    # Dart SDK for the host.
-    if (current_toolchain == host_toolchain || is_fuchsia) {
-      prebuilt_dart_sdk = host_prebuilt_dart_sdk
-    } else {
-      prebuilt_dart_sdk = target_prebuilt_dart_sdk
-    }
     sources = [
       {
         target = "copy_dart_sdk"
@@ -61,7 +54,7 @@ _build_engine_artifacts =
     (is_linux && !is_chromeos && current_cpu != "arm") || is_mac
 
 group("dart_sdk") {
-  if (_build_engine_artifacts) {
+  if (build_engine_artifacts) {
     if (flutter_prebuilt_dart_sdk) {
       public_deps = [ ":copy_dart_sdk" ]
     } else {
@@ -78,6 +71,14 @@ group("flutter") {
     "//flutter/shell/platform/embedder:flutter_engine",
     "//flutter/sky",
   ]
+
+  # Ensure the example for a sample embedder compiles.
+  if (build_embedder_examples) {
+    public_deps += [
+      "//flutter/examples/glfw",
+      "//flutter/examples/vulkan_glfw",
+    ]
+  }
 
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {
@@ -111,6 +112,7 @@ group("flutter") {
   # Compile all benchmark targets if enabled.
   if (enable_unittests && !is_win) {
     public_deps += [
+      "//flutter/display_list:display_list_benchmarks",
       "//flutter/fml:fml_benchmarks",
       "//flutter/lib/ui:ui_benchmarks",
       "//flutter/shell/common:shell_benchmarks",
@@ -143,6 +145,7 @@ group("flutter") {
       "//flutter/lib/spirv/test/supported_glsl_op_shaders:spirv_compile_supported_glsl_shaders",
       "//flutter/lib/spirv/test/supported_op_shaders:spirv_compile_supported_op_shaders",
       "//flutter/lib/ui:ui_unittests",
+      "//flutter/runtime:dart_plugin_registrant_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",
@@ -166,8 +169,10 @@ group("flutter") {
     }
 
     if (is_mac) {
-      public_deps +=
-          [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
+      public_deps += [
+        "//flutter/impeller:impeller_unittests",
+        "//flutter/shell/platform/darwin:flutter_channels_unittests",
+      ]
     }
 
     if (!is_win && !is_fuchsia) {

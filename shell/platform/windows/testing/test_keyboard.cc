@@ -38,14 +38,18 @@ std::unique_ptr<std::vector<uint8_t>> _keyHandlingResponse(bool handled) {
   return flutter::JsonMessageCodec::GetInstance().EncodeMessage(document);
 }
 
-// A struct to use as a FlutterPlatformMessageResponseHandle so it can keep the
-// callbacks and user data passed to the engine's
-// PlatformMessageCreateResponseHandle for use in the SendPlatformMessage
-// overridden function.
-struct TestResponseHandle {
-  FlutterDesktopBinaryReply callback;
-  void* user_data;
-};
+static std::string ordinal(int num) {
+  switch (num) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
 }  // namespace
 
 #define _RETURN_IF_NOT_EQUALS(val1, val2)                                     \
@@ -85,8 +89,7 @@ LPARAM CreateKeyEventLparam(USHORT scancode,
           (LPARAM(scancode) << 16) | LPARAM(repeat_count));
 }
 
-static MockKeyEventChannelHandler stored_channel_handler;
-static MockKeyEventEmbedderHandler stored_embedder_handler;
+static std::shared_ptr<MockKeyResponseController> stored_response_controller;
 
 // Set EngineModifier, listen to event messages that go through the channel and
 // the embedder API, while disabling other methods so that the engine can be
@@ -94,64 +97,77 @@ static MockKeyEventEmbedderHandler stored_embedder_handler;
 //
 // The |channel_handler| and |embedder_handler| should return a boolean
 // indicating whether the framework decides to handle the event.
-void MockEmbedderApiForKeyboard(EngineModifier& modifier,
-                                MockKeyEventChannelHandler channel_handler,
-                                MockKeyEventEmbedderHandler embedder_handler) {
-  stored_channel_handler = channel_handler;
-  stored_embedder_handler = embedder_handler;
+void MockEmbedderApiForKeyboard(
+    EngineModifier& modifier,
+    std::shared_ptr<MockKeyResponseController> response_controller) {
+  stored_response_controller = response_controller;
   // This mock handles channel messages.
-  modifier.embedder_api().SendPlatformMessage =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         const FlutterPlatformMessage* message) {
-        if (std::string(message->channel) == std::string("flutter/settings")) {
-          return kSuccess;
+  modifier.embedder_api()
+      .SendPlatformMessage = [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+                                const FlutterPlatformMessage* message) {
+    if (std::string(message->channel) == std::string("flutter/settings")) {
+      return kSuccess;
+    }
+    if (std::string(message->channel) == std::string("flutter/keyevent")) {
+      stored_response_controller->HandleChannelMessage([message](bool handled) {
+        auto response = _keyHandlingResponse(handled);
+        auto response_handle = message->response_handle;
+        if (response_handle->callback != nullptr) {
+          response_handle->callback(response->data(), response->size(),
+                                    response_handle->user_data);
         }
-        if (std::string(message->channel) == std::string("flutter/keyevent")) {
-          bool result = stored_channel_handler();
-          auto response = _keyHandlingResponse(result);
-          const TestResponseHandle* response_handle =
-              reinterpret_cast<const TestResponseHandle*>(
-                  message->response_handle);
-          if (response_handle->callback != nullptr) {
-            response_handle->callback(response->data(), response->size(),
-                                      response_handle->user_data);
-          }
-          return kSuccess;
-        }
-        return kSuccess;
-      };
+      });
+      return kSuccess;
+    }
+    if (std::string(message->channel) == std::string("flutter/textinput")) {
+      std::unique_ptr<rapidjson::Document> document =
+          flutter::JsonMessageCodec::GetInstance().DecodeMessage(
+              message->message, message->message_size);
+      if (document == nullptr) {
+        return kInvalidArguments;
+      }
+      stored_response_controller->HandleTextInputMessage(std::move(document));
+      return kSuccess;
+    }
+    return kSuccess;
+  };
 
-  // This mock handles key events sent through the embedder API,
-  // and records it in `key_calls`.
+  // This mock handles key events sent through the embedder API.
   modifier.embedder_api().SendKeyEvent =
       [](FLUTTER_API_SYMBOL(FlutterEngine) engine, const FlutterKeyEvent* event,
          FlutterKeyEventCallback callback, void* user_data) {
-        bool result = stored_embedder_handler(event);
-        if (callback != nullptr) {
-          callback(result, user_data);
-        }
+        stored_response_controller->HandleEmbedderMessage(
+            event, [callback, user_data](bool handled) {
+              if (callback != nullptr) {
+                callback(handled, user_data);
+              }
+            });
         return kSuccess;
       };
 
   // The following mocks enable channel mocking.
   modifier.embedder_api().PlatformMessageCreateResponseHandle =
       [](auto engine, auto data_callback, auto user_data, auto response_out) {
-        TestResponseHandle* response_handle = new TestResponseHandle();
+        auto response_handle = new FlutterPlatformMessageResponseHandle();
         response_handle->user_data = user_data;
         response_handle->callback = data_callback;
-        *response_out = reinterpret_cast<FlutterPlatformMessageResponseHandle*>(
-            response_handle);
+        *response_out = response_handle;
         return kSuccess;
       };
 
   modifier.embedder_api().PlatformMessageReleaseResponseHandle =
       [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
          FlutterPlatformMessageResponseHandle* response) {
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(response);
-        delete response_handle;
+        delete response;
         return kSuccess;
       };
+
+  // The following mock disables responses for method channels sent from the
+  // embedding to the framework. (No code uses the response yet.)
+  modifier.embedder_api().SendPlatformMessageResponse =
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         const FlutterPlatformMessageResponseHandle* handle,
+         const uint8_t* data, size_t data_length) { return kSuccess; };
 
   // The following mocks allows RunWithEntrypoint to be run, which creates a
   // non-empty FlutterEngine and enables SendKeyEvent.
@@ -175,20 +191,25 @@ void MockEmbedderApiForKeyboard(EngineModifier& modifier,
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
 }
 
-void MockMessageQueue::InjectMessageList(int count,
-                                         const Win32Message* messages) {
-  for (int i = 0; i < count; i += 1) {
-    _pending_messages.push_back(messages[i]);
+void MockMessageQueue::PushBack(const Win32Message* message) {
+  _pending_messages.push_back(*message);
+}
+
+LRESULT MockMessageQueue::DispatchFront() {
+  assert(!_pending_messages.empty());
+  Win32Message message = _pending_messages.front();
+  _pending_messages.pop_front();
+  _sent_messages.push_back(message);
+  LRESULT result =
+      Win32SendMessage(message.message, message.wParam, message.lParam);
+  if (message.expected_result != kWmResultDontCheck) {
+    EXPECT_EQ(result, message.expected_result)
+        << "  This is the " << _sent_messages.size()
+        << ordinal(_sent_messages.size()) << " event, with\n    " << std::hex
+        << "Message 0x" << message.message << " LParam 0x" << message.lParam
+        << " WParam 0x" << message.wParam;
   }
-  while (!_pending_messages.empty()) {
-    Win32Message message = _pending_messages.front();
-    _pending_messages.pop_front();
-    LRESULT result =
-        Win32SendMessage(message.message, message.wParam, message.lParam);
-    if (message.expected_result != kWmResultDontCheck) {
-      EXPECT_EQ(result, message.expected_result);
-    }
-  }
+  return result;
 }
 
 BOOL MockMessageQueue::Win32PeekMessage(LPMSG lpMsg,

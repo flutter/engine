@@ -91,7 +91,7 @@ void FlatlandExternalViewEmbedder::BeginFrame(
   Reset();
   frame_size_ = frame_size;
 
-  // TODO(fxbug.dev/64201): Handle device pixel ratio.
+  // TODO(fxbug.dev/94000): Handle device pixel ratio.
 
   // Create the root layer.
   frame_layers_.emplace(
@@ -188,10 +188,10 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         FML_CHECK(view_mutators.total_transform ==
                   view_params.transformMatrix());
 
-        // TODO(fxbug.dev/64201): Handle clips.
+        // TODO(fxbug.dev/94000): Handle clips.
 
         // Set transform for the viewport.
-        // TODO(fxbug.dev/64201): Handle scaling.
+        // TODO(fxbug.dev/94000): Handle scaling.
         if (view_mutators.transform != viewport.mutators.transform) {
           flatland_->flatland()->SetTranslation(
               viewport.transform_id,
@@ -200,8 +200,8 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
           viewport.mutators.transform = view_mutators.transform;
         }
 
-        // TODO(fxbug.dev/64201): Set HitTestBehavior.
-        // TODO(fxbug.dev/64201): Set opacity.
+        // TODO(fxbug.dev/94000): Set HitTestBehavior.
+        // TODO(fxbug.dev/94000): Set opacity.
 
         // Set size
         // TODO(): Set occlusion hint, and focusable.
@@ -258,16 +258,31 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
             {static_cast<uint32_t>(surface_for_layer->GetSize().width()),
              static_cast<uint32_t>(surface_for_layer->GetSize().height())});
 
+        // Flutter Embedder lacks an API to detect if a layer has alpha or not.
+        // For now, we assume any layer beyond the first has alpha.
+        flatland_->flatland()->SetImageBlendingFunction(
+            {surface_for_layer->GetImageId()},
+            flatland_layer_index == 0
+                ? fuchsia::ui::composition::BlendMode::SRC
+                : fuchsia::ui::composition::BlendMode::SRC_OVER);
+
         // Attach the FlatlandLayer to the main scene graph.
         flatland_->flatland()->AddChild(
             root_transform_id_,
             flatland_layers_[flatland_layer_index].transform_id);
         child_transforms_.emplace_back(
             flatland_layers_[flatland_layer_index].transform_id);
+
+        // Attach full-screen hit testing shield.
+        flatland_->flatland()->SetHitRegions(
+            flatland_layers_[flatland_layer_index].transform_id,
+            {{{0, 0, std::numeric_limits<float>::max(),
+               std::numeric_limits<float>::max()},
+              fuchsia::ui::composition::HitTestInteraction::
+                  SEMANTICALLY_INVISIBLE}});
       }
 
       // Reset for the next pass:
-      //  +The next layer will not be the first layer.
       flatland_layer_index++;
     }
   }
@@ -332,7 +347,7 @@ void FlatlandExternalViewEmbedder::CreateView(
                            .viewport_id = flatland_->NextContentId()};
   flatland_->flatland()->CreateTransform(new_view.transform_id);
   fuchsia::ui::composition::ViewportProperties properties;
-  // TODO(fxbug.dev/64201): Investigate if it is possible to avoid using a
+  // TODO(fxbug.dev/94000): Investigate if it is possible to avoid using a
   // default size by finding the size before creation.
   properties.set_logical_size(
       {kFlatlandDefaultViewportSize, kFlatlandDefaultViewportSize});
@@ -380,7 +395,7 @@ void FlatlandExternalViewEmbedder::SetViewProperties(
   auto found = flatland_views_.find(view_id);
   FML_CHECK(found != flatland_views_.end());
 
-  // TODO(fxbug.dev/64201): Set occlusion_hint, hit_testable and focusable.
+  // TODO(fxbug.dev/94000): Set occlusion_hint, hit_testable and focusable.
 }
 
 void FlatlandExternalViewEmbedder::Reset() {

@@ -1,0 +1,129 @@
+import("//flutter/build/zip_bundle.gni")
+
+zip_bundle("artifacts") {
+  output = "$full_platform_name/artifacts.zip"
+  deps = [
+    "//flutter/flutter_frontend_server:frontend_server",
+    "//flutter/lib/snapshot:generate_snapshot_bin",
+    "//flutter/shell/testing:testing",
+  ]
+  files = [
+    {
+      source = "//third_party/icu/flutter/icudtl.dat"
+      destination = "icudtl.dat"
+    },
+    {
+      source = "$root_out_dir/gen/flutter/lib/snapshot/isolate_snapshot.bin"
+      destination = "isolate_snapshot.bin"
+    },
+    {
+      source = "$root_gen_dir/flutter/lib/snapshot/vm_isolate_snapshot.bin"
+      destination = "vm_isolate_snapshot.bin"
+    },
+    {
+      source = "$root_gen_dir/frontend_server.dart.snapshot"
+      destination = "frontend_server.dart.snapshot"
+    },
+  ]
+  if (host_os == "win") {
+    files += [
+      {
+        source = "$root_out_dir/flutter_tester.exe"
+        destination = "flutter_tester"
+      },
+    ]
+  } else {
+    files += [
+      {
+        source = "$root_out_dir/flutter_tester"
+        destination = "flutter_tester"
+      },
+    ]
+  }
+}
+
+if (host_os == "linux" || host_os == "win") {
+  group("embedder") {
+    deps = [ "//flutter/shell/platform/embedder:embedder-archive" ]
+  }
+}
+
+# Generates flutter_patched_sdk.zip for debug and profile runtime modes
+# and saves it in the zips_archive folder. For release runtime mode it
+# generates flutter_patched_sdk_product.zip and saves it to
+# zips_archive/flutter_patched_sdk_product/ folder.
+zip_bundle("flutter_patched_sdk") {
+  file_suffix = ""
+  path_prefix = ""
+  if (flutter_runtime_mode == "release") {
+    file_suffix = "_product"
+    path_prefix = "flutter_patched_sdk_product/"
+  }
+  output = "flutter_patched_sdk${file_suffix}.zip"
+  deps = [ "//flutter/lib/snapshot:strong_platform" ]
+  files = [
+    {
+      source = "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill"
+      destination = "${path_prefix}vm_outline_strong.dill"
+    },
+    {
+      source = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
+      destination = "${path_prefix}platform_strong.dill"
+    },
+  ]
+}
+
+# Flutter consumes the dart sdk as a prebuilt. Rather than regenerating
+# the zip file we are just copying the original file to the artifacts location.
+if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
+  copy("dart_sdk_archive") {
+    sources = [ prebuilt_dart_sdk_archive ]
+    outputs =
+        [ "$root_out_dir/zip_archives/dart-sdk-$prebuilt_dart_sdk_config.zip" ]
+  }
+}
+
+# Archives Flutter Web SDK
+if (!is_fuchsia) {
+  group("flutter_web_sdk") {
+    deps = [ "//flutter/web_sdk:flutter_web_sdk_archive" ]
+  }
+}
+
+# Archives Flutter Windows Artifacts
+if (host_os == "win") {
+  zip_bundle("windows_flutter") {
+    output = "$full_platform_name-$flutter_runtime_mode/$full_platform_name-flutter.zip"
+    deps = [
+      "//flutter/shell/platform/common:publish_headers",
+      "//flutter/shell/platform/windows:flutter_windows",
+      "//flutter/shell/platform/windows:publish_headers_windows",
+    ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_export.h"
+        destination = "flutter_export.h"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.h"
+        destination = "flutter_windows.h"
+      },
+      {
+        source = "$root_out_dir/flutter_messenger.h"
+        destination = "flutter_messenger.h"
+      },
+      {
+        source = "$root_out_dir/flutter_plugin_registrar.h"
+        destination = "flutter_plugin_registrar.h"
+      },
+      {
+        source = "$root_out_dir/flutter_texture_registrar.h"
+        destination = "flutter_texture_registrar.h"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.dll"
+        destination = "flutter_windows.dll"
+      },
+    ]
+  }
+}

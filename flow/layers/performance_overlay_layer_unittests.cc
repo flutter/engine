@@ -10,13 +10,10 @@
 #include "flutter/flow/flow_test_utils.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/layer_test.h"
-#include "flutter/flow/testing/mock_layer.h"
-#include "flutter/fml/build_config.h"
-#include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
-#include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
+#include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/utils/SkBase64.h"
@@ -49,7 +46,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
   std::string golden_file_path = GetGoldenFilePath(refresh_rate, false);
   std::string new_golden_file_path = GetGoldenFilePath(refresh_rate, true);
 
-  flutter::Stopwatch mock_stopwatch(
+  FixedRefreshRateStopwatch mock_stopwatch(
       fml::RefreshRateToFrameBudget(refresh_rate));
   for (int i = 0; i < size(kMockedTimes); ++i) {
     mock_stopwatch.SetLapTime(
@@ -90,9 +87,9 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 
   // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
   // platforms.
-#if !defined(OS_LINUX)
+#if !defined(FML_OS_LINUX)
   GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
-#endif  // OS_LINUX
+#endif  // FML_OS_LINUX
   const bool golden_data_matches = golden_data->equals(snapshot_data.get());
   if (!golden_data_matches) {
     SkFILEWStream wstream(new_golden_file_path.c_str());
