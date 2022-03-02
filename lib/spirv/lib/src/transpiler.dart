@@ -348,7 +348,7 @@ class _Transpiler {
     if (inst.isResult) {
       results[inst.id] = inst;
     }
-    currentBlock!.add(inst);
+    currentBlock!._add(inst);
   }
 
   /// Read an instruction word, and handle the operation.

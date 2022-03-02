@@ -5,23 +5,23 @@
 part of spirv;
 
 class _Variable {
+  _Variable(this.id, this.type);
+
   final int id;
   final int type;
 
   bool initialized = false;
   int liftToBlock = 0;
-
-  _Variable(this.id, this.type);
 }
 
 class _Function {
+  _Function(this.transpiler, this.type, this.name)
+      : params = List<int>.filled(type.params.length, 0);
+
   final _Transpiler transpiler;
   final int name;
   final _FunctionType type;
   final List<int> params;
-
-  _Function(this.transpiler, this.type, this.name)
-      : params = List<int>.filled(type.params.length, 0);
 
   // entry point for the function
   _Block? entry;
@@ -120,7 +120,7 @@ class _Function {
       out.writeln('  float4 $_colorVariableName;');
     }
 
-    entry?.preprocess();
+    entry?._preprocess();
 
     // write the actual function body
     entry?.write(_BlockContext(

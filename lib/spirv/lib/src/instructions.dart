@@ -1,6 +1,15 @@
 part of spirv;
 
 class _BlockContext {
+  _BlockContext({
+    required this.out,
+    required this.indent,
+    this.merge = 0,
+    this.continueBlock = 0,
+    this.loopHeader = 0,
+    this.loopMerge = 0,
+  });
+
   final StringBuffer out;
   final int indent;
 
@@ -17,15 +26,6 @@ class _BlockContext {
   /// This is different from [merge] when the context is inside an if-statement
   /// inside of a for-loop, for example.
   final int loopMerge;
-
-  _BlockContext({
-    required this.out,
-    required this.indent,
-    this.merge = 0,
-    this.continueBlock = 0,
-    this.loopHeader = 0,
-    this.loopMerge = 0,
-  });
 
   /// Return a new [_BlockContext] that is a copy of the current [_BlockContext]
   /// with an increased indent and any parameters specified here overwritten.
@@ -50,16 +50,12 @@ class _BlockContext {
 }
 
 class _Block {
-  List<_Instruction> instructions = <_Instruction>[];
-
-  void add(_Instruction i) {
-    instructions.add(i);
-  }
+  _Block(this.id, this.function);
 
   final int id;
   final _Function function;
 
-  _Block(this.id, this.function);
+  List<_Instruction> instructions = <_Instruction>[];
 
   // control flow
   int branch = 0;
@@ -72,12 +68,19 @@ class _Block {
   _Store? loopInitializer;
   int continueBlock = 0;
 
-  /// true if this block has been processed by [liftLoopVariables].
+  // true if this block has been processed by [liftLoopVariables].
   bool scanned = false;
 
   _Transpiler get transpiler => function.transpiler;
 
-  void writeContinue(_BlockContext ctx) {
+  bool get hasSelectionStructure => mergeBlock != 0 && continueBlock == 0;
+  bool get hasLoopStructure => continueBlock != 0;
+
+  void _add(_Instruction i) {
+    instructions.add(i);
+  }
+
+  void _writeContinue(_BlockContext ctx) {
     final List<_CompoundAssignment> assignments =
         instructions.whereType<_CompoundAssignment>().toList();
     if (assignments.isEmpty) {
@@ -116,9 +119,9 @@ class _Block {
     }
 
     if (hasSelectionStructure) {
-      writeSelectionStructure(ctx);
+      _writeSelectionStructure(ctx);
     } else if (hasLoopStructure) {
-      writeLoopStructure(ctx);
+      _writeLoopStructure(ctx);
     }
 
     if (mergeBlock != 0) {
@@ -144,7 +147,7 @@ class _Block {
 
   /// Scans through the entire Control-Flow graph to collecting parts of
   /// for-loop structures.
-  void preprocess() {
+  void _preprocess() {
     if (scanned) {
       return;
     }
@@ -159,7 +162,7 @@ class _Block {
       int conditionId = condition;
       if (condition == 0) {
         final _Block branchBlock = function.block(branch);
-        if (!branchBlock.isSimple() || branchBlock.condition == 0) {
+        if (!branchBlock._isSimple() || branchBlock.condition == 0) {
           throw TranspileException._(
               _opBranch,
               'block $id has a loop structure but does not immediately '
@@ -179,22 +182,22 @@ class _Block {
 
     // Scan all blocks that can be reached from this block.
     if (branch != 0) {
-      function.block(branch).preprocess();
+      function.block(branch)._preprocess();
     }
     if (condition != 0) {
       if (truthyBlock != 0) {
-        function.block(truthyBlock).preprocess();
+        function.block(truthyBlock)._preprocess();
       }
       if (falseyBlock != 0) {
-        function.block(falseyBlock).preprocess();
+        function.block(falseyBlock)._preprocess();
       }
     }
     if (mergeBlock != 0) {
-      function.block(mergeBlock).preprocess();
+      function.block(mergeBlock)._preprocess();
     }
   }
 
-  void writeSelectionStructure(_BlockContext ctx) {
+  void _writeSelectionStructure(_BlockContext ctx) {
     final _BlockContext childCtx = ctx.child(merge: mergeBlock);
     ctx.writeIndent();
     final String conditionString = transpiler.resolveResult(condition);
@@ -209,7 +212,7 @@ class _Block {
     ctx.out.writeln('}');
   }
 
-  void writeLoopStructure(_BlockContext ctx) {
+  void _writeLoopStructure(_BlockContext ctx) {
     final _BlockContext childCtx = ctx.child(
       merge: mergeBlock,
       continueBlock: continueBlock,
@@ -229,7 +232,7 @@ class _Block {
       }
     } else {
       final _Block branchBlock = function.block(branch);
-      if (!branchBlock.isSimple() || branchBlock.condition == 0) {
+      if (!branchBlock._isSimple() || branchBlock.condition == 0) {
         throw TranspileException._(
             _opBranch,
             'block $id has a loop structure but does not immediately '
@@ -258,7 +261,7 @@ class _Block {
     ctx.out.write('; ');
     ctx.out.write(conditionString);
     ctx.out.write('; ');
-    function.block(continueBlock).writeContinue(ctx);
+    function.block(continueBlock)._writeContinue(ctx);
     ctx.out.writeln(') {');
     function.block(loopBody).write(childCtx);
     ctx.writeIndent();
@@ -267,7 +270,7 @@ class _Block {
 
   /// Returns true if this block has no stateful expressions
   /// and can be written as a single expression.
-  bool isSimple() {
+  bool _isSimple() {
     int statements = 0;
     for (final _Instruction inst in instructions) {
       if (!inst.isResult) {
@@ -279,9 +282,6 @@ class _Block {
     }
     return statements == 0;
   }
-
-  bool get hasSelectionStructure => mergeBlock != 0 && continueBlock == 0;
-  bool get hasLoopStructure => continueBlock != 0;
 }
 
 abstract class _Instruction {
@@ -301,6 +301,8 @@ abstract class _Instruction {
 }
 
 class _FunctionCall extends _Instruction {
+  _FunctionCall(this.type, this.id, this.function, this.args);
+
   @override
   final int type;
 
@@ -310,7 +312,8 @@ class _FunctionCall extends _Instruction {
   final String function;
   final List<int> args;
 
-  _FunctionCall(this.type, this.id, this.function, this.args);
+  @override
+  List<int> get deps => args;
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -323,9 +326,6 @@ class _FunctionCall extends _Instruction {
     }
     out.write(')');
   }
-
-  @override
-  List<int> get deps => args;
 }
 
 class _Return extends _Instruction {
@@ -336,6 +336,8 @@ class _Return extends _Instruction {
 }
 
 class _Select extends _Instruction {
+  _Select(this.type, this.id, this.condition, this.a, this.b);
+
   @override
   final int type;
 
@@ -346,7 +348,8 @@ class _Select extends _Instruction {
   final int a;
   final int b;
 
-  _Select(this.type, this.id, this.condition, this.a, this.b);
+  @override
+  List<int> get deps => <int>[condition, a, b];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -355,17 +358,14 @@ class _Select extends _Instruction {
     final String conditionName = t.resolveResult(condition);
     out.write('$conditionName ? $aName : $bName');
   }
-
-  @override
-  List<int> get deps => <int>[condition, a, b];
 }
 
 class _CompoundAssignment extends _Instruction {
+  _CompoundAssignment(this.pointer, this.op, this.object);
+
   final int pointer;
   final _Operator op;
   final int object;
-
-  _CompoundAssignment(this.pointer, this.op, this.object);
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -377,6 +377,13 @@ class _CompoundAssignment extends _Instruction {
 }
 
 class _Store extends _Instruction {
+  _Store(
+    this.pointer,
+    this.object, {
+    this.shouldDeclare = false,
+    this.declarationType = 0,
+  });
+
   final int pointer;
   final int object;
 
@@ -386,12 +393,8 @@ class _Store extends _Instruction {
   int selfModifyObject = 0;
   String selfModifyOperator = '';
 
-  _Store(
-    this.pointer,
-    this.object, {
-    this.shouldDeclare = false,
-    this.declarationType = 0,
-  });
+  @override
+  List<int> get deps => <int>[pointer, object];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -408,12 +411,11 @@ class _Store extends _Instruction {
       out.write('$pointerName = $objectName');
     }
   }
-
-  @override
-  List<int> get deps => <int>[pointer, object];
 }
 
 class _AccessChain extends _Instruction {
+  _AccessChain(this.type, this.id, this.base, this.indices);
+
   @override
   final int type;
 
@@ -423,7 +425,8 @@ class _AccessChain extends _Instruction {
   final int base;
   final List<int> indices;
 
-  _AccessChain(this.type, this.id, this.base, this.indices);
+  @override
+  List<int> get deps => <int>[base, ...indices];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -433,12 +436,11 @@ class _AccessChain extends _Instruction {
       out.write('[$indexString]');
     }
   }
-
-  @override
-  List<int> get deps => <int>[base, ...indices];
 }
 
 class _VectorShuffle extends _Instruction {
+  _VectorShuffle(this.type, this.id, this.vector, this.indices);
+
   @override
   final int type;
 
@@ -448,7 +450,8 @@ class _VectorShuffle extends _Instruction {
   final int vector;
   final List<int> indices;
 
-  _VectorShuffle(this.type, this.id, this.vector, this.indices);
+  @override
+  List<int> get deps => <int>[vector];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -464,12 +467,11 @@ class _VectorShuffle extends _Instruction {
     }
     out.write(')');
   }
-
-  @override
-  List<int> get deps => <int>[vector];
 }
 
 class _CompositeConstruct extends _Instruction {
+  _CompositeConstruct(this.type, this.id, this.components);
+
   @override
   final int type;
 
@@ -478,7 +480,8 @@ class _CompositeConstruct extends _Instruction {
 
   final List<int> components;
 
-  _CompositeConstruct(this.type, this.id, this.components);
+  @override
+  List<int> get deps => components;
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -492,12 +495,11 @@ class _CompositeConstruct extends _Instruction {
     }
     out.write(')');
   }
-
-  @override
-  List<int> get deps => components;
 }
 
 class _CompositeExtract extends _Instruction {
+  _CompositeExtract(this.type, this.id, this.src, this.indices);
+
   @override
   final int type;
 
@@ -507,7 +509,8 @@ class _CompositeExtract extends _Instruction {
   final int src;
   final List<int> indices;
 
-  _CompositeExtract(this.type, this.id, this.src, this.indices);
+  @override
+  List<int> get deps => <int>[src];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -516,12 +519,12 @@ class _CompositeExtract extends _Instruction {
       out.write('[${indices[i]}]');
     }
   }
-
-  @override
-  List<int> get deps => <int>[src];
 }
 
 class _ImageSampleImplicitLod extends _Instruction {
+  _ImageSampleImplicitLod(
+      this.type, this.id, this.sampledImage, this.coordinate);
+
   @override
   final int type;
 
@@ -531,8 +534,8 @@ class _ImageSampleImplicitLod extends _Instruction {
   final int sampledImage;
   final int coordinate;
 
-  _ImageSampleImplicitLod(
-      this.type, this.id, this.sampledImage, this.coordinate);
+  @override
+  List<int> get deps => <int>[coordinate];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -545,12 +548,11 @@ class _ImageSampleImplicitLod extends _Instruction {
       out.write('texture($sampledImageString, $coordinateString)');
     }
   }
-
-  @override
-  List<int> get deps => <int>[coordinate];
 }
 
 class _UnaryOperator extends _Instruction {
+  _UnaryOperator(this.type, this.id, this.op, this.operand);
+
   @override
   final int type;
 
@@ -560,34 +562,34 @@ class _UnaryOperator extends _Instruction {
   final _Operator op;
   final int operand;
 
-  _UnaryOperator(this.type, this.id, this.op, this.operand);
+  @override
+  List<int> get deps => <int>[operand];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
     out.write(_operatorString(op));
     out.write(t.resolveResult(operand));
   }
-
-  @override
-  List<int> get deps => <int>[operand];
 }
 
 class _ReturnValue extends _Instruction {
+  _ReturnValue(this.value);
+
   final int value;
 
-  _ReturnValue(this.value);
+  @override
+  List<int> get deps => <int>[value];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
     final String valueString = t.resolveResult(value);
     out.write('return $valueString');
   }
-
-  @override
-  List<int> get deps => <int>[value];
 }
 
 class _BinaryOperator extends _Instruction {
+  _BinaryOperator(this.type, this.id, this.op, this.a, this.b);
+
   @override
   final int type;
 
@@ -598,7 +600,8 @@ class _BinaryOperator extends _Instruction {
   final int a;
   final int b;
 
-  _BinaryOperator(this.type, this.id, this.op, this.a, this.b);
+  @override
+  List<int> get deps => <int>[a, b];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -607,12 +610,11 @@ class _BinaryOperator extends _Instruction {
     final String opString = _operatorString(op);
     out.write('$aStr $opString $bStr');
   }
-
-  @override
-  List<int> get deps => <int>[a, b];
 }
 
 class _BuiltinFunction extends _Instruction {
+  _BuiltinFunction(this.type, this.id, this.function, this.args);
+
   @override
   final int type;
 
@@ -622,7 +624,8 @@ class _BuiltinFunction extends _Instruction {
   final String function;
   final List<int> args;
 
-  _BuiltinFunction(this.type, this.id, this.function, this.args);
+  @override
+  List<int> get deps => args;
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -635,12 +638,11 @@ class _BuiltinFunction extends _Instruction {
     }
     out.write(')');
   }
-
-  @override
-  List<int> get deps => args;
 }
 
 class _TypeCast extends _Instruction {
+  _TypeCast(this.type, this.id, this.value);
+
   @override
   final int type;
 
@@ -649,7 +651,8 @@ class _TypeCast extends _Instruction {
 
   final int value;
 
-  _TypeCast(this.type, this.id, this.value);
+  @override
+  List<int> get deps => <int>[value];
 
   @override
   void write(_Transpiler t, StringBuffer out) {
@@ -657,7 +660,4 @@ class _TypeCast extends _Instruction {
     final String valueString = t.resolveResult(value);
     out.write('$typeString($valueString)');
   }
-
-  @override
-  List<int> get deps => <int>[value];
 }
