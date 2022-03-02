@@ -24,19 +24,21 @@ import android.graphics.Insets;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.hardware.HardwareBuffer;
+import android.hardware.display.DisplayManager;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.os.Build;
 import android.provider.Settings;
+import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.core.util.Consumer;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.window.layout.FoldingFeature;
 import androidx.window.layout.WindowLayoutInfo;
@@ -757,11 +759,6 @@ public class FlutterViewTest {
   public void itRegistersAndUnregistersToWindowManager() {
     Context context = Robolectric.setupActivity(Activity.class);
     FlutterView flutterView = spy(new FlutterView(context));
-    ShadowDisplay display =
-        Shadows.shadowOf(
-            ((WindowManager)
-                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay());
     WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
         mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
     // For reasoning behing using doReturn instead of when, read "Important gotcha" at
@@ -785,11 +782,6 @@ public class FlutterViewTest {
   public void itSendsHingeDisplayFeatureToFlutter() {
     Context context = Robolectric.setupActivity(Activity.class);
     FlutterView flutterView = spy(new FlutterView(context));
-    ShadowDisplay display =
-        Shadows.shadowOf(
-            ((WindowManager)
-                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay());
     when(flutterView.getContext()).thenReturn(context);
     WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
         mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
@@ -1057,9 +1049,10 @@ public class FlutterViewTest {
   private void setExpectedDisplayRotation(int rotation) {
     ShadowDisplay display =
         Shadows.shadowOf(
-            ((WindowManager)
-                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay());
+            ((DisplayManager)
+                    ApplicationProvider.getApplicationContext()
+                        .getSystemService(Context.DISPLAY_SERVICE))
+                .getDisplay(Display.DEFAULT_DISPLAY));
     display.setRotation(rotation);
   }
 

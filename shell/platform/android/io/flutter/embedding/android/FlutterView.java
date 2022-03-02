@@ -12,6 +12,7 @@ import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Insets;
 import android.graphics.Rect;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,6 +20,7 @@ import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
+import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -29,7 +31,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
-import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
@@ -603,8 +604,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     Context context = getContext();
     int orientation = context.getResources().getConfiguration().orientation;
     int rotation =
-        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
-            .getDefaultDisplay()
+        ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
+            .getDisplay(Display.DEFAULT_DISPLAY)
             .getRotation();
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
