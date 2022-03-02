@@ -695,7 +695,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   self.initialRoute = initialRoute;
 
   auto settings = [_dartProject.get() settings];
-  if (initialRoute != nil){
+  if (initialRoute != nil) {
     self.initialRoute = initialRoute;
   } else if (settings.route.empty() == false) {
     self.initialRoute = [NSString stringWithCString:settings.route.c_str()
