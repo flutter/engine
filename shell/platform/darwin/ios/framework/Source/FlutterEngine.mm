@@ -695,9 +695,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   self.initialRoute = initialRoute;
 
   auto settings = [_dartProject.get() settings];
-  if (settings.route.empty() == false) {
+  if (initialRoute != nil){
+    self.initialRoute = initialRoute;
+  } else if (settings.route.empty() == false) {
     self.initialRoute = [NSString stringWithCString:settings.route.c_str()
-                                           encoding:[NSString defaultCStringEncoding]];
+                                           encoding:NSUTF8StringEncoding];
   }
 
   FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
