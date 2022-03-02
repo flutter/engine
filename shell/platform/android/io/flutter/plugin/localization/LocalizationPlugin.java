@@ -152,7 +152,7 @@ public class LocalizationPlugin {
    * <p>FlutterEngine must be non-null when this method is invoked.
    *
    * <p>TODO(camillesimon): Remove {@link android.content.res.Configuration}'s {@code locale} when
-   * API < 24 no longer supported.
+   * API < 24 no longer supported (see https://github.com/flutter/flutter/issues/99427).
    */
   @SuppressWarnings("deprecation")
   public void sendLocalesToFlutter(@NonNull Configuration config) {
