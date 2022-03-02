@@ -40,8 +40,8 @@ static bool IsUnprintableKey(uint64_t character) {
   return character >= 0xF700 && character <= 0xF8FF;
 }
 
-static bool IsEasciiCharacter(uint64_t character) {
-  return character > 0 && character < 256;
+static bool IsAsciiCharacter(uint64_t character) {
+  return character > 0 && character < 128;
 }
 
 /**
@@ -178,10 +178,10 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
     delete[] keyLabel;
   }
 
-  // If a printable key is mapped to an non-EASCII character, use the printable
+  // If a printable key is mapped to an non-ASCII character, use the printable
   // physical key as logical key instead. This allows non-latin languages (such
   // as Russian) to produce latin logical keys so that shortcuts work correctly.
-  if (!IsEasciiCharacter(character)) {
+  if (!IsAsciiCharacter(character)) {
     NSNumber* logicalKey = [verbatimPhysicalToLogicalKey objectForKey:@(physicalKey)];
     if (logicalKey != nil) {
       return [logicalKey unsignedLongLongValue];
