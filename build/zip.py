@@ -26,7 +26,7 @@ def main(args):
       file_dict_list = json.load(source_file)
       for file_dict in file_dict_list:
         if os.path.isdir(file_dict['source']):
-          _zip_dir(f, file_dict['source'], file_dict['destination'])
+          _zip_dir(file_dict['source'], zip_file, file_dict['destination'])
         else:
           zip_file.write(file_dict['source'], file_dict['destination'])
   else:
