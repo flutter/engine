@@ -1410,7 +1410,8 @@ class Paint {
   ///
   /// When a shape is being drawn, [colorFilter] overrides [color] and [shader].
   ColorFilter? get colorFilter {
-    return _objects?[_kColorFilterIndex]?.creator as ColorFilter?;
+    final _ColorFilter? nativeFilter = _objects?[_kColorFilterIndex] as _ColorFilter?;
+    return nativeFilter?.creator;
   }
 
   set colorFilter(ColorFilter? value) {
@@ -1447,7 +1448,8 @@ class Paint {
   ///
   ///  * [MaskFilter], which is used for drawing geometry.
   ImageFilter? get imageFilter {
-    return _objects?[_kImageFilterIndex]?.creator as ImageFilter?;
+    final _ImageFilter? nativeFilter = _objects?[_kImageFilterIndex] as _ImageFilter?;
+    return nativeFilter?.creator;
   }
 
   set imageFilter(ImageFilter? value) {
