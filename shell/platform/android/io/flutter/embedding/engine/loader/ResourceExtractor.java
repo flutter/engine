@@ -42,10 +42,12 @@ class ResourceExtractor {
   @NonNull private final HashSet<String> mResources;
   private FutureTask mExtractTask;
 
-  // Thread pool settings are the same as default values from the deprecated android.os.AsyncTask
-  // API, which was previously used (see
-  // https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/os/AsyncTask.java#211).
+  /**
+   * Thread pool settings are the same as default values from the deprecated android.os.AsyncTask
+   * API, which was previously used (see {@link android.os.AsyncTask}).
+   */
   private static final int CORE_POOL_SIZE = 1;
+
   private static final int MAXIMUM_POOL_SIZE = 20;
   private static final int BACKUP_POOL_SIZE = 5;
   private static final int KEEP_ALIVE_SECONDS = 3;
