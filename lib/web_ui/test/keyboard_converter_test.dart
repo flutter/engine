@@ -304,6 +304,30 @@ void testMain() {
     );
   });
 
+  test('Non ASCII keys should use US-en logical keys', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
+    converter.handleEvent(keyDownEvent('KeyA', 'ф', 0, 0));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalKeyA,
+      logical: kLogicalKeyA,
+      character: 'ф',
+    );
+
+    converter.handleEvent(keyUpEvent('KeyA', 'ф', 0, 0));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalKeyA,
+      logical: kLogicalKeyA,
+      character: null,
+    );
+  });
+
   test('Dead keys are distinguishable', () {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {

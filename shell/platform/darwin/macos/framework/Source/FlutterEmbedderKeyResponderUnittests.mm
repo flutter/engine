@@ -265,7 +265,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 }
 
-TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiKeys) {
+TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiKeysShouldUseUsEnLogicalKeys) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
