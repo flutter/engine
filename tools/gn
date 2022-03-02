@@ -206,7 +206,7 @@ def to_gn_args(args):
     gn_args['dart_lib_export_symbols'] = False
 
     if runtime_mode == 'debug':
-        gn_args['dart_debug'] = args.unoptimized
+        gn_args['dart_runtime_mode'] = 'develop'
     elif runtime_mode == 'jit_release':
         gn_args['dart_runtime_mode'] = 'release';
     else:
