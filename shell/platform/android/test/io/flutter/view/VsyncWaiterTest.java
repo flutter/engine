@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.annotation.TargetApi;
 import android.hardware.display.DisplayManager;
 import android.os.Looper;
 import android.view.Display;
