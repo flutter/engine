@@ -42,6 +42,7 @@ abstract class PlatformBinding {
 
   String getChromeBuild(ChromeLock chromeLock);
   String getChromeDownloadUrl(String version);
+  String getChromeDriverDownloadUrl(String version);
   String getFirefoxDownloadUrl(String version);
   String getFirefoxDownloadFilename(String version);
   String getChromeExecutablePath(io.Directory versionDir);
@@ -63,6 +64,10 @@ class WindowsPlatformBinding implements PlatformBinding {
   @override
   String getChromeDownloadUrl(String version) =>
       'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F$version%2Fchrome-win.zip?alt=media';
+
+  @override
+  String getChromeDriverDownloadUrl(String version) =>
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F$version%2Fchromedriver_win32.zip?alt=media';
 
   @override
   String getChromeExecutablePath(io.Directory versionDir) =>
@@ -103,6 +108,10 @@ class LinuxPlatformBinding implements PlatformBinding {
       '$_kBaseDownloadUrl/Linux_x64%2F$version%2Fchrome-linux.zip?alt=media';
 
   @override
+  String getChromeDriverDownloadUrl(String version) =>
+      '$_kBaseDownloadUrl/Linux_x64%2F$version%2Fchromedriver_linux64.zip?alt=media';
+
+  @override
   String getChromeExecutablePath(io.Directory versionDir) =>
       path.join(versionDir.path, 'chrome');
 
@@ -141,6 +150,10 @@ class MacPlatformBinding implements PlatformBinding {
   @override
   String getChromeDownloadUrl(String version) =>
       '$_kBaseDownloadUrl/Mac%2F$version%2Fchrome-mac.zip?alt=media';
+
+  @override
+  String getChromeDriverDownloadUrl(String version) =>
+      '$_kBaseDownloadUrl/Mac%2F$version%2Fchromedriver_mac64.zip?alt=media';
 
   @override
   String getChromeExecutablePath(io.Directory versionDir) => path.join(
