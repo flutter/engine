@@ -11,9 +11,8 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 
-#if WINDOWS
 #include <windows.h>
-#endif
+
 
 namespace flutter {
 
@@ -83,7 +82,6 @@ CreateEmbedderTaskRunner(const FlutterTaskRunnerDescription* description) {
                     SAFE_ACCESS(description, identifier, 0u))};
 }
 
-#if WINDOWS
 static void WindowsPlatformThreadConfigSetter(
     const fml::Thread::ThreadConfig& config) {
   // set thread name
@@ -91,43 +89,41 @@ static void WindowsPlatformThreadConfigSetter(
   // set thread priority
   switch (config.priority) {
     case fml::Thread::ThreadPriority::BACKGROUND: {
-      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) !=  0) {
+      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::DISPLAY: {
-      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) !=  0) {
+      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::RASTER: {
-      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) !=  0) {
+      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
     default:
-      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) !=  0) {
+      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
   }
 }
-#endif
 
 std::unique_ptr<EmbedderThreadHost>
 EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
     const FlutterCustomTaskRunners* custom_task_runners,
     flutter::ThreadConfigSetter config_setter) {
   {
-    #if WINDOWS
+
     auto host =
         CreateEmbedderManagedThreadHost(custom_task_runners, WindowsPlatformThreadConfigSetter);
-    #else
-    auto host =
-        CreateEmbedderManagedThreadHost(custom_task_runners, config_setter);
-    #endif
+    // #else
+    // auto host =
+    //     CreateEmbedderManagedThreadHost(custom_task_runners, config_setter);
     if (host && host->IsValid()) {
       return host;
     }
