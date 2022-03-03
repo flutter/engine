@@ -37,7 +37,6 @@ static void WindowsPlatformThreadPrioritySetter(
     FlutterThreadPriority priority) {
   // TODO(99502): Add support for tracing to the windows embedding so we can
   // mark thread priorities and success/failure.
-  DWORD dwError;
   switch (priority) {
     case FlutterThreadPriority::kBackground: {
       SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
