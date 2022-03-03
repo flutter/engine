@@ -28,6 +28,35 @@ namespace flutter {
 
 namespace {
 
+// Update the thread priority for the Windows engine.
+static const void WindowsPlatformThreadPrioritySetter(FlutterThreadPriority priority) {
+  // set thread priority
+  switch (priority) {
+    case FlutterThreadPriority::kBackground: {
+      if (SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS) != 0) {
+
+      }
+      break;
+    }
+    case FlutterThreadPriority::kDisplay: {
+      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
+
+      }
+      break;
+    }
+    case FlutterThreadPriority::kRaster: {
+      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
+
+      }
+      break;
+    }
+    default:
+      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) != 0) {
+
+      }
+  }
+}
+
 // Creates and returns a FlutterRendererConfig that renders to the view (if any)
 // of a FlutterWindowsEngine, using OpenGL (via ANGLE).
 // The user_data received by the render callbacks refers to the
@@ -246,6 +275,7 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
+  custom_task_runners.thread_priority_setter = &WindowsPlatformThreadPrioritySetter;
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);

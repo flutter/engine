@@ -11,9 +11,6 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 
-#include <windows.h>
-
-
 namespace flutter {
 
 //------------------------------------------------------------------------------
@@ -82,48 +79,13 @@ CreateEmbedderTaskRunner(const FlutterTaskRunnerDescription* description) {
                     SAFE_ACCESS(description, identifier, 0u))};
 }
 
-static void WindowsPlatformThreadConfigSetter(
-    const fml::Thread::ThreadConfig& config) {
-  // set thread name
-  fml::Thread::SetCurrentThreadName(config);
-  // set thread priority
-  switch (config.priority) {
-    case fml::Thread::ThreadPriority::BACKGROUND: {
-      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) != 0) {
-        FML_LOG(ERROR) << "Failed to set IO task runner priority";
-      }
-      break;
-    }
-    case fml::Thread::ThreadPriority::DISPLAY: {
-      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
-        FML_LOG(ERROR) << "Failed to set IO task runner priority";
-      }
-      break;
-    }
-    case fml::Thread::ThreadPriority::RASTER: {
-      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
-        FML_LOG(ERROR) << "Failed to set IO task runner priority";
-      }
-      break;
-    }
-    default:
-      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) != 0) {
-        FML_LOG(ERROR) << "Failed to set IO task runner priority";
-      }
-  }
-}
-
 std::unique_ptr<EmbedderThreadHost>
 EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
     const FlutterCustomTaskRunners* custom_task_runners,
     flutter::ThreadConfigSetter config_setter) {
   {
-
     auto host =
-        CreateEmbedderManagedThreadHost(custom_task_runners, WindowsPlatformThreadConfigSetter);
-    // #else
-    // auto host =
-    //     CreateEmbedderManagedThreadHost(custom_task_runners, config_setter);
+        CreateEmbedderManagedThreadHost(custom_task_runners, config_setter);
     if (host && host->IsValid()) {
       return host;
     }
