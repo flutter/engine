@@ -233,6 +233,7 @@ class FlutterWindowsEngine {
   // An override of the frame interval used by EngineModifier for testing.
   std::optional<std::chrono::nanoseconds> frame_interval_override_ =
       std::nullopt;
+
   bool semantics_enabled_ = false;
 
   std::shared_ptr<AccessibilityBridge> accessibility_bridge_;

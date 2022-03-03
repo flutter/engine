@@ -18,10 +18,10 @@
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
-#ifndef WINUWP
-#include <dwmapi.h>
+#if defined(WINUWP)
 #include "flutter/shell/platform/windows/accessibility_bridge_delegate_winuwp.h"
 #else
+#include <dwmapi.h>
 #include "flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h"
 #endif  // defined(WINUWP)
 
