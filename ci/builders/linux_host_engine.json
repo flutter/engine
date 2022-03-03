@@ -59,7 +59,7 @@
                 "config": "host_debug",
                 "targets": [
                     "flutter/build/archives:artifacts",
-                    "flutter/build/archives:linux-embedder",
+                    "flutter/build/archives:embedder",
                     "flutter/build/archives:flutter_patched_sdk",
                     "flutter/build/archives:dart_sdk_archive",
                     "flutter/build/archives:flutter_web_sdk",
@@ -97,7 +97,7 @@
             "ninja": {
                 "config": "host_profile",
                 "targets": [
-                    "flutter",
+                    "flutter:unittests",
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
             },
@@ -145,7 +145,7 @@
             "ninja": {
                 "config": "host_release",
                 "targets": [
-                    "flutter",
+                    "flutter:unittests",
                     "flutter/build/archives:flutter_patched_sdk",
                     "flutter/shell/platform/linux:flutter_gtk",
                     "flutter/build/archives:flutter_web_sdk"
