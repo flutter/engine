@@ -183,7 +183,10 @@ def to_gn_args(args):
     if args.unoptimized:
       # There is no point in enabling LTO in unoptimized builds.
       enable_lto = False
-
+    if args.experimental_ios_static:
+      # xcodebuild `create-xcframework` command doesn't support LLVM Bitcode
+      # archive, only Mach-O Object archive so LTO needs to be disabled.
+      enable_lto = False
     if not sys.platform.startswith('win'):
       # The GN arg is not available in the windows toolchain.
       gn_args['enable_lto'] = enable_lto
@@ -416,6 +419,9 @@ def to_gn_args(args):
     # Impeller flags.
     gn_args['impeller_enable_playground'] = args.enable_impeller_playground
 
+    # Experimental
+    gn_args['experimental_ios_static'] = args.experimental_ios_static
+
     return gn_args
 
 def parse_args(args):
@@ -540,6 +546,10 @@ def parse_args(args):
 
   parser.add_argument('--trace-gn', default=False, action='store_true',
                        help='Write a GN trace log (gn_trace.json) in the Chromium tracing format in the build directory.')
+
+  # Experimental
+  parser.add_argument('--experimental-ios-static', default=False, action='store_true',
+                      help='Creates a Static Frameworks XCFramework in iOS instead of a dynamic one.')
 
   # Verbose output.
   parser.add_argument('--verbose', default=False, action='store_true')

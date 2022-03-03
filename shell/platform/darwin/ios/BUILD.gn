@@ -297,13 +297,38 @@ shared_library("create_flutter_framework_dylib") {
   public_configs = [ "//flutter:config" ]
 }
 
-copy("copy_dylib") {
+static_library("create_flutter_framework_static") {
   visibility = [ ":*" ]
 
-  sources = [ "$root_out_dir/libFlutter.dylib" ]
-  outputs = [ "$_flutter_framework_dir/Flutter" ]
+  output_name = "FlutterStatic"
 
-  deps = [ ":create_flutter_framework_dylib" ]
+  complete_static_lib = true
+
+  public = _flutter_framework_headers
+
+  deps = [ ":flutter_framework_source" ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+if (experimental_ios_static) {
+  copy("copy_static_archive") {
+    visibility = [ ":*" ]
+
+    sources = [ "$root_out_dir/obj/flutter/shell/platform/darwin/ios/libFlutterStatic.a" ]
+    outputs = [ "$_flutter_framework_dir/Flutter" ]
+
+    deps = [ ":create_flutter_framework_static" ]
+  }
+} else {
+  copy("copy_dylib") {
+    visibility = [ ":*" ]
+
+    sources = [ "$root_out_dir/libFlutter.dylib" ]
+    outputs = [ "$_flutter_framework_dir/Flutter" ]
+
+    deps = [ ":create_flutter_framework_dylib" ]
+  }
 }
 
 copy("copy_asan_runtime_dylib") {
@@ -404,13 +429,18 @@ group("universal_flutter_framework") {
   visibility = [ ":*" ]
   deps = [
     ":copy_and_verify_framework_module",
-    ":copy_dylib",
     ":copy_framework_icu",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",
     ":copy_framework_podspec",
     ":copy_license",
   ]
+
+  if (experimental_ios_static) {
+    deps += [ ":copy_static_archive" ]
+  } else {
+    deps += [ ":copy_dylib" ]
+  }
 
   if (is_asan) {
     deps += [ ":copy_asan_runtime_dylib" ]
