@@ -32,6 +32,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.FragmentActivity;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
@@ -47,6 +48,8 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+
+import io.flutter.embedding.android.FlutterFragmentActivity;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
@@ -519,8 +522,19 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
-    WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
-    when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
+  try (ActivityScenario<FlutterFragmentActivity> scenario =
+    ActivityScenario.launch(FlutterFragmentActivity.class)) {
+  scenario.onActivity(
+      activity -> {
+        System.out.println("hello");
+      });
+}
+
+    WindowInsetsController fakeWindowInsetsController2 = mock(WindowInsetsController.class);
+    when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController2);
+
+    WindowInsetsControllerCompat fakeWindowInsetsController =
+    new WindowInsetsControllerCompat(fakeWindow, testView);    
 
     platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
 
@@ -528,34 +542,13 @@ public class PlatformPluginTest {
     builder.setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 200, 0, 200));
     WindowInsets fullScreenInsets = builder.build();
 
-    platformPlugin
-        .getInsetsListener()
-        .onApplyWindowInsets(testView, WindowInsetsCompat.toWindowInsetsCompat(fullScreenInsets));
+    // platformPlugin
+    //     .getInsetsListener()
+    //     .onApplyWindowInsets(testView, WindowInsetsCompat.toWindowInsetsCompat(fullScreenInsets));
 
-    // (1.5) Attempt with setting visibility of system bars
     fakeWindowInsetsController.show(WindowInsetsCompat.Type.systemBars());
+    verify(platformPlugin.getInsetsListener()).onApplyWindowInsets(testView, WindowInsetsCompat.toWindowInsetsCompat(fullScreenInsets));
     verify(fakePlatformChannel).systemChromeChanged(false);
-
-    // (2) Attempt with setting systemUiMode:
-    // platformPlugin.mPlatformMessageHandler.showSystemUiMode(
-    //     PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
-    // verify(fakePlatformChannel).systemChromeChanged(true);
-
-    // (3) Attempt with using real activity:
-    // try (ActivityScenario<Activity> scenario =
-    // ActivityScenario.launch(Activity.class)) {
-    //   scenario.onActivity(
-    //       activity -> {
-    //         View view = activity.getWindow().getDecorView();
-    //         WindowInsetsControllerCompat windowInsetsControllerCompat = new
-    // WindowInsetsControllerCompat(activity.getWindow(), view);
-    //         activity.getWindow().setDecorFitsSystemWindows(false);
-    //                 windowInsetsControllerCompat.show(WindowInsetsCompat.Type.systemBars());
-    //         System.out.println(view.getRootWindowInsets());
-    //
-    // assertTrue(view.getRootWindowInsets().isVisible(WindowInsetsCompat.Type.systemBars()));
-    //       });
-    //   }
   }
 
   @Config(sdk = 30)
