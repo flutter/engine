@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <optional>
@@ -71,9 +72,10 @@ class FlutterWindowsEngine {
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();
 
-  // Sets |callback| to be called when the plugin registrar is destroyed.
-  void SetPluginRegistrarDestructionCallback(
-      FlutterDesktopOnPluginRegistrarDestroyed callback);
+  // Registers |callback| to be called when the plugin registrar is destroyed.
+  void AddPluginRegistrarDestructionCallback(
+      FlutterDesktopOnPluginRegistrarDestroyed callback,
+      FlutterDesktopPluginRegistrarRef registrar);
 
   // Sets switches member to the given switches.
   void SetSwitches(const std::vector<std::string>& switches);
@@ -149,6 +151,9 @@ class FlutterWindowsEngine {
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
+  // Invoke on the embedder's vsync callback to schedule a frame.
+  void OnVsync(intptr_t baton);
+
   // Dispatches a semantics action to the specified semantics node.
   bool DispatchSemanticsAction(uint64_t id,
                                FlutterSemanticsAction action,
@@ -158,7 +163,9 @@ class FlutterWindowsEngine {
   void UpdateSemanticsEnabled(bool enabled);
 
   // Returns true if the semantics tree is enabled.
-  bool semantics_enabled() const { return semantics_enabled_; }
+  bool semantics_enabled() const {
+    return semantics_enabled_;
+  }
 
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
@@ -215,10 +222,21 @@ class FlutterWindowsEngine {
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<BasicMessageChannel<rapidjson::Document>> settings_channel_;
 
-  // A callback to be called when the engine (and thus the plugin registrar)
-  // is being destroyed.
-  FlutterDesktopOnPluginRegistrarDestroyed
-      plugin_registrar_destruction_callback_ = nullptr;
+  // Callbacks to be called when the engine (and thus the plugin registrar) is
+  // being destroyed.
+  std::map<FlutterDesktopOnPluginRegistrarDestroyed,
+           FlutterDesktopPluginRegistrarRef>
+      plugin_registrar_destruction_callbacks_;
+
+  // The approximate time between vblank events.
+  std::chrono::nanoseconds FrameInterval();
+
+  // The start time used to align frames.
+  std::chrono::nanoseconds start_time_ = std::chrono::nanoseconds::zero();
+
+  // An override of the frame interval used by EngineModifier for testing.
+  std::optional<std::chrono::nanoseconds> frame_interval_override_ =
+      std::nullopt;
 
   bool semantics_enabled_ = false;
 
