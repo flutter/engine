@@ -29,7 +29,7 @@ namespace flutter {
 namespace {
 
 // Update the thread priority for the Windows engine.
-static const void WindowsPlatformThreadPrioritySetter(
+static void WindowsPlatformThreadPrioritySetter(
     FlutterThreadPriority priority) {
   // We do not check if setting thread priority succeeds because failure is not
   // actionable. For normal or default priority we do not need to set the
