@@ -210,7 +210,7 @@ data:
     final String logLevel = verbose ? 'debug' : 'warning';
     vprint('  Running CIPD $cipdCommand');
     return runProcess('cipd', <String>[
-      'pkg-build', // TODO(dit): use cipdCommand
+      cipdCommand,
       '--pkg-def',
       path.basename(config.path),
       '--json-output',
