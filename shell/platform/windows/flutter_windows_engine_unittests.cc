@@ -69,6 +69,10 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         EXPECT_EQ(args->custom_dart_entrypoint, nullptr);
         EXPECT_NE(args->vsync_callback, nullptr);
 
+        args->custom_task_runners->thread_priority_setter(
+            FlutterThreadPriority::kRaster);
+        EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+                  THREAD_PRIORITY_ABOVE_NORMAL);
         return kSuccess;
       }));
 
