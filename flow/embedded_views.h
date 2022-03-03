@@ -231,7 +231,11 @@ class EmbeddedViewParams {
            matrix_ == other.matrix_;
   }
 
+  bool has_blur() const { return has_blur_; }
+  void SetHasBlur(bool value) { has_blur_ = value; }
+
  private:
+  bool has_blur_;
   SkMatrix matrix_;
   SkSize size_points_;
   MutatorsStack mutators_stack_;
@@ -296,6 +300,10 @@ class ExternalViewEmbedder {
   }
 
   virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
+
+  virtual EmbeddedViewParams* GetEmbeddedViewParams(int64_t view_id) {
+    return nullptr;
+  }
 
   // Must be called on the UI thread.
   virtual SkCanvas* CompositeEmbeddedView(int view_id) = 0;

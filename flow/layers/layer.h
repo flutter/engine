@@ -263,6 +263,9 @@ class Layer {
     subtree_has_platform_view_ = value;
   }
 
+  void set_subtree_has_blur(bool value) { subtree_has_blur_ = value; }
+  bool subtree_has_blur() const { return subtree_has_blur_; }
+
   // Returns true if the layer can render with an added opacity value inherited
   // from an OpacityLayer ancestor and delivered to its |Paint| method through
   // the |PaintContext.inherited_opacity| field. This flag can be set either
@@ -344,6 +347,7 @@ class Layer {
   uint64_t unique_id_;
   uint64_t original_layer_id_;
   bool subtree_has_platform_view_;
+  bool subtree_has_blur_;
   bool layer_can_inherit_opacity_;
 
   static uint64_t NextUniqueID();

@@ -416,7 +416,18 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
   CGFloat screenScale = [UIScreen mainScreen].scale;
   clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
                                   rect.width() / screenScale, rect.height() / screenScale);
+  if (params.has_backdropfilter()) {
+    UIView* platformView = GetPlatformViewByID(view_id);
+    UIBlurEffect* blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+    UIVisualEffectView* effectview = [[UIVisualEffectView alloc] initWithEffect:blur];
+    effectview.frame = platformView.frame;
+    [platformView addSubview:effectview];
+  }
   ApplyMutators(mutatorStack, touchInterceptor);
+}
+
+EmbeddedViewParams* FlutterPlatformViewsController::GetEmbeddedViewParams(int64_t view_id) {
+  return &current_composition_params_[view_id];
 }
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
@@ -570,6 +581,7 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   active_composition_order_.clear();
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t platform_view_id = composition_order_[i];
+    GetEmbeddedViewParams(platform_view_id);
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
     UIView* platform_view_root = root_views_[platform_view_id].get();
 

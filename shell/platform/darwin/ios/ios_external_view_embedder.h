@@ -49,6 +49,8 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
+  EmbeddedViewParams* GetEmbeddedViewParams(int64_t view_id) override;
+
   // |ExternalViewEmbedder|
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 

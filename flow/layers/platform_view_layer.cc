@@ -36,6 +36,9 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
                       "does not support embedding";
     return;
   }
+  auto params = context.view_embedder->GetEmbeddedViewParams(view_id_);
+  params->SetHasBlur(subtree_has_blur());
+
   SkCanvas* canvas = context.view_embedder->CompositeEmbeddedView(view_id_);
   context.leaf_nodes_canvas = canvas;
 }

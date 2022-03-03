@@ -49,6 +49,10 @@ void IOSExternalViewEmbedder::PrerollCompositeEmbeddedView(
   platform_views_controller_->PrerollCompositeEmbeddedView(view_id, std::move(params));
 }
 
+EmbeddedViewParams* IOSExternalViewEmbedder::GetEmbeddedViewParams(int64_t view_id) {
+  return platform_views_controller_->GetEmbeddedViewParams(view_id);
+}
+
 // |ExternalViewEmbedder|
 PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
