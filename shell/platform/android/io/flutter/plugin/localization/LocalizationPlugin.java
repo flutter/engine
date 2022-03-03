@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.localization;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
@@ -22,6 +23,7 @@ public class LocalizationPlugin {
   @NonNull private final Context context;
 
   @VisibleForTesting
+  @TargetApi(17)
   final LocalizationChannel.LocalizationMessageHandler localizationMessageHandler =
       new LocalizationChannel.LocalizationMessageHandler() {
         @Override
