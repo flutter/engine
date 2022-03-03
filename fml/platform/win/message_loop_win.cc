@@ -9,8 +9,8 @@
 
 #include "flutter/fml/logging.h"
 
-const uint32_t kHighResolutionTimer = 1;  // 1 ms
-const uint32_t kLowResolutionTimer = 15;  // 15 ms
+constexpr uint32_t kHighResolutionTimer = 1;  // 1 ms
+constexpr uint32_t kLowResolutionTimer = 15;  // 15 ms
 
 namespace fml {
 
