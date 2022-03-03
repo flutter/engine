@@ -227,7 +227,7 @@ typedef enum {
 } FlutterTextDirection;
 
 /// Valid values for priority of Thread.
-typedef enum  {
+typedef enum {
   /// Suitable for threads that shouldn't disrupt high priority work.
   kBackground = 0,
   /// Default priority level.

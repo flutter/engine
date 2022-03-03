@@ -29,10 +29,13 @@ namespace flutter {
 namespace {
 
 // Update the thread priority for the Windows engine.
-static const void WindowsPlatformThreadPrioritySetter(FlutterThreadPriority priority) {
+static const void WindowsPlatformThreadPrioritySetter(
+    FlutterThreadPriority priority) {
   // We do not check if setting thread priority succeeds because failure is not
-  // actionable. For normal or default priority we do not need to set the priority
-  // class.
+  // actionable. For normal or default priority we do not need to set the
+  // priority class.
+  // TODO(99502): Add support for tracing to the windows embedding so we can
+  // mark thread priorities.
   switch (priority) {
     case FlutterThreadPriority::kBackground: {
       SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
@@ -267,7 +270,8 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
-  custom_task_runners.thread_priority_setter = &WindowsPlatformThreadPrioritySetter;
+  custom_task_runners.thread_priority_setter =
+      &WindowsPlatformThreadPrioritySetter;
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);

@@ -15,8 +15,8 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/thread.h"
 #include "flutter/fml/native_library.h"
+#include "flutter/fml/thread.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 
@@ -1452,7 +1452,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   }
 #endif
   auto custom_task_runners = SAFE_ACCESS(args, custom_task_runners, nullptr);
-  auto thread_config_callback = [&custom_task_runners](const fml::Thread::ThreadConfig& config) {
+  auto thread_config_callback = [&custom_task_runners](
+                                    const fml::Thread::ThreadConfig& config) {
     fml::Thread::SetCurrentThreadName(config);
     if (!custom_task_runners || !custom_task_runners->thread_priority_setter) {
       return;
