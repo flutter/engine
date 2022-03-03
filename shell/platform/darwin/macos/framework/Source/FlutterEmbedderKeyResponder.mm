@@ -684,8 +684,19 @@ const char* getEventString(NSString* characters) {
     // key up event to the window where the corresponding key down occurred.
     // However this might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.
-    [callback resolveTo:TRUE];
-    return;
+
+    // TODO
+    FlutterKeyEvent flutterEvent = {
+        .struct_size = sizeof(FlutterKeyEvent),
+        .timestamp = GetFlutterTimestampFrom(event.timestamp),
+        .type = kFlutterKeyEventTypeUp,
+        .physical = physicalKey,
+        .logical = logicalKey,
+        .character = nil,
+        .synthesized = true,
+    };
+    [self sendSynthesizedFlutterEvent:flutterEvent guard:callback];
+    pressedLogicalKey = nil;
   }
 
   if (pressedLogicalKey == nil) {
