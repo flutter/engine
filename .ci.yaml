@@ -295,8 +295,9 @@ targets:
     scheduler: luci
 
   - name: Mac Web Engine
-    recipe: web_engine
+    recipe: engine/web_engine
     properties:
+      add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
       dependencies: >-
         [
@@ -319,6 +320,10 @@ targets:
     properties:
       config_name: mac_ios_engine
       environment: Staging
+      dependencies: >-
+        [
+          {"dependency": "jazzy"}
+        ]
     scheduler: luci
 
   - name:  Mac mac_ios_engine_profile
@@ -422,4 +427,3 @@ targets:
   - name: Linux ci_yaml engine roller
     bringup: true
     recipe: infra/ci_yaml
-    scheduler: luci

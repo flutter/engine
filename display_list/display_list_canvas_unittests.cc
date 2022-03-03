@@ -843,7 +843,7 @@ class CanvasCompareTester {
                        "saveLayer ColorFilter, no bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter.sk_filter());
+                         save_p.setColorFilter(filter.skia_object());
                          cv->saveLayer(nullptr, &save_p);
                          p.setStrokeWidth(5.0);
                        },
@@ -861,7 +861,7 @@ class CanvasCompareTester {
                        "saveLayer ColorFilter and bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter.sk_filter());
+                         save_p.setColorFilter(filter.skia_object());
                          cv->saveLayer(RenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        },
@@ -1149,7 +1149,7 @@ class CanvasCompareTester {
                        "ColorFilter == RotateRGB",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter.sk_filter());
+                         p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
@@ -1165,7 +1165,7 @@ class CanvasCompareTester {
                        "ColorFilter == Invert",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter.sk_filter());
+                         p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
@@ -1237,8 +1237,7 @@ class CanvasCompareTester {
     }
 
     {
-      sk_sp<SkMaskFilter> filter =
-          SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 5.0);
+      const DlBlurMaskFilter filter(kNormal_SkBlurStyle, 5.0);
       BoundsTolerance blur5Tolerance = tolerance.addBoundsPadding(4, 4);
       {
         // Stroked primitives need some non-trivial stroke size to be blurred
@@ -1247,30 +1246,13 @@ class CanvasCompareTester {
                        "MaskFilter == Blur 5",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
+                         p.setMaskFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
-                         b.setMaskFilter(filter);
+                         b.setMaskFilter(&filter);
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur 5 Cleanup";
-      {
-        RenderWith(testP, env, blur5Tolerance,
-                   CaseParameters(
-                       "MaskFilter == Blur(Normal, 5.0)",
-                       [=](SkCanvas*, SkPaint& p) {
-                         p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
-                       },
-                       [=](DisplayListBuilder& b) {
-                         b.setStrokeWidth(5.0);
-                         b.setMaskBlurFilter(kNormal_SkBlurStyle, 5.0);
-                       }));
-      }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur(Normal, 5.0) Cleanup";
     }
 
     {
