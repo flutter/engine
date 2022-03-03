@@ -30,30 +30,22 @@ namespace {
 
 // Update the thread priority for the Windows engine.
 static const void WindowsPlatformThreadPrioritySetter(FlutterThreadPriority priority) {
-  // set thread priority
+  // We do not check if setting thread priority succeeds because failure is not
+  // actionable. For normal or default priority we do not need to set the priority
+  // class.
   switch (priority) {
     case FlutterThreadPriority::kBackground: {
-      if (SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS) != 0) {
-
-      }
+      SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
       break;
     }
     case FlutterThreadPriority::kDisplay: {
-      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
-
-      }
+      SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
       break;
     }
     case FlutterThreadPriority::kRaster: {
-      if (SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) != 0) {
-
-      }
+      SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
       break;
     }
-    default:
-      if (SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) != 0) {
-
-      }
   }
 }
 

@@ -62,6 +62,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         EXPECT_EQ(strcmp(args->dart_entrypoint_argv[1], "arg2"), 0);
         EXPECT_NE(args->platform_message_callback, nullptr);
         EXPECT_NE(args->custom_task_runners, nullptr);
+        EXPECT_NE(args->custom_task_runners->thread_priority_setter, nullptr);
         EXPECT_EQ(args->custom_dart_entrypoint, nullptr);
 
         return kSuccess;
