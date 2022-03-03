@@ -680,18 +680,18 @@ const char* getEventString(NSString* characters) {
   bool isARepeat = event.isARepeat;
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   if (pressedLogicalKey != nil && !isARepeat) {
-    // Normally the key up events won't be missed since macOS always sends the
-    // key up event to the window where the corresponding key down occurred.
-    // However this might happen in add-to-app scenarios if the focus is changed
+    // This might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.
-
-    // TODO
+    //
+    // This might also happen when a key event is forged (such as by an
+    // IME) using the same keyCode as an unreleased key. See
+    // https://github.com/flutter/flutter/issues/82673#issuecomment-988661079
     FlutterKeyEvent flutterEvent = {
         .struct_size = sizeof(FlutterKeyEvent),
         .timestamp = GetFlutterTimestampFrom(event.timestamp),
         .type = kFlutterKeyEventTypeUp,
         .physical = physicalKey,
-        .logical = logicalKey,
+        .logical = [pressedLogicalKey unsignedLongLongValue],
         .character = nil,
         .synthesized = true,
     };
