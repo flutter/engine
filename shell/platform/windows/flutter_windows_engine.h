@@ -162,7 +162,9 @@ class FlutterWindowsEngine {
   void UpdateSemanticsEnabled(bool enabled);
 
   // Returns true if the semantics tree is enabled.
-  bool semantics_enabled() const { return semantics_enabled_; }
+  bool semantics_enabled() const {
+    return semantics_enabled_;
+  }
 
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
