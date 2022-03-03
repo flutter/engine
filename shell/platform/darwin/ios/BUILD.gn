@@ -315,7 +315,9 @@ if (experimental_ios_static) {
   copy("copy_static_archive") {
     visibility = [ ":*" ]
 
-    sources = [ "$root_out_dir/obj/flutter/shell/platform/darwin/ios/libFlutterStatic.a" ]
+    sources = [
+      "$root_out_dir/obj/flutter/shell/platform/darwin/ios/libFlutterStatic.a",
+    ]
     outputs = [ "$_flutter_framework_dir/Flutter" ]
 
     deps = [ ":create_flutter_framework_static" ]

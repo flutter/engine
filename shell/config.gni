@@ -10,6 +10,7 @@ declare_args() {
   shell_enable_vulkan = false
 
   shell_enable_software = true
+
   # experimental
   experimental_ios_static = false
 }
