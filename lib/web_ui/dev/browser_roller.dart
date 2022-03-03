@@ -13,23 +13,7 @@ import 'common.dart';
 import 'utils.dart';
 
 final ArgParser _argParser = ArgParser(allowTrailingOptions: false)
-  ..addOption(
-    'version-tag',
-    abbr: 't',
-    help: 'The tag to assign to the uploaded package. This label can be used '
-          'to refer to this version from .ci.yaml.',
-    mandatory: true,
-    valueHelp: 'VERSION'
-  )..addOption(
-    'platform',
-    abbr: 'p',
-    // See _platformBindings below
-    allowed: <String>['linux', 'mac', 'windows'],
-    help: 'The platform to download. If not passed, the script will download '
-          'for all available platforms. One of: ',
-    mandatory: false,
-    valueHelp: 'PLATFORM',
-  )..addFlag(
+  ..addFlag(
     'dry-run',
     defaultsTo: false,
     help: 'Whether or not to push changes to CIPD. When --dry-run is set, the '
@@ -45,8 +29,6 @@ final ArgParser _argParser = ArgParser(allowTrailingOptions: false)
     negatable: false,
   );
 
-late final String versionTag;
-late final String? desiredPlatform;
 late final bool dryRun;
 late final bool verbose;
 
@@ -79,8 +61,6 @@ ${_argParser.usage}
 
 // Initialize globals from the parsed command-line arguments.
 void processArgs(ArgResults args) {
-  versionTag = args['version-tag'] as String;
-  desiredPlatform = args['platform'] as String?;
   dryRun = args['dry-run'] as bool;
   verbose = args['verbose'] as bool;
 }
@@ -109,16 +89,12 @@ class _BrowserRoller {
   Future<void> roll() async {
     for (final MapEntry<String, PlatformBinding> entry in _platformBindings.entries) {
       final String platform = entry.key;
-      if (desiredPlatform != null && platform != desiredPlatform) {
-        vprint('Skipped platform: $platform');
-        continue;
-      }
       final PlatformBinding binding = entry.value;
       await _rollChromium(platform, binding);
       await _rollChromeDriver(platform, binding);
     }
     if (dryRun) {
-      print('\nDry Run! Non-published roll artifacts kept here: ${_rollDir.path}\n');
+      print('\nDry Run Done!\nNon-published roll artifacts kept here: ${_rollDir.path}\n');
     } else {
       // Clean-up
       vprint('\nDeleting temporary directory: ${_rollDir.path}');
@@ -130,13 +106,13 @@ class _BrowserRoller {
   // Returns the contents for the CIPD config required to publish a new chromium package.
   String _getCipdChromiumConfig({
     required String platform,
-    required String version,
-    required String build,
+    required String majorVersion,
+    required String buildId,
     required String root,
   }) {
     return '''
 package: flutter_internal/browsers/chrome/$platform-amd64
-description: Chromium $version (build $build) used for testing
+description: Chromium $majorVersion (build $buildId) used for testing
 preserve_writable: true
 root: $root
 data:
@@ -147,13 +123,13 @@ data:
   // Returns the contents for the CIPD config required to publish a new chromedriver package.
   String _getCipdChromedriverConfig({
     required String platform,
-    required String version,
-    required String build,
+    required String majorVersion,
+    required String buildId,
     required String root,
   }) {
     return '''
 package: flutter_internal/browser-drivers/chrome/$platform-amd64
-description: Chromedriver for Chromium $version (build $build) used for testing
+description: Chromedriver for Chromium $majorVersion (build $buildId) used for testing
 preserve_writable: true
 root: $root
 data:
@@ -224,7 +200,11 @@ data:
   }
 
   // Runs a CIPD command to upload a package defined by its `config` file.
-  Future<int> _uploadToCipd({required io.File config}) {
+  Future<int> _uploadToCipd({
+    required io.File config,
+    required String version,
+    required String buildId,
+  }) {
     final String cipdCommand = dryRun ? 'pkg-build' : 'create';
     // CIPD won't fully shut up even in 'error' mode
     final String logLevel = verbose ? 'debug' : 'warning';
@@ -239,7 +219,9 @@ data:
       logLevel,
       if (!dryRun) ...<String>[
         '--tag',
-        versionTag,
+        'version:$version',
+        '--ref',
+        buildId,
       ],
       if (dryRun) ...<String>[
         '--out',
@@ -252,8 +234,10 @@ data:
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromium(String platform, PlatformBinding binding) async {
     final String chromeBuild = binding.getChromeBuild(_lock.chromeLock);
+    final String majorVersion = _lock.chromeLock.version;
     final String url = binding.getChromeDownloadUrl(chromeBuild);
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform));
+    final String relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
     await platformDir.create(recursive: true);
 
     print('\nRolling Chromium for $platform (build $chromeBuild)');
@@ -263,56 +247,51 @@ data:
 
     await _unzipAndDeleteFile(chromeDownload, platformDir);
 
-    // Zips might create spurious subdirs, find them and take them into account for our root CIPD param
-    final io.Directory? actualContentRootDir = await _locateContentRoot(platformDir);
-    assert(actualContentRootDir != null);
-    final String relativePlatformDir = path.relative(actualContentRootDir!.path, from: _rollDir.path);
-
     // Create the config manifest to upload to CIPD
-    final String cipdConfigFilePath = path.join(_rollDir.path, 'cipd.chromium.$platform.yaml');
     final io.File cipdConfigFile = await _writeFile(
-        cipdConfigFilePath,
+        path.join(_rollDir.path, 'cipd.chromium.$platform.yaml'),
         _getCipdChromiumConfig(
             platform: platform,
-            version: versionTag,
-            build: chromeBuild,
-            root: relativePlatformDir,
+            majorVersion: majorVersion,
+            buildId: chromeBuild,
+            root: relativePlatformDirPath,
         ));
     // Run CIPD
-    await _uploadToCipd(config: cipdConfigFile);
+    await _uploadToCipd(config: cipdConfigFile, version: majorVersion, buildId: chromeBuild);
   }
 
   // Downloads Chromedriver from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromeDriver(String platform, PlatformBinding binding) async {
     final String chromeBuild = binding.getChromeBuild(_lock.chromeLock);
+    final String majorVersion = _lock.chromeLock.version;
     final String url = binding.getChromeDriverDownloadUrl(chromeBuild);
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform}_driver'));
     await platformDir.create(recursive: true);
 
-    print('\nRolling Chromedriver for $platform (build $chromeBuild)');
+    print('\nRolling Chromedriver for $platform (version $majorVersion, build $chromeBuild)');
     vprint('  Created target directory [${platformDir.path}]');
 
     final io.File chromedriverDownload = await _downloadTemporaryFile(url);
 
     await _unzipAndDeleteFile(chromedriverDownload, platformDir);
 
-    // Zips might create spurious subdirs, find them and take them into account for our root CIPD param
-    final io.Directory? actualContentRootDir = await _locateContentRoot(platformDir);
-    assert(actualContentRootDir != null);
-    final String relativePlatformDir = path.relative(actualContentRootDir!.path, from: _rollDir.path);
+    // Chromedriver zip creates a spurious subdir, that we CD into, until we find
+    // the actual contents of the package.
+    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+    assert(actualContentRoot != null);
+    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
 
     // Create the config manifest to upload to CIPD
-    final String cipdConfigFilePath = path.join(_rollDir.path, 'cipd.chromedriver.$platform.yaml');
     final io.File cipdConfigFile = await _writeFile(
-        cipdConfigFilePath,
+        path.join(_rollDir.path, 'cipd.chromedriver.$platform.yaml'),
         _getCipdChromedriverConfig(
             platform: platform,
-            version: versionTag,
-            build: chromeBuild,
-            root: relativePlatformDir,
+            majorVersion: majorVersion,
+            buildId: chromeBuild,
+            root: relativePlatformDirPath,
         ));
     // Run CIPD
-    await _uploadToCipd(config: cipdConfigFile);
+    await _uploadToCipd(config: cipdConfigFile, version: majorVersion, buildId: chromeBuild);
   }
 }
