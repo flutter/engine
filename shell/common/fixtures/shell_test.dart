@@ -13,6 +13,29 @@ void nativeReportTimingsCallback(List<int> timings) native 'NativeReportTimingsC
 void nativeOnBeginFrame(int microseconds) native 'NativeOnBeginFrame';
 void nativeOnPointerDataPacket(List<int> sequences) native 'NativeOnPointerDataPacket';
 
+
+@pragma('vm:entry-point')
+void drawFrames() {
+  // Wait for native to tell us to start going.
+  notifyNative();
+
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
+    final SceneBuilder builder = SceneBuilder();
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(Offset.zero, picture);
+
+    final Scene scene = builder.build();
+    window.render(scene);
+
+    scene.dispose();
+    picture.dispose();
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
 @pragma('vm:entry-point')
 void reportTimingsMain() {
   PlatformDispatcher.instance.onReportTimings = (List<FrameTiming> timings) {
@@ -32,6 +55,7 @@ void onBeginFrameMain() {
   PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
     nativeOnBeginFrame(beginTime.inMicroseconds);
   };
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
@@ -223,4 +247,26 @@ void canAccessResourceFromAssetDir() async {
       notifyCanAccessResource(byteData != null);
     },
   );
+}
+
+void notifyNativeWhenEngineRun(bool success) native 'NotifyNativeWhenEngineRun';
+
+void notifyNativeWhenEngineSpawn(bool success) native 'NotifyNativeWhenEngineSpawn';
+
+@pragma('vm:entry-point')
+void canReceiveArgumentsWhenEngineRun(List<String> args) {
+  notifyNativeWhenEngineRun(args.length == 2 && args[0] == 'foo' && args[1] == 'bar');
+}
+
+@pragma('vm:entry-point')
+void canReceiveArgumentsWhenEngineSpawn(List<String> args) {
+  notifyNativeWhenEngineSpawn(args.length == 2 && args[0] == 'arg1' && args[1] == 'arg2');
+}
+
+@pragma('vm:entry-point')
+void canScheduleFrameFromPlatform() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
+    nativeOnBeginFrame(beginTime.inMicroseconds);
+  };
+  notifyNative();
 }

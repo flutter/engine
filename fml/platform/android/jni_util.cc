@@ -6,10 +6,10 @@
 
 #include <sys/prctl.h>
 
-#include <codecvt>
 #include <string>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/string_conversion.h"
 #include "flutter/fml/thread_local.h"
 
 namespace fml {
@@ -52,7 +52,7 @@ JNIEnv* AttachCurrentThread() {
   } else {
     args.name = thread_name;
   }
-  jint ret = g_jvm->AttachCurrentThread(&env, &args);
+  [[maybe_unused]] jint ret = g_jvm->AttachCurrentThread(&env, &args);
   FML_DCHECK(JNI_OK == ret);
 
   FML_DCHECK(tls_jni_detach.get() == nullptr);
@@ -67,12 +67,6 @@ void DetachFromVM() {
   }
 }
 
-static std::string UTF16StringToUTF8String(const char16_t* chars, size_t len) {
-  std::u16string u16_string(chars, len);
-  return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}
-      .to_bytes(u16_string);
-}
-
 std::string JavaStringToString(JNIEnv* env, jstring str) {
   if (env == nullptr || str == nullptr) {
     return "";
@@ -81,21 +75,17 @@ std::string JavaStringToString(JNIEnv* env, jstring str) {
   if (chars == nullptr) {
     return "";
   }
-  std::string u8_string = UTF16StringToUTF8String(
-      reinterpret_cast<const char16_t*>(chars), env->GetStringLength(str));
+  std::u16string u16_string(reinterpret_cast<const char16_t*>(chars),
+                            env->GetStringLength(str));
+  std::string u8_string = Utf16ToUtf8(u16_string);
   env->ReleaseStringChars(str, chars);
   ASSERT_NO_EXCEPTION();
   return u8_string;
 }
 
-static std::u16string UTF8StringToUTF16String(const std::string& string) {
-  return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}
-      .from_bytes(string);
-}
-
 ScopedJavaLocalRef<jstring> StringToJavaString(JNIEnv* env,
                                                const std::string& u8_string) {
-  std::u16string u16_string = UTF8StringToUTF16String(u8_string);
+  std::u16string u16_string = Utf8ToUtf16(u8_string);
   auto result = ScopedJavaLocalRef<jstring>(
       env, env->NewString(reinterpret_cast<const jchar*>(u16_string.data()),
                           u16_string.length()));
@@ -119,6 +109,35 @@ std::vector<std::string> StringArrayToVector(JNIEnv* env, jobjectArray array) {
   for (jsize i = 0; i < length; ++i) {
     ScopedJavaLocalRef<jstring> java_string(
         env, static_cast<jstring>(env->GetObjectArrayElement(array, i)));
+    out[i] = JavaStringToString(env, java_string.obj());
+  }
+
+  return out;
+}
+
+std::vector<std::string> StringListToVector(JNIEnv* env, jobject list) {
+  std::vector<std::string> out;
+  if (env == nullptr || list == nullptr) {
+    return out;
+  }
+
+  ScopedJavaLocalRef<jclass> list_clazz(env, env->FindClass("java/util/List"));
+  FML_DCHECK(!list_clazz.is_null());
+
+  jmethodID list_get =
+      env->GetMethodID(list_clazz.obj(), "get", "(I)Ljava/lang/Object;");
+  jmethodID list_size = env->GetMethodID(list_clazz.obj(), "size", "()I");
+
+  jint size = env->CallIntMethod(list, list_size);
+
+  if (size == 0) {
+    return out;
+  }
+
+  out.resize(size);
+  for (jint i = 0; i < size; ++i) {
+    ScopedJavaLocalRef<jstring> java_string(
+        env, static_cast<jstring>(env->CallObjectMethod(list, list_get, i)));
     out[i] = JavaStringToString(env, java_string.obj());
   }
 
@@ -153,9 +172,10 @@ ScopedJavaLocalRef<jobjectArray> VectorToBufferArray(
       env->NewObjectArray(vector.size(), byte_buffer_clazz.obj(), NULL);
   ASSERT_NO_EXCEPTION();
   for (size_t i = 0; i < vector.size(); ++i) {
+    uint8_t* data = const_cast<uint8_t*>(vector[i].data());
     ScopedJavaLocalRef<jobject> item(
-        env,
-        env->NewDirectByteBuffer((void*)(vector[i].data()), vector[i].size()));
+        env, env->NewDirectByteBuffer(reinterpret_cast<void*>(data),
+                                      vector[i].size()));
     env->SetObjectArrayElement(java_array, i, item.obj());
   }
   return ScopedJavaLocalRef<jobjectArray>(env, java_array);
@@ -166,16 +186,18 @@ bool HasException(JNIEnv* env) {
 }
 
 bool ClearException(JNIEnv* env) {
-  if (!HasException(env))
+  if (!HasException(env)) {
     return false;
+  }
   env->ExceptionDescribe();
   env->ExceptionClear();
   return true;
 }
 
 bool CheckException(JNIEnv* env) {
-  if (!HasException(env))
+  if (!HasException(env)) {
     return true;
+  }
 
   jthrowable exception = env->ExceptionOccurred();
   env->ExceptionClear();

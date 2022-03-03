@@ -7,9 +7,9 @@ import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show domRenderer, window;
+import 'package:ui/src/engine.dart' show flutterViewEmbedder, window;
 import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/dom_renderer.dart';
+import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -46,11 +46,11 @@ void main() {
 }
 
 void testMain() {
-  final html.Element glassPane = domRenderer.glassPaneElement!;
+  final html.Element glassPane = flutterViewEmbedder.glassPaneElement!;
   double dpi = 1.0;
 
   setUp(() {
-    ensureDomRendererInitialized();
+    ensureFlutterViewEmbedderInitialized();
     ui.window.onPointerDataPacket = null;
     dpi = window.devicePixelRatio;
   });
@@ -2325,7 +2325,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? deltaX,
     required double? deltaY,
   }) {
-    final Function jsWheelEvent = js_util.getProperty(html.window, 'WheelEvent') as Function;
+    final Function jsWheelEvent = js_util.getProperty<Function>(html.window, 'WheelEvent');
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
       <String, dynamic>{
@@ -2336,10 +2336,10 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         'deltaY': deltaY,
       }
     ];
-    return js_util.callConstructor(
+    return js_util.callConstructor<html.Event>(
       jsWheelEvent,
       js_util.jsify(eventArgs) as List<Object?>,
-    ) as html.Event;
+    );
   }
 }
 
@@ -2553,7 +2553,7 @@ class _MouseEventContext extends _BasicEventContext
     double? clientY,
   }) {
     final Function jsMouseEvent =
-        js_util.getProperty(html.window, 'MouseEvent') as Function;
+        js_util.getProperty<Function>(html.window, 'MouseEvent');
     final List<dynamic> eventArgs = <dynamic>[
       type,
       <String, dynamic>{
@@ -2563,10 +2563,10 @@ class _MouseEventContext extends _BasicEventContext
         'clientY': clientY,
       }
     ];
-    return js_util.callConstructor(
+    return js_util.callConstructor<html.MouseEvent>(
       jsMouseEvent,
       js_util.jsify(eventArgs) as List<Object?>,
-    ) as html.MouseEvent;
+    );
   }
 }
 

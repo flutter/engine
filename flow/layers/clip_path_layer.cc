@@ -10,9 +10,8 @@ namespace flutter {
 ClipPathLayer::ClipPathLayer(const SkPath& clip_path, Clip clip_behavior)
     : clip_path_(clip_path), clip_behavior_(clip_behavior) {
   FML_DCHECK(clip_behavior != Clip::none);
+  set_layer_can_inherit_opacity(true);
 }
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 void ClipPathLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -29,8 +28,6 @@ void ClipPathLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ClipPathLayer::Preroll");
@@ -62,15 +59,20 @@ void ClipPathLayer::Paint(PaintContext& context) const {
   context.internal_nodes_canvas->clipPath(clip_path_,
                                           clip_behavior_ != Clip::hardEdge);
 
-  if (UsesSaveLayer()) {
-    context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
+  if (!UsesSaveLayer()) {
+    PaintChildren(context);
+    return;
   }
+
+  AutoCachePaint cache_paint(context);
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  context.internal_nodes_canvas->saveLayer(paint_bounds(), cache_paint.paint());
+
   PaintChildren(context);
-  if (UsesSaveLayer()) {
-    context.internal_nodes_canvas->restore();
-    if (context.checkerboard_offscreen_layers) {
-      DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
-    }
+
+  context.internal_nodes_canvas->restore();
+  if (context.checkerboard_offscreen_layers) {
+    DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
   }
 }
 

@@ -4,13 +4,10 @@
 
 #include "flutter/flow/layers/physical_shape_layer.h"
 
+#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/flow/paint_utils.h"
-#include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flutter {
-
-const SkScalar kLightHeight = 600;
-const SkScalar kLightRadius = 800;
 
 PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        SkColor shadow_color,
@@ -22,8 +19,6 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
       elevation_(elevation),
       path_(path),
       clip_behavior_(clip_behavior) {}
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -41,20 +36,19 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (elevation_ == 0) {
     bounds = path_.getBounds();
   } else {
-    bounds = ComputeShadowBounds(path_, elevation_,
-                                 context->frame_device_pixel_ratio(),
-                                 context->GetTransform());
+    bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
+        path_, elevation_, context->frame_device_pixel_ratio(),
+        context->GetTransform());
   }
 
   context->AddLayerBounds(bounds);
 
-  if (context->PushCullRect(bounds)) {
+  // Only push cull rect if there is clip.
+  if (clip_behavior_ == Clip::none || context->PushCullRect(bounds)) {
     DiffChildren(context, prev);
   }
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
@@ -62,18 +56,24 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
 
-  SkRect child_paint_bounds;
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
 
+  SkRect paint_bounds;
   if (elevation_ == 0) {
-    set_paint_bounds(path_.getBounds());
+    paint_bounds = path_.getBounds();
   } else {
     // We will draw the shadow in Paint(), so add some margin to the paint
-    // bounds to leave space for the shadow. We fill this whole region and clip
-    // children to it so we don't need to join the child paint bounds.
-    set_paint_bounds(ComputeShadowBounds(
-        path_, elevation_, context->frame_device_pixel_ratio, matrix));
+    // bounds to leave space for the shadow.
+    paint_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
+        path_, elevation_, context->frame_device_pixel_ratio, matrix);
   }
+
+  if (clip_behavior_ == Clip::none) {
+    paint_bounds.join(child_paint_bounds);
+  }
+
+  set_paint_bounds(paint_bounds);
 }
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
@@ -81,8 +81,9 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   if (elevation_ != 0) {
-    DrawShadow(context.leaf_nodes_canvas, path_, shadow_color_, elevation_,
-               SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
+    DisplayListCanvasDispatcher::DrawShadow(
+        context.leaf_nodes_canvas, path_, shadow_color_, elevation_,
+        SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
   // Call drawPath without clip if possible for better performance.
@@ -101,10 +102,11 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
     case Clip::antiAlias:
       context.internal_nodes_canvas->clipPath(path_, true);
       break;
-    case Clip::antiAliasWithSaveLayer:
+    case Clip::antiAliasWithSaveLayer: {
+      TRACE_EVENT0("flutter", "Canvas::saveLayer");
       context.internal_nodes_canvas->clipPath(path_, true);
       context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
-      break;
+    } break;
     case Clip::none:
       break;
   }
@@ -126,42 +128,6 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
       DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
     }
   }
-}
-
-SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkPath& path,
-                                               float elevation,
-                                               SkScalar dpr,
-                                               const SkMatrix& ctm) {
-  SkRect shadow_bounds(path.getBounds());
-  SkShadowUtils::GetLocalBounds(
-      ctm, path, SkPoint3::Make(0, 0, dpr * elevation),
-      SkPoint3::Make(0, -1, 1), kLightRadius / kLightHeight,
-      SkShadowFlags::kDirectionalLight_ShadowFlag, &shadow_bounds);
-  return shadow_bounds;
-}
-
-void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
-                                    const SkPath& path,
-                                    SkColor color,
-                                    float elevation,
-                                    bool transparentOccluder,
-                                    SkScalar dpr) {
-  const SkScalar kAmbientAlpha = 0.039f;
-  const SkScalar kSpotAlpha = 0.25f;
-
-  uint32_t flags = transparentOccluder
-                       ? SkShadowFlags::kTransparentOccluder_ShadowFlag
-                       : SkShadowFlags::kNone_ShadowFlag;
-  flags |= SkShadowFlags::kDirectionalLight_ShadowFlag;
-  SkColor inAmbient = SkColorSetA(color, kAmbientAlpha * SkColorGetA(color));
-  SkColor inSpot = SkColorSetA(color, kSpotAlpha * SkColorGetA(color));
-  SkColor ambientColor, spotColor;
-  SkShadowUtils::ComputeTonalColors(inAmbient, inSpot, &ambientColor,
-                                    &spotColor);
-  SkShadowUtils::DrawShadow(canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
-                            SkPoint3::Make(0, -1, 1),
-                            kLightRadius / kLightHeight, ambientColor,
-                            spotColor, flags);
 }
 
 }  // namespace flutter

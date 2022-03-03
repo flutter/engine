@@ -127,22 +127,6 @@ bool EmbedderEngine::DispatchPointerDataPacket(
   return true;
 }
 
-bool EmbedderEngine::DispatchKeyDataPacket(
-    std::unique_ptr<flutter::KeyDataPacket> packet,
-    KeyDataResponse callback) {
-  if (!IsValid() || !packet) {
-    return false;
-  }
-
-  auto platform_view = shell_->GetPlatformView();
-  if (!platform_view) {
-    return false;
-  }
-
-  platform_view->DispatchKeyDataPacket(std::move(packet), std::move(callback));
-  return true;
-}
-
 bool EmbedderEngine::SendPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   if (!IsValid() || !message) {
@@ -229,8 +213,8 @@ bool EmbedderEngine::OnVsyncEvent(intptr_t baton,
     return false;
   }
 
-  return VsyncWaiterEmbedder::OnEmbedderVsync(baton, frame_start_time,
-                                              frame_target_time);
+  return VsyncWaiterEmbedder::OnEmbedderVsync(
+      task_runners_, baton, frame_start_time, frame_target_time);
 }
 
 bool EmbedderEngine::ReloadSystemFonts() {
@@ -286,6 +270,19 @@ bool EmbedderEngine::PostTaskOnEngineManagedNativeThreads(
   vm->GetConcurrentMessageLoop()->PostTaskToAllWorkers(
       [closure]() { closure(kFlutterNativeThreadTypeWorker); });
 
+  return true;
+}
+
+bool EmbedderEngine::ScheduleFrame() {
+  if (!IsValid()) {
+    return false;
+  }
+
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+  platform_view->ScheduleFrame();
   return true;
 }
 

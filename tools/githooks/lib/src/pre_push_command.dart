@@ -24,8 +24,8 @@ class PrePushCommand extends Command<bool> {
     final bool verbose = globalResults!['verbose']! as bool;
     final String flutterRoot = globalResults!['flutter']! as String;
     final List<bool> checkResults = <bool>[
-      await _runClangTidy(flutterRoot, verbose),
       await _runFormatter(flutterRoot, verbose),
+      await _runClangTidy(flutterRoot, verbose),
     ];
     sw.stop();
     io.stdout.writeln('pre-push checks finished in ${sw.elapsed}');
@@ -60,7 +60,6 @@ class PrePushCommand extends Command<bool> {
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
       buildCommandsPath: compileCommands,
-      repoPath: io.Directory(flutterRoot),
       outSink: outBuffer,
       errSink: errBuffer,
     );

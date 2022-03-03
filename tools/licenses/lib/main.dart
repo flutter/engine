@@ -52,9 +52,9 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
 
   // file names that we are confident won't be included in the final build product
   static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
-  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg)$', caseSensitive: false);
+  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg|Brewfile)$', caseSensitive: false);
   static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache)$', caseSensitive: false);
+  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap)$', caseSensitive: false);
   static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
   // The ICU library has sample code that will never get linked.
   static final RegExp _icuSamplesPattern = RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
@@ -484,41 +484,45 @@ class _RepositoryFreetypeLicenseFile extends _RepositoryLicenseFile {
     : _target = _parseLicense(io), super(parent, io);
 
   static final RegExp _pattern = RegExp(
-    r'The  FreeType 2  font  engine is  copyrighted  work and  cannot be  used\n'
-    r'legally  without a  software license\.   In  order to  make this  project\n'
-    r'usable  to a vast  majority of  developers, we  distribute it  under two\n'
+    r'FREETYPE LICENSES\n'
+    r'-----------------\n'
+    r'\n'
+    r'The FreeType  2 font  engine is  copyrighted work  and cannot  be used\n'
+    r'legally without  a software  license\.  In order  to make  this project\n'
+    r'usable to  a vast majority of  developers, we distribute it  under two\n'
     r'mutually exclusive open-source licenses\.\n'
     r'\n'
-    r'This means  that \*you\* must choose  \*one\* of the  two licenses described\n'
-    r'below, then obey  all its terms and conditions when  using FreeType 2 in\n'
-    r'any of your projects or products.\n'
+    r'This means that \*you\* must choose  \*one\* of the two licenses described\n'
+    r'below, then obey all its terms and conditions when using FreeType 2 in\n'
+    r'any of your projects or products\.\n'
     r'\n'
-    r"  - The FreeType License, found in  the file `(FTL\.TXT)', which is similar\n"
-    r'    to the original BSD license \*with\* an advertising clause that forces\n'
-    r"    you  to  explicitly cite  the  FreeType  project  in your  product's\n"
-    r'    documentation\.  All  details are in the license  file\.  This license\n'
-    r"    is  suited  to products  which  don't  use  the GNU  General  Public\n"
-    r'    License\.\n'
+    r'  - The FreeType License,  found in the file  `docs/(FTL\.TXT)`, which is\n'
+    r'    similar to the  original BSD license \*with\*  an advertising clause\n'
+    r'    that forces  you to explicitly  cite the FreeType project  in your\n'
+    r"    product's  documentation\.  All  details are  in the  license file\.\n"
+    r"    This license is suited to products which don't use the GNU General\n"
+    r'    Public License\.\n'
     r'\n'
-    r'    Note that  this license  is  compatible  to the  GNU General  Public\n'
+    r'    Note that  this license  is compatible to  the GNU  General Public\n'
     r'    License version 3, but not version 2\.\n'
     r'\n'
-    r"  - The GNU General Public License version 2, found in  `GPLv2\.TXT' \(any\n"
-    r'    later version can be used  also\), for programs which already use the\n'
-    r'    GPL\.  Note  that the  FTL is  incompatible  with  GPLv2 due  to  its\n'
-    r'    advertisement clause\.\n'
+    r'  - The   GNU   General   Public   License   version   2,   found   in\n'
+    r'    `docs/GPLv2\.TXT`  \(any  later  version  can  be  used  also\),  for\n'
+    r'    programs  which  already  use  the  GPL\.  Note  that  the  FTL  is\n'
+    r'    incompatible with GPLv2 due to its advertisement clause\.\n'
     r'\n'
-    r'The contributed BDF and PCF drivers  come with a license similar to that\n'
-    r'of the X Window System\.  It is compatible to the above two licenses \(see\n'
-    r'file src/bdf/README and  src/pcf/README\)\.  The same holds  for the files\n'
-    r"`fthash\.c' and  `fthash\.h'; their  code was  part of  the BDF  driver in\n"
-    r'earlier FreeType versions\.\n'
+    r'The contributed  BDF and PCF  drivers come  with a license  similar to\n'
+    r'that  of the  X Window  System\.   It is  compatible to  the above  two\n'
+    r'licenses \(see files `src/bdf/README`  and `src/pcf/README`\)\.  The same\n'
+    r'holds   for   the   source    code   files   `src/base/fthash\.c`   and\n'
+    r'`include/freetype/internal/fthash\.h`; they wer part  of the BDF driver\n'
+    r'in earlier FreeType versions\.\n'
     r'\n'
-    r'The gzip module uses the zlib license \(see src/gzip/zlib\.h\) which too is\n'
-    r'compatible to the above two licenses\.\n'
+    r'The gzip  module uses the  zlib license \(see  `src/gzip/zlib\.h`\) which\n'
+    r'too is compatible to the above two licenses\.\n'
     r'\n'
-    r'The MD5 checksum support \(only used for debugging in development builds\)\n'
-    r'is in the public domain\.\n'
+    r'The  MD5 checksum  support  \(only used  for  debugging in  development\n'
+    r'builds\) is in the public domain\.\n'
     r'\n*'
     r'--- end of LICENSE\.TXT ---\n*$'
   );
@@ -919,6 +923,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   ///   directory (a.k.a. buildroot).
   bool shouldRecurse(fs.IoNode entry) {
     return !entry.fullName.endsWith('third_party/gn') &&
+            !entry.fullName.endsWith('third_party/imgui') &&
             entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
             entry.name != '.git' &&
@@ -1362,17 +1367,27 @@ class _RepositoryExpatDirectory extends _RepositoryDirectory {
 
   @override
   bool get subdirectoriesAreLicenseRoots => true;
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'expat')
+      return _RepositoryExpatExpatDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryExpatExpatDirectory extends _RepositoryDirectory {
+  _RepositoryExpatExpatDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'doc' // we don't ship the documentation
+        && super.shouldRecurse(entry);
+  }
 }
 
 class _RepositoryFreetypeDocsDirectory extends _RepositoryDirectory {
   _RepositoryFreetypeDocsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  _RepositoryFile createFile(fs.IoNode entry) {
-    if (entry.name == 'LICENSE.TXT')
-      return _RepositoryFreetypeLicenseFile(this, entry as fs.TextFile);
-    return super.createFile(entry);
-  }
 
   @override
   int get fileCount => 0;
@@ -1458,6 +1473,13 @@ class _RepositoryFreetypeDirectory extends _RepositoryDirectory {
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'builds' // build files
         && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryFile createFile(fs.IoNode entry) {
+    if (entry.name == 'LICENSE.TXT')
+      return _RepositoryFreetypeLicenseFile(this, entry as fs.TextFile);
+    return super.createFile(entry);
   }
 
   @override
@@ -1833,7 +1855,8 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'spirv_headers' // only used on hosts for tests
         && entry.name != 'spirv_cross' // only used on hosts for tests
         && entry.name != 'ocmock' // only used for tests
-        && entry.name != 'java'// only used for Android builds
+        && entry.name != 'java' // only used for Android builds
+        && entry.name != 'inja' // only used on hosts for builds
         && super.shouldRecurse(entry);
   }
 
@@ -2150,8 +2173,23 @@ class _RepositoryFlutterDirectory extends _RepositoryDirectory {
       return _createLibDirectoryRoot(entry, this);
     if (entry.name == 'web_sdk')
       return _createWebSdkDirectoryRoot(entry, this);
+    if (entry.name == 'impeller')
+      return _createImpellerDirectory(entry, this);
     return super.createSubdirectory(entry);
   }
+}
+
+_RelativePathDenylistRepositoryDirectory _createImpellerDirectory(fs.Directory entry, _RepositoryDirectory parent) {
+  return _RelativePathDenylistRepositoryDirectory(
+    rootDir: entry,
+    denylist: <Pattern>[
+      // TODO(chinmaygarde): Remove stb.
+      // https://github.com/flutter/flutter/issues/97843
+      'third_party/stb',  // Currently only used for unit tests, and will be removed.
+    ],
+    parent: parent,
+    io: entry,
+  );
 }
 
 /// A specialized crawler for "github.com/flutter/engine/lib" directory.

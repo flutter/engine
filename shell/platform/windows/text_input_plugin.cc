@@ -7,10 +7,8 @@
 #include <windows.h>
 
 #include <cstdint>
-#include <iostream>
 
 #include "flutter/shell/platform/common/json_method_codec.h"
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
 static constexpr char kClearClientMethod[] = "TextInput.clearClient";
@@ -52,8 +50,7 @@ static constexpr char kInternalConsistencyError[] =
 
 namespace flutter {
 
-void TextInputPlugin::TextHook(FlutterWindowsView* view,
-                               const std::u16string& text) {
+void TextInputPlugin::TextHook(const std::u16string& text) {
   if (active_model_ == nullptr) {
     return;
   }
@@ -61,17 +58,16 @@ void TextInputPlugin::TextHook(FlutterWindowsView* view,
   SendStateUpdate(*active_model_);
 }
 
-bool TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
-                                   int key,
+void TextInputPlugin::KeyboardHook(int key,
                                    int scancode,
                                    int action,
                                    char32_t character,
                                    bool extended,
                                    bool was_down) {
   if (active_model_ == nullptr) {
-    return false;
+    return;
   }
-  if (action == WM_KEYDOWN) {
+  if (action == WM_KEYDOWN || action == WM_SYSKEYDOWN) {
     // Most editing keys (arrow keys, backspace, delete, etc.) are handled in
     // the framework, so don't need to be handled at this layer.
     switch (key) {
@@ -82,7 +78,6 @@ bool TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
         break;
     }
   }
-  return false;
 }
 
 TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger,
@@ -116,7 +111,29 @@ void TextInputPlugin::ComposeCommitHook() {
     return;
   }
   active_model_->CommitComposing();
-  SendStateUpdate(*active_model_);
+
+  // We do not trigger SendStateUpdate here.
+  //
+  // Until a WM_IME_ENDCOMPOSING event, the user is still composing from the OS
+  // point of view. Commit events are always immediately followed by another
+  // composing event or an end composing event. However, in the brief window
+  // between the commit event and the following event, the composing region is
+  // collapsed. Notifying the framework of this intermediate state will trigger
+  // any framework code designed to execute at the end of composing, such as
+  // input formatters, which may try to update the text and send a message back
+  // to the engine with changes.
+  //
+  // This is a particular problem with Korean IMEs, which build up one
+  // character at a time in their composing region until a keypress that makes
+  // no sense for the in-progress character. At that point, the result
+  // character is committed and a compose event is immedidately received with
+  // the new composing region.
+  //
+  // In the case where this event is immediately followed by a composing event,
+  // the state will be sent in ComposeChangeHook.
+  //
+  // In the case where this event is immediately followed by an end composing
+  // event, the state will be sent in ComposeEndHook.
 }
 
 void TextInputPlugin::ComposeEndHook() {
@@ -148,6 +165,12 @@ void TextInputPlugin::HandleMethodCall(
   if (method.compare(kShowMethod) == 0 || method.compare(kHideMethod) == 0) {
     // These methods are no-ops.
   } else if (method.compare(kClearClientMethod) == 0) {
+    if (active_model_ != nullptr && active_model_->composing()) {
+      active_model_->CommitComposing();
+      active_model_->EndComposing();
+      SendStateUpdate(*active_model_);
+    }
+    delegate_->OnResetImeComposing();
     active_model_ = nullptr;
   } else if (method.compare(kSetClientMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {

@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+library util;
+
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'safe_browser_api.dart';
 import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
@@ -391,7 +393,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
 bool isNsErrorFailureException(Object e) {
-  return js_util.getProperty(e, 'name') == 'NS_ERROR_FAILURE';
+  return getJsProperty<dynamic>(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
 /// From: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Syntax
@@ -422,8 +424,20 @@ const Set<String> _genericFontFamilies = <String>{
 ///
 /// For iOS, default to -apple-system, where it should be available, otherwise
 /// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
-final String _fallbackFontFamily =
-    isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
+String get _fallbackFontFamily {
+  if (isIOS15) {
+    // Remove the "-apple-system" fallback font because it causes a crash in
+    // iOS 15.
+    //
+    // See github issue: https://github.com/flutter/flutter/issues/90705
+    // See webkit bug: https://bugs.webkit.org/show_bug.cgi?id=231686
+    return 'BlinkMacSystemFont';
+  }
+  if (isMacOrIOS) {
+    return '-apple-system, BlinkMacSystemFont';
+  }
+  return 'Arial';
+}
 
 /// Create a font-family string appropriate for CSS.
 ///
@@ -500,16 +514,6 @@ class FastMatrix32 {
 /// Flutter mobile.
 double convertSigmaToRadius(double sigma) {
   return sigma * 2.0;
-}
-
-/// Used to check for null values that are non-nullable.
-///
-/// This is useful when some external API (e.g. HTML DOM) disagrees with
-/// Dart type declarations (e.g. `dart:html`). Where `dart:html` may believe
-/// something to be non-null, it may actually be null (e.g. old browsers do
-/// not implement a feature, such as clipboard).
-bool isUnsoundNull(dynamic object) {
-  return object == null;
 }
 
 int clampInt(int value, int min, int max) {
@@ -638,5 +642,92 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 
   double? tryDouble(String propertyName) {
     return this[propertyName] as double?;
+  }
+}
+
+/// Prints a list of bytes in hex format.
+///
+/// Bytes are separated by one space and are padded on the left to always show
+/// two digits.
+///
+/// Example:
+///
+///     Input: [0, 1, 2, 3]
+///     Output: 0x00 0x01 0x02 0x03
+String bytesToHexString(List<int> data) {
+  return data.map((int byte) => '0x' + byte.toRadixString(16).padLeft(2, '0')).join(' ');
+}
+
+/// Sets a style property on [element].
+///
+/// [name] is the name of the property. [value] is the value of the property.
+/// If [value] is null, removes the style property.
+void setElementStyle(
+    html.Element element, String name, String? value) {
+  if (value == null) {
+    element.style.removeProperty(name);
+  } else {
+    element.style.setProperty(name, value);
+  }
+}
+
+void setClipPath(html.Element element, String? value) {
+  if (browserEngine == BrowserEngine.webkit) {
+    if (value == null) {
+      element.style.removeProperty('-webkit-clip-path');
+    } else {
+      element.style.setProperty('-webkit-clip-path', value);
+    }
+  }
+  if (value == null) {
+    element.style.removeProperty('clip-path');
+  } else {
+    element.style.setProperty('clip-path', value);
+  }
+}
+
+void setThemeColor(ui.Color color) {
+  html.MetaElement? theme =
+      html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
+  if (theme == null) {
+    theme = html.MetaElement()
+      ..id = 'flutterweb-theme'
+      ..name = 'theme-color';
+    html.document.head!.append(theme);
+  }
+  theme.content = colorToCssString(color)!;
+}
+
+bool? _ellipseFeatureDetected;
+
+/// Draws CanvasElement ellipse with fallback.
+void drawEllipse(
+    html.CanvasRenderingContext2D context,
+    double centerX,
+    double centerY,
+    double radiusX,
+    double radiusY,
+    double rotation,
+    double startAngle,
+    double endAngle,
+    bool antiClockwise) {
+  _ellipseFeatureDetected ??= getJsProperty<Object?>(context, 'ellipse') != null;
+  if (_ellipseFeatureDetected!) {
+    context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
+        endAngle, antiClockwise);
+  } else {
+    context.save();
+    context.translate(centerX, centerY);
+    context.rotate(rotation);
+    context.scale(radiusX, radiusY);
+    context.arc(0, 0, 1, startAngle, endAngle, antiClockwise);
+    context.restore();
+  }
+}
+
+/// Removes all children of a DOM node.
+void removeAllChildren(html.Node node) {
+  while (node.lastChild != null) {
+    node.lastChild!.remove();
   }
 }

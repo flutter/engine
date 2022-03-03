@@ -15,6 +15,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -33,6 +34,33 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   return flutterLocale;
 }
 
+#pragma mark -
+
+// Records an active handler of the messenger (FlutterEngine) that listens to
+// platform messages on a given channel.
+@interface FlutterEngineHandlerInfo : NSObject
+
+- (instancetype)initWithConnection:(NSNumber*)connection
+                           handler:(FlutterBinaryMessageHandler)handler;
+
+@property(nonatomic, readonly) FlutterBinaryMessageHandler handler;
+@property(nonatomic, readonly) NSNumber* connection;
+
+@end
+
+@implementation FlutterEngineHandlerInfo
+- (instancetype)initWithConnection:(NSNumber*)connection
+                           handler:(FlutterBinaryMessageHandler)handler {
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _connection = connection;
+  _handler = handler;
+  return self;
+}
+@end
+
+#pragma mark -
+
 /**
  * Private interface declaration for FlutterEngine.
  */
@@ -49,6 +77,14 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
 
 /**
+ * Invoked right before the engine is restarted.
+ *
+ * This should reset states to as if the application has just started.  It
+ * usually indicates a hot restart (Shift-R in Flutter CLI.)
+ */
+- (void)engineCallbackOnPreEngineRestart;
+
+/**
  * Requests that the task be posted back the to the Flutter engine at the target time. The target
  * time is in the clock used by the Flutter engine.
  */
@@ -59,6 +95,11 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
  * if it is present in the assets directory.
  */
 - (void)loadAOTData:(NSString*)assetsDir;
+
+/**
+ * Creates a platform view channel and sets up the method handler.
+ */
+- (void)setUpPlatformViewChannel;
 
 @end
 
@@ -110,6 +151,11 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   }];
 }
 
+- (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
+                     withId:(nonnull NSString*)factoryId {
+  [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
+}
+
 @end
 
 // Callbacks provided to the engine. See the called methods for documentation.
@@ -131,8 +177,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // The project being run by this engine.
   FlutterDartProject* _project;
 
-  // A mapping of channel names to the registered handlers for those channels.
-  NSMutableDictionary<NSString*, FlutterBinaryMessageHandler>* _messageHandlers;
+  // A mapping of channel names to the registered information for those channels.
+  NSMutableDictionary<NSString*, FlutterEngineHandlerInfo*>* _messengerHandlers;
+
+  // A self-incremental integer to assign to newly assigned channels as
+  // identification.
+  FlutterBinaryMessengerConnection _currentMessengerConnection;
 
   // Whether the engine can continue running after the view controller is removed.
   BOOL _allowHeadlessExecution;
@@ -147,6 +197,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
+
+  // Method channel for platform view functions. These functions include creating, disposing and
+  // mutating a platform view.
+  FlutterMethodChannel* _platformViewsChannel;
+
+  // Used to support creation and deletion of platform views and registering platform view
+  // factories. Lifecycle is tied to the engine.
+  FlutterPlatformViewController* _platformViewController;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -160,7 +218,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(self, @"Super init cannot be nil");
 
   _project = project ?: [[FlutterDartProject alloc] init];
-  _messageHandlers = [[NSMutableDictionary alloc] init];
+  _messengerHandlers = [[NSMutableDictionary alloc] init];
+  _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
 
@@ -178,6 +237,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                          selector:@selector(sendUserLocales)
                              name:NSCurrentLocaleDidChangeNotification
                            object:nil];
+
+  _platformViewController = [[FlutterPlatformViewController alloc] init];
+  [self setUpPlatformViewChannel];
 
   return self;
 }
@@ -264,6 +326,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   flutterArguments.compositor = [self createFlutterCompositor];
 
+  flutterArguments.on_pre_engine_restart_callback = [](void* user_data) {
+    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+    [engine engineCallbackOnPreEngineRestart];
+  };
+
   FlutterRendererConfig rendererConfig = [_renderer createRendererConfig];
   FlutterEngineResult result = _embedderAPI.Initialize(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
@@ -338,8 +405,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   if ([FlutterRenderingBackend renderUsingMetal]) {
     FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
-    _macOSCompositor =
-        std::make_unique<flutter::FlutterMetalCompositor>(_viewController, metalRenderer.device);
+    _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
+        _viewController, _platformViewController, metalRenderer.device);
     _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
       if (has_flutter_content) {
         FlutterMetalRenderer* metalRenderer =
@@ -496,6 +563,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _embedderAPI.DispatchSemanticsAction(_engine, target, action, data.GetMapping(), data.GetSize());
 }
 
+- (FlutterPlatformViewController*)platformViewController {
+  return _platformViewController;
+}
+
 #pragma mark - Private methods
 
 - (void)sendUserLocales {
@@ -544,11 +615,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     }
   };
 
-  FlutterBinaryMessageHandler channelHandler = _messageHandlers[channel];
-  if (channelHandler) {
-    channelHandler(messageData, binaryResponseHandler);
+  FlutterEngineHandlerInfo* handlerInfo = _messengerHandlers[channel];
+  if (handlerInfo) {
+    handlerInfo.handler(messageData, binaryResponseHandler);
   } else {
     binaryResponseHandler(nil);
+  }
+}
+
+- (void)engineCallbackOnPreEngineRestart {
+  if (_viewController) {
+    [_viewController onPreEngineRestart];
   }
 }
 
@@ -577,6 +654,18 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     NSLog(@"Failed to shut down Flutter engine: error %d", result);
   }
   _engine = nullptr;
+}
+
+- (void)setUpPlatformViewChannel {
+  _platformViewsChannel =
+      [FlutterMethodChannel methodChannelWithName:@"flutter/platform_views"
+                                  binaryMessenger:self.binaryMessenger
+                                            codec:[FlutterStandardMethodCodec sharedInstance]];
+
+  __weak FlutterEngine* weakSelf = self;
+  [_platformViewsChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [[weakSelf platformViewController] handleMethodCall:call result:result];
+  }];
 }
 
 #pragma mark - FlutterBinaryMessenger
@@ -640,12 +729,27 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(nonnull NSString*)channel
                                           binaryMessageHandler:
                                               (nullable FlutterBinaryMessageHandler)handler {
-  _messageHandlers[channel] = [handler copy];
-  return 0;
+  _currentMessengerConnection += 1;
+  _messengerHandlers[channel] =
+      [[FlutterEngineHandlerInfo alloc] initWithConnection:@(_currentMessengerConnection)
+                                                   handler:[handler copy]];
+  return _currentMessengerConnection;
 }
 
-- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
-  // There hasn't been a need to implement this yet for macOS.
+- (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
+  // Find the _messengerHandlers that has the required connection, and record its
+  // channel.
+  NSString* foundChannel = nil;
+  for (NSString* key in [_messengerHandlers allKeys]) {
+    FlutterEngineHandlerInfo* handlerInfo = [_messengerHandlers objectForKey:key];
+    if ([handlerInfo.connection isEqual:@(connection)]) {
+      foundChannel = key;
+      break;
+    }
+  }
+  if (foundChannel) {
+    [_messengerHandlers removeObjectForKey:foundChannel];
+  }
 }
 
 #pragma mark - FlutterPluginRegistry
@@ -715,20 +819,22 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 #pragma mark - Task runner integration
 
-- (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime {
-  const auto engine_time = _embedderAPI.GetCurrentTime();
-
-  __weak FlutterEngine* weak_self = self;
-  auto worker = ^{
-    FlutterEngine* strong_self = weak_self;
-    if (strong_self && strong_self->_engine) {
-      auto result = _embedderAPI.RunTask(strong_self->_engine, &task);
-      if (result != kSuccess) {
-        NSLog(@"Could not post a task to the Flutter engine.");
-      }
+- (void)runTaskOnEmbedder:(FlutterTask)task {
+  if (_engine) {
+    auto result = _embedderAPI.RunTask(_engine, &task);
+    if (result != kSuccess) {
+      NSLog(@"Could not post a task to the Flutter engine.");
     }
+  }
+}
+
+- (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime {
+  __weak FlutterEngine* weakSelf = self;
+  auto worker = ^{
+    [weakSelf runTaskOnEmbedder:task];
   };
 
+  const auto engine_time = _embedderAPI.GetCurrentTime();
   if (targetTime <= engine_time) {
     dispatch_async(dispatch_get_main_queue(), worker);
 

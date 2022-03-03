@@ -9,9 +9,9 @@ namespace flutter {
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {}
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {
+  set_layer_can_inherit_opacity(true);
+}
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -29,8 +29,6 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
-
 void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
@@ -41,8 +39,9 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  Layer::AutoSaveLayer save =
-      Layer::AutoSaveLayer::Create(context, paint_bounds(), nullptr);
+  AutoCachePaint cache_paint(context);
+  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+      context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);
 
   SkPaint paint;

@@ -12,6 +12,8 @@ import 'dart:typed_data';
 // These parts only contain private members, all public
 // members are in this file (spirv.dart)
 part 'src/constants.dart';
+part 'src/function.dart';
+part 'src/instructions.dart';
 part 'src/transpiler.dart';
 part 'src/types.dart';
 
@@ -38,7 +40,15 @@ class TranspileResult {
   /// The number of float uniforms used in this shader.
   final int uniformFloatCount;
 
-  TranspileResult._(this.src, this.uniformFloatCount, this.language);
+  /// The number of samplers (children) used in this shader.
+  final int samplerCount;
+
+  TranspileResult._(
+    this.src,
+    this.uniformFloatCount,
+    this.samplerCount,
+    this.language,
+  );
 }
 
 /// Thrown during transpilation due to malformed or unsupported SPIR-V.
@@ -64,6 +74,7 @@ TranspileResult transpile(ByteBuffer spirv, TargetLanguage target) {
   return TranspileResult._(
     t.src.toString(),
     t.uniformFloatCount,
+    t.samplerCount,
     target,
   );
 }

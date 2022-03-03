@@ -13,17 +13,17 @@
 #include "flutter/testing/test_timeout_listener.h"
 #include "gtest/gtest.h"
 
-#ifdef OS_IOS
+#ifdef FML_OS_IOS
 #include <asl.h>
-#endif  // OS_IOS
+#endif  // FML_OS_IOS
 
 std::optional<fml::TimeDelta> GetTestTimeoutFromArgs(int argc, char** argv) {
   const auto command_line = fml::CommandLineFromArgcArgv(argc, argv);
 
   std::string timeout_seconds;
   if (!command_line.GetOptionValue("timeout", &timeout_seconds)) {
-    // No timeout specified. Default to 30s.
-    return fml::TimeDelta::FromSeconds(30u);
+    // No timeout specified. Default to 120s.
+    return fml::TimeDelta::FromSeconds(120u);
   }
 
   const auto seconds = std::stoi(timeout_seconds);
@@ -37,12 +37,12 @@ std::optional<fml::TimeDelta> GetTestTimeoutFromArgs(int argc, char** argv) {
 
 int main(int argc, char** argv) {
   fml::InstallCrashHandler();
-#ifdef OS_IOS
+#ifdef FML_OS_IOS
   asl_log_descriptor(NULL, NULL, ASL_LEVEL_NOTICE, STDOUT_FILENO,
                      ASL_LOG_DESCRIPTOR_WRITE);
   asl_log_descriptor(NULL, NULL, ASL_LEVEL_ERR, STDERR_FILENO,
                      ASL_LOG_DESCRIPTOR_WRITE);
-#endif  // OS_IOS
+#endif  // FML_OS_IOS
 
   ::testing::InitGoogleTest(&argc, argv);
 

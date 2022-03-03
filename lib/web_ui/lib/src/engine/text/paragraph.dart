@@ -8,8 +8,7 @@ import 'dart:math' as math;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
-import '../html/bitmap_canvas.dart';
+import '../embedder.dart';
 import '../util.dart';
 import 'layout_service.dart';
 import 'ruler.dart';
@@ -31,33 +30,8 @@ class EngineLineMetrics implements ui.LineMetrics {
         endIndex = -1,
         endIndexWithoutNewlines = -1,
         widthWithTrailingSpaces = width,
-        boxes = null;
-
-  EngineLineMetrics.withText(
-    String this.displayText, {
-    required this.startIndex,
-    required this.endIndex,
-    required this.endIndexWithoutNewlines,
-    required this.hardBreak,
-    required this.width,
-    required this.widthWithTrailingSpaces,
-    required this.left,
-    required this.lineNumber,
-  })  : assert(displayText != null), // ignore: unnecessary_null_comparison,
-        assert(startIndex != null), // ignore: unnecessary_null_comparison
-        assert(endIndex != null), // ignore: unnecessary_null_comparison
-        assert(endIndexWithoutNewlines != null), // ignore: unnecessary_null_comparison
-        assert(hardBreak != null), // ignore: unnecessary_null_comparison
-        assert(width != null), // ignore: unnecessary_null_comparison
-        assert(left != null), // ignore: unnecessary_null_comparison
-        assert(lineNumber != null && lineNumber >= 0), // ignore: unnecessary_null_comparison
-        ellipsis = null,
-        ascent = double.infinity,
-        descent = double.infinity,
-        unscaledAscent = double.infinity,
-        height = double.infinity,
-        baseline = double.infinity,
-        boxes = null;
+        boxes = <RangeBox>[],
+        spaceBoxCount = 0;
 
   EngineLineMetrics.rich(
     this.lineNumber, {
@@ -74,6 +48,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.ascent,
     required this.descent,
     required this.boxes,
+    required this.spaceBoxCount,
   })  : displayText = null,
         unscaledAscent = double.infinity;
 
@@ -101,7 +76,10 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   /// The list of boxes representing the entire line, possibly across multiple
   /// spans.
-  final List<RangeBox>? boxes;
+  final List<RangeBox> boxes;
+
+  /// The number of boxes that are space-only.
+  final int spaceBoxCount;
 
   @override
   final bool hardBreak;
@@ -201,31 +179,6 @@ class EngineLineMetrics implements ui.LineMetrics {
       return super.toString();
     }
   }
-}
-
-/// Common interface for all the implementations of [ui.Paragraph] in the web
-/// engine.
-abstract class EngineParagraph implements ui.Paragraph {
-  /// Whether this paragraph has been laid out or not.
-  bool get isLaidOut;
-
-  /// Whether this paragraph can be drawn on a bitmap canvas.
-  bool get drawOnCanvas;
-
-  /// Whether this paragraph is doing arbitrary paint operations that require
-  /// a bitmap canvas, and can't be expressed in a DOM canvas.
-  bool get hasArbitraryPaint;
-
-  void paint(BitmapCanvas canvas, ui.Offset offset);
-
-  /// Generates a flat string computed from all the spans of the paragraph.
-  String toPlainText();
-
-  /// Returns a DOM element that represents the entire paragraph and its
-  /// children.
-  ///
-  /// Generates a new DOM element on every invocation.
-  html.HtmlElement toDomElement();
 }
 
 /// The web implementation of [ui.ParagraphStyle].
@@ -450,7 +403,7 @@ class EngineTextStyle implements ui.TextStyle {
       }
     }
     if (fontFamily.isEmpty) {
-      return DomRenderer.defaultFontFamily;
+      return FlutterViewEmbedder.defaultFontFamily;
     }
     return fontFamily;
   }
@@ -474,7 +427,7 @@ class EngineTextStyle implements ui.TextStyle {
   TextHeightStyle _createHeightStyle() {
     return TextHeightStyle(
       fontFamily: effectiveFontFamily,
-      fontSize: fontSize ?? DomRenderer.defaultFontSize,
+      fontSize: fontSize ?? FlutterViewEmbedder.defaultFontSize,
       height: height,
       // TODO(mdebbar): Pass the actual value when font features become supported
       //                https://github.com/flutter/flutter/issues/64595
@@ -717,7 +670,21 @@ void applyTextStyleToElement({
   final html.CssStyleDeclaration cssStyle = element.style;
 
   final ui.Color? color = style.foreground?.color ?? style.color;
-  if (color != null) {
+  if (style.foreground?.style == ui.PaintingStyle.stroke) {
+    // When comparing the outputs of the Bitmap Canvas and the DOM
+    // implementation, we have found, that we need to set the background color
+    // of the text to transparent to achieve the same effect as in the Bitmap
+    // Canvas and the Skia Engine where only the text stroke is painted.
+    // If we don't set it here to transparent, the text will inherit the color
+    // of it's parent element.
+    cssStyle.color = 'transparent';
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double? strokeWidth = style.foreground?.strokeWidth;
+    final double adaptedWidth = strokeWidth != null && strokeWidth > 0
+        ? strokeWidth
+        : 1.0 / ui.window.devicePixelRatio;
+    cssStyle.textStroke = '${adaptedWidth}px ${colorToCssString(color)}';
+  } else if (color != null) {
     cssStyle.color = colorToCssString(color);
   }
   final ui.Color? background = style.background?.color;
@@ -765,7 +732,7 @@ void applyTextStyleToElement({
           _textDecorationToCssString(style.decoration, style.decorationStyle);
       if (textDecoration != null) {
         if (browserEngine == BrowserEngine.webkit) {
-          DomRenderer.setElementStyle(
+          setElementStyle(
               element, '-webkit-text-decoration', textDecoration);
         } else {
           cssStyle.textDecoration = textDecoration;
@@ -787,7 +754,7 @@ void applyTextStyleToElement({
 html.Element createPlaceholderElement({
   required ParagraphPlaceholder placeholder,
 }) {
-  final html.Element element = domRenderer.createElement('span');
+  final html.Element element = html.document.createElement('span');
   final html.CssStyleDeclaration style = element.style;
   style
     ..display = 'inline-block'

@@ -7,10 +7,12 @@ package io.flutter.plugin.platform;
 import android.annotation.SuppressLint;
 import android.view.View;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /** A handle to an Android view to be embedded in the Flutter hierarchy. */
 public interface PlatformView {
   /** Returns the Android view to be embedded in the Flutter hierarchy. */
+  @Nullable
   View getView();
 
   /**
@@ -60,24 +62,26 @@ public interface PlatformView {
   void dispose();
 
   /**
-   * Callback fired when the platform's input connection is locked, or should be used. See also
-   * {@link io.flutter.plugin.editing.TextInputPlugin#lockPlatformViewInputConnection}.
+   * Callback fired when the platform's input connection is locked, or should be used.
    *
    * <p>This hook only exists for rare cases where the plugin relies on the state of the input
    * connection. This probably doesn't need to be implemented.
+   *
+   * <p>This method is deprecated, and will be removed in a future release.
    */
-  // Default interface methods are supported on all min SDK versions of Android.
   @SuppressLint("NewApi")
-  default void onInputConnectionLocked() {};
+  @Deprecated
+  default void onInputConnectionLocked() {}
 
   /**
-   * Callback fired when the platform input connection has been unlocked. See also {@link
-   * io.flutter.plugin.editing.TextInputPlugin#lockPlatformViewInputConnection}.
+   * Callback fired when the platform input connection has been unlocked.
    *
    * <p>This hook only exists for rare cases where the plugin relies on the state of the input
    * connection. This probably doesn't need to be implemented.
+   *
+   * <p>This method is deprecated, and will be removed in a future release.
    */
-  // Default interface methods are supported on all min SDK versions of Android.
   @SuppressLint("NewApi")
-  default void onInputConnectionUnlocked() {};
+  @Deprecated
+  default void onInputConnectionUnlocked() {}
 }

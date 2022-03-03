@@ -175,13 +175,20 @@ bool Keyboard::ConsumeEvent(KeyEvent event) {
   if (!event.has_type()) {
     return false;
   }
-  if (!event.has_key()) {
+  if (!event.has_key() && !event.has_key_meaning()) {
     return false;
   }
   // Check if the time sequence of the events is correct.
-
   last_event_ = std::move(event);
   any_events_received_ = true;
+
+  if (!event.has_key()) {
+    // The key only has key meaning.  Key meaning currently can not
+    // update the modifier state, so we just short-circuit the table
+    // below.
+    return true;
+  }
+
   const Key& key = last_event_.key();
   const KeyEventType& event_type = last_event_.type();
   switch (event_type) {
@@ -277,7 +284,7 @@ bool Keyboard::ConsumeEvent(KeyEvent event) {
       // No-op
       break;
   }
-  return false;
+  return true;
 }
 
 bool Keyboard::IsShift() {
@@ -285,7 +292,7 @@ bool Keyboard::IsShift() {
 }
 
 bool Keyboard::IsKeys() {
-  return (static_cast<uint64_t>(last_event_.key()) & 0xFFFF0000) == 0x00070000;
+  return LastHIDUsagePage() == 0x7;
 }
 
 uint32_t Keyboard::Modifiers() {
@@ -298,12 +305,20 @@ uint32_t Keyboard::Modifiers() {
 }
 
 uint32_t Keyboard::LastCodePoint() {
+  // If the key has a meaning, and if the meaning is a code point, always have
+  // that code point take precedence over any other keymap.
+  if (last_event_.has_key_meaning()) {
+    const auto& key_meaning = last_event_.key_meaning();
+    if (key_meaning.is_codepoint()) {
+      return key_meaning.codepoint();
+    }
+  }
   static const int qwerty_map_size =
       sizeof(QWERTY_TO_CODE_POINTS) / sizeof(QWERTY_TO_CODE_POINTS[0]);
   if (!IsKeys()) {
     return 0;
   }
-  const auto usage = LastHIDUsage();
+  const auto usage = LastHIDUsageID();
   if (usage < qwerty_map_size) {
     return QWERTY_TO_CODE_POINTS[usage][IsShift() & 1];
   }
@@ -311,8 +326,28 @@ uint32_t Keyboard::LastCodePoint() {
   return 0;
 }
 
+uint32_t Keyboard::GetLastKey() {
+  // For logical key determination, the physical key does not matter as long
+  // as code point is set.
+  // https://github.com/flutter/flutter/blob/570e39d38b799e91abe4f73f120ce494049c4ff0/packages/flutter/lib/src/services/raw_keyboard_fuchsia.dart#L71
+  // It is not quite clear what happens to the physical key, though:
+  // https://github.com/flutter/flutter/blob/570e39d38b799e91abe4f73f120ce494049c4ff0/packages/flutter/lib/src/services/raw_keyboard_fuchsia.dart#L88
+  if (!last_event_.has_key()) {
+    return 0;
+  }
+  return static_cast<uint32_t>(last_event_.key());
+}
+
 uint32_t Keyboard::LastHIDUsage() {
-  return static_cast<uint64_t>(last_event_.key()) & 0xFFFF;
+  return GetLastKey() & 0xFFFFFFFF;
+}
+
+uint16_t Keyboard::LastHIDUsageID() {
+  return GetLastKey() & 0xFFFF;
+}
+
+uint16_t Keyboard::LastHIDUsagePage() {
+  return (GetLastKey() >> 16) & 0xFFFF;
 }
 
 }  // namespace flutter_runner

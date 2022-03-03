@@ -159,6 +159,26 @@ FLUTTER_ASSERT_ARC
                                        message:encodedSetInitialRouteMethod]);
 }
 
+- (void)testInitialRouteSettingsSendsNavigationMessage {
+  id mockBinaryMessenger = OCMClassMock([FlutterBinaryMessengerRelay class]);
+
+  auto settings = FLTDefaultSettingsForBundle();
+  settings.route = "test";
+  FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine setBinaryMessenger:mockBinaryMessenger];
+  [engine run];
+
+  // Now check that an encoded method call has been made on the binary messenger to set the
+  // initial route to "test".
+  FlutterMethodCall* setInitialRouteMethodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"setInitialRoute" arguments:@"test"];
+  NSData* encodedSetInitialRouteMethod =
+      [[FlutterJSONMethodCodec sharedInstance] encodeMethodCall:setInitialRouteMethodCall];
+  OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/navigation"
+                                       message:encodedSetInitialRouteMethod]);
+}
+
 - (void)testPlatformViewsControllerRenderingMetalBackend {
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine run];
@@ -194,7 +214,10 @@ FLUTTER_ASSERT_ARC
 - (void)testSpawn {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
   [engine run];
-  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil libraryURI:nil];
+  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil
+                                          libraryURI:nil
+                                        initialRoute:nil
+                                      entrypointArgs:nil];
   XCTAssertNotNil(spawn);
 }
 
@@ -213,6 +236,29 @@ FLUTTER_ASSERT_ARC
   }
   [self waitForExpectationsWithTimeout:1 handler:nil];
   [center removeObserver:observer];
+}
+
+- (void)testSetHandlerAfterRun {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+  XCTestExpectation* gotMessage = [self expectationWithDescription:@"gotMessage"];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSObject<FlutterPluginRegistrar>* registrar = [engine registrarForPlugin:@"foo"];
+    fml::AutoResetWaitableEvent latch;
+    [engine run];
+    flutter::Shell& shell = engine.shell;
+    engine.shell.GetTaskRunners().GetUITaskRunner()->PostTask([&latch, &shell] {
+      flutter::Engine::Delegate& delegate = shell;
+      auto message = std::make_unique<flutter::PlatformMessage>("foo", nullptr);
+      delegate.OnEngineHandlePlatformMessage(std::move(message));
+      latch.Signal();
+    });
+    latch.Wait();
+    [registrar.messenger setMessageHandlerOnChannel:@"foo"
+                               binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                                 [gotMessage fulfill];
+                               }];
+  });
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 @end

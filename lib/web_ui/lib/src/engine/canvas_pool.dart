@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -11,7 +10,6 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
-import 'dom_renderer.dart';
 import 'engine_canvas.dart';
 import 'html/bitmap_canvas.dart';
 import 'html/painting.dart';
@@ -24,6 +22,7 @@ import 'html/shaders/image_shader.dart';
 import 'html/shaders/shader.dart';
 import 'platform_dispatcher.dart';
 import 'rrect_renderer.dart';
+import 'safe_browser_api.dart';
 import 'shadow.dart';
 import 'util.dart';
 import 'vector_math.dart';
@@ -206,24 +205,12 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   html.CanvasElement? _allocCanvas(int width, int height) {
-    final dynamic canvas =
-      js_util.callMethod(html.document, 'createElement', <dynamic>['CANVAS']);
-    if (canvas != null) {
-      try {
-        canvas.width = (width * _density).ceil();
-        canvas.height = (height * _density).ceil();
-      } catch (e) {
-        return null;
-      }
-      return canvas as html.CanvasElement;
-    }
-    return null;
-    // !!! We don't use the code below since NNBD assumes it can never return
-    // null and optimizes out code.
-    // return canvas = html.CanvasElement(
-    //   width: _widthInBitmapPixels,
-    //   height: _heightInBitmapPixels,
-    // );
+    // The dartdocs for `tryCreateCanvasElement` on why we don't use the
+    // `html.CanvasElement` constructor.
+    return tryCreateCanvasElement(
+      (width * _density).ceil(),
+      (height * _density).ceil(),
+    );
   }
 
   @override
@@ -750,7 +737,7 @@ class CanvasPool extends _SaveStackTracking {
         rect.center.dx - shaderBounds.left;
     final double cy = shaderBounds == null ? rect.center.dy :
         rect.center.dy - shaderBounds.top;
-    DomRenderer.ellipse(context, cx, cy, rect.width / 2,
+    drawEllipse(context, cx, cy, rect.width / 2,
         rect.height / 2, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
@@ -761,7 +748,7 @@ class CanvasPool extends _SaveStackTracking {
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     final double cx = shaderBounds == null ? c.dx : c.dx - shaderBounds.left;
     final double cy = shaderBounds == null ? c.dy : c.dy - shaderBounds.top;
-    DomRenderer.ellipse(context, cx, cy, radius, radius, 0, 0, 2.0 * math.pi, false);
+    drawEllipse(context, cx, cy, radius, radius, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -898,7 +885,7 @@ class ContextStateHandle {
     if (blendMode != _currentBlendMode) {
       _currentBlendMode = blendMode;
       context.globalCompositeOperation =
-          stringForBlendMode(blendMode) ?? 'source-over';
+          blendModeToCssMixBlendMode(blendMode) ?? 'source-over';
     }
   }
 

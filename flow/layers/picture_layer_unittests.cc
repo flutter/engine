@@ -97,8 +97,6 @@ TEST_F(PictureLayerTest, SimplePicture) {
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 using PictureLayerDiffTest = DiffContextTest;
 
 TEST_F(PictureLayerDiffTest, SimplePicture) {
@@ -119,6 +117,20 @@ TEST_F(PictureLayerDiffTest, SimplePicture) {
   MockLayerTree tree3;
   damage = DiffLayerTree(tree3, tree2);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+}
+
+TEST_F(PictureLayerDiffTest, FractionalTranslation) {
+  auto picture = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+
+  MockLayerTree tree1;
+  tree1.root()->Add(CreatePictureLayer(picture, SkPoint::Make(0.5, 0.5)));
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(11, 11, 61, 61));
+#else
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 61, 61));
+#endif
 }
 
 TEST_F(PictureLayerDiffTest, PictureCompare) {
@@ -152,8 +164,6 @@ TEST_F(PictureLayerDiffTest, PictureCompare) {
   damage = DiffLayerTree(tree4, tree3);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(20, 20, 70, 70));
 }
-
-#endif
 
 }  // namespace testing
 }  // namespace flutter

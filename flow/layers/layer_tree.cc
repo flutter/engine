@@ -23,7 +23,8 @@ LayerTree::LayerTree(const SkISize& frame_size, float device_pixel_ratio)
 }
 
 bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
-                        bool ignore_raster_cache) {
+                        bool ignore_raster_cache,
+                        SkRect cull_rect) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
 
   if (!root_layer_) {
@@ -42,7 +43,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.view_embedder(),
       stack,
       color_space,
-      kGiantRect,
+      cull_rect,
       false,
       frame.context().raster_time(),
       frame.context().ui_time(),
@@ -101,7 +102,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   }
 
   MutatorsStack unused_stack;
-  const Stopwatch unused_stopwatch;
+  const FixedRefreshRateStopwatch unused_stopwatch;
   TextureRegistry unused_texture_registry;
   SkMatrix root_surface_transformation;
   // No root surface transformation. So assume identity.

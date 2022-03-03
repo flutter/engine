@@ -11,10 +11,11 @@ namespace flutter {
 // Multipler used to map controller velocity to an appropriate scroll input.
 static constexpr double kControllerScrollMultiplier = 3;
 
-// TODO(clarkezone): Determine pointer ID in
-// OnPointerPressed/OnPointerReleased/OnPointerMoved in order to support multi
-// touch. See https://github.com/flutter/flutter/issues/70201
-static constexpr int32_t kDefaultPointerDeviceId = 0;
+// Minimum pointer ID that gets emitted by the pointer ID generator.
+static constexpr uint32_t kMinPointerId = 0;
+
+// Maximum pointer ID that gets emitted by the pointer ID generator.
+static constexpr uint32_t kMaxPointerId = 128;
 
 // Maps a Flutter cursor name to a CoreCursor.
 //
@@ -66,11 +67,15 @@ winrt::Windows::UI::Core::CoreCursor GetCursorByName(
   }
 }
 
+// UWP does not care if key events are handled, since it can not redispatch them
+// anyway.
+static void IgnoreKeyEventResult(bool handled) {}
+
 }  // namespace
 
 FlutterWindowWinUWP::FlutterWindowWinUWP(
-    ABI::Windows::ApplicationModel::Core::CoreApplicationView*
-        applicationview) {
+    ABI::Windows::ApplicationModel::Core::CoreApplicationView* applicationview)
+    : pointer_id_generator_(kMinPointerId, kMaxPointerId) {
   winrt::Windows::ApplicationModel::Core::CoreApplicationView cav{nullptr};
   winrt::copy_from_abi(cav, applicationview);
 
@@ -131,6 +136,11 @@ void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
 
 void FlutterWindowWinUWP::OnCursorRectUpdated(const Rect& rect) {
   // TODO(cbracken): Implement IMM candidate window positioning.
+}
+
+void FlutterWindowWinUWP::OnResetImeComposing() {
+  // TODO(cbracken): Cancel composing, close the candidates view, and clear the
+  // composing text.
 }
 
 void FlutterWindowWinUWP::OnWindowResized() {}
@@ -206,9 +216,10 @@ void FlutterWindowWinUWP::OnPointerPressed(
   double y = GetPosY(args);
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
   FlutterPointerMouseButtons mouse_button = GetPointerMouseButton(args);
+  auto pointer_id = GetPointerId(args);
 
-  binding_handler_delegate_->OnPointerDown(
-      x, y, device_kind, kDefaultPointerDeviceId, mouse_button);
+  binding_handler_delegate_->OnPointerDown(x, y, device_kind, pointer_id,
+                                           mouse_button);
 }
 
 void FlutterWindowWinUWP::OnPointerReleased(
@@ -218,9 +229,11 @@ void FlutterWindowWinUWP::OnPointerReleased(
   double y = GetPosY(args);
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
   FlutterPointerMouseButtons mouse_button = GetPointerMouseButton(args);
+  auto pointer_id = GetPointerId(args);
 
-  binding_handler_delegate_->OnPointerUp(x, y, device_kind,
-                                         kDefaultPointerDeviceId, mouse_button);
+  binding_handler_delegate_->OnPointerUp(x, y, device_kind, pointer_id,
+                                         mouse_button);
+  ReleasePointer(args);
 }
 
 void FlutterWindowWinUWP::OnPointerMoved(
@@ -229,9 +242,9 @@ void FlutterWindowWinUWP::OnPointerMoved(
   double x = GetPosX(args);
   double y = GetPosY(args);
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+  auto pointer_id = GetPointerId(args);
 
-  binding_handler_delegate_->OnPointerMove(x, y, device_kind,
-                                           kDefaultPointerDeviceId);
+  binding_handler_delegate_->OnPointerMove(x, y, device_kind, pointer_id);
 }
 
 void FlutterWindowWinUWP::OnPointerWheelChanged(
@@ -240,9 +253,10 @@ void FlutterWindowWinUWP::OnPointerWheelChanged(
   double x = GetPosX(args);
   double y = GetPosY(args);
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+  auto pointer_id = GetPointerId(args);
   int delta = args.CurrentPoint().Properties().MouseWheelDelta();
   binding_handler_delegate_->OnScroll(x, y, 0, -delta, 1, device_kind,
-                                      kDefaultPointerDeviceId);
+                                      pointer_id);
 }
 
 double FlutterWindowWinUWP::GetPosX(
@@ -299,6 +313,17 @@ FlutterPointerMouseButtons FlutterWindowWinUWP::GetPointerMouseButton(
   return kFlutterPointerButtonMousePrimary;
 }
 
+void FlutterWindowWinUWP::ReleasePointer(
+    winrt::Windows::UI::Core::PointerEventArgs const& args) {
+  pointer_id_generator_.ReleaseNumber(args.CurrentPoint().PointerId());
+}
+
+uint32_t FlutterWindowWinUWP::GetPointerId(
+    winrt::Windows::UI::Core::PointerEventArgs const& args) {
+  // Generate a mapped ID in the interval [kMinPointerId, kMaxPointerId].
+  return pointer_id_generator_.GetGeneratedId(args.CurrentPoint().PointerId());
+}
+
 void FlutterWindowWinUWP::OnBoundsChanged(
     winrt::Windows::UI::ViewManagement::ApplicationView const& app_view,
     winrt::Windows::Foundation::IInspectable const&) {
@@ -326,9 +351,9 @@ void FlutterWindowWinUWP::OnKeyUp(
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
   int action = 0x0101;
-  binding_handler_delegate_->OnKey(key, scancode, action, 0,
-                                   status.IsExtendedKey /* extended */,
-                                   status.WasKeyDown /* was_down */);
+  binding_handler_delegate_->OnKey(
+      key, scancode, action, 0, status.IsExtendedKey /* extended */,
+      status.WasKeyDown /* was_down */, IgnoreKeyEventResult);
 }
 
 void FlutterWindowWinUWP::OnKeyDown(
@@ -342,9 +367,9 @@ void FlutterWindowWinUWP::OnKeyDown(
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
   int action = 0x0100;
-  binding_handler_delegate_->OnKey(key, scancode, action, 0,
-                                   status.IsExtendedKey /* extended */,
-                                   status.WasKeyDown /* was_down */);
+  binding_handler_delegate_->OnKey(
+      key, scancode, action, 0, status.IsExtendedKey /* extended */,
+      status.WasKeyDown /* was_down */, IgnoreKeyEventResult);
 }
 
 void FlutterWindowWinUWP::OnCharacterReceived(

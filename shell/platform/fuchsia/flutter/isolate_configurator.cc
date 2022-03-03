@@ -15,7 +15,7 @@ namespace flutter_runner {
 
 IsolateConfigurator::IsolateConfigurator(
     UniqueFDIONS fdio_ns,
-    fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
+    fuchsia::sys::EnvironmentHandle environment,
     zx::channel directory_request,
     zx::eventpair view_ref)
     : fdio_ns_(std::move(fdio_ns)),
@@ -53,8 +53,8 @@ void IsolateConfigurator::BindZircon() {
   Dart_Handle zircon_lib = Dart_LookupLibrary(tonic::ToDart("dart:zircon"));
   FML_CHECK(!tonic::LogIfError(zircon_lib));
 
-  Dart_Handle namespace_type =
-      Dart_GetType(zircon_lib, tonic::ToDart("_Namespace"), 0, nullptr);
+  Dart_Handle namespace_type = Dart_GetNonNullableType(
+      zircon_lib, tonic::ToDart("_Namespace"), 0, nullptr);
   FML_CHECK(!tonic::LogIfError(namespace_type));
 
   Dart_Handle result =
@@ -70,8 +70,8 @@ void IsolateConfigurator::BindDartIO() {
   FML_CHECK(!tonic::LogIfError(io_lib));
 
   // Disable dart:io exit()
-  Dart_Handle embedder_config_type =
-      Dart_GetType(io_lib, tonic::ToDart("_EmbedderConfig"), 0, nullptr);
+  Dart_Handle embedder_config_type = Dart_GetNonNullableType(
+      io_lib, tonic::ToDart("_EmbedderConfig"), 0, nullptr);
   FML_CHECK(!tonic::LogIfError(embedder_config_type));
 
   Dart_Handle result = Dart_SetField(embedder_config_type,
@@ -80,7 +80,7 @@ void IsolateConfigurator::BindDartIO() {
 
   // Tell dart:io about the FDIO namespace configured for this instance.
   Dart_Handle namespace_type =
-      Dart_GetType(io_lib, tonic::ToDart("_Namespace"), 0, nullptr);
+      Dart_GetNonNullableType(io_lib, tonic::ToDart("_Namespace"), 0, nullptr);
   FML_CHECK(!tonic::LogIfError(namespace_type));
 
   Dart_Handle namespace_args[] = {

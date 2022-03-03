@@ -225,6 +225,17 @@ abstract class FlutterView {
   ///   applications.
   WindowPadding get padding => viewConfiguration.padding;
 
+  /// {@macro dart.ui.ViewConfiguration.displayFeatures}
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism to access this data.
+  List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
+
   /// Updates the view's rendering on the GPU with the newly provided [Scene].
   ///
   /// This function must be called within the scope of the
@@ -413,6 +424,15 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   double get textScaleFactor => platformDispatcher.textScaleFactor;
+
+  /// Whether briefly displaying the characters as you type in obscured text
+  /// fields is enabled in system settings.
+  ///
+  /// See also:
+  ///
+  ///  * [EditableText.obscureText], which when set to true hides the text in
+  ///    the text field.
+  bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.

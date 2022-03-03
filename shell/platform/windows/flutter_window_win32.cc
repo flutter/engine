@@ -184,14 +184,15 @@ void FlutterWindowWin32::OnText(const std::u16string& text) {
   binding_handler_delegate_->OnText(text);
 }
 
-bool FlutterWindowWin32::OnKey(int key,
+void FlutterWindowWin32::OnKey(int key,
                                int scancode,
                                int action,
                                char32_t character,
                                bool extended,
-                               bool was_down) {
-  return binding_handler_delegate_->OnKey(key, scancode, action, character,
-                                          extended, was_down);
+                               bool was_down,
+                               KeyEventCallback callback) {
+  binding_handler_delegate_->OnKey(key, scancode, action, character, extended,
+                                   was_down, std::move(callback));
 }
 
 void FlutterWindowWin32::OnComposeBegin() {
@@ -209,6 +210,10 @@ void FlutterWindowWin32::OnComposeEnd() {
 void FlutterWindowWin32::OnComposeChange(const std::u16string& text,
                                          int cursor_pos) {
   binding_handler_delegate_->OnComposeChange(text, cursor_pos);
+}
+
+void FlutterWindowWin32::OnUpdateSemanticsEnabled(bool enabled) {
+  binding_handler_delegate_->OnUpdateSemanticsEnabled(enabled);
 }
 
 void FlutterWindowWin32::OnScroll(double delta_x,
@@ -232,6 +237,10 @@ void FlutterWindowWin32::OnCursorRectUpdated(const Rect& rect) {
   UpdateCursorRect(Rect(origin, size));
 }
 
+void FlutterWindowWin32::OnResetImeComposing() {
+  AbortImeComposing();
+}
+
 bool FlutterWindowWin32::OnBitmapSurfaceUpdated(const void* allocation,
                                                 size_t row_bytes,
                                                 size_t height) {
@@ -248,6 +257,10 @@ bool FlutterWindowWin32::OnBitmapSurfaceUpdated(const void* allocation,
   int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
                               allocation, &bmi, DIB_RGB_COLORS);
   return ret != 0;
+}
+
+gfx::NativeViewAccessible FlutterWindowWin32::GetNativeViewAccessible() {
+  return binding_handler_delegate_->GetNativeViewAccessible();
 }
 
 }  // namespace flutter

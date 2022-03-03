@@ -4,8 +4,6 @@
 
 #include "vulkan_proc_table.h"
 
-#include <dlfcn.h>
-
 #include "flutter/fml/logging.h"
 
 #define ACQUIRE_PROC(name, context)                          \
@@ -16,10 +14,20 @@
 
 namespace vulkan {
 
-VulkanProcTable::VulkanProcTable()
+VulkanProcTable::VulkanProcTable() : VulkanProcTable("libvulkan.so"){};
+
+VulkanProcTable::VulkanProcTable(const char* so_path)
     : handle_(nullptr), acquired_mandatory_proc_addresses_(false) {
-  acquired_mandatory_proc_addresses_ =
-      OpenLibraryHandle() && SetupLoaderProcAddresses();
+  acquired_mandatory_proc_addresses_ = OpenLibraryHandle(so_path) &&
+                                       SetupGetInstanceProcAddress() &&
+                                       SetupLoaderProcAddresses();
+}
+
+VulkanProcTable::VulkanProcTable(
+    std::function<void*(VkInstance, const char*)> get_instance_proc_addr)
+    : handle_(nullptr), acquired_mandatory_proc_addresses_(false) {
+  GetInstanceProcAddr = get_instance_proc_addr;
+  acquired_mandatory_proc_addresses_ = SetupLoaderProcAddresses();
 }
 
 VulkanProcTable::~VulkanProcTable() {
@@ -42,24 +50,27 @@ bool VulkanProcTable::AreDeviceProcsSetup() const {
   return device_;
 }
 
-bool VulkanProcTable::SetupLoaderProcAddresses() {
-  if (handle_ == nullptr) {
+bool VulkanProcTable::SetupGetInstanceProcAddress() {
+  if (!handle_) {
     return true;
   }
 
-  GetInstanceProcAddr =
+  GetInstanceProcAddr = reinterpret_cast<void* (*)(VkInstance, const char*)>(
 #if VULKAN_LINK_STATICALLY
-      GetInstanceProcAddr = &vkGetInstanceProcAddr;
+      &vkGetInstanceProcAddr
 #else   // VULKAN_LINK_STATICALLY
-      reinterpret_cast<PFN_vkGetInstanceProcAddr>(
-          dlsym(handle_, "vkGetInstanceProcAddr"));
+      const_cast<uint8_t*>(handle_->ResolveSymbol("vkGetInstanceProcAddr"))
 #endif  // VULKAN_LINK_STATICALLY
-
+  );
   if (!GetInstanceProcAddr) {
     FML_DLOG(WARNING) << "Could not acquire vkGetInstanceProcAddr.";
     return false;
   }
 
+  return true;
+}
+
+bool VulkanProcTable::SetupLoaderProcAddresses() {
   VulkanHandle<VkInstance> null_instance(VK_NULL_HANDLE, nullptr);
 
   ACQUIRE_PROC(CreateInstance, null_instance);
@@ -79,14 +90,14 @@ bool VulkanProcTable::SetupInstanceProcAddresses(
   ACQUIRE_PROC(GetDeviceProcAddr, handle);
   ACQUIRE_PROC(GetPhysicalDeviceFeatures, handle);
   ACQUIRE_PROC(GetPhysicalDeviceQueueFamilyProperties, handle);
-#if OS_ANDROID
+#if FML_OS_ANDROID
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR, handle);
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceFormatsKHR, handle);
   ACQUIRE_PROC(GetPhysicalDeviceSurfacePresentModesKHR, handle);
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceSupportKHR, handle);
   ACQUIRE_PROC(DestroySurfaceKHR, handle);
   ACQUIRE_PROC(CreateAndroidSurfaceKHR, handle);
-#endif  // OS_ANDROID
+#endif  // FML_OS_ANDROID
 
   // The debug report functions are optional. We don't want proc acquisition to
   // fail here because the optional methods were not present (since ACQUIRE_PROC
@@ -99,7 +110,7 @@ bool VulkanProcTable::SetupInstanceProcAddresses(
     return true;
   }();
 
-  instance_ = {handle, nullptr};
+  instance_ = VulkanHandle<VkInstance>{handle, nullptr};
   return true;
 }
 
@@ -129,58 +140,44 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(ResetCommandBuffer, handle);
   ACQUIRE_PROC(ResetFences, handle);
   ACQUIRE_PROC(WaitForFences, handle);
-#if OS_ANDROID
+#ifndef TEST_VULKAN_PROCS
+#if FML_OS_ANDROID
   ACQUIRE_PROC(AcquireNextImageKHR, handle);
   ACQUIRE_PROC(CreateSwapchainKHR, handle);
   ACQUIRE_PROC(DestroySwapchainKHR, handle);
   ACQUIRE_PROC(GetSwapchainImagesKHR, handle);
   ACQUIRE_PROC(QueuePresentKHR, handle);
-#endif  // OS_ANDROID
+#endif  // FML_OS_ANDROID
 #if OS_FUCHSIA
   ACQUIRE_PROC(ImportSemaphoreZirconHandleFUCHSIA, handle);
   ACQUIRE_PROC(GetSemaphoreZirconHandleFUCHSIA, handle);
   ACQUIRE_PROC(GetMemoryZirconHandleFUCHSIA, handle);
-  ACQUIRE_PROC(CreateBufferCollectionFUCHSIAX, handle);
-  ACQUIRE_PROC(DestroyBufferCollectionFUCHSIAX, handle);
-  ACQUIRE_PROC(SetBufferCollectionConstraintsFUCHSIAX, handle);
-  ACQUIRE_PROC(GetBufferCollectionPropertiesFUCHSIAX, handle);
+  ACQUIRE_PROC(CreateBufferCollectionFUCHSIA, handle);
+  ACQUIRE_PROC(DestroyBufferCollectionFUCHSIA, handle);
+  ACQUIRE_PROC(SetBufferCollectionImageConstraintsFUCHSIA, handle);
+  ACQUIRE_PROC(GetBufferCollectionPropertiesFUCHSIA, handle);
 #endif  // OS_FUCHSIA
-  device_ = {handle, nullptr};
+#endif  // TEST_VULKAN_PROCS
+  device_ = VulkanHandle<VkDevice>{handle, nullptr};
   return true;
 }
 
-bool VulkanProcTable::OpenLibraryHandle() {
+bool VulkanProcTable::OpenLibraryHandle(const char* path) {
 #if VULKAN_LINK_STATICALLY
-  static char kDummyLibraryHandle = '\0';
-  handle_ = reinterpret_cast<decltype(handle_)>(&kDummyLibraryHandle);
-  return true;
+  handle_ = fml::NativeLibrary::CreateForCurrentProcess();
 #else   // VULKAN_LINK_STATICALLY
-  dlerror();  // clear existing errors on thread.
-  handle_ = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
-  if (handle_ == nullptr) {
-    FML_DLOG(WARNING) << "Could not open the vulkan library: " << dlerror();
+  handle_ = fml::NativeLibrary::Create(path);
+#endif  // VULKAN_LINK_STATICALLY
+  if (!handle_) {
+    FML_DLOG(WARNING) << "Could not open Vulkan library handle: " << path;
     return false;
   }
   return true;
-#endif  // VULKAN_LINK_STATICALLY
 }
 
 bool VulkanProcTable::CloseLibraryHandle() {
-#if VULKAN_LINK_STATICALLY
   handle_ = nullptr;
   return true;
-#else
-  if (handle_ != nullptr) {
-    dlerror();  // clear existing errors on thread.
-    if (dlclose(handle_) != 0) {
-      FML_DLOG(ERROR) << "Could not close the vulkan library handle. This "
-                         "indicates a leak.";
-      FML_DLOG(ERROR) << dlerror();
-    }
-    handle_ = nullptr;
-  }
-  return handle_ == nullptr;
-#endif
 }
 
 PFN_vkVoidFunction VulkanProcTable::AcquireProc(
@@ -191,7 +188,8 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
   }
 
   // A VK_NULL_HANDLE as the instance is an acceptable parameter.
-  return GetInstanceProcAddr(instance, proc_name);
+  return reinterpret_cast<PFN_vkVoidFunction>(
+      GetInstanceProcAddr(instance, proc_name));
 }
 
 PFN_vkVoidFunction VulkanProcTable::AcquireProc(
@@ -211,13 +209,14 @@ GrVkGetProc VulkanProcTable::CreateSkiaGetProc() const {
 
   return [this](const char* proc_name, VkInstance instance, VkDevice device) {
     if (device != VK_NULL_HANDLE) {
-      auto result = AcquireProc(proc_name, {device, nullptr});
+      auto result =
+          AcquireProc(proc_name, VulkanHandle<VkDevice>{device, nullptr});
       if (result != nullptr) {
         return result;
       }
     }
 
-    return AcquireProc(proc_name, {instance, nullptr});
+    return AcquireProc(proc_name, VulkanHandle<VkInstance>{instance, nullptr});
   };
 }
 

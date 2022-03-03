@@ -383,7 +383,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRRect'));
     final EngineLayer engineLayer = EngineLayer._();
-    _pushClipRRect(engineLayer, rrect._value32, clipBehavior.index, oldLayer?._nativeLayer);
+    _pushClipRRect(engineLayer, rrect._getValue32(), clipBehavior.index, oldLayer?._nativeLayer);
     final ClipRRectEngineLayer layer = ClipRRectEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
@@ -718,6 +718,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
     bool isComplexHint = false,
     bool willChangeHint = false,
   }) {
+    assert(!picture.debugDisposed);
     final int hints = (isComplexHint ? 1 : 0) | (willChangeHint ? 2 : 0);
     _addPicture(offset.dx, offset.dy, picture, hints);
   }

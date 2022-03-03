@@ -9,16 +9,15 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import '../../browser_detection.dart';
+import '../../safe_browser_api.dart';
 import '../../util.dart';
 import '../../validators.dart';
 import '../../vector_math.dart';
-import '../offscreen_canvas.dart';
 import '../path/path_utils.dart';
 import '../render_vertices.dart';
 import 'normalized_gradient.dart';
 import 'shader_builder.dart';
 import 'vertex_shaders.dart';
-import 'webgl_context.dart';
 
 const double kFltEpsilon = 1.19209290E-07; // == 1 / (2 ^ 23)
 const double kFltEpsilonSquared = 1.19209290E-07 * 1.19209290E-07;
@@ -80,11 +79,9 @@ class GradientSweep extends EngineGradient {
     final Object angleRange = gl.getUniformLocation(glProgram.program, 'angle_range');
     gl.setUniform2f(angleRange, startAngle, endAngle);
     normalizedGradient.setupUniforms(gl, glProgram);
-    if (matrix4 != null) {
-      final Object gradientMatrix =
+    final Object gradientMatrix =
           gl.getUniformLocation(glProgram.program, 'm_gradient');
-      gl.setUniformMatrix4fv(gradientMatrix, false, matrix4!);
-    }
+    gl.setUniformMatrix4fv(gradientMatrix, false, matrix4 ?? Matrix4.identity().storage);
     if (createDataUrl) {
       return glRenderer!.drawRectToImageUrl(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
@@ -294,9 +291,7 @@ class GradientLinear extends EngineGradient {
     // We compute location based on gl_FragCoord to center distance which
     // returns 0.0 at center. To make sure we align center of gradient to this
     // point, we shift by 0.5 to get st value for center of gradient.
-    if (tileMode != ui.TileMode.repeated) {
-      gradientTransform.translate(0.5, 0);
-    }
+    gradientTransform.translate(0.5, 0);
     if (length > kFltEpsilon) {
       gradientTransform.scale(1.0 / length);
     }

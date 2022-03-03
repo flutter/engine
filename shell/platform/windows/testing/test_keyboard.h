@@ -16,9 +16,13 @@
 
 #include "gtest/gtest.h"
 
+struct _FlutterPlatformMessageResponseHandle {
+  FlutterDesktopBinaryReply callback;
+  void* user_data;
+};
+
 namespace flutter {
 namespace testing {
-
 ::testing::AssertionResult _EventEquals(const char* expr_event,
                                         const char* expr_expected,
                                         const FlutterKeyEvent& event,
@@ -42,40 +46,94 @@ LPARAM CreateKeyEventLparam(USHORT scancode,
                             bool context_code = 0,
                             bool transition_state = 1);
 
-typedef std::function<bool()> MockKeyEventChannelHandler;
-typedef std::function<bool(const FlutterKeyEvent* event)>
-    MockKeyEventEmbedderHandler;
+class MockKeyResponseController {
+ public:
+  using ResponseCallback = std::function<void(bool)>;
+  using EmbedderCallbackHandler =
+      std::function<void(const FlutterKeyEvent*, ResponseCallback)>;
+  using ChannelCallbackHandler = std::function<void(ResponseCallback)>;
+  using TextInputCallbackHandler =
+      std::function<void(std::unique_ptr<rapidjson::Document>)>;
 
-void MockEmbedderApiForKeyboard(EngineModifier& modifier,
-                                MockKeyEventChannelHandler channel_handler,
-                                MockKeyEventEmbedderHandler embedder_handler);
+  MockKeyResponseController()
+      : channel_response_(ChannelRespondFalse),
+        embedder_response_(EmbedderRespondFalse),
+        text_input_response_(
+            [](std::unique_ptr<rapidjson::Document> document) {}) {}
+
+  void SetChannelResponse(ChannelCallbackHandler handler) {
+    channel_response_ = std::move(handler);
+  }
+
+  void SetEmbedderResponse(EmbedderCallbackHandler handler) {
+    embedder_response_ = std::move(handler);
+  }
+
+  void SetTextInputResponse(TextInputCallbackHandler handler) {
+    text_input_response_ = std::move(handler);
+  }
+
+  void HandleChannelMessage(ResponseCallback callback) {
+    channel_response_(callback);
+  }
+
+  void HandleEmbedderMessage(const FlutterKeyEvent* event,
+                             ResponseCallback callback) {
+    embedder_response_(event, std::move(callback));
+  }
+
+  void HandleTextInputMessage(std::unique_ptr<rapidjson::Document> document) {
+    text_input_response_(std::move(document));
+  }
+
+ private:
+  EmbedderCallbackHandler embedder_response_;
+  ChannelCallbackHandler channel_response_;
+  TextInputCallbackHandler text_input_response_;
+
+  static void ChannelRespondFalse(ResponseCallback callback) {
+    callback(false);
+  }
+
+  static void EmbedderRespondFalse(const FlutterKeyEvent* event,
+                                   ResponseCallback callback) {
+    callback(false);
+  }
+};
+
+void MockEmbedderApiForKeyboard(
+    EngineModifier& modifier,
+    std::shared_ptr<MockKeyResponseController> response_controller);
 
 // Simulate a message queue for WM messages.
 //
 // Subclasses must implement |Win32SendMessage| for how dispatched messages are
 // processed.
 class MockMessageQueue {
- public:
-  // Push a list of messages to the message queue, then dispatch
-  // them with |Win32SendMessage| one by one.
-  void InjectMessageList(int count, const Win32Message* messages);
+ protected:
+  // Push a message to the message queue without dispatching it.
+  void PushBack(const Win32Message* message);
+
+  // Dispatch the first message of the message queue and return its result.
+  //
+  // This method asserts that the queue is not empty.
+  LRESULT DispatchFront();
 
   // Peak the next message in the message queue.
   //
   // See Win32's |PeekMessage| for documentation.
   BOOL Win32PeekMessage(LPMSG lpMsg,
-                        HWND hWnd,
                         UINT wMsgFilterMin,
                         UINT wMsgFilterMax,
                         UINT wRemoveMsg);
 
- protected:
-  virtual LRESULT Win32SendMessage(HWND hWnd,
-                                   UINT const message,
+  // Simulate dispatching a message to the system.
+  virtual LRESULT Win32SendMessage(UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) = 0;
 
   std::list<Win32Message> _pending_messages;
+  std::list<Win32Message> _sent_messages;
 };
 
 }  // namespace testing

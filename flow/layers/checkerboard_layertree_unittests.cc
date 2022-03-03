@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/clip_rrect_layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
-
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -294,7 +294,7 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(
+            DisplayListCanvasDispatcher::ComputeShadowBounds(
                 layer_path, initial_elevation, 1.0f, SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(layer->elevation(), initial_elevation);
@@ -333,7 +333,7 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(
+            DisplayListCanvasDispatcher::ComputeShadowBounds(
                 layer_path, initial_elevation, 1.0f, SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(layer->elevation(), initial_elevation);

@@ -5,18 +5,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import '../assets.dart';
 import '../browser_detection.dart';
+import '../safe_browser_api.dart';
 import '../util.dart';
 import 'layout_service.dart';
 
 const String ahemFontFamily = 'Ahem';
-const String ahemFontUrl = 'packages/ui/assets/ahem.ttf';
+const String ahemFontUrl = '/assets/fonts/ahem.ttf';
 const String robotoFontFamily = 'Roboto';
-const String robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -185,17 +185,7 @@ class FontManager {
     try {
       final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
       _fontLoadingFutures.add(fontFace.load().then((_) {
-        // We could do:
-        // ```
-        // html.document.fonts!.add(fontFace);
-        // ```
-        // But dart:html expects the return value to be non-null, and Firefox
-        // returns null. This causes the app to crash in Firefox with a null
-        // check exception.
-        //
-        // TODO(mdebbar): Revert this once the dart:html type is fixed.
-        //                https://github.com/dart-lang/sdk/issues/45676
-        js_util.callMethod(html.document.fonts!, 'add', <dynamic>[fontFace]);
+        html.document.fonts!.add(fontFace);
       }, onError: (dynamic e) {
         printWarning('Error while trying to load font family "$family":\n$e');
       }));
@@ -322,9 +312,3 @@ class _PolyfillFontManager extends FontManager {
     _fontLoadingFutures.add(completer.future);
   }
 }
-
-final bool supportsFontLoadingApi =
-    js_util.hasProperty(html.window, 'FontFace');
-final bool supportsFontsClearApi =
-    js_util.hasProperty(html.document, 'fonts') &&
-        js_util.hasProperty(html.document.fonts!, 'clear');

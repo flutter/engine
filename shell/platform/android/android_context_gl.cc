@@ -6,7 +6,11 @@
 
 #include <EGL/eglext.h>
 
+#include <list>
 #include <utility>
+
+// required to get API level
+#include <sys/system_properties.h>
 
 #include "flutter/fml/trace_event.h"
 
@@ -105,13 +109,138 @@ static bool TeardownContext(EGLDisplay display, EGLContext context) {
   return true;
 }
 
+class AndroidEGLSurfaceDamage {
+ public:
+  void init(EGLDisplay display, EGLContext context) {
+    if (GetAPILevel() < 28) {
+      // Disable partial repaint for devices older than Android 9. There
+      // are old devices that have extensions below available but the
+      // implementation causes glitches (i.e. Xperia Z3 with Android 6).
+      partial_redraw_supported_ = false;
+      return;
+    }
+
+    const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
+
+    if (HasExtension(extensions, "EGL_KHR_partial_update")) {
+      set_damage_region_ = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+          eglGetProcAddress("eglSetDamageRegionKHR"));
+    }
+
+    if (HasExtension(extensions, "EGL_EXT_swap_buffers_with_damage")) {
+      swap_buffers_with_damage_ =
+          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+              eglGetProcAddress("eglSwapBuffersWithDamageEXT"));
+    } else if (HasExtension(extensions, "EGL_KHR_swap_buffers_with_damage")) {
+      swap_buffers_with_damage_ =
+          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+              eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+    }
+
+    partial_redraw_supported_ =
+        set_damage_region_ != nullptr && swap_buffers_with_damage_ != nullptr;
+  }
+
+  static int GetAPILevel() {
+    char sdk_version_string[PROP_VALUE_MAX];
+    if (__system_property_get("ro.build.version.sdk", sdk_version_string)) {
+      return atoi(sdk_version_string);
+    } else {
+      return -1;
+    }
+  }
+
+  void SetDamageRegion(EGLDisplay display,
+                       EGLSurface surface,
+                       const std::optional<SkIRect>& region) {
+    if (set_damage_region_ && region) {
+      auto rects = RectToInts(display, surface, *region);
+      set_damage_region_(display, surface, rects.data(), 1);
+    }
+  }
+
+  // Maximum damage history - for triple buffering we need to store damage for
+  // last two frames; Some Android devices (Pixel 4) use quad buffering.
+  static const int kMaxHistorySize = 10;
+
+  bool SupportsPartialRepaint() const { return partial_redraw_supported_; }
+
+  std::optional<SkIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
+    if (!partial_redraw_supported_) {
+      return std::nullopt;
+    }
+
+    EGLint age;
+    eglQuerySurface(display, surface, EGL_BUFFER_AGE_EXT, &age);
+
+    if (age == 0) {  // full repaint
+      return std::nullopt;
+    } else {
+      // join up to (age - 1) last rects from damage history
+      --age;
+      auto res = SkIRect::MakeEmpty();
+      for (auto i = damage_history_.rbegin();
+           i != damage_history_.rend() && age > 0; ++i, --age) {
+        res.join(*i);
+      }
+      return res;
+    }
+  }
+
+  bool SwapBuffersWithDamage(EGLDisplay display,
+                             EGLSurface surface,
+                             const std::optional<SkIRect>& damage) {
+    if (swap_buffers_with_damage_ && damage) {
+      damage_history_.push_back(*damage);
+      if (damage_history_.size() > kMaxHistorySize) {
+        damage_history_.pop_front();
+      }
+      auto rects = RectToInts(display, surface, *damage);
+      return swap_buffers_with_damage_(display, surface, rects.data(), 1);
+    } else {
+      return eglSwapBuffers(display, surface);
+    }
+  }
+
+ private:
+  std::array<EGLint, 4> static RectToInts(EGLDisplay display,
+                                          EGLSurface surface,
+                                          const SkIRect& rect) {
+    EGLint height;
+    eglQuerySurface(display, surface, EGL_HEIGHT, &height);
+
+    std::array<EGLint, 4> res{rect.left(), height - rect.bottom(), rect.width(),
+                              rect.height()};
+    return res;
+  }
+
+  PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ = nullptr;
+  PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage_ = nullptr;
+
+  bool partial_redraw_supported_;
+
+  bool HasExtension(const char* extensions, const char* name) {
+    const char* r = strstr(extensions, name);
+    auto len = strlen(name);
+    // check that the extension name is terminated by space or null terminator
+    return r != nullptr && (r[len] == ' ' || r[len] == 0);
+  }
+
+  std::list<SkIRect> damage_history_;
+};
+
 AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
                                      EGLDisplay display,
                                      EGLContext context)
-    : surface_(surface), display_(display), context_(context) {}
+    : surface_(surface),
+      display_(display),
+      context_(context),
+      damage_(std::make_unique<AndroidEGLSurfaceDamage>()) {
+  damage_->init(display_, context);
+}
 
 AndroidEGLSurface::~AndroidEGLSurface() {
-  auto result = eglDestroySurface(display_, surface_);
+  [[maybe_unused]] auto result = eglDestroySurface(display_, surface_);
   FML_DCHECK(result == EGL_TRUE);
 }
 
@@ -128,9 +257,23 @@ bool AndroidEGLSurface::MakeCurrent() const {
   return true;
 }
 
-bool AndroidEGLSurface::SwapBuffers() {
+void AndroidEGLSurface::SetDamageRegion(
+    const std::optional<SkIRect>& buffer_damage) {
+  damage_->SetDamageRegion(display_, surface_, buffer_damage);
+}
+
+bool AndroidEGLSurface::SwapBuffers(
+    const std::optional<SkIRect>& surface_damage) {
   TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
-  return eglSwapBuffers(display_, surface_);
+  return damage_->SwapBuffersWithDamage(display_, surface_, surface_damage);
+}
+
+bool AndroidEGLSurface::SupportsPartialRepaint() const {
+  return damage_->SupportsPartialRepaint();
+}
+
+std::optional<SkIRect> AndroidEGLSurface::InitialDamage() {
+  return damage_->InitialDamage(display_, surface_);
 }
 
 SkISize AndroidEGLSurface::GetSize() const {
@@ -148,10 +291,12 @@ SkISize AndroidEGLSurface::GetSize() const {
 
 AndroidContextGL::AndroidContextGL(
     AndroidRenderingAPI rendering_api,
-    fml::RefPtr<AndroidEnvironmentGL> environment)
+    fml::RefPtr<AndroidEnvironmentGL> environment,
+    const TaskRunners& task_runners)
     : AndroidContext(AndroidRenderingAPI::kOpenGLES),
       environment_(environment),
-      config_(nullptr) {
+      config_(nullptr),
+      task_runners_(task_runners) {
   if (!environment_->IsValid()) {
     FML_LOG(ERROR) << "Could not create an Android GL environment.";
     return;
@@ -189,6 +334,26 @@ AndroidContextGL::AndroidContextGL(
 }
 
 AndroidContextGL::~AndroidContextGL() {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  sk_sp<GrDirectContext> main_context = GetMainSkiaContext();
+  SetMainSkiaContext(nullptr);
+  fml::AutoResetWaitableEvent latch;
+  // This context needs to be deallocated from the raster thread in order to
+  // keep a coherent usage of egl from a single thread.
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(), [&] {
+    if (main_context) {
+      std::unique_ptr<AndroidEGLSurface> pbuffer_surface =
+          CreatePbufferSurface();
+      if (pbuffer_surface->MakeCurrent()) {
+        main_context->releaseResourcesAndAbandonContext();
+        main_context.reset();
+        ClearCurrent();
+      }
+    }
+    latch.Signal();
+  });
+  latch.Wait();
+
   if (!TeardownContext(environment_->Display(), context_)) {
     FML_LOG(ERROR)
         << "Could not tear down the EGL context. Possible resource leak.";

@@ -8,8 +8,6 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
@@ -18,7 +16,6 @@ namespace flutter {
 PlatformView::PlatformView(Delegate& delegate, TaskRunners task_runners)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
-      size_(SkISize::Make(0, 0)),
       weak_factory_(this) {}
 
 PlatformView::~PlatformView() = default;
@@ -39,12 +36,6 @@ void PlatformView::DispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
   delegate_.OnPlatformViewDispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
-}
-
-void PlatformView::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                                         KeyDataResponse callback) {
-  delegate_.OnPlatformViewDispatchKeyDataPacket(std::move(packet),
-                                                std::move(callback));
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t id,
@@ -92,6 +83,10 @@ void PlatformView::NotifyDestroyed() {
   delegate_.OnPlatformViewDestroyed();
 }
 
+void PlatformView::ScheduleFrame() {
+  delegate_.OnPlatformViewScheduleFrame();
+}
+
 sk_sp<GrDirectContext> PlatformView::CreateResourceContext() const {
   FML_DLOG(WARNING) << "This platform does not set up the resource "
                        "context on the IO thread for async texture uploads.";
@@ -115,8 +110,9 @@ void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
-  if (auto response = message->response())
+  if (auto response = message->response()) {
     response->CompleteEmpty();
+  }
 }
 
 void PlatformView::OnPreEngineRestart() const {}
@@ -183,6 +179,11 @@ void PlatformView::UpdateAssetResolverByType(
 
 std::unique_ptr<SnapshotSurfaceProducer>
 PlatformView::CreateSnapshotSurfaceProducer() {
+  return nullptr;
+}
+
+std::shared_ptr<PlatformMessageHandler>
+PlatformView::GetPlatformMessageHandler() const {
   return nullptr;
 }
 

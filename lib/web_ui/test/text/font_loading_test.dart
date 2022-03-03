@@ -17,9 +17,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui.webOnlyInitializeTestDomRenderer();
+  await initializeTestFlutterViewEmbedder();
   group('loadFontFromList', () {
-    const String _testFontUrl = 'packages/ui/assets/ahem.ttf';
+    const String _testFontUrl = '/assets/fonts/ahem.ttf';
 
     tearDown(() {
       html.document.fonts!.clear();

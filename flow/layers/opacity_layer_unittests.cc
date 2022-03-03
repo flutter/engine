@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/opacity_layer.h"
 
 #include "flutter/flow/layers/clip_rect_layer.h"
+#include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -261,8 +262,8 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_transform), Mutator(alpha_half)}));
 
-  const SkPaint opacity_paint =
-      SkPaint(SkColor4f::FromColor(SkColorSetA(SK_ColorBLACK, alpha_half)));
+  SkPaint opacity_paint;
+  opacity_paint.setAlphaf(alpha_half * (1.0 / SK_AlphaOPAQUE));
   SkRect opacity_bounds;
   expected_layer_bounds.makeOffset(-layer_offset.fX, -layer_offset.fY)
       .roundOut(&opacity_bounds);
@@ -351,10 +352,10 @@ TEST_F(OpacityLayerTest, Nested) {
   //   EXPECT_EQ(mock_layer3->parent_mutators(),
   //             std::vector({Mutator(layer1_transform), Mutator(alpha1)}));
 
-  const SkPaint opacity1_paint =
-      SkPaint(SkColor4f::FromColor(SkColorSetA(SK_ColorBLACK, alpha1)));
-  const SkPaint opacity2_paint =
-      SkPaint(SkColor4f::FromColor(SkColorSetA(SK_ColorBLACK, alpha2)));
+  SkPaint opacity1_paint;
+  opacity1_paint.setAlphaf(alpha1 * (1.0 / SK_AlphaOPAQUE));
+  SkPaint opacity2_paint;
+  opacity2_paint.setAlphaf(alpha2 * (1.0 / SK_AlphaOPAQUE));
   SkRect opacity1_bounds, opacity2_bounds;
   expected_layer1_bounds.makeOffset(-layer1_offset.fX, -layer1_offset.fY)
       .roundOut(&opacity1_bounds);
@@ -425,6 +426,24 @@ TEST_F(OpacityLayerTest, CullRectIsTransformed) {
   clipRectLayer->Preroll(preroll_context(), SkMatrix::I());
   EXPECT_EQ(mockLayer->parent_cull_rect().fLeft, -20);
   EXPECT_EQ(mockLayer->parent_cull_rect().fTop, -20);
+}
+
+using OpacityLayerDiffTest = DiffContextTest;
+
+TEST_F(OpacityLayerDiffTest, FractionalTranslation) {
+  auto picture =
+      CreatePictureLayer(CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1));
+  auto layer = CreateOpacityLater({picture}, 128, SkPoint::Make(0.5, 0.5));
+
+  MockLayerTree tree1;
+  tree1.root()->Add(layer);
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(11, 11, 61, 61));
+#else
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 61, 61));
+#endif
 }
 
 }  // namespace testing

@@ -35,6 +35,7 @@
 #include "third_party/tonic/dart_microtask_queue.h"
 #include "third_party/tonic/dart_state.h"
 #include "third_party/tonic/logging/dart_error.h"
+#include "third_party/tonic/logging/dart_invoke.h"
 
 #include "builtin_libraries.h"
 #include "logging.h"
@@ -354,7 +355,20 @@ void DartComponentControllerV2::Run() {
   loop_->Run();
 
   if (binding_.is_bound()) {
-    binding_.Close(return_code_);
+    // From the documentation for ComponentController, ZX_OK should be sent when
+    // the ComponentController receives a termination request. However, if the
+    // component exited with a non-zero return code, we indicate this by sending
+    // an INTERNAL epitaph instead.
+    //
+    // TODO(fxb/86666): Communicate return code from the ComponentController
+    // once v2 has support.
+    if (return_code_ == 0) {
+      binding_.Close(ZX_OK);
+    } else {
+      FML_LOG(ERROR) << "Component exited with non-zero return code: "
+                     << return_code_;
+      binding_.Close(zx_status_t(fuchsia::component::Error::INTERNAL));
+    }
   }
 }
 
@@ -364,7 +378,7 @@ bool DartComponentControllerV2::RunDartMain() {
 
   tonic::DartMicrotaskQueue::StartForCurrentThread();
 
-  // TODO(fxb/79871): Create a file descriptor for each component that is
+  // TODO(fxb/88384): Create a file descriptor for each component that is
   // launched and listen for anything that is written to the component. When
   // something is written to the component, forward that message along to the
   // Fuchsia logger and decorate it with the tag that it came from the
@@ -391,10 +405,41 @@ bool DartComponentControllerV2::RunDartMain() {
   Dart_EnterIsolate(isolate_);
   Dart_EnterScope();
 
-  // TODO(fxb/79871): Support argument passing.
-  Dart_Handle main_result =
-      Dart_Invoke(Dart_RootLibrary() /* target */, ToDart("main") /* name */,
-                  0 /* number_of_arguments */, {} /* arguments */);
+  // TODO(fxb/88383): Support argument passing.
+  Dart_Handle corelib = Dart_LookupLibrary(ToDart("dart:core"));
+  Dart_Handle string_type =
+      Dart_GetNonNullableType(corelib, ToDart("String"), 0, NULL);
+  Dart_Handle dart_arguments =
+      Dart_NewListOfTypeFilled(string_type, Dart_EmptyString(), 0);
+
+  if (Dart_IsError(dart_arguments)) {
+    FX_LOGF(ERROR, LOG_TAG, "Failed to allocate Dart arguments list: %s",
+            Dart_GetError(dart_arguments));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle user_main = Dart_GetField(Dart_RootLibrary(), ToDart("main"));
+
+  if (Dart_IsError(user_main)) {
+    FX_LOGF(ERROR, LOG_TAG,
+            "Failed to locate user_main in the root library: %s",
+            Dart_GetError(user_main));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle fuchsia_lib = Dart_LookupLibrary(tonic::ToDart("dart:fuchsia"));
+
+  if (Dart_IsError(fuchsia_lib)) {
+    FX_LOGF(ERROR, LOG_TAG, "Failed to locate dart:fuchsia: %s",
+            Dart_GetError(fuchsia_lib));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle main_result = tonic::DartInvokeField(
+      fuchsia_lib, "_runUserMainForDartRunner", {user_main, dart_arguments});
 
   if (Dart_IsError(main_result)) {
     auto dart_state = tonic::DartState::Current();

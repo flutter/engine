@@ -80,6 +80,9 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
     if (!entity.path.endsWith('.java')) {
       continue;
     }
+    if (entity.path.endsWith('Test.java')) {
+      continue;
+    }
     projectXml.writeln('    <src file="${entity.path}" />');
   }
 
@@ -90,7 +93,7 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
   await projectXml.close();
   print('Wrote project.xml, starting lint...');
   final List<String> lintArgs = <String>[
-    path.join(androidSdkDir.path, 'cmdline-tools', 'bin', 'lint'),
+    path.join(androidSdkDir.path, 'cmdline-tools', 'latest', 'bin', 'lint'),
     '--project', projectXmlPath,
     '--compile-sdk-version', '31',
     '--showall',

@@ -28,6 +28,10 @@ DEF_SWITCHES_START
 DEF_SWITCH(AotSharedLibraryName,
            "aot-shared-library-name",
            "Name of the *.so containing AOT compiled Dart assets.")
+DEF_SWITCH(AotVMServiceSharedLibraryName,
+           "aot-vmservice-shared-library-name",
+           "Name of the *.so containing AOT compiled Dart assets for "
+           "launching the service isolate.")
 DEF_SWITCH(SnapshotAssetPath,
            "snapshot-asset-path",
            "Path to the directory containing the four files specified by "
@@ -101,6 +105,9 @@ DEF_SWITCH(EnableSoftwareRendering,
            "Enable rendering using the Skia software backend. This is useful "
            "when testing Flutter on emulators. By default, Flutter will "
            "attempt to either use OpenGL, Metal, or Vulkan.")
+DEF_SWITCH(Route,
+           "route",
+           "Start app with an specific route defined on the framework")
 DEF_SWITCH(SkiaDeterministicRendering,
            "skia-deterministic-rendering",
            "Skips the call to SkGraphics::Init(), thus avoiding swapping out "
@@ -169,6 +176,10 @@ DEF_SWITCH(UseTestFonts,
            "will make font resolution default to the Ahem test font on all "
            "platforms (See https://www.w3.org/Style/CSS/Test/Fonts/Ahem/). "
            "This option is only available on the desktop test shells.")
+DEF_SWITCH(PrefetchedDefaultFontManager,
+           "prefetched-default-font-manager",
+           "Indicates whether the embedding started a prefetch of the "
+           "default font manager before creating the engine.")
 DEF_SWITCH(VerboseLogging,
            "verbose-logging",
            "By default, only errors are logged. This flag enabled logging at "
@@ -185,6 +196,12 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
+DEF_SWITCH(EnableSerialGC,
+           "enable-serial-gc",
+           "On low power devices with low core counts, running concurrent "
+           "GC tasks on threads can cause them to contend with the UI thread "
+           "which could potentially lead to jank. This option turns off all "
+           "concurrent GC activities")
 DEF_SWITCH(DisallowInsecureConnections,
            "disallow-insecure-connections",
            "By default, dart:io allows all socket connections. If this switch "
@@ -207,6 +224,11 @@ DEF_SWITCH(EnableSkParagraph,
            "enable-skparagraph",
            "Selects the SkParagraph implementation of the text layout engine.")
 
+DEF_SWITCH(LeakVM,
+           "leak-vm",
+           "When the last shell shuts down, the shared VM is leaked by default "
+           "(the leak_vm in VM settings is true). To clean up the leak VM, set "
+           "this value to false.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

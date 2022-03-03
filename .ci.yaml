@@ -4,13 +4,10 @@
 # for every commit.
 #
 # More information at:
-#  * https://github.com/flutter/cocoon/blob/master/CI_YAML.md
+#  * https://github.com/flutter/cocoon/blob/main/CI_YAML.md
 enabled_branches:
   - main
-  - master
-  - dev
-  - beta
-  - stable
+  - flutter-\d+\.\d+-candidate\.\d+
 
 platform_properties:
   linux:
@@ -72,7 +69,7 @@ platform_properties:
       device_type: none
       mac_model: "Macmini8,1"
       os: Mac-10.15
-      xcode: 12a7209 # xcode 12
+      xcode: 12c33 # xcode 12.3
   windows:
     properties:
       build_host: "false"
@@ -103,7 +100,7 @@ platform_properties:
 
 targets:
   - name: Linux Android AOT Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       add_recipes_cq: "true"
       build_android_aot: "true"
@@ -113,7 +110,7 @@ targets:
     scheduler: luci
 
   - name: Linux Android Debug Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       add_recipes_cq: "true"
       build_android_debug: "true"
@@ -124,7 +121,7 @@ targets:
     timeout: 60
     scheduler: luci
 
-  - name: Linux Android Scenarios
+  - name: Linux Android Emulator Tests
     bringup: true # Recipe issue https://github.com/flutter/flutter/issues/86427
     recipe: engine/scenarios
     properties:
@@ -139,6 +136,7 @@ targets:
 
   - name: Linux Benchmarks
     enabled_branches:
+      - main
       - master
     recipe: engine/engine_metrics
     presubmit: false
@@ -157,7 +155,7 @@ targets:
     scheduler: luci
 
   - name: Linux Fuchsia
-    recipe: engine
+    recipe: engine/engine
     properties:
       add_recipes_cq: "true"
       build_fuchsia: "true"
@@ -166,7 +164,7 @@ targets:
     scheduler: luci
 
   - name: Linux Fuchsia FEMU
-    recipe: femu_test
+    recipe: engine/femu_test
     properties:
       add_recipes_cq: "true"
       build_fuchsia: "true"
@@ -176,11 +174,14 @@ targets:
 
   - name: Linux Framework Smoke Tests
     recipe: engine/framework_smoke
+    enabled_branches:
+      - main
+      - master
     timeout: 60
     scheduler: luci
 
   - name: Linux Host Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       add_recipes_cq: "true"
       build_host: "true"
@@ -188,7 +189,14 @@ targets:
     scheduler: luci
 
   - name: Linux Unopt
-    recipe: engine_unopt
+    recipe: engine/engine_unopt
+    properties:
+      add_recipes_cq: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux clang-tidy
+    recipe: engine/engine_lint
     properties:
       add_recipes_cq: "true"
     timeout: 60
@@ -203,10 +211,14 @@ targets:
     scheduler: luci
 
   - name: Linux Web Engine
-    recipe: web_engine
+    recipe: engine/web_engine
     properties:
       add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
     timeout: 60
     scheduler: luci
     runIf:
@@ -219,6 +231,9 @@ targets:
 
   - name: Linux Web Framework tests
     recipe: engine/web_engine_framework
+    enabled_branches:
+      - main
+      - master
     properties:
       add_recipes_cq: "true"
       framework: "true"
@@ -236,24 +251,34 @@ targets:
       - flutter_frontend_server/**
 
   - name: Mac Android AOT Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
       build_android_aot: "true"
+      jazzy_version: 0.9.5
     timeout: 60
     scheduler: luci
 
   - name: Mac Host Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       add_recipes_cq: "true"
       build_host: "true"
+      jazzy_version: 0.9.5
     timeout: 75
     scheduler: luci
 
   - name: Mac Unopt
-    recipe: engine_unopt
+    recipe: engine/engine_unopt
+    properties:
+      add_recipes_cq: "true"
+      jazzy_version: 0.9.5
+    timeout: 75
+    scheduler: luci
+
+  - name: Mac clang-tidy
+    recipe: engine/engine_lint
     properties:
       add_recipes_cq: "true"
       jazzy_version: 0.9.5
@@ -261,7 +286,7 @@ targets:
     scheduler: luci
 
   - name: Mac iOS Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       build_ios: "true"
       ios_debug: "true"
@@ -270,9 +295,14 @@ targets:
     scheduler: luci
 
   - name: Mac Web Engine
-    recipe: web_engine
+    recipe: engine/web_engine
     properties:
+      add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
     timeout: 60
     scheduler: luci
     runIf:
@@ -283,8 +313,39 @@ targets:
       - ci/**
       - flutter_frontend_server/**
 
+  - name: Mac mac_ios_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine
+      environment: Staging
+      dependencies: >-
+        [
+          {"dependency": "jazzy"}
+        ]
+    scheduler: luci
+
+  - name:  Mac mac_ios_engine_profile
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine_profile
+      environment: Staging
+    scheduler: luci
+
+  - name:  Mac mac_ios_engine_release
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine_release
+      environment: Staging
+    scheduler: luci
+
   - name: Windows Android AOT Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       build_android_aot: "true"
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
@@ -293,29 +354,47 @@ targets:
     scheduler: luci
 
   - name: Windows Host Engine
-    recipe: engine
+    recipe: engine/engine
     timeout: 60
     properties:
       add_recipes_cq: "true"
       build_host: "true"
     scheduler: luci
 
+  - name: Windows windows_android_aot_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_android_aot_engine
+      environment: Staging
+    scheduler: luci
+
+  - name: Windows windows_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_host_engine
+      environment: Staging
+    scheduler: luci
+
   - name: Windows Unopt
-    recipe: engine_unopt
+    recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
     timeout: 75
     scheduler: luci
 
   - name: Windows UWP Engine
-    recipe: engine
+    recipe: engine/engine
     properties:
       build_windows_uwp: "true"
     timeout: 60
     scheduler: luci
 
   - name: Windows Web Engine
-    recipe: web_engine
+    recipe: engine/web_engine
     properties:
       gcs_goldens_bucket: flutter_logs
     timeout: 60
@@ -327,7 +406,7 @@ targets:
 
   - name: Mac iOS Engine Profile
     presubmit: false
-    recipe: engine
+    recipe: engine/engine
     properties:
       build_ios: "true"
       ios_profile: "true"
@@ -337,7 +416,7 @@ targets:
 
   - name: Mac iOS Engine Release
     presubmit: false
-    recipe: engine
+    recipe: engine/engine
     properties:
       build_ios: "true"
       ios_release: "true"
@@ -348,4 +427,3 @@ targets:
   - name: Linux ci_yaml engine roller
     bringup: true
     recipe: infra/ci_yaml
-    scheduler: luci

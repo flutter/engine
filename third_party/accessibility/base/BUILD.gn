@@ -26,6 +26,8 @@ source_set("base") {
     sources += [
       "win/atl.h",
       "win/atl_module.h",
+      "win/display.cc",
+      "win/display.h",
       "win/enum_variant.cc",
       "win/enum_variant.h",
       "win/scoped_bstr.cc",
@@ -33,8 +35,6 @@ source_set("base") {
       "win/scoped_safearray.h",
       "win/scoped_variant.cc",
       "win/scoped_variant.h",
-      "win/string_conversion.cc",
-      "win/string_conversion.h",
       "win/variant_util.h",
       "win/variant_vector.cc",
       "win/variant_vector.h",
@@ -50,6 +50,8 @@ source_set("base") {
 
   public_deps = [
     "numerics",
+    "//flutter/fml:string_conversion",
     "//flutter/third_party/accessibility/ax_build",
+    "//third_party/dart/runtime/third_party/double-conversion/src:libdouble_conversion",
   ]
 }

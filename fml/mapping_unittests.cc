@@ -25,7 +25,8 @@ TEST(MallocMapping, MoveConstructor) {
   MallocMapping mapping(reinterpret_cast<uint8_t*>(malloc(length)), length);
   MallocMapping moved = std::move(mapping);
 
-  ASSERT_EQ(nullptr, mapping.GetMapping());
+  ASSERT_EQ(nullptr,
+            mapping.GetMapping());  // NOLINT(clang-analyzer-cplusplus.Move)
   ASSERT_EQ(0u, mapping.GetSize());
   ASSERT_NE(nullptr, moved.GetMapping());
   ASSERT_EQ(length, moved.GetSize());
@@ -50,6 +51,13 @@ TEST(MallocMapping, Release) {
   free(const_cast<uint8_t*>(mapping.Release()));
   ASSERT_EQ(nullptr, mapping.GetMapping());
   ASSERT_EQ(0u, mapping.GetSize());
+}
+
+TEST(MallocMapping, IsDontNeedSafe) {
+  size_t length = 10;
+  MallocMapping mapping(reinterpret_cast<uint8_t*>(malloc(length)), length);
+  ASSERT_NE(nullptr, mapping.GetMapping());
+  ASSERT_FALSE(mapping.IsDontNeedSafe());
 }
 
 }  // namespace fml

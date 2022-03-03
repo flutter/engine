@@ -89,8 +89,7 @@ class AccessibilityBridgeTest : public testing::Test {
  protected:
   void SetUp() override {
     // Connect to SemanticsManager service.
-    fidl::InterfaceHandle<fuchsia::accessibility::semantics::SemanticsManager>
-        semantics_manager;
+    fuchsia::accessibility::semantics::SemanticsManagerHandle semantics_manager;
     zx_status_t semantics_status =
         services_provider_.service_directory()
             ->Connect<fuchsia::accessibility::semantics::SemanticsManager>(
@@ -807,8 +806,9 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
+
   EXPECT_TRUE(6 <= semantics_manager_.UpdateCount() &&
-              semantics_manager_.UpdateCount() <= 10);
+              semantics_manager_.UpdateCount() <= 12);
   EXPECT_EQ(1, semantics_manager_.CommitCount());
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());

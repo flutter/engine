@@ -24,9 +24,8 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
     FML_LOG(ERROR) << "TransformLayer is constructed with an invalid matrix.";
     transform_.setIdentity();
   }
+  set_layer_can_inherit_opacity(true);
 }
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -41,8 +40,6 @@ void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffChildren(context, prev);
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TransformLayer::Preroll");

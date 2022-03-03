@@ -5,7 +5,7 @@
 import 'dart:html' as html;
 
 import 'browser_detection.dart';
-import 'dom_renderer.dart';
+import 'embedder.dart';
 import 'text_editing/text_editing.dart';
 
 /// The interface required to host a flutter app in the DOM, and its tests.
@@ -97,9 +97,11 @@ class ShadowDomHostNode implements HostNode {
     root.isConnected ?? true,
     'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.',
     ) {
-    _shadow = root.attachShadow(<String, String>{
+    _shadow = root.attachShadow(<String, dynamic>{
       'mode': 'open',
-      'delegatesFocus': 'true',
+      // This needs to stay false to prevent issues like this:
+      // - https://github.com/flutter/flutter/issues/85759
+      'delegatesFocus': false,
     });
 
     final html.StyleElement shadowRootStyleElement = html.StyleElement();

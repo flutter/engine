@@ -4,9 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -32,6 +32,7 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UProperty;
 import io.flutter.embedding.android.KeyboardManager;
@@ -50,7 +51,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
@@ -61,7 +61,7 @@ import org.robolectric.shadows.ShadowInputMethodManager;
 @Config(
     manifest = Config.NONE,
     shadows = {InputConnectionAdaptorTest.TestImm.class})
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class InputConnectionAdaptorTest {
   @Mock KeyboardManager mockKeyboardManager;
   // Verifies the method and arguments for a captured method call.
@@ -81,7 +81,7 @@ public class InputConnectionAdaptorTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
   }
 
   @Test
@@ -1192,15 +1192,15 @@ public class InputConnectionAdaptorTest {
     int client = 0;
     TextInputChannel textInputChannel = mock(TextInputChannel.class);
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsEmoji(anyInt()))
+    when(mockFlutterJNI.isCodePointEmoji(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmoji((int) invocation.getArguments()[0]));
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsEmojiModifier(anyInt()))
+    when(mockFlutterJNI.isCodePointEmojiModifier(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmojiModifier((int) invocation.getArguments()[0]));
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsEmojiModifierBase(anyInt()))
+    when(mockFlutterJNI.isCodePointEmojiModifierBase(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmojiModifierBase((int) invocation.getArguments()[0]));
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsVariationSelector(anyInt()))
+    when(mockFlutterJNI.isCodePointVariantSelector(anyInt()))
         .thenAnswer((invocation) -> Emoji.isVariationSelector((int) invocation.getArguments()[0]));
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsRegionalIndicator(anyInt()))
+    when(mockFlutterJNI.isCodePointRegionalIndicator(anyInt()))
         .thenAnswer(
             (invocation) -> Emoji.isRegionalIndicatorSymbol((int) invocation.getArguments()[0]));
     return new InputConnectionAdaptor(
@@ -1263,7 +1263,6 @@ public class InputConnectionAdaptorTest {
   @Implements(InputMethodManager.class)
   public static class TestImm extends ShadowInputMethodManager {
     public static int empty = -999;
-    // private InputMethodSubtype currentInputMethodSubtype;
     CursorAnchorInfo lastCursorAnchorInfo;
     int lastExtractedTextToken = empty;
     ExtractedText lastExtractedText;
@@ -1274,15 +1273,6 @@ public class InputConnectionAdaptorTest {
     int lastCandidatesEnd = empty;
 
     public TestImm() {}
-
-    // @Implementation
-    // public InputMethodSubtype getCurrentInputMethodSubtype() {
-    //  return currentInputMethodSubtype;
-    // }
-
-    // public void setCurrentInputMethodSubtype(InputMethodSubtype inputMethodSubtype) {
-    //  this.currentInputMethodSubtype = inputMethodSubtype;
-    // }
 
     @Implementation
     public void updateCursorAnchorInfo(View view, CursorAnchorInfo cursorAnchorInfo) {

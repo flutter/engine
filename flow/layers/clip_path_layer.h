@@ -11,13 +11,10 @@ namespace flutter {
 
 class ClipPathLayer : public ContainerLayer {
  public:
-  ClipPathLayer(const SkPath& clip_path, Clip clip_behavior = Clip::antiAlias);
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+  explicit ClipPathLayer(const SkPath& clip_path,
+                         Clip clip_behavior = Clip::antiAlias);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 

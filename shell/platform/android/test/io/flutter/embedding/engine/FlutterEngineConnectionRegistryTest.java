@@ -11,6 +11,8 @@ import android.content.Context;
 import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import io.flutter.embedding.android.ExclusiveAppComponent;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -20,12 +22,11 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 // Run with Robolectric so that Log calls don't crash.
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterEngineConnectionRegistryTest {
   @Test
   public void itDoesNotRegisterTheSamePluginTwice() {
@@ -74,7 +75,11 @@ public class FlutterEngineConnectionRegistryTest {
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
 
     FlutterLoader flutterLoader = mock(FlutterLoader.class);
+
+    ExclusiveAppComponent appComponent = mock(ExclusiveAppComponent.class);
     Activity activity = mock(Activity.class);
+    when(appComponent.getAppComponent()).thenReturn(activity);
+
     Lifecycle lifecycle = mock(Lifecycle.class);
     Intent intent = mock(Intent.class);
     AtomicBoolean isFirstCall = new AtomicBoolean(true);
@@ -84,7 +89,7 @@ public class FlutterEngineConnectionRegistryTest {
         new FlutterEngineConnectionRegistry(context, flutterEngine, flutterLoader);
     FakeActivityAwareFlutterPlugin fakePlugin = new FakeActivityAwareFlutterPlugin();
     registry.add(fakePlugin);
-    registry.attachToActivity(activity, lifecycle);
+    registry.attachToActivity(appComponent, lifecycle);
 
     // The binding is now available via `fakePlugin.binding`: Create and add the listeners
     FakeActivityResultListener listener1 =

@@ -15,7 +15,9 @@
             "fuchsia.logger.LogSink",
             "fuchsia.net.name.Lookup",
             "fuchsia.posix.socket.Provider",
-            "fuchsia.tracing.provider.Registry",
+            "fuchsia.process.Launcher",
+            "fuchsia.process.Resolver",
+            "fuchsia.tracing.provider.Registry"
         ]
     }
 }

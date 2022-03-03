@@ -85,8 +85,6 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
 
   auto settings = p_settings;
 
-  settings.dart_entrypoint_args = args;
-
   if (!DartVM::IsRunningPrecompiledCode()) {
     if (!fml::IsFile(kernel_file_path)) {
       FML_LOG(ERROR) << "Could not locate kernel file.";
@@ -130,10 +128,12 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
           vm_data->GetIsolateSnapshot(),       // isolate snapshot
           nullptr,                             // platform configuration
           DartIsolate::Flags{},                // flags
+          nullptr,                             // root isolate create callback
           settings.isolate_create_callback,    // isolate create callback
           settings.isolate_shutdown_callback,  // isolate shutdown callback
           entrypoint,                          // entrypoint
           std::nullopt,                        // library
+          args,                                // args
           std::move(isolate_configuration),    // isolate configuration
           context                              // engine context
           )

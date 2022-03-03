@@ -26,6 +26,9 @@ void _updateWindowMetrics(
   double systemGestureInsetBottom,
   double systemGestureInsetLeft,
   double physicalTouchSlop,
+  List<double> displayFeaturesBounds,
+  List<int> displayFeaturesType,
+  List<int> displayFeaturesState,
 ) {
   PlatformDispatcher.instance._updateWindowMetrics(
     id,
@@ -45,6 +48,9 @@ void _updateWindowMetrics(
     systemGestureInsetBottom,
     systemGestureInsetLeft,
     physicalTouchSlop,
+    displayFeaturesBounds,
+    displayFeaturesType,
+    displayFeaturesState,
   );
 }
 
@@ -89,11 +95,6 @@ void _dispatchPointerDataPacket(ByteData packet) {
 }
 
 @pragma('vm:entry-point')
-void _dispatchKeyData(ByteData packet, int responseId) {
-  PlatformDispatcher.instance._dispatchKeyData(packet, responseId);
-}
-
-@pragma('vm:entry-point')
 void _dispatchSemanticsAction(int id, int action, ByteData? args) {
   PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
 }
@@ -124,7 +125,7 @@ void _runMainZoned(Function startMainIsolateFunction,
   startMainIsolateFunction(() {
     runZonedGuarded<void>(() {
       if (userMainFunction is _ListStringArgFunction) {
-        (userMainFunction as dynamic)(args);
+        userMainFunction(args);
       } else {
         userMainFunction();
       }
@@ -232,7 +233,7 @@ bool _isLoopback(String host) {
 @pragma('vm:entry-point')
 void Function(Uri) _getHttpConnectionHookClosure(bool mayInsecurelyConnectToAllDomains) {
   return (Uri uri) {
-      final dynamic zoneOverride = Zone.current[#flutter.io.allow_http];
+      final Object? zoneOverride = Zone.current[#flutter.io.allow_http];
       if (zoneOverride == true) {
         return;
       }

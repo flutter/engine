@@ -5,7 +5,7 @@
 # found in the LICENSE file.
 
 """
-This script is based on chromium/chromium/master/tools/clang/scripts/update.py.
+This script is based on chromium/chromium/main/tools/clang/scripts/update.py.
 
 It is used on Windows platforms to copy the correct msdia*.dll to the
 clang folder, as a "gclient hook".
@@ -19,8 +19,8 @@ import sys
 
 # Path constants. (All of these should be absolute paths.)
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-LLVM_BUILD_DIR = os.path.abspath(os.path.join(THIS_DIR, '..', '..', 'third_party',
-                                              'llvm-build', 'Release+Asserts'))
+LLVM_BUILD_DIR = os.path.abspath(os.path.join(THIS_DIR, '..', '..', 'buildtools',
+                                              'windows-x64', 'clang'))
 
 
 def GetDiaDll():

@@ -44,16 +44,13 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric>
 
 /// Maintains a single instance of computed segments for set of PathMetric
 /// objects exposed through iterator.
-///
-/// [resScale] controls the precision of measure when values > 1.
 class _SurfacePathMeasure {
-  _SurfacePathMeasure(this._path, this.forceClosed, {this.resScale = 1.0})
+  _SurfacePathMeasure(this._path, this.forceClosed)
       :
         // nextContour will increment this to the zero based index.
         _currentContourIndex = -1,
         _pathIterator = PathIterator(_path, forceClosed);
 
-  final double resScale;
   final PathRef _path;
   PathIterator _pathIterator;
   final List<_PathContourMeasure> _contours = <_PathContourMeasure>[];
@@ -533,7 +530,7 @@ const double _fTolerance = 0.5;
 /// the path.
 ///
 /// Implementation is based on
-/// https://github.com/google/skia/blob/master/src/core/SkContourMeasure.cpp
+/// https://github.com/google/skia/blob/main/src/core/SkContourMeasure.cpp
 /// to maintain consistency with native platforms.
 class SurfacePathMetric implements ui.PathMetric {
   SurfacePathMetric._(this._measure)

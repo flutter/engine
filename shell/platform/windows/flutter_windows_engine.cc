@@ -8,19 +8,22 @@
 #include <iostream>
 #include <sstream>
 
+#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
-#include "flutter/shell/platform/windows/string_conversion.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
 #ifndef WINUWP
 #include <dwmapi.h>
-#endif
+#include "flutter/shell/platform/windows/accessibility_bridge_delegate_winuwp.h"
+#else
+#include "flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h"
+#endif  // defined(WINUWP)
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -161,8 +164,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   FlutterEngineGetProcAddresses(&embedder_api_);
 
   task_runner_ = TaskRunner::Create(
-      GetCurrentThreadId(), embedder_api_.GetCurrentTime,
-      [this](const auto* task) {
+      embedder_api_.GetCurrentTime, [this](const auto* task) {
         if (!engine_) {
           std::cerr << "Cannot post an engine task when engine is not running."
                     << std::endl;
@@ -279,6 +281,29 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     host->OnVsync(baton);
   };
+  args.on_pre_engine_restart_callback = [](void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    host->view()->OnPreEngineRestart();
+  };
+  args.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
+                                           void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (!node || node->id == kFlutterSemanticsNodeIdBatchEnd) {
+      host->accessibility_bridge_->CommitUpdates();
+      return;
+    }
+    host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+  };
+  args.update_semantics_custom_action_callback =
+      [](const FlutterSemanticsCustomAction* action, void* user_data) {
+        auto host = static_cast<FlutterWindowsEngine*>(user_data);
+        if (!action || action->id == kFlutterSemanticsNodeIdBatchEnd) {
+          host->accessibility_bridge_->CommitUpdates();
+          return;
+        }
+        host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
+            action);
+      };
 
   args.custom_task_runners = &custom_task_runners;
 
@@ -485,7 +510,8 @@ void FlutterWindowsEngine::SendSystemSettings() {
                      Prefer24HourTime(GetUserTimeFormat()), allocator);
   settings.AddMember("textScaleFactor", 1.0, allocator);
   settings.AddMember("platformBrightness",
-                     Utf8FromUtf16(GetPreferredBrightness()), allocator);
+                     fml::WideStringToUtf8(GetPreferredBrightness()),
+                     allocator);
   settings_channel_->Send(settings);
 }
 
@@ -503,6 +529,48 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
     int64_t texture_id) {
   return (embedder_api_.MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
+}
+
+bool FlutterWindowsEngine::DispatchSemanticsAction(
+    uint64_t target,
+    FlutterSemanticsAction action,
+    fml::MallocMapping data) {
+  return (embedder_api_.DispatchSemanticsAction(engine_, target, action,
+                                                data.GetMapping(),
+                                                data.GetSize()) == kSuccess);
+}
+
+void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
+#if defined(WINUWP)
+  using AccessibilityBridgeDelegateWindows = AccessibilityBridgeDelegateWinUWP;
+#else
+  using AccessibilityBridgeDelegateWindows = AccessibilityBridgeDelegateWin32;
+#endif  // defined(WINUWP)
+
+  if (engine_ && semantics_enabled_ != enabled) {
+    semantics_enabled_ = enabled;
+    embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
+
+    if (!semantics_enabled_ && accessibility_bridge_) {
+      accessibility_bridge_.reset();
+    } else if (semantics_enabled_ && !accessibility_bridge_) {
+      accessibility_bridge_ = std::make_shared<AccessibilityBridge>(
+          std::make_unique<AccessibilityBridgeDelegateWindows>(this));
+    }
+  }
+}
+
+gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
+    AccessibilityNodeId id) {
+  if (!accessibility_bridge_) {
+    return nullptr;
+  }
+  std::shared_ptr<FlutterPlatformNodeDelegate> node_delegate =
+      accessibility_bridge_->GetFlutterPlatformNodeDelegateFromID(id).lock();
+  if (!node_delegate) {
+    return nullptr;
+  }
+  return node_delegate->GetNativeViewAccessible();
 }
 
 }  // namespace flutter

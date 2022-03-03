@@ -4,14 +4,13 @@
 
 #include <algorithm>
 
-#include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "third_party/skia/include/codec/SkCodec.h"
 #include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/src/codec/SkCodecImageGenerator.h"
-#ifdef OS_MACOSX
+#ifdef FML_OS_MACOSX
 #include "third_party/skia/include/ports/SkImageGeneratorCG.h"
-#elif OS_WIN
+#elif FML_OS_WIN
 #include "third_party/skia/include/ports/SkImageGeneratorWIC.h"
 #endif
 
@@ -25,7 +24,7 @@ ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
       0);
 
   // todo(bdero): https://github.com/flutter/flutter/issues/82603
-#ifdef OS_MACOSX
+#ifdef FML_OS_MACOSX
   AddFactory(
       [](sk_sp<SkData> buffer) {
         auto generator = SkImageGeneratorCG::MakeFromEncodedCG(buffer);
@@ -33,7 +32,7 @@ ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
             std::move(generator));
       },
       0);
-#elif OS_WIN
+#elif FML_OS_WIN
   AddFactory(
       [](sk_sp<SkData> buffer) {
         auto generator = SkImageGeneratorWIC::MakeFromEncodedWIC(buffer);
@@ -48,8 +47,7 @@ ImageGeneratorRegistry::~ImageGeneratorRegistry() = default;
 
 void ImageGeneratorRegistry::AddFactory(ImageGeneratorFactory factory,
                                         int32_t priority) {
-  image_generator_factories_.insert(
-      {factory, priority, fml::tracing::TraceNonce()});
+  image_generator_factories_.insert({factory, priority, ++nonce_});
 }
 
 std::shared_ptr<ImageGenerator>

@@ -45,17 +45,17 @@ class ClangTidy {
   /// will otherwise go to stderr.
   ClangTidy({
     required io.File buildCommandsPath,
-    required io.Directory repoPath,
     String checksArg = '',
     bool lintAll = false,
+    bool fix = false,
     StringSink? outSink,
     StringSink? errSink,
   }) :
     options = Options(
       buildCommandsPath: buildCommandsPath,
-      repoPath: repoPath,
       checksArg: checksArg,
       lintAll: lintAll,
+      fix: fix,
       errSink: errSink,
     ),
     _outSink = outSink ?? io.stdout,
@@ -110,7 +110,7 @@ class ClangTidy {
     final List<dynamic> buildCommandsData = jsonDecode(
       options.buildCommandsPath.readAsStringSync(),
     ) as List<dynamic>;
-    final List<Command> changedFileBuildCommands = getLintCommandsForChangedFiles(
+    final List<Command> changedFileBuildCommands = await getLintCommandsForChangedFiles(
       buildCommandsData,
       changedFiles,
     );
@@ -165,26 +165,26 @@ class ClangTidy {
   /// Given a build commands json file, and the files with local changes,
   /// compute the lint commands to run.
   @visibleForTesting
-  List<Command> getLintCommandsForChangedFiles(
+  Future<List<Command>> getLintCommandsForChangedFiles(
     List<dynamic> buildCommandsData,
     List<io.File> changedFiles,
-  ) {
-    final List<Command> buildCommands = <Command>[
-      for (final dynamic c in buildCommandsData)
-        Command.fromMap(c as Map<String, dynamic>),
-    ];
-
-    return <Command>[
-      for (final Command c in buildCommands)
-        if (c.containsAny(changedFiles))
-          c,
-    ];
+  ) async {
+    final List<Command> buildCommands = <Command>[];
+    for (final dynamic data in buildCommandsData) {
+      final Command command = Command.fromMap(data as Map<String, dynamic>);
+      final LintAction lintAction = await command.lintAction;
+      // Short-circuit the expensive containsAny call for the many third_party files.
+      if (lintAction != LintAction.skipThirdParty && command.containsAny(changedFiles)) {
+        buildCommands.add(command);
+      }
+    }
+    return buildCommands;
   }
 
   Future<_ComputeJobsResult> _computeJobs(
     List<Command> commands,
     io.Directory repoPath,
-    String checks,
+    String? checks,
   ) async {
     bool sawMalformed = false;
     final List<WorkerJob> jobs = <WorkerJob>[];
@@ -207,10 +207,13 @@ class ClangTidy {
           break;
         case LintAction.lint:
           _outSink.writeln('🔶 linting $relativePath');
-          jobs.add(command.createLintJob(checks));
+          jobs.add(command.createLintJob(checks, options.fix));
           break;
         case LintAction.skipThirdParty:
           _outSink.writeln('🔷 ignoring $relativePath (third_party)');
+          break;
+        case LintAction.skipMissing:
+          _outSink.writeln('🔷 ignoring $relativePath (missing)');
           break;
       }
     }
@@ -224,20 +227,10 @@ class ClangTidy {
       if (job.result.exitCode == 0) {
         continue;
       }
-      if (job.exception != null) {
-        _errSink.writeln(
-          '\n❗ A clang-tidy job failed to run, aborting:\n${job.exception}',
-        );
-        result = 1;
-        break;
-      } else {
-        _errSink.writeln('❌ Failures for ${job.name}:');
-        _errSink.writeln(job.result.stdout);
-      }
+      _errSink.writeln('❌ Failures for ${job.name}:');
+      _errSink.writeln(job.result.stdout);
       result = 1;
     }
     return result;
   }
 }
-
-

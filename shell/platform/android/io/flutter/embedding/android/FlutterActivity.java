@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_META_DATA_KEY;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_URI_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_BACKGROUND_MODE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_DART_ENTRYPOINT;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
@@ -37,6 +38,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.WindowCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
@@ -449,6 +451,15 @@ public class FlutterActivity extends Activity
     this.delegate = delegate;
   }
 
+  /**
+   * Returns the Android App Component exclusively attached to {@link
+   * io.flutter.embedding.engine.FlutterEngine}.
+   */
+  @Override
+  public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
+    return delegate;
+  }
+
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     switchLaunchThemeForNormalTheme();
@@ -580,7 +591,14 @@ public class FlutterActivity extends Activity
       Window window = getWindow();
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.setStatusBarColor(0x40000000);
-      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
+      WindowCompat.setDecorFitsSystemWindows(window, false);
+      if (Build.VERSION.SDK_INT < 30) {
+        // This ensures that the navigation bar is not hidden for APIs < 30,
+        // as dictated by the implementation of WindowCompat.
+        View view = window.getDecorView();
+        view.setSystemUiVisibility(
+            view.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+      }
     }
   }
 
@@ -647,10 +665,10 @@ public class FlutterActivity extends Activity
    * <p>After calling, this activity should be disposed immediately and not be re-used.
    */
   private void release() {
-    delegate.onDestroyView();
-    delegate.onDetach();
-    delegate.release();
-    delegate = null;
+    if (delegate != null) {
+      delegate.release();
+      delegate = null;
+    }
   }
 
   @Override
@@ -662,15 +680,20 @@ public class FlutterActivity extends Activity
             + " connection to the engine "
             + getFlutterEngine()
             + " evicted by another attaching activity");
-    release();
+    if (delegate != null) {
+      delegate.onDestroyView();
+      delegate.onDetach();
+    }
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
     if (stillAttachedForEvent("onDestroy")) {
-      release();
+      delegate.onDestroyView();
+      delegate.onDetach();
     }
+    release();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 
@@ -816,6 +839,32 @@ public class FlutterActivity extends Activity
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
     } catch (PackageManager.NameNotFoundException e) {
       return DEFAULT_DART_ENTRYPOINT;
+    }
+  }
+
+  /**
+   * The Dart library URI for the entrypoint that will be executed as soon as the Dart snapshot is
+   * loaded.
+   *
+   * <p>Example value: "package:foo/bar.dart"
+   *
+   * <p>This preference can be controlled by setting a {@code <meta-data>} called {@link
+   * FlutterActivityLaunchConfigs#DART_ENTRYPOINT_URI_META_DATA_KEY} within the Android manifest
+   * definition for this {@code FlutterActivity}.
+   *
+   * <p>A value of null means use the default root library.
+   *
+   * <p>Subclasses may override this method to directly control the Dart entrypoint uri.
+   */
+  @Nullable
+  public String getDartEntrypointLibraryUri() {
+    try {
+      Bundle metaData = getMetaData();
+      String desiredDartLibraryUri =
+          metaData != null ? metaData.getString(DART_ENTRYPOINT_URI_META_DATA_KEY) : null;
+      return desiredDartLibraryUri;
+    } catch (PackageManager.NameNotFoundException e) {
+      return null;
     }
   }
 
@@ -1127,9 +1176,20 @@ public class FlutterActivity extends Activity
     return false;
   }
 
+  @Override
+  public void updateSystemUiOverlays() {
+    if (delegate != null) {
+      delegate.updateSystemUiOverlays();
+    }
+  }
+
   private boolean stillAttachedForEvent(String event) {
     if (delegate == null) {
       Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
+      return false;
+    }
+    if (!delegate.isAttached()) {
+      Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after detach.");
       return false;
     }
     return true;

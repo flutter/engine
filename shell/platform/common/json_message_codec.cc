@@ -21,9 +21,11 @@ const JsonMessageCodec& JsonMessageCodec::GetInstance() {
 
 std::unique_ptr<std::vector<uint8_t>> JsonMessageCodec::EncodeMessageInternal(
     const rapidjson::Document& message) const {
-  // TODO: Look into alternate writers that would avoid the buffer copy.
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  // clang-tidy has trouble reasoning about some of the complicated array and
+  // pointer-arithmetic code in rapidjson.
+  // NOLINTNEXTLINE(clang-analyzer-core.*)
   message.Accept(writer);
   const char* buffer_start = buffer.GetString();
   return std::make_unique<std::vector<uint8_t>>(
@@ -37,9 +39,7 @@ std::unique_ptr<rapidjson::Document> JsonMessageCodec::DecodeMessageInternal(
   auto json_message = std::make_unique<rapidjson::Document>();
   rapidjson::ParseResult result =
       json_message->Parse(raw_message, message_size);
-  bool parsing_successful =
-      result == rapidjson::ParseErrorCode::kParseErrorNone;
-  if (!parsing_successful) {
+  if (result.IsError()) {
     std::cerr << "Unable to parse JSON message:" << std::endl
               << rapidjson::GetParseError_En(result.Code()) << std::endl;
     return nullptr;

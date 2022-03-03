@@ -6,6 +6,7 @@
 
 #import "FlutterEngine.h"
 #import "FlutterMacros.h"
+#import "FlutterPlatformViews.h"
 #import "FlutterPluginRegistrarMacOS.h"
 
 /**
@@ -52,5 +53,13 @@ FLUTTER_DARWIN_EXPORT
                                  bundle:(nullable NSBundle*)nibBundleOrNil
     NS_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Invoked by the engine right before the engine is restarted.
+ *
+ * This should reset states to as if the application has just started.  It
+ * usually indicates a hot restart (Shift-R in Flutter CLI.)
+ */
+- (void)onPreEngineRestart;
 
 @end

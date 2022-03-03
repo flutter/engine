@@ -25,6 +25,14 @@ import '../profiler.dart';
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
 
+/// Whether to use a CanvasKit implementation provided by a JavaScript
+/// `window.h5vcc.canvasKit` object.
+///
+/// Cobalt may use this object to expose a native implementation of the
+/// CanvasKit bindings. If this exists, use it instead of using the normal
+/// downloaded CanvasKit library.
+final bool useH5vccCanvasKit = h5vcc != null;
+
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
 /// static APIs.
 ///
@@ -39,6 +47,18 @@ external set windowFlutterCanvasKit(CanvasKit? value);
 @JS('window.flutterCanvasKit')
 external CanvasKit? get windowFlutterCanvasKit;
 
+@JS('window.h5vcc')
+external H5vcc? get h5vcc;
+
+@JS('window.h5vcc')
+external set debugH5vccSetter(H5vcc? value);
+
+@JS()
+@anonymous
+abstract class H5vcc {
+  external CanvasKit? get canvasKit;
+}
+
 @JS()
 @anonymous
 class CanvasKit {
@@ -46,7 +66,6 @@ class CanvasKit {
   external SkPaintStyleEnum get PaintStyle;
   external SkStrokeCapEnum get StrokeCap;
   external SkStrokeJoinEnum get StrokeJoin;
-  external SkFilterQualityEnum get FilterQuality;
   external SkBlurStyleEnum get BlurStyle;
   external SkTileModeEnum get TileMode;
   external SkFilterModeEnum get FilterMode;
@@ -105,6 +124,7 @@ class CanvasKit {
 
   external SkFontMgrNamespace get FontMgr;
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
+  external SkTypefaceFactory get Typeface;
   external int GetWebGLContext(
       html.CanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
@@ -115,7 +135,6 @@ class CanvasKit {
     ColorSpace colorSpace,
   );
   external SkSurface MakeSWCanvasSurface(html.CanvasElement canvas);
-  external void setCurrentContext(int glContext);
 
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
@@ -124,11 +143,24 @@ class CanvasKit {
   /// Typically pixel data is obtained using [SkImage.readPixels]. The
   /// parameters specified in [SkImageInfo] passed [SkImage.readPixels] must
   /// match [info].
-  external SkImage MakeImage(
+  external SkImage? MakeImage(
     SkImageInfo info,
     Uint8List pixels,
     int bytesPerRow,
   );
+  external SkImage? MakeLazyImageFromTextureSource(
+    Object src,
+    SkPartialImageInfo info,
+  );
+
+  /// Gets a Skia surface from Cobalt's h5vcc object.
+  ///
+  /// This is only applicable when running on Cobalt and when using Cobalt's
+  /// h5vcc CanvasKit bindings.
+  ///
+  /// On Cobalt, this is the only way to get a Skia surface. Other CanvasKit
+  /// Make...Surface methods are not supported.
+  external SkSurface getH5vccSkSurface();
 }
 
 @JS('window.CanvasKitInit')
@@ -660,30 +692,6 @@ SkStrokeJoin toSkStrokeJoin(ui.StrokeJoin strokeJoin) {
 }
 
 @JS()
-class SkFilterQualityEnum {
-  external SkFilterQuality get None;
-  external SkFilterQuality get Low;
-  external SkFilterQuality get Medium;
-  external SkFilterQuality get High;
-}
-
-@JS()
-class SkFilterQuality {
-  external int get value;
-}
-
-final List<SkFilterQuality> _skFilterQualitys = <SkFilterQuality>[
-  canvasKit.FilterQuality.None,
-  canvasKit.FilterQuality.Low,
-  canvasKit.FilterQuality.Medium,
-  canvasKit.FilterQuality.High,
-];
-
-SkFilterQuality toSkFilterQuality(ui.FilterQuality filterQuality) {
-  return _skFilterQualitys[filterQuality.index];
-}
-
-@JS()
 class SkTileModeEnum {
   external SkTileMode get Clamp;
   external SkTileMode get Repeat;
@@ -779,9 +787,14 @@ class SkColorType {
 class SkAnimatedImage {
   external int getFrameCount();
 
-  /// Returns duration in milliseconds.
   external int getRepetitionCount();
+
+  /// Returns duration in milliseconds.
+  external int currentFrameDuration();
+
+  /// Advances to the next frame and returns its duration in milliseconds.
   external int decodeNextFrame();
+
   external SkImage makeImageAtCurrentFrame();
   external int width();
   external int height();
@@ -904,6 +917,53 @@ class SkPaint {
 
 @JS()
 @anonymous
+abstract class CkFilterOptions {}
+
+@JS()
+@anonymous
+class _CkCubicFilterOptions extends CkFilterOptions {
+  external double get B;
+  external double get C;
+
+  external factory _CkCubicFilterOptions({double B, double C});
+}
+
+@JS()
+@anonymous
+class _CkTransformFilterOptions extends CkFilterOptions {
+  external SkFilterMode get filter;
+  external SkMipmapMode get mipmap;
+
+  external factory _CkTransformFilterOptions(
+      {SkFilterMode filter, SkMipmapMode mipmap});
+}
+
+final Map<ui.FilterQuality, CkFilterOptions> _filterOptions =
+    <ui.FilterQuality, CkFilterOptions>{
+  ui.FilterQuality.none: _CkTransformFilterOptions(
+    filter: canvasKit.FilterMode.Nearest,
+    mipmap: canvasKit.MipmapMode.None,
+  ),
+  ui.FilterQuality.low: _CkTransformFilterOptions(
+    filter: canvasKit.FilterMode.Linear,
+    mipmap: canvasKit.MipmapMode.None,
+  ),
+  ui.FilterQuality.medium: _CkTransformFilterOptions(
+    filter: canvasKit.FilterMode.Linear,
+    mipmap: canvasKit.MipmapMode.Linear,
+  ),
+  ui.FilterQuality.high: _CkCubicFilterOptions(
+    B: 1.0 / 3,
+    C: 1.0 / 3,
+  ),
+};
+
+CkFilterOptions toSkFilterOptions(ui.FilterQuality filterQuality) {
+  return _filterOptions[filterQuality]!;
+}
+
+@JS()
+@anonymous
 class SkMaskFilter {
   external void delete();
 }
@@ -936,7 +996,7 @@ class SkImageFilterNamespace {
 
   external SkImageFilter MakeMatrixTransform(
     Float32List matrix, // 3x3 matrix
-    SkFilterQuality filterQuality,
+    CkFilterOptions filterOptions,
     void input, // we don't use this yet
   );
 
@@ -1848,12 +1908,17 @@ class SkTonalColors {
 class SkFontMgrNamespace {
   // TODO(yjbanov): can this be made non-null? It returns null in our unit-tests right now.
   external SkFontMgr? FromData(List<Uint8List> fonts);
-  external SkFontMgr RefDefault();
 }
 
 @JS()
 class TypefaceFontProviderNamespace {
   external TypefaceFontProvider Make();
+}
+
+@JS()
+@anonymous
+class SkTypefaceFactory {
+  external SkTypeface? MakeFreeTypeFaceFromData(ByteBuffer fontData);
 }
 
 /// Collects Skia objects that are no longer necessary.
@@ -2097,9 +2162,9 @@ class SkImageInfo {
   external factory SkImageInfo({
     required int width,
     required int height,
-    SkAlphaType alphaType,
-    ColorSpace colorSpace,
-    SkColorType colorType,
+    required SkColorType colorType,
+    required SkAlphaType alphaType,
+    required ColorSpace colorSpace,
   });
   external SkAlphaType get alphaType;
   external ColorSpace get colorSpace;
@@ -2113,4 +2178,82 @@ class SkImageInfo {
   external SkImageInfo makeColorSpace(ColorSpace colorSpace);
   external SkImageInfo makeColorType(SkColorType colorType);
   external SkImageInfo makeWH(int width, int height);
+}
+
+@JS()
+@anonymous
+class SkPartialImageInfo {
+  external factory SkPartialImageInfo({
+    required int width,
+    required int height,
+    required SkColorType colorType,
+    required SkAlphaType alphaType,
+    required ColorSpace colorSpace,
+  });
+  external SkAlphaType get alphaType;
+  external ColorSpace get colorSpace;
+  external SkColorType get colorType;
+  external int get height;
+  external int get width;
+}
+
+/// Monkey-patch the top-level `module` and `exports` objects so that
+/// CanvasKit doesn't attempt to register itself as an anonymous module.
+///
+/// The idea behind making these fake `exports` and `module` objects is
+/// that `canvaskit.js` contains the following lines of code:
+///
+///     if (typeof exports === 'object' && typeof module === 'object')
+///       module.exports = CanvasKitInit;
+///     else if (typeof define === 'function' && define['amd'])
+///       define([], function() { return CanvasKitInit; });
+///
+/// We need to avoid hitting the case where CanvasKit defines an anonymous
+/// module, since this breaks RequireJS, which DDC and some plugins use.
+/// Temporarily removing the `define` function won't work because RequireJS
+/// could load in between this code running and the CanvasKit code running.
+/// Also, we cannot monkey-patch the `define` function because it is
+/// non-configurable (it is a top-level 'var').
+// TODO(hterkelsen): Rather than this monkey-patch hack, we should
+// build CanvasKit ourselves. See:
+// https://github.com/flutter/flutter/issues/52588
+void patchCanvasKitModule(html.ScriptElement canvasKitScript) {
+  // First check if `exports` and `module` are already defined. If so, then
+  // CommonJS is being used, and we shouldn't have any problems.
+  final js.JsFunction objectConstructor = js.context['Object'] as js.JsFunction;
+  if (js.context['exports'] == null) {
+    final js.JsObject exportsAccessor = js.JsObject.jsify(<String, dynamic>{
+      'get': allowInterop(() {
+        if (html.document.currentScript == canvasKitScript) {
+          return js.JsObject(objectConstructor);
+        } else {
+          return js.context['_flutterWebCachedExports'];
+        }
+      }),
+      'set': allowInterop((dynamic value) {
+        js.context['_flutterWebCachedExports'] = value;
+      }),
+      'configurable': true,
+    });
+    objectConstructor.callMethod(
+        'defineProperty', <dynamic>[js.context, 'exports', exportsAccessor]);
+  }
+  if (js.context['module'] == null) {
+    final js.JsObject moduleAccessor = js.JsObject.jsify(<String, dynamic>{
+      'get': allowInterop(() {
+        if (html.document.currentScript == canvasKitScript) {
+          return js.JsObject(objectConstructor);
+        } else {
+          return js.context['_flutterWebCachedModule'];
+        }
+      }),
+      'set': allowInterop((dynamic value) {
+        js.context['_flutterWebCachedModule'] = value;
+      }),
+      'configurable': true,
+    });
+    objectConstructor.callMethod(
+        'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
+  }
+  html.document.head!.append(canvasKitScript);
 }

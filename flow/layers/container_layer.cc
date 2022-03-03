@@ -10,8 +10,6 @@ namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto old_container = static_cast<const ContainerLayer*>(old_layer);
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -79,7 +77,8 @@ void ContainerLayer::DiffChildren(DiffContext* context,
       auto layer = layers_[i];
       auto prev_layer = prev_layers[i_prev];
       auto paint_region = context->GetOldLayerPaintRegion(prev_layer.get());
-      if (layer == prev_layer && !paint_region.has_readback()) {
+      if (layer == prev_layer && !paint_region.has_readback() &&
+          !paint_region.has_texture()) {
         // for retained layers, stop processing the subtree and add existing
         // region; We know current subtree is not dirty (every ancestor up to
         // here matches) so the retained subtree will render identically to
@@ -104,8 +103,6 @@ void ContainerLayer::DiffChildren(DiffContext* context,
   }
 }
 
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
-
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layers_.emplace_back(std::move(layer));
 }
@@ -124,6 +121,13 @@ void ContainerLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
+static bool safe_intersection_test(const SkRect* rect1, const SkRect& rect2) {
+  if (rect1->isEmpty() || rect2.isEmpty()) {
+    return false;
+  }
+  return rect1->intersects(rect2);
+}
+
 void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
@@ -132,13 +136,28 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   FML_DCHECK(!context->has_platform_view);
   bool child_has_platform_view = false;
   bool child_has_texture_layer = false;
+  bool subtree_can_inherit_opacity = layer_can_inherit_opacity();
+
   for (auto& layer : layers_) {
     // Reset context->has_platform_view to false so that layers aren't treated
     // as if they have a platform view based on one being previously found in a
     // sibling tree.
     context->has_platform_view = false;
+    // Initialize the "inherit opacity" flag to the value recorded in the layer
+    // and allow it to override the answer during its |Preroll|
+    context->subtree_can_inherit_opacity = layer->layer_can_inherit_opacity();
 
     layer->Preroll(context, child_matrix);
+
+    subtree_can_inherit_opacity =
+        subtree_can_inherit_opacity && context->subtree_can_inherit_opacity;
+    if (subtree_can_inherit_opacity &&
+        safe_intersection_test(child_paint_bounds, layer->paint_bounds())) {
+      // This will allow inheritance by a linear sequence of non-overlapping
+      // children, but will fail with a grid or other arbitrary 2D layout.
+      // See https://github.com/flutter/flutter/issues/93899
+      subtree_can_inherit_opacity = false;
+    }
     child_paint_bounds->join(layer->paint_bounds());
 
     child_has_platform_view =
@@ -149,6 +168,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
   context->has_platform_view = child_has_platform_view;
   context->has_texture_layer = child_has_texture_layer;
+  context->subtree_can_inherit_opacity = subtree_can_inherit_opacity;
   set_subtree_has_platform_view(child_has_platform_view);
 }
 
@@ -175,6 +195,9 @@ void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
       context->raster_cache &&
       SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
     context->raster_cache->Prepare(context, layer, matrix);
+  } else if (context->raster_cache) {
+    // Don't evict raster cache entry during partial repaint
+    context->raster_cache->Touch(layer, matrix);
   }
 }
 
@@ -189,9 +212,14 @@ MergedContainerLayer::MergedContainerLayer() {
   // child becomes the cacheable child, but at the potential cost of
   // not being as stable in the raster cache from frame to frame.
   ContainerLayer::Add(std::make_shared<ContainerLayer>());
+
+  // The interposing Container only recurses to its children with no
+  // additional processing so, by default, it can pass an inherited
+  // opacity on to its children, subject only to the accumulation
+  // logic that happens during |PrerollChildren|.
+  GetChildContainer()->set_layer_can_inherit_opacity(true);
 }
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 void MergedContainerLayer::DiffChildren(DiffContext* context,
                                         const ContainerLayer* old_layer) {
   if (context->IsSubtreeDirty()) {
@@ -207,7 +235,6 @@ void MergedContainerLayer::DiffChildren(DiffContext* context,
   auto layer = static_cast<const MergedContainerLayer*>(old_layer);
   GetChildContainer()->DiffChildren(context, layer->GetChildContainer());
 }
-#endif
 
 void MergedContainerLayer::Add(std::shared_ptr<Layer> layer) {
   GetChildContainer()->Add(std::move(layer));
