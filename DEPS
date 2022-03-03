@@ -33,8 +33,11 @@ vars = {
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
   'canvaskit_cipd_instance': '8MSYGWVWzrTJIoVL00ZquruZs-weuwLBy1kt1AawJiIC',
 
-  # Activate the Emscripten SDK by default.
-  'activate_emsdk': True,
+  # Do not activate the Emscripten SDK by default.
+  # This prevents us from downloading the Emscripten toolchain for builds
+  # which do not build for the web. This toolchain is needed to build CanvasKit
+  # for the web engine.
+  'activate_emsdk': False,
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
