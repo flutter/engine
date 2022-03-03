@@ -318,5 +318,26 @@ TEST(FlutterWindowsEngine, DispatchSemanticsAction) {
   EXPECT_TRUE(called);
 }
 
+TEST(FlutterWindowsEngine, SetsThreadPriority) {
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kBackground);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+            THREAD_PRIORITY_BELOW_NORMAL);
+
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kDisplay);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+            THREAD_PRIORITY_ABOVE_NORMAL);
+
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kRaster);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+            THREAD_PRIORITY_ABOVE_NORMAL);
+
+  // FlutterThreadPriority::kNormal does not change thread priority, reset to 0
+  // here.
+  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kNormal);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()), THREAD_PRIORITY_NORMAL);
+}
+
 }  // namespace testing
 }  // namespace flutter
