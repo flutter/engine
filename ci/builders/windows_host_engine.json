@@ -33,7 +33,7 @@
             "ninja": {
                 "config": "host_debug",
                 "targets": [
-                    "flutter:unittest",
+                    "flutter:unittests",
                     "flutter/build/archives:artifacts",
                     "flutter/build/archives:embedder",
                     "flutter/tools/font-subset",
