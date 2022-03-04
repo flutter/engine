@@ -105,13 +105,13 @@ class _BrowserRoller {
 
   // Returns the contents for the CIPD config required to publish a new chromium package.
   String _getCipdChromiumConfig({
-    required String platform,
+    required String package,
     required String majorVersion,
     required String buildId,
     required String root,
   }) {
     return '''
-package: flutter_internal/browsers/chrome/$platform-amd64
+package: $package
 description: Chromium $majorVersion (build $buildId) used for testing
 preserve_writable: true
 root: $root
@@ -122,13 +122,13 @@ data:
 
   // Returns the contents for the CIPD config required to publish a new chromedriver package.
   String _getCipdChromedriverConfig({
-    required String platform,
+    required String package,
     required String majorVersion,
     required String buildId,
     required String root,
   }) {
     return '''
-package: flutter_internal/browser-drivers/chrome/$platform-amd64
+package: $package
 description: Chromedriver for Chromium $majorVersion (build $buildId) used for testing
 preserve_writable: true
 root: $root
@@ -230,28 +230,65 @@ data:
     ], workingDirectory: _rollDir.path);
   }
 
+  // Determine if a `package` tagged with version:`versionTag` already exists in CIPD.
+  Future<bool> _cipdKnowsPackageVersion({
+    required String package,
+    required String versionTag,
+  }) async {
+    // $ cipd search $package -tag version:$versionTag
+    // Instances:
+    //   $package:CIPD_PACKAGE_ID
+    // or:
+    // No matching instances.
+    final String logLevel = verbose ? 'debug' : 'warning';
+    vprint('  Searching for $package version:$versionTag in CIPD');
+    final String stdout = await evalProcess('cipd', <String>[
+      'search',
+      package,
+      '--tag',
+      'version:$versionTag',
+      '--log-level',
+      logLevel,
+    ], workingDirectory: _rollDir.path);
+
+    return stdout.contains('Instances:') && stdout.contains(package);
+  }
+
   // Downloads Chromium from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromium(String platform, PlatformBinding binding) async {
     final String chromeBuild = binding.getChromeBuild(_lock.chromeLock);
     final String majorVersion = _lock.chromeLock.version;
     final String url = binding.getChromeDownloadUrl(chromeBuild);
+    final String cipdPackageName = 'flutter_internal/browsers/chrome/$platform-amd64';
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform));
-    final String relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
-    await platformDir.create(recursive: true);
-
     print('\nRolling Chromium for $platform (build $chromeBuild)');
+    // Bail out if CIPD already has version:$majorVersion for this package!
+    if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
+      print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
+      vprint('  Update  browser_lock.yaml  and use a different version value.');
+      return;
+    }
+
+    await platformDir.create(recursive: true);
     vprint('  Created target directory [${platformDir.path}]');
 
     final io.File chromeDownload = await _downloadTemporaryFile(url);
 
     await _unzipAndDeleteFile(chromeDownload, platformDir);
 
+    // copy actualContentRoot/*.* -R platformDir
+    // TODO(webinfra): Remove this when recipes agree on a specific path for all platforms.
+    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+    assert(actualContentRoot != null);
+    await copyPath(actualContentRoot!.path, platformDir.path);
+    final String relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
+
     // Create the config manifest to upload to CIPD
     final io.File cipdConfigFile = await _writeFile(
         path.join(_rollDir.path, 'cipd.chromium.$platform.yaml'),
         _getCipdChromiumConfig(
-            platform: platform,
+            package: cipdPackageName,
             majorVersion: majorVersion,
             buildId: chromeBuild,
             root: relativePlatformDirPath,
@@ -266,27 +303,35 @@ data:
     final String chromeBuild = binding.getChromeBuild(_lock.chromeLock);
     final String majorVersion = _lock.chromeLock.version;
     final String url = binding.getChromeDriverDownloadUrl(chromeBuild);
+    final String cipdPackageName = 'flutter_internal/browser-drivers/chrome/$platform-amd64';
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform}_driver'));
-    await platformDir.create(recursive: true);
-
     print('\nRolling Chromedriver for $platform (version $majorVersion, build $chromeBuild)');
+    // Bail out if CIPD already has version:$majorVersion for this package!
+    if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
+      print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
+      vprint('  Update  browser_lock.yaml  and use a different version value.');
+      return;
+    }
+
+    await platformDir.create(recursive: true);
     vprint('  Created target directory [${platformDir.path}]');
 
     final io.File chromedriverDownload = await _downloadTemporaryFile(url);
 
     await _unzipAndDeleteFile(chromedriverDownload, platformDir);
 
-    // Chromedriver zip creates a spurious subdir, that we CD into, until we find
-    // the actual contents of the package.
+    // copy actualContentRoot/*.* -R platformDir
+    // TODO(webinfra): Remove this when recipes agree on a specific path for all platforms.
     final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
     assert(actualContentRoot != null);
-    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
+    await copyPath(actualContentRoot!.path, platformDir.path);
+    final String relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
 
     // Create the config manifest to upload to CIPD
     final io.File cipdConfigFile = await _writeFile(
         path.join(_rollDir.path, 'cipd.chromedriver.$platform.yaml'),
         _getCipdChromedriverConfig(
-            platform: platform,
+            package: cipdPackageName,
             majorVersion: majorVersion,
             buildId: chromeBuild,
             root: relativePlatformDirPath,

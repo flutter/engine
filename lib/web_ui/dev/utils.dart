@@ -379,3 +379,46 @@ List<FilePath> findAllTests() {
           path.relative(f.path, from: environment.webUiRootDir.path)))
       .toList();
 }
+
+// Check for copyPath noop.
+//
+// Returns true if `from` and `to` are the same directory, or `to` is within `from`.
+//
+// (Comes from package:io)
+bool _doNothing(String from, String to) {
+  if (path.canonicalize(from) == path.canonicalize(to)) {
+    return true;
+  }
+  if (path.isWithin(from, to)) {
+    throw ArgumentError('Cannot copy from $from to $to');
+  }
+  return false;
+}
+
+/// Copies all of the files in the [from] directory to [to].
+///
+/// This is similar to `cp -R <from> <to>`:
+/// * Symlinks are supported.
+/// * Existing files are over-written, if any.
+/// * If [to] is within [from], throws [ArgumentError] (an infinite operation).
+/// * If [from] and [to] are canonically the same, no operation occurs.
+///
+/// Returns a future that completes when complete.
+//
+// (Comes from package:io)
+Future<void> copyPath(String from, String to) async {
+  if (_doNothing(from, to)) {
+    return;
+  }
+  await io.Directory(to).create(recursive: true);
+  await for (final io.FileSystemEntity file in io.Directory(from).list(recursive: true)) {
+    final String copyTo = path.join(to, path.relative(file.path, from: from));
+    if (file is io.Directory) {
+      await io.Directory(copyTo).create(recursive: true);
+    } else if (file is io.File) {
+      await io.File(file.path).copy(copyTo);
+    } else if (file is io.Link) {
+      await io.Link(copyTo).create(await file.target(), recursive: true);
+    }
+  }
+}
