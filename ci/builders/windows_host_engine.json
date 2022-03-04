@@ -32,7 +32,16 @@
             "name": "host_debug",
             "ninja": {
                 "config": "host_debug",
-                "targets": []
+                "targets": [
+                    "flutter:unittest",
+                    "flutter/build/archives:artifacts",
+                    "flutter/build/archives:embedder",
+                    "flutter/tools/font-subset",
+                    "flutter/build/archives:dart_sdk_archive",
+                    "flutter/shell/platform/windows/client_wrapper:client_wrapper_archive",
+                    "flutter/build/archives:windows_flutter",
+                    "flutter/build/archives:flutter_web_sdk"
+                ]
             },
             "tests": [
                 {
@@ -76,7 +85,8 @@
                 "config": "host_profile",
                 "targets": [
                     "windows",
-                    "gen_snapshot"
+                    "gen_snapshot",
+                    "flutter/build/archives:windows_flutter"
                 ]
             },
             "tests": []
@@ -109,7 +119,8 @@
                 "config": "host_release",
                 "targets": [
                     "windows",
-                    "gen_snapshot"
+                    "gen_snapshot",
+                    "flutter/build/archives:windows_flutter"
                 ]
             },
             "tests": []
