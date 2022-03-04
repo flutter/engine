@@ -141,8 +141,7 @@ void TextInputPlugin::ComposeCommitHook() {
   TextRange selection_before_change = active_model_->selection();
   TextRange composing_before_change = active_model_->composing_range();
   std::string composing_text_before_change = text_before_change.substr(
-      composing_before_change.base(),
-      composing_before_change.extent() - composing_before_change.base());
+      composing_before_change.start(), composing_before_change.length());
   active_model_->CommitComposing();
 
   // We do not trigger SendStateUpdate here.
