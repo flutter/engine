@@ -60,9 +60,7 @@ group("flutter") {
 
   # If building for WASM, only build CanvasKit.
   if (is_wasm) {
-    deps = [
-      "//third_party/skia/modules/canvaskit:canvaskit"
-    ]
+    deps = [ "//third_party/skia/modules/canvaskit:canvaskit" ]
   } else {
     # Flutter SDK artifacts should only be built when either doing host builds, or
     # for cross-compiled desktop targets.
@@ -127,8 +125,8 @@ group("flutter") {
       ]
     }
 
-    if ((flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile") &&
-        (is_ios || is_android)) {
+    if ((flutter_runtime_mode == "debug" ||
+         flutter_runtime_mode == "profile") && (is_ios || is_android)) {
       public_deps += [ "//flutter/testing/scenario_app" ]
     }
 
