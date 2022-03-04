@@ -7,6 +7,7 @@ part of ui;
 class _HashEnd { const _HashEnd(); }
 const _HashEnd _hashEnd = _HashEnd();
 
+// ignore: avoid_classes_with_only_static_members
 /// Jenkins hash function, optimized for small integers.
 //
 // Borrowed from the dart sdk: sdk/lib/math/jenkins_smi_hash.dart.
