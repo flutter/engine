@@ -29,7 +29,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);
-  
+
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     TryToPrepareRasterCache(context, this, matrix);
   } else {
