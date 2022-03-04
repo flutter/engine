@@ -26,6 +26,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
@@ -109,6 +110,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
   fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
+  fml::scoped_nsobject<FlutterUndoManagerPlugin> _undoManagerPlugin;
   fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
@@ -116,6 +118,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
@@ -363,6 +366,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
   _textInputPlugin.get().viewController = viewController;
+  _undoManagerPlugin.get().viewController = viewController;
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -398,6 +402,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
   _textInputPlugin.get().viewController = nil;
+  _undoManagerPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else {
@@ -435,6 +440,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterTextInputPlugin*)textInputPlugin {
   return _textInputPlugin.get();
 }
+- (FlutterUndoManagerPlugin*)undoManagerPlugin {
+  return _undoManagerPlugin.get();
+}
 - (FlutterRestorationPlugin*)restorationPlugin {
   return _restorationPlugin.get();
 }
@@ -452,6 +460,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 - (FlutterMethodChannel*)textInputChannel {
   return _textInputChannel.get();
+}
+- (FlutterMethodChannel*)undoManagerChannel {
+  return _undoManagerChannel.get();
 }
 - (FlutterBasicMessageChannel*)lifecycleChannel {
   return _lifecycleChannel.get();
@@ -477,6 +488,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _platformChannel.reset();
   _platformViewsChannel.reset();
   _textInputChannel.reset();
+  _undoManagerChannel.reset();
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
@@ -544,6 +556,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
+  _undoManagerChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/undomanager"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
   _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/lifecycle"
       binaryMessenger:self.binaryMessenger
@@ -567,8 +584,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
   _textInputPlugin.reset(textInputPlugin);
   textInputPlugin.indirectScribbleDelegate = self;
-  textInputPlugin.undoManagerDelegate = self;
   [textInputPlugin setupIndirectScribbleInteraction:self.viewController];
+
+  FlutterUndoManagerPlugin* undoManagerPlugin =
+      [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
+  _undoManagerPlugin.reset(undoManagerPlugin);
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
 
@@ -596,6 +616,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [textInputPlugin handleMethodCall:call result:result];
     }];
+
+    FlutterUndoManagerPlugin* undoManagerPlugin = _undoManagerPlugin.get();
+    [_undoManagerChannel.get()
+        setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+          [undoManagerPlugin handleMethodCall:call result:result];
+        }];
   }
 }
 
@@ -962,10 +988,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Undo Manager Delegate
 
-- (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
-                    handleUndo:(FlutterUndoRedoDirection)direction {
+- (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
+                      handleUndo:(FlutterUndoRedoDirection)direction {
   NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.handleUndo" arguments:@[ action ]];
+  [_undoManagerChannel.get() invokeMethod:@"UndoManagerClient.handleUndo" arguments:@[ action ]];
 }
 
 #pragma mark - Screenshot Delegate

@@ -46,7 +46,6 @@ static NSString* const kSetEditableSizeAndTransformMethod =
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
 static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
-static NSString* const kSetUndoStateMethod = @"TextInput.setUndoState";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -2071,10 +2070,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_inputHider release];
   [_autofillContext release];
   [_scribbleElements release];
-  [self resetUndoManager];
-  if (_undoManager != nil) {
-    [_undoManager release];
-  }
   [super dealloc];
 }
 
@@ -2127,9 +2122,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     result(nil);
   } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];
-    result(nil);
-  } else if ([method isEqualToString:kSetUndoStateMethod]) {
-    [self setUndoState:args];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
@@ -2554,64 +2546,5 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
  */
 - (BOOL)handlePress:(nonnull FlutterUIPressProxy*)press API_AVAILABLE(ios(13.4)) {
   return NO;
-}
-
-#pragma mark - Methods related to UndoManager support
-- (NSUndoManager*)undoManager {
-  if (_undoManager != nil) {
-    return _undoManager;
-  }
-  return _viewController.undoManager;
-}
-
-- (void)resetUndoManager API_AVAILABLE(ios(9.0)) {
-  [self.undoManager removeAllActionsWithTarget:self];
-}
-
-- (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction API_AVAILABLE(ios(9.0)) {
-  self.undoManager.groupsByEvent = NO;
-  [self.undoManager beginUndoGrouping];
-  [self.undoManager registerUndoWithTarget:self
-                                   handler:^(id target) {
-                                     // register undo with opposite direction
-                                     FlutterUndoRedoDirection newDirection =
-                                         (direction == FlutterUndoRedoDirectionRedo)
-                                             ? FlutterUndoRedoDirectionUndo
-                                             : FlutterUndoRedoDirectionRedo;
-                                     [target registerUndoWithDirection:newDirection];
-                                     // invoke method on delegate
-                                     [_undoManagerDelegate flutterTextInputPlugin:self
-                                                                       handleUndo:direction];
-                                   }];
-  [self.undoManager endUndoGrouping];
-  self.undoManager.groupsByEvent = YES;
-}
-
-- (void)registerRedo API_AVAILABLE(ios(9.0)) {
-  self.undoManager.groupsByEvent = NO;
-  [self.undoManager beginUndoGrouping];
-  [self.undoManager
-      registerUndoWithTarget:self
-                     handler:^(id target) {
-                       // register undo with opposite direction
-                       [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
-                     }];
-  [self.undoManager endUndoGrouping];
-  self.undoManager.groupsByEvent = YES;
-  [self.undoManager undo];
-}
-
-- (void)setUndoState:(NSDictionary*)dictionary API_AVAILABLE(ios(9.0)) {
-  BOOL canUndo = [dictionary[@"canUndo"] boolValue];
-  BOOL canRedo = [dictionary[@"canRedo"] boolValue];
-
-  [self resetUndoManager];
-
-  if (canUndo) {
-    [self registerUndoWithDirection:FlutterUndoRedoDirectionUndo];
-  }
-  if (canRedo) {
-    [self registerRedo];
-  }
 }
 @end

@@ -14,11 +14,11 @@ typedef NS_ENUM(NSInteger, FlutterUndoRedoDirection) {
   FlutterUndoRedoDirectionRedo,
 };
 
-@class FlutterTextInputPlugin;
+@class FlutterUndoManagerPlugin;
 
 @protocol FlutterUndoManagerDelegate <NSObject>
-- (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
-                    handleUndo:(FlutterUndoRedoDirection)direction;
+- (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
+                      handleUndo:(FlutterUndoRedoDirection)direction;
 @end
 NS_ASSUME_NONNULL_END
 

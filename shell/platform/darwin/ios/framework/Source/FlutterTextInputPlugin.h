@@ -13,7 +13,6 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
 typedef NS_ENUM(NSInteger, FlutterScribbleFocusStatus) {
@@ -33,8 +32,6 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 
 @property(nonatomic, assign) UIViewController* viewController;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
-@property(nonatomic, assign) id<FlutterUndoManagerDelegate> undoManagerDelegate;
-@property(nonatomic, strong) NSUndoManager* undoManager;
 @property(nonatomic, strong)
     NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 
