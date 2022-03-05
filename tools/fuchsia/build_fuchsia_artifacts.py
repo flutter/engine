@@ -370,7 +370,7 @@ def main():
       action='store_true',
       default=False,
       help='If set, skips building and just creates packages.')
-  
+
   parser.add_argument(
       '--no-prebuilt-dart-sdk',
       action='store_true',
