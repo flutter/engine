@@ -10,6 +10,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/string_conversion.h"
+#include "flutter/fml/thread.h"
 #include "flutter/fml/thread_local.h"
 
 namespace fml {
@@ -44,14 +45,8 @@ JNIEnv* AttachCurrentThread() {
   JavaVMAttachArgs args;
   args.version = JNI_VERSION_1_4;
   args.group = nullptr;
-  // 16 is the maximum size for thread names on Android.
-  char thread_name[16];
-  int err = prctl(PR_GET_NAME, thread_name);
-  if (err < 0) {
-    args.name = nullptr;
-  } else {
-    args.name = thread_name;
-  }
+  args.name = fml::Thread::GetCurrentName().c_str();
+
   [[maybe_unused]] jint ret = g_jvm->AttachCurrentThread(&env, &args);
   FML_DCHECK(JNI_OK == ret);
 

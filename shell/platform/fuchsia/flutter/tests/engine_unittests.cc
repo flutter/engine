@@ -17,6 +17,7 @@
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 
+#include "flutter/fml/thread.h"
 #include "flutter/shell/platform/fuchsia/flutter/logging.h"
 #include "flutter/shell/platform/fuchsia/flutter/runner.h"
 #include "flutter/shell/platform/fuchsia/flutter/vulkan_surface_producer.h"
@@ -99,33 +100,21 @@ TEST_F(EngineTest, ThreadNames) {
   std::string prefix = GetCurrentTestName();
   flutter::ThreadHost engine_thread_host = Engine::CreateThreadHost(prefix);
 
-  char thread_name[ZX_MAX_NAME_LEN];
-  zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
-                                   sizeof(thread_name));
-  EXPECT_EQ(std::string(thread_name), prefix + std::string(".platform"));
+  EXPECT_EQ(fml::Thread::GetCurrentName(), prefix + std::string(".platform"));
   EXPECT_EQ(engine_thread_host.platform_thread, nullptr);
 
   engine_thread_host.raster_thread->GetTaskRunner()->PostTask([&prefix]() {
-    char thread_name[ZX_MAX_NAME_LEN];
-    zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
-                                     sizeof(thread_name));
-    EXPECT_EQ(std::string(thread_name), prefix + std::string(".raster"));
+    EXPECT_EQ(fml::Thread::GetCurrentName(), prefix + std::string(".raster"));
   });
   engine_thread_host.raster_thread->Join();
 
   engine_thread_host.ui_thread->GetTaskRunner()->PostTask([&prefix]() {
-    char thread_name[ZX_MAX_NAME_LEN];
-    zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
-                                     sizeof(thread_name));
-    EXPECT_EQ(std::string(thread_name), prefix + std::string(".ui"));
+    EXPECT_EQ(fml::Thread::GetCurrentName(), prefix + std::string(".ui"));
   });
   engine_thread_host.ui_thread->Join();
 
   engine_thread_host.io_thread->GetTaskRunner()->PostTask([&prefix]() {
-    char thread_name[ZX_MAX_NAME_LEN];
-    zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
-                                     sizeof(thread_name));
-    EXPECT_EQ(std::string(thread_name), prefix + std::string(".io"));
+    EXPECT_EQ(fml::Thread::GetCurrentName(), prefix + std::string(".io"));
   });
   engine_thread_host.io_thread->Join();
 }
