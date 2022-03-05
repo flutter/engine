@@ -1389,6 +1389,16 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   Timer? _positionInputElementTimer;
   static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
 
+  /// The interval is considered as fast between blur subscription and callback.
+  ///
+  /// This is only used for iOS. The blur callback may trigger as soon as
+  /// the creation of the subscription. In that case, the virtual keyboard will
+  /// show and hide again occasionally.
+  ///
+  /// Lesser than the interval allows the virtual keyboard to keep showing up
+  /// instead of hiding rapidly.
+  static const Duration _blurFastCallbackInterval = Duration(milliseconds: 200);
+
   /// Whether or not the input element can be positioned at this point in time.
   ///
   /// This is currently only used in iOS. It's set to false before focusing the
@@ -1453,6 +1463,9 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     _addTapListener();
 
+    // Record start time of blur subscription.
+    final DateTime blurSubscriptionStart = DateTime.now();
+
     // On iOS, blur is trigerred in the following cases:
     //
     // 1. The browser app is sent to the background (or the tab is changed). In
@@ -1465,7 +1478,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    okay because the virtual keyboard will hide, and as soon as the user
     //    taps the text field again, the virtual keyboard will come up.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      if (windowHasFocus) {
+      if (DateTime.now().difference(blurSubscriptionStart) < _blurFastCallbackInterval) {
         activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();
