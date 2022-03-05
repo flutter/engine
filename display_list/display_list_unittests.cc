@@ -32,6 +32,8 @@ constexpr float stops[] = {
     0.5,
     1.0,
 };
+std::vector<uint32_t> color_vector(colors, colors + 3);
+std::vector<float> stops_vector(stops, stops + 3);
 
 // clang-format off
 constexpr float rotate_color_matrix[20] = {
@@ -65,33 +67,33 @@ static const sk_sp<SkBlender> TestBlender2 =
     SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
 static const sk_sp<SkBlender> TestBlender3 =
     SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
-static const sk_sp<SkShader> TestShader1 =
-    SkGradientShader::MakeLinear(end_points,
-                                 colors,
-                                 stops,
-                                 3,
-                                 SkTileMode::kMirror,
-                                 0,
-                                 nullptr);
+static const DlLinearGradientColorSource TestShader1 =
+    DlLinearGradientColorSource(end_points[0],
+                                end_points[1],
+                                3,
+                                color_vector,
+                                stops_vector,
+                                DlTileMode::kMirror,
+                                SkMatrix::I());
 // TestShader2 is identical to TestShader1 and points out that we cannot
 // perform a deep compare over our various sk_sp objects because the
 // DisplayLists constructed with the two do not compare == below.
-static const sk_sp<SkShader> TestShader2 =
-    SkGradientShader::MakeLinear(end_points,
-                                 colors,
-                                 stops,
-                                 3,
-                                 SkTileMode::kMirror,
-                                 0,
-                                 nullptr);
-static const sk_sp<SkShader> TestShader3 =
-    SkGradientShader::MakeLinear(end_points,
-                                 colors,
-                                 stops,
-                                 3,
-                                 SkTileMode::kDecal,
-                                 0,
-                                 nullptr);
+static const DlLinearGradientColorSource TestShader2 =
+    DlLinearGradientColorSource(end_points[0],
+                                end_points[1],
+                                3,
+                                color_vector,
+                                stops_vector,
+                                DlTileMode::kMirror,
+                                SkMatrix::I());
+static const DlLinearGradientColorSource TestShader3 =
+    DlLinearGradientColorSource(end_points[0],
+                                end_points[1],
+                                3,
+                                color_vector,
+                                stops_vector,
+                                DlTileMode::kDecal,
+                                SkMatrix::I());
 static const sk_sp<SkImageFilter> TestImageFilter1 =
     SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr, nullptr);
 static const sk_sp<SkImageFilter> TestImageFilter2 =
@@ -336,11 +338,11 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setBlender(nullptr);}},
     }
   },
-  { "SetShader", {
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader2);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader3);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setShader(nullptr);}},
+  { "SetColorSource", {
+      {0, 128, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestShader1);}},
+      {0, 128, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestShader2);}},
+      {0, 128, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestShader3);}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(nullptr);}},
     }
   },
   { "SetImageFilter", {
@@ -1283,26 +1285,6 @@ TEST(DisplayList, DisplayListBlenderRefHandling) {
   };
 
   BlenderRefTester tester;
-  tester.test();
-  ASSERT_TRUE(tester.ref_is_unique());
-}
-
-TEST(DisplayList, DisplayListShaderRefHandling) {
-  class ShaderRefTester : public virtual AttributeRefTester {
-   public:
-    void setRefToPaint(SkPaint& paint) const override {
-      paint.setShader(shader);
-    }
-    void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setShader(shader);
-    }
-    bool ref_is_unique() const override { return shader->unique(); }
-
-   private:
-    sk_sp<SkShader> shader = SkShaders::Color(SK_ColorBLUE);
-  };
-
-  ShaderRefTester tester;
   tester.test();
   ASSERT_TRUE(tester.ref_is_unique());
 }

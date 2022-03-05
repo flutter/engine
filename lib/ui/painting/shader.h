@@ -5,10 +5,9 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_SHADER_H_
 #define FLUTTER_LIB_UI_PAINTING_SHADER_H_
 
-#include "flutter/flow/skia_gpu_object.h"
-#include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/display_list/display_list_color_source.h"
+// #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "third_party/skia/include/core/SkShader.h"
 
 namespace flutter {
 
@@ -19,7 +18,7 @@ class Shader : public RefCountedDartWrappable<Shader> {
  public:
   ~Shader() override;
 
-  virtual sk_sp<SkShader> shader(SkSamplingOptions) = 0;
+  virtual std::shared_ptr<DlColorSource> shader(SkSamplingOptions&) = 0;
 
  protected:
   Shader() {}

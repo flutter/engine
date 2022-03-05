@@ -38,6 +38,20 @@ fml::RefPtr<CanvasGradient> CanvasGradient::Create() {
   return fml::MakeRefCounted<CanvasGradient>();
 }
 
+struct GradientVectors {
+  GradientVectors(int count, const int32_t* color_array, const float* stop_array)
+      : count(count) {
+    for (int i = 0; i < count; i++) {
+      colors.push_back(color_array[i]);
+      stops.push_back(stop_array[i]);
+    }
+  }
+
+  uint32_t count;
+  std::vector<uint32_t> colors;
+  std::vector<float> stops;
+};
+
 void CanvasGradient::initLinear(const tonic::Float32List& end_points,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
@@ -58,10 +72,14 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
-  sk_shader_ = UIDartState::CreateGPUObject(SkGradientShader::MakeLinear(
-      reinterpret_cast<const SkPoint*>(end_points.data()),
-      reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr));
+  SkPoint p0 = SkPoint::Make(end_points[0], end_points[1]);
+  SkPoint p1 = SkPoint::Make(end_points[2], end_points[3]);
+  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
+  GradientVectors vectors(colors.num_elements(), colors.data(),
+                          color_stops.data());
+
+  dl_shader_ = std::make_shared<DlLinearGradientColorSource>(
+      p0, p1, vectors.count, vectors.colors, vectors.stops, mode, sk_matrix);
 }
 
 void CanvasGradient::initRadial(double center_x,
@@ -83,10 +101,13 @@ void CanvasGradient::initRadial(double center_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
-  sk_shader_ = UIDartState::CreateGPUObject(SkGradientShader::MakeRadial(
-      SkPoint::Make(center_x, center_y), radius,
-      reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr));
+  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
+  GradientVectors vectors(colors.num_elements(), colors.data(),
+                          color_stops.data());
+
+  dl_shader_ = std::make_shared<DlRadialGradientColorSource>(
+      SkPoint::Make(center_x, center_y), radius, vectors.count,
+      vectors.colors, vectors.stops, mode, sk_matrix);
 }
 
 void CanvasGradient::initSweep(double center_x,
@@ -109,11 +130,14 @@ void CanvasGradient::initSweep(double center_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
-  sk_shader_ = UIDartState::CreateGPUObject(SkGradientShader::MakeSweep(
-      center_x, center_y, reinterpret_cast<const SkColor*>(colors.data()),
-      color_stops.data(), colors.num_elements(), tile_mode,
-      start_angle * 180.0 / M_PI, end_angle * 180.0 / M_PI, 0,
-      has_matrix ? &sk_matrix : nullptr));
+  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
+  GradientVectors vectors(colors.num_elements(), colors.data(),
+                          color_stops.data());
+
+  dl_shader_ = std::make_shared<DlSweepGradientColorSource>(
+      SkPoint::Make(center_x, center_y), start_angle * 180.0 / M_PI,
+      end_angle * 180.0 / M_PI, vectors.count, vectors.colors, vectors.stops,
+      mode, sk_matrix);
 }
 
 void CanvasGradient::initTwoPointConical(double start_x,
@@ -138,13 +162,14 @@ void CanvasGradient::initTwoPointConical(double start_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
-  sk_shader_ =
-      UIDartState::CreateGPUObject(SkGradientShader::MakeTwoPointConical(
+  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
+  GradientVectors vectors(colors.num_elements(), colors.data(),
+                          color_stops.data());
+
+  dl_shader_ = std::make_shared<DlConicalGradientColorSource>(
           SkPoint::Make(start_x, start_y), start_radius,
           SkPoint::Make(end_x, end_y), end_radius,
-          reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-          colors.num_elements(), tile_mode, 0,
-          has_matrix ? &sk_matrix : nullptr));
+          vectors.count, vectors.colors, vectors.stops, mode, sk_matrix);
 }
 
 CanvasGradient::CanvasGradient() = default;

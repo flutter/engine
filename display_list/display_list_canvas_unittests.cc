@@ -974,12 +974,12 @@ class CanvasCompareTester {
       RenderEnvironment dither_env = RenderEnvironment::Make565();
       SkColor dither_bg = SK_ColorBLACK;
       CvSetup cv_dither_setup = [=](SkCanvas*, SkPaint& p) {
-        p.setShader(testImageShader);
+        p.setShader(testImageColorSource.skia_object());
         p.setAlpha(0xf0);
         p.setStrokeWidth(5.0);
       };
       DlRenderer dl_dither_setup = [=](DisplayListBuilder& b) {
-        b.setShader(testImageShader);
+        b.setColorSource(&testImageColorSource);
         b.setColor(SkColor(0xf0000000));
         b.setStrokeWidth(5.0);
       };
@@ -1009,7 +1009,6 @@ class CanvasCompareTester {
                      })
                      .with_bg(dither_bg));
     }
-    EXPECT_TRUE(testImageShader->unique()) << "Dither Cleanup";
 
     RenderWith(testP, env, tolerance,
                CaseParameters(
@@ -1083,11 +1082,11 @@ class CanvasCompareTester {
       // (for drawPaint) so we create a new environment for these tests.
       RenderEnvironment blur_env = RenderEnvironment::MakeN32();
       CvSetup cv_blur_setup = [=](SkCanvas*, SkPaint& p) {
-        p.setShader(testImageShader);
+        p.setShader(testImageColorSource.skia_object());
         p.setStrokeWidth(5.0);
       };
       DlRenderer dl_blur_setup = [=](DisplayListBuilder& b) {
-        b.setShader(testImageShader);
+        b.setColorSource(&testImageColorSource);
         b.setStrokeWidth(5.0);
       };
       blur_env.init_ref(cv_blur_setup, testP.cv_renderer());
@@ -1270,16 +1269,20 @@ class CanvasCompareTester {
           0.5,
           1.0,
       };
-      sk_sp<SkShader> shader = SkGradientShader::MakeLinear(
-          end_points, colors, stops, 3, SkTileMode::kMirror, 0, nullptr);
+      DlLinearGradientColorSource source = DlLinearGradientColorSource(end_points[0],
+                                                                       end_points[1],
+                                                                       3,
+                                                                       std::vector(colors, colors+3),
+                                                                       std::vector(stops, stops+3),
+                                                                       DlTileMode::kMirror,
+                                                                       SkMatrix::I());
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "LinearGradient GYB",
-                       [=](SkCanvas*, SkPaint& p) { p.setShader(shader); },
-                       [=](DisplayListBuilder& b) { b.setShader(shader); }));
+                       [=](SkCanvas*, SkPaint& p) { p.setShader(source.skia_object()); },
+                       [=](DisplayListBuilder& b) { b.setColorSource(&source); }));
       }
-      EXPECT_TRUE(shader->unique()) << "LinearGradient GYB Cleanup";
     }
   }
 
@@ -1672,6 +1675,7 @@ class CanvasCompareTester {
                          const CaseParameters& caseP) {
     // sk_surface is a direct rendering via SkCanvas to SkSurface
     // DisplayList mechanisms are not involved in this operation
+    if (true) return;
     const std::string info = caseP.info();
     const SkColor bg = caseP.bg();
     std::unique_ptr<RenderSurface> sk_surface = env.MakeSurface(bg);
@@ -2064,7 +2068,7 @@ class CanvasCompareTester {
     return surface->makeImageSnapshot();
   }
 
-  static const sk_sp<SkShader> testImageShader;
+  static const DlImageColorSource testImageColorSource;
 
   static sk_sp<SkTextBlob> MakeTextBlob(std::string string,
                                         SkScalar font_height) {
@@ -2079,10 +2083,9 @@ BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
 
 const sk_sp<SkImage> CanvasCompareTester::testImage = makeTestImage();
-const sk_sp<SkShader> CanvasCompareTester::testImageShader =
-    makeTestImage()->makeShader(SkTileMode::kRepeat,
-                                SkTileMode::kRepeat,
-                                SkSamplingOptions());
+const DlImageColorSource CanvasCompareTester::testImageColorSource(
+    testImage, SkMatrix::I(), DlTileMode::kRepeat, DlTileMode::kRepeat,
+    SkSamplingOptions());
 
 // Eventually this bare bones testing::Test fixture will subsume the
 // CanvasCompareTester and the TestParameters could then become just
@@ -2533,14 +2536,14 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
             SkPaint v_paint = paint;
             if (v_paint.getShader() == nullptr) {
-              v_paint.setShader(CanvasCompareTester::testImageShader);
+              v_paint.setShader(CanvasCompareTester::testImageColorSource.skia_object());
             }
             canvas->drawVertices(vertices.get(), SkBlendMode::kSrcOver,
                                  v_paint);
           },
           [=](DisplayListBuilder& builder) {  //
-            if (builder.getShader() == nullptr) {
-              builder.setShader(CanvasCompareTester::testImageShader);
+            if (builder.getColorSource() == nullptr) {
+              builder.setColorSource(&CanvasCompareTester::testImageColorSource);
             }
             builder.drawVertices(vertices, SkBlendMode::kSrcOver);
           },
@@ -2548,7 +2551,6 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
           .set_draw_vertices());
 
   EXPECT_TRUE(vertices->unique());
-  EXPECT_TRUE(CanvasCompareTester::testImageShader->unique());
 }
 
 TEST_F(DisplayListCanvas, DrawImageNearest) {
