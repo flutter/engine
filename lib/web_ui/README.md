@@ -136,7 +136,54 @@ fetched from CIPD.
 
 Since the engine code and infra recipes do not live in the same repository
 there are few steps to follow in order to upgrade a browser's version. For
-now these instructins are most relevant to Chrome.
+now these instructions are most relevant to Chromium.
+
+#### Chromium
+
+**Chromium for Linux, Mac and Windows and their appropriate Chromedrivers get automatically rolled** by the `dev/browser_roller.dart`
+script.
+
+First, sign up to CIPD (Googlers [see docs](go/cipd-flutter-web)), then run:
+
+```
+dart ./dev/browser_roller.dart
+```
+
+The above script will grab the Chromium Build ID and version information from the
+`browser_lock.yaml` file, and do the whole download + packaging + upload + tagging
+process.
+
+The script has the following command-line options:
+
+* `--dry-run` - The script will stop before uploading artifacts to CIPD. The location of the data will be reported at the end of the script, if the script finishes successfullyThe output of the script will be visible in /tmp/browser-roll-RANDOM_STRING
+* `--verbose` - Greatly increase the amount of information printed to `stdout` by the script.
+
+> Try the following!
+>
+> ```
+> dart ./dev/browser_roller.dart --dry-run --verbose
+> ```
+
+##### Version
+
+The `version` field is used to tag CIPD instances once they're uploaded with a `version` Tag. Only one instance of a package may be tagged with a version. After each successful upload to CIPD, you'll need to update the
+`version` field before being able to upload again (The script validates this for you, and will reject to act on a package if the version value is already used!)
+
+To update the `version` field: start in the Major Version of the browser that you're configuring (e.g: `'96'`), then for each subsequent
+upload of the same version, update a minor tick (e.g: `'96.1'`, `'96.2'` and so on).
+
+##### Build Ids
+
+If you need to find the latest Build ID for the `stable` releases of Chromium, see
+[Omaha Proxy](https://omahaproxy.appspot.com) (it's the `branch_base_position` for
+the `os`/`channel` combination that you need (normally `channel` is `stable`)).
+
+If you want to find Build IDs for earlier versions of Chromium,
+[follow instructions here](https://www.chromium.org/getting-involved/download-chromium/#downloading-old-builds-of-chrome-chromium).
+
+#### Other browsers / manual upload
+
+In general, the manual process goes like this:
 
 1. Dowload the binaries for the new browser/driver for each operaing system
    (macOS, linux, windows).
