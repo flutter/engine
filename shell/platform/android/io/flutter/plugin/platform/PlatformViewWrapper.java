@@ -57,21 +57,24 @@ class PlatformViewWrapper extends FrameLayout {
   @Nullable private TextureRegistry.SurfaceTextureEntry textureEntry;
   private final AtomicLong pendingFramesCount = new AtomicLong(0L);
 
-  private final TextureRegistry.ImageFrameListener frameListener =
-      new TextureRegistry.ImageFrameListener() {
-        @Override
-        public void onFrameAvailable() {}
-
+  private final TextureRegistry.OnFrameConsumedListener listener =
+      new TextureRegistry.OnFrameConsumedListener() {
         @Override
         public void onFrameConsumed() {
-          if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+          if (Build.VERSION.SDK_INT == 29) {
             pendingFramesCount.decrementAndGet();
           }
         }
       };
 
+  private void onFrameProduced() {
+    if (Build.VERSION.SDK_INT == 29) {
+      pendingFramesCount.incrementAndGet();
+    }
+  }
+
   private boolean shouldDrawToSurfaceNow() {
-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT == 29) {
       return pendingFramesCount.get() <= 0L;
     }
     return true;
@@ -86,7 +89,7 @@ class PlatformViewWrapper extends FrameLayout {
       @NonNull Context context, @NonNull TextureRegistry.SurfaceTextureEntry textureEntry) {
     this(context);
     this.textureEntry = textureEntry;
-    textureEntry.setImageFrameListener(frameListener);
+    textureEntry.setOnFrameConsumedListener(listener);
     setTexture(textureEntry.surfaceTexture());
   }
 
@@ -141,10 +144,7 @@ class PlatformViewWrapper extends FrameLayout {
       } else {
         canvas.drawColor(Color.TRANSPARENT);
       }
-
-      if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
-        pendingFramesCount.incrementAndGet();
-      }
+      onFrameProduced();
     } finally {
       surface.unlockCanvasAndPost(canvas);
     }
@@ -257,10 +257,7 @@ class PlatformViewWrapper extends FrameLayout {
           surfaceCanvas.drawColor(Color.TRANSPARENT);
         }
         super.draw(surfaceCanvas);
-
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
-          pendingFramesCount.incrementAndGet();
-        }
+        onFrameProduced();
       } finally {
         surface.unlockCanvasAndPost(surfaceCanvas);
       }

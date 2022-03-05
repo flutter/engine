@@ -43,15 +43,12 @@ public interface TextureRegistry {
     /** Deregisters and releases this SurfaceTexture. */
     void release();
 
-    /** Set a listener that will be notified when a image frame state changes. */
-    default void setImageFrameListener(@Nullable ImageFrameListener listener) {}
+    /** Set a listener that will be notified when the most recent image has been consumed. */
+    default void setOnFrameConsumedListener(@Nullable OnFrameConsumedListener listener) {}
   }
 
-  /** Listener invoked when a new image frame becomes available and has been consumed. */
-  interface ImageFrameListener {
-    /** This method will to be invoked when a new image frame becomes available. */
-    void onFrameAvailable();
-
+  /** Listener invoked when the most recent image has been consumed. */
+  interface OnFrameConsumedListener {
     /**
      * This method will to be invoked when the most recent image from the image stream has been
      * consumed.

@@ -27,6 +27,14 @@ public class SurfaceTextureWrapper {
     this(surfaceTexture, null);
   }
 
+  /**
+   * A wrapper for a SurfaceTexture.
+   *
+   * <p>The provided {@code onFrameConsumed} callback must be invoked when the most recent image was
+   * consumed.
+   *
+   * @param onFrameConsumed The callback after the {@code updateTexImage} is called.
+   */
   public SurfaceTextureWrapper(
       @NonNull SurfaceTexture surfaceTexture, @Nullable Runnable onFrameConsumed) {
     this.surfaceTexture = surfaceTexture;

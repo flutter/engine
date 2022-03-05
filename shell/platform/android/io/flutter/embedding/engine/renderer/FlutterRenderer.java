@@ -121,7 +121,7 @@ public class FlutterRenderer implements TextureRegistry {
     private final long id;
     @NonNull private final SurfaceTextureWrapper textureWrapper;
     private boolean released;
-    @Nullable private ImageFrameListener listener;
+    @Nullable private OnFrameConsumedListener listener;
     private final Runnable onFrameConsumed =
         new Runnable() {
           @Override
@@ -161,10 +161,6 @@ public class FlutterRenderer implements TextureRegistry {
               // callback may still be called by a stale reference after released==true and
               // mNativeView==null.
               return;
-            }
-
-            if (listener != null) {
-              listener.onFrameAvailable();
             }
             markTextureFrameAvailable(id);
           }
@@ -211,7 +207,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
-    public void setImageFrameListener(@Nullable ImageFrameListener listener) {
+    public void setOnFrameConsumedListener(@Nullable OnFrameConsumedListener listener) {
       this.listener = listener;
     }
   }

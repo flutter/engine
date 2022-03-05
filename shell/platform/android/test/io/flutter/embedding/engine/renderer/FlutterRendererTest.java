@@ -321,11 +321,8 @@ public class FlutterRendererTest {
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
     AtomicInteger invocationCount = new AtomicInteger(0);
-    final TextureRegistry.ImageFrameListener listener =
-        new TextureRegistry.ImageFrameListener() {
-          @Override
-          public void onFrameAvailable() {}
-
+    final TextureRegistry.OnFrameConsumedListener listener =
+        new TextureRegistry.OnFrameConsumedListener() {
           @Override
           public void onFrameConsumed() {
             invocationCount.incrementAndGet();
@@ -334,7 +331,7 @@ public class FlutterRendererTest {
 
     FlutterRenderer.SurfaceTextureRegistryEntry entry =
         (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
-    entry.setImageFrameListener(listener);
+    entry.setOnFrameConsumedListener(listener);
 
     // Execute the behavior under test.
     entry.textureWrapper().updateTexImage();
