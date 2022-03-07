@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "flutter/common/constants.h"
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/fml/logging.h"
@@ -175,25 +176,50 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeDisplayList(
 
 void RasterCache::Prepare(PrerollContext* context,
                           Layer* layer,
-                          const SkMatrix& ctm) {
-  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyType::kLayer, ctm);
+                          const SkMatrix& ctm,
+                          RasterCacheLayerStrategy strategy) {
+  RasterCacheKey cache_key = MakeRasterCacheKeyForLayer(layer, strategy, ctm);
   Entry& entry = cache_[cache_key];
   entry.access_count++;
   entry.used_this_frame = true;
   if (!entry.image) {
-    entry.image = RasterizeLayer(context, layer, ctm, checkerboard_images_);
+    entry.image =
+        RasterizeLayer(context, layer, strategy, ctm, checkerboard_images_);
+  }
+}
+
+const RasterCacheKey RasterCache::MakeRasterCacheKeyForLayer(
+    const Layer* layer,
+    RasterCacheLayerStrategy strategy,
+    const SkMatrix& ctm) const {
+  switch (strategy) {
+    case RasterCacheLayerStrategy::kLayer:
+      return RasterCacheKey(layer->unique_id(), RasterCacheKeyType::kLayer,
+                            ctm);
+    case RasterCacheLayerStrategy::kLayerChildren:
+      auto children_layers =
+          static_cast<const ContainerLayer*>(layer)->layers();
+      std::vector<uint64_t> ids;
+      std::transform(children_layers.begin(), children_layers.end(),
+                     std::back_inserter(ids),
+                     [](std::shared_ptr<Layer>& layer) -> uint64_t {
+                       return layer->unique_id();
+                     });
+      return RasterCacheKey(RasterCacheKeyID(std::move(ids)),
+                            RasterCacheKeyType::kLayerChildren, ctm);
   }
 }
 
 std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
     PrerollContext* context,
     Layer* layer,
+    RasterCacheLayerStrategy strategy,
     const SkMatrix& ctm,
     bool checkerboard) const {
   return Rasterize(
       context->gr_context, ctm, context->dst_color_space, checkerboard,
       layer->paint_bounds(), "RasterCacheFlow::Layer",
-      [layer, context](SkCanvas* canvas) {
+      [layer, context, strategy](SkCanvas* canvas) {
         SkISize canvas_size = canvas->getBaseLayerSize();
         SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
                                            canvas_size.height());
@@ -211,8 +237,20 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
             context->has_platform_view ? nullptr : context->raster_cache,
             context->checkerboard_offscreen_layers,
             context->frame_device_pixel_ratio};
-        if (layer->needs_painting(paintContext)) {
-          layer->Paint(paintContext);
+        switch (strategy) {
+          case RasterCacheLayerStrategy::kLayer:
+            if (layer->needs_painting(paintContext)) {
+              layer->Paint(paintContext);
+            }
+            break;
+          case RasterCacheLayerStrategy::kLayerChildren:
+            auto layers = static_cast<const ContainerLayer*>(layer)->layers();
+            for (auto& layer : layers) {
+              if (layer->needs_painting(paintContext)) {
+                layer->Paint(paintContext);
+              }
+            }
+            break;
         }
       });
 }
@@ -320,8 +358,10 @@ bool RasterCache::Prepare(PrerollContext* context,
   return true;
 }
 
-void RasterCache::Touch(Layer* layer, const SkMatrix& ctm) {
-  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyType::kLayer, ctm);
+void RasterCache::Touch(Layer* layer,
+                        const SkMatrix& ctm,
+                        RasterCacheLayerStrategy strategey) {
+  RasterCacheKey cache_key = MakeRasterCacheKeyForLayer(layer, strategey, ctm);
   Touch(cache_key);
 }
 
@@ -367,9 +407,10 @@ bool RasterCache::Draw(const DisplayList& display_list,
 
 bool RasterCache::Draw(const Layer* layer,
                        SkCanvas& canvas,
+                       RasterCacheLayerStrategy strategy,
                        const SkPaint* paint) const {
-  RasterCacheKey cache_key(layer->unique_id(), RasterCacheKeyType::kLayer,
-                           canvas.getTotalMatrix());
+  RasterCacheKey cache_key =
+      MakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
   return Draw(cache_key, canvas, paint);
 }
 
