@@ -220,6 +220,23 @@ class TextLayoutService {
       }
     }
 
+    // ********************** //
+    // *** POSITION BOXES *** //
+    // ********************** //
+
+    if (lines.isNotEmpty) {
+      final EngineLineMetrics lastLine = lines.last;
+      final bool shouldJustifyParagraph =
+        width.isFinite &&
+        paragraph.paragraphStyle.textAlign == ui.TextAlign.justify;
+
+      for (final EngineLineMetrics line in lines) {
+        // Don't apply justification to the last line.
+        final bool shouldJustifyLine = shouldJustifyParagraph && line != lastLine;
+        _positionLineBoxes(line, withJustification: shouldJustifyLine);
+      }
+    }
+
     // ******************************** //
     // *** MAX/MIN INTRINSIC WIDTHS *** //
     // ******************************** //
@@ -268,6 +285,145 @@ class TextLayoutService {
         currentLine = currentLine.nextLine();
       }
     }
+  }
+
+  ui.TextDirection get _paragraphDirection =>
+      paragraph.paragraphStyle.effectiveTextDirection;
+
+  /// Positions the boxes in the given [line] and takes into account their
+  /// directions, the paragraph's direction, and alignment justification.
+  void _positionLineBoxes(EngineLineMetrics line, {
+    required bool withJustification,
+  }) {
+    final List<RangeBox> boxes = line.boxes;
+    final double justifyPerSpaceBox = withJustification
+      ? _calculateJustifyPerSpaceBox(line)
+      : 0.0;
+
+    int i = 0;
+    double cumulativeWidth = 0.0;
+    while (i < boxes.length) {
+      final RangeBox box = boxes[i];
+      if (box.boxDirection == _paragraphDirection) {
+        // The box is in the same direction as the paragraph.
+        box.startOffset = cumulativeWidth;
+        box.lineWidth = line.width;
+        if (box is SpanBox && box.isSpaceOnly) {
+          box._width += justifyPerSpaceBox;
+        }
+
+        cumulativeWidth += box.width;
+        i++;
+        continue;
+      }
+
+      // At this point, we found a box that has the opposite direction to the
+      // paragraph. This could be a sequence of one or more boxes.
+      //
+      // These boxes should flow in the opposite direction. So we need to
+      // position them in reverse order.
+      //
+      // If the last box in the sequence is a space-only box (contains only
+      // whitespace characters), it should be excluded from the sequence.
+      //
+      // Example: an LTR paragraph with the contents:
+      //
+      // "ABC rtl1 rtl2 rtl3 XYZ"
+      //     ^    ^    ^    ^
+      //    SP1  SP2  SP3  SP4
+      //
+      //
+      // box direction:    LTR           RTL               LTR
+      //                |------>|<-----------------------|------>
+      //                +----------------------------------------+
+      //                | ABC | | rtl3 | | rtl2 | | rtl1 | | XYZ |
+      //                +----------------------------------------+
+      //                       ^        ^        ^        ^
+      //                      SP1      SP3      SP2      SP4
+      //
+      // Notice how SP2 and SP3 are flowing in the RTL direction because of the
+      // surrounding RTL words. SP4 is also preceded by an RTL word, but it marks
+      // the end of the RTL sequence, so it goes back to flowing in the paragraph
+      // direction (LTR).
+
+      final int first = i;
+      int lastNonSpaceBox = first;
+      i++;
+      while (i < boxes.length && boxes[i].boxDirection != _paragraphDirection) {
+        final RangeBox box = boxes[i];
+        if (box is SpanBox && box.isSpaceOnly) {
+          // Do nothing.
+        } else {
+          lastNonSpaceBox = i;
+        }
+        i++;
+      }
+      final int last = lastNonSpaceBox;
+      i = lastNonSpaceBox + 1;
+
+      // The range (first:last) is the entire sequence of boxes that have the
+      // opposite direction to the paragraph.
+      final double sequenceWidth = _positionLineBoxesInReverse(
+        line,
+        first,
+        last,
+        startOffset: cumulativeWidth,
+        justifyPerSpaceBox: justifyPerSpaceBox,
+      );
+      cumulativeWidth += sequenceWidth;
+    }
+  }
+
+  /// Positions a sequence of boxes in the direction opposite to the paragraph
+  /// text direction.
+  ///
+  /// This is needed when a right-to-left sequence appears in the middle of a
+  /// left-to-right paragraph, or vice versa.
+  ///
+  /// Returns the total width of all the positioned boxes in the sequence.
+  ///
+  /// [first] and [last] are expected to be inclusive.
+  double _positionLineBoxesInReverse(
+    EngineLineMetrics line,
+    int first,
+    int last, {
+    required double startOffset,
+    required double justifyPerSpaceBox,
+  }) {
+    final List<RangeBox> boxes = line.boxes;
+    double cumulativeWidth = 0.0;
+    for (int i = last; i >= first; i--) {
+      // Update the visual position of each box.
+      final RangeBox box = boxes[i];
+      assert(box.boxDirection != _paragraphDirection);
+      box.startOffset = startOffset + cumulativeWidth;
+      box.lineWidth = line.width;
+      if (box is SpanBox && box.isSpaceOnly) {
+        box._width += justifyPerSpaceBox;
+      }
+
+      cumulativeWidth += box.width;
+    }
+    return cumulativeWidth;
+  }
+
+  /// Calculates for the given [line], the amount of extra width that needs to be
+  /// added to each space box in order to align the line with the rest of the
+  /// paragraph.
+  double _calculateJustifyPerSpaceBox(EngineLineMetrics line) {
+    final double justifyTotal = paragraph.width - line.width;
+    final RangeBox lastBox = line.boxes.last;
+
+    int spaceBoxesToJustify = line.spaceBoxCount;
+    // If the last box is a space box, we can't use it to justify text.
+    if (lastBox is SpanBox && lastBox.isSpaceOnly) {
+      spaceBoxesToJustify--;
+    }
+    if (spaceBoxesToJustify > 0) {
+      return justifyTotal / spaceBoxesToJustify;
+    }
+
+    return 0.0;
   }
 
   List<ui.TextBox> getBoxesForPlaceholders() {
@@ -396,7 +552,6 @@ abstract class RangeBox {
   RangeBox(
     this.start,
     this.end,
-    this.width,
     this.paragraphDirection,
     this.boxDirection,
   );
@@ -421,7 +576,7 @@ abstract class RangeBox {
       : lineWidth - startOffset;
 
   /// The distance from the left edge of the box to the right edge of the box.
-  final double width;
+  double get width;
 
   /// The width of the line that this box belongs to.
   late final double lineWidth;
@@ -464,9 +619,12 @@ class PlaceholderBox extends RangeBox {
     required LineBreakResult index,
     required ui.TextDirection paragraphDirection,
     required ui.TextDirection boxDirection,
-  }) : super(index, index, placeholder.width, paragraphDirection, boxDirection);
+  }) : super(index, index, paragraphDirection, boxDirection);
 
   final PlaceholderSpan placeholder;
+
+  @override
+  double get width => placeholder.width;
 
   @override
   ui.TextBox toTextBox(EngineLineMetrics line) {
@@ -536,7 +694,8 @@ class SpanBox extends RangeBox {
   })  : span = spanometer.currentSpan,
         height = spanometer.height,
         baseline = spanometer.ascent,
-        super(start, end, width, paragraphDirection, boxDirection);
+        _width = width,
+        super(start, end, paragraphDirection, boxDirection);
 
 
   final Spanometer spanometer;
@@ -565,6 +724,13 @@ class SpanBox extends RangeBox {
 
   /// Whether this box is made of only white space.
   final bool isSpaceOnly;
+
+  /// This is made mutable so it can be updated later in the layout process for
+  /// the purpose of aligning the lines of a paragraph with [ui.TextAlign.justify].
+  double _width;
+
+  @override
+  double get width => _width;
 
   /// Whether the contents of this box flow in the left-to-right direction.
   bool get isContentLtr => contentDirection == ui.TextDirection.ltr;
@@ -1290,7 +1456,6 @@ class LineBuilder {
   EngineLineMetrics build({String? ellipsis}) {
     // At the end of each line, we cut the last box of the line.
     createBox();
-    _positionBoxes();
 
     final double ellipsisWidth =
         ellipsis == null ? 0.0 : spanometer.measureText(ellipsis);
@@ -1319,105 +1484,6 @@ class LineBuilder {
       boxes: _boxes,
       spaceBoxCount: _spaceBoxCount,
     );
-  }
-
-  /// Positions the boxes and takes into account their directions, and the
-  /// paragraph's direction.
-  void _positionBoxes() {
-    final List<RangeBox> boxes = _boxes;
-
-    int i = 0;
-    double cumulativeWidth = 0.0;
-    while (i < boxes.length) {
-      final RangeBox box = boxes[i];
-      if (box.boxDirection == _paragraphDirection) {
-        // The box is in the same direction as the paragraph.
-        box.startOffset = cumulativeWidth;
-        box.lineWidth = width;
-
-        cumulativeWidth += box.width;
-        i++;
-        continue;
-      }
-
-      // At this point, we found a box that has the opposite direction to the
-      // paragraph. This could be a sequence of one or more boxes.
-      //
-      // These boxes should flow in the opposite direction. So we need to
-      // position them in reverse order.
-      //
-      // If the last box in the sequence is a space-only box (contains only
-      // whitespace characters), it should be excluded from the sequence.
-      //
-      // Example: an LTR paragraph with the contents:
-      //
-      // "ABC rtl1 rtl2 rtl3 XYZ"
-      //     ^    ^    ^    ^
-      //    SP1  SP2  SP3  SP4
-      //
-      //
-      // box direction:    LTR           RTL               LTR
-      //                |------>|<-----------------------|------>
-      //                +----------------------------------------+
-      //                | ABC | | rtl3 | | rtl2 | | rtl1 | | XYZ |
-      //                +----------------------------------------+
-      //                       ^        ^        ^        ^
-      //                      SP1      SP3      SP2      SP4
-      //
-      // Notice how SP2 and SP3 are flowing in the RTL direction because of the
-      // surrounding RTL words. SP4 is also preceded by an RTL word, but it marks
-      // the end of the RTL sequence, so it goes back to flowing in the paragraph
-      // direction (LTR).
-
-      final int first = i;
-      int lastNonSpaceBox = first;
-      i++;
-      while (i < boxes.length && boxes[i].boxDirection != _paragraphDirection) {
-        final RangeBox box = boxes[i];
-        if (box is SpanBox && box.isSpaceOnly) {
-          // Do nothing.
-        } else {
-          lastNonSpaceBox = i;
-        }
-        i++;
-      }
-      final int last = lastNonSpaceBox;
-      i = lastNonSpaceBox + 1;
-
-      // The range (first:last) is the entire sequence of boxes that have the
-      // opposite direction to the paragraph.
-      final double sequenceWidth =
-          _positionBoxesInReverse(boxes, first, last, startOffset: cumulativeWidth);
-      cumulativeWidth += sequenceWidth;
-    }
-  }
-
-  /// Positions a sequence of boxes in the direction opposite to the paragraph
-  /// text direction.
-  ///
-  /// This is needed when a right-to-left sequence appears in the middle of a
-  /// left-to-right paragraph, or vice versa.
-  ///
-  /// Returns the total width of all the positioned boxes in the sequence.
-  ///
-  /// [first] and [last] are expected to be inclusive.
-  double _positionBoxesInReverse(
-    List<RangeBox> boxes,
-    int first,
-    int last, {
-    required double startOffset,
-  }) {
-    double cumulativeWidth = 0.0;
-    for (int i = last; i >= first; i--) {
-      // Update the visual position of each box.
-      final RangeBox box = boxes[i];
-      assert(box.boxDirection != _paragraphDirection);
-      box.startOffset = startOffset + cumulativeWidth;
-      box.lineWidth = width;
-
-      cumulativeWidth += box.width;
-    }
-    return cumulativeWidth;
   }
 
   LineBreakResult? _cachedNextBreak;
