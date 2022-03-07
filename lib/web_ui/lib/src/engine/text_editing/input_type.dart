@@ -67,6 +67,7 @@ abstract class EngineInputType {
   /// For various `inputmode` values supported by browsers, see:
   /// <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inputmode>.
   String? get inputmodeAttribute;
+  String? get enterkeyhintAttribute;
 
   /// Whether this input type allows the "Enter" key to submit the input action.
   bool get submitActionOnEnter => true;
@@ -86,6 +87,9 @@ abstract class EngineInputType {
         operatingSystem == OperatingSystem.android ||
         inputmodeAttribute == EngineInputType.none.inputmodeAttribute) {
       domElement.setAttribute('inputmode', inputmodeAttribute!);
+      if (enterkeyhintAttribute != null) {
+        domElement.setAttribute('enterkeyhint', enterkeyhintAttribute!);
+      }
     }
   }
 }
@@ -96,6 +100,9 @@ class NoTextInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'none';
+
+  @override
+  String? get enterkeyhintAttribute => null;
 }
 
 /// Single-line text input type.
@@ -104,6 +111,9 @@ class TextInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'text';
+
+  @override
+  String get enterkeyhintAttribute => 'go';
 }
 
 /// Numeric input type.
@@ -114,6 +124,9 @@ class NumberInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'numeric';
+
+  @override
+  String? get enterkeyhintAttribute => null;
 }
 
 /// Decimal input type.
@@ -125,6 +138,9 @@ class DecimalInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'decimal';
+
+  @override
+  String? get enterkeyhintAttribute => null;
 }
 
 /// Phone number input type.
@@ -133,6 +149,9 @@ class PhoneInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'tel';
+
+  @override
+  String? get enterkeyhintAttribute => null;
 }
 
 /// Email address input type.
@@ -141,6 +160,9 @@ class EmailInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'email';
+
+  @override
+  String? get enterkeyhintAttribute => null;
 }
 
 /// URL input type.
@@ -149,6 +171,9 @@ class UrlInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'url';
+
+  @override
+  String? get enterkeyhintAttribute => null;
 }
 
 /// Multi-line text input type.
@@ -157,6 +182,9 @@ class MultilineInputType extends EngineInputType {
 
   @override
   String? get inputmodeAttribute => null;
+
+  @override
+  String? get enterkeyhintAttribute => null;
 
   @override
   bool get submitActionOnEnter => false;
