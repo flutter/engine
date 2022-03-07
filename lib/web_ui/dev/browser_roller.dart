@@ -38,8 +38,27 @@ final Client _client = Client();
 ///
 /// Currently only rolls Chrome.
 ///
-/// These rolls are consumed by the "chrome_and_driver" LUCI recipe, here:
-/// https://cs.opensource.google/flutter/recipes/+/main:recipe_modules/flutter_deps/api.py;l=146
+/// Chrome rolls are consumed by the "chrome_and_driver" and "chrome" LUCI recipes, here:
+/// * https://cs.opensource.google/flutter/recipes/+/main:recipe_modules/flutter_deps/api.py;l=146
+/// * https://cs.opensource.google/flutter/recipes/+/master:recipe_modules/web_util/api.py;l=22
+///
+/// Chromedriver is consumed by the same "chrome_and_driver" LUCI recipe, but also "chrome_driver":
+/// * https://cs.opensource.google/flutter/recipes/+/master:recipe_modules/web_util/api.py;l=48
+///
+/// There's a small difference in the layout of the zip file coming from CIPD for the
+/// Mac platform. In `Linux` and `Windows`, the chrome(.exe) executable is expected
+/// to be placed directly in the root of the zip file.
+///
+/// However in `Mac`, the `Chromium.app` is expected to be placed inside of a
+/// `chrome-mac` directory in the resulting zip file.
+///
+/// This script respects that historical quirk when building the CIPD packages.
+/// In order for all the packages to be the same, the recipes listed above should
+/// be made slightly smarter, so they can find the CHROME_EXECUTABLE in the right
+/// place.
+///
+/// All platforms expect the "chromedriver" executable to be placed in the root
+/// of the CIPD zip.
 Future<void> main(List<String> args) async {
   try {
     processArgs(_argParser.parse(args));
@@ -262,7 +281,7 @@ data:
     final String url = binding.getChromeDownloadUrl(chromeBuild);
     final String cipdPackageName = 'flutter_internal/browsers/chrome/$platform-amd64';
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform));
-    print('\nRolling Chromium for $platform (build $chromeBuild)');
+    print('\nRolling Chromium for $platform (version:$majorVersion, build $chromeBuild)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
       print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
@@ -277,12 +296,15 @@ data:
 
     await _unzipAndDeleteFile(chromeDownload, platformDir);
 
-    // copy actualContentRoot/*.* -R platformDir
-    // TODO(webinfra): Remove this when recipes agree on a specific path for all platforms.
-    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
-    assert(actualContentRoot != null);
-    await copyPath(actualContentRoot!.path, platformDir.path);
-    final String relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
+    late String relativePlatformDirPath;
+    // Preserve the `chrome-mac` directory when bundling, but remove it for win and linux.
+    if (platform == 'Mac') {
+      relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
+    } else {
+      final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+      assert(actualContentRoot != null);
+      relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
+    }
 
     // Create the config manifest to upload to CIPD
     final io.File cipdConfigFile = await _writeFile(
@@ -305,7 +327,7 @@ data:
     final String url = binding.getChromeDriverDownloadUrl(chromeBuild);
     final String cipdPackageName = 'flutter_internal/browser-drivers/chrome/$platform-amd64';
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform}_driver'));
-    print('\nRolling Chromedriver for $platform (version $majorVersion, build $chromeBuild)');
+    print('\nRolling Chromedriver for $platform (version:$majorVersion, build $chromeBuild)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
       print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
@@ -320,12 +342,10 @@ data:
 
     await _unzipAndDeleteFile(chromedriverDownload, platformDir);
 
-    // copy actualContentRoot/*.* -R platformDir
-    // TODO(webinfra): Remove this when recipes agree on a specific path for all platforms.
+    // Ensure the chromedriver executable is placed in the root of the bundle.
     final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
     assert(actualContentRoot != null);
-    await copyPath(actualContentRoot!.path, platformDir.path);
-    final String relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
+    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
 
     // Create the config manifest to upload to CIPD
     final io.File cipdConfigFile = await _writeFile(
