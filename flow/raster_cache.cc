@@ -244,10 +244,11 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
             }
             break;
           case RasterCacheLayerStrategy::kLayerChildren:
-            auto layers = static_cast<const ContainerLayer*>(layer)->layers();
-            for (auto& layer : layers) {
-              if (layer->needs_painting(paintContext)) {
-                layer->Paint(paintContext);
+            auto children_layers =
+                static_cast<const ContainerLayer*>(layer)->layers();
+            for (auto& child_layer : children_layers) {
+              if (child_layer->needs_painting(paintContext)) {
+                child_layer->Paint(paintContext);
               }
             }
             break;

@@ -17,7 +17,7 @@ namespace flutter {
 
 class RasterCacheKeyID {
  public:
-  RasterCacheKeyID(std::vector<uint64_t> ids) : ids_(ids) {}
+  RasterCacheKeyID(const std::vector<uint64_t> ids) : ids_(ids) {}
 
   const std::vector<uint64_t>& ids() { return ids_; }
 
@@ -38,7 +38,7 @@ class RasterCacheKeyID {
   }
 
  private:
-  std::vector<uint64_t> ids_;
+  const std::vector<uint64_t> ids_;
 };
 
 enum class RasterCacheKeyType {

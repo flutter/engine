@@ -657,25 +657,23 @@ TEST(RasterCache, RasterCacheKeyID_Equal) {
   ASSERT_EQ(first, second);
   ASSERT_NE(first, third);
 
-  first = RasterCacheKeyID({1, 2});
-  second = RasterCacheKeyID({1, 2});
-  third = RasterCacheKeyID({2, 1});
-  ASSERT_EQ(first, second);
-  ASSERT_NE(first, third);
+  RasterCacheKeyID fourth = RasterCacheKeyID({1, 2});
+  RasterCacheKeyID fifth = RasterCacheKeyID({1, 2});
+  RasterCacheKeyID sixth = RasterCacheKeyID({2, 1});
+  ASSERT_EQ(fourth, fifth);
+  ASSERT_NE(fourth, sixth);
 }
 
 TEST(RasterCache, RasterCacheKeyID_HashCode) {
-  RasterCacheKeyID first = RasterCacheKeyID({1});
-  RasterCacheKeyID second = RasterCacheKeyID({1, 2});
-  RasterCacheKeyID third = RasterCacheKeyID({2, 1});
+  uint64_t foo = 1;
+  uint64_t bar = 2;
+  RasterCacheKeyID first = RasterCacheKeyID({foo});
+  RasterCacheKeyID second = RasterCacheKeyID({foo, bar});
+  RasterCacheKeyID third = RasterCacheKeyID({bar, foo});
 
-  ASSERT_EQ(first.GetHash(), fml::HashCombine<uint64_t>(1));
-  ASSERT_EQ(second.GetHash(), fml::HashCombine<uint64_t>(1, 2));
-  ASSERT_EQ(third.GetHash(), fml::HashCombine<uint64_t>(2, 1));
-
-  ASSERT_NE(first.GetHash(), second.GetHash());
-  ASSERT_NE(first.GetHash(), third.GetHash());
-  ASSERT_NE(second.GetHash(), third.GetHash());
+  ASSERT_EQ(first.GetHash(), fml::HashCombine(foo));
+  ASSERT_EQ(second.GetHash(), fml::HashCombine(foo, bar));
+  ASSERT_EQ(third.GetHash(), fml::HashCombine(bar, foo));
 }
 
 }  // namespace testing
