@@ -129,7 +129,7 @@ if (host_os == "win") {
 }
 
 # Archives Flutter Mac Artifacts
-if (host_os == "mac") {
+if (is_mac) {
   group("macos_flutter_framework") {
     deps = [
       "//flutter/shell/platform/darwin/macos:macos_flutter_framework_archive",
