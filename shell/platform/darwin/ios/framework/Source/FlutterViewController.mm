@@ -423,6 +423,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   pointer_data.physical_x = location.x * scale;
   pointer_data.physical_y = location.y * scale;
   pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
+  // `UITouch.timestamp` is defined as seconds since system startup. Synthesized events can get this time
+  // with `NSProcessInfo.systemUptime`. See
+  // https://developer.apple.com/documentation/uikit/uitouch/1618144-timestamp?language=objc
   pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
   auto packet = std::make_unique<flutter::PointerDataPacket>(/*count=*/1);
   pointer_data.change = change;
@@ -756,6 +759,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
       pointer_data.Clear();
 
       // Use current time.
+      // `UITouch.timestamp` is defined as seconds since system startup. Synthesized events can get this time
+      // with `NSProcessInfo.systemUptime`. See
+      // https://developer.apple.com/documentation/uikit/uitouch/1618144-timestamp?language=objc
       pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
 
       pointer_data.change = flutter::PointerData::Change::kCancel;
