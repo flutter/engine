@@ -1,4 +1,4 @@
-Signature: 00dba3c03f62152a80535e473aac2193
+Signature: e3335019d704ef4788a169adaa952066
 
 UNUSED LICENSES:
 
@@ -1067,7 +1067,6 @@ FILE: ../../../third_party/skia/modules/canvaskit/catchExceptionNop.js
 FILE: ../../../third_party/skia/modules/canvaskit/color.js
 FILE: ../../../third_party/skia/modules/canvaskit/cpu.js
 FILE: ../../../third_party/skia/modules/canvaskit/debug.js
-FILE: ../../../third_party/skia/modules/canvaskit/debugger.js
 FILE: ../../../third_party/skia/modules/canvaskit/external_test/typescript_browser/index.html
 FILE: ../../../third_party/skia/modules/canvaskit/external_test/typescript_browser/module_uses_ck.ts
 FILE: ../../../third_party/skia/modules/canvaskit/external_test/typescript_browser/package-lock.json
@@ -1162,6 +1161,8 @@ FILE: ../../../third_party/skia/modules/skparagraph/samples/SampleParagraph.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.h
+FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/OneLineShaper.cpp
@@ -3361,7 +3362,6 @@ FILE: ../../../third_party/skia/include/gpu/gl/GrGLAssembleHelpers.h
 FILE: ../../../third_party/skia/include/private/GrGLTypesPriv.h
 FILE: ../../../third_party/skia/include/private/SkThreadAnnotations.h
 FILE: ../../../third_party/skia/modules/canvaskit/WasmCommon.h
-FILE: ../../../third_party/skia/modules/canvaskit/debugger_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/particles_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/skottie_bindings.cpp
