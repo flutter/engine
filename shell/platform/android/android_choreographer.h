@@ -10,6 +10,11 @@
 #include <cstdint>
 
 namespace flutter {
+
+//------------------------------------------------------------------------------
+/// The Android Choreographer is used by `VsyncWaiterAndroid` to await vsync
+/// signal. It's only avialalbe on API 29+ or API 24+ and architecture is 64-bit
+///
 class AndroidChoreographer {
  public:
   typedef void (*OnFrameCallback)(int64_t frame_time_nanos, void* data);

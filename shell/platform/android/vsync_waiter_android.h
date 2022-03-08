@@ -44,9 +44,7 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
                                   jclass jcaller,
                                   jfloat refresh_rate);
 
-  bool should_use_ndk_choreographer_;
-  std::unique_ptr<AndroidChoreographer> choreographer_;
-
+  const bool should_use_ndk_choreographer_;
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterAndroid);
 };
 

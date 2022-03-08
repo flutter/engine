@@ -37,6 +37,7 @@ void VsyncWaiterAndroid::AwaitVSync() {
           AndroidChoreographer::PostFrameCallback(&OnVsyncFromNDK, weak_this);
         });
   } else {
+    // TODO: Remove the JNI fallback when we drop support for API level < 29.
     auto* weak_this = new std::weak_ptr<VsyncWaiter>(shared_from_this());
     jlong java_baton = reinterpret_cast<jlong>(weak_this);
     task_runners_.GetPlatformTaskRunner()->PostTask([java_baton]() {

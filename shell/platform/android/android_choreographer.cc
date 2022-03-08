@@ -8,8 +8,10 @@
 
 // Only avialalbe on API 24+
 typedef void AChoreographer;
+// Only avialalbe on API 29+ or API 24+ and architecture is 64-bit
 typedef void (*AChoreographer_frameCallback)(int64_t frameTimeNanos,
                                              void* data);
+// Only avialalbe on API 24+
 typedef AChoreographer* (*AChoreographer_getInstance_FPN)();
 typedef void (*AChoreographer_postFrameCallback_FPN)(
     AChoreographer* choreographer,
