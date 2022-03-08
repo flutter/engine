@@ -33,11 +33,11 @@ vars = {
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
   'canvaskit_cipd_instance': '8MSYGWVWzrTJIoVL00ZquruZs-weuwLBy1kt1AawJiIC',
 
-  # Do not activate the Emscripten SDK by default.
+  # Do not download the Emscripten SDK by default.
   # This prevents us from downloading the Emscripten toolchain for builds
   # which do not build for the web. This toolchain is needed to build CanvasKit
   # for the web engine.
-  'activate_emsdk': False,
+  'download_emsdk': False,
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -572,6 +572,11 @@ deps = {
       },
     ],
     'dep_type': 'cipd',
+  },
+
+  'src/buildtools/emsdk': {
+   'url': Var('skia_git') + '/external/github.com/emscripten-core/emsdk.git' + '@' + 'fc645b7626ebf86530dbd82fbece74d457e7ae07',
+   'condition': 'download_emsdk',
   },
 
   # Clang on mac and linux are expected to typically be the same revision.
