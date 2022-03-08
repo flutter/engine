@@ -41,6 +41,8 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding.OnSaveInstanceStateListener;
 import io.flutter.plugins.GeneratedPluginRegistrant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -96,6 +98,7 @@ public class FlutterActivityTest {
 
     assertEquals("main", flutterActivity.getDartEntrypointFunctionName());
     assertNull(flutterActivity.getDartEntrypointLibraryUri());
+    assertNull(flutterActivity.getDartEntrypointArgs());
     assertEquals("/", flutterActivity.getInitialRoute());
     assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
@@ -140,6 +143,7 @@ public class FlutterActivityTest {
     Intent intent =
         FlutterActivity.withNewEngine()
             .initialRoute("/custom/route")
+            .dartEntrypointArgs(new ArrayList<String>(Arrays.asList("foo", "bar")))
             .backgroundMode(BackgroundMode.transparent)
             .build(RuntimeEnvironment.application);
     ActivityController<FlutterActivity> activityController =
@@ -148,6 +152,8 @@ public class FlutterActivityTest {
     flutterActivity.setDelegate(new FlutterActivityAndFragmentDelegate(flutterActivity));
 
     assertEquals("/custom/route", flutterActivity.getInitialRoute());
+    assertArrayEquals(
+        new String[] {"foo", "bar"}, flutterActivity.getDartEntrypointArgs().toArray());
     assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());

@@ -11,6 +11,7 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_BACKGROUND_MODE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_CACHED_ENGINE_ID;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DART_ENTRYPOINT_ARGS;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
@@ -47,6 +48,8 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.util.ViewUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A Flutter {@code Activity} that is based upon {@link FragmentActivity}.
@@ -97,6 +100,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     private final Class<? extends FlutterFragmentActivity> activityClass;
     private String initialRoute = DEFAULT_INITIAL_ROUTE;
     private String backgroundMode = DEFAULT_BACKGROUND_MODE;
+    private List<String> dartEntrypointArgs;
 
     /**
      * Constructor that allows this {@code NewEngineIntentBuilder} to be used by subclasses of
@@ -145,6 +149,12 @@ public class FlutterFragmentActivity extends FragmentActivity
       return this;
     }
 
+    @NonNull
+    public NewEngineIntentBuilder dartEntrypointArgs(@Nullable List<String> dartEntrypointArgs) {
+      this.dartEntrypointArgs = dartEntrypointArgs;
+      return this;
+    }
+
     /**
      * Creates and returns an {@link Intent} that will launch a {@code FlutterFragmentActivity} with
      * the desired configuration.
@@ -154,7 +164,10 @@ public class FlutterFragmentActivity extends FragmentActivity
       return new Intent(context, activityClass)
           .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
           .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode)
-          .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
+          .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true)
+          .putExtra(
+              EXTRA_DART_ENTRYPOINT_ARGS,
+              dartEntrypointArgs != null ? new ArrayList(dartEntrypointArgs) : null);
     }
   }
 
@@ -478,6 +491,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       return FlutterFragment.withNewEngine()
           .dartEntrypoint(getDartEntrypointFunctionName())
           .dartLibraryUri(getDartEntrypointLibraryUri())
+          .dartEntrypointArgs(getDartEntrypointArgs())
           .initialRoute(getInitialRoute())
           .appBundlePath(getAppBundlePath())
           .flutterShellArgs(FlutterShellArgs.fromIntent(getIntent()))
@@ -705,6 +719,11 @@ public class FlutterFragmentActivity extends FragmentActivity
     } catch (PackageManager.NameNotFoundException e) {
       return DEFAULT_DART_ENTRYPOINT;
     }
+  }
+
+  @Nullable
+  public List<String> getDartEntrypointArgs() {
+    return (List<String>) getIntent().getSerializableExtra(EXTRA_DART_ENTRYPOINT_ARGS);
   }
 
   /**
