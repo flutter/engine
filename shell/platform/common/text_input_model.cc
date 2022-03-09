@@ -28,9 +28,12 @@ TextInputModel::TextInputModel() = default;
 
 TextInputModel::~TextInputModel() = default;
 
-bool TextInputModel::SetText(const std::string& text, const TextRange& selection, const TextRange& composing_range) {
+bool TextInputModel::SetText(const std::string& text,
+                             const TextRange& selection,
+                             const TextRange& composing_range) {
   text_ = fml::Utf8ToUtf16(text);
-  if (!text_range().Contains(selection) || !text_range().Contains(composing_range)) {
+  if (!text_range().Contains(selection) ||
+      !text_range().Contains(composing_range)) {
     return false;
   }
 

@@ -356,9 +356,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
 
   NSString* text = state[kTextKey];
-  if (text != nil) {
-    _activeModel->SetText([text UTF8String]);
-  }
 
   flutter::TextRange selected_range = RangeFromBaseExtent(
       state[kSelectionBaseKey], state[kSelectionExtentKey], _activeModel->selection());
@@ -366,14 +363,12 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
   flutter::TextRange composing_range = RangeFromBaseExtent(
       state[kComposingBaseKey], state[kComposingExtentKey], _activeModel->composing_range());
-  size_t cursor_offset = selected_range.base() - composing_range.start();
-  if (!composing_range.collapsed() && !_activeModel->composing()) {
-    _activeModel->BeginComposing();
-  } else if (composing_range.collapsed() && _activeModel->composing()) {
-    _activeModel->EndComposing();
+
+  const bool wasComposing = _activeModel->composing();
+  _activeModel->SetText([text UTF8String], selected_range, composing_range);
+  if (composing_range.collapsed() && wasComposing) {
     [_textInputContext discardMarkedText];
   }
-  _activeModel->SetComposingRange(composing_range, cursor_offset);
   [_client becomeFirstResponder];
   [self updateTextAndSelection];
 }
