@@ -633,6 +633,15 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   std::string marked_text = isAttributedString ? [[string string] UTF8String] : [string UTF8String];
   _activeModel->UpdateComposingText(marked_text);
 
+  // Update the selection within the marked text.
+  long signedLength = static_cast<long>(selectedRange.length);
+  long location = selectedRange.location + _activeModel->composing_range().base();
+  long textLength = _activeModel->text_range().end();
+
+  size_t base = std::clamp(location, 0L, textLength);
+  size_t extent = std::clamp(location + signedLength, 0L, textLength);
+  _activeModel->SetSelection(flutter::TextRange(base, extent));
+
   if (_enableDeltaModel) {
     flutter::TextRange composing = _activeModel->composing_range();
     [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, composing,
