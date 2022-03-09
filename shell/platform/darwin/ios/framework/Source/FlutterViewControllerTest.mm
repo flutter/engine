@@ -141,6 +141,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateDisplayLink;
 - (void)addInternalPlugins;
+- (flutter::PointerData)generatePointerDataForFake;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -1055,4 +1056,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
       dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>()];
 }
 
+- (void)testFakeEventTimeStamp {
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  flutter::PointerData pointer_data = [vc generatePointerDataForFake];
+  int64_t current_time = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
+  XCTAssertTrue(current_time == pointer_data.time_stamp,
+                @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
+}
 @end
