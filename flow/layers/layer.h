@@ -373,9 +373,6 @@ class Layer {
   uint64_t original_layer_id_;
   bool subtree_has_platform_view_;
   bool layer_can_inherit_opacity_;
-  std::unordered_set<uint64_t> ancestors_ = {};
-
-  unsigned level_ = 0;
 
   static uint64_t NextUniqueID();
 

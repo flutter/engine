@@ -86,7 +86,16 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
+  context->raster_cached_entries.emplace_back(RasterCacheEntry(this));
 
+  auto& cache_entry = context->raster_cached_entries.back();
+  // display layer is a leaf node
+  cache_entry.num_child_entries = 0;
+  cache_entry.need_caching = IsNeedCached(context, matrix);
+}
+
+bool DisplayListLayer::IsNeedCached(PrerollContext* context,
+                                    const SkMatrix& ctm) {
   DisplayList* disp_list = display_list();
 
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
@@ -98,16 +107,28 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
-                         offset_)) {
-        context->subtree_can_inherit_opacity = true;
-      }
-    } else {
-      // Don't evict raster cache entry during partial repaint
-      cache->Touch(disp_list, matrix);
+      return cache->ShouldBeCached(context, disp_list, is_complex_,
+                                   will_change_, ctm);
     }
   }
-  set_paint_bounds(bounds);
+  return false;
+}
+
+void DisplayListLayer::TryToPrepareRasterCache(PrerollContext* context,
+                                               const SkMatrix& ctm) {
+  DisplayList* disp_list = display_list();
+
+  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
+  auto* cache = context->raster_cache;
+  if (context->cull_rect.intersects(bounds)) {
+    if (cache->Prepare(context, disp_list, is_complex_, will_change_, ctm,
+                       offset_)) {
+      context->subtree_can_inherit_opacity = true;
+    }
+  } else {
+    // Don't evict raster cache entry during partial repaint
+    cache->Touch(disp_list, ctm);
+  }
 }
 
 void DisplayListLayer::Paint(PaintContext& context) const {

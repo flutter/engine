@@ -7,7 +7,9 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
+#include "include/core/SkMatrix.h"
 
 namespace flutter {
 
@@ -31,6 +33,11 @@ class DisplayListLayer : public Layer {
   const DisplayListLayer* as_display_list_layer() const override {
     return this;
   }
+
+  bool IsNeedCached(PrerollContext* context, const SkMatrix& ctm) override;
+
+  void TryToPrepareRasterCache(PrerollContext* context,
+                               const SkMatrix& ctm) override;
 
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
 
