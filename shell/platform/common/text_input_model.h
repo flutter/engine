@@ -20,10 +20,11 @@ class TextInputModel {
   TextInputModel();
   virtual ~TextInputModel();
 
-  // Sets the text.
+  // Sets the text, as well as the selection and the composing region.
   //
-  // Resets the selection base and extent.
-  void SetText(const std::string& text);
+  // This method is typically used to update the TextInputModel's editing state
+  // when the Flutter framework sends its latest text editing state.
+  bool SetText(const std::string& text, const TextRange& selection = TextRange(0), const TextRange& composing_range = TextRange(0));
 
   // Attempts to set the text selection.
   //
