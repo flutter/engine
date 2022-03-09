@@ -20,6 +20,8 @@ class ImageFilterLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
+  bool IsNeedCached(PrerollContext* context, const SkMatrix& ctm) override;
+
  private:
   // The ImageFilterLayer might cache the filtered output of this layer
   // if the layer remains stable (if it is not animating for instance).

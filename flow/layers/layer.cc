@@ -3,8 +3,11 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/layer.h"
+#include <algorithm>
 
 #include "flutter/flow/paint_utils.h"
+#include "flutter/flow/raster_cache.h"
+#include "include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 
 namespace flutter {
@@ -27,6 +30,9 @@ uint64_t Layer::NextUniqueID() {
 }
 
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
+
+void Layer::TryToPrepareRasterCache(PrerollContext* context,
+                                    const SkMatrix& ctm) {}
 
 Layer::AutoPrerollSaveLayerState::AutoPrerollSaveLayerState(
     PrerollContext* preroll_context,

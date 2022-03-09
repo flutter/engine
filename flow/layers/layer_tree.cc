@@ -7,8 +7,10 @@
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
+#include "include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
@@ -58,7 +60,20 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   };
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
+
+  RasterCache(&context, frame.root_surface_transformation());
+
   return context.surface_needs_readback;
+}
+
+void LayerTree::RasterCache(PrerollContext* context, const SkMatrix& ctm) {
+  for (unsigned i = 0; i < context->raster_cached_entries.size(); i++) {
+    auto& entry = context->raster_cached_entries[i];
+    if (entry.need_caching) {
+      entry.layer->TryToPrepareRasterCache(context, ctm);
+      i += entry.num_child_entries;
+    }
+  }
 }
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame,

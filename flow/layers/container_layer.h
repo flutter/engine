@@ -20,6 +20,9 @@ class ContainerLayer : public Layer {
 
   virtual void Add(std::shared_ptr<Layer> layer);
 
+  void TryToPrepareRasterCache(PrerollContext* context,
+                               const SkMatrix& ctm) override;
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
 
