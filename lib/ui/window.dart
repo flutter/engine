@@ -59,6 +59,9 @@ part of dart.ui;
 ///  * [FlutterWindow], a special case of a [FlutterView] that is represented on
 ///    the platform as a separate window which can host other [FlutterView]s.
 abstract class FlutterView {
+  /// The opaque ID for this view.
+  Object get id;
+
   /// The platform dispatcher that this view is registered with, and gets its
   /// information from.
   PlatformDispatcher get platformDispatcher;
@@ -264,8 +267,8 @@ abstract class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) => _render(scene, this);
-  void _render(Scene scene, FlutterView view) native 'PlatformConfiguration_render';
+  void render(Scene scene) => _render(scene, this.id);
+  void _render(Scene scene, Object viewId) native 'PlatformConfiguration_render';
 }
 
 /// A top-level platform window displaying a Flutter layer tree drawn from a
@@ -289,6 +292,8 @@ class FlutterWindow extends FlutterView {
 
   /// The opaque ID for this view.
   final Object _windowId;
+
+  Object get id => _windowId;
 
   @override
   final PlatformDispatcher platformDispatcher;

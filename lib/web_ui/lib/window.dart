@@ -5,6 +5,7 @@
 part of ui;
 
 abstract class FlutterView {
+  Object get id => 0;
   PlatformDispatcher get platformDispatcher;
   ViewConfiguration get viewConfiguration;
   double get devicePixelRatio => viewConfiguration.devicePixelRatio;
