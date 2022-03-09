@@ -240,6 +240,7 @@ targets:
     scheduler: luci
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -261,6 +262,7 @@ targets:
     scheduler: luci
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -324,6 +326,7 @@ targets:
     scheduler: luci
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -418,6 +421,7 @@ targets:
     scheduler: luci
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
 
