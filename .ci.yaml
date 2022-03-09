@@ -59,7 +59,9 @@ platform_properties:
           {"name":"flutter_cocoapods","path":"cocoapods"},
           {"name":"old_osx_sdk","path":"osx_sdk"},
           {"name":"builder_mac_engine","path":"builder"},
-          {"name":"openjdk","path":"java"}
+          {"name":"openjdk","path":"java"},
+          {"name":"xcode_runtime_ios-13-0","path":"xcode_runtime_ios-13-0"},
+          {"name":"xcode_runtime_ios-15-0","path":"xcode_runtime_ios-15-0"}
         ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
@@ -68,8 +70,13 @@ platform_properties:
         ]
       device_type: none
       mac_model: "Macmini8,1"
-      os: Mac-10.15
-      xcode: 12c33 # xcode 12.3
+      os: Mac-12
+      runtime_versions: >
+        [
+          "ios-13",
+          "ios-15"
+        ]
+      xcode: 13a233 # xcode 13.0
   windows:
     properties:
       build_host: "false"
