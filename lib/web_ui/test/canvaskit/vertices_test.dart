@@ -9,6 +9,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import 'package:web_engine_tester/golden_tester.dart';
+
 import 'common.dart';
 
 void main() {
@@ -35,7 +37,7 @@ void testMain() {
       vertices.delete();
     });
 
-    test('Vertices are anti-aliased', () {
+    test('Vertices are anti-aliased', () async {
       const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 500);
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(region);
@@ -46,7 +48,7 @@ void testMain() {
       ) as CkVertices;
       canvas.drawVertices(
         vertices,
-        BlendMode.srcOver,
+        ui.BlendMode.srcOver,
         CkPaint()..color = const ui.Color(0xFFFF0000),
       );
 
