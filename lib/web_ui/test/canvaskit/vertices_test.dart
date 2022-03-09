@@ -46,6 +46,7 @@ void testMain() {
         Float32List.fromList(_circularVertices),
         indices: Uint16List.fromList(_circularVertexIndices),
       ) as CkVertices;
+      canvas.scale(3.0, 3.0);
       canvas.drawVertices(
         vertices,
         ui.BlendMode.srcOver,
