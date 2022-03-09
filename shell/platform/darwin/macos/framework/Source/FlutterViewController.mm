@@ -446,11 +446,7 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)initializeKeyboard {
   __weak FlutterViewController* weakSelf = self;
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
-  _keyboardManager = [[FlutterKeyboardManager alloc] initWithEngine:_engine
-                                                    textInputPlugin:_textInputPlugin
-                                                   getNextResponder:^() {
-                                                     return weakSelf.nextResponder;
-                                                   }];
+  _keyboardManager = [[FlutterKeyboardManager alloc] initWithEngine:_engine viewDelegate:weakSelf];
 }
 
 - (void)addInternalPlugins {
@@ -661,6 +657,12 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (id<FlutterPluginRegistrar>)registrarForPlugin:(NSString*)pluginName {
   return [_engine registrarForPlugin:pluginName];
+}
+
+#pragma mark - FlutterKeyboardViewDelegate
+
+- (BOOL)onTextInputKeyEvent:(nonnull NSEvent*)event {
+  return [_textInputPlugin handleKeyEvent:event];
 }
 
 #pragma mark - NSResponder

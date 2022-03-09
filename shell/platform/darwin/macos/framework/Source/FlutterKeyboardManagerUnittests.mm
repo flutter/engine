@@ -27,7 +27,7 @@
                      message:(NSData* _Nullable)message
                  binaryReply:(FlutterBinaryReply _Nullable)callback;
 
-- (BOOL)handleTextEvent:(NSEvent*)event;
+- (BOOL)handleTextInputKeyEvent:(NSEvent*)event;
 @end
 
 @implementation KeyboardTester {
@@ -54,15 +54,13 @@
                         binaryReply:[OCMArg any]])
       .andCall(self, @selector(handleChannelMessage:message:binaryReply:));
 
-  id textInputPluginMock = OCMStrictClassMock([FlutterTextInputPlugin class]);
-  OCMStub([textInputPluginMock handleKeyEvent:[OCMArg any]])
-      .andCall(self, @selector(handleTextEvent:));
+  id viewDelegateMock = OCMStrictProtocolMock(@protocol(FlutterKeyboardViewDelegate));
+  OCMStub([viewDelegateMock nextResponder]).andReturn(_nextResponder);
+  OCMStub([viewDelegateMock onTextInputKeyEvent:[OCMArg any]])
+      .andCall(self, @selector(handleTextInputKeyEvent:));
 
   _manager = [[FlutterKeyboardManager alloc] initWithEngine:engineMock
-                                            textInputPlugin:textInputPluginMock
-                                           getNextResponder:^() {
-                                             return _nextResponder;
-                                           }];
+                                               viewDelegate:viewDelegateMock];
   NSLog(@"Manager 0x%llx", reinterpret_cast<uint64_t>(_manager));
   return self;
 }
@@ -89,7 +87,7 @@
   callback(encodedKeyEvent);
 }
 
-- (BOOL)handleTextEvent:(NSEvent*)event {
+- (BOOL)handleTextInputKeyEvent:(NSEvent*)event {
   return NO;
 }
 

@@ -14,7 +14,7 @@
 /**
  * The text input plugin set by initialization.
  */
-@property(nonatomic) FlutterTextInputPlugin* textInputPlugin;
+@property(nonatomic) id<FlutterKeyboardViewDelegate> viewDelegate;
 
 /**
  * The primary responders added by addPrimaryResponder.
@@ -36,12 +36,10 @@
 }
 
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
-                       textInputPlugin:(nonnull FlutterTextInputPlugin*)textInputPlugin
-                      getNextResponder:(nonnull NextResponderProvider)getNextResponder {
+                          viewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate {
   self = [super init];
   if (self != nil) {
-    _getNextResponder = getNextResponder;
-    _textInputPlugin = textInputPlugin;
+    _viewDelegate = viewDelegate;
 
     _primaryResponders = [[NSMutableArray alloc] init];
     __weak FlutterEngine* weakEngine = engine;
@@ -97,17 +95,13 @@
   }
 }
 
-- (BOOL)isFirstResponder {
-  return [self.textInputPlugin isFirstResponder];
-}
-
 #pragma mark - Private
 
 - (void)dispatchToSecondaryResponders:(NSEvent*)event {
-  if ([_textInputPlugin handleKeyEvent:event]) {
+  if ([_viewDelegate onTextInputKeyEvent:event]) {
     return;
   }
-  NSResponder* nextResponder = _getNextResponder();
+  NSResponder* nextResponder = _viewDelegate.nextResponder;
   if (nextResponder == nil) {
     return;
   }

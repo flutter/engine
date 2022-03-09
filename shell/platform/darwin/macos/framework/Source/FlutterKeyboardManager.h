@@ -5,7 +5,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h"
 
 namespace {
 // Someohow this pointer type must be defined as a single type for the compiler
@@ -53,8 +53,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
  * key events are propagated to if no responders handle the event.
  */
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
-                       textInputPlugin:(nonnull FlutterTextInputPlugin*)textInputPlugin
-                      getNextResponder:(nonnull NextResponderProvider)getNextResponder;
+                          viewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate;
 
 /**
  * Dispatch a key event to all responders, and possibly the next |NSResponder|

@@ -1427,6 +1427,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySeco
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManagerTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardViewDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h
