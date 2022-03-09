@@ -753,7 +753,7 @@ hooks = [
   {
     'name': 'Activate Emscripten SDK',
     'pattern': '.',
-    'condition': 'activate_emsdk',
+    'condition': 'download_emsdk',
     'action': [
       'python3',
       'src/flutter/tools/activate_emsdk.py',
