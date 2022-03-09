@@ -42,6 +42,7 @@ template("zip_bundle") {
     script = "//flutter/build/zip.py"
     outputs = [ "$root_build_dir/zip_archives/${invoker.output}" ]
     sources = []
+    forward_variables_from(invoker, [ "visibility" ])
     deps = invoker.deps
 
     args = [
@@ -84,9 +85,11 @@ template("zip_bundle") {
 template("zip_bundle_from_file") {
   assert(defined(invoker.output), "output must be defined")
   assert(defined(invoker.files), "files must be defined as a list of scopes")
+
   action(target_name) {
     script = "//flutter/build/zip.py"
     outputs = [ "$root_build_dir/zip_archives/${invoker.output}" ]
+    forward_variables_from(invoker, [ "visibility" ])
     sources = []
     deps = invoker.deps
     location_source_path = "$target_gen_dir/zip_bundle.txt"
