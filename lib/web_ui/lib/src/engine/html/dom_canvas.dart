@@ -226,12 +226,12 @@ html.HtmlElement buildDrawRectElement(
       ..width = '${right - left}px'
       ..height = '${bottom - top}px'
       ..backgroundColor = cssColor
-      ..backgroundImage = _getBackgroundImage(paint.shader, rect);
+      ..backgroundImage = _getBackgroundImageCssValue(paint.shader, rect);
   }
   return rectangle;
 }
 
-String _getBackgroundImage(ui.Shader? shader, ui.Rect bounds) {
+String _getBackgroundImageCssValue(ui.Shader? shader, ui.Rect bounds) {
   final String url = _getBackgroundImageUrl(shader, bounds);
   return (url != '') ? "url('$url'": '';
 }
