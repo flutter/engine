@@ -58,6 +58,26 @@ TEST(RasterCache, ThresholdIsRespectedForSkPicture) {
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 }
 
+TEST(RasterCache, HighPriorityIsRespectedForSkPicture) {
+  flutter::RasterCache cache;
+
+  SkMatrix matrix = SkMatrix::I();
+
+  auto picture = GetSamplePicture();
+
+  SkCanvas dummy_canvas;
+
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  // Prepare should cache it when 1st access.
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            picture.get(), true, false, matrix, SkPoint(),
+                            /**is_high_priority=*/true));
+  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+}
+
 TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   size_t threshold = 2;
   flutter::RasterCache cache(threshold);
@@ -138,6 +158,26 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
   // Now Prepare should cache it.
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
                             display_list.get(), true, false, matrix));
+  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+}
+
+TEST(RasterCache, HighPriorityIsRespectedForDisplayList) {
+  flutter::RasterCache cache;
+
+  SkMatrix matrix = SkMatrix::I();
+
+  auto display_list = GetSampleDisplayList();
+
+  SkCanvas dummy_canvas;
+
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  // Prepare should cache it when 1st access.
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            display_list.get(), true, false, matrix, SkPoint(),
+                            /**is_high_priority=*/true));
   ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
 }
 
@@ -289,6 +329,87 @@ TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
   cache.PrepareNewFrame();
 
   ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+}
+
+void PrepareAndCleanupEmptyFrame(flutter::RasterCache& cache, size_t times) {
+  for (size_t i = 0; i < times; i++) {
+    cache.PrepareNewFrame();
+    cache.CleanupAfterFrame();  // Extra frame without a Get image access.
+  }
+}
+
+TEST(RasterCache, KeepUnusedSkPicturesIfIsHighPriority) {
+  size_t threshold = 1;
+  flutter::RasterCache cache(threshold);
+
+  SkMatrix matrix = SkMatrix::I();
+
+  auto picture = GetSamplePicture();
+
+  SkCanvas dummy_canvas;
+
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            picture.get(), true, false, matrix, SkPoint(),
+                            /**is_high_priority=*/true));
+  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+
+  cache.CleanupAfterFrame();
+
+  PrepareAndCleanupEmptyFrame(cache, 1);
+  cache.PrepareNewFrame();
+  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+  cache.CleanupAfterFrame();
+
+  PrepareAndCleanupEmptyFrame(cache, 2);
+  cache.PrepareNewFrame();
+  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+  cache.CleanupAfterFrame();
+
+  PrepareAndCleanupEmptyFrame(cache, 3);
+  cache.PrepareNewFrame();
+  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  cache.CleanupAfterFrame();
+}
+
+TEST(RasterCache, KeepUnusedDisplayListsIfIsHighPriority) {
+  size_t threshold = 1;
+  flutter::RasterCache cache(threshold);
+
+  SkMatrix matrix = SkMatrix::I();
+
+  auto display_list = GetSampleDisplayList();
+
+  SkCanvas dummy_canvas;
+
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            display_list.get(), true, false, matrix, SkPoint(),
+                            /**is_high_priority=*/true));
+  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+
+  cache.CleanupAfterFrame();
+
+  PrepareAndCleanupEmptyFrame(cache, 1);
+  cache.PrepareNewFrame();
+  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+  cache.CleanupAfterFrame();
+
+  PrepareAndCleanupEmptyFrame(cache, 2);
+  cache.PrepareNewFrame();
+  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+  cache.CleanupAfterFrame();
+
+  PrepareAndCleanupEmptyFrame(cache, 3);
+  cache.PrepareNewFrame();
+  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  cache.CleanupAfterFrame();
 }
 
 // Construct a cache result whose device target rectangle rounds out to be one

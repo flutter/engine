@@ -68,18 +68,31 @@ struct RasterCacheMetrics {
   size_t in_use_bytes = 0;
 
   /**
+   * The number of cache entries with images unused but keeped in this frame.
+   */
+  size_t unused_count = 0;
+
+  /**
+   * The size of all of the images unused but keeped in this frame.
+   */
+  size_t unused_bytes = 0;
+  /**
    * The total cache entries that had images during this frame whether
    * they were used in the frame or held memory during the frame and then
    * were evicted after it ended.
    */
-  size_t total_count() const { return in_use_count + eviction_count; }
+  size_t total_count() const {
+    return in_use_count + unused_count + eviction_count;
+  }
 
   /**
    * The size of all of the cached images during this frame whether
    * they were used in the frame or held memory during the frame and then
    * were evicted after it ended.
    */
-  size_t total_bytes() const { return in_use_bytes + eviction_bytes; }
+  size_t total_bytes() const {
+    return in_use_bytes + unused_bytes + eviction_bytes;
+  }
 };
 
 class RasterCache {
@@ -186,13 +199,15 @@ class RasterCache {
                bool is_complex,
                bool will_change,
                const SkMatrix& untranslated_matrix,
-               const SkPoint& offset = SkPoint());
+               const SkPoint& offset = SkPoint(),
+               bool is_high_priority = false);
   bool Prepare(PrerollContext* context,
                DisplayList* display_list,
                bool is_complex,
                bool will_change,
                const SkMatrix& untranslated_matrix,
-               const SkPoint& offset = SkPoint());
+               const SkPoint& offset = SkPoint(),
+               bool is_high_priority = false);
 
   // If there is cache entry for this picture, display list or layer, mark it as
   // used for this frame in order to not get evicted. This is needed during
@@ -286,9 +301,14 @@ class RasterCache {
 
  private:
   struct Entry {
+    // If the entry is high priority, it will always cache on first usage and
+    // survive 3 frames without usage.
+    bool is_high_priority = false;
     bool used_this_frame = false;
     size_t access_count = 0;
+    size_t unused_count = 0;
     std::unique_ptr<RasterCacheResult> image;
+    size_t unused_threshold() const { return is_high_priority ? 3 : 1; }
   };
 
   void Touch(const RasterCacheKey& cache_key);
