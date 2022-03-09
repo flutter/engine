@@ -302,10 +302,7 @@ action("_generate_symlinks") {
 }
 
 copy("copy_framework_podspec") {
-  visibility = [
-    ":*",
-    "//flutter/build/archives:macos_flutter_framework",
-  ]
+  visibility = [ ":*" ]
   sources = [ "framework/FlutterMacOS.podspec" ]
   outputs = [ "$root_out_dir/FlutterMacOS.podspec" ]
 }
