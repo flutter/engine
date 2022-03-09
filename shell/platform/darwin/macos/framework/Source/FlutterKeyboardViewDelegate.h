@@ -8,7 +8,7 @@
 
 @required
 
-@property(nonatomic, readonly, nullable) NSResponder *nextResponder;
+@property(nonatomic, readonly, nullable) NSResponder* nextResponder;
 
 - (BOOL)onTextInputKeyEvent:(nonnull NSEvent*)event;
 

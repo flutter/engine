@@ -11,99 +11,11 @@
 #import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-@interface KeyboardTester : NSObject
-- (nonnull instancetype)init;
-
-@property(nonatomic) NSMutableArray<FlutterAsyncKeyCallback>* callbacks;
-@property(nonatomic) FlutterKeyboardManager* manager;
-@property(nonatomic) NSResponder* nextResponder;
-
-#pragma mark - Private
-- (void)handleEmbedderEvent:(const FlutterKeyEvent&)event
-                   callback:(nullable FlutterKeyEventCallback)callback
-                   userData:(nullable void*)userData;
-
-- (void)handleChannelMessage:(NSString*)channel
-                     message:(NSData* _Nullable)message
-                 binaryReply:(FlutterBinaryReply _Nullable)callback;
-
-- (BOOL)handleTextInputKeyEvent:(NSEvent*)event;
-@end
-
-@implementation KeyboardTester {
-}
-
-- (nonnull instancetype)init {
-  self = [super init];
-  if (self == nil) {
-    return nil;
-  }
-
-  _callbacks = [NSMutableArray<FlutterAsyncKeyCallback> array];
-  _nextResponder = OCMClassMock([NSResponder class]);
-
-  id engineMock = OCMStrictClassMock([FlutterEngine class]);
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(engineMock);
-  OCMStub([engineMock sendKeyEvent:FlutterKeyEvent {} callback:nil userData:nil])
-      .ignoringNonObjectArgs()
-      .andCall(self, @selector(handleEmbedderEvent:callback:userData:));
-  OCMStub([engineMock sendOnChannel:@"flutter/keyevent"
-                            message:[OCMArg any]
-                        binaryReply:[OCMArg any]])
-      .andCall(self, @selector(handleChannelMessage:message:binaryReply:));
-
-  id viewDelegateMock = OCMStrictProtocolMock(@protocol(FlutterKeyboardViewDelegate));
-  OCMStub([viewDelegateMock nextResponder]).andReturn(_nextResponder);
-  OCMStub([viewDelegateMock onTextInputKeyEvent:[OCMArg any]])
-      .andCall(self, @selector(handleTextInputKeyEvent:));
-
-  _manager = [[FlutterKeyboardManager alloc] initWithEngine:engineMock
-                                               viewDelegate:viewDelegateMock];
-  NSLog(@"Manager 0x%llx", reinterpret_cast<uint64_t>(_manager));
-  return self;
-}
-
-- (void)handleEmbedderEvent:(const FlutterKeyEvent&)event
-                   callback:(nullable FlutterKeyEventCallback)callback
-                   userData:(nullable void*)userData {
-  if (callback == nullptr) {
-    [_callbacks addObject:nil];
-  } else {
-    [_callbacks addObject:^(BOOL handled) {
-      callback(handled, userData);
-    }];
-  }
-}
-
-- (void)handleChannelMessage:(NSString*)channel
-                     message:(NSData* _Nullable)message
-                 binaryReply:(FlutterBinaryReply _Nullable)callback {
-  NSDictionary* result = @{
-    @"handled" : @false,
-  };
-  NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:result];
-  callback(encodedKeyEvent);
-}
-
-- (BOOL)handleTextInputKeyEvent:(NSEvent*)event {
-  return NO;
-}
-
-@end
-
-@interface FlutterKeyboardManagerUnittestsObjC : NSObject
-// - (bool)nextResponderShouldThrowOnKeyUp;
-- (bool)singlePrimaryResponder;
-// - (bool)doublePrimaryResponder;
-// - (bool)singleSecondaryResponder;
-// - (bool)emptyNextResponder;
-@end
-
-namespace flutter::testing {
-
 namespace {
+
+typedef BOOL (^BoolGetter)();
+typedef void (^AsyncKeyCallback)(BOOL handled);
+typedef void (^AsyncKeyCallbackHandler)(AsyncKeyCallback callback);
 
 NSEvent* keyDownEvent(unsigned short keyCode) {
   return [NSEvent keyEventWithType:NSEventTypeKeyDown
@@ -152,8 +64,6 @@ NSResponder* mockOwnerWithDownOnlyNext() {
   return owner;
 }
 
-typedef BOOL (^BoolGetter)();
-
 // id<FlutterKeyPrimaryResponder> mockPrimaryResponder(KeyCallbackSetter callbackSetter) {
 //   id<FlutterKeyPrimaryResponder> mock =
 //       OCMStrictProtocolMock(@protocol(FlutterKeyPrimaryResponder));
@@ -178,6 +88,127 @@ typedef BOOL (^BoolGetter)();
 
 }  // namespace
 
+@interface KeyboardTester : NSObject
+- (nonnull instancetype)init;
+- (void)respondEmbedderCallsWith:(BOOL)response;
+- (void)recordEmbedderCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
+- (void)respondChannelCallsWith:(BOOL)response;
+- (void)recordChannelCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
+
+@property(nonatomic) FlutterKeyboardManager* manager;
+@property(nonatomic) NSResponder* nextResponder;
+
+#pragma mark - Private
+
+- (void)handleEmbedderEvent:(const FlutterKeyEvent&)event
+                   callback:(nullable FlutterKeyEventCallback)callback
+                   userData:(nullable void*)userData;
+
+- (void)handleChannelMessage:(NSString*)channel
+                     message:(NSData* _Nullable)message
+                 binaryReply:(FlutterBinaryReply _Nullable)callback;
+
+- (BOOL)handleTextInputKeyEvent:(NSEvent*)event;
+@end
+
+@implementation KeyboardTester {
+  AsyncKeyCallbackHandler _embedderHandler;
+  AsyncKeyCallbackHandler _channelHandler;
+}
+
+- (nonnull instancetype)init {
+  self = [super init];
+  if (self == nil) {
+    return nil;
+  }
+
+  _nextResponder = OCMClassMock([NSResponder class]);
+  [self respondChannelCallsWith:false];
+  [self respondEmbedderCallsWith:false];
+
+  id engineMock = OCMStrictClassMock([FlutterEngine class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(engineMock);
+  OCMStub([engineMock sendKeyEvent:FlutterKeyEvent {} callback:nil userData:nil])
+      .ignoringNonObjectArgs()
+      .andCall(self, @selector(handleEmbedderEvent:callback:userData:));
+  OCMStub([engineMock sendOnChannel:@"flutter/keyevent"
+                            message:[OCMArg any]
+                        binaryReply:[OCMArg any]])
+      .andCall(self, @selector(handleChannelMessage:message:binaryReply:));
+
+  id viewDelegateMock = OCMStrictProtocolMock(@protocol(FlutterKeyboardViewDelegate));
+  OCMStub([viewDelegateMock nextResponder]).andReturn(_nextResponder);
+  OCMStub([viewDelegateMock onTextInputKeyEvent:[OCMArg any]])
+      .andCall(self, @selector(handleTextInputKeyEvent:));
+
+  _manager = [[FlutterKeyboardManager alloc] initWithEngine:engineMock
+                                               viewDelegate:viewDelegateMock];
+  return self;
+}
+
+- (void)respondEmbedderCallsWith:(BOOL)response {
+  _embedderHandler = ^(AsyncKeyCallback callback) {
+    if (callback != nil)
+      callback(response);
+  };
+}
+
+- (void)recordEmbedderCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage {
+  _embedderHandler = ^(AsyncKeyCallback callback) {
+    [storage addObject:callback];
+  };
+}
+
+- (void)respondChannelCallsWith:(BOOL)response {
+  _channelHandler = ^(AsyncKeyCallback callback) {
+    if (callback != nil)
+      callback(response);
+  };
+}
+
+- (void)recordChannelCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage {
+  _channelHandler = ^(AsyncKeyCallback callback) {
+    [storage addObject:callback];
+  };
+}
+
+#pragma mark - Private
+
+- (void)handleEmbedderEvent:(const FlutterKeyEvent&)event
+                   callback:(nullable FlutterKeyEventCallback)callback
+                   userData:(nullable void*)userData {
+  _embedderHandler(^(BOOL handled) {
+    callback(handled, userData);
+  });
+}
+
+- (void)handleChannelMessage:(NSString*)channel
+                     message:(NSData* _Nullable)message
+                 binaryReply:(FlutterBinaryReply _Nullable)callback {
+  NSDictionary* result = @{
+    @"handled" : @false,
+  };
+  NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:result];
+  callback(encodedKeyEvent);
+}
+
+- (BOOL)handleTextInputKeyEvent:(NSEvent*)event {
+  return NO;
+}
+
+@end
+
+@interface FlutterKeyboardManagerUnittestsObjC : NSObject
+// - (bool)nextResponderShouldThrowOnKeyUp;
+- (bool)singlePrimaryResponder;
+// - (bool)doublePrimaryResponder;
+// - (bool)singleSecondaryResponder;
+// - (bool)emptyNextResponder;
+@end
+
+namespace flutter::testing {
 // TEST(FlutterKeyboardManagerUnittests, NextResponderShouldThrowOnKeyUp) {
 //   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] nextResponderShouldThrowOnKeyUp]);
 // }
@@ -205,9 +236,9 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 // Verify that the nextResponder returned from mockOwnerWithDownOnlyNext()
 // throws exception when keyUp is called.
 - (bool)nextResponderShouldThrowOnKeyUp {
-  NSResponder* owner = flutter::testing::mockOwnerWithDownOnlyNext();
+  NSResponder* owner = mockOwnerWithDownOnlyNext();
   @try {
-    [owner.nextResponder keyUp:flutter::testing::keyUpEvent(0x50)];
+    [owner.nextResponder keyUp:keyUpEvent(0x50)];
     return false;
   } @catch (...) {
     return true;
@@ -216,44 +247,46 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 
 - (bool)singlePrimaryResponder {
   KeyboardTester* tester = [[KeyboardTester alloc] init];
+  NSMutableArray<FlutterAsyncKeyCallback>* embedderCallbacks =
+      [NSMutableArray<FlutterAsyncKeyCallback> array];
+  [tester recordEmbedderCallsTo:embedderCallbacks];
 
   // Case: The responder reports FALSE
-  [tester.manager handleEvent:flutter::testing::keyDownEvent(0x50)];
-  EXPECT_EQ([tester.callbacks count], 1u);
-  tester.callbacks[0](FALSE);
-  OCMVerify([tester.nextResponder keyDown:flutter::testing::checkKeyDownEvent(0x50)]);
-  [tester.callbacks removeAllObjects];
+  [tester.manager handleEvent:keyDownEvent(0x50)];
+  EXPECT_EQ([embedderCallbacks count], 1u);
+  embedderCallbacks[0](FALSE);
+  OCMVerify([tester.nextResponder keyDown:checkKeyDownEvent(0x50)]);
+  [embedderCallbacks removeAllObjects];
 
   // Case: The responder reports TRUE
-  [tester.manager handleEvent:flutter::testing::keyUpEvent(0x50)];
-  EXPECT_EQ([tester.callbacks count], 1u);
-  tester.callbacks[0](TRUE);
+  [tester.manager handleEvent:keyUpEvent(0x50)];
+  EXPECT_EQ([embedderCallbacks count], 1u);
+  embedderCallbacks[0](TRUE);
   // [owner.nextResponder keyUp:] should not be called, otherwise an error will be thrown.
 
-  NSLog(@"End");
   return true;
 }
 
 //- (bool)doublePrimaryResponder {
-//  NSResponder* owner = flutter::testing::mockOwnerWithDownOnlyNext();
+//  NSResponder* owner = mockOwnerWithDownOnlyNext();
 //  FlutterKeyboardManager* manager = [[FlutterKeyboardManager alloc] initWithOwner:owner];
 //
 //  __block NSMutableArray<FlutterAsyncKeyCallback>* callbacks1 =
 //      [NSMutableArray<FlutterAsyncKeyCallback> array];
-//  [manager addPrimaryResponder:flutter::testing::mockPrimaryResponder(
+//  [manager addPrimaryResponder:mockPrimaryResponder(
 //                                   ^(FlutterAsyncKeyCallback callback) {
 //                                     [callbacks1 addObject:callback];
 //                                   })];
 //
 //  __block NSMutableArray<FlutterAsyncKeyCallback>* callbacks2 =
 //      [NSMutableArray<FlutterAsyncKeyCallback> array];
-//  [manager addPrimaryResponder:flutter::testing::mockPrimaryResponder(
+//  [manager addPrimaryResponder:mockPrimaryResponder(
 //                                   ^(FlutterAsyncKeyCallback callback) {
 //                                     [callbacks2 addObject:callback];
 //                                   })];
 //
 //  // Case: Both responder report TRUE.
-//  [manager handleEvent:flutter::testing::keyUpEvent(0x50)];
+//  [manager handleEvent:keyUpEvent(0x50)];
 //  EXPECT_EQ([callbacks1 count], 1u);
 //  EXPECT_EQ([callbacks2 count], 1u);
 //  callbacks1[0](TRUE);
@@ -265,7 +298,7 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 //  [callbacks2 removeAllObjects];
 //
 //  // Case: One responder reports TRUE.
-//  [manager handleEvent:flutter::testing::keyUpEvent(0x50)];
+//  [manager handleEvent:keyUpEvent(0x50)];
 //  EXPECT_EQ([callbacks1 count], 1u);
 //  EXPECT_EQ([callbacks2 count], 1u);
 //  callbacks1[0](FALSE);
@@ -277,14 +310,14 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 //  [callbacks2 removeAllObjects];
 //
 //  // Case: Both responders report FALSE.
-//  [manager handleEvent:flutter::testing::keyDownEvent(0x50)];
+//  [manager handleEvent:keyDownEvent(0x50)];
 //  EXPECT_EQ([callbacks1 count], 1u);
 //  EXPECT_EQ([callbacks2 count], 1u);
 //  callbacks1[0](FALSE);
 //  callbacks2[0](FALSE);
 //  EXPECT_EQ([callbacks1 count], 1u);
 //  EXPECT_EQ([callbacks2 count], 1u);
-//  OCMVerify([owner.nextResponder keyDown:flutter::testing::checkKeyDownEvent(0x50)]);
+//  OCMVerify([owner.nextResponder keyDown:checkKeyDownEvent(0x50)]);
 //  [callbacks1 removeAllObjects];
 //  [callbacks2 removeAllObjects];
 //
@@ -292,25 +325,25 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 //}
 //
 //- (bool)singleSecondaryResponder {
-//  NSResponder* owner = flutter::testing::mockOwnerWithDownOnlyNext();
+//  NSResponder* owner = mockOwnerWithDownOnlyNext();
 //  FlutterKeyboardManager* manager = [[FlutterKeyboardManager alloc] initWithOwner:owner];
 //
 //  __block NSMutableArray<FlutterAsyncKeyCallback>* callbacks =
 //      [NSMutableArray<FlutterAsyncKeyCallback> array];
-//  [manager addPrimaryResponder:flutter::testing::mockPrimaryResponder(
+//  [manager addPrimaryResponder:mockPrimaryResponder(
 //                                   ^(FlutterAsyncKeyCallback callback) {
 //                                     [callbacks addObject:callback];
 //                                   })];
 //
 //  __block BOOL nextResponse;
-//  [manager addSecondaryResponder:flutter::testing::mockSecondaryResponder(^() {
+//  [manager addSecondaryResponder:mockSecondaryResponder(^() {
 //             return nextResponse;
 //           })];
 //
 //  // Case: Primary responder responds TRUE. The event shouldn't be handled by
 //  // the secondary responder.
 //  nextResponse = FALSE;
-//  [manager handleEvent:flutter::testing::keyUpEvent(0x50)];
+//  [manager handleEvent:keyUpEvent(0x50)];
 //  EXPECT_EQ([callbacks count], 1u);
 //  callbacks[0](TRUE);
 //  // [owner.nextResponder keyUp:] should not be called, otherwise an error will be thrown.
@@ -319,7 +352,7 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 //  // Case: Primary responder responds FALSE. The secondary responder returns
 //  // TRUE.
 //  nextResponse = TRUE;
-//  [manager handleEvent:flutter::testing::keyUpEvent(0x50)];
+//  [manager handleEvent:keyUpEvent(0x50)];
 //  EXPECT_EQ([callbacks count], 1u);
 //  callbacks[0](FALSE);
 //  // [owner.nextResponder keyUp:] should not be called, otherwise an error will be thrown.
@@ -327,10 +360,10 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 //
 //  // Case: Primary responder responds FALSE. The secondary responder returns FALSE.
 //  nextResponse = FALSE;
-//  [manager handleEvent:flutter::testing::keyDownEvent(0x50)];
+//  [manager handleEvent:keyDownEvent(0x50)];
 //  EXPECT_EQ([callbacks count], 1u);
 //  callbacks[0](FALSE);
-//  OCMVerify([owner.nextResponder keyDown:flutter::testing::checkKeyDownEvent(0x50)]);
+//  OCMVerify([owner.nextResponder keyDown:checkKeyDownEvent(0x50)]);
 //  [callbacks removeAllObjects];
 //
 //  return true;
@@ -342,7 +375,7 @@ TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
 //
 //  FlutterKeyboardManager* manager = [[FlutterKeyboardManager alloc] initWithOwner:owner];
 //
-//  [manager addPrimaryResponder:flutter::testing::mockPrimaryResponder(
+//  [manager addPrimaryResponder:mockPrimaryResponder(
 //                                   ^(FlutterAsyncKeyCallback callback) {
 //                                     callback(FALSE);
 //                                   })];
