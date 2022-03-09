@@ -73,8 +73,8 @@ platform_properties:
       os: Mac-12
       runtime_versions: >-
         [
-          "ios-13",
-          "ios-15"
+          "ios-13-0",
+          "ios-15-0"
         ]
       xcode: 13a233 # xcode 13.0
   windows:
