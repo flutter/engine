@@ -228,6 +228,7 @@ targets:
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -253,6 +254,7 @@ targets:
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -310,6 +312,7 @@ targets:
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -394,6 +397,7 @@ targets:
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
 
