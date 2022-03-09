@@ -41,7 +41,7 @@ void testMain() {
         ui.VertexMode.triangles,
         Float32List.fromList(_circularVertices),
         indices: Uint16List.fromList(_circularVertexIndices),
-      );
+      ) as CkVertices;
       canvas.drawVertices(
         vertices,
         BlendMode.srcOver,
