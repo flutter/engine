@@ -1236,7 +1236,12 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   Future<String> get signature async {
     final List<_RepositoryLicensedFile> allFiles = _signatureFiles.toList();
     allFiles.sort((_RepositoryLicensedFile a, _RepositoryLicensedFile b) =>
-        a.io.fullName.compareTo(b.io.fullName));
+      a.io.fullName.compareTo(b.io.fullName));
+    print('hash: START');
+    for (_RepositoryLicensedFile file in allFiles) {
+      crypto.Digest hash = crypto.md5.convert(file.ioFile.readBytes());
+      print('file: ${file.io.fullName} hash=$hash');
+    }
     final crypto.Digest digest = await crypto.md5.bind(_signatureStream(allFiles)).single;
     return digest.bytes.map((int e) => e.toRadixString(16).padLeft(2, '0')).join();
   }
