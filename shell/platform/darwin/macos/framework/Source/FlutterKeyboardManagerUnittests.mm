@@ -190,7 +190,7 @@ NSResponder* mockOwnerWithDownOnlyNext() {
 - (bool)nextResponderShouldThrowOnKeyUp;
 - (bool)singlePrimaryResponder;
 - (bool)doublePrimaryResponder;
- - (bool)textInputPlugin;
+- (bool)textInputPlugin;
 - (bool)emptyNextResponder;
 @end
 
