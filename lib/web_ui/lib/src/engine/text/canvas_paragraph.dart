@@ -157,23 +157,8 @@ class CanvasParagraph implements ui.Paragraph {
     cssStyle
       ..position = 'absolute'
       // Prevent the browser from doing any line breaks in the paragraph. We want
-      // to insert our own <BR> breaks based on layout results.
+      // to have full control of the paragraph layout.
       ..whiteSpace = 'pre';
-
-    // if (width > longestLine) {
-      // In this case, we set the width so that the CSS text-align property
-      // works correctly.
-      // When `longestLine` is >= `paragraph.width` that means the DOM element
-      // will automatically size itself to fit the longest line, so there's no
-      // need to set an explicit width.
-      cssStyle.width = '${width}px';
-    // }
-
-    // if (paragraphStyle.maxLines != null || paragraphStyle.ellipsis != null) {
-    //   cssStyle
-    //     ..overflow = 'hidden'
-    //     ..height = '${height}px';
-    // }
 
     // 2. Append all spans to the paragraph.
 
@@ -181,11 +166,6 @@ class CanvasParagraph implements ui.Paragraph {
     final List<EngineLineMetrics> lines = computeLineMetrics();
 
     for (int i = 0; i < lines.length; i++) {
-      // Insert a <BR> element before each line except the first line.
-      if (i > 0) {
-        rootElement.append(html.document.createElement('br'));
-      }
-
       final EngineLineMetrics line = lines[i];
       final List<RangeBox> boxes = line.boxes;
       final StringBuffer buffer = StringBuffer();
