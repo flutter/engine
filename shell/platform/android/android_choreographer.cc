@@ -8,7 +8,7 @@
 
 // Only avialalbe on API 24+
 typedef void AChoreographer;
-// Only avialalbe on API 29+ or API 24+ and architecture is 64-bit
+// Only available on API 29+ or API 24+ if the architecture is 64-bit.
 typedef void (*AChoreographer_frameCallback)(int64_t frameTimeNanos,
                                              void* data);
 // Only avialalbe on API 24+
@@ -23,9 +23,9 @@ static AChoreographer_postFrameCallback_FPN AChoreographer_postFrameCallback;
 namespace flutter {
 
 bool AndroidChoreographer::ShouldUseNDKChoreographer() {
-  static std::optional<bool> should_use_ndk_choreographer;
-  if (should_use_ndk_choreographer) {
-    return should_use_ndk_choreographer.value();
+  static std::optional<bool> use_ndk_choreographer;
+  if (use_ndk_choreographer) {
+    return use_ndk_choreographer.value();
   }
   auto libandroid = fml::NativeLibrary::Create("libandroid.so");
   FML_DCHECK(libandroid);
@@ -45,11 +45,11 @@ bool AndroidChoreographer::ShouldUseNDKChoreographer() {
   if (get_instance_fn && post_frame_callback_fn) {
     AChoreographer_getInstance = get_instance_fn.value();
     AChoreographer_postFrameCallback = post_frame_callback_fn.value();
-    should_use_ndk_choreographer = true;
+    use_ndk_choreographer = true;
   } else {
-    should_use_ndk_choreographer = false;
+    use_ndk_choreographer = false;
   }
-  return should_use_ndk_choreographer.value();
+  return use_ndk_choreographer.value();
 }
 
 void AndroidChoreographer::PostFrameCallback(OnFrameCallback callback,

@@ -23,21 +23,21 @@ static std::atomic_uint g_refresh_rate_ = 60;
 
 VsyncWaiterAndroid::VsyncWaiterAndroid(flutter::TaskRunners task_runners)
     : VsyncWaiter(std::move(task_runners)),
-      should_use_ndk_choreographer_(
+      use_ndk_choreographer_(
           AndroidChoreographer::ShouldUseNDKChoreographer()) {}
 
 VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
 // |VsyncWaiter|
 void VsyncWaiterAndroid::AwaitVSync() {
-  if (should_use_ndk_choreographer_) {
+  if (use_ndk_choreographer_) {
     auto* weak_this = new std::weak_ptr<VsyncWaiter>(shared_from_this());
     fml::TaskRunner::RunNowOrPostTask(
         task_runners_.GetUITaskRunner(), [weak_this]() {
           AndroidChoreographer::PostFrameCallback(&OnVsyncFromNDK, weak_this);
         });
   } else {
-    // TODO: Remove the JNI fallback when we drop support for API level < 29.
+    // TODO(99798): Remove it when we drop support for API level < 29.
     auto* weak_this = new std::weak_ptr<VsyncWaiter>(shared_from_this());
     jlong java_baton = reinterpret_cast<jlong>(weak_this);
     task_runners_.GetPlatformTaskRunner()->PostTask([java_baton]() {

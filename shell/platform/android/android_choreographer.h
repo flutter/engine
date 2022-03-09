@@ -13,7 +13,8 @@ namespace flutter {
 
 //------------------------------------------------------------------------------
 /// The Android Choreographer is used by `VsyncWaiterAndroid` to await vsync
-/// signal. It's only avialalbe on API 29+ or API 24+ and architecture is 64-bit
+/// signal. It's only available on API 29+ or API 24+ if the architecture is
+/// 64-bit.
 ///
 class AndroidChoreographer {
  public:
