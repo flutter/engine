@@ -322,8 +322,9 @@ if (build_glfw_shell) {
   }
 }
 
-zip_bundle("_zip_macos_flutter_framework") {
+zip_bundle("zip_macos_flutter_framework") {
   output = "FlutterMacOS.framework.zip"
+  visibility = [ ":*" ]
   deps = [ ":_generate_symlinks" ]
   files = [
     {
@@ -336,8 +337,8 @@ zip_bundle("_zip_macos_flutter_framework") {
 zip_bundle("macos_flutter_framework_archive") {
   output = "$full_platform_name/FlutterMacOS.framework.zip"
   deps = [
-    ":_zip_macos_flutter_framework",
     ":copy_framework_podspec",
+    ":zip_macos_flutter_framework",
   ]
   files = [
     {
