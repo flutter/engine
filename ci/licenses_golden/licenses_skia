@@ -1,4 +1,4 @@
-Signature: 0653f22c99b7de312f9c875856b196ce
+Signature: f313754956204e4840a30656a2204296
 
 UNUSED LICENSES:
 
@@ -6101,6 +6101,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/UploadTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.mm
 FILE: ../../../third_party/skia/gm/bug12866.cpp
+FILE: ../../../third_party/skia/include/core/SkAlphaType.h
+FILE: ../../../third_party/skia/include/core/SkColorType.h
 FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/src/core/SkBuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
