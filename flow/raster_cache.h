@@ -68,12 +68,12 @@ struct RasterCacheMetrics {
   size_t in_use_bytes = 0;
 
   /**
-   * The number of cache entries with images unused but keeped in this frame.
+   * The number of cache entries with images unused but kept in this frame.
    */
   size_t unused_count = 0;
 
   /**
-   * The size of all of the images unused but keeped in this frame.
+   * The size of all of the images unused but kept in this frame.
    */
   size_t unused_bytes = 0;
   /**
