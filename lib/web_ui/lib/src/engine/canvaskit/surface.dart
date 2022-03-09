@@ -305,9 +305,9 @@ class Surface {
       final int glContext = canvasKit.GetWebGLContext(
         htmlCanvas,
         SkWebGLContextOptions(
-          // Default to no anti-aliasing. Paint commands can be explicitly
-          // anti-aliased by setting their `Paint` object's `antialias` property.
-          antialias: 0,
+          // Default to anti-aliasing, so that Skia uses MSAA. This enabled
+          // drawVertices to be anti-aliased.
+          antialias: 1,
           majorVersion: webGLVersion,
         ),
       );
