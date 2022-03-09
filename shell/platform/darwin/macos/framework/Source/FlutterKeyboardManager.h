@@ -2,12 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
-
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeySecondaryResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
+
+namespace {
+// Someohow this pointer type must be defined as a single type for the compiler
+// to compile the function pointer type (due to _Nullable).
+typedef NSResponder* _NSResponderPtr;
+}
+
+typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
 /**
  * A hub that manages how key events are dispatched to various Flutter key
@@ -39,27 +45,16 @@
  */
 @interface FlutterKeyboardManager : NSObject
 
+// TODO
 /**
- * Create a manager by specifying the owner.
+ * Create a manager by specifying a weak pointer to the owner view controller.
  *
- * The owner should be an object that handles the lifecycle of this instance.
- * The |owner.nextResponder| can be nil, but if it isn't, it will be where the
- * key events are propagated to if no responders handle the event. The owner
- * is typically a |FlutterViewController|.
+ * The |viewController.nextResponder| can be nil, but if it isn't, it will be where the
+ * key events are propagated to if no responders handle the event.
  */
-- (nonnull instancetype)initWithOwner:(nonnull NSResponder*)weakOwner;
-
-/**
- * Add a primary responder, which asynchronously decides whether to handle an
- * event.
- */
-- (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)responder;
-
-/**
- * Add a secondary responder, which synchronously decides whether to handle an
- * event in order if no earlier responders handle.
- */
-- (void)addSecondaryResponder:(nonnull id<FlutterKeySecondaryResponder>)responder;
+- (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
+                       textInputPlugin:(nonnull FlutterTextInputPlugin*)textInputPlugin
+                      getNextResponder:(nonnull NextResponderProvider)getNextResponder;
 
 /**
  * Dispatch a key event to all responders, and possibly the next |NSResponder|
