@@ -87,14 +87,16 @@ template("zip_bundle_from_file") {
   assert(defined(invoker.files), "files must be defined as a list of scopes")
 
   action(target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "visibility",
+                             "deps",
+                           ])
     script = "//flutter/build/zip.py"
     outputs = [ "$root_build_dir/zip_archives/${invoker.output}" ]
-    forward_variables_from(invoker, [ "visibility" ])
     sources = []
-    deps = invoker.deps
     location_source_path = "$target_gen_dir/zip_bundle.txt"
     write_file(location_source_path, invoker.files, "json")
-
     args = [
       "-o",
       rebase_path(outputs[0]),
