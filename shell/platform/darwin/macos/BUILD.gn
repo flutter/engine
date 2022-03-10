@@ -84,6 +84,7 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterKeyPrimaryResponder.h",
     "framework/Source/FlutterKeyboardManager.h",
     "framework/Source/FlutterKeyboardManager.mm",
+    "framework/Source/FlutterKeyboardViewDelegate.h",
     "framework/Source/FlutterMacOSExternalTexture.h",
     "framework/Source/FlutterMacOSExternalTexture.h",
     "framework/Source/FlutterMetalCompositor.h",
