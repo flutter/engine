@@ -1443,7 +1443,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterFakeKey
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterHeadlessDartRunner.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyPrimaryResponder.h
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManagerTest.mm
