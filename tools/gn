@@ -264,9 +264,6 @@ def to_gn_args(args):
       # Overrides whether Boring SSL is compiled with system as. Only meaningful
       # on Android.
       gn_args['bssl_use_clang_integrated_as'] = True
-
-      # Impeller flags.
-      gn_args['impeller_enable_playground'] = args.enable_impeller_playground
     
     # DBC is not supported anymore.
     if args.interpreter:
@@ -427,6 +424,10 @@ def to_gn_args(args):
       # Read the default target api level from a file so we can update it with a roller
       with open(os.path.join(os.path.dirname(__file__), 'fuchsia/target_api_level')) as f:
         gn_args['fuchsia_target_api_level'] = int(f.read().strip())
+
+    # Impeller flags.
+    if args.enable_impeller_playground:
+      gn_args['impeller_enable_playground'] = args.enable_impeller_playground
 
     return gn_args
 
