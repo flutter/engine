@@ -7,26 +7,21 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
-          operatingSystem == OperatingSystem.iOs;
+bool get isIosSafari =>
+    browserEngine == BrowserEngine.webkit &&
+    operatingSystem == OperatingSystem.iOs;
 
 String fontFamilyToAttribute(String fontFamily) {
   fontFamily = canonicalizeFontFamily(fontFamily)!;
   if (browserEngine == BrowserEngine.firefox) {
-    fontFamily = fontFamily.replaceAll('"', '&quot;');
+    return fontFamily.replaceAll('"', '&quot;');
   } else if (browserEngine == BrowserEngine.blink ||
       browserEngine == BrowserEngine.samsung ||
       browserEngine == BrowserEngine.webkit) {
-    fontFamily = fontFamily.replaceAll('"', '');
+    return fontFamily.replaceAll('"', '');
   }
-  return 'font-family: $fontFamily;';
+  return fontFamily;
 }
-
-final String defaultFontFamily = fontFamilyToAttribute('Ahem');
-const String defaultColor = 'color: rgb(255, 0, 0);';
-const String defaultFontSize = 'font-size: 14px;';
-const String paragraphStyle =
-    'position: absolute; white-space: pre;';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -49,8 +44,8 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
+      '<p style="${paragraphStyle(fontSize: 13)}">'
+      '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
       'Hello'
       '</span>'
       '</p>',
@@ -60,9 +55,12 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: 39.0));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
-      'Hel<br>lo'
+      '<p style="${paragraphStyle(fontSize: 13)}">'
+      '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
+      'Hel'
+      '</span>'
+      '<span style="${spanStyle(top: 13, left: 0, fontSize: 13)}">'
+      'lo'
       '</span>'
       '</p>',
     );
@@ -88,8 +86,8 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
+      '<p style="${paragraphStyle()}">'
+      '<span style="${spanStyle(top: 0, left: 0)}">'
       'Hello'
       '</span>'
       '</p>',
@@ -109,16 +107,11 @@ Future<void> testMain() async {
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.toPlainText(), 'Hello');
 
-    double expectedHeight = 14.0;
-    if (isIosSafari) {
-      // On iOS Safari, the height measurement is one extra pixel.
-      expectedHeight++;
-    }
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle overflow-y: hidden; height: ${expectedHeight}px;">'
-      '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
+      '<p style="${paragraphStyle()}">'
+      '<span style="${spanStyle(top: 0, left: 0)}">'
       'Hello'
       '</span>'
       '</p>',
@@ -135,16 +128,11 @@ Future<void> testMain() async {
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.toPlainText(), 'HelloWorld');
 
-    double expectedHeight = 14.0;
-    if (isIosSafari) {
-      // On iOS Safari, the height measurement is one extra pixel.
-      expectedHeight++;
-    }
     paragraph.layout(const ParagraphConstraints(width: 100.0));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle width: 100px; overflow-y: hidden; height: ${expectedHeight}px;">'
-      '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
+      '<p style="${paragraphStyle()}">'
+      '<span style="${spanStyle(top: 0, left: 0)}">'
       'Hell...'
       '</span>'
       '</p>',
@@ -171,8 +159,8 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="line-height: 1.5; font-size: 9px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor line-height: 1.5; font-size: 9px; font-weight: bold; font-style: italic; $defaultFontFamily letter-spacing: 2px;">'
+      '<p style="${paragraphStyle(lineHeight: 1.5, fontSize: 9)}">'
+      '<span style="${spanStyle(top: 0, left: 0, lineHeight: 1.5, fontSize: 9, fontWeight: 'bold', fontStyle: 'italic', letterSpacing: 2)}">'
       'Hello'
       '</span>'
       '</p>',
@@ -209,26 +197,32 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; font-weight: bold; $defaultFontFamily">'
+      '<p style="${paragraphStyle(fontSize: 13)}">'
+      '<span style="${spanStyle(top: 0, left: 0, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
       '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
-      ' world'
+      '<span style="${spanStyle(top: 0, left: 65, fontSize: 13, fontStyle: 'italic')}">'
+      ' '
+      '</span>'
+      '<span style="${spanStyle(top: 0, left: 78, fontSize: 13, fontStyle: 'italic')}">'
+      'world'
       '</span>'
       '</p>',
     );
 
-    // Should break "Hello world" into "Hello" and " world".
+    // Should break "Hello world" into 2 lines: "Hello" and " world".
     paragraph.layout(const ParagraphConstraints(width: 75.0));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle width: 75px;">'
-      '<span style="$defaultColor font-size: 13px; font-weight: bold; $defaultFontFamily">'
+      '<p style="${paragraphStyle(fontSize: 13)}">'
+      '<span style="${spanStyle(top: 0, left: 0, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
       '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
-      ' <br>world'
+      '<span style="${spanStyle(top: 0, left: 65, fontSize: 13, fontStyle: 'italic')}">'
+      ' '
+      '</span>'
+      '<span style="${spanStyle(top: 13, left: 0, fontSize: 13, fontStyle: 'italic')}">'
+      'world'
       '</span>'
       '</p>',
     );
@@ -274,14 +268,17 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor line-height: 2; font-size: 13px; font-weight: bold; $defaultFontFamily">'
+      '<p style="${paragraphStyle(fontSize: 13)}">'
+      '<span style="${spanStyle(top: 0, left: 0, lineHeight: 2, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
       '</span>'
-      '<span style="$defaultColor font-size: 13px; font-weight: bold; font-style: italic; $defaultFontFamily">'
-      ' world'
+      '<span style="${spanStyle(top: 6, left: 65, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
+      ' '
       '</span>'
-      '<span style="$defaultColor font-size: 13px; font-weight: normal; font-style: italic; $defaultFontFamily">'
+      '<span style="${spanStyle(top: 6, left: 78, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
+      'world'
+      '</span>'
+      '<span style="${spanStyle(top: 6, left: 143, fontSize: 13, fontWeight: 'normal', fontStyle: 'italic')}">'
       '!'
       '</span>'
       '</p>',
@@ -338,11 +335,17 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
-      'First<br>Second '
+      '<p style="${paragraphStyle(fontSize: 13)}">'
+      '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
+      'First'
       '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
+      '<span style="${spanStyle(top: 13, left: 0, fontSize: 13)}">'
+      'Second'
+      '</span>'
+      '<span style="${spanStyle(top: 13, left: 78, fontSize: 13)}">'
+      ' '
+      '</span>'
+      '<span style="${spanStyle(top: 13, left: 91, fontSize: 13, fontStyle: 'italic')}">'
       'ThirdLongLine'
       '</span>'
       '</p>',
@@ -352,11 +355,17 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: 180.0));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle width: 180px;">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
-      'First<br>Second <br>'
+      '<p style="${paragraphStyle(fontSize: 13)}">'
+      '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
+      'First'
       '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
+      '<span style="${spanStyle(top: 13, left: 0, fontSize: 13)}">'
+      'Second'
+      '</span>'
+      '<span style="${spanStyle(top: 13, left: 78, fontSize: 13)}">'
+      ' '
+      '</span>'
+      '<span style="${spanStyle(top: 26, left: 0, fontSize: 13, fontStyle: 'italic')}">'
       'ThirdLongLine'
       '</span>'
       '</p>',
@@ -385,21 +394,80 @@ Future<void> testMain() async {
     // greatest font size.
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 18px; ${fontFamilyToAttribute('second')} $paragraphStyle">'
-      '<span style="$defaultColor font-size: 12px; ${fontFamilyToAttribute('first')}">'
-      'First '
+      // Since we are using unknown font families, we can't predict the text
+      // measurements.
+      removePositionInfo(paragraph.toDomElement().outerHtml!),
+      '<p style="${paragraphStyle(fontSize: 18, fontFamily: 'second')}">'
+      '<span style="${spanStyle(top: null, left: null, fontSize: 12, fontFamily: 'first')}">'
+      'First'
       '</span>'
-      '<span style="$defaultColor font-size: 18px; ${fontFamilyToAttribute('second')}">'
-      'Second '
+      '<span style="${spanStyle(top: null, left: null, fontSize: 12, fontFamily: 'first')}">'
+      ' '
       '</span>'
-      '<span style="$defaultColor font-size: 10px; ${fontFamilyToAttribute('third')}">'
+      '<span style="${spanStyle(top: null, left: null, fontSize: 18, fontFamily: 'second')}">'
+      'Second'
+      '</span>'
+      '<span style="${spanStyle(top: null, left: null, fontSize: 18, fontFamily: 'second')}">'
+      ' '
+      '</span>'
+      '<span style="${spanStyle(top: null, left: null, fontSize: 10, fontFamily: 'third')}">'
       'Third'
       '</span>'
       '</p>',
     );
     debugEmulateFlutterTesterEnvironment = true;
   });
+}
+
+const String defaultFontFamily = 'Ahem';
+const num defaultFontSize = 14;
+
+String paragraphStyle({
+  String fontFamily = defaultFontFamily,
+  num fontSize = defaultFontSize,
+  num? lineHeight,
+}) {
+  return <String>[
+    if (lineHeight != null) 'line-height: $lineHeight;',
+    'font-size: ${fontSize}px;',
+    'font-family: ${fontFamilyToAttribute(fontFamily)};',
+    'position: absolute;',
+    'white-space: pre;',
+  ].join(' ');
+}
+
+String spanStyle({
+  required num? top,
+  required num? left,
+  String fontFamily = defaultFontFamily,
+  num fontSize = defaultFontSize,
+  String? fontWeight,
+  String? fontStyle,
+  num? lineHeight,
+  num? letterSpacing,
+}) {
+  return <String>[
+    'color: rgb(255, 0, 0);',
+    if (lineHeight != null) 'line-height: $lineHeight;',
+    'font-size: ${fontSize}px;',
+    if (fontWeight != null) 'font-weight: $fontWeight;',
+    if (fontStyle != null) 'font-style: $fontStyle;',
+    'font-family: ${fontFamilyToAttribute(fontFamily)};',
+    if (letterSpacing != null) 'letter-spacing: ${letterSpacing}px;',
+    'position: absolute;',
+    if (top != null) 'top: ${top}px;',
+    if (left != null) 'left: ${left}px;',
+  ].join(' ');
+}
+
+/// Removes "top" and "left" CSS styles from the given html string.
+///
+/// This is needed when the positioning information in the html output is
+/// unknown and could be different depending on browser and environment.
+String removePositionInfo(String outerHtml) {
+  return outerHtml
+      .replaceAll(RegExp(r'\s*top:\s*[\d\.]+px\s*;\s*'), '')
+      .replaceAll(RegExp(r'\s*left:\s*[\d\.]+px\s*;\s*'), '');
 }
 
 TextStyle styleWithDefaults({

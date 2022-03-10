@@ -266,6 +266,9 @@ void _applyNecessaryParagraphStyles({
 }) {
   final html.CssStyleDeclaration cssStyle = element.style;
 
+  // TODO(mdebbar): Now that we absolutely position each span inside the
+  //                paragraph, do we still need these style on <p>?
+
   if (style.textAlign != null) {
     cssStyle.textAlign = textAlignToCssValue(
         style.textAlign, style.textDirection ?? ui.TextDirection.ltr);
