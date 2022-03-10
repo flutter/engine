@@ -371,6 +371,12 @@ TEST(RasterCache, KeepUnusedSkPicturesIfIsHighPriority) {
 
   PrepareAndCleanupEmptyFrame(cache, 3);
   cache.PrepareNewFrame();
+  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+  cache.CleanupAfterFrame();
+
+  // The entry will be evicted when it is not used 4 times in a row.
+  PrepareAndCleanupEmptyFrame(cache, 4);
+  cache.PrepareNewFrame();
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
   cache.CleanupAfterFrame();
 }
@@ -407,6 +413,12 @@ TEST(RasterCache, KeepUnusedDisplayListsIfIsHighPriority) {
   cache.CleanupAfterFrame();
 
   PrepareAndCleanupEmptyFrame(cache, 3);
+  cache.PrepareNewFrame();
+  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+  cache.CleanupAfterFrame();
+
+  // The entry will be evicted when it is not used 4 times in a row.
+  PrepareAndCleanupEmptyFrame(cache, 4);
   cache.PrepareNewFrame();
   ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
   cache.CleanupAfterFrame();

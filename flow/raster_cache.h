@@ -308,7 +308,9 @@ class RasterCache {
     size_t access_count = 0;
     size_t unused_count = 0;
     std::unique_ptr<RasterCacheResult> image;
-    size_t unused_threshold() const { return is_high_priority ? 3 : 1; }
+    // Return the number of frames the entry survives if it is not used. If the
+    // number is 0, then it will be evicted when not in use.
+    size_t unused_threshold() const { return is_high_priority ? 3 : 0; }
   };
 
   void Touch(const RasterCacheKey& cache_key);

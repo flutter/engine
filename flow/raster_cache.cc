@@ -416,8 +416,8 @@ void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
   for (auto it = cache.begin(); it != cache.end(); ++it) {
     Entry& entry = it->second;
     if (!entry.used_this_frame) {
-      entry.unused_count++;
       if (entry.unused_count < entry.unused_threshold()) {
+        entry.unused_count++;
         if (entry.image) {
           RasterCacheKeyKind kind = it->first.kind();
           switch (kind) {
