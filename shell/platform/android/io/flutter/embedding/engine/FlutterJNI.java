@@ -257,14 +257,23 @@ public class FlutterJNI {
     // on Android we will need to refactor this. Static lookup makes things a
     // bit easier on the C++ side.
     FlutterJNI.refreshRateFPS = refreshRateFPS;
+    updateRefreshRate();
   }
+
+  public void updateRefreshRate() {
+    if (!FlutterJNI.loadLibraryCalled) {
+      return;
+    }
+    nativeUpdateRefreshRate(refreshRateFPS);
+  }
+
+  private native void nativeUpdateRefreshRate(float refreshRateFPS);
 
   /**
    * The Android vsync waiter implementation in C++ needs to know when a vsync signal arrives, which
-   * is obtained via Java API. The delegate set here is called on the C++ side on the ui thread when
-   * the engine is ready to wait for the next vsync signal. The delegate is expected to add a
-   * postFrameCallback to the {@link android.view.Choreographer}, and call {@link onVsync} to notify
-   * the engine.
+   * is obtained via Java API. The delegate set here is called on the C++ side when the engine is
+   * ready to wait for the next vsync signal. The delegate is expected to add a postFrameCallback to
+   * the {@link android.view.Choreographer}, and call {@link onVsync} to notify the engine.
    *
    * @param delegate The delegate that will call the engine back on the next vsync signal.
    */
@@ -273,7 +282,7 @@ public class FlutterJNI {
   }
 
   // TODO(mattcarroll): add javadocs
-  // Called by native on the ui thread.
+  // Called by native.
   private static void asyncWaitForVsync(final long cookie) {
     if (asyncWaitForVsyncDelegate != null) {
       asyncWaitForVsyncDelegate.asyncWaitForVsync(cookie);
