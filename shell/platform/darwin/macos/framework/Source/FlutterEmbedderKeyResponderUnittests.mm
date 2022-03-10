@@ -428,7 +428,6 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertAbruptRepeatEventsToDown) {
   [events removeAllObjects];
 }
 
-
 // Press L shift, A, then release L shift then A, on an US keyboard.
 //
 // This is special because the characters for the A key will change in this
