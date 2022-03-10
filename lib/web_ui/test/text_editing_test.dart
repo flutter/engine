@@ -676,54 +676,53 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('focus and disconnection with delaying blur in iOS', () async {
-      // Test on ios-safari only.
-      if (browserEngine == BrowserEngine.webkit &&
-          operatingSystem == OperatingSystem.iOs) {
-        final MethodCall setClient = MethodCall(
-            'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-        sendFrameworkMessage(codec.encodeMethodCall(setClient));
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
-        const MethodCall setEditingState =
-        MethodCall('TextInput.setEditingState', <String, dynamic>{
-          'text': 'abcd',
-          'selectionBase': 2,
-          'selectionExtent': 3,
-        });
-        sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+      const MethodCall setEditingState =
+      MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
-        // Editing shouldn't have started yet.
-        expect(defaultTextEditingRoot.activeElement, null);
+      // Editing shouldn't have started yet.
+      expect(defaultTextEditingRoot.activeElement, null);
 
-        const MethodCall show = MethodCall('TextInput.show');
-        sendFrameworkMessage(codec.encodeMethodCall(show));
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
-        // The "setSizeAndTransform" message has to be here before we call
-        // checkInputEditingState, since on some platforms (e.g. Desktop Safari)
-        // we don't put the input element into the DOM until we get its correct
-        // dimensions from the framework.
-        final MethodCall setSizeAndTransform =
-        configureSetSizeAndTransformMethodCall(150, 50,
-            Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
-        sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+      // The "setSizeAndTransform" message has to be here before we call
+      // checkInputEditingState, since on some platforms (e.g. Desktop Safari)
+      // we don't put the input element into the DOM until we get its correct
+      // dimensions from the framework.
+      final MethodCall setSizeAndTransform =
+      configureSetSizeAndTransformMethodCall(150, 50,
+          Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-        checkInputEditingState(
-            textEditing!.strategy.domElement, 'abcd', 2, 3);
-        expect(textEditing!.isEditing, isTrue);
+      checkInputEditingState(
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
+      expect(textEditing!.isEditing, isTrue);
 
-        // Delay for not to be a fast callback with blur.
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-        // DOM element is blurred.
-        textEditing!.strategy.domElement!.blur();
+      // Delay for not to be a fast callback with blur.
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // DOM element is blurred.
+      textEditing!.strategy.domElement!.blur();
 
-        expect(spy.messages, hasLength(1));
-        expect(spy.messages[0].channel, 'flutter/textinput');
-        expect(
-            spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
-        await Future<void>.delayed(Duration.zero);
-        // DOM element loses the focus.
-        expect(defaultTextEditingRoot.activeElement, null);
-      }
-    });
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(
+          spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
+      await Future<void>.delayed(Duration.zero);
+      // DOM element loses the focus.
+      expect(defaultTextEditingRoot.activeElement, null);
+    },
+        // Test on ios-safari only.
+        skip: browserEngine != BrowserEngine.webkit ||
+            operatingSystem != OperatingSystem.iOs);
 
     test('finishAutofillContext closes connection no autofill element',
         () async {
