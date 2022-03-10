@@ -108,16 +108,15 @@ NSResponder* mockOwnerWithDownOnlyNext() {
 
   id messengerMock = OCMStrictProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub([messengerMock sendOnChannel:@"flutter/keyevent"
-                            message:[OCMArg any]
-                        binaryReply:[OCMArg any]])
+                               message:[OCMArg any]
+                           binaryReply:[OCMArg any]])
       .andCall(self, @selector(handleChannelMessage:message:binaryReply:));
 
   id viewDelegateMock = OCMStrictProtocolMock(@protocol(FlutterKeyboardViewDelegate));
   OCMStub([viewDelegateMock nextResponder]).andReturn(_nextResponder);
   OCMStub([viewDelegateMock onTextInputKeyEvent:[OCMArg any]])
       .andCall(self, @selector(handleTextInputKeyEvent:));
-  OCMStub([viewDelegateMock getBinaryMessenger])
-      .andReturn(messengerMock);
+  OCMStub([viewDelegateMock getBinaryMessenger]).andReturn(messengerMock);
   OCMStub([viewDelegateMock sendKeyEvent:FlutterKeyEvent {} callback:nil userData:nil])
       .ignoringNonObjectArgs()
       .andCall(self, @selector(handleEmbedderEvent:callback:userData:));

@@ -46,14 +46,15 @@
                                                       FlutterKeyEventCallback callback,
                                                       void* userData) {
                                     [_viewDelegate sendKeyEvent:event
-                                                    callback:callback
-                                                    userData:userData];
+                                                       callback:callback
+                                                       userData:userData];
                                   }]];
     [self
         addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
                                 initWithChannel:[FlutterBasicMessageChannel
                                                     messageChannelWithName:@"flutter/keyevent"
-                                                           binaryMessenger:[_viewDelegate getBinaryMessenger]
+                                                           binaryMessenger:[_viewDelegate
+                                                                               getBinaryMessenger]
                                                                      codec:[FlutterJSONMessageCodec
                                                                                sharedInstance]]]];
   }
