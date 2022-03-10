@@ -75,7 +75,7 @@ if (_platform_name == "mac") {
   _platform_name = "windows"
 }
 
-full_platform_name = "$_platform_name-$host_cpu"
+full_platform_name = "$_platform_name-$target_cpu"
 
 # Prebuilt Dart SDK location
 
