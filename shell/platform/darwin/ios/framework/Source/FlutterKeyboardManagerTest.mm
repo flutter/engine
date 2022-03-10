@@ -7,7 +7,6 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 #include <_types/_uint32_t.h>
-#import <strstream>
 
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
@@ -373,59 +372,6 @@ typedef BOOL (^BoolGetter)();
   // Start a nested CFRunLoop so we can wait for both presses to complete before exiting the test
   CFRunLoopRun();
   XCTAssertFalse(key2Handled);
-  XCTAssertFalse(key1Handled);
-}
-
-- (void)testLogWhenEventHandlingTakesTooLong API_AVAILABLE(ios(13.4)) {
-  constexpr UIKeyboardHIDUsage keyId1 = (UIKeyboardHIDUsage)0x50;
-  FlutterUIPressProxy* event1 = keyDownEvent(keyId1);
-  __block FlutterAsyncKeyCallback key1Callback;
-  __block bool key1Handled = true;
-
-  // Redirect the stderr to a string buffer.
-  std::stringstream cerrBuffer;
-  std::streambuf* realCerr = std::cerr.rdbuf(cerrBuffer.rdbuf());
-
-  FlutterKeyboardManager* manager = [[FlutterKeyboardManager alloc] init];
-  [manager addPrimaryResponder:[self mockPrimaryResponder:^(FlutterUIPressProxy* press,
-                                                            FlutterAsyncKeyCallback callback) {
-             if (press == event1) {
-               key1Callback = callback;
-             }
-           }]];
-
-  // Add both presses into the main CFRunLoop queue
-  CFRunLoopTimerRef timer0 = CFRunLoopTimerCreateWithHandler(
-      kCFAllocatorDefault, CFAbsoluteTimeGetCurrent(), 0, 0, 0, ^(CFRunLoopTimerRef timerRef) {
-        [manager handlePress:event1
-                  nextAction:^() {
-                    key1Handled = false;
-                  }];
-      });
-  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer0, kCFRunLoopCommonModes);
-
-  // Call the callback, but do it too late, so that we get a log message.
-  CFRunLoopTimerRef timer1 = CFRunLoopTimerCreateWithHandler(
-      kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 3, 0, 0, 0, ^(CFRunLoopTimerRef timerRef) {
-        // No processing should be done on key2 yet
-        XCTAssertTrue(key1Callback != nil);
-        key1Callback(false);
-      });
-  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer1,
-                    fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode);
-
-  // Start a nested CFRunLoop so we can wait for both presses to complete before exiting the test
-  CFRunLoopRun();
-
-  // Check the log output.
-  std::cerr.flush();
-  std::string logOutput =
-      cerrBuffer.str();  // Get the stderr output that happened while the loop was running.
-  XCTAssertTrue(logOutput.find("Flutter framework failed to process a key event in a reasonable "
-                               "time. Continuing to wait.") != std::string::npos);
-  std::cerr.rdbuf(realCerr);
-  // In case there was other useful cerr output in the test, write it to the real cerr.
-  std::cerr << logOutput;
   XCTAssertFalse(key1Handled);
 }
 

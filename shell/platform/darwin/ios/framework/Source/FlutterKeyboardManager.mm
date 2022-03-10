@@ -121,6 +121,7 @@ static constexpr CFTimeInterval kReasonableInterval = 2.0;
         NSLog(@"Flutter framework failed to process a key event in a reasonable time. Continuing "
               @"to wait.");
         CFRunLoopRunInMode(fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode, kDistantFuture, NO);
+        NSLog(@"Flutter framework finally responded. Exiting nested event loop.");
       }
       break;
     }
