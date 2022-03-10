@@ -106,14 +106,8 @@ NSResponder* mockOwnerWithDownOnlyNext() {
   [self respondEmbedderCallsWith:FALSE];
   [self respondTextInputWith:FALSE];
 
-  id engineMock = OCMStrictClassMock([FlutterEngine class]);
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(engineMock);
-  OCMStub([engineMock sendKeyEvent:FlutterKeyEvent {} callback:nil userData:nil])
-      .ignoringNonObjectArgs()
-      .andCall(self, @selector(handleEmbedderEvent:callback:userData:));
-  OCMStub([engineMock sendOnChannel:@"flutter/keyevent"
+  id messengerMock = OCMStrictProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub([messengerMock sendOnChannel:@"flutter/keyevent"
                             message:[OCMArg any]
                         binaryReply:[OCMArg any]])
       .andCall(self, @selector(handleChannelMessage:message:binaryReply:));
@@ -122,9 +116,13 @@ NSResponder* mockOwnerWithDownOnlyNext() {
   OCMStub([viewDelegateMock nextResponder]).andReturn(_nextResponder);
   OCMStub([viewDelegateMock onTextInputKeyEvent:[OCMArg any]])
       .andCall(self, @selector(handleTextInputKeyEvent:));
+  OCMStub([viewDelegateMock getBinaryMessenger])
+      .andReturn(messengerMock);
+  OCMStub([viewDelegateMock sendKeyEvent:FlutterKeyEvent {} callback:nil userData:nil])
+      .ignoringNonObjectArgs()
+      .andCall(self, @selector(handleEmbedderEvent:callback:userData:));
 
-  _manager = [[FlutterKeyboardManager alloc] initWithEngine:engineMock
-                                               viewDelegate:viewDelegateMock];
+  _manager = [[FlutterKeyboardManager alloc] initWithViewDelegate:viewDelegateMock];
   return self;
 }
 

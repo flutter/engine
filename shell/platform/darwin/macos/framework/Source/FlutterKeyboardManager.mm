@@ -35,19 +35,17 @@
   NextResponderProvider _getNextResponder;
 }
 
-- (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
-                          viewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate {
+- (nonnull instancetype)initWithViewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate {
   self = [super init];
   if (self != nil) {
     _viewDelegate = viewDelegate;
 
     _primaryResponders = [[NSMutableArray alloc] init];
-    __weak FlutterEngine* weakEngine = engine;
     [self addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
                                   initWithSendEvent:^(const FlutterKeyEvent& event,
                                                       FlutterKeyEventCallback callback,
                                                       void* userData) {
-                                    [weakEngine sendKeyEvent:event
+                                    [_viewDelegate sendKeyEvent:event
                                                     callback:callback
                                                     userData:userData];
                                   }]];
@@ -55,7 +53,7 @@
         addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
                                 initWithChannel:[FlutterBasicMessageChannel
                                                     messageChannelWithName:@"flutter/keyevent"
-                                                           binaryMessenger:engine.binaryMessenger
+                                                           binaryMessenger:[_viewDelegate getBinaryMessenger]
                                                                      codec:[FlutterJSONMessageCodec
                                                                                sharedInstance]]]];
   }

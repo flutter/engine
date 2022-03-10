@@ -36,14 +36,10 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 /**
  * Create a keyboard manager.
  *
- * The |engine| is a weak reference, used for embedder APIs and channel
- * messages.
- *
  * The |viewDelegate| is a weak reference, typically implemented by
  * |FlutterViewController|.
  */
-- (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
-                          viewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate;
+- (nonnull instancetype)initWithViewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate;
 
 /**
  * Processes a key event.

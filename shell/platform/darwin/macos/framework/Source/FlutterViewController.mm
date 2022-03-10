@@ -446,7 +446,7 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)initializeKeyboard {
   __weak FlutterViewController* weakSelf = self;
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
-  _keyboardManager = [[FlutterKeyboardManager alloc] initWithEngine:_engine viewDelegate:weakSelf];
+  _keyboardManager = [[FlutterKeyboardManager alloc] initWithViewDelegate:weakSelf];
 }
 
 - (void)addInternalPlugins {
@@ -660,6 +660,16 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 #pragma mark - FlutterKeyboardViewDelegate
+
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(nullable FlutterKeyEventCallback)callback
+            userData:(nullable void*)userData {
+  [_engine sendKeyEvent:event callback:callback userData:userData];
+}
+
+- (id<FlutterBinaryMessenger>)getBinaryMessenger {
+  return _engine.binaryMessenger;
+}
 
 - (BOOL)onTextInputKeyEvent:(nonnull NSEvent*)event {
   return [_textInputPlugin handleKeyEvent:event];
