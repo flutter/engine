@@ -1,4 +1,4 @@
-Signature: 7bda71dc439dc0a18ac558267dc64a9c
+Signature: 76f8e89738b27c991d5a58a2a6b3a907
 
 UNUSED LICENSES:
 
@@ -4309,7 +4309,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: angle
-ORIGIN: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c + ../../../fuchsia/sdk/mac/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c
 FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h
@@ -18087,6 +18087,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18216,6 +18217,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18355,6 +18357,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18489,6 +18492,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18622,6 +18626,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18760,6 +18765,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18894,6 +18900,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -19027,6 +19034,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -19133,6 +19141,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -19306,6 +19315,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
