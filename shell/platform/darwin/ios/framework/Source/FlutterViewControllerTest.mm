@@ -6,8 +6,8 @@
 #import <XCTest/XCTest.h>
 
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
-#include "flutter/lib/ui/window/pointer_data.h"
 #import "flutter/lib/ui/window/platform_configuration.h"
+#include "flutter/lib/ui/window/pointer_data.h"
 #import "flutter/lib/ui/window/viewport_metrics.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
@@ -1101,8 +1101,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
   XCTAssertNotNil(vc);
 
   flutter::PointerData pointer_data = [vc generatePointerDataForFake];
-  int64_t current_time = [[NSProcessInfo processInfo] systemUptime];
-  XCTAssertTrue(current_time / 2 == pointer_data.time_stamp / 1000 / 1000 / 2,
+  int64_t current_micros = [[NSProcessInfo processInfo] systemUptime] * 1000 * 1000;
+  int64_t interval_micros = current_micros - pointer_data.time_stamp;
+  XCTAssertTrue(interval_micros / 1000 == 0,
                 @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
 }
 @end
