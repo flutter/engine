@@ -6,6 +6,7 @@
 #import <XCTest/XCTest.h>
 
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
+#include "flutter/lib/ui/window/pointer_data.h"
 #import "flutter/lib/ui/window/platform_configuration.h"
 #import "flutter/lib/ui/window/viewport_metrics.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
@@ -138,6 +139,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateDisplayLink;
 - (void)addInternalPlugins;
+- (flutter::PointerData)generatePointerDataForFake;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -1092,4 +1094,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
       dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];
 }
 
+- (void)testFakeEventTimeStamp {
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  flutter::PointerData pointer_data = [vc generatePointerDataForFake];
+  int64_t current_time = [[NSProcessInfo processInfo] systemUptime];
+  XCTAssertTrue(current_time == pointer_data.time_stamp / 1000 / 1000,
+                @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
+}
 @end
