@@ -1103,7 +1103,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
   flutter::PointerData pointer_data = [vc generatePointerDataForFake];
   int64_t current_micros = [[NSProcessInfo processInfo] systemUptime] * 1000 * 1000;
   int64_t interval_micros = current_micros - pointer_data.time_stamp;
-  XCTAssertTrue(interval_micros / 1000 == 0,
+  const int64_t tolerance_millis = 2;
+  XCTAssertTrue(interval_micros / 1000 < 2,
                 @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
 }
 @end
