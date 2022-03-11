@@ -1104,7 +1104,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   int64_t current_micros = [[NSProcessInfo processInfo] systemUptime] * 1000 * 1000;
   int64_t interval_micros = current_micros - pointer_data.time_stamp;
   const int64_t tolerance_millis = 2;
-  XCTAssertTrue(interval_micros / 1000 < 2,
+  XCTAssertTrue(interval_micros / 1000 < tolerance_millis,
                 @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
 }
 @end
