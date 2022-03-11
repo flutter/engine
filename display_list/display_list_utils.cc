@@ -74,7 +74,7 @@ void SkPaintDispatchHelper::setBlender(sk_sp<SkBlender> blender) {
   paint_.setBlender(blender);
 }
 void SkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
-  paint_.setShader(source->skia_object());
+  paint_.setShader(source ? source->skia_object() : nullptr);
 }
 void SkPaintDispatchHelper::setImageFilter(sk_sp<SkImageFilter> filter) {
   paint_.setImageFilter(filter);

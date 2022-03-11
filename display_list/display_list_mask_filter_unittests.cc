@@ -21,6 +21,7 @@ TEST(DisplayListMaskFilter, FromSkiaBlurFilter) {
       SkMaskFilter::MakeBlur(SkBlurStyle::kNormal_SkBlurStyle, 5.0);
   std::shared_ptr<DlMaskFilter> filter = DlMaskFilter::From(sk_filter);
   ASSERT_EQ(filter->type(), DlMaskFilterType::kUnknown);
+  // We cannot recapture the blur parameters from an SkBlurMaskFilter
   ASSERT_EQ(filter->asBlur(), nullptr);
   ASSERT_EQ(filter->skia_object(), sk_filter);
 }

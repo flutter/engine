@@ -225,12 +225,17 @@ DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, MaskFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
 
-// 4 byte header + 
+// 4 byte header + 80 bytes for the embedded DlImageColorSource
+// uses 84 total bytes (4 bytes unused)
 struct SetImageColorSourceOp : DLOp {
   static const auto kType = DisplayListOpType::kSetImageColorSource;
 
   SetImageColorSourceOp(const DlImageColorSource* source)
-      : source(source) {}
+      : source(source->image(),
+               source->horizontal_tile_mode(),
+               source->vertical_tile_mode(),
+               source->sampling(),
+               source->matrix_ptr()) {}
 
   const DlImageColorSource source;
 

@@ -53,12 +53,12 @@ void ImageShader::initWithImage(CanvasImage* image,
   SkSamplingOptions sampling =
       sampling_is_locked_ ? ImageFilter::SamplingFromIndex(filter_quality_index)
                           : DisplayList::LinearSampling;
-  cached_shader_ = UIDartState::CreateGPUObject(
-      sk_make_sp<DlImageColorSource>(sk_image_.skia_object(), local_matrix,
-                                     dl_tmx, dl_tmy, sampling));
+  cached_shader_ = UIDartState::CreateGPUObject(sk_make_sp<DlImageColorSource>(
+      sk_image_.skia_object(), dl_tmx, dl_tmy, sampling, &local_matrix));
 }
 
-std::shared_ptr<DlColorSource> ImageShader::shader(SkSamplingOptions& sampling) {
+std::shared_ptr<DlColorSource> ImageShader::shader(
+    SkSamplingOptions& sampling) {
   if (sampling_is_locked_) {
     sampling = cached_shader_.skia_object()->sampling();
   }

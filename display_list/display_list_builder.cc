@@ -146,15 +146,6 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
       case DlColorSourceType::kLinearGradient: {
         const DlLinearGradientColorSource* linear = source->asLinearGradient();
         FML_DCHECK(linear);
-        std::vector<int> ints;
-        FML_LOG(ERROR) << "LinearGradient is: " << linear->size();
-        FML_LOG(ERROR) << "sizeof(DL) is: " << sizeof(DisplayList);
-        FML_LOG(ERROR) << "sizeof(empty int vector) is: " << sizeof(ints);
-        ints.push_back(1);
-        ints.push_back(2);
-        ints.push_back(3);
-        ints.push_back(4);
-        FML_LOG(ERROR) << "sizeof(4 element int vector) is: " << sizeof(ints);
         void* pod = Push<SetPodColorSourceOp>(linear->size(), 0);
         new (pod) DlLinearGradientColorSource(linear);
         break;
@@ -167,7 +158,8 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
         break;
       }
       case DlColorSourceType::kConicalGradient: {
-        const DlConicalGradientColorSource* conical = source->asConicalGradient();
+        const DlConicalGradientColorSource* conical =
+            source->asConicalGradient();
         FML_DCHECK(conical);
         void* pod = Push<SetPodColorSourceOp>(conical->size(), 0);
         new (pod) DlConicalGradientColorSource(conical);

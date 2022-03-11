@@ -61,39 +61,69 @@ constexpr SkPoint TestPoints[] = {
 };
 #define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
 
+static sk_sp<SkImage> MakeTestImage(int w, int h, int checker_size) {
+  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
+  SkCanvas* canvas = surface->getCanvas();
+  SkPaint p0, p1;
+  p0.setStyle(SkPaint::kFill_Style);
+  p0.setColor(SK_ColorGREEN);
+  p1.setStyle(SkPaint::kFill_Style);
+  p1.setColor(SK_ColorBLUE);
+  p1.setAlpha(128);
+  for (int y = 0; y < w; y += checker_size) {
+    for (int x = 0; x < h; x += checker_size) {
+      SkPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
+      canvas->drawRect(SkRect::MakeXYWH(x, y, checker_size, checker_size),
+                       cellp);
+    }
+  }
+  return surface->makeImageSnapshot();
+}
+
+static sk_sp<SkImage> TestImage1 = MakeTestImage(40, 40, 5);
+static sk_sp<SkImage> TestImage2 = MakeTestImage(50, 50, 5);
+
 static const sk_sp<SkBlender> TestBlender1 =
     SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, false);
 static const sk_sp<SkBlender> TestBlender2 =
     SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
 static const sk_sp<SkBlender> TestBlender3 =
     SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
-static const DlLinearGradientColorSource TestShader1 =
-    DlLinearGradientColorSource(end_points[0],
-                                end_points[1],
-                                3,
-                                color_vector,
-                                stops_vector,
-                                DlTileMode::kMirror,
-                                SkMatrix::I());
-// TestShader2 is identical to TestShader1 and points out that we cannot
-// perform a deep compare over our various sk_sp objects because the
-// DisplayLists constructed with the two do not compare == below.
-static const DlLinearGradientColorSource TestShader2 =
-    DlLinearGradientColorSource(end_points[0],
-                                end_points[1],
-                                3,
-                                color_vector,
-                                stops_vector,
-                                DlTileMode::kMirror,
-                                SkMatrix::I());
-static const DlLinearGradientColorSource TestShader3 =
-    DlLinearGradientColorSource(end_points[0],
-                                end_points[1],
-                                3,
-                                color_vector,
-                                stops_vector,
-                                DlTileMode::kDecal,
-                                SkMatrix::I());
+static const DlImageColorSource TestSource1(TestImage1,
+                                            DlTileMode::kClamp,
+                                            DlTileMode::kMirror,
+                                            DisplayList::LinearSampling);
+static const std::shared_ptr<DlColorSource> TestSource2 =
+    DlColorSource::MakeLinear(end_points[0],
+                              end_points[1],
+                              3,
+                              colors,
+                              stops,
+                              DlTileMode::kMirror);
+static const std::shared_ptr<DlColorSource> TestSource3 =
+    DlColorSource::MakeRadial(end_points[0],
+                              10.0,
+                              3,
+                              colors,
+                              stops,
+                              DlTileMode::kMirror);
+static const std::shared_ptr<DlColorSource> TestSource4 =
+    DlColorSource::MakeConical(end_points[0],
+                               10.0,
+                               end_points[1],
+                               200.0,
+                               3,
+                               colors,
+                               stops,
+                               DlTileMode::kDecal);
+static const std::shared_ptr<DlColorSource> TestSource5 =
+    DlColorSource::MakeSweep(end_points[0],
+                             0.0,
+                             360.0,
+                             3,
+                             colors,
+                             stops,
+                             DlTileMode::kDecal);
 static const sk_sp<SkImageFilter> TestImageFilter1 =
     SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr, nullptr);
 static const sk_sp<SkImageFilter> TestImageFilter2 =
@@ -130,27 +160,6 @@ static const SkPath TestPath3 =
     SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, false);
 static const SkMatrix TestMatrix1 = SkMatrix::Scale(2, 2);
 static const SkMatrix TestMatrix2 = SkMatrix::RotateDeg(45);
-
-static sk_sp<SkImage> MakeTestImage(int w, int h, int checker_size) {
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
-  SkCanvas* canvas = surface->getCanvas();
-  SkPaint p0, p1;
-  p0.setStyle(SkPaint::kFill_Style);
-  p0.setColor(SK_ColorGREEN);
-  p1.setStyle(SkPaint::kFill_Style);
-  p1.setColor(SK_ColorBLUE);
-  p1.setAlpha(128);
-  for (int y = 0; y < w; y += checker_size) {
-    for (int x = 0; x < h; x += checker_size) {
-      SkPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
-      canvas->drawRect(SkRect::MakeXYWH(x, y, checker_size, checker_size),
-                       cellp);
-    }
-  }
-  return surface->makeImageSnapshot();
-}
-static sk_sp<SkImage> TestImage1 = MakeTestImage(40, 40, 5);
-static sk_sp<SkImage> TestImage2 = MakeTestImage(50, 50, 5);
 
 static sk_sp<SkVertices> TestVertices1 =
     SkVertices::MakeCopy(SkVertices::kTriangles_VertexMode,
@@ -339,9 +348,11 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetColorSource", {
-      {0, 128, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestShader1);}},
-      {0, 128, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestShader2);}},
-      {0, 128, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestShader3);}},
+      {0, 112, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestSource1);}},
+      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource2.get());}},
+      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource3.get());}},
+      {0, 88 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource4.get());}},
+      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource5.get());}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(nullptr);}},
     }
   },
