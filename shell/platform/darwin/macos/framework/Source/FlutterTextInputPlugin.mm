@@ -633,6 +633,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
   std::string marked_text = isAttributedString ? [[string string] UTF8String] : [string UTF8String];
   _activeModel->UpdateComposingText(marked_text);
+
   if (_enableDeltaModel) {
     flutter::TextRange composing = _activeModel->composing_range();
     [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, composing,
