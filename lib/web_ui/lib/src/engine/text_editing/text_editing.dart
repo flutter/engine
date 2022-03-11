@@ -1478,7 +1478,9 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    okay because the virtual keyboard will hide, and as soon as the user
     //    taps the text field again, the virtual keyboard will come up.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      if (DateTime.now().difference(blurSubscriptionStart) < _blurFastCallbackInterval) {
+      if (windowHasFocus &&
+          DateTime.now().difference(blurSubscriptionStart) <
+              _blurFastCallbackInterval) {
         activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();
