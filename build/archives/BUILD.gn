@@ -2,12 +2,16 @@ import("//flutter/build/zip_bundle.gni")
 import("//flutter/sky/tools/macos_snapshots.gni")
 
 zip_bundle("artifacts") {
-  output = "$full_platform_name/artifacts.zip"
   deps = [
     "//flutter/flutter_frontend_server:frontend_server",
     "//flutter/lib/snapshot:generate_snapshot_bin",
     "//flutter/shell/testing:testing",
   ]
+  prefix = "$full_platform_name/"
+  if (flutter_runtime_mode != "debug") {
+    prefix = "$full_platform_name-$flutter_runtime_mode/"
+  }
+  output = "$prefix/artifacts.zip"
   files = [
     {
       source = "//third_party/icu/flutter/icudtl.dat"
@@ -154,6 +158,12 @@ if (is_mac) {
         source = "$root_out_dir/gen_snapshot_$target_cpu"
         destination = "gen_snapshot_$target_cpu"
       },
+    ]
+  }
+
+  group("flutter_embedder_framework") {
+    deps = [
+      "//flutter/shell/platform/embedder:flutter_embedder_framework_archive",
     ]
   }
 }
