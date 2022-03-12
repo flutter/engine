@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/display_list_attributes_testing.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_color_source.h"
-#include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/types.h"
-#include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -99,15 +98,14 @@ TEST(DisplayListColorSource, FromSkiaColorShader) {
   std::shared_ptr<DlColorSource> source = DlColorSource::From(shader);
   DlColorColorSource dl_source(SK_ColorBLUE);
   ASSERT_EQ(source->type(), DlColorSourceType::kColor);
-  // There is no way to read back the parameters of an SkColorShader.
-  ASSERT_NE(source->asColor(), nullptr);
+  ASSERT_EQ(*source->asColor(), dl_source);
+  ASSERT_EQ(source->asColor()->color(), SK_ColorBLUE);
+
   ASSERT_EQ(source->asImage(), nullptr);
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
-  ASSERT_EQ(*source->asColor(), dl_source);
-  ASSERT_EQ(source->asColor()->color(), SK_ColorBLUE);
 }
 
 TEST(DisplayListColorSource, FromSkiaImageShader) {
@@ -118,21 +116,23 @@ TEST(DisplayListColorSource, FromSkiaImageShader) {
                                DlTileMode::kClamp, DisplayList::LinearSampling,
                                &TestMatrix1);
   ASSERT_EQ(source->type(), DlColorSourceType::kImage);
-  ASSERT_EQ(source->asColor(), nullptr);
-  ASSERT_NE(source->asImage(), nullptr);
-  ASSERT_EQ(source->asLinearGradient(), nullptr);
-  ASSERT_EQ(source->asRadialGradient(), nullptr);
-  ASSERT_EQ(source->asConicalGradient(), nullptr);
-  ASSERT_EQ(source->asSweepGradient(), nullptr);
   ASSERT_EQ(*source->asImage(), dl_source);
   ASSERT_EQ(source->asImage()->image(), TestImage1);
   ASSERT_EQ(source->asImage()->matrix(), TestMatrix1);
   ASSERT_EQ(source->asImage()->horizontal_tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asImage()->vertical_tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asImage()->sampling(), DisplayList::LinearSampling);
+
+  ASSERT_EQ(source->asColor(), nullptr);
+  ASSERT_EQ(source->asLinearGradient(), nullptr);
+  ASSERT_EQ(source->asRadialGradient(), nullptr);
+  ASSERT_EQ(source->asConicalGradient(), nullptr);
+  ASSERT_EQ(source->asSweepGradient(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaLinearGradient) {
+  // We can read back all of the parameters of a Linear gradient
+  // except for matrix.
   sk_sp<SkShader> shader = SkGradientShader::MakeLinear(
       TestPoints, TestColors, TestStops, kTestStopCount, SkTileMode::kClamp);
   std::shared_ptr<DlColorSource> source = DlColorSource::From(shader);
@@ -140,12 +140,6 @@ TEST(DisplayListColorSource, FromSkiaLinearGradient) {
       DlColorSource::MakeLinear(TestPoints[0], TestPoints[1], kTestStopCount,
                                 TestColors, TestStops, DlTileMode::kClamp);
   ASSERT_EQ(source->type(), DlColorSourceType::kLinearGradient);
-  ASSERT_EQ(source->asColor(), nullptr);
-  ASSERT_EQ(source->asImage(), nullptr);
-  ASSERT_NE(source->asLinearGradient(), nullptr);
-  ASSERT_EQ(source->asRadialGradient(), nullptr);
-  ASSERT_EQ(source->asConicalGradient(), nullptr);
-  ASSERT_EQ(source->asSweepGradient(), nullptr);
   EXPECT_TRUE(*source->asLinearGradient() == *dl_source->asLinearGradient());
   ASSERT_EQ(*source->asLinearGradient(), *dl_source->asLinearGradient());
   ASSERT_EQ(source->asLinearGradient()->p0(), TestPoints[0]);
@@ -157,6 +151,12 @@ TEST(DisplayListColorSource, FromSkiaLinearGradient) {
   }
   ASSERT_EQ(source->asLinearGradient()->tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asLinearGradient()->matrix(), SkMatrix::I());
+
+  ASSERT_EQ(source->asColor(), nullptr);
+  ASSERT_EQ(source->asImage(), nullptr);
+  ASSERT_EQ(source->asRadialGradient(), nullptr);
+  ASSERT_EQ(source->asConicalGradient(), nullptr);
+  ASSERT_EQ(source->asSweepGradient(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaRadialGradient) {
@@ -170,12 +170,6 @@ TEST(DisplayListColorSource, FromSkiaRadialGradient) {
       DlColorSource::MakeRadial(TestPoints[0], 10.0, kTestStopCount, TestColors,
                                 TestStops, DlTileMode::kClamp);
   ASSERT_EQ(source->type(), DlColorSourceType::kRadialGradient);
-  ASSERT_EQ(source->asColor(), nullptr);
-  ASSERT_EQ(source->asImage(), nullptr);
-  ASSERT_EQ(source->asLinearGradient(), nullptr);
-  ASSERT_NE(source->asRadialGradient(), nullptr);
-  ASSERT_EQ(source->asConicalGradient(), nullptr);
-  ASSERT_EQ(source->asSweepGradient(), nullptr);
   EXPECT_TRUE(*source->asRadialGradient() == *dl_source->asRadialGradient());
   ASSERT_EQ(*source->asRadialGradient(), *dl_source->asRadialGradient());
   ASSERT_EQ(source->asRadialGradient()->center(), TestPoints[0]);
@@ -187,6 +181,12 @@ TEST(DisplayListColorSource, FromSkiaRadialGradient) {
   }
   ASSERT_EQ(source->asRadialGradient()->tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asRadialGradient()->matrix(), SkMatrix::I());
+
+  ASSERT_EQ(source->asColor(), nullptr);
+  ASSERT_EQ(source->asImage(), nullptr);
+  ASSERT_EQ(source->asLinearGradient(), nullptr);
+  ASSERT_EQ(source->asConicalGradient(), nullptr);
+  ASSERT_EQ(source->asSweepGradient(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaConicalGradient) {
@@ -200,12 +200,6 @@ TEST(DisplayListColorSource, FromSkiaConicalGradient) {
       TestPoints[0], 10.0, TestPoints[1], 20.0, kTestStopCount, TestColors,
       TestStops, DlTileMode::kClamp);
   ASSERT_EQ(source->type(), DlColorSourceType::kConicalGradient);
-  ASSERT_EQ(source->asColor(), nullptr);
-  ASSERT_EQ(source->asImage(), nullptr);
-  ASSERT_EQ(source->asLinearGradient(), nullptr);
-  ASSERT_EQ(source->asRadialGradient(), nullptr);
-  ASSERT_NE(source->asConicalGradient(), nullptr);
-  ASSERT_EQ(source->asSweepGradient(), nullptr);
   EXPECT_TRUE(*source->asConicalGradient() == *dl_source->asConicalGradient());
   ASSERT_EQ(*source->asConicalGradient(), *dl_source->asConicalGradient());
   ASSERT_EQ(source->asConicalGradient()->start_center(), TestPoints[0]);
@@ -219,6 +213,12 @@ TEST(DisplayListColorSource, FromSkiaConicalGradient) {
   }
   ASSERT_EQ(source->asConicalGradient()->tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asConicalGradient()->matrix(), SkMatrix::I());
+
+  ASSERT_EQ(source->asColor(), nullptr);
+  ASSERT_EQ(source->asImage(), nullptr);
+  ASSERT_EQ(source->asLinearGradient(), nullptr);
+  ASSERT_EQ(source->asRadialGradient(), nullptr);
+  ASSERT_EQ(source->asSweepGradient(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaSweepGradient) {
@@ -232,12 +232,6 @@ TEST(DisplayListColorSource, FromSkiaSweepGradient) {
       DlColorSource::MakeSweep(TestPoints[0], 0, 360, kTestStopCount,
                                TestColors, TestStops, DlTileMode::kClamp);
   ASSERT_EQ(source->type(), DlColorSourceType::kSweepGradient);
-  ASSERT_EQ(source->asColor(), nullptr);
-  ASSERT_EQ(source->asImage(), nullptr);
-  ASSERT_EQ(source->asLinearGradient(), nullptr);
-  ASSERT_EQ(source->asRadialGradient(), nullptr);
-  ASSERT_EQ(source->asConicalGradient(), nullptr);
-  ASSERT_NE(source->asSweepGradient(), nullptr);
   EXPECT_TRUE(*source->asSweepGradient() == *dl_source->asSweepGradient());
   ASSERT_EQ(*source->asSweepGradient(), *dl_source->asSweepGradient());
   ASSERT_EQ(source->asSweepGradient()->center(), TestPoints[0]);
@@ -250,43 +244,27 @@ TEST(DisplayListColorSource, FromSkiaSweepGradient) {
   }
   ASSERT_EQ(source->asSweepGradient()->tile_mode(), DlTileMode::kClamp);
   ASSERT_EQ(source->asSweepGradient()->matrix(), SkMatrix::I());
+
+  ASSERT_EQ(source->asColor(), nullptr);
+  ASSERT_EQ(source->asImage(), nullptr);
+  ASSERT_EQ(source->asLinearGradient(), nullptr);
+  ASSERT_EQ(source->asRadialGradient(), nullptr);
+  ASSERT_EQ(source->asConicalGradient(), nullptr);
+  ASSERT_NE(source->asSweepGradient(), nullptr);
 }
 
 TEST(DisplayListColorSource, FromSkiaUnrecognizedShader) {
   std::shared_ptr<DlColorSource> source =
       DlColorSource::From(TestUnknownShader);
   ASSERT_EQ(source->type(), DlColorSourceType::kUnknown);
+  ASSERT_EQ(source->skia_object(), TestUnknownShader);
+
   ASSERT_EQ(source->asColor(), nullptr);
   ASSERT_EQ(source->asImage(), nullptr);
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), nullptr);
-  ASSERT_EQ(source->skia_object(), TestUnknownShader);
-}
-
-static void TestEquals(DlColorSource& source1, DlColorSource& source2) {
-  ASSERT_TRUE(source1 == source2);
-  ASSERT_TRUE(source2 == source1);
-  ASSERT_FALSE(source1 != source2);
-  ASSERT_FALSE(source2 != source1);
-  ASSERT_EQ(source1, source2);
-  ASSERT_EQ(source2, source1);
-  ASSERT_TRUE(Equals(&source1, &source2));
-  ASSERT_TRUE(Equals(source1.shared(), source2.shared()));
-}
-
-static void TestNotEquals(DlColorSource& source1,
-                          DlColorSource& source2,
-                          std::string label) {
-  ASSERT_FALSE(source1 == source2) << label;
-  ASSERT_FALSE(source2 == source1) << label;
-  ASSERT_TRUE(source1 != source2) << label;
-  ASSERT_TRUE(source2 != source1) << label;
-  ASSERT_NE(source1, source2) << label;
-  ASSERT_NE(source2, source1) << label;
-  ASSERT_TRUE(NotEquals(&source1, &source2));
-  ASSERT_TRUE(NotEquals(source1.shared(), source2.shared()));
 }
 
 TEST(DisplayListColorSource, ColorConstructor) {
@@ -316,7 +294,9 @@ TEST(DisplayListColorSource, ColorContents) {
   ASSERT_EQ(source.color(), SK_ColorRED);
   ASSERT_EQ(source.is_opaque(), true);
   for (int i = 0; i < 255; i++) {
-    DlColorColorSource alpha_source(SkColorSetA(SK_ColorRED, i));
+    SkColor alpha_color = SkColorSetA(SK_ColorRED, i);
+    DlColorColorSource alpha_source(alpha_color);
+    ASSERT_EQ(alpha_source.color(), alpha_color);
     ASSERT_EQ(alpha_source.is_opaque(), false);
   }
 }
