@@ -47,8 +47,7 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
     int count = info.fColorCount;
     info.fColors = new SkColor[count];
     info.fColorOffsets = new SkScalar[count];
-    SkShader::GradientType type2 = sk_shader->asAGradient(&info);
-    FML_DCHECK(type == type2);
+    sk_shader->asAGradient(&info);
     FML_DCHECK(count == info.fColorCount);
   }
   DlTileMode mode = static_cast<DlTileMode>(info.fTileMode);
