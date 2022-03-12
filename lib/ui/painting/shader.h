@@ -6,7 +6,6 @@
 #define FLUTTER_LIB_UI_PAINTING_SHADER_H_
 
 #include "flutter/display_list/display_list_color_source.h"
-// #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 
 namespace flutter {
@@ -22,9 +21,6 @@ class Shader : public RefCountedDartWrappable<Shader> {
 
  protected:
   Shader() {}
-
- private:
-  //  flutter::SkiaGPUObject<SkShader> shader_;
 };
 
 }  // namespace flutter

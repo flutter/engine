@@ -38,7 +38,6 @@ std::shared_ptr<DlColorSource> FragmentShader::shader(
   // Sampling options are ignored, since sampling options don't make sense for
   // generative shaders.
   return source_;
-  // return shader_;
 }
 
 fml::RefPtr<FragmentShader> FragmentShader::Create(Dart_Handle dart_handle,
