@@ -439,7 +439,6 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   flutter::PointerData pointer_data = [[engine viewController] generatePointerDataForFake];
   pointer_data.physical_x = location.x * scale;
   pointer_data.physical_y = location.y * scale;
-  pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
   auto packet = std::make_unique<flutter::PointerDataPacket>(/*count=*/1);
   pointer_data.change = change;
   packet->SetPointerData(0, pointer_data);
