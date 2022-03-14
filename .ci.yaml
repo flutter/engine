@@ -39,6 +39,7 @@ platform_properties:
         ]
       device_type: none
       os: Linux
+      cores: 8
   mac:
     properties:
       build_host: "false"
