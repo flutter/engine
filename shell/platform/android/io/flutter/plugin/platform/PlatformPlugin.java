@@ -15,6 +15,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
@@ -38,8 +39,10 @@ public class PlatformPlugin {
   private PlatformChannel.SystemChromeStyle currentTheme;
   private PlatformChannel.SystemUiMode currentSystemUiMode;
   private List<PlatformChannel.SystemUiOverlay> currentOverlays;
-  private androidx.core.view.OnApplyWindowInsetsListener insetsListener;
+  private WindowInsetsController windowInsetsController;
   private static final String TAG = "PlatformPlugin";
+
+  @VisibleForTesting androidx.core.view.OnApplyWindowInsetsListener insetsListener;
 
   /**
    * The {@link PlatformPlugin} generally has default behaviors implemented for platform
@@ -143,7 +146,6 @@ public class PlatformPlugin {
       @NonNull PlatformPluginDelegate delegate) {
     this.activity = activity;
     this.platformChannel = platformChannel;
-    this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
     this.platformPluginDelegate = delegate;
   }
 
@@ -232,7 +234,8 @@ public class PlatformPlugin {
         });
   }
 
-  private void setSystemChromeChangeListener() {
+  @VisibleForTesting
+  public void setSystemChromeChangeListener() {
     // Set up a listener to notify the framework when the system ui has changed.
     // The Android API for overlays/insets as of API 30 provides backwards compatibility
     // up through API 20, so legacy code with equivalent behavior is still used for API 19.
@@ -246,34 +249,26 @@ public class PlatformPlugin {
             @Override
             public WindowInsetsCompat onApplyWindowInsets(
                 View view, WindowInsetsCompat windowInsets) {
-              System.out.println(windowInsets.hasInsets());
-              System.out.println(decorView.getRootWindowInsets());
-              System.out.println(view.getRootWindowInsets());
-              if (windowInsets.isVisible(WindowInsetsCompat.Type.systemBars())) {
+              System.out.println(windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()));
+              if (windowInsets.isVisible(WindowInsetsCompat.Type.statusBars())
+                  || windowInsets.isVisible(WindowInsetsCompat.Type.navigationBars())) {
                 // The system bars are visible. Make any desired adjustments to
                 // your UI, such as showing the action bar or other navigational
                 // controls. Another common action is to set a timer to dismiss
                 // the system bars and restore the fullscreen mode that was
                 // previously enabled.
-                System.out.println("Setting system chrome changed to false");
                 platformChannel.systemChromeChanged(false);
               } else {
                 // The system bars are NOT visible. Make any desired adjustments
                 // to your UI, such as hiding the action bar or other
                 // navigational controls.
-                System.out.println("Setting system chrome changed to true");
                 platformChannel.systemChromeChanged(true);
               }
-              return windowInsets;
+              return ViewCompat.onApplyWindowInsets(view, windowInsets);
             }
           };
       ViewCompat.setOnApplyWindowInsetsListener(decorView, insetsListener);
     }
-  }
-
-  @VisibleForTesting
-  androidx.core.view.OnApplyWindowInsetsListener getInsetsListener() {
-    return insetsListener;
   }
 
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
