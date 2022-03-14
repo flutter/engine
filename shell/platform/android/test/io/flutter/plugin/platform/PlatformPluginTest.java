@@ -29,7 +29,6 @@ import android.view.WindowInsetsController;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -374,7 +373,7 @@ public class PlatformPluginTest {
     }
   }
 
-@Config(sdk = 30)
+  @Config(sdk = 30)
   @Test
   public void verifySystemChromeChangeListenerWithSystemBarsInvisible() {
     View fakeDecorView = mock(View.class);
@@ -441,6 +440,7 @@ public class PlatformPluginTest {
       verify(fakePlatformChannel).systemChromeChanged(false);
     }
   }
+
   @Config(sdk = 28)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
