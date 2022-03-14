@@ -26,8 +26,35 @@ part of ui;
 ///
 /// This is only available on the Web, as native Flutter configures the
 /// environment in the native embedder.
+@Deprecated('Use webOnlyWarmupEngine')
 Future<void> webOnlyInitializePlatform() async {
   await engine.initializeEngine();
+}
+
+/// Initializes essential bits of the engine before it fully initializes.
+///
+/// Returns a JsFlutter object that can be used by the app programmer to control
+/// the bootstrap of the Flutter app.
+///
+/// This is the only bit of `dart:ui` that is directly called by Flutter web apps.
+/// It takes care of initializing the JS-Interop layer that will be used to
+/// load and bootstrap a web app and its plugins.
+///
+/// This method should NOT trigger the download of any additional resources.
+/// TODO: Do not return AppBootstrap from engine, it's private!
+Future<engine.AppBootstrap> webOnlyWarmupEngine({
+  Function? registerPlugins,
+  Function? runApp,
+}) async {
+  await engine.initializeEngineServices();
+  return engine.AppBootstrap(
+    initEngine: () async {
+      if (registerPlugins != null) {
+        registerPlugins();
+      }
+      return engine.initializeEngineUi();
+    }, runApp: runApp,
+  );
 }
 
 /// Emulates the `flutter test` environment.
