@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_TYPES_H_
 
 #include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkBlender.h"
 #include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -16,7 +17,11 @@
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPathEffect.h"
 #include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkPoint3.h"
+#include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRSXform.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkVertices.h"

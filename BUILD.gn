@@ -68,6 +68,7 @@ group("flutter") {
 
   # Compile the engine.
   public_deps = [
+    ":unittests",
     "//flutter/shell/platform/embedder:flutter_engine",
     "//flutter/sky",
   ]
@@ -129,7 +130,12 @@ group("flutter") {
       current_cpu == "arm64") {
     public_deps += [ "//flutter/testing/android_background_image" ]
   }
+}
 
+group("unittests") {
+  testonly = true
+
+  public_deps = []
   if (is_android) {
     public_deps +=
         [ "//flutter/shell/platform/android:flutter_shell_native_unittests" ]
@@ -145,6 +151,7 @@ group("flutter") {
       "//flutter/lib/spirv/test/supported_glsl_op_shaders:spirv_compile_supported_glsl_shaders",
       "//flutter/lib/spirv/test/supported_op_shaders:spirv_compile_supported_op_shaders",
       "//flutter/lib/ui:ui_unittests",
+      "//flutter/runtime:dart_plugin_registrant_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",

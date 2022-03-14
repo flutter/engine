@@ -188,10 +188,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final PlatformView platformView = viewFactory.create(context, viewId, createParams);
           platformViews.put(viewId, platformView);
 
-          final PlatformViewWrapper wrapperView = new PlatformViewWrapper(context);
           final TextureRegistry.SurfaceTextureEntry textureEntry =
               textureRegistry.createSurfaceTexture();
-          wrapperView.setTexture(textureEntry.surfaceTexture());
+          final PlatformViewWrapper wrapperView = new PlatformViewWrapper(context, textureEntry);
           wrapperView.setTouchProcessor(androidTouchProcessor);
 
           final int physicalWidth = toPhysicalPixels(request.logicalWidth);
@@ -449,7 +448,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * @param dartExecutor The dart execution context, which is used to set up a system channel.
    */
   public void attach(
-      Context context, TextureRegistry textureRegistry, @NonNull DartExecutor dartExecutor) {
+      @Nullable Context context,
+      @NonNull TextureRegistry textureRegistry,
+      @NonNull DartExecutor dartExecutor) {
     if (this.context != null) {
       throw new AssertionError(
           "A PlatformViewsController can only be attached to a single output target.\n"
@@ -516,7 +517,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @Override
-  public void attachAccessibilityBridge(AccessibilityBridge accessibilityBridge) {
+  public void attachAccessibilityBridge(@NonNull AccessibilityBridge accessibilityBridge) {
     accessibilityEventsDelegate.setAccessibilityBridge(accessibilityBridge);
   }
 
@@ -534,7 +535,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>A platform views controller should be attached to a text input plugin whenever it is
    * possible for the Flutter framework to receive text input.
    */
-  public void attachTextInputPlugin(TextInputPlugin textInputPlugin) {
+  public void attachTextInputPlugin(@NonNull TextInputPlugin textInputPlugin) {
     this.textInputPlugin = textInputPlugin;
   }
 
@@ -568,6 +569,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @Override
+  @Nullable
   public View getPlatformViewById(int viewId) {
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
@@ -692,7 +694,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     flutterView.addView(parentView);
   }
 
-  public void attachToFlutterRenderer(FlutterRenderer flutterRenderer) {
+  public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer) {
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ true);
   }
 
@@ -717,7 +719,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       int height,
       int viewWidth,
       int viewHeight,
-      FlutterMutatorsStack mutatorsStack) {
+      @NonNull FlutterMutatorsStack mutatorsStack) {
     initializeRootImageViewIfNeeded();
     initializePlatformViewIfNeeded(viewId);
 
@@ -856,6 +858,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @VisibleForTesting
   @TargetApi(19)
+  @NonNull
   public FlutterOverlaySurface createOverlaySurface(@NonNull FlutterImageView imageView) {
     final int id = nextOverlayLayerId++;
     overlayLayerViews.put(id, imageView);
@@ -870,6 +873,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This member is not intended for public use, and is only visible for testing.
    */
   @TargetApi(19)
+  @NonNull
   public FlutterOverlaySurface createOverlaySurface() {
     // Overlay surfaces have the same size as the background surface.
     //
