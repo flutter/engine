@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -29,18 +30,11 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.FragmentActivity;
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import io.flutter.embedding.android.FlutterFragment;
-import io.flutter.embedding.android.FlutterFragmentActivity;
-import io.flutter.embedding.engine.FlutterEngine;
-import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
@@ -52,6 +46,7 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -523,73 +518,66 @@ public class PlatformPluginTest {
     View fakeDecorView = mock(View.class);
     Activity fakeActivity = mock(Activity.class);
     Window fakeWindow = mock(Window.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
     when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
-    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
 
     platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
-
 
     WindowInsets.Builder builder = new WindowInsets.Builder();
     builder.setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 0, 0, 0));
     builder.setVisible(WindowInsetsCompat.Type.systemBars(), false);
-    WindowInsets fullScreenInsets = builder.build();
+    WindowInsets systemBarsInvisibleInsets = builder.build();
 
-    platformPlugin
-    .insetsListener
-    .onApplyWindowInsets(
-      fakeDecorView,
-        WindowInsetsCompat.toWindowInsetsCompat(fullScreenInsets));
+    try (MockedStatic<ViewCompat> mocked = mockStatic(ViewCompat.class)) {
+      mocked
+          .when(
+              () ->
+                  ViewCompat.onApplyWindowInsets(
+                      fakeDecorView,
+                      WindowInsetsCompat.toWindowInsetsCompat(systemBarsInvisibleInsets)))
+          .thenReturn(null);
 
+      platformPlugin.insetsListener.onApplyWindowInsets(
+          fakeDecorView, WindowInsetsCompat.toWindowInsetsCompat(systemBarsInvisibleInsets));
 
-    // try (ActivityScenario<FlutterFragmentActivityWithProvidedEngine> scenario =
-    //     ActivityScenario.launch(FlutterFragmentActivityWithProvidedEngine.class)) {
-    //   scenario.onActivity(
-    //       activity -> {
-    //         System.out.println("hi");
-    //         PlatformPlugin platformPlugin = new PlatformPlugin(activity, fakePlatformChannel);
-
-    //         WindowInsets.Builder builder = new WindowInsets.Builder();
-    //         builder.setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 0, 0, 0));
-    //         builder.setVisible(WindowInsetsCompat.Type.systemBars(), false);
-    //         WindowInsets fullScreenInsets = builder.build();
-
-    //         platformPlugin
-    //             .getInsetsListener()
-    //             .onApplyWindowInsets(
-    //                 activity.getWindow().getDecorView(),
-    //                 WindowInsetsCompat.toWindowInsetsCompat(fullScreenInsets));
-    //       });
-    // }
-    verify(fakePlatformChannel).systemChromeChanged(true);
+      verify(fakePlatformChannel).systemChromeChanged(true);
+    }
   }
 
   @Config(sdk = 30)
   @Test
   public void verifySystemChromeChangeListenerWithSystemBarsVisible() {
+    View fakeDecorView = mock(View.class);
+    Activity fakeActivity = mock(Activity.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
-    try (ActivityScenario<FlutterFragmentActivityWithProvidedEngine> scenario =
-        ActivityScenario.launch(FlutterFragmentActivityWithProvidedEngine.class)) {
-      scenario.onActivity(
-          activity -> {
-            System.out.println("hi");
-            PlatformPlugin platformPlugin = new PlatformPlugin(activity, fakePlatformChannel);
+    platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
 
-            WindowInsets.Builder builder = new WindowInsets.Builder();
-            builder.setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 0, 0, 0));
-            builder.setVisible(WindowInsetsCompat.Type.systemBars(), true);
-            WindowInsets fullScreenInsets = builder.build();
+    WindowInsets.Builder builder = new WindowInsets.Builder();
+    builder.setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 0, 0, 0));
+    builder.setVisible(WindowInsetsCompat.Type.systemBars(), true);
+    WindowInsets systemBarsVisibleInsets = builder.build();
 
-            platformPlugin
-                .insetsListener
-                .onApplyWindowInsets(
-                    activity.getWindow().getDecorView(),
-                    WindowInsetsCompat.toWindowInsetsCompat(fullScreenInsets));
-          });
+    try (MockedStatic<ViewCompat> mocked = mockStatic(ViewCompat.class)) {
+      mocked
+          .when(
+              () ->
+                  ViewCompat.onApplyWindowInsets(
+                      fakeDecorView,
+                      WindowInsetsCompat.toWindowInsetsCompat(systemBarsVisibleInsets)))
+          .thenReturn(null);
+
+      platformPlugin.insetsListener.onApplyWindowInsets(
+          fakeDecorView, WindowInsetsCompat.toWindowInsetsCompat(systemBarsVisibleInsets));
+
+      verify(fakePlatformChannel).systemChromeChanged(false);
     }
-    verify(fakePlatformChannel).systemChromeChanged(false);
   }
 
   @Config(sdk = 30)
@@ -745,26 +733,5 @@ public class PlatformPluginTest {
     platformPlugin.mPlatformMessageHandler.popSystemNavigator();
 
     verify(mockActivity, times(1)).finish();
-  }
-
-  static class FlutterFragmentActivityWithProvidedEngine extends FlutterFragmentActivity {
-    int numberOfEnginesCreated = 0;
-
-    @Override
-    protected FlutterFragment createFlutterFragment() {
-      return FlutterFragment.createDefault();
-    }
-
-    @Nullable
-    @Override
-    public FlutterEngine provideFlutterEngine(@NonNull Context context) {
-      FlutterJNI flutterJNI = mock(FlutterJNI.class);
-      FlutterLoader flutterLoader = mock(FlutterLoader.class);
-      when(flutterJNI.isAttached()).thenReturn(true);
-      when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
-
-      numberOfEnginesCreated++;
-      return new FlutterEngine(context, flutterLoader, flutterJNI, new String[] {}, true);
-    }
   }
 }

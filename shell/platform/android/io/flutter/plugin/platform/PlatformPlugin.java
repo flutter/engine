@@ -234,8 +234,7 @@ public class PlatformPlugin {
         });
   }
 
-  @VisibleForTesting
-  public void setSystemChromeChangeListener() {
+  private void setSystemChromeChangeListener() {
     // Set up a listener to notify the framework when the system ui has changed.
     // The Android API for overlays/insets as of API 30 provides backwards compatibility
     // up through API 20, so legacy code with equivalent behavior is still used for API 19.
@@ -243,7 +242,6 @@ public class PlatformPlugin {
       setSystemChromeChangeListenerLegacy();
     } else {
       View decorView = activity.getWindow().getDecorView();
-      Window window = activity.getWindow();
       insetsListener =
           new androidx.core.view.OnApplyWindowInsetsListener() {
             @Override
