@@ -142,8 +142,8 @@ TEST(DisplayListColorSource, FromSkiaLinearGradient) {
   ASSERT_EQ(source->type(), DlColorSourceType::kLinearGradient);
   EXPECT_TRUE(*source->asLinearGradient() == *dl_source->asLinearGradient());
   ASSERT_EQ(*source->asLinearGradient(), *dl_source->asLinearGradient());
-  ASSERT_EQ(source->asLinearGradient()->p0(), TestPoints[0]);
-  ASSERT_EQ(source->asLinearGradient()->p1(), TestPoints[1]);
+  ASSERT_EQ(source->asLinearGradient()->start_point(), TestPoints[0]);
+  ASSERT_EQ(source->asLinearGradient()->end_point(), TestPoints[1]);
   ASSERT_EQ(source->asLinearGradient()->stop_count(), kTestStopCount);
   for (int i = 0; i < kTestStopCount; i++) {
     ASSERT_EQ(source->asLinearGradient()->colors()[i], TestColors[i]);
@@ -440,8 +440,8 @@ TEST(DisplayListColorSource, LinearGradientContents) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
       TestPoints[0], TestPoints[1], kTestStopCount, TestColors, TestStops,
       DlTileMode::kClamp, &TestMatrix1);
-  ASSERT_EQ(source->asLinearGradient()->p0(), TestPoints[0]);
-  ASSERT_EQ(source->asLinearGradient()->p1(), TestPoints[1]);
+  ASSERT_EQ(source->asLinearGradient()->start_point(), TestPoints[0]);
+  ASSERT_EQ(source->asLinearGradient()->end_point(), TestPoints[1]);
   ASSERT_EQ(source->asLinearGradient()->stop_count(), kTestStopCount);
   for (int i = 0; i < kTestStopCount; i++) {
     ASSERT_EQ(source->asLinearGradient()->colors()[i], TestColors[i]);
@@ -456,8 +456,8 @@ TEST(DisplayListColorSource, AlphaLinearGradientContents) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
       TestPoints[0], TestPoints[1], kTestStopCount, TestAlphaColors, TestStops,
       DlTileMode::kClamp, &TestMatrix1);
-  ASSERT_EQ(source->asLinearGradient()->p0(), TestPoints[0]);
-  ASSERT_EQ(source->asLinearGradient()->p1(), TestPoints[1]);
+  ASSERT_EQ(source->asLinearGradient()->start_point(), TestPoints[0]);
+  ASSERT_EQ(source->asLinearGradient()->end_point(), TestPoints[1]);
   ASSERT_EQ(source->asLinearGradient()->stop_count(), kTestStopCount);
   for (int i = 0; i < kTestStopCount; i++) {
     ASSERT_EQ(source->asLinearGradient()->colors()[i], TestAlphaColors[i]);

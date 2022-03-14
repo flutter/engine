@@ -33,6 +33,7 @@ source_set("display_list") {
     "display_list_mask_filter.h",
     "display_list_ops.cc",
     "display_list_ops.h",
+    "display_list_tile_mode.h",
     "display_list_utils.cc",
     "display_list_utils.h",
     "types.h",

@@ -7,6 +7,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_attributes.h"
+#include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkShader.h"
@@ -22,6 +23,16 @@ class DlConicalGradientColorSource;
 class DlSweepGradientColorSource;
 class DlUnknownColorSource;
 
+// The DisplayList ColorSource class. This class implements all of the
+// facilities and adheres to the design goals of the |DlAttribute| base
+// class.
+//
+// The role of the DlColorSource is to provide color information for
+// the pixels of a rendering operation. The object is essentially the
+// origin of all color being rendered, though its output may be
+// modified or transformed by geometric coverage data, the filter
+// attributes, and the final blend with the pixels in the destination.
+
 enum class DlColorSourceType {
   kColor,
   kImage,
@@ -30,23 +41,6 @@ enum class DlColorSourceType {
   kConicalGradient,
   kSweepGradient,
   kUnknown
-};
-
-enum class DlTileMode {
-  // Replicate the edge color if the shader draws outside of its
-  // original bounds.
-  kClamp,
-
-  // Repeat the shader's image horizontally and vertically.
-  kRepeat,
-
-  // Repeat the shader's image horizontally and vertically, alternating
-  // mirror images so that adjacent images always seam.
-  kMirror,
-
-  // Only draw within the original domain, return transparent-black everywhere
-  // else.
-  kDecal,
 };
 
 class DlColorSource
@@ -69,8 +63,8 @@ class DlColorSource
   }
 
   static std::shared_ptr<DlColorSource> MakeLinear(
-      const SkPoint p0,
-      const SkPoint p1,
+      const SkPoint start_point,
+      const SkPoint end_point,
       uint32_t stop_count,
       const uint32_t* colors,
       const float* stops,
@@ -357,16 +351,16 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
   size_t size() const override { return sizeof(*this) + vector_sizes(); }
 
   std::shared_ptr<DlColorSource> shared() const override {
-    return MakeLinear(p0_, p1_, stop_count(), colors(), stops(), tile_mode(),
-                      matrix_ptr());
+    return MakeLinear(start_point_, end_point_, stop_count(), colors(), stops(),
+                      tile_mode(), matrix_ptr());
   }
 
-  const SkPoint& p0() const { return p0_; }
-  const SkPoint& p1() const { return p1_; }
+  const SkPoint& start_point() const { return start_point_; }
+  const SkPoint& end_point() const { return end_point_; }
 
   sk_sp<SkShader> skia_object() const override {
     auto mode = static_cast<SkTileMode>(tile_mode());
-    SkPoint pts[] = {p0_, p1_};
+    SkPoint pts[] = {start_point_, end_point_};
     return SkGradientShader::MakeLinear(pts, colors(), stops(), stop_count(),
                                         mode, 0, matrix_ptr());
   }
@@ -377,20 +371,21 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
   bool equals_(DlColorSource const& other) const override {
     FML_DCHECK(other.type() == DlColorSourceType::kLinearGradient);
     auto that = static_cast<DlLinearGradientColorSource const*>(&other);
-    return (p0_ == that->p0_ && p1_ == that->p1_ && base_equals_(that));
+    return (start_point_ == that->start_point_ &&
+            end_point_ == that->end_point_ && base_equals_(that));
   }
 
  private:
-  DlLinearGradientColorSource(const SkPoint p0,
-                              const SkPoint p1,
+  DlLinearGradientColorSource(const SkPoint start_point,
+                              const SkPoint end_point,
                               uint32_t stop_count,
                               const uint32_t* colors,
                               const float* stops,
                               DlTileMode tile_mode,
                               const SkMatrix* matrix = nullptr)
       : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
-        p0_(p0),
-        p1_(p1) {
+        start_point_(start_point),
+        end_point_(end_point) {
     store_color_stops(this + 1, colors, stops);
   }
 
@@ -398,13 +393,13 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
       : DlGradientColorSourceBase(source->stop_count(),
                                   source->tile_mode(),
                                   source->matrix_ptr()),
-        p0_(source->p0()),
-        p1_(source->p1()) {
+        start_point_(source->start_point()),
+        end_point_(source->end_point()) {
     store_color_stops(this + 1, source->colors(), source->stops());
   }
 
-  SkPoint p0_;
-  SkPoint p1_;
+  SkPoint start_point_;
+  SkPoint end_point_;
 
   friend class DlColorSource;
   friend class DisplayListBuilder;

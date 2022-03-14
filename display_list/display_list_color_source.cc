@@ -87,8 +87,8 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
 }
 
 std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
-    const SkPoint p0,
-    const SkPoint p1,
+    const SkPoint start_point,
+    const SkPoint end_point,
     uint32_t stop_count,
     const uint32_t* colors,
     const float* stops,
@@ -101,7 +101,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
   ret.reset(new (storage) DlLinearGradientColorSource(
-      p0, p1, stop_count, colors, stops, tile_mode, matrix));
+      start_point, end_point, stop_count, colors, stops, tile_mode, matrix));
   return std::move(ret);
 }
 
