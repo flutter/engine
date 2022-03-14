@@ -495,8 +495,8 @@ public class FlutterFragmentActivity extends FragmentActivity
       Window window = getWindow();
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.setStatusBarColor(0x40000000);
-      WindowCompat.setDecorFitsSystemWindows(window, false);
       if (Build.VERSION.SDK_INT < 30) {
+        WindowCompat.setDecorFitsSystemWindows(window, false);
         // This ensures that the navigation bar is not hidden for APIs < 30,
         // as dictated by the implementation of WindowCompat.
         View view = window.getDecorView();
