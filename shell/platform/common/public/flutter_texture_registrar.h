@@ -32,8 +32,12 @@ typedef enum {
 typedef enum {
   // Uninitialized.
   kFlutterDesktopGpuSurfaceTypeNone,
-  // A D3D/DXGI-based surface.
-  kFlutterDesktopGpuSurfaceTypeDxgi
+  // A DXGI shared texture handle (Windows only).
+  // See
+  // https://docs.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiresource-getsharedhandle
+  kFlutterDesktopGpuSurfaceTypeDxgiSharedHandle,
+  // A |ID3D11Texture2D| (Windows only).
+  kFlutterDesktopGpuSurfaceTypeD3d11Texture2D
 } FlutterDesktopGpuSurfaceType;
 
 // Supported pixel formats.
@@ -64,9 +68,21 @@ typedef struct {
 
 // A GPU surface descriptor.
 typedef struct {
-  // The surface handle.
-  // For DirectX textures (kFlutterDesktopGpuSurfaceTypeDxgi), this is the
-  // shared handle of an IDXGIResource.
+  // The size of this struct. Must be
+  // sizeof(FlutterDesktopGpuSurfaceDescriptor).
+  size_t struct_size;
+  // The surface handle. The expected type depends on the
+  // |FlutterDesktopGpuSurfaceType|.
+  //
+  // Provide a |ID3D11Texture2D*| when using
+  // |kFlutterDesktopGpuSurfaceTypeD3d11Texture2D| or a |HANDLE| when using
+  // |kFlutterDesktopGpuSurfaceTypeDxgiSharedHandle|.
+  //
+  // The referenced resource needs to stay valid until it has been opened by
+  // Flutter. Consider incrementing the resource's reference count in the
+  // |FlutterDesktopGpuSurfaceTextureCallback| and registering a
+  // |release_callback| for decrementing the reference count once it has been
+  // opened.
   void* handle;
   // The physical width.
   size_t width;
@@ -80,22 +96,31 @@ typedef struct {
   size_t visible_height;
   // The pixel format which might by optional depending on the surface type.
   FlutterDesktopPixelFormat format;
+  // An optional callback that gets invoked when the |handle| has been opened.
+  void (*release_callback)(void* release_context);
+  // Opaque data passed to |release_callback|.
+  void* release_context;
 } FlutterDesktopGpuSurfaceDescriptor;
 
 // The pixel buffer copy callback definition provided to
 // the Flutter engine to copy the texture.
 // It is invoked with the intended surface size specified by |width| and
-// |height| and the |user_data| held by FlutterDesktopPixelBufferTextureConfig.
+// |height| and the |user_data| held by
+// |FlutterDesktopPixelBufferTextureConfig|.
 //
 // As this is usually called from the render thread, the callee must take
 // care of proper synchronization. It also needs to be ensured that the
-// returned FlutterDesktopPixelBuffer isn't released prior to unregistering
+// returned |FlutterDesktopPixelBuffer| isn't released prior to unregistering
 // the corresponding texture.
 typedef const FlutterDesktopPixelBuffer* (
     *FlutterDesktopPixelBufferTextureCallback)(size_t width,
                                                size_t height,
                                                void* user_data);
 
+// The GPU surface callback definition provided to the Flutter engine to obtain
+// the surface. It is invoked with the intended surface size specified by
+// |width| and |height| and the |user_data| held by
+// |FlutterDesktopGpuSurfaceTextureConfig|.
 typedef const FlutterDesktopGpuSurfaceDescriptor* (
     *FlutterDesktopGpuSurfaceTextureCallback)(size_t width,
                                               size_t height,
@@ -111,7 +136,11 @@ typedef struct {
 
 // An object used to configure GPU-surface textures.
 typedef struct {
-  // The concrete surface type (e.g. kFlutterDesktopGpuSurfaceTypeDxgi)
+  // The size of this struct. Must be
+  // sizeof(FlutterDesktopGpuSurfaceTextureConfig).
+  size_t struct_size;
+  // The concrete surface type (e.g.
+  // |kFlutterDesktopGpuSurfaceTypeDxgiSharedHandle|)
   FlutterDesktopGpuSurfaceType type;
   // The callback used by the engine to obtain the surface descriptor.
   FlutterDesktopGpuSurfaceTextureCallback callback;

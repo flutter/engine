@@ -170,6 +170,8 @@ int64_t TextureRegistrarImpl::RegisterTexture(TextureVariant* texture) {
   } else if (auto gpu_surface_texture =
                  std::get_if<GpuSurfaceTexture>(texture)) {
     info.type = kFlutterDesktopGpuSurfaceTexture;
+    info.gpu_surface_config.struct_size =
+        sizeof(FlutterDesktopGpuSurfaceTextureConfig);
     info.gpu_surface_config.type = gpu_surface_texture->surface_type();
     info.gpu_surface_config.user_data = gpu_surface_texture;
     info.gpu_surface_config.callback =

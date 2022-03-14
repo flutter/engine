@@ -7,6 +7,7 @@
 #include <iostream>
 #include <mutex>
 
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/windows/external_texture_d3d.h"
 #include "flutter/shell/platform/windows/external_texture_pixelbuffer.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
@@ -37,18 +38,24 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
     return EmplaceTexture(std::make_unique<flutter::ExternalTexturePixelBuffer>(
         texture_info->pixel_buffer_config.callback,
         texture_info->pixel_buffer_config.user_data, gl_procs_));
-  } else if (texture_info->type == kFlutterDesktopGpuSurfaceTexture &&
-             texture_info->gpu_surface_config.type ==
-                 kFlutterDesktopGpuSurfaceTypeDxgi) {
-    if (!texture_info->gpu_surface_config.callback) {
-      std::cerr << "Invalid DXGI surface callback." << std::endl;
-      return kInvalidTexture;
-    }
+  } else if (texture_info->type == kFlutterDesktopGpuSurfaceTexture) {
+    const FlutterDesktopGpuSurfaceTextureConfig* gpu_surface_config =
+        &texture_info->gpu_surface_config;
+    auto surface_type = SAFE_ACCESS(gpu_surface_config, type,
+                                    kFlutterDesktopGpuSurfaceTypeNone);
+    if (surface_type == kFlutterDesktopGpuSurfaceTypeDxgiSharedHandle ||
+        surface_type == kFlutterDesktopGpuSurfaceTypeD3d11Texture2D) {
+      auto callback = SAFE_ACCESS(gpu_surface_config, callback, nullptr);
+      if (!callback) {
+        std::cerr << "Invalid GPU surface descriptor callback." << std::endl;
+        return kInvalidTexture;
+      }
 
-    return EmplaceTexture(std::make_unique<flutter::ExternalTextureD3d>(
-        texture_info->gpu_surface_config.callback,
-        texture_info->gpu_surface_config.user_data, engine_->surface_manager(),
-        gl_procs_));
+      auto user_data = SAFE_ACCESS(gpu_surface_config, user_data, nullptr);
+      return EmplaceTexture(std::make_unique<flutter::ExternalTextureD3d>(
+          surface_type, callback, user_data, engine_->surface_manager(),
+          gl_procs_));
+    }
   }
 
   std::cerr << "Attempted to register texture of unsupport type." << std::endl;
