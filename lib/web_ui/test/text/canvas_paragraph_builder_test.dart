@@ -11,6 +11,12 @@ bool get isIosSafari =>
     browserEngine == BrowserEngine.webkit &&
     operatingSystem == OperatingSystem.iOs;
 
+/// Some text measurements are sensitive to browser implementations. Position
+/// info in the following tests only pass in Chrome, they are slightly different
+/// on each browser. So we need to ignore position info on non-Chrome browsers
+/// when comparing expectations with actual output.
+bool get isChrome => browserEngine == BrowserEngine.blink;
+
 String fontFamilyToAttribute(String fontFamily) {
   fontFamily = canonicalizeFontFamily(fontFamily)!;
   if (browserEngine == BrowserEngine.firefox) {
@@ -42,19 +48,20 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(1));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 13)}">'
       '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
       'Hello'
       '</span>'
       '</p>',
+      ignorePositions: !isChrome,
     );
 
     // Should break "Hello" into "Hel" and "lo".
     paragraph.layout(const ParagraphConstraints(width: 39.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 13)}">'
       '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
       'Hel'
@@ -63,6 +70,7 @@ Future<void> testMain() async {
       'lo'
       '</span>'
       '</p>',
+      ignorePositions: !isChrome,
     );
 
     final ParagraphSpan span = paragraph.spans.single;
@@ -195,8 +203,8 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(2));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 13)}">'
       '<span style="${spanStyle(top: 0, left: 0, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
@@ -208,12 +216,13 @@ Future<void> testMain() async {
       'world'
       '</span>'
       '</p>',
+      ignorePositions: !isChrome,
     );
 
     // Should break "Hello world" into 2 lines: "Hello" and " world".
     paragraph.layout(const ParagraphConstraints(width: 75.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 13)}">'
       '<span style="${spanStyle(top: 0, left: 0, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
@@ -225,6 +234,7 @@ Future<void> testMain() async {
       'world'
       '</span>'
       '</p>',
+      ignorePositions: !isChrome,
     );
 
     final FlatTextSpan hello = paragraph.spans.first as FlatTextSpan;
@@ -266,8 +276,8 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(3));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 13)}">'
       '<span style="${spanStyle(top: 0, left: 0, lineHeight: 2, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
@@ -282,6 +292,7 @@ Future<void> testMain() async {
       '!'
       '</span>'
       '</p>',
+      ignorePositions: !isChrome,
     );
 
     final FlatTextSpan hello = paragraph.spans[0] as FlatTextSpan;
@@ -333,8 +344,8 @@ Future<void> testMain() async {
     // There's a new line between "First" and "Second", but "Second" and
     // "ThirdLongLine" remain together since constraints are infinite.
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 13)}">'
       '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
       'First'
@@ -349,12 +360,13 @@ Future<void> testMain() async {
       'ThirdLongLine'
       '</span>'
       '</p>',
+      ignorePositions: !isChrome,
     );
 
     // Should break the paragraph into "First", "Second" and "ThirdLongLine".
     paragraph.layout(const ParagraphConstraints(width: 180.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 13)}">'
       '<span style="${spanStyle(top: 0, left: 0, fontSize: 13)}">'
       'First'
@@ -369,6 +381,7 @@ Future<void> testMain() async {
       'ThirdLongLine'
       '</span>'
       '</p>',
+      ignorePositions: !isChrome,
     );
   });
 
@@ -393,10 +406,8 @@ Future<void> testMain() async {
     // The paragraph should take the font size and family from the span with the
     // greatest font size.
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      // Since we are using unknown font families, we can't predict the text
-      // measurements.
-      removePositionInfo(paragraph.toDomElement().outerHtml!),
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(fontSize: 18, fontFamily: 'second')}">'
       '<span style="${spanStyle(top: null, left: null, fontSize: 12, fontFamily: 'first')}">'
       'First'
@@ -414,6 +425,9 @@ Future<void> testMain() async {
       'Third'
       '</span>'
       '</p>',
+      // Since we are using unknown font families, we can't predict the text
+      // measurements.
+      ignorePositions: true,
     );
     debugEmulateFlutterTesterEnvironment = true;
   });
@@ -460,16 +474,6 @@ String spanStyle({
   ].join(' ');
 }
 
-/// Removes "top" and "left" CSS styles from the given html string.
-///
-/// This is needed when the positioning information in the html output is
-/// unknown and could be different depending on browser and environment.
-String removePositionInfo(String outerHtml) {
-  return outerHtml
-      .replaceAll(RegExp(r'\s*top:\s*[\d\.]+px\s*;\s*'), '')
-      .replaceAll(RegExp(r'\s*left:\s*[\d\.]+px\s*;\s*'), '');
-}
-
 TextStyle styleWithDefaults({
   Color color = const Color(0xFFFF0000),
   String fontFamily = FlutterViewEmbedder.defaultFontFamily,
@@ -488,4 +492,24 @@ TextStyle styleWithDefaults({
     height: height,
     letterSpacing: letterSpacing,
   );
+}
+
+void expectOuterHtml(CanvasParagraph paragraph, String expected, {required bool ignorePositions}) {
+  String outerHtml = paragraph.toDomElement().outerHtml!;
+  if (ignorePositions) {
+    outerHtml = removePositionInfo(outerHtml);
+    expected = removePositionInfo(expected);
+  }
+
+  expect(outerHtml, expected);
+}
+
+/// Removes "top" and "left" CSS styles from the given html string.
+///
+/// This is needed when the positioning information in the html output is
+/// unknown and could be different depending on browser and environment.
+String removePositionInfo(String outerHtml) {
+  return outerHtml
+      .replaceAll(RegExp(r'\s*top:\s*[\d\.]+px\s*;\s*'), '')
+      .replaceAll(RegExp(r'\s*left:\s*[\d\.]+px\s*;\s*'), '');
 }
