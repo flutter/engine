@@ -1,4 +1,4 @@
-Signature: a07a673451b5ad6413349fcdfeaff66f
+Signature: b30343ab114cc1be004c17014fd11d08
 
 UNUSED LICENSES:
 
@@ -4309,7 +4309,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: angle
-ORIGIN: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c + ../../../fuchsia/sdk/mac/LICENSE
+ORIGIN: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c
 FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h
