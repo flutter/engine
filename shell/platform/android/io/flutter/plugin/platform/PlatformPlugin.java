@@ -445,10 +445,6 @@ public class PlatformPlugin {
         }
       }
     }
-
-    if (currentTheme != null) {
-      setSystemChromeSystemUIOverlayStyle(currentTheme);
-    }
   }
 
   private void restoreSystemChromeSystemUIOverlays() {
