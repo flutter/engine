@@ -1477,6 +1477,11 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    programmatically, so we end up refocusing the input field. This is
     //    okay because the virtual keyboard will hide, and as soon as the user
     //    taps the text field again, the virtual keyboard will come up.
+    // 4. Safari sometimes sends a blur event immediately after activating the
+    //    input field. In this case, we want to keep the focus on the input field.
+    //    In order to detect this, we measure how much time has passed since the
+    //    input field was activated. If the time is too short, we re-focus the
+    //    input element.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
       final bool isFastCallback =
           DateTime.now().difference(blurSubscriptionStart) < _blurFastCallbackInterval;
