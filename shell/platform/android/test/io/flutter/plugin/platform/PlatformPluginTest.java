@@ -373,6 +373,42 @@ public class PlatformPluginTest {
     }
   }
 
+  @Config(sdk = 19)
+  @Test
+  public void verifySystemChromeChangeListenerLegacyWithSystemBarsInvisible() {
+    View fakeDecorView = mock(View.class);
+    Activity fakeActivity = mock(Activity.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
+
+    platformPlugin.insetsListenerLegacy.onSystemUiVisibilityChange(View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+    verify(fakePlatformChannel).systemChromeChanged(true);
+  }
+
+  @Config(sdk = 19)
+  @Test
+  public void verifySystemChromeChangeListenerLegacyWithSystemBarsVisible() {
+    View fakeDecorView = mock(View.class);
+    Activity fakeActivity = mock(Activity.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
+
+    platformPlugin.insetsListenerLegacy.onSystemUiVisibilityChange(~View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+    verify(fakePlatformChannel).systemChromeChanged(false);
+  }
+
   @Config(sdk = 30)
   @Test
   public void verifySystemChromeChangeListenerWithSystemBarsInvisible() {

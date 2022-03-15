@@ -40,6 +40,7 @@ public class PlatformPlugin {
   private int mEnabledOverlays;
   private static final String TAG = "PlatformPlugin";
 
+  @VisibleForTesting View.OnSystemUiVisibilityChangeListener insetsListenerLegacy;
   @VisibleForTesting androidx.core.view.OnApplyWindowInsetsListener insetsListener;
 
   /**
@@ -221,7 +222,7 @@ public class PlatformPlugin {
 
   private void setSystemChromeChangeListenerLegacy() {
     View decorView = activity.getWindow().getDecorView();
-    decorView.setOnSystemUiVisibilityChangeListener(
+    insetsListenerLegacy =
         new View.OnSystemUiVisibilityChangeListener() {
           @Override
           public void onSystemUiVisibilityChange(int visibility) {
@@ -231,7 +232,9 @@ public class PlatformPlugin {
               platformChannel.systemChromeChanged(true);
             }
           }
-        });
+        };
+
+    decorView.setOnSystemUiVisibilityChangeListener(insetsListenerLegacy);
   }
 
   private void setSystemChromeChangeListener() {
