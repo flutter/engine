@@ -41,12 +41,12 @@ Future<void> webOnlyInitializePlatform() async {
 /// load and bootstrap a web app and its plugins.
 ///
 /// This method should NOT trigger the download of any additional resources.
-Future<Object> webOnlyWarmupEngine({
+Future<void> webOnlyWarmupEngine({
   Function? registerPlugins,
   Function? runApp,
 }) async {
   await engine.initializeEngineServices();
-  return engine.AppBootstrap(
+  final engine.AppBootstrap bootstrap = engine.AppBootstrap(
     initEngine: () async {
       if (registerPlugins != null) {
         registerPlugins();
@@ -54,6 +54,12 @@ Future<Object> webOnlyWarmupEngine({
       return engine.initializeEngineUi();
     }, runApp: runApp,
   );
+
+  if (engine.didLoadMainDartJs != null) {
+    engine.didLoadMainDartJs!(bootstrap.prepareCustomEngineInitializer());
+  } else {
+    await bootstrap.now();
+  }
 }
 
 /// Emulates the `flutter test` environment.

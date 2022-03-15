@@ -33,6 +33,12 @@ class AppBootstrap {
     return null;
   }
 
+  /// Immediately bootstraps the app
+  Future<void> now() async {
+    await _safeCall(initEngine);
+    await _safeCall(runApp);
+  }
+
   /// Creates an engineInitializer that runs our encapsulated initEngine function.
   FlutterEngineInitializer prepareCustomEngineInitializer() {
     // Return an object that has a initEngine method...
@@ -59,8 +65,7 @@ class AppBootstrap {
           PromiseResolver<void> resolve,
           PromiseRejecter _,
         ) async {
-          await _safeCall(initEngine);
-          await _safeCall(runApp);
+          await now();
           resolve(null);
         }));
       }),
