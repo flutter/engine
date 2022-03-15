@@ -32,20 +32,40 @@ Future<void> webOnlyInitializePlatform() async {
 }
 
 /// Initializes essential bits of the engine before it fully initializes.
+/// Initializes essential bits of the engine before it fully initializes.
+/// When [didLoadMainDartJs] is set, it delegates engine initialization and app
+/// startup to the programmer.
+/// Else, it immediately triggers the full engine + app bootstrap.
 ///
-/// Returns a JsFlutter object that can be used by the app programmer to control
-/// the bootstrap of the Flutter app.
+/// This method is called by the flutter_tools package, from the entrypoint that
+/// it generates around the main method provided by the programmer. See:
+/// * https://github.com/flutter/flutter/blob/2bd3e0d914854aa8c12e933f25c5fd8532ae5571/packages/flutter_tools/lib/src/build_system/targets/web.dart#L135-L163
+/// * https://github.com/flutter/flutter/blob/61fb2de52c7bdac19b7f2f74eaf3f11237e1e91d/packages/flutter_tools/lib/src/isolated/resident_web_runner.dart#L460-L485
 ///
-/// This is the only bit of `dart:ui` that is directly called by Flutter web apps.
-/// It takes care of initializing the JS-Interop layer that will be used to
-/// load and bootstrap a web app and its plugins.
+/// This function first calls [engine.warmup] so the engine can prepare the
+/// js-interop layer that is used by web apps (instead of the old `ui.webOnlyFoo`
+/// methods/getters).
 ///
-/// This method should NOT trigger the download of any additional resources.
+/// It then creates a JsObject that is passed to the [didLoadMainDartJs] callback,
+/// to delegate bootstrapping the app to the programmer.
+///
+/// If said callback is not defined, this assumes that the Flutter Web app is
+/// initializing "in legacy mode", that is: as soon as possible. This will run
+/// the initEngine and runApp methods (via [engine.AppBootstrap.now]).
+///
+/// This is the only bit of `dart:ui` that should be directly called by Flutter
+/// web apps. Everything else should go through the js-interop layer created in
+/// `engine.warmup`.
+///
+/// This method should NOT trigger the download of any additional resources (except
+/// in "legacy mode").
 Future<void> webOnlyWarmupEngine({
   Function? registerPlugins,
   Function? runApp,
 }) async {
+  // Prepare the js-interop layer for the app.
   await engine.initializeEngineServices();
+  // Create the object that knows how to bootstrap an app from JS and Dart.
   final engine.AppBootstrap bootstrap = engine.AppBootstrap(
     initEngine: () async {
       if (registerPlugins != null) {
@@ -54,11 +74,13 @@ Future<void> webOnlyWarmupEngine({
       return engine.initializeEngineUi();
     }, runApp: runApp,
   );
-
-  if (engine.didLoadMainDartJs != null) {
-    engine.didLoadMainDartJs!(bootstrap.prepareCustomEngineInitializer());
-  } else {
+  // Is this running in "legacy" mode?
+  if (engine.didLoadMainDartJs == null) {
+    // Yes: The user does not want control of the app, bootstrap it now.
     await bootstrap.now();
+  } else {
+    // No: Yield control of the bootstrap procedure to the user.
+    engine.didLoadMainDartJs!(bootstrap.prepareCustomEngineInitializer());
   }
 }
 
