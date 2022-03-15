@@ -41,8 +41,7 @@ Future<void> webOnlyInitializePlatform() async {
 /// load and bootstrap a web app and its plugins.
 ///
 /// This method should NOT trigger the download of any additional resources.
-/// TODO: Do not return AppBootstrap from engine, it's private!
-Future<engine.AppBootstrap> webOnlyWarmupEngine({
+Future<Object> webOnlyWarmupEngine({
   Function? registerPlugins,
   Function? runApp,
 }) async {

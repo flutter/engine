@@ -17,25 +17,7 @@ import 'js_promise.dart';
 abstract class FlutterEngineInitializer{
   external factory FlutterEngineInitializer({
     required InitializeEngineFn initializeEngine,
-  });
-}
-
-/// A class that exposes a function that continues initializing the engine,
-/// and returns the promise of a FlutterAppInitializer.
-@JS()
-@anonymous
-abstract class CustomFlutterEngineInitializer extends FlutterEngineInitializer {
-  /// Creates an instance of [CustomFlutterEngineInitializer].
-  external factory CustomFlutterEngineInitializer({
-    required InitializeEngineFn initializeEngine,
-  });
-}
-
-@JS()
-@anonymous
-abstract class AutomaticFlutterEngineInitializer extends FlutterEngineInitializer {
-  external factory AutomaticFlutterEngineInitializer({
-    required InitializeEngineFn initializeEngine,
+    required Function runApp,
   });
 }
 
