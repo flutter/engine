@@ -1,4 +1,4 @@
-Signature: ddd1f8980f3627be6b6be5839074c63c
+Signature: 305d21a6ca9e675ab5c10e9740bae4a3
 
 UNUSED LICENSES:
 
@@ -1298,6 +1298,7 @@ FILE: ../../../third_party/skia/src/xps/BUILD.bazel
 FILE: ../../../third_party/skia/third_party/BUILD.bazel
 FILE: ../../../third_party/skia/third_party/file_map_for_bazel.json
 FILE: ../../../third_party/skia/toolchain/BUILD.bazel
+FILE: ../../../third_party/skia/toolchain/IWYU_mapping.imp
 FILE: ../../../third_party/skia/toolchain/build_toolchain.bzl
 FILE: ../../../third_party/skia/toolchain/clang_toolchain_config.bzl
 ----------------------------------------------------------------------------------------------------
@@ -6168,7 +6169,6 @@ FILE: ../../../third_party/skia/include/sksl/DSLStatement.h
 FILE: ../../../third_party/skia/include/sksl/DSLWrapper.h
 FILE: ../../../third_party/skia/include/sksl/SkSLDebugTrace.h
 FILE: ../../../third_party/skia/include/sksl/SkSLErrorReporter.h
-FILE: ../../../third_party/skia/include/sksl/SkSLPosition.h
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrModulateAtlasCoverageEffect.cpp
