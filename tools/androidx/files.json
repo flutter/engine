@@ -59,9 +59,9 @@
     ]
   },
   {
-    "url": "https://dl.google.com/android/maven2/androidx/core/core/1.6.0/core-1.6.0.aar",
+    "url": "https://dl.google.com/android/maven2/androidx/core/core/1.8.0-alpha04/core-1.8.0-alpha04.aar",
     "out_file_name": "androidx_core.aar",
-    "maven_dependency": "androidx.core:core:1.6.0",
+    "maven_dependency": "androidx.core:core:1.8.0-alpha04",
     "provides": [
       "androidx.core.view.WindowInsetsControllerCompat"
     ]
