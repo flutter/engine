@@ -110,8 +110,7 @@ Future<void> copySkiaTestImages() async {
     'images',
   ));
 
-  for (final io.File imageFile
-      in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
+  for (final io.File imageFile in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
     final io.File destination = io.File(pathlib.join(
       environment.webUiBuildDir.path,
       'test_images',
@@ -128,34 +127,16 @@ Future<void> copyCanvasKitFiles() async {
       io.File(pathlib.join(environment.canvasKitOutDir.path, 'canvaskit.wasm'));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
 
-  final io.Directory canvasKitDir = io.Directory(pathlib.join(
-    environment.engineSrcDir.path,
-    'third_party',
-    'web_dependencies',
-    'canvaskit',
-  ));
-
-  Iterable<io.File> canvasKitFiles;
-  if (builtLocalCanvasKit) {
-    canvasKitFiles = <io.File>[
-      localCanvasKitWasm,
-      io.File(pathlib.join(environment.canvasKitOutDir.path, 'canvaskit.js')),
-    ];
-  } else {
-    canvasKitFiles = canvasKitDir
-        .listSync(recursive: true, followLinks: true)
-        .whereType<io.File>();
-  }
-
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
     'canvaskit',
   ));
 
-  // If we have a local canvaskit build, then copy canvaskit.js and
-  // canvaskit.wasm to the output dir and the "profiling" sub-directory.
   if (builtLocalCanvasKit) {
-    print('Copying CanvasKit from local build');
+    final List<io.File> canvasKitFiles = <io.File>[
+      localCanvasKitWasm,
+      io.File(pathlib.join(environment.canvasKitOutDir.path, 'canvaskit.js')),
+    ];
     for (final io.File file in canvasKitFiles) {
       final io.File normalTargetFile = io.File(pathlib.join(
         targetDir.path,
@@ -172,6 +153,17 @@ Future<void> copyCanvasKitFiles() async {
       await file.copy(profileTargetFile.path);
     }
   } else {
+    final io.Directory canvasKitDir = io.Directory(pathlib.join(
+      environment.engineSrcDir.path,
+      'third_party',
+      'web_dependencies',
+      'canvaskit',
+    ));
+
+    final Iterable<io.File> canvasKitFiles = canvasKitDir
+        .listSync(recursive: true, followLinks: true)
+        .whereType<io.File>();
+
     for (final io.File file in canvasKitFiles) {
       final String relativePath =
           pathlib.relative(file.path, from: canvasKitDir.path);
@@ -220,8 +212,7 @@ Future<void> compileTests(List<FilePath> testFiles) async {
 }
 
 // Maximum number of concurrent dart2js processes to use.
-const int _dart2jsConcurrency =
-    int.fromEnvironment('FELT_DART2JS_CONCURRENCY', defaultValue: 8);
+const int _dart2jsConcurrency = int.fromEnvironment('FELT_DART2JS_CONCURRENCY', defaultValue: 8);
 
 final Pool _dart2jsPool = Pool(_dart2jsConcurrency);
 
@@ -266,7 +257,8 @@ Future<bool> compileUnitTest(FilePath input,
   );
 
   final io.Directory directoryToTarget = io.Directory(pathlib.join(
-      environment.webUiBuildDir.path, pathlib.dirname(input.relativeToWebUi)));
+      environment.webUiBuildDir.path,
+      pathlib.dirname(input.relativeToWebUi)));
 
   if (!directoryToTarget.existsSync()) {
     directoryToTarget.createSync(recursive: true);
