@@ -16,7 +16,10 @@ static struct {
     {ATK_STATE_CHECKABLE, kFlutterSemanticsFlagHasCheckedState, FALSE},
     {ATK_STATE_FOCUSABLE, kFlutterSemanticsFlagIsFocusable, FALSE},
     {ATK_STATE_FOCUSED, kFlutterSemanticsFlagIsFocused, FALSE},
-    {ATK_STATE_CHECKED, kFlutterSemanticsFlagIsChecked, FALSE},
+    {ATK_STATE_CHECKED,
+     static_cast<FlutterSemanticsFlag>(kFlutterSemanticsFlagIsChecked |
+                                       kFlutterSemanticsFlagIsToggled),
+     FALSE},
     {ATK_STATE_SELECTED, kFlutterSemanticsFlagIsSelected, FALSE},
     {ATK_STATE_ENABLED, kFlutterSemanticsFlagIsEnabled, FALSE},
     {ATK_STATE_READ_ONLY, kFlutterSemanticsFlagIsReadOnly, FALSE},
@@ -118,6 +121,17 @@ static ActionData* get_action(FlAccessibleNode* self, gint index) {
   return static_cast<ActionData*>(g_ptr_array_index(self->actions, index));
 }
 
+// Checks if [object] is in [children].
+static gboolean has_child(GPtrArray* children, AtkObject* object) {
+  for (guint i = 0; i < children->len; i++) {
+    if (g_ptr_array_index(children, i) == object) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
 static void fl_accessible_node_dispose(GObject* object) {
   FlAccessibleNode* self = FL_ACCESSIBLE_NODE(object);
 
@@ -173,6 +187,13 @@ static AtkRole fl_accessible_node_get_role(AtkObject* accessible) {
   if ((self->flags & kFlutterSemanticsFlagIsButton) != 0) {
     return ATK_ROLE_PUSH_BUTTON;
   }
+  if ((self->flags & (kFlutterSemanticsFlagHasCheckedState |
+                      kFlutterSemanticsFlagHasToggledState)) != 0) {
+    return ATK_ROLE_CHECK_BOX;
+  }
+  if ((self->flags & kFlutterSemanticsFlagIsSlider) != 0) {
+    return ATK_ROLE_SLIDER;
+  }
   if ((self->flags & kFlutterSemanticsFlagIsTextField) != 0) {
     return ATK_ROLE_TEXT;
   }
@@ -186,7 +207,7 @@ static AtkRole fl_accessible_node_get_role(AtkObject* accessible) {
     return ATK_ROLE_IMAGE;
   }
 
-  return ATK_ROLE_FRAME;
+  return ATK_ROLE_PANEL;
 }
 
 // Implements AtkObject::ref_state_set.
@@ -330,11 +351,25 @@ void fl_accessible_node_set_children(FlAccessibleNode* self,
                                      GPtrArray* children) {
   g_return_if_fail(FL_IS_ACCESSIBLE_NODE(self));
 
-  g_ptr_array_remove_range(self->children, 0, self->children->len);
+  // Remove nodes that are no longer required.
+  for (guint i = 0; i < self->children->len;) {
+    AtkObject* object = ATK_OBJECT(g_ptr_array_index(self->children, i));
+    if (has_child(children, object)) {
+      i++;
+    } else {
+      g_signal_emit_by_name(self, "children-changed::remove", i, object,
+                            nullptr);
+      g_ptr_array_remove_index(self->children, i);
+    }
+  }
+
+  // Add new nodes.
   for (guint i = 0; i < children->len; i++) {
     AtkObject* object = ATK_OBJECT(g_ptr_array_index(children, i));
-    g_ptr_array_add(self->children, g_object_ref(object));
-    g_signal_emit_by_name(self, "children-changed::add", i, object, nullptr);
+    if (!has_child(self->children, object)) {
+      g_ptr_array_add(self->children, g_object_ref(object));
+      g_signal_emit_by_name(self, "children-changed::add", i, object, nullptr);
+    }
   }
 }
 

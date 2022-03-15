@@ -39,6 +39,7 @@ platform_properties:
         ]
       device_type: none
       os: Linux
+      cores: "8"
   mac:
     properties:
       build_host: "false"
@@ -142,7 +143,6 @@ targets:
       upload_packages: "true"
       clobber: "true"
     timeout: 60
-    scheduler: luci
 
   - name: Linux Benchmarks
     enabled_branches:
@@ -210,6 +210,7 @@ targets:
     recipe: engine/engine_lint
     properties:
       add_recipes_cq: "true"
+      cores: "32"
     timeout: 60
     scheduler: luci
 
@@ -228,7 +229,6 @@ targets:
     properties:
       config_name: linux_host_engine
       environment: Staging
-    scheduler: luci
 
   - name: Linux Web Engine
     recipe: engine/web_engine
@@ -278,7 +278,7 @@ targets:
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
       build_android_aot: "true"
-      jazzy_version: 0.9.5
+      jazzy_version: "0.14.1"
     timeout: 60
     scheduler: luci
 
@@ -287,7 +287,7 @@ targets:
     properties:
       add_recipes_cq: "true"
       build_host: "true"
-      jazzy_version: 0.9.5
+      jazzy_version: "0.14.1"
     timeout: 75
     scheduler: luci
 
@@ -295,7 +295,7 @@ targets:
     recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
-      jazzy_version: 0.9.5
+      jazzy_version: "0.14.1"
     timeout: 75
     scheduler: luci
 
@@ -303,7 +303,7 @@ targets:
     recipe: engine/engine_lint
     properties:
       add_recipes_cq: "true"
-      jazzy_version: 0.9.5
+      jazzy_version: "0.14.1"
     timeout: 75
     scheduler: luci
 
@@ -312,7 +312,7 @@ targets:
     properties:
       build_ios: "true"
       ios_debug: "true"
-      jazzy_version: 0.9.5
+      jazzy_version: "0.14.1"
     timeout: 60
     scheduler: luci
 
@@ -345,9 +345,8 @@ targets:
       environment: Staging
       dependencies: >-
         [
-          {"dependency": "jazzy"}
+          {"dependency": "jazzy", "version": "0.14.1"}
         ]
-    scheduler: luci
 
   - name:  Mac mac_ios_engine_profile
     recipe: engine_v2/engine_v2
@@ -356,7 +355,6 @@ targets:
     properties:
       config_name: mac_ios_engine_profile
       environment: Staging
-    scheduler: luci
 
   - name:  Mac mac_ios_engine_release
     recipe: engine_v2/engine_v2
@@ -365,7 +363,6 @@ targets:
     properties:
       config_name: mac_ios_engine_release
       environment: Staging
-    scheduler: luci
 
   - name: Windows Android AOT Engine
     recipe: engine/engine
@@ -391,7 +388,6 @@ targets:
     properties:
       config_name: windows_android_aot_engine
       environment: Staging
-    scheduler: luci
 
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
@@ -400,7 +396,6 @@ targets:
     properties:
       config_name: windows_host_engine
       environment: Staging
-    scheduler: luci
 
   - name: Windows Unopt
     recipe: engine/engine_unopt
@@ -434,7 +429,7 @@ targets:
     properties:
       build_ios: "true"
       ios_profile: "true"
-      jazzy_version: 0.9.5
+      jazzy_version: "0.14.1"
     timeout: 90
     scheduler: luci
 
@@ -444,7 +439,7 @@ targets:
     properties:
       build_ios: "true"
       ios_release: "true"
-      jazzy_version: 0.9.5
+      jazzy_version: "0.14.1"
     timeout: 90
     scheduler: luci
 
