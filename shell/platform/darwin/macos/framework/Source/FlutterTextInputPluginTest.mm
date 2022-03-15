@@ -459,7 +459,7 @@
     return false;
   }
 
-  bool localTextAndSelectionUpdated = [plugin.string isEqualToString:@"text to insert"] && NSEqualRanges(plugin.selectedRange, NSMakeRange(14, 0));
+bool localTextAndSelectionUpdated = [plugin.string isEqualToString:@"text to insert"] && NSEqualRanges(plugin.selectedRange, NSMakeRange(14, 0));
     
   return localTextAndSelectionUpdated;
 }
