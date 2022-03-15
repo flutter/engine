@@ -36,7 +36,7 @@ class TextInputModel {
   //
   // To update both the text and the selection/composing range within the text
   // (for instance, when the framework sends its latest text editing state),
-  // call SetText() instead.
+  // call |SetText| instead.
   bool SetSelection(const TextRange& range);
 
   // Attempts to set the composing range.
@@ -46,7 +46,7 @@ class TextInputModel {
   //
   // To update both the text and the selection/composing range within the text
   // (for instance, when the framework sends its latest text editing state),
-  // call SetText() instead.
+  // call |SetText| instead.
   bool SetComposingRange(const TextRange& range, size_t cursor_offset);
 
   // Begins IME composing mode.
