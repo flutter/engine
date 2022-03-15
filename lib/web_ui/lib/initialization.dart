@@ -75,11 +75,20 @@ Future<void> webOnlyWarmupEngine({
     }, runApp: runApp,
   );
   // Is this running in "legacy" mode?
-  if (engine.didLoadMainDartJs == null) {
+  bool legacyMode = false;
+  try {
+    legacyMode = engine.didLoadMainDartJs == null;
+  } catch (e) {
+    // Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'loader')
+    legacyMode = true;
+  }
+  if (legacyMode) {
     // Yes: The user does not want control of the app, bootstrap it now.
+    print('Flutter Web Bootstrap: Immediate');
     await bootstrap.now();
   } else {
     // No: Yield control of the bootstrap procedure to the user.
+    print('Flutter Web Bootstrap: User');
     engine.didLoadMainDartJs!(bootstrap.prepareCustomEngineInitializer());
   }
 }

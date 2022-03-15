@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@JS('_flutter.loader')
+@JS()
 library js_loader;
 
 import 'package:js/js.dart';
@@ -15,9 +15,8 @@ import 'js_promise.dart';
 typedef DidLoadMainDartJsFn = void Function(FlutterEngineInitializer);
 
 /// A hook to notify JavaScript that Flutter is up and running!
-/// This is setup by flutter.js when the main entrypoint bundle is injected,
-/// in `window._flutter.loader.didLoadMainDartJs`.
-@JS('didLoadMainDartJs')
+/// This is setup by flutter.js when the main entrypoint bundle is injected.
+@JS('_flutter.loader.didLoadMainDartJs')
 external DidLoadMainDartJsFn? get didLoadMainDartJs;
 
 // FlutterEngineInitializer
