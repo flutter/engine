@@ -78,8 +78,7 @@ zip_bundle("flutter_patched_sdk") {
 if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
   copy("dart_sdk_archive") {
     sources = [ prebuilt_dart_sdk_archive ]
-    outputs =
-        [ "$root_out_dir/zip_archives/dart-sdk-$prebuilt_dart_sdk_config.zip" ]
+    outputs = [ "$root_out_dir/zip_archives/dart-sdk-$full_platform_name.zip" ]
   }
 }
 
@@ -124,6 +123,15 @@ if (host_os == "win") {
         source = "$root_out_dir/flutter_windows.dll"
         destination = "flutter_windows.dll"
       },
+    ]
+  }
+}
+
+# Archives Flutter Mac Artifacts
+if (is_mac) {
+  group("macos_flutter_framework") {
+    deps = [
+      "//flutter/shell/platform/darwin/macos:macos_flutter_framework_archive",
     ]
   }
 }
