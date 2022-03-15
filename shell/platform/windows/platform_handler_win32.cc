@@ -14,6 +14,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 static constexpr char kValueKey[] = "value";
+static constexpr int kAccessDeniedErrorCode = 5;
 
 namespace flutter {
 
@@ -235,18 +236,27 @@ void PlatformHandlerWin32::GetPlainText(
 void PlatformHandlerWin32::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   ScopedClipboard clipboard;
+  bool hasStrings;
   if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
     rapidjson::Document error_code;
     error_code.SetInt(::GetLastError());
-    result->Error(kClipboardError, "Unable to open clipboard", error_code);
-    return;
+    // Swallow errors of type ERROR_ACCESS_DENIED. These happen when the app is
+    // not in the foreground and HasStrings is irrelevant.
+    // See https://github.com/flutter/flutter/issues/95817.
+    if (error_code != kAccessDeniedErrorCode) {
+      result->Error(kClipboardError, "Unable to open clipboard", error_code);
+      return;
+    }
+    hasStrings = false;
+  } else {
+    hasStrings = clipboard.HasString();
   }
 
   rapidjson::Document document;
   document.SetObject();
   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
   document.AddMember(rapidjson::Value(kValueKey, allocator),
-                     rapidjson::Value(clipboard.HasString()), allocator);
+                     rapidjson::Value(hasStrings), allocator);
   result->Success(document);
 }
 
