@@ -269,7 +269,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       @NonNull String channel,
       @Nullable ByteBuffer message,
       @Nullable BinaryMessenger.BinaryReply callback) {
-    try (new TraceSection("DartMessenger#send on " + channel)) {
+    try (final TraceSection traceSection = new TraceSection("DartMessenger#send on " + channel)) {
       Log.v(TAG, "Sending message with callback over channel '" + channel + "'");
       int replyId = nextReplyId++;
       if (callback != null) {
@@ -311,7 +311,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
     Runnable myRunnable =
         () -> {
-          try (new TraceSection("DartMessenger#handleMessageFromDart on " + channel)) {
+          try (final TraceSection traceSection =
+              new TraceSection("DartMessenger#handleMessageFromDart on " + channel)) {
             invokeHandler(handlerInfo, message, replyId);
             if (message != null && message.isDirect()) {
               // This ensures that if a user retains an instance to the ByteBuffer and it

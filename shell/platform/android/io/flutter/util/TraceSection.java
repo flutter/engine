@@ -4,6 +4,7 @@
 
 package io.flutter.util;
 
+import androidx.annotation.NonNull;
 import androidx.tracing.Trace;
 
 public final class TraceSection implements AutoCloseable {
@@ -15,15 +16,15 @@ public final class TraceSection implements AutoCloseable {
    */
   public TraceSection(@NonNull String sectionName) {
     sectionName = sectionName.length() < 127 ? sectionName : sectionName.substring(0, 127);
-    Trace.beginSection(name);
+    Trace.beginSection(sectionName);
   }
 
   /**
    * Wraps Trace.endSection.
    *
-   * <p>This method exists solely to avoid problematic usage of Trace.beginSection.
+   * <p>This is intended to be called from a try-with-resources block.
    */
-  public void close() throws Exception {
+  public void close() throws RuntimeException {
     Trace.endSection();
   }
 }

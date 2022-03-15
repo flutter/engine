@@ -149,7 +149,7 @@ public class FlutterLoader {
       throw new IllegalStateException("startInitialization must be called on the main thread");
     }
 
-    try (new TraceSection("FlutterLoader#startInitialization")) {
+    try (final TraceSection traceSection = new TraceSection("FlutterLoader#startInitialization")) {
       // Ensure that the context is actually the application context.
       final Context appContext = applicationContext.getApplicationContext();
 
@@ -177,7 +177,7 @@ public class FlutterLoader {
           new Callable<InitResult>() {
             @Override
             public InitResult call() {
-              try (new TraceSection("FlutterLoader initTask")) {
+              try (final TraceSection traceSection = new TraceSection("FlutterLoader initTask")) {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
                 flutterJNI.loadLibrary();
@@ -224,7 +224,8 @@ public class FlutterLoader {
           "ensureInitializationComplete must be called after startInitialization");
     }
 
-    try (new TraceSection("FlutterLoader#ensureInitializationComplete")) {
+    try (final TraceSection traceSection =
+        new TraceSection("FlutterLoader#ensureInitializationComplete")) {
       InitResult result = initResultFuture.get();
 
       List<String> shellArgs = new ArrayList<>();
