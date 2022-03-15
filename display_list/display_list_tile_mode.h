@@ -5,6 +5,8 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_TILE_MODE_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_TILE_MODE_H_
 
+#include "third_party/skia/include/core/SkTileMode.h"
+
 namespace flutter {
 
 // An enum to define how to repeat, fold, or omit colors outside of the
@@ -27,6 +29,14 @@ enum class DlTileMode {
   // else.
   kDecal,
 };
+
+inline DlTileMode ToDl(SkTileMode sk_mode) {
+  return static_cast<DlTileMode>(sk_mode);
+}
+
+inline SkTileMode ToSk(DlTileMode dl_mode) {
+  return static_cast<SkTileMode>(dl_mode);
+}
 
 }  // namespace flutter
 

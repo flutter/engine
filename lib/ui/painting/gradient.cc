@@ -60,13 +60,12 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
 
   SkPoint p0 = SkPoint::Make(end_points[0], end_points[1]);
   SkPoint p1 = SkPoint::Make(end_points[2], end_points[3]);
-  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
   const uint32_t* colors_array =
       reinterpret_cast<const uint32_t*>(colors.data());
 
-  dl_shader_ = DlColorSource::MakeLinear(p0, p1, colors.num_elements(),
-                                         colors_array, color_stops.data(), mode,
-                                         has_matrix ? &sk_matrix : nullptr);
+  dl_shader_ = DlColorSource::MakeLinear(
+      p0, p1, colors.num_elements(), colors_array, color_stops.data(),
+      ToDl(tile_mode), has_matrix ? &sk_matrix : nullptr);
 }
 
 void CanvasGradient::initRadial(double center_x,
@@ -88,14 +87,13 @@ void CanvasGradient::initRadial(double center_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
-  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
   const uint32_t* colors_array =
       reinterpret_cast<const uint32_t*>(colors.data());
 
-  dl_shader_ = DlColorSource::MakeRadial(SkPoint::Make(center_x, center_y),
-                                         radius, colors.num_elements(),
-                                         colors_array, color_stops.data(), mode,
-                                         has_matrix ? &sk_matrix : nullptr);
+  dl_shader_ = DlColorSource::MakeRadial(
+      SkPoint::Make(center_x, center_y), radius, colors.num_elements(),
+      colors_array, color_stops.data(), ToDl(tile_mode),
+      has_matrix ? &sk_matrix : nullptr);
 }
 
 void CanvasGradient::initSweep(double center_x,
@@ -118,14 +116,13 @@ void CanvasGradient::initSweep(double center_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
-  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
   const uint32_t* colors_array =
       reinterpret_cast<const uint32_t*>(colors.data());
 
   dl_shader_ = DlColorSource::MakeSweep(
       SkPoint::Make(center_x, center_y), start_angle * 180.0 / M_PI,
       end_angle * 180.0 / M_PI, colors.num_elements(), colors_array,
-      color_stops.data(), mode, has_matrix ? &sk_matrix : nullptr);
+      color_stops.data(), ToDl(tile_mode), has_matrix ? &sk_matrix : nullptr);
 }
 
 void CanvasGradient::initTwoPointConical(double start_x,
@@ -150,7 +147,6 @@ void CanvasGradient::initTwoPointConical(double start_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
-  DlTileMode mode = static_cast<DlTileMode>(tile_mode);
   const uint32_t* colors_array =
       reinterpret_cast<const uint32_t*>(colors.data());
 
@@ -158,7 +154,7 @@ void CanvasGradient::initTwoPointConical(double start_x,
       SkPoint::Make(start_x, start_y), start_radius,            //
       SkPoint::Make(end_x, end_y), end_radius,                  //
       colors.num_elements(), colors_array, color_stops.data(),  //
-      mode, has_matrix ? &sk_matrix : nullptr);
+      ToDl(tile_mode), has_matrix ? &sk_matrix : nullptr);
 }
 
 CanvasGradient::CanvasGradient() = default;

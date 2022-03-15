@@ -71,6 +71,7 @@ FILE: ../../../flutter/display_list/display_list_complexity_metal.h
 FILE: ../../../flutter/display_list/display_list_complexity_unittests.cc
 FILE: ../../../flutter/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/display_list/display_list_dispatcher.h
+FILE: ../../../flutter/display_list/display_list_enum_unittests.cc
 FILE: ../../../flutter/display_list/display_list_flags.cc
 FILE: ../../../flutter/display_list/display_list_flags.h
 FILE: ../../../flutter/display_list/display_list_mask_filter.cc

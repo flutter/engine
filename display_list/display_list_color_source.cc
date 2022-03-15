@@ -17,11 +17,9 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
     SkTileMode xy[2];
     SkImage* image = sk_shader->isAImage(&local_matrix, xy);
     if (image) {
-      DlTileMode h_mode = static_cast<DlTileMode>(xy[0]);
-      DlTileMode v_mode = static_cast<DlTileMode>(xy[1]);
       return std::make_shared<DlImageColorSource>(
-          sk_ref_sp(image), h_mode, v_mode, DisplayList::LinearSampling,
-          &local_matrix);
+          sk_ref_sp(image), ToDl(xy[0]), ToDl(xy[1]),
+          DisplayList::LinearSampling, &local_matrix);
     }
   }
   // Skia provides |SkShader->asAGradient(&info)| method to access the
@@ -50,7 +48,7 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
     sk_shader->asAGradient(&info);
     FML_DCHECK(count == info.fColorCount);
   }
-  DlTileMode mode = static_cast<DlTileMode>(info.fTileMode);
+  DlTileMode mode = ToDl(info.fTileMode);
   std::shared_ptr<DlColorSource> source;
   switch (type) {
     case SkShader::kNone_GradientType:

@@ -46,15 +46,13 @@ void ImageShader::initWithImage(CanvasImage* image,
     return;
   }
   sk_image_ = UIDartState::CreateGPUObject(image->image());
-  DlTileMode dl_tmx = static_cast<DlTileMode>(tmx);
-  DlTileMode dl_tmy = static_cast<DlTileMode>(tmy);
   SkMatrix local_matrix = ToSkMatrix(matrix4);
   sampling_is_locked_ = filter_quality_index >= 0;
   SkSamplingOptions sampling =
       sampling_is_locked_ ? ImageFilter::SamplingFromIndex(filter_quality_index)
                           : DisplayList::LinearSampling;
   cached_shader_ = UIDartState::CreateGPUObject(sk_make_sp<DlImageColorSource>(
-      sk_image_.skia_object(), dl_tmx, dl_tmy, sampling, &local_matrix));
+      sk_image_.skia_object(), ToDl(tmx), ToDl(tmy), sampling, &local_matrix));
 }
 
 std::shared_ptr<DlColorSource> ImageShader::shader(

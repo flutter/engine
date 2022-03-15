@@ -234,9 +234,9 @@ class DlImageColorSource final : public SkRefCnt,
   SkSamplingOptions sampling() const { return sampling_; }
 
   virtual sk_sp<SkShader> skia_object() const override {
-    auto h_mode = static_cast<SkTileMode>(horizontal_tile_mode_);
-    auto v_mode = static_cast<SkTileMode>(vertical_tile_mode_);
-    return sk_image_->makeShader(h_mode, v_mode, sampling_, matrix_ptr());
+    return sk_image_->makeShader(ToSk(horizontal_tile_mode_),
+                                 ToSk(vertical_tile_mode_), sampling_,
+                                 matrix_ptr());
   }
 
  protected:
@@ -359,10 +359,9 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
   const SkPoint& end_point() const { return end_point_; }
 
   sk_sp<SkShader> skia_object() const override {
-    auto mode = static_cast<SkTileMode>(tile_mode());
     SkPoint pts[] = {start_point_, end_point_};
     return SkGradientShader::MakeLinear(pts, colors(), stops(), stop_count(),
-                                        mode, 0, matrix_ptr());
+                                        ToSk(tile_mode()), 0, matrix_ptr());
   }
 
  protected:
@@ -427,9 +426,9 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar radius() const { return radius_; }
 
   sk_sp<SkShader> skia_object() const override {
-    auto mode = static_cast<SkTileMode>(tile_mode());
     return SkGradientShader::MakeRadial(center_, radius_, colors(), stops(),
-                                        stop_count(), mode, 0, matrix_ptr());
+                                        stop_count(), ToSk(tile_mode()), 0,
+                                        matrix_ptr());
   }
 
  protected:
@@ -497,10 +496,9 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar end_radius() const { return end_radius_; }
 
   sk_sp<SkShader> skia_object() const override {
-    auto mode = static_cast<SkTileMode>(tile_mode());
     return SkGradientShader::MakeTwoPointConical(
         start_center_, start_radius_, end_center_, end_radius_, colors(),
-        stops(), stop_count(), mode, 0, matrix_ptr());
+        stops(), stop_count(), ToSk(tile_mode()), 0, matrix_ptr());
   }
 
  protected:
@@ -576,10 +574,9 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar end() const { return end_; }
 
   sk_sp<SkShader> skia_object() const override {
-    auto mode = static_cast<SkTileMode>(tile_mode());
     return SkGradientShader::MakeSweep(center_.x(), center_.y(), colors(),
-                                       stops(), stop_count(), mode, start_,
-                                       end_, 0, matrix_ptr());
+                                       stops(), stop_count(), ToSk(tile_mode()),
+                                       start_, end_, 0, matrix_ptr());
   }
 
  protected:
