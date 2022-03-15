@@ -33,11 +33,22 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);
+
+  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+    TryToPrepareRasterCache(context, this, matrix);
+  } else {
+    render_count_++;
+  }
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
+
+  if (context.raster_cache &&
+      context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+    return;
+  }
 
   AutoCachePaint cache_paint(context);
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
