@@ -1,4 +1,4 @@
-Signature: 90fef1e8cf0c47274670b889cca02cb3
+Signature: ddd1f8980f3627be6b6be5839074c63c
 
 UNUSED LICENSES:
 
@@ -6168,6 +6168,7 @@ FILE: ../../../third_party/skia/include/sksl/DSLStatement.h
 FILE: ../../../third_party/skia/include/sksl/DSLWrapper.h
 FILE: ../../../third_party/skia/include/sksl/SkSLDebugTrace.h
 FILE: ../../../third_party/skia/include/sksl/SkSLErrorReporter.h
+FILE: ../../../third_party/skia/include/sksl/SkSLPosition.h
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrModulateAtlasCoverageEffect.cpp
