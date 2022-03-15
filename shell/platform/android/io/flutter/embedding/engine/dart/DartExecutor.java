@@ -8,13 +8,13 @@ import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import androidx.tracing.Trace;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
+import io.flutter.util.TraceSection;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -141,10 +141,8 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    Trace.beginSection("DartExecutor#executeDartEntrypoint");
-    Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
-
-    try {
+    try (new TraceSection("DartExecutor#executeDartEntrypoint")) {
+      Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
       flutterJNI.runBundleAndSnapshotFromLibrary(
           dartEntrypoint.pathToBundle,
           dartEntrypoint.dartEntrypointFunctionName,
@@ -153,8 +151,6 @@ public class DartExecutor implements BinaryMessenger {
           dartEntrypointArgs);
 
       isApplicationRunning = true;
-    } finally {
-      Trace.endSection();
     }
   }
 
@@ -171,10 +167,8 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    Trace.beginSection("DartExecutor#executeDartCallback");
-    Log.v(TAG, "Executing Dart callback: " + dartCallback);
-
-    try {
+    try (new TraceSection("DartExecutor#executeDartCallback")) {
+      Log.v(TAG, "Executing Dart callback: " + dartCallback);
       flutterJNI.runBundleAndSnapshotFromLibrary(
           dartCallback.pathToBundle,
           dartCallback.callbackHandle.callbackName,
@@ -183,8 +177,6 @@ public class DartExecutor implements BinaryMessenger {
           null);
 
       isApplicationRunning = true;
-    } finally {
-      Trace.endSection();
     }
   }
 

@@ -7,11 +7,11 @@ package io.flutter.embedding.engine.dart;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import androidx.tracing.Trace;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.util.TraceSection;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -269,10 +269,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       @NonNull String channel,
       @Nullable ByteBuffer message,
       @Nullable BinaryMessenger.BinaryReply callback) {
-    Trace.beginSection("DartMessenger#send on " + channel);
-    Log.v(TAG, "Sending message with callback over channel '" + channel + "'");
-
-    try {
+    try (new TraceSection("DartMessenger#send on " + channel)) {
+      Log.v(TAG, "Sending message with callback over channel '" + channel + "'");
       int replyId = nextReplyId++;
       if (callback != null) {
         pendingReplies.put(replyId, callback);
@@ -282,8 +280,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       } else {
         flutterJNI.dispatchPlatformMessage(channel, message, message.position(), replyId);
       }
-    } finally {
-      Trace.endSection();
     }
   }
 
@@ -315,8 +311,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
     Runnable myRunnable =
         () -> {
-          Trace.beginSection("DartMessenger#handleMessageFromDart on " + channel);
-          try {
+          try (new TraceSection("DartMessenger#handleMessageFromDart on " + channel)) {
             invokeHandler(handlerInfo, message, replyId);
             if (message != null && message.isDirect()) {
               // This ensures that if a user retains an instance to the ByteBuffer and it
@@ -326,7 +321,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
           } finally {
             // This is deleting the data underneath the message object.
             flutterJNI.cleanupMessageData(messageData);
-            Trace.endSection();
           }
         };
     final DartMessengerTaskQueue nonnullTaskQueue =
