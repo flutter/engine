@@ -16,10 +16,6 @@ namespace {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
-// TODO: See if this can be queried from the OS; this value is chosen
-// arbitrarily to get something that feels reasonable.
-constexpr int kScrollOffsetMultiplier = 20;
-
 // Maps a Flutter cursor name to an HCURSOR.
 //
 // Returns the arrow cursor for unknown constants.
@@ -226,9 +222,14 @@ void FlutterWindowWin32::OnScroll(double delta_x,
   POINT point;
   GetCursorPos(&point);
 
+  // This logic is based off Chromiums implementation
+  // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/blink/web_input_event_builders_win.cc;l=319-331
+  int scrollOffsetMultiplier =
+      static_cast<float>(GetCurrentWheelScrollLines()) * 100.0 / 3.0;
+
   ScreenToClient(GetWindowHandle(), &point);
   binding_handler_delegate_->OnScroll(point.x, point.y, delta_x, delta_y,
-                                      kScrollOffsetMultiplier, device_kind,
+                                      scrollOffsetMultiplier, device_kind,
                                       device_id);
 }
 

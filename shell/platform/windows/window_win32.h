@@ -199,6 +199,8 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
 
   UINT GetCurrentHeight();
 
+  UINT GetCurrentWheelScrollLines();
+
  protected:
   // Win32's DefWindowProc.
   //
@@ -232,6 +234,7 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   int current_dpi_ = 0;
   int current_width_ = 0;
   int current_height_ = 0;
+  UINT current_wheel_scroll_lines_ = 3;
 
   // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
   // SDK

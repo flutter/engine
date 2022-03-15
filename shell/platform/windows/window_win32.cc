@@ -61,6 +61,11 @@ WindowWin32::WindowWin32(
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
   current_dpi_ = GetDpiForHWND(nullptr);
+
+  // Get initial value for wheel scroll lines
+  SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &current_wheel_scroll_lines_,
+                       0);
+
   if (text_input_manager_ == nullptr) {
     text_input_manager_ = std::make_unique<TextInputManagerWin32>();
   }
@@ -535,6 +540,11 @@ WindowWin32::HandleMessage(UINT const message,
         return 0;
       }
       break;
+    case WM_SETTINGCHANGE:
+      // Update wheel scroll lines on settings change
+      SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0,
+                           &current_wheel_scroll_lines_, 0);
+      break;
   }
 
   return Win32DefWindowProc(window_handle_, message, wparam, result_lparam);
@@ -554,6 +564,10 @@ UINT WindowWin32::GetCurrentHeight() {
 
 HWND WindowWin32::GetWindowHandle() {
   return window_handle_;
+}
+
+UINT WindowWin32::GetCurrentWheelScrollLines() {
+  return current_wheel_scroll_lines_;
 }
 
 void WindowWin32::Destroy() {
