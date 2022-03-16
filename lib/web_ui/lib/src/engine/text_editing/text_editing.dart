@@ -1465,7 +1465,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     _addTapListener();
 
     // Record start time of blur subscription.
-    final DateTime blurSubscriptionStart = DateTime.now();
+    final Stopwatch blurWatch = Stopwatch()..start();
 
     // On iOS, blur is trigerred in the following cases:
     //
@@ -1484,8 +1484,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    input field was activated. If the time is too short, we re-focus the
     //    input element.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      final bool isFastCallback =
-          DateTime.now().difference(blurSubscriptionStart) < _blurFastCallbackInterval;
+      final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
       if (windowHasFocus && isFastCallback) {
         activeDomElement.focus();
       } else {
