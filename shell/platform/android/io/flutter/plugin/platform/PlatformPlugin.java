@@ -313,7 +313,7 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
-        System.out.println("Applying overlays for some reason");
+    System.out.println("Applying overlays for some reason");
     // Start by assuming we want to hide all system overlays (like an immersive
     // game).
     int enabledOverlays =
@@ -383,7 +383,16 @@ public class PlatformPlugin {
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
     // proper contrast. This can be overridden with
     // SystemChromeStyle.systemStatusBarContrastEnforced.
-    //TODO(camillesimon): Fix status bars
+    // TODO(camillesimon): Fix status bars
+    System.out.println(Build.VERSION.SDK_INT);
+    System.out.println(systemChromeStyle.systemNavigationBarDividerColor);
+    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
+      System.out.println("Divider color being set");
+      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+      window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+      window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
+    }
+
     if (Build.VERSION.SDK_INT >= 23) {
       if (systemChromeStyle.statusBarIconBrightness != null) {
         switch (systemChromeStyle.statusBarIconBrightness) {
@@ -401,35 +410,6 @@ public class PlatformPlugin {
             break;
         }
       }
-
-      if (systemChromeStyle.statusBarColor != null) {
-        System.out.println("Status bar color being set");
-        window.setStatusBarColor(systemChromeStyle.statusBarColor);
-      }
-    }
-    // You can't override the enforced contrast for a transparent status bar until SDK 29.
-    // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
-    // contrast is appropriate when using full screen layout modes like Edge to Edge.
-    if (systemChromeStyle.systemStatusBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
-      System.out.println("Status bar contrast being enforced");
-      window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
-    }
-
-    // SYSTEM NAVIGATION BAR --------------------------------------------------------------
-    // You can't change the color of the system navigation bar until SDK 21, and you can't change
-    // the color of the navigation buttons until SDK 26. We only allow both starting at 26 to
-    // ensure buttons can be visible when changing the background color.
-    // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
-    // bars to ensure proper contrast. This can be overridden with
-    // SystemChromeStyle.systemNavigationBarContrastEnforced.
-
-    // You can't change the color of the navigation bar divider color until SDK 28.
-    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
-      System.out.println("Divider color being set");
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      //TODO(camillesimon):https://developer.android.com/reference/android/view/WindowManager.LayoutParams#FLAG_TRANSLUCENT_NAVIGATION
-      window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-      window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
 
     if (Build.VERSION.SDK_INT >= 26) {
@@ -464,15 +444,39 @@ public class PlatformPlugin {
             break;
         }
       }
-
-      if (systemChromeStyle.systemNavigationBarColor != null) {
-        //TODO(camillesimon): Test clear flag fix for API 28. Seems to cause problems on 30 :/
-        System.out.println("Navigation bar color being set");
-        // window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
-      }
     }
 
+    if (Build.VERSION.SDK_INT >= 23) {
+      if (systemChromeStyle.statusBarColor != null) {
+        System.out.println("Status bar color being set");
+        // window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(systemChromeStyle.statusBarColor);
+      }
+    }
+    // You can't override the enforced contrast for a transparent status bar until SDK 29.
+    // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
+    // contrast is appropriate when using full screen layout modes like Edge to Edge.
+    if (systemChromeStyle.systemStatusBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
+      System.out.println("Status bar contrast being enforced");
+      window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
+    }
+
+    // SYSTEM NAVIGATION BAR --------------------------------------------------------------
+    // You can't change the color of the system navigation bar until SDK 21, and you can't change
+    // the color of the navigation buttons until SDK 26. We only allow both starting at 26 to
+    // ensure buttons can be visible when changing the background color.
+    // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
+    // bars to ensure proper contrast. This can be overridden with
+    // SystemChromeStyle.systemNavigationBarContrastEnforced.
+
+    // You can't change the color of the navigation bar divider color until SDK 28.
+
+    if (systemChromeStyle.systemNavigationBarColor != null) {
+      // TODO(camillesimon): Test clear flag fix for API 28. Seems to cause problems on 30 :/
+      System.out.println("Navigation bar color being set");
+      // window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+      window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
+    }
 
     // You can't override the enforced contrast for a transparent navigation bar until SDK 29.
     // This overrides the translucent scrim that may be placed behind 2/3 button navigation bars on
@@ -480,7 +484,7 @@ public class PlatformPlugin {
     // Edge to Edge.
     if (systemChromeStyle.systemNavigationBarContrastEnforced != null
         && Build.VERSION.SDK_INT >= 29) {
-          System.out.println("Nav bar contrast being enforced");
+      System.out.println("Nav bar contrast being enforced");
       window.setNavigationBarContrastEnforced(
           systemChromeStyle.systemNavigationBarContrastEnforced);
     }
