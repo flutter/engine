@@ -86,6 +86,11 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewMarkTextureFrameAvailable,
                void(int64_t texture_id));
 
+  MOCK_METHOD(const Settings&,
+              OnPlatformViewGetSettings,
+              (),
+              (const, override));
+
   MOCK_METHOD3(LoadDartDeferredLibrary,
                void(intptr_t loading_unit_id,
                     std::unique_ptr<const fml::Mapping> snapshot_data,
@@ -535,6 +540,7 @@ TEST_F(ShellTest,
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
   flags.push_back("--random_seed 42");
+  flags.push_back("--max_subtype_cache_entries=22");
   if (!DartVM::IsRunningPrecompiledCode()) {
     flags.push_back("--enable_mirrors");
   }
@@ -1847,7 +1853,7 @@ TEST_F(ShellTest, CanScheduleFrameFromPlatform) {
   ASSERT_TRUE(shell->IsSetup());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("canScheduleFrameFromPlatform");
+  configuration.SetEntrypoint("onBeginFrameWithNotifyNativeMain");
   RunEngine(shell.get(), std::move(configuration));
 
   // Wait for the application to attach the listener.
@@ -1857,6 +1863,50 @@ TEST_F(ShellTest, CanScheduleFrameFromPlatform) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell]() { shell->GetPlatformView()->ScheduleFrame(); });
   check_latch.Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
+  bool is_on_begin_frame_called = false;
+  bool is_secondary_callback_called = false;
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback(
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
+  fml::CountDownLatch count_down_latch(2);
+  AddNativeCallback("NativeOnBeginFrame",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      EXPECT_FALSE(is_on_begin_frame_called);
+                      EXPECT_FALSE(is_secondary_callback_called);
+                      is_on_begin_frame_called = true;
+                      count_down_latch.CountDown();
+                    }));
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+  ASSERT_TRUE(shell->IsSetup());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("onBeginFrameWithNotifyNativeMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  // Wait for the application to attach the listener.
+  latch.Wait();
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetUITaskRunner(), [&]() {
+        shell->GetEngine()->ScheduleSecondaryVsyncCallback(0, [&]() {
+          EXPECT_TRUE(is_on_begin_frame_called);
+          EXPECT_FALSE(is_secondary_callback_called);
+          is_secondary_callback_called = true;
+          count_down_latch.CountDown();
+        });
+        shell->GetEngine()->ScheduleFrame();
+      });
+  count_down_latch.Wait();
+  EXPECT_TRUE(is_on_begin_frame_called);
+  EXPECT_TRUE(is_secondary_callback_called);
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 

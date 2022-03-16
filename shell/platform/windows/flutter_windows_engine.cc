@@ -21,12 +21,27 @@
 #if defined(WINUWP)
 #include "flutter/shell/platform/windows/accessibility_bridge_delegate_winuwp.h"
 #else
+#include <dwmapi.h>
 #include "flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h"
 #endif  // defined(WINUWP)
+
+// winbase.h defines GetCurrentTime as a macro.
+#undef GetCurrentTime
 
 namespace flutter {
 
 namespace {
+
+// Lifted from vsync_waiter_fallback.cc
+static std::chrono::nanoseconds SnapToNextTick(
+    std::chrono::nanoseconds value,
+    std::chrono::nanoseconds tick_phase,
+    std::chrono::nanoseconds tick_interval) {
+  std::chrono::nanoseconds offset = (tick_phase - value) % tick_interval;
+  if (offset != std::chrono::nanoseconds::zero())
+    offset = offset + tick_interval;
+  return value + offset;
+}
 
 // Creates and returns a FlutterRendererConfig that renders to the view (if any)
 // of a FlutterWindowsEngine, using OpenGL (via ANGLE).
@@ -246,6 +261,8 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
+  custom_task_runners.thread_priority_setter =
+      &WindowsPlatformThreadPrioritySetter;
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
@@ -261,6 +278,10 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
          void* user_data) -> void {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
+  };
+  args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    host->OnVsync(baton);
   };
   args.on_pre_engine_restart_callback = [](void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
@@ -307,6 +328,19 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     return false;
   }
 
+  // Configure device frame rate displayed via devtools.
+  FlutterEngineDisplay display = {};
+  display.struct_size = sizeof(FlutterEngineDisplay);
+  display.display_id = 0;
+  display.single_display = true;
+  display.refresh_rate =
+      1.0 / (static_cast<double>(FrameInterval().count()) / 1000000000.0);
+
+  std::vector<FlutterEngineDisplay> displays = {display};
+  embedder_api_.NotifyDisplayUpdate(engine_,
+                                    kFlutterEngineDisplaysUpdateTypeStartup,
+                                    displays.data(), displays.size());
+
   SendSystemSettings();
 
   return true;
@@ -314,8 +348,9 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
 
 bool FlutterWindowsEngine::Stop() {
   if (engine_) {
-    if (plugin_registrar_destruction_callback_) {
-      plugin_registrar_destruction_callback_(plugin_registrar_.get());
+    for (const auto& [callback, registrar] :
+         plugin_registrar_destruction_callbacks_) {
+      callback(registrar);
     }
     FlutterEngineResult result = embedder_api_.Shutdown(engine_);
     engine_ = nullptr;
@@ -328,14 +363,45 @@ void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
   view_ = view;
 }
 
+void FlutterWindowsEngine::OnVsync(intptr_t baton) {
+  std::chrono::nanoseconds current_time =
+      std::chrono::nanoseconds(embedder_api_.GetCurrentTime());
+  std::chrono::nanoseconds frame_interval = FrameInterval();
+  auto next = SnapToNextTick(current_time, start_time_, frame_interval);
+  embedder_api_.OnVsync(engine_, baton, next.count(),
+                        (next + frame_interval).count());
+}
+
+std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
+  if (frame_interval_override_.has_value()) {
+    return frame_interval_override_.value();
+  }
+  uint64_t interval = 16600000;
+
+#ifndef WINUWP
+  DWM_TIMING_INFO timing_info = {};
+  timing_info.cbSize = sizeof(timing_info);
+  HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
+  if (result == S_OK && timing_info.rateRefresh.uiDenominator > 0 &&
+      timing_info.rateRefresh.uiNumerator > 0) {
+    interval = static_cast<double>(timing_info.rateRefresh.uiDenominator *
+                                   1000000000.0) /
+               static_cast<double>(timing_info.rateRefresh.uiNumerator);
+  }
+#endif
+
+  return std::chrono::nanoseconds(interval);
+}
+
 // Returns the currently configured Plugin Registrar.
 FlutterDesktopPluginRegistrarRef FlutterWindowsEngine::GetRegistrar() {
   return plugin_registrar_.get();
 }
 
-void FlutterWindowsEngine::SetPluginRegistrarDestructionCallback(
-    FlutterDesktopOnPluginRegistrarDestroyed callback) {
-  plugin_registrar_destruction_callback_ = callback;
+void FlutterWindowsEngine::AddPluginRegistrarDestructionCallback(
+    FlutterDesktopOnPluginRegistrarDestroyed callback,
+    FlutterDesktopPluginRegistrarRef registrar) {
+  plugin_registrar_destruction_callbacks_[callback] = registrar;
 }
 
 void FlutterWindowsEngine::SendWindowMetricsEvent(
