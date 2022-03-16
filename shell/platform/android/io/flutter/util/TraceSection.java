@@ -14,8 +14,8 @@ public final class TraceSection implements AutoCloseable {
    *
    * @param sectionName The string to display as the section name in the trace.
    */
-  public TraceSection(@NonNull String sectionName) {
-    sectionName = sectionName.length() < 127 ? sectionName : sectionName.substring(0, 127);
+  public static void begin(@NonNull String sectionName) {
+    sectionName = sectionName.length() < 124 ? sectionName : sectionName.substring(0, 124) + "...";
     Trace.beginSection(sectionName);
   }
 
@@ -24,7 +24,7 @@ public final class TraceSection implements AutoCloseable {
    *
    * <p>This is intended to be called from a try-with-resources block.
    */
-  public void close() throws RuntimeException {
+  public static void end() throws RuntimeException {
     Trace.endSection();
   }
 }

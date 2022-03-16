@@ -141,7 +141,8 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    try (final TraceSection traceSection = new TraceSection("DartExecutor#executeDartEntrypoint")) {
+    TraceSection.begin("DartExecutor#executeDartEntrypoint");
+    try {
       Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
       flutterJNI.runBundleAndSnapshotFromLibrary(
           dartEntrypoint.pathToBundle,
@@ -151,6 +152,8 @@ public class DartExecutor implements BinaryMessenger {
           dartEntrypointArgs);
 
       isApplicationRunning = true;
+    } finally {
+      TraceSection.end();
     }
   }
 
@@ -167,7 +170,8 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    try (final TraceSection traceSection = new TraceSection("DartExecutor#executeDartCallback")) {
+    TraceSection.begin("DartExecutor#executeDartCallback");
+    try {
       Log.v(TAG, "Executing Dart callback: " + dartCallback);
       flutterJNI.runBundleAndSnapshotFromLibrary(
           dartCallback.pathToBundle,
@@ -177,6 +181,8 @@ public class DartExecutor implements BinaryMessenger {
           null);
 
       isApplicationRunning = true;
+    } finally {
+      TraceSection.end();
     }
   }
 

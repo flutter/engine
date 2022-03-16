@@ -149,7 +149,8 @@ public class FlutterLoader {
       throw new IllegalStateException("startInitialization must be called on the main thread");
     }
 
-    try (final TraceSection traceSection = new TraceSection("FlutterLoader#startInitialization")) {
+    TraceSection.begin("FlutterLoader#startInitialization");
+    try {
       // Ensure that the context is actually the application context.
       final Context appContext = applicationContext.getApplicationContext();
 
@@ -177,7 +178,8 @@ public class FlutterLoader {
           new Callable<InitResult>() {
             @Override
             public InitResult call() {
-              try (final TraceSection traceSection = new TraceSection("FlutterLoader initTask")) {
+              TraceSection.begin("FlutterLoader initTask");
+              try {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
                 flutterJNI.loadLibrary();
@@ -195,10 +197,14 @@ public class FlutterLoader {
                     PathUtils.getFilesDir(appContext),
                     PathUtils.getCacheDirectory(appContext),
                     PathUtils.getDataDirectory(appContext));
+              } finally {
+                TraceSection.end();
               }
             }
           };
       initResultFuture = executorService.submit(initTask);
+    } finally {
+      TraceSection.end();
     }
   }
 
@@ -224,8 +230,8 @@ public class FlutterLoader {
           "ensureInitializationComplete must be called after startInitialization");
     }
 
-    try (final TraceSection traceSection =
-        new TraceSection("FlutterLoader#ensureInitializationComplete")) {
+    TraceSection.begin("FlutterLoader#ensureInitializationComplete");
+    try {
       InitResult result = initResultFuture.get();
 
       List<String> shellArgs = new ArrayList<>();
@@ -323,6 +329,8 @@ public class FlutterLoader {
     } catch (Exception e) {
       Log.e(TAG, "Flutter initialization failed.", e);
       throw new RuntimeException(e);
+    } finally {
+      TraceSection.end();
     }
   }
 
