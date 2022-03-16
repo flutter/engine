@@ -18,7 +18,7 @@ import 'surface_factory.dart';
 import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
-// prevents Paint anti-aliasing from working.
+// removes the ability for disabling AA on Paint objects.
 const bool _kUsingMSAA =
     bool.fromEnvironment('flutter.web.msaa', defaultValue: false);
 
