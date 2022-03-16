@@ -539,10 +539,6 @@ WindowWin32::HandleMessage(UINT const message,
         return 0;
       }
       break;
-    case WM_SETTINGCHANGE:
-      // Update wheel scroll lines on settings change
-      UpdateScrollOffsetMultiplier();
-      break;
   }
 
   return Win32DefWindowProc(window_handle_, message, wparam, result_lparam);

@@ -201,7 +201,6 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
 
   float GetScrollOffsetMultiplier();
 
-
  protected:
   // Win32's DefWindowProc.
   //
