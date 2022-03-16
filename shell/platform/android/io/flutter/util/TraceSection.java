@@ -7,10 +7,9 @@ package io.flutter.util;
 import androidx.annotation.NonNull;
 import androidx.tracing.Trace;
 
-public final class TraceSection implements AutoCloseable {
+public final class TraceSection {
   /**
-   * Wraps Trace.beginSection to ensure that the line length stays below 127 code units, and
-   * automatically closes the section in a try-with-resources block.
+   * Wraps Trace.beginSection to ensure that the line length stays below 127 code units.
    *
    * @param sectionName The string to display as the section name in the trace.
    */
@@ -19,11 +18,7 @@ public final class TraceSection implements AutoCloseable {
     Trace.beginSection(sectionName);
   }
 
-  /**
-   * Wraps Trace.endSection.
-   *
-   * <p>This is intended to be called from a try-with-resources block.
-   */
+  /** Wraps Trace.endSection. */
   public static void end() throws RuntimeException {
     Trace.endSection();
   }
