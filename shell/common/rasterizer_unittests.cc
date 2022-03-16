@@ -463,9 +463,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return true; };
-    RasterStatus status =
-        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    // Always discard the layer tree.
+    auto discard_callback = [](LayerTree&) { return true; };
+    RasterStatus status = rasterizer->Draw(CreateFinishedBuildRecorder(),
+                                           pipeline, discard_callback);
     EXPECT_EQ(status, RasterStatus::kDiscarded);
     latch.Signal();
   });
