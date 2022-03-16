@@ -132,7 +132,6 @@ class SkiaGoldClient {
       '--commit', commitHash,
       '--keys-file', keys.path,
       '--failure-file', failures.path,
-      '--passfail',
     ];
 
     if (imgtestInitCommand.contains(null)) {
