@@ -365,11 +365,7 @@ TEST(FlutterKeyboardManagerUnittests, EmptyNextResponder) {
 }
 
 - (bool)forwardKeyEventsToSystemWhenComposing {
-  KeyboardTester* tester = [[KeyboardTester alloc] init];
-
-  tester.isComposing = YES;
-  // Send a down event with composing == YES.
-  [tester.manager handleEvent:keyDownEvent(0x50)];
+  KeyboardTester* tester = OCMPartialMock([[KeyboardTester alloc] init]);
 
   NSMutableArray<FlutterAsyncKeyCallback>* channelCallbacks =
       [NSMutableArray<FlutterAsyncKeyCallback> array];
@@ -377,23 +373,18 @@ TEST(FlutterKeyboardManagerUnittests, EmptyNextResponder) {
       [NSMutableArray<FlutterAsyncKeyCallback> array];
   [tester recordEmbedderCallsTo:embedderCallbacks];
   [tester recordChannelCallsTo:channelCallbacks];
-  // TextInputPlugin does not claim the event.
+  // The event shouldn't propagate further even if TextInputPlugin does not
+  // claim the event.
   [tester respondTextInputWith:NO];
+
+  tester.isComposing = YES;
+  // Send a down event with composing == YES.
   [tester.manager handleEvent:keyUpEvent(0x50)];
 
   // Nobody gets the event except for the text input plugin.
   EXPECT_EQ([channelCallbacks count], 0u);
   EXPECT_EQ([embedderCallbacks count], 0u);
-
-  // Send another down event with composing == NO.
-  tester.isComposing = NO;
-  [tester respondTextInputWith:YES];
-  [tester.manager handleEvent:keyDownEvent(0x50)];
-  // Now the responders get the event.
-  EXPECT_EQ([channelCallbacks count], 1u);
-  EXPECT_EQ([embedderCallbacks count], 1u);
-  embedderCallbacks[0](TRUE);
-  channelCallbacks[0](TRUE);
+  OCMVerify(times(1), [tester handleTextInputKeyEvent:checkKeyDownEvent(0x50)]);
 
   return true;
 }
