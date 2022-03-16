@@ -335,6 +335,19 @@ class ExternalViewEmbedder {
   // embedder.
   virtual void Teardown();
 
+  // Change the flag about whether it is used in this frame, it will be set to
+  // true when 'BeginFrame' and false when 'EndFrame'.
+  void set_used_this_frame(bool used_this_frame) {
+    used_this_frame_ = used_this_frame;
+  }
+
+  // Whether it is used in this frame, returns true between 'BeginFrame' and
+  // 'EndFrame', otherwise returns false.
+  bool used_this_frame() const { return used_this_frame_; }
+
+ private:
+  bool used_this_frame_ = false;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
 };  // ExternalViewEmbedder

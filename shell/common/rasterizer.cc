@@ -151,10 +151,11 @@ void Rasterizer::DrawLastLayerTree(
       DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_) {
+  if (external_view_embedder_ && external_view_embedder_->used_this_frame()) {
     bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
+    external_view_embedder_->set_used_this_frame(false);
   }
 }
 
@@ -208,9 +209,11 @@ RasterStatus Rasterizer::Draw(
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (surface_ && external_view_embedder_) {
+  if (surface_ && external_view_embedder_ &&
+      external_view_embedder_->used_this_frame()) {
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
+    external_view_embedder_->set_used_this_frame(false);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
@@ -524,6 +527,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     external_view_embedder_->BeginFrame(
         layer_tree.frame_size(), surface_->GetContext(),
         layer_tree.device_pixel_ratio(), raster_thread_merger_);
+    external_view_embedder_->set_used_this_frame(true);
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
