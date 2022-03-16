@@ -15,7 +15,7 @@ bool get isIosSafari =>
 /// info in the following tests only pass in Chrome, they are slightly different
 /// on each browser. So we need to ignore position info on non-Chrome browsers
 /// when comparing expectations with actual output.
-bool get isChrome => browserEngine == BrowserEngine.blink;
+bool get isBlink => browserEngine == BrowserEngine.blink;
 
 String fontFamilyToAttribute(String fontFamily) {
   fontFamily = canonicalizeFontFamily(fontFamily)!;
@@ -55,7 +55,7 @@ Future<void> testMain() async {
       'Hello'
       '</span>'
       '</p>',
-      ignorePositions: !isChrome,
+      ignorePositions: !isBlink,
     );
 
     // Should break "Hello" into "Hel" and "lo".
@@ -70,7 +70,7 @@ Future<void> testMain() async {
       'lo'
       '</span>'
       '</p>',
-      ignorePositions: !isChrome,
+      ignorePositions: !isBlink,
     );
 
     final ParagraphSpan span = paragraph.spans.single;
@@ -216,7 +216,7 @@ Future<void> testMain() async {
       'world'
       '</span>'
       '</p>',
-      ignorePositions: !isChrome,
+      ignorePositions: !isBlink,
     );
 
     // Should break "Hello world" into 2 lines: "Hello" and " world".
@@ -234,7 +234,7 @@ Future<void> testMain() async {
       'world'
       '</span>'
       '</p>',
-      ignorePositions: !isChrome,
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan hello = paragraph.spans.first as FlatTextSpan;
@@ -292,7 +292,7 @@ Future<void> testMain() async {
       '!'
       '</span>'
       '</p>',
-      ignorePositions: !isChrome,
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan hello = paragraph.spans[0] as FlatTextSpan;
@@ -360,7 +360,7 @@ Future<void> testMain() async {
       'ThirdLongLine'
       '</span>'
       '</p>',
-      ignorePositions: !isChrome,
+      ignorePositions: !isBlink,
     );
 
     // Should break the paragraph into "First", "Second" and "ThirdLongLine".
@@ -381,7 +381,7 @@ Future<void> testMain() async {
       'ThirdLongLine'
       '</span>'
       '</p>',
-      ignorePositions: !isChrome,
+      ignorePositions: !isBlink,
     );
   });
 
