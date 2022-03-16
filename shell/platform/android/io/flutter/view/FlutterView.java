@@ -84,9 +84,9 @@ public class FlutterView extends SurfaceView
    * as a full-screen Flutter activity).
    *
    * <p>This indirection is provided to support applications that use an activity other than
-   * io.flutter.app.FlutterActivity (no longer available) (e.g. Android v4 support library's {@code FragmentActivity}).
-   * It allows Flutter plugins to deal in this interface and not require that the activity be a
-   * subclass of {@code FlutterActivity}.
+   * io.flutter.app.FlutterActivity (no longer available) (e.g. Android v4 support library's {@code
+   * FragmentActivity}). It allows Flutter plugins to deal in this interface and not require that
+   * the activity be a subclass of {@code FlutterActivity}.
    */
   public interface Provider {
     /**

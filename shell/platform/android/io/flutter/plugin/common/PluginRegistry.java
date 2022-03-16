@@ -81,8 +81,7 @@ public interface PluginRegistry {
      * Returns the {@link android.app.Activity} that forms the plugin's operating context.
      *
      * <p>Plugin authors should not assume the type returned by this method is any specific subclass
-     * of {@code Activity}, as applications are free to use any activity
-     * subclass.
+     * of {@code Activity}, as applications are free to use any activity subclass.
      *
      * <p>When there is no foreground activity in the application, this will return null. If a
      * {@link Context} is needed, use context() to get the application's context.
