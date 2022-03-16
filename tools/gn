@@ -60,6 +60,9 @@ def get_out_dir(args):
     if args.macos_enable_metal:
       target_dir.append('metal')
 
+    if args.target_dir != '':
+      target_dir = [args.target_dir]
+
     return os.path.join(args.out_dir, 'out', '_'.join(target_dir))
 
 def to_command_line(gn_args):
@@ -75,7 +78,7 @@ def to_command_line(gn_args):
     return [merge(x, y) for x, y in gn_args.items()]
 
 def cpu_for_target_arch(arch):
-  if arch in ['ia32', 'arm', 'armv6', 'armv5te', 'mips',
+  if arch in ['ia32', 'x86', 'arm', 'armv6', 'armv5te', 'mips',
               'simarm', 'simarmv6', 'simarmv5te', 'simmips', 'simdbc',
               'armsimdbc']:
     return 'x86'
@@ -208,7 +211,7 @@ def to_gn_args(args):
     if runtime_mode == 'debug':
         gn_args['dart_runtime_mode'] = 'develop'
     elif runtime_mode == 'jit_release':
-        gn_args['dart_runtime_mode'] = 'release';
+        gn_args['dart_runtime_mode'] = 'release'
     else:
         gn_args['dart_runtime_mode'] = runtime_mode
 
@@ -446,11 +449,12 @@ def parse_args(args):
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument('--linux', dest='target_os', action='store_const', const='linux')
   parser.add_argument('--fuchsia', dest='target_os', action='store_const', const='fuchsia')
+  parser.add_argument('--windows', dest='target_os', action='store_const', const='win')
   parser.add_argument('--winuwp', dest='target_os', action='store_const', const='winuwp')
 
   parser.add_argument('--linux-cpu', type=str, choices=['x64', 'x86', 'arm64', 'arm'])
   parser.add_argument('--fuchsia-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
-  parser.add_argument('--windows-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
+  parser.add_argument('--windows-cpu', type=str, choices=['x64', 'arm64', 'x86'], default = 'x64')
   parser.add_argument('--simulator-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
   parser.add_argument('--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp'])
 
@@ -493,7 +497,10 @@ def parse_args(args):
 
   parser.add_argument('--coverage', default=False, action='store_true')
 
-  parser.add_argument('--out-dir', default='', type=str)
+  parser.add_argument('--out-dir', default='', type=str,
+                      help='Root out directory. Target specific gn files will be generated in ${out-dir}/')
+  parser.add_argument('--target-dir', default='', type=str,
+                      help='Use the specified name for target out directory. By default this tool determines one.')
 
   parser.add_argument('--full-dart-sdk', default=False, action='store_true',
                       help='include trained dart2js and dartdevc snapshots. Enable only on steps that create an SDK')
