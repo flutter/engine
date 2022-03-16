@@ -63,8 +63,7 @@ WindowWin32::WindowWin32(
   current_dpi_ = GetDpiForHWND(nullptr);
 
   // Get initial value for wheel scroll lines
-  SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &current_wheel_scroll_lines_,
-                       0);
+  UpdateScrollOffsetMultiplier();
 
   if (text_input_manager_ == nullptr) {
     text_input_manager_ = std::make_unique<TextInputManagerWin32>();
@@ -542,8 +541,7 @@ WindowWin32::HandleMessage(UINT const message,
       break;
     case WM_SETTINGCHANGE:
       // Update wheel scroll lines on settings change
-      SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0,
-                           &current_wheel_scroll_lines_, 0);
+      UpdateScrollOffsetMultiplier();
       break;
   }
 
@@ -566,8 +564,21 @@ HWND WindowWin32::GetWindowHandle() {
   return window_handle_;
 }
 
-UINT WindowWin32::GetCurrentWheelScrollLines() {
-  return current_wheel_scroll_lines_;
+float WindowWin32::GetScrollOffsetMultiplier() { 
+  return scroll_offset_multiplier_; 
+ }
+
+void WindowWin32::UpdateScrollOffsetMultiplier() {
+  UINT lines_per_scroll;
+  // Get lines per scroll wheel value from Windows
+  if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines_per_scroll, 0) == 0) {
+    // Windows default
+    lines_per_scroll = 3;
+  }
+
+  // This logic is based off Chromiums implementation
+  // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/blink/web_input_event_builders_win.cc;l=319-331
+  scroll_offset_multiplier_ = static_cast<float>(lines_per_scroll) * 100.0 / 3.0;
 }
 
 void WindowWin32::Destroy() {

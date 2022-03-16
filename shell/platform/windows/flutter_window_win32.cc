@@ -222,14 +222,9 @@ void FlutterWindowWin32::OnScroll(double delta_x,
   POINT point;
   GetCursorPos(&point);
 
-  // This logic is based off Chromiums implementation
-  // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/blink/web_input_event_builders_win.cc;l=319-331
-  int scrollOffsetMultiplier =
-      static_cast<float>(GetCurrentWheelScrollLines()) * 100.0 / 3.0;
-
   ScreenToClient(GetWindowHandle(), &point);
   binding_handler_delegate_->OnScroll(point.x, point.y, delta_x, delta_y,
-                                      scrollOffsetMultiplier, device_kind,
+                                      GetScrollOffsetMultiplier(), device_kind,
                                       device_id);
 }
 
