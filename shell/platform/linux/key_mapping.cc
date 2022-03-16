@@ -355,12 +355,12 @@ std::map<uint64_t, uint64_t> gtk_keyval_to_logical_key_map = {
     {0x0000ffe3, 0x00200000100},  // Control_L
     {0x0000ffe4, 0x00200000101},  // Control_R
     {0x0000ffe5, 0x00100000104},  // Caps_Lock
-    {0x0000ffe7, 0x00200000106},  // Meta_L
+    {0x0000ffe7, 0x00200000104},  // Meta_L
     {0x0000ffe8, 0x00200000107},  // Meta_R
     {0x0000ffe9, 0x00200000104},  // Alt_L
     {0x0000ffea, 0x00200000105},  // Alt_R
-    {0x0000ffeb, 0x0010000010e},  // Super_L
-    {0x0000ffec, 0x0010000010e},  // Super_R
+    {0x0000ffeb, 0x00200000106},  // Super_L
+    {0x0000ffec, 0x00200000106},  // Super_R
     {0x0000ffed, 0x00100000108},  // Hyper_L
     {0x0000ffee, 0x00100000108},  // Hyper_R
     {0x0000ffff, 0x0010000007f},  // Delete
