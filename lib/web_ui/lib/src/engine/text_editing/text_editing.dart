@@ -1389,13 +1389,14 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   Timer? _positionInputElementTimer;
   static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
 
-  /// The interval is considered as fast between blur subscription and callback.
+  /// This interval between the blur subscription and callback is considered to
+  /// be fast.
   ///
-  /// This is only used for iOS. The blur callback may trigger as soon as
-  /// the creation of the subscription. In that case, the virtual keyboard will
-  /// show and hide again occasionally.
+  /// This is only used for iOS. The blur callback may trigger as soon as the
+  /// creation of the subscription. Occasionally in this case, the virtual
+  /// keyboard will quickly show and hide again.
   ///
-  /// Lesser than the interval allows the virtual keyboard to keep showing up
+  /// Less than this interval allows the virtual keyboard to keep showing up
   /// instead of hiding rapidly.
   static const Duration _blurFastCallbackInterval = Duration(milliseconds: 200);
 
