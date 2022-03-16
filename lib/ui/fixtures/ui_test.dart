@@ -747,7 +747,47 @@ void hooksTests() {
     expectEquals(frameNumber, 2);
   });
 
+  test('_futureize does not leak sync uncaught exceptions into the zone', () async {
+    void callbacker(String? Function(Object? arg) cb) {
+      cb(null); // indicates failure
+    }
+    Object? error;
+    try {
+      await _futurize(callbacker);
+    } catch (err) {
+      error = err;
+    }
+    expectNotEquals(error, null)
+  });
+
   _finish();
+}
+
+typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
+
+// This is an exact copy of the function defined in painting.dart. If you change either
+// then you must change both.
+Future<T> _futurize<T>(_Callbacker<T> callbacker) {
+  final Completer<T> completer = Completer<T>.sync();
+  // If the callback synchronously throws an error, then synchronously
+  // rethrow that error instead of adding it to the completer. This
+  // prevents the Zone from receiving an uncaught exception.
+  bool sync = true;
+  final String? error = callbacker((T? t) {
+    if (t == null) {
+      if (sync) {
+        throw Exception('operation failed');
+      } else {
+        completer.completeError(Exception('operation failed'));
+      }
+    } else {
+      completer.complete(t);
+    }
+  });
+  sync = false;
+  if (error != null)
+    throw Exception(error);
+  return completer.future;
 }
 
 void _callHook(

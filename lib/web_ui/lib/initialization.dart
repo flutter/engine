@@ -139,6 +139,10 @@ final PlatformViewRegistry platformViewRegistry = PlatformViewRegistry();
 //                NNBD migration.
 typedef _Callback<T> = void Function(T result);
 typedef _Callbacker<T> = String? Function(_Callback<T> callback);
+
+// Note: this function is not directly tested so that it remains private, instead an exact
+// copy of it has been inlined into the test at lib/ui/fixtures/ui_test.dart. if you change
+// this function, then you  must update the test.
 Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
   // If the callback synchronously throws an error, then synchronously
