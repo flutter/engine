@@ -748,7 +748,7 @@ void hooksTests() {
   });
 
   test('_futureize does not leak sync uncaught exceptions into the zone', () async {
-    void callbacker(String? Function(Object? arg) cb) {
+    String? callbacker(void Function(Object? arg) cb) {
       cb(null); // indicates failure
     }
     Object? error;
@@ -757,12 +757,13 @@ void hooksTests() {
     } catch (err) {
       error = err;
     }
-    expectNotEquals(error, null)
+    expectNotEquals(error, null);
   });
 
   _finish();
 }
 
+typedef _Callback<T> = void Function(T result);
 typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
 
 // This is an exact copy of the function defined in painting.dart. If you change either
