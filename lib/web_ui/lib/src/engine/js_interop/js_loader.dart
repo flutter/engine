@@ -27,7 +27,7 @@ external DidLoadMainDartJsFn? get didLoadMainDartJs;
 abstract class FlutterEngineInitializer{
   external factory FlutterEngineInitializer({
     required InitializeEngineFn initializeEngine,
-    required Function runApp,
+    required ImmediateRunAppFn runApp,
   });
 }
 
@@ -40,7 +40,11 @@ abstract class InitializeEngineFnParameters {
 }
 
 /// Typedef for the function that initializes the flutter engine.
-typedef InitializeEngineFn = Promise<FlutterAppRunner?> Function(InitializeEngineFnParameters?);
+typedef InitializeEngineFn = Promise<FlutterAppRunner?> Function([InitializeEngineFnParameters?]);
+
+/// Typedef for the `runApp` function that can be called straight from an engine initializer instance.
+/// (Similar to [RunAppFn], but returning a void).
+typedef ImmediateRunAppFn = void Function();
 
 // FlutterAppRunner
 
@@ -63,7 +67,7 @@ abstract class RunAppFnParameters {
 }
 
 /// Typedef for the function that runs the flutter app main entrypoint.
-typedef RunAppFn = Promise<FlutterAppCleaner> Function(RunAppFnParameters?);
+typedef RunAppFn = Promise<FlutterAppCleaner> Function([RunAppFnParameters?]);
 
 // FlutterAppCleaner
 
@@ -87,4 +91,4 @@ abstract class CleanAppFnParameters {
 }
 
 /// Typedef for the function that cleans the flutter app initialized by the functions above.
-typedef CleanAppFn = Promise<bool> Function (CleanAppFnParameters?);
+typedef CleanAppFn = Promise<bool> Function ([CleanAppFnParameters?]);
