@@ -69,6 +69,10 @@ UIDartState::UIDartState(
       enable_display_list_(enable_display_list),
       context_(std::move(context)) {
   AddOrRemoveTaskObserver(true /* add */);
+  tonic::SetUnhandledExceptionReporter(
+      [&](const std::string& error, const std::string& stack_trace) {
+        ReportUnhandledException(error, stack_trace);
+      });
 }
 
 UIDartState::~UIDartState() {
@@ -134,7 +138,7 @@ std::shared_ptr<VolatilePathTracker> UIDartState::GetVolatilePathTracker()
 }
 
 void UIDartState::ScheduleMicrotask(Dart_Handle closure) {
-  if (tonic::LogIfError(closure) || !Dart_IsClosure(closure)) {
+  if (tonic::CheckAndHandleError(closure) || !Dart_IsClosure(closure)) {
     return;
   }
 
