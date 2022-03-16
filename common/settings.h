@@ -192,6 +192,10 @@ struct Settings {
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
 
+  // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
+  // not supported on the platform.
+  bool enable_impeller = false;
+
   // Selects the DisplayList for storage of rendering operations.
   bool enable_display_list = true;
 
@@ -294,8 +298,6 @@ struct Settings {
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
-
-  std::string ToString() const;
 };
 
 }  // namespace flutter

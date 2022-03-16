@@ -1,4 +1,4 @@
-Signature: 08be3bcfbbbd4c4d871d48ca0614edf7
+Signature: 0b1d43b9fbe190141d02087e689147cd
 
 UNUSED LICENSES:
 
@@ -1316,6 +1316,7 @@ FILE: ../../../third_party/skia/src/xps/BUILD.bazel
 FILE: ../../../third_party/skia/third_party/BUILD.bazel
 FILE: ../../../third_party/skia/third_party/file_map_for_bazel.json
 FILE: ../../../third_party/skia/toolchain/BUILD.bazel
+FILE: ../../../third_party/skia/toolchain/IWYU_mapping.imp
 FILE: ../../../third_party/skia/toolchain/build_toolchain.bzl
 FILE: ../../../third_party/skia/toolchain/clang_toolchain_config.bzl
 ----------------------------------------------------------------------------------------------------
@@ -2656,7 +2657,6 @@ FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.h
 FILE: ../../../third_party/skia/src/gpu/KeyBuilder.h
 FILE: ../../../third_party/skia/src/gpu/ResourceKey.cpp
 FILE: ../../../third_party/skia/src/gpu/ShaderErrorHandler.cpp
-FILE: ../../../third_party/skia/src/gpu/SkRenderEngineAbortf.h
 FILE: ../../../third_party/skia/src/gpu/SurfaceFillContext.cpp
 FILE: ../../../third_party/skia/src/gpu/SurfaceFillContext.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTypesPriv.cpp
@@ -6130,6 +6130,8 @@ FILE: ../../../third_party/skia/gm/bug12866.cpp
 FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/src/core/SkBuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
+FILE: ../../../third_party/skia/src/core/SkKeyContext.cpp
+FILE: ../../../third_party/skia/src/core/SkKeyContext.h
 FILE: ../../../third_party/skia/src/core/SkKeyHelpers.cpp
 FILE: ../../../third_party/skia/src/core/SkKeyHelpers.h
 FILE: ../../../third_party/skia/src/core/SkPaintParamsKey.cpp
