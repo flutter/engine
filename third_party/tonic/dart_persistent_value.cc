@@ -40,6 +40,7 @@ void DartPersistentValue::Clear() {
 
   auto dart_state = dart_state_.lock();
   if (!dart_state) {
+    value_ = nullptr;
     return;
   }
 
