@@ -9,6 +9,15 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 
+namespace {
+typedef void (^VoidBlock)();
+
+// Someohow this pointer type must be defined as a single type for the compiler
+// to compile the function pointer type (due to _Nullable).
+typedef NSResponder* _NSResponderPtr;
+typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
+}
+
 @interface FlutterKeyboardManager ()
 
 /**
@@ -21,13 +30,21 @@
  */
 @property(nonatomic) NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
 
+@property(nonatomic) NSMutableArray<NSEvent*>* pendingTextEvents;
+
+@property(nonatomic) BOOL processingEvent;
+
 /**
  * Add a primary responder, which asynchronously decides whether to handle an
  * event.
  */
 - (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)responder;
 
-- (void)dispatchToSecondaryResponders:(NSEvent*)event;
+- (void)processNextEvent;
+
+- (void)processEvent:(NSEvent*)event onFinish:(VoidBlock)onFinish;
+
+- (void)dispatchTextEvent:(NSEvent*)pendingEvent;
 
 @end
 
@@ -38,6 +55,7 @@
 - (nonnull instancetype)initWithViewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate {
   self = [super init];
   if (self != nil) {
+    _processingEvent = FALSE;
     _viewDelegate = viewDelegate;
 
     _primaryResponders = [[NSMutableArray alloc] init];
@@ -57,6 +75,7 @@
                                                                                getBinaryMessenger]
                                                                      codec:[FlutterJSONMessageCodec
                                                                                sharedInstance]]]];
+    _pendingTextEvents = [[NSMutableArray alloc] init];
   }
   return self;
 }
@@ -73,8 +92,35 @@
     return;
   }
 
+  [_pendingTextEvents addObject:event];
+  [self processNextEvent];
+}
+
+#pragma mark - Private
+
+- (void)processNextEvent {
+  @synchronized(self) {
+    if (_processingEvent || [_pendingTextEvents count] == 0) {
+      return;
+    }
+    _processingEvent = TRUE;
+  }
+
+  NSEvent* pendingEvent = [_pendingTextEvents firstObject];
+  [_pendingTextEvents removeObjectAtIndex:0];
+
+  __weak __typeof__(self) weakSelf = self;
+  VoidBlock onFinish = ^() {
+    weakSelf.processingEvent = FALSE;
+    [weakSelf processNextEvent];
+  };
+  [self processEvent:pendingEvent onFinish:onFinish];
+}
+
+- (void)processEvent:(NSEvent*)event onFinish:(VoidBlock)onFinish {
   if (_viewDelegate.isComposing) {
-    [self dispatchToSecondaryResponders:event];
+    [self dispatchTextEvent:event];
+    onFinish();
     return;
   }
 
@@ -86,12 +132,16 @@
   __weak __typeof__(self) weakSelf = self;
   __block int unreplied = [_primaryResponders count];
   __block BOOL anyHandled = false;
+
   FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
     unreplied -= 1;
     NSAssert(unreplied >= 0, @"More primary responders replied than possible.");
     anyHandled = anyHandled || handled;
-    if (unreplied == 0 && !anyHandled) {
-      [weakSelf dispatchToSecondaryResponders:event];
+    if (unreplied == 0) {
+      if (!anyHandled) {
+        [weakSelf dispatchTextEvent:event];
+      }
+      onFinish();
     }
   };
 
@@ -100,9 +150,7 @@
   }
 }
 
-#pragma mark - Private
-
-- (void)dispatchToSecondaryResponders:(NSEvent*)event {
+- (void)dispatchTextEvent:(NSEvent*)event {
   if ([_viewDelegate onTextInputKeyEvent:event]) {
     return;
   }
