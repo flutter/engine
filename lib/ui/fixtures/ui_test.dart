@@ -749,7 +749,7 @@ void hooksTests() {
 
   test('_futureize handles callbacker sync error', () async {
     String? callbacker(void Function(Object? arg) cb) {
-      return 'failure'
+      return 'failure';
     }
     Object? error;
     try {
@@ -805,7 +805,7 @@ void hooksTests() {
     }
     final Object? result = await _futurize(callbacker);
 
-    expectEquals(error, true);
+    expectEquals(result, true);
   });
 
   _finish();
