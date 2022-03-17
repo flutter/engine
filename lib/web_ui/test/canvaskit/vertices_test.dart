@@ -16,6 +16,12 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
+final CkVertices circleVertices = ui.Vertices.raw(
+  ui.VertexMode.triangles,
+  Float32List.fromList(_circularVertices),
+  indices: Uint16List.fromList(_circularVertexIndices),
+) as CkVertices;
+
 void testMain() {
   group('Vertices', () {
     setUpCanvasKitTest();
@@ -43,11 +49,7 @@ void testMain() {
     const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 500);
     final CkPictureRecorder recorder = CkPictureRecorder();
     final CkCanvas canvas = recorder.beginRecording(region);
-    final CkVertices vertices = ui.Vertices.raw(
-      ui.VertexMode.triangles,
-      Float32List.fromList(_circularVertices),
-      indices: Uint16List.fromList(_circularVertexIndices),
-    ) as CkVertices;
+    final CkVertices vertices = circleVertices;
     canvas.scale(3.0, 3.0);
     canvas.drawVertices(
       vertices,
