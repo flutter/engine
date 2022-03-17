@@ -93,7 +93,7 @@ class SkiaGoldClient {
       '--luci',
     ];
 
-    final ProcessResult result = await process.run(authCommand);
+    final ProcessResult result = await _runCommand(authCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
@@ -106,6 +106,11 @@ class SkiaGoldClient {
         ..writeln('stderr: ${result.stderr}');
       throw Exception(buf.toString());
     }
+  }
+
+  Future<ProcessResult> _runCommand(List<String> command) {
+    print(command.join(' '));
+    return process.run(command);
   }
 
   /// Executes the `imgtest init` command in the `goldctl` tool.
@@ -132,7 +137,6 @@ class SkiaGoldClient {
       '--commit', commitHash,
       '--keys-file', keys.path,
       '--failure-file', failures.path,
-      '--passfail',
     ];
 
     if (imgtestInitCommand.contains(null)) {
@@ -144,7 +148,7 @@ class SkiaGoldClient {
       throw Exception(buf.toString());
     }
 
-    final ProcessResult result = await process.run(imgtestInitCommand);
+    final ProcessResult result = await _runCommand(imgtestInitCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
@@ -186,7 +190,7 @@ class SkiaGoldClient {
       ..._getMatchingArguments(testName, screenshotSize, isCanvaskitTest),
     ];
 
-    final ProcessResult result = await process.run(imgtestCommand);
+    final ProcessResult result = await _runCommand(imgtestCommand);
 
     if (result.exitCode != 0) {
       // We do not want to throw for non-zero exit codes here, as an intentional
@@ -215,7 +219,7 @@ class SkiaGoldClient {
     await failures.create();
     final String commitHash = await _getCurrentCommit();
 
-    final List<String> imgtestInitCommand = <String>[
+    final List<String> tryjobInitCommand = <String>[
       _goldctl,
       'imgtest', 'init',
       '--instance', _instance,
@@ -223,22 +227,25 @@ class SkiaGoldClient {
       '--commit', commitHash,
       '--keys-file', keys.path,
       '--failure-file', failures.path,
+      // This is running in pre-submit so it's okay for the `goldctl` commands
+      // to fail when the images don't match. But during post-submit
+      // (in `_imgtestInit`) we shouldn't let the command fail.
       '--passfail',
       '--crs', 'github',
       '--patchset_id', commitHash,
       ...getCIArguments(),
     ];
 
-    if (imgtestInitCommand.contains(null)) {
+    if (tryjobInitCommand.contains(null)) {
       final StringBuffer buf = StringBuffer()
         ..writeln('A null argument was provided for Skia Gold tryjob init.')
         ..writeln('Please confirm the settings of your golden file test.')
         ..writeln('Arguments provided:');
-      imgtestInitCommand.forEach(buf.writeln);
+      tryjobInitCommand.forEach(buf.writeln);
       throw Exception(buf.toString());
     }
 
-    final ProcessResult result = await process.run(imgtestInitCommand);
+    final ProcessResult result = await _runCommand(tryjobInitCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
@@ -271,7 +278,7 @@ class SkiaGoldClient {
   ) async {
     await _tryjobInit();
 
-    final List<String> imgtestCommand = <String>[
+    final List<String> tryjobCommand = <String>[
       _goldctl,
       'imgtest', 'add',
       '--work-dir', _tempPath,
@@ -280,7 +287,7 @@ class SkiaGoldClient {
       ..._getMatchingArguments(testName, screenshotSize, isCanvaskitTest),
     ];
 
-    final ProcessResult result = await process.run(imgtestCommand);
+    final ProcessResult result = await _runCommand(tryjobCommand);
 
     final String resultStdout = result.stdout.toString();
     if (result.exitCode != 0 &&
