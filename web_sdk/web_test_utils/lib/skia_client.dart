@@ -55,6 +55,7 @@ class SkiaGoldClient {
 
   /// Indicates whether the `goldctl` tool has been initialized for the current
   /// test context.
+  bool get isInitialized => _isInitialized;
   bool _isInitialized = false;
 
   /// Indicates whether the client has already been authorized to communicate
@@ -198,6 +199,30 @@ class SkiaGoldClient {
       // is meant to inform when an unexpected result occurs.
       print('goldctl imgtest add stdout: ${result.stdout}');
       print('goldctl imgtest add stderr: ${result.stderr}');
+    }
+
+    return true;
+  }
+
+  /// Executes the `imgtest finalize` command in the `goldctl` tool.
+  ///
+  /// Since we removed `--passfail` from our post-submit commands, images aren't
+  /// being uploaded anymore. In order to make sure they are uploaded, we need
+  /// to manually call `imgtest finalize` after all tests are complete.
+  Future<bool> imgtestFinalize() async {
+    await _imgtestInit();
+
+    final List<String> imgtestCommand = <String>[
+      _goldctl,
+      'imgtest', 'finalize',
+      '--work-dir', _tempPath,
+    ];
+
+    final ProcessResult result = await _runCommand(imgtestCommand);
+
+    if (result.exitCode != 0) {
+      print('goldctl imgtest finalize stdout: ${result.stdout}');
+      print('goldctl imgtest finalize stderr: ${result.stderr}');
     }
 
     return true;

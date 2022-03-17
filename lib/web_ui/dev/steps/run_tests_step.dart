@@ -131,6 +131,10 @@ class RunTestsStep implements PipelineStep {
       _checkExitCode('Golden tests');
     }
 
+    if (skiaClient != null && skiaClient.isInitialized) {
+      skiaClient.imgtestFinalize();
+    }
+
     if (!allShardsPassed) {
       throw ToolExit(_createFailedShardsMessage());
     }
