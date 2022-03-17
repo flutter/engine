@@ -282,6 +282,12 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
     return reinterpret_cast<const float*>(colors() + stop_count());
   }
 
+  void operator delete(void* p) { ::operator delete(p); }
+
+  void operator delete(void* p, size_t s) {
+    ::operator delete(p, static_cast<DlGradientColorSourceBase*>(p)->size());
+  }
+
  protected:
   DlGradientColorSourceBase(uint32_t stop_count,
                             DlTileMode tile_mode,
