@@ -94,6 +94,7 @@ executable("dart_utils_unittests") {
     ":utils",
     "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
     "//flutter/testing",
+    "//third_party/dart/runtime:libdart_jit",
   ]
 }
 
