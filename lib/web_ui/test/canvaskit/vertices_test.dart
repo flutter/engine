@@ -64,7 +64,6 @@ void testMain() {
         .draw(builder.build().layerTree);
     await matchGoldenFile('canvaskit_vertices_antialiased.png', region: region);
 
-    vertices.delete();
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
