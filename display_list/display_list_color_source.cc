@@ -85,7 +85,12 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
 }
 
 static void DlGradientDeleter(void* p) {
-  ::operator delete(p, static_cast<DlColorSource*>(p)->size());
+  // Some of our target environments would prefer a sized delete,
+  // but other target environments do not have that operator.
+  // Use an unsized delete until we get better agreement in the
+  // environments.
+  // See https://github.com/flutter/flutter/issues/100327
+  ::operator delete(p);
 }
 
 std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
