@@ -760,6 +760,41 @@ void hooksTests() {
     expectNotEquals(error, null);
   });
 
+  test('_futureize does not leak async uncaught exceptions into the zone', () async {
+    String? callbacker(void Function(Object? arg) cb) {
+      Timer.run(() {
+        cb(null); // indicates failure
+      });
+    }
+    Object? error;
+    try {
+      await _futurize(callbacker);
+    } catch (err) {
+      error = err;
+    }
+    expectNotEquals(error, null);
+  });
+
+  test('_futureize successfully returns a value sync', () async {
+    String? callbacker(void Function(Object? arg) cb) {
+      cb(true);
+    }
+    final Object? result = await _futurize(callbacker);
+
+    expectEquals(result, true);
+  });
+
+  test('_futureize successfully returns a value async', () async {
+    String? callbacker(void Function(Object? arg) cb) {
+      Timer.run(() {
+        cb(true);
+      });
+    }
+    final Object? result = await _futurize(callbacker);
+
+    expectEquals(error, true);
+  });
+
   _finish();
 }
 
