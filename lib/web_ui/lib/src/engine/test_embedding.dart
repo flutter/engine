@@ -9,19 +9,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart';
 
-Future<void>? _testPlatformInitializedFuture;
-
-Future<dynamic> ensureTestPlatformInitializedThenRunTest(dynamic Function() body) {
-  if (_testPlatformInitializedFuture == null) {
-    ui.debugEmulateFlutterTesterEnvironment = true;
-
-    // Initializing the platform will ensure that the test font is loaded.
-    _testPlatformInitializedFuture =
-        ui.webOnlyInitializePlatform(assetManager: WebOnlyMockAssetManager());
-  }
-  return _testPlatformInitializedFuture!.then<dynamic>((_) => body());
-}
-
 Future<void>? _platformInitializedFuture;
 
 Future<void> initializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) {

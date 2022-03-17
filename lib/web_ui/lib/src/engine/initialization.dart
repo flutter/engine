@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -15,6 +16,7 @@ import 'package:ui/src/engine/platform_dispatcher.dart';
 import 'package:ui/src/engine/platform_views/content_manager.dart';
 import 'package:ui/src/engine/profiler.dart';
 import 'package:ui/src/engine/safe_browser_api.dart';
+import 'package:ui/src/engine/text/line_break_properties.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -73,6 +75,13 @@ void initializeEngine() {
   if (_engineInitialized) {
     return;
   }
+
+  scheduleMicrotask(() {
+    // Access [lineLookup] to force the lazy unpacking of line break data
+    // now. Removing this line won't break anything. It's just an optimization
+    // to make the unpacking happen while we are waiting for network requests.
+    lineLookup;
+  });
 
   // Setup the hook that allows users to customize URL strategy before running
   // the app.

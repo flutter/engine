@@ -31,7 +31,7 @@ void testMain() {
   late EngineSingletonFlutterWindow window;
 
   setUp(() {
-    ui.webOnlyInitializeEngine();
+    ui.webOnlyInitializePlatform();
     window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
   });
 
