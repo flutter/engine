@@ -747,6 +747,19 @@ void hooksTests() {
     expectEquals(frameNumber, 2);
   });
 
+  test('_futureize handles callbacker sync error', () async {
+    String? callbacker(void Function(Object? arg) cb) {
+      return 'failure'
+    }
+    Object? error;
+    try {
+      await _futurize(callbacker);
+    } catch (err) {
+      error = err;
+    }
+    expectNotEquals(error, null);
+  });
+
   test('_futureize does not leak sync uncaught exceptions into the zone', () async {
     String? callbacker(void Function(Object? arg) cb) {
       cb(null); // indicates failure
