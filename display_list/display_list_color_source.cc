@@ -98,8 +98,10 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
-  ret.reset(new (storage) DlLinearGradientColorSource(
-      start_point, end_point, stop_count, colors, stops, tile_mode, matrix));
+  ret.reset(new (storage)
+                DlLinearGradientColorSource(start_point, end_point, stop_count,
+                                            colors, stops, tile_mode, matrix),
+            [needed](auto p) { ::operator delete(p, needed); });
   return std::move(ret);
 }
 
@@ -118,7 +120,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
 
   std::shared_ptr<DlRadialGradientColorSource> ret;
   ret.reset(new (storage) DlRadialGradientColorSource(
-      center, radius, stop_count, colors, stops, tile_mode, matrix));
+                center, radius, stop_count, colors, stops, tile_mode, matrix),
+            [needed](auto p) { ::operator delete(p, needed); });
   return std::move(ret);
 }
 
@@ -139,8 +142,9 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
 
   std::shared_ptr<DlConicalGradientColorSource> ret;
   ret.reset(new (storage) DlConicalGradientColorSource(
-      start_center, start_radius, end_center, end_radius, stop_count, colors,
-      stops, tile_mode, matrix));
+                start_center, start_radius, end_center, end_radius, stop_count,
+                colors, stops, tile_mode, matrix),
+            [needed](auto p) { ::operator delete(p, needed); });
   return std::move(ret);
 }
 
@@ -159,8 +163,10 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlSweepGradientColorSource> ret;
-  ret.reset(new (storage) DlSweepGradientColorSource(
-      center, start, end, stop_count, colors, stops, tile_mode, matrix));
+  ret.reset(new (storage)
+                DlSweepGradientColorSource(center, start, end, stop_count,
+                                           colors, stops, tile_mode, matrix),
+            [needed](auto p) { ::operator delete(p, needed); });
   return std::move(ret);
 }
 
