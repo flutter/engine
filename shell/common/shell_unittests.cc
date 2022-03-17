@@ -1277,7 +1277,7 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/95751): Disabled due to
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
 // flakiness.
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
@@ -2394,7 +2394,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/95751): Disabled due to
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
 // flakiness.
 TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
@@ -2446,7 +2446,7 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/95751): Disabled due to
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
 // flakiness.
 TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
