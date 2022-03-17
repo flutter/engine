@@ -1031,7 +1031,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   ui.ErrorCallback? get onError => _onError;
   @override
-  set onError(ErrorCallback? callback) {
+  set onError(ui.ErrorCallback? callback) {
     _onError = callback;
     _onErrorZone = Zone.current;
   }
