@@ -758,8 +758,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)initializeDisplays {
   auto vsync_waiter = std::shared_ptr<flutter::VsyncWaiter>(_shell->GetVsyncWaiter().lock());
-  auto vsync_waiter_ios =
-      std::static_pointer_cast<flutter::VsyncWaiterIOS>(vsync_waiter);
+  auto vsync_waiter_ios = std::static_pointer_cast<flutter::VsyncWaiterIOS>(vsync_waiter);
   std::vector<std::unique_ptr<flutter::Display>> displays;
   displays.push_back(std::make_unique<flutter::VariableRefreshRateDisplay>(vsync_waiter_ios));
   _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, std::move(displays));
