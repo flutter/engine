@@ -287,6 +287,8 @@ TEST_F(ImageFilterLayerTest, ChildIsCached) {
   use_mock_raster_cache();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
   EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
                                     RasterCacheLayerStrategy::kLayerChildren));
   EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
@@ -295,6 +297,8 @@ TEST_F(ImageFilterLayerTest, ChildIsCached) {
   layer->Preroll(preroll_context(), initial_transform);
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
   EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
                                     RasterCacheLayerStrategy::kLayerChildren));
   EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,

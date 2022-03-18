@@ -178,8 +178,12 @@ void RasterCache::Prepare(PrerollContext* context,
                           Layer* layer,
                           const SkMatrix& ctm,
                           RasterCacheLayerStrategy strategy) {
-  RasterCacheKey cache_key = MakeRasterCacheKeyForLayer(layer, strategy, ctm);
-  Entry& entry = cache_[cache_key];
+  auto cache_key_optional =
+      TryToMakeRasterCacheKeyForLayer(layer, strategy, ctm);
+  if (!cache_key_optional) {
+    return;
+  }
+  Entry& entry = cache_[cache_key_optional.value()];
   entry.access_count++;
   entry.used_this_frame = true;
   if (!entry.image) {
@@ -188,7 +192,7 @@ void RasterCache::Prepare(PrerollContext* context,
   }
 }
 
-const RasterCacheKey RasterCache::MakeRasterCacheKeyForLayer(
+std::optional<RasterCacheKey> RasterCache::TryToMakeRasterCacheKeyForLayer(
     const Layer* layer,
     RasterCacheLayerStrategy strategy,
     const SkMatrix& ctm) const {
@@ -197,12 +201,21 @@ const RasterCacheKey RasterCache::MakeRasterCacheKeyForLayer(
       return RasterCacheKey(layer->unique_id(), RasterCacheKeyType::kLayer,
                             ctm);
     case RasterCacheLayerStrategy::kLayerChildren:
-      auto children_layers =
+      auto& children_layers =
           static_cast<const ContainerLayer*>(layer)->layers();
+      auto children_count = children_layers.size();
+      if (children_count == 0) {
+        return std::nullopt;
+      } else if (children_count == 1) {
+        // When there is only a single child, we use the child's 'unique_id' to
+        // generate the cache key.So that the entry can be reused as much as
+        // possible.
+        return RasterCacheKey(children_layers[0]->unique_id(),
+                              RasterCacheKeyType::kLayer, ctm);
+      }
       std::vector<uint64_t> ids;
       std::transform(children_layers.begin(), children_layers.end(),
-                     std::back_inserter(ids),
-                     [](std::shared_ptr<Layer>& layer) -> uint64_t {
+                     std::back_inserter(ids), [](auto& layer) -> uint64_t {
                        return layer->unique_id();
                      });
       return RasterCacheKey(RasterCacheKeyID(std::move(ids)),
@@ -244,7 +257,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
             }
             break;
           case RasterCacheLayerStrategy::kLayerChildren:
-            auto children_layers =
+            auto& children_layers =
                 static_cast<const ContainerLayer*>(layer)->layers();
             for (auto& child_layer : children_layers) {
               if (child_layer->needs_painting(paintContext)) {
@@ -362,8 +375,12 @@ bool RasterCache::Prepare(PrerollContext* context,
 void RasterCache::Touch(Layer* layer,
                         const SkMatrix& ctm,
                         RasterCacheLayerStrategy strategey) {
-  RasterCacheKey cache_key = MakeRasterCacheKeyForLayer(layer, strategey, ctm);
-  Touch(cache_key);
+  auto cache_key_optional =
+      TryToMakeRasterCacheKeyForLayer(layer, strategey, ctm);
+  if (!cache_key_optional) {
+    return;
+  }
+  Touch(cache_key_optional.value());
 }
 
 void RasterCache::Touch(SkPicture* picture,
@@ -410,9 +427,12 @@ bool RasterCache::Draw(const Layer* layer,
                        SkCanvas& canvas,
                        RasterCacheLayerStrategy strategy,
                        const SkPaint* paint) const {
-  RasterCacheKey cache_key =
-      MakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
-  return Draw(cache_key, canvas, paint);
+  auto cache_key_optional =
+      TryToMakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
+  if (!cache_key_optional) {
+    return false;
+  }
+  return Draw(cache_key_optional.value(), canvas, paint);
 }
 
 bool RasterCache::Draw(const RasterCacheKey& cache_key,

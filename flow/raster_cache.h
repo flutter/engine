@@ -320,7 +320,7 @@ class RasterCache {
                picture_and_display_list_cache_limit_per_frame_;
   }
 
-  const RasterCacheKey MakeRasterCacheKeyForLayer(
+  std::optional<RasterCacheKey> TryToMakeRasterCacheKeyForLayer(
       const Layer* layer,
       RasterCacheLayerStrategy strategy,
       const SkMatrix& ctm) const;

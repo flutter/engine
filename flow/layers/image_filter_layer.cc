@@ -115,8 +115,7 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   paint.setImageFilter(filter_);
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  auto children_layers = layers();
-  for (auto& layer : children_layers) {
+  for (auto& layer : layers()) {
     child_paint_bounds.join(layer->paint_bounds());
   }
   // Normally a save_layer is sized to the current layer bounds, but in this
