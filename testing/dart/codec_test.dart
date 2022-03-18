@@ -47,6 +47,16 @@ void main() {
     }
   });
 
+  test('getNextFrame fails with empty image data', () async {
+    final ui.Codec codec = await ui.instantiateImageCodec(Uint8List(0));
+    try {
+      await codec.getNextFrame();
+      fail('exception not thrown');
+    } on Exception catch (e) {
+      expect(e.toString(), contains('Codec failed'));
+    }
+  });
+
   test('nextFrame', () async {
     final Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
     final ui.Codec codec = await ui.instantiateImageCodec(data);
