@@ -58,7 +58,7 @@ platform_properties:
       caches: >-
         [
           {"name":"flutter_cocoapods","path":"cocoapods"},
-          {"name":"osx_sdk_13c100_13_15_2","path":"osx_sdk"},
+          {"name":"osx_sdk_13c100_13_15","path":"osx_sdk"},
           {"name":"builder_mac_engine","path":"builder"},
           {"name":"openjdk","path":"java"},
           {"name":"xcode_runtime_ios-13-0","path":"xcode_runtime_ios-13-0"},
@@ -77,8 +77,7 @@ platform_properties:
       runtime_versions: >-
         [
           "ios-13-0",
-          "ios-15-0",
-          "ios-15-2"
+          "ios-15-0"
         ]
       xcode: 13c100 # xcode 13.2.1
   windows:
