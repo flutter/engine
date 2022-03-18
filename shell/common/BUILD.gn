@@ -270,7 +270,6 @@ if (enable_unittests) {
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
       "rasterizer_unittests.cc",
-      "shell_io_manager_unittests.cc",
       "shell_unittests.cc",
       "skp_shader_warmup_unittests.cc",
       "switches_unittests.cc",
@@ -297,6 +296,9 @@ if (enable_unittests) {
         "$fuchsia_sdk_root/pkg:fidl_cpp",
         "$fuchsia_sdk_root/pkg:sys_cpp",
       ]
+    } else {
+      # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
+      sources += [ "shell_io_manager_unittests.cc" ]
     }
   }
 }
