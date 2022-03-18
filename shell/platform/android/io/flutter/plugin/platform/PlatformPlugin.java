@@ -370,6 +370,9 @@ public class PlatformPlugin {
     WindowInsetsControllerCompat windowInsetsControllerCompat =
         new WindowInsetsControllerCompat(window, view);
 
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+
     // SYSTEM STATUS BAR -------------------------------------------------------------------
     // You can't change the color of the system status bar until SDK 21, and you can't change the
     // color of the status icons until SDK 23. We only allow both starting at 23 to ensure buttons
@@ -433,8 +436,6 @@ public class PlatformPlugin {
     }
     // You can't change the color of the navigation bar divider color until SDK 28.
     if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
 

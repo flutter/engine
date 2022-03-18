@@ -13,6 +13,8 @@ import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextEditingDelta;
+//TODO(camillesimon): Remove, using for testing:
+import io.flutter.plugin.editing.SpellCheckPlugin;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,6 +45,9 @@ public class TextInputChannel {
 
   @NonNull public final MethodChannel channel;
   @Nullable private TextInputMethodHandler textInputMethodHandler;
+
+  //TODO(camillesimon): Remove, using for testing:
+  @Nullable private SpellCheckMethodHandler spellCheckMethodHandler;
 
   @NonNull @VisibleForTesting
   final MethodChannel.MethodCallHandler parsingMethodHandler =
@@ -150,7 +155,8 @@ public class TextInputChannel {
                 final JSONArray argumentList = (JSONArray) args;
                 String locale = argumentList.getString(0);
                 String text = argumentList.getString(1);
-                textInputMethodHandler.initiateSpellChecking(locale, text);
+                //TODO(camillesimon): Remove, use for testing
+                spellCheckMethodHandler.initiateSpellChecking(locale, text);
                 result.success(null);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
@@ -372,7 +378,7 @@ public class TextInputChannel {
       int inputClientId, ArrayList<String> spellCheckerResults, String spellCheckedText) {
     channel.invokeMethod(
         "TextInputClient.updateSpellCheckerResults",
-        Arrays.asList(inputClientId, spellCheckerResults, spellCheckedText));
+        Arrays.asList(0, spellCheckerResults, spellCheckedText));
   }
 
   /**
@@ -381,6 +387,19 @@ public class TextInputChannel {
    */
   public void setTextInputMethodHandler(@Nullable TextInputMethodHandler textInputMethodHandler) {
     this.textInputMethodHandler = textInputMethodHandler;
+  }
+
+  //TODO(camillesimon): Remove, using for testing
+  public void setSpellCheckMethodHandler(@Nullable SpellCheckMethodHandler spellCheckMethodHandler) {
+    this.spellCheckMethodHandler = spellCheckMethodHandler;
+  }
+
+  public interface SpellCheckMethodHandler {
+    /**
+     * Requests that spell checking is initiated for the inputted text recognized by the framework,
+     * which will automatically result in spell checking resutls being sent back to the framework.
+     */
+    void initiateSpellChecking(String locale, String text);
   }
 
   public interface TextInputMethodHandler {

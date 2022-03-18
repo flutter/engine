@@ -33,6 +33,7 @@ import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
+import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -95,6 +96,7 @@ public class FlutterEngine {
   @NonNull private final RestorationChannel restorationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
+  @NonNull private final SpellCheckChannel spellCheckChannel;
   @NonNull private final SystemChannel systemChannel;
   @NonNull private final TextInputChannel textInputChannel;
 
@@ -309,6 +311,7 @@ public class FlutterEngine {
     platformChannel = new PlatformChannel(dartExecutor);
     restorationChannel = new RestorationChannel(dartExecutor, waitForRestorationData);
     settingsChannel = new SettingsChannel(dartExecutor);
+    spellCheckChannel = new SpellCheckChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
@@ -557,6 +560,12 @@ public class FlutterEngine {
   @NonNull
   public TextInputChannel getTextInputChannel() {
     return textInputChannel;
+  }
+
+  /** System channel that sends and receives requests related to spell check. */
+  @NonNull
+  public SpellCheckChannel getSpellCheckChannel() {
+    return spellCheckChannel;
   }
 
   /**
