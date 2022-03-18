@@ -718,7 +718,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
-      4,                         // sample count
+      // TODO(dnfield): Update this when embedders support MSAA, see
+      // https://github.com/flutter/flutter/issues/100392
+      1,                         // sample count
       kBGRA_8888_SkColorType,    // color type
       nullptr,                   // color space
       &surface_properties,       // surface properties
