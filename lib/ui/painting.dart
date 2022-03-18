@@ -1994,9 +1994,15 @@ class Codec extends NativeFieldWrapperClass1 {
   /// [FrameInfo.image] on the returned object.
   Future<FrameInfo> getNextFrame() async {
     final Completer<FrameInfo> completer = Completer<FrameInfo>.sync();
+    bool sync = true;
     final String? error = _getNextFrame((_Image? image, int durationMilliseconds) {
       if (image == null) {
-        completer.completeError(Exception('Codec failed to produce an image, possibly due to invalid image data.'));
+        final Exception exception = Exception('Codec failed to produce an image, possibly due to invalid image data.');
+        if (sync) {
+          throw exception;
+        } else {
+          completer.completeError(exception);
+        }
       } else {
         completer.complete(FrameInfo._(
           image: Image._(image),
@@ -2004,6 +2010,7 @@ class Codec extends NativeFieldWrapperClass1 {
         ));
       }
     });
+    sync = false;
     if (error != null) {
       throw Exception(error);
     }
