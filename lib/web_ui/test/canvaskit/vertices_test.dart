@@ -65,7 +65,7 @@ void testMain() {
     await matchGoldenFile('canvaskit_vertices_antialiased.png', region: region);
 
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  }, skip: isSafari);
 }
 
 CkVertices _testVertices() {
