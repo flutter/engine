@@ -26,11 +26,20 @@ TEST(VariableRefreshRateDisplayTest, ReportCorrectRefreshRateWhenUpdated) {
 }
 
 TEST(VariableRefreshRateDisplayTest,
-     Report0IfReporterSharedPointerIsDestroyed) {
+     Report0IfReporterSharedPointerIsDestroyedAfterDisplayCreation) {
   auto refresh_rate_reporter = std::make_shared<TestRefreshRateReporter>(60);
   auto display = flutter::VariableRefreshRateDisplay(
       std::weak_ptr<TestRefreshRateReporter>(refresh_rate_reporter));
   refresh_rate_reporter.reset();
+  ASSERT_EQ(display.GetRefreshRate(), 0);
+}
+
+TEST(VariableRefreshRateDisplayTest,
+     Report0IfReporterSharedPointerIsDestroyedBeforeDisplayCreation) {
+  auto refresh_rate_reporter = std::make_shared<TestRefreshRateReporter>(60);
+  refresh_rate_reporter.reset();
+  auto display = flutter::VariableRefreshRateDisplay(
+      std::weak_ptr<TestRefreshRateReporter>(refresh_rate_reporter));
   ASSERT_EQ(display.GetRefreshRate(), 0);
 }
 
