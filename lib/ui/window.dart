@@ -425,6 +425,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///    observe when this value changes.
   double get textScaleFactor => platformDispatcher.textScaleFactor;
 
+  bool get defaultSpellCheckEnabled => platformDispatcher.defaultSpellCheckEnabled;
+
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
   ///

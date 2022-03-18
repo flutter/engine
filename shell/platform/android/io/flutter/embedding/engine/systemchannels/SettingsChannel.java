@@ -13,6 +13,7 @@ public class SettingsChannel {
 
   public static final String CHANNEL_NAME = "flutter/settings";
   private static final String TEXT_SCALE_FACTOR = "textScaleFactor";
+  private static final String DEFAULT_SPELL_CHECK_ENABLED = "defaultSpellCheckEnabled";
   private static final String BRIEFLY_SHOW_PASSWORD = "brieflyShowPassword";
   private static final String ALWAYS_USE_24_HOUR_FORMAT = "alwaysUse24HourFormat";
   private static final String PLATFORM_BRIGHTNESS = "platformBrightness";
@@ -39,6 +40,13 @@ public class SettingsChannel {
     @NonNull
     public MessageBuilder setTextScaleFactor(float textScaleFactor) {
       message.put(TEXT_SCALE_FACTOR, textScaleFactor);
+      return this;
+    }
+
+    @NonNull
+    public MessageBuilder setDefaultSpellCheckEnabled(@NonNull boolean defaultSpellCheckEnabled) {
+      System.out.println("--------------DefaultSpellCheckEnabled SET TO TRUE--------------------");
+      message.put(DEFAULT_SPELL_CHECK_ENABLED, defaultSpellCheckEnabled);
       return this;
     }
 
