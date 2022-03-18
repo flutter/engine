@@ -420,6 +420,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 }
 
+// Regression test for https://github.com/flutter/engine/pull/32098.
 - (void)testInternalPluginsInvokeInViewDidLoad {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
