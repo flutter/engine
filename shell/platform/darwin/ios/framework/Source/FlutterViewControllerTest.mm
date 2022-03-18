@@ -420,7 +420,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 }
 
--(void)testInternalPluginsInvokeInViewDidLoad {
+- (void)testInternalPluginsInvokeInViewDidLoad {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
