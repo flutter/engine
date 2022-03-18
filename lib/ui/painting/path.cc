@@ -287,7 +287,7 @@ void CanvasPath::transform(Dart_Handle path_handle,
 
   fml::RefPtr<CanvasPath> path = CreateNew(path_handle);
   auto& other_mutable_path = path->mutable_path();
-  mutable_path().transform(sk_matrix, &other_mutable_path);
+  mutable_path().transform(ToSkMatrix(matrix4), &other_mutable_path);
 }
 
 tonic::Float32List CanvasPath::getBounds() {

@@ -43,9 +43,9 @@ void ImageShader::initWithImage(CanvasImage* image,
 }
 
 std::shared_ptr<DlColorSource> ImageShader::shader(
-    SkSamplingOptions& sampling) {
+    const SkSamplingOptions& sampling) {
   if (sampling_is_locked_) {
-    sampling = cached_shader_.skia_object()->sampling();
+    return cached_shader_.skia_object()->with_sampling(cached_shader_.skia_object()->sampling());
   }
   // It might seem that if the sampling is locked we can just return the
   // cached version, but since we need to hold the cached shader in a

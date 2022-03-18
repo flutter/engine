@@ -37,10 +37,10 @@ Vertices::~Vertices() {}
 
 bool Vertices::init(Dart_Handle vertices_handle,
                     SkVertices::VertexMode vertex_mode,
-                    tonic::Float32List& positions,
-                    tonic::Float32List& texture_coordinates,
-                    tonic::Int32List& colors,
-                    tonic::Uint16List& indices) {
+                    const tonic::Float32List& positions,
+                    const tonic::Float32List& texture_coordinates,
+                    const tonic::Int32List& colors,
+                    const tonic::Uint16List& indices) {
   UIDartState::ThrowIfUIOperationsProhibited();
   uint32_t builderFlags = 0;
   if (texture_coordinates.data()) {
@@ -79,11 +79,6 @@ bool Vertices::init(Dart_Handle vertices_handle,
     std::copy(indices.data(), indices.data() + indices.num_elements(),
               builder.indices());
   }
-
-  positions.Release();
-  texture_coordinates.Release();
-  colors.Release();
-  indices.Release();
 
   auto vertices = fml::MakeRefCounted<Vertices>();
   vertices->vertices_ = builder.detach();

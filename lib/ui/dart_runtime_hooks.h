@@ -29,6 +29,8 @@ class DartRuntimeHooks {
   FML_DISALLOW_IMPLICIT_CONSTRUCTORS(DartRuntimeHooks);
 };
 
+void DartPluginRegistrant_EnsureInitialized();
+
 }  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_DART_RUNTIME_HOOKS_H_
