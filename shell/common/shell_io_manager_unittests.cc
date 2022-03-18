@@ -48,6 +48,7 @@ static sk_sp<SkData> OpenFixtureAsSkData(const char* name) {
 
 class ShellIOManagerTest : public FixtureTest {};
 
+// Regression test for https://github.com/flutter/engine/pull/32106.
 TEST_F(ShellIOManagerTest,
        ItDoesNotCrashThatSkiaUnrefQueueDrainAfterIOManagerReset) {
   auto settings = CreateSettingsForFixture();
@@ -110,6 +111,10 @@ TEST_F(ShellIOManagerTest,
 
   // Destroy the IO manager
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
+    // 'SkiaUnrefQueue.Drain' will be called after 'io_manager.reset()' in this
+    // test, If the resource context has been destroyed at that time, it will
+    // crash.
+    // See https://github.com/flutter/flutter/issues/87895
     io_manager.reset();
     gl_surface.reset();
   });
