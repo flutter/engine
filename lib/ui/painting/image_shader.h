@@ -30,7 +30,7 @@ class ImageShader : public Shader {
                      int filter_quality_index,
                      const tonic::Float64List& matrix4);
 
-  sk_sp<SkShader> shader(SkSamplingOptions) override;
+  std::shared_ptr<DlColorSource> shader(SkSamplingOptions&) override;
 
   int width();
   int height();
@@ -39,13 +39,9 @@ class ImageShader : public Shader {
   ImageShader();
 
   flutter::SkiaGPUObject<SkImage> sk_image_;
-  SkTileMode tmx_;
-  SkTileMode tmy_;
-  SkMatrix local_matrix_;
   bool sampling_is_locked_;
 
-  SkSamplingOptions cached_sampling_;
-  flutter::SkiaGPUObject<SkShader> cached_shader_;
+  flutter::SkiaGPUObject<DlImageColorSource> cached_shader_;
 };
 
 }  // namespace flutter

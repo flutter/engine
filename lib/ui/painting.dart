@@ -1105,6 +1105,7 @@ class Paint {
   // The binary format must match the deserialization code in paint.cc.
 
   final ByteData _data = ByteData(_kDataByteCount);
+
   static const int _kIsAntiAliasIndex = 0;
   static const int _kColorIndex = 1;
   static const int _kBlendModeIndex = 2;
@@ -1138,10 +1139,10 @@ class Paint {
   static const int _kDataByteCount = 56;
 
   // Binary format must match the deserialization code in paint.cc.
-  List<dynamic>? _objects;
+  List<Object?>? _objects;
 
-  List<dynamic> _ensureObjectsInitialized() {
-    return _objects ??= List<dynamic>.filled(_kObjectCount, null, growable: false);
+  List<Object?> _ensureObjectsInitialized() {
+    return _objects ??= List<Object?>.filled(_kObjectCount, null, growable: false);
   }
 
   static const int _kShaderIndex = 0;
@@ -1407,7 +1408,8 @@ class Paint {
   ///
   /// When a shape is being drawn, [colorFilter] overrides [color] and [shader].
   ColorFilter? get colorFilter {
-    return _objects?[_kColorFilterIndex]?.creator as ColorFilter?;
+    final _ColorFilter? nativeFilter = _objects?[_kColorFilterIndex] as _ColorFilter?;
+    return nativeFilter?.creator;
   }
   set colorFilter(ColorFilter? value) {
     final _ColorFilter? nativeFilter = value?._toNativeColorFilter();
@@ -1443,7 +1445,8 @@ class Paint {
   ///
   ///  * [MaskFilter], which is used for drawing geometry.
   ImageFilter? get imageFilter {
-    return _objects?[_kImageFilterIndex]?.creator as ImageFilter?;
+    final _ImageFilter? nativeFilter = _objects?[_kImageFilterIndex] as _ImageFilter?;
+    return nativeFilter?.creator;
   }
   set imageFilter(ImageFilter? value) {
     if (value == null) {
@@ -1451,8 +1454,9 @@ class Paint {
         _objects![_kImageFilterIndex] = null;
       }
     } else {
-      final List<dynamic> objects = _ensureObjectsInitialized();
-      if (objects[_kImageFilterIndex]?.creator != value) {
+      final List<Object?> objects = _ensureObjectsInitialized();
+      final _ImageFilter? imageFilter = objects[_kImageFilterIndex] as _ImageFilter?;
+      if (imageFilter?.creator != value) {
         objects[_kImageFilterIndex] = value._toNativeImageFilter();
       }
     }
@@ -4384,10 +4388,10 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::saveLayerWithoutBounds')
-  external void _saveLayerWithoutBounds(List<dynamic>? paintObjects, ByteData paintData);
+  external void _saveLayerWithoutBounds(List<Object?>? paintObjects, ByteData paintData);
 
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::saveLayer')
-  external void _saveLayer(double left, double top, double right, double bottom, List<dynamic>? paintObjects, ByteData paintData);
+  external void _saveLayer(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
 
   /// Pops the current save stack, if there is anything to pop.
   /// Otherwise, does nothing.
@@ -4526,7 +4530,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawLine')
-  external void _drawLine(double x1, double y1, double x2, double y2, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawLine(double x1, double y1, double x2, double y2, List<Object?>? paintObjects, ByteData paintData);
 
   /// Fills the canvas with the given [Paint].
   ///
@@ -4538,7 +4542,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::drawPaint')
-  external void _drawPaint(List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawPaint(List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
   /// or stroked (or both) is controlled by [Paint.style].
@@ -4549,7 +4553,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawRect')
-  external void _drawRect(double left, double top, double right, double bottom, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawRect(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
   /// filled or stroked (or both) is controlled by [Paint.style].
@@ -4560,7 +4564,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>('Canvas::drawRRect')
-  external void _drawRRect(Float32List rrect, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawRRect(Float32List rrect, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a shape consisting of the difference between two rounded rectangles
   /// with the given [Paint]. Whether this shape is filled or stroked (or both)
@@ -4575,7 +4579,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>('Canvas::drawDRRect')
-  external void _drawDRRect(Float32List outer, Float32List inner, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawDRRect(Float32List outer, Float32List inner, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws an axis-aligned oval that fills the given axis-aligned rectangle
   /// with the given [Paint]. Whether the oval is filled or stroked (or both) is
@@ -4587,7 +4591,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawOval')
-  external void _drawOval(double left, double top, double right, double bottom, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawOval(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a circle centered at the point given by the first argument and
   /// that has the radius given by the second argument, with the [Paint] given in
@@ -4600,7 +4604,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle)>('Canvas::drawCircle')
-  external void _drawCircle(double x, double y, double radius, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawCircle(double x, double y, double radius, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draw an arc scaled to fit inside the given rectangle.
   ///
@@ -4628,7 +4632,7 @@ class Canvas extends NativeFieldWrapperClass1 {
       double startAngle,
       double sweepAngle,
       bool useCenter,
-      List<dynamic>? paintObjects,
+      List<Object?>? paintObjects,
       ByteData paintData);
 
   /// Draws the given [Path] with the given [Paint].
@@ -4643,7 +4647,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Handle, Handle)>('Canvas::drawPath')
-  external void _drawPath(Path path, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawPath(Path path, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
@@ -4655,7 +4659,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle, Handle, Int32)>('Canvas::drawImage')
-  external void _drawImage(_Image image, double x, double y, List<dynamic>? paintObjects, ByteData paintData, int filterQualityIndex);
+  external void _drawImage(_Image image, double x, double y, List<Object?>? paintObjects, ByteData paintData, int filterQualityIndex);
 
   /// Draws the subset of the given image described by the `src` argument into
   /// the canvas in the axis-aligned rectangle given by the `dst` argument.
@@ -4710,7 +4714,7 @@ class Canvas extends NativeFieldWrapperClass1 {
       double dstTop,
       double dstRight,
       double dstBottom,
-      List<dynamic>? paintObjects,
+      List<Object?>? paintObjects,
       ByteData paintData,
       int filterQualityIndex);
 
@@ -4771,7 +4775,7 @@ class Canvas extends NativeFieldWrapperClass1 {
       double dstTop,
       double dstRight,
       double dstBottom,
-      List<dynamic>? paintObjects,
+      List<Object?>? paintObjects,
       ByteData paintData,
       int filterQualityIndex);
 
@@ -4845,7 +4849,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Handle)>('Canvas::drawPoints')
-  external void _drawPoints(List<dynamic>? paintObjects, ByteData paintData, int pointMode, Float32List points);
+  external void _drawPoints(List<Object?>? paintObjects, ByteData paintData, int pointMode, Float32List points);
 
   /// Draws the set of [Vertices] onto the canvas.
   ///
@@ -4876,7 +4880,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle, Handle)>('Canvas::drawVertices')
-  external void _drawVertices(Vertices vertices, int blendMode, List<dynamic>? paintObjects, ByteData paintData);
+  external void _drawVertices(Vertices vertices, int blendMode, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws many parts of an image - the [atlas] - onto the canvas.
   ///
@@ -5227,7 +5231,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>(
       'Canvas::drawAtlas')
   external void _drawAtlas(
-      List<dynamic>? paintObjects,
+      List<Object?>? paintObjects,
       ByteData paintData,
       int filterQualityIndex,
       _Image atlas,
@@ -5792,15 +5796,27 @@ typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
 ///   return _futurize(_doSomethingAndCallback);
 /// }
 /// ```
+// Note: this function is not directly tested so that it remains private, instead an exact
+// copy of it has been inlined into the test at lib/ui/fixtures/ui_test.dart. if you change
+// this function, then you  must update the test.
 Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
+  // If the callback synchronously throws an error, then synchronously
+  // rethrow that error instead of adding it to the completer. This
+  // prevents the Zone from receiving an uncaught exception.
+  bool sync = true;
   final String? error = callbacker((T? t) {
     if (t == null) {
-      completer.completeError(Exception('operation failed'));
+      if (sync) {
+        throw Exception('operation failed');
+      } else {
+        completer.completeError(Exception('operation failed'));
+      }
     } else {
       completer.complete(t);
     }
   });
+  sync = false;
   if (error != null)
     throw Exception(error);
   return completer.future;

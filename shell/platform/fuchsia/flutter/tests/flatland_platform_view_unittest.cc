@@ -84,11 +84,17 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDestroyed() {}
   // |flutter::PlatformView::Delegate|
+  void OnPlatformViewScheduleFrame() {}
+  // |flutter::PlatformView::Delegate|
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
       const flutter::ViewportMetrics& metrics) {
     metrics_ = metrics;
+  }
+  // |flutter::PlatformView::Delegate|
+  const flutter::Settings& OnPlatformViewGetSettings() const {
+    return settings_;
   }
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
@@ -165,6 +171,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   std::vector<std::unique_ptr<flutter::PointerDataPacket>> pointer_packets_;
   int32_t semantics_features_ = 0;
   bool semantics_enabled_ = false;
+  flutter::Settings settings_;
 };
 
 class MockResponse : public flutter::PlatformMessageResponse {

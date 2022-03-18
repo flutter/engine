@@ -275,6 +275,13 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _shown = FALSE;
     [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
+    // If there's an active mark region, commit it, end composing, and clear the IME's mark text.
+    if (_activeModel && _activeModel->composing()) {
+      _activeModel->CommitComposing();
+      _activeModel->EndComposing();
+    }
+    [_textInputContext discardMarkedText];
+
     _clientID = nil;
     _inputAction = nil;
     _enableDeltaModel = NO;
@@ -349,9 +356,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
 
   NSString* text = state[kTextKey];
-  if (text != nil) {
-    _activeModel->SetText([text UTF8String]);
-  }
 
   flutter::TextRange selected_range = RangeFromBaseExtent(
       state[kSelectionBaseKey], state[kSelectionExtentKey], _activeModel->selection());
@@ -359,15 +363,19 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
   flutter::TextRange composing_range = RangeFromBaseExtent(
       state[kComposingBaseKey], state[kComposingExtentKey], _activeModel->composing_range());
-  size_t cursor_offset = selected_range.base() - composing_range.start();
-  _activeModel->SetComposingRange(composing_range, cursor_offset);
+
+  const bool wasComposing = _activeModel->composing();
+  _activeModel->SetText([text UTF8String], selected_range, composing_range);
+  if (composing_range.collapsed() && wasComposing) {
+    [_textInputContext discardMarkedText];
+  }
   [_client becomeFirstResponder];
   [self updateTextAndSelection];
 }
 
-- (void)updateEditState {
+- (NSDictionary*)editingState {
   if (_activeModel == nullptr) {
-    return;
+    return nil;
   }
 
   NSString* const textAffinity = [self textAffinityString];
@@ -375,7 +383,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
   int composingExtent = _activeModel->composing() ? _activeModel->composing_range().extent() : -1;
 
-  NSDictionary* state = @{
+  return @{
     kSelectionBaseKey : @(_activeModel->selection().base()),
     kSelectionExtentKey : @(_activeModel->selection().extent()),
     kSelectionAffinityKey : textAffinity,
@@ -384,7 +392,14 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     kComposingExtentKey : @(composingExtent),
     kTextKey : [NSString stringWithUTF8String:_activeModel->GetText().c_str()]
   };
+}
 
+- (void)updateEditState {
+  if (_activeModel == nullptr) {
+    return;
+  }
+
+  NSDictionary* state = [self editingState];
   [_channel invokeMethod:kUpdateEditStateResponseMethod arguments:@[ self.clientID, state ]];
   [self updateTextAndSelection];
 }
@@ -416,6 +431,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
   [_channel invokeMethod:kUpdateEditStateWithDeltasResponseMethod
                arguments:@[ self.clientID, deltas ]];
+  [self updateTextAndSelection];
 }
 
 - (void)updateTextAndSelection {
@@ -441,19 +457,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
                                                             : kTextAffinityDownstream;
 }
 
-#pragma mark -
-#pragma mark FlutterKeySecondaryResponder
+- (BOOL)isComposing {
+  return _activeModel && !_activeModel->composing_range().collapsed();
+}
 
-/**
- * Handles key down events received from the view controller, responding YES if
- * the event was handled.
- *
- * Note, the Apple docs suggest that clients should override essentially all the
- * mouse and keyboard event-handling methods of NSResponder. However, experimentation
- * indicates that only key events are processed by the native layer; Flutter processes
- * mouse events. Additionally, processing both keyUp and keyDown results in duplicate
- * processing of the same keys.
- */
 - (BOOL)handleKeyEvent:(NSEvent*)event {
   if (event.type == NSEventTypeKeyUp ||
       (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
@@ -612,6 +619,15 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
   std::string marked_text = isAttributedString ? [[string string] UTF8String] : [string UTF8String];
   _activeModel->UpdateComposingText(marked_text);
+
+  // Update the selection within the marked text.
+  long signedLength = static_cast<long>(selectedRange.length);
+  long location = selectedRange.location + _activeModel->composing_range().base();
+  long textLength = _activeModel->text_range().end();
+
+  size_t base = std::clamp(location, 0L, textLength);
+  size_t extent = std::clamp(location + signedLength, 0L, textLength);
+  _activeModel->SetSelection(flutter::TextRange(base, extent));
 
   if (_enableDeltaModel) {
     flutter::TextRange composing = _activeModel->composing_range();

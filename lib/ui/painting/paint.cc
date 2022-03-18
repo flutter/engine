@@ -98,14 +98,14 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
       Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
       auto sampling =
           ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-      paint.setShader(decoded->shader(sampling));
+      paint.setShader(decoded->shader(sampling)->skia_object());
     }
 
     Dart_Handle color_filter = values[kColorFilterIndex];
     if (!Dart_IsNull(color_filter)) {
       ColorFilter* decoded_color_filter =
           tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
-      paint.setColorFilter(decoded_color_filter->filter());
+      paint.setColorFilter(decoded_color_filter->filter()->skia_object());
     }
 
     Dart_Handle image_filter = values[kImageFilterIndex];
@@ -156,8 +156,7 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   }
 
   if (uint_data[kInvertColorIndex]) {
-    sk_sp<SkColorFilter> invert_filter =
-        ColorFilter::MakeColorMatrixFilter255(invert_colors);
+    sk_sp<SkColorFilter> invert_filter = SkColorFilters::Matrix(invert_colors);
     sk_sp<SkColorFilter> current_filter = paint.refColorFilter();
     if (current_filter) {
       invert_filter = invert_filter->makeComposed(current_filter);
@@ -197,7 +196,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   Dart_Handle values[kObjectCount];
   if (Dart_IsNull(paint_objects_)) {
     if (flags.applies_shader()) {
-      builder->setShader(nullptr);
+      builder->setColorSource(nullptr);
     }
     if (flags.applies_color_filter()) {
       builder->setColorFilter(nullptr);
@@ -219,12 +218,12 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     if (flags.applies_shader()) {
       Dart_Handle shader = values[kShaderIndex];
       if (Dart_IsNull(shader)) {
-        builder->setShader(nullptr);
+        builder->setColorSource(nullptr);
       } else {
         Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
         auto sampling =
             ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-        builder->setShader(decoded->shader(sampling));
+        builder->setColorSource(decoded->shader(sampling).get());
       }
     }
 
@@ -235,7 +234,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
       } else {
         ColorFilter* decoded_color_filter =
             tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
-        builder->setColorFilter(decoded_color_filter->filter());
+        builder->setColorFilter(decoded_color_filter->dl_filter());
       }
     }
 
@@ -302,7 +301,12 @@ bool Paint::sync_to(DisplayListBuilder* builder,
         SkBlurStyle blur_style =
             static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
         double sigma = float_data[kMaskFilterSigmaIndex];
-        builder->setMaskBlurFilter(blur_style, sigma);
+        DlBlurMaskFilter dl_filter(blur_style, sigma);
+        if (dl_filter.skia_object()) {
+          builder->setMaskFilter(&dl_filter);
+        } else {
+          builder->setMaskFilter(nullptr);
+        }
         break;
     }
   }

@@ -484,6 +484,27 @@ class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onPlatformBrightnessChanged = callback;
   }
 
+  /// The setting indicating the system font of the host platform.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  String? get systemFontFamily => platformDispatcher.systemFontFamily;
+
+  /// A callback that is invoked whenever [systemFontFamily] changes value.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback? get onSystemFontFamilyChanged => platformDispatcher.onSystemFontFamilyChanged;
+  set onSystemFontFamilyChanged(VoidCallback? callback) {
+    platformDispatcher.onSystemFontFamilyChanged = callback;
+  }
+
   /// A callback that is invoked to notify the window that it is an appropriate
   /// time to provide a scene using the [SceneBuilder] API and the [render]
   /// method.
@@ -773,6 +794,7 @@ class AccessibilityFeatures {
   static const int _kBoldTextIndex = 1 << 3;
   static const int _kReduceMotionIndex = 1 << 4;
   static const int _kHighContrastIndex = 1 << 5;
+  static const int _kOnOffSwitchLabelsIndex = 1 << 6;
 
   // A bitfield which represents each enabled feature.
   final int _index;
@@ -805,6 +827,11 @@ class AccessibilityFeatures {
   /// Only supported on iOS.
   bool get highContrast => _kHighContrastIndex & _index != 0;
 
+  /// The platform is requesting to show on/off labels inside switches.
+  ///
+  /// Only supported on iOS.
+  bool get onOffSwitchLabels => _kOnOffSwitchLabelsIndex & _index != 0;
+
   @override
   String toString() {
     final List<String> features = <String>[];
@@ -820,6 +847,8 @@ class AccessibilityFeatures {
       features.add('reduceMotion');
     if (highContrast)
       features.add('highContrast');
+    if (onOffSwitchLabels)
+      features.add('onOffSwitchLabels');
     return 'AccessibilityFeatures$features';
   }
 

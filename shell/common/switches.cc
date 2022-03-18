@@ -68,6 +68,7 @@ static const std::string gAllowedDartFlags[] = {
     "--strict_null_safety_checks",
     "--enable-display-list",
     "--no-enable-display-list",
+    "--max_subtype_cache_entries",
 };
 // clang-format on
 
@@ -356,6 +357,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::VmSnapshotData),
                               &vm_snapshot_data_filename);
 
+  command_line.GetOptionValue(FlagForSwitch(Switch::Route), &settings.route);
+
   std::string vm_snapshot_instr_filename;
   command_line.GetOptionValue(FlagForSwitch(Switch::VmSnapshotInstructions),
                               &vm_snapshot_instr_filename);
@@ -417,6 +420,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   std::string enable_skparagraph = command_line.GetOptionValueWithDefault(
       FlagForSwitch(Switch::EnableSkParagraph), "");
   settings.enable_skparagraph = enable_skparagraph != "false";
+
+  settings.enable_impeller =
+      command_line.HasOption(FlagForSwitch(Switch::EnableImpeller));
 
   settings.prefetched_default_font_manager = command_line.HasOption(
       FlagForSwitch(Switch::PrefetchedDefaultFontManager));

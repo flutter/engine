@@ -215,16 +215,17 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path,
   tonic::Float64List matrix4(matrix4_handle);
 
   if (!path) {
+    matrix4.Release();
     Dart_ThrowException(
         ToDart("Path.addPathWithMatrix called with non-genuine Path."));
     return;
   }
 
   SkMatrix matrix = ToSkMatrix(matrix4);
+  matrix4.Release();
   matrix.setTranslateX(matrix.getTranslateX() + dx);
   matrix.setTranslateY(matrix.getTranslateY() + dy);
   mutable_path().addPath(path->path(), matrix, SkPath::kAppend_AddPathMode);
-  matrix4.Release();
   resetVolatility();
 }
 
@@ -245,16 +246,17 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
   tonic::Float64List matrix4(matrix4_handle);
 
   if (!path) {
+    matrix4.Release();
     Dart_ThrowException(
         ToDart("Path.addPathWithMatrix called with non-genuine Path."));
     return;
   }
 
   SkMatrix matrix = ToSkMatrix(matrix4);
+  matrix4.Release();
   matrix.setTranslateX(matrix.getTranslateX() + dx);
   matrix.setTranslateY(matrix.getTranslateY() + dy);
   mutable_path().addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
-  matrix4.Release();
   resetVolatility();
 }
 
@@ -285,8 +287,7 @@ void CanvasPath::transform(Dart_Handle path_handle,
 
   fml::RefPtr<CanvasPath> path = CreateNew(path_handle);
   auto& other_mutable_path = path->mutable_path();
-  mutable_path().transform(ToSkMatrix(matrix4), &other_mutable_path);
-  matrix4.Release();
+  mutable_path().transform(sk_matrix, &other_mutable_path);
 }
 
 tonic::Float32List CanvasPath::getBounds() {

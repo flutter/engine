@@ -175,33 +175,74 @@ struct SetBlendModeOp final : DLOp {
     }                                                                          \
   };
 DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
-DEFINE_SET_CLEAR_SKREF_OP(Shader, shader)
 DEFINE_SET_CLEAR_SKREF_OP(ImageFilter, filter)
-DEFINE_SET_CLEAR_SKREF_OP(ColorFilter, filter)
-DEFINE_SET_CLEAR_SKREF_OP(MaskFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_SKREF_OP
 
-// 4 byte header + 4 byte payload packs into minimum 8 bytes
-// Note that the "blur style" is packed into the OpType to prevent
-// needing an additional 8 bytes for a 4-value enum.
-#define DEFINE_MASK_BLUR_FILTER_OP(name, style)                            \
-  struct SetMaskBlurFilter##name##Op final : DLOp {                        \
-    static const auto kType = DisplayListOpType::kSetMaskBlurFilter##name; \
-                                                                           \
-    explicit SetMaskBlurFilter##name##Op(SkScalar sigma) : sigma(sigma) {} \
-                                                                           \
-    SkScalar sigma;                                                        \
-                                                                           \
-    void dispatch(Dispatcher& dispatcher) const {                          \
-      dispatcher.setMaskBlurFilter(style, sigma);                          \
-    }                                                                      \
+// Clear: 4 byte header + unused 4 byte payload uses 8 bytes
+//        (4 bytes unused)
+// Set: 4 byte header + unused 4 byte struct padding + Dl<name>
+//      instance copied to the memory following the record
+//      yields a size and efficiency that has somewhere between
+//      4 and 8 bytes unused
+// SetSk: 4 byte header + an sk_sp (ptr) uses 16 bytes due to the
+//        alignment of the ptr.
+//        (4 bytes unused)
+#define DEFINE_SET_CLEAR_DLATTR_OP(name, sk_name, field)                    \
+  struct Clear##name##Op final : DLOp {                                     \
+    static const auto kType = DisplayListOpType::kClear##name;              \
+                                                                            \
+    Clear##name##Op() {}                                                    \
+                                                                            \
+    void dispatch(Dispatcher& dispatcher) const {                           \
+      dispatcher.set##name(nullptr);                                        \
+    }                                                                       \
+  };                                                                        \
+  struct SetPod##name##Op final : DLOp {                                    \
+    static const auto kType = DisplayListOpType::kSetPod##name;             \
+                                                                            \
+    SetPod##name##Op() {}                                                   \
+                                                                            \
+    void dispatch(Dispatcher& dispatcher) const {                           \
+      const Dl##name* filter = reinterpret_cast<const Dl##name*>(this + 1); \
+      dispatcher.set##name(filter);                                         \
+    }                                                                       \
+  };                                                                        \
+  struct SetSk##name##Op final : DLOp {                                     \
+    static const auto kType = DisplayListOpType::kSetSk##name;              \
+                                                                            \
+    SetSk##name##Op(sk_sp<Sk##sk_name> field) : field(field) {}             \
+                                                                            \
+    sk_sp<Sk##sk_name> field;                                               \
+                                                                            \
+    void dispatch(Dispatcher& dispatcher) const {                           \
+      DlUnknown##name dl_filter(field);                                     \
+      dispatcher.set##name(&dl_filter);                                     \
+    }                                                                       \
   };
-DEFINE_MASK_BLUR_FILTER_OP(Normal, kNormal_SkBlurStyle)
-DEFINE_MASK_BLUR_FILTER_OP(Solid, kSolid_SkBlurStyle)
-DEFINE_MASK_BLUR_FILTER_OP(Inner, kInner_SkBlurStyle)
-DEFINE_MASK_BLUR_FILTER_OP(Outer, kOuter_SkBlurStyle)
-#undef DEFINE_MASK_BLUR_FILTER_OP
+DEFINE_SET_CLEAR_DLATTR_OP(ColorFilter, ColorFilter, filter)
+DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, MaskFilter, filter)
+DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
+#undef DEFINE_SET_CLEAR_DLATTR_OP
+
+// 4 byte header + 80 bytes for the embedded DlImageColorSource
+// uses 84 total bytes (4 bytes unused)
+struct SetImageColorSourceOp : DLOp {
+  static const auto kType = DisplayListOpType::kSetImageColorSource;
+
+  SetImageColorSourceOp(const DlImageColorSource* source)
+      : source(source->image(),
+               source->horizontal_tile_mode(),
+               source->vertical_tile_mode(),
+               source->sampling(),
+               source->matrix_ptr()) {}
+
+  const DlImageColorSource source;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setColorSource(&source);
+  }
+};
 
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
 struct SaveOp final : DLOp {
@@ -339,6 +380,15 @@ struct TransformFullPerspectiveOp final : DLOp {
                                         mzx, mzy, mzz, mzt,  //
                                         mwx, mwy, mwz, mwt);
   }
+};
+
+// 4 byte header with no payload.
+struct TransformResetOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransformReset;
+
+  TransformResetOp() = default;
+
+  void dispatch(Dispatcher& dispatcher) const { dispatcher.transformReset(); }
 };
 
 // 4 byte header + 4 byte common payload packs into minimum 8 bytes

@@ -73,35 +73,31 @@ void SkPaintDispatchHelper::setBlendMode(SkBlendMode mode) {
 void SkPaintDispatchHelper::setBlender(sk_sp<SkBlender> blender) {
   paint_.setBlender(blender);
 }
-void SkPaintDispatchHelper::setShader(sk_sp<SkShader> shader) {
-  paint_.setShader(shader);
+void SkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
+  paint_.setShader(source ? source->skia_object() : nullptr);
 }
 void SkPaintDispatchHelper::setImageFilter(sk_sp<SkImageFilter> filter) {
   paint_.setImageFilter(filter);
 }
-void SkPaintDispatchHelper::setColorFilter(sk_sp<SkColorFilter> filter) {
-  color_filter_ = filter;
+void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
+  color_filter_ = filter ? filter->shared() : nullptr;
   paint_.setColorFilter(makeColorFilter());
 }
 void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
   paint_.setPathEffect(effect);
 }
-void SkPaintDispatchHelper::setMaskFilter(sk_sp<SkMaskFilter> filter) {
-  paint_.setMaskFilter(filter);
-}
-void SkPaintDispatchHelper::setMaskBlurFilter(SkBlurStyle style,
-                                              SkScalar sigma) {
-  paint_.setMaskFilter(SkMaskFilter::MakeBlur(style, sigma));
+void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
+  paint_.setMaskFilter(filter ? filter->skia_object() : nullptr);
 }
 
-sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() {
+sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
   if (!invert_colors_) {
-    return color_filter_;
+    return color_filter_ ? color_filter_->skia_object() : nullptr;
   }
   sk_sp<SkColorFilter> invert_filter =
       SkColorFilters::Matrix(invert_color_matrix);
   if (color_filter_) {
-    invert_filter = invert_filter->makeComposed(color_filter_);
+    invert_filter = invert_filter->makeComposed(color_filter_->skia_object());
   }
   return invert_filter;
 }
@@ -155,6 +151,11 @@ void SkMatrixDispatchHelper::transformFullPerspective(
 }
 
 // clang-format on
+
+void SkMatrixDispatchHelper::transformReset() {
+  matrix_ = {};
+  matrix33_ = {};
+}
 
 void SkMatrixDispatchHelper::save() {
   saved_.push_back(matrix_);
@@ -266,20 +267,14 @@ void DisplayListBoundsCalculator::setBlender(sk_sp<SkBlender> blender) {
 void DisplayListBoundsCalculator::setImageFilter(sk_sp<SkImageFilter> filter) {
   image_filter_ = std::move(filter);
 }
-void DisplayListBoundsCalculator::setColorFilter(sk_sp<SkColorFilter> filter) {
-  color_filter_ = std::move(filter);
+void DisplayListBoundsCalculator::setColorFilter(const DlColorFilter* filter) {
+  color_filter_ = filter ? filter->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::setPathEffect(sk_sp<SkPathEffect> effect) {
   path_effect_ = std::move(effect);
 }
-void DisplayListBoundsCalculator::setMaskFilter(sk_sp<SkMaskFilter> filter) {
-  mask_filter_ = std::move(filter);
-  mask_sigma_pad_ = 0.0f;
-}
-void DisplayListBoundsCalculator::setMaskBlurFilter(SkBlurStyle style,
-                                                    SkScalar sigma) {
-  mask_sigma_pad_ = std::max(3.0f * sigma, 0.0f);
-  mask_filter_ = nullptr;
+void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
+  mask_filter_ = filter ? filter->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::save() {
   SkMatrixDispatchHelper::save();
@@ -601,15 +596,18 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
 
   if (flags.applies_mask_filter()) {
     if (mask_filter_) {
-      SkPaint p;
-      p.setMaskFilter(mask_filter_);
-      if (!p.canComputeFastBounds()) {
-        return false;
+      const DlBlurMaskFilter* blur_filter = mask_filter_->asBlur();
+      if (blur_filter) {
+        SkScalar mask_sigma_pad = blur_filter->sigma() * 3.0;
+        bounds.outset(mask_sigma_pad, mask_sigma_pad);
+      } else {
+        SkPaint p;
+        p.setMaskFilter(mask_filter_->skia_object());
+        if (!p.canComputeFastBounds()) {
+          return false;
+        }
+        bounds = p.computeFastBounds(bounds, &bounds);
       }
-      bounds = p.computeFastBounds(bounds, &bounds);
-    }
-    if (mask_sigma_pad_ > 0.0f) {
-      bounds.outset(mask_sigma_pad_, mask_sigma_pad_);
     }
   }
 
@@ -657,8 +655,7 @@ bool DisplayListBoundsCalculator::paint_nops_on_transparency() {
   // save layer untouched out to the edge of the output surface.
   // This test assumes that the blend mode checked down below will
   // NOP on transparent black.
-  if (color_filter_ &&
-      color_filter_->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT) {
+  if (color_filter_ && color_filter_->modifies_transparent_black()) {
     return false;
   }
 

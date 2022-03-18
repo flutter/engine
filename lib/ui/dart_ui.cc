@@ -98,6 +98,7 @@ typedef CanvasPath Path;
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
   V(DartRuntimeHooks::GetCallbackHandle, 1)                           \
   V(DartRuntimeHooks::GetCallbackFromHandle, 1)                       \
+  V(DartPluginRegistrant_EnsureInitialized, 0)                        \
   V(Vertices::init, 6)
 
 // List of native instance methods used as @FfiNative functions.

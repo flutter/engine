@@ -519,6 +519,9 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewDestroyed() override;
 
   // |PlatformView::Delegate|
+  void OnPlatformViewScheduleFrame() override;
+
+  // |PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
       const ViewportMetrics& metrics) override;
 
@@ -553,6 +556,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
+
+  // |PlatformView::Delegate|
+  const Settings& OnPlatformViewGetSettings() const override;
 
   // |PlatformView::Delegate|
   void LoadDartDeferredLibrary(

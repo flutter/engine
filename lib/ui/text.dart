@@ -2838,12 +2838,12 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
           _encodeLocale(style._locale));
   }
 
-  @FfiNative<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double,Handle, Handle)>('ParagraphBuilder::Create')
+  @FfiNative<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle)>('ParagraphBuilder::Create')
   external void _constructor(
       Int32List encoded,
       ByteData? strutData,
       String? fontFamily,
-      List<dynamic>? strutFontFamily,
+      List<Object?>? strutFontFamily,
       double fontSize,
       double height,
       String? ellipsis,
@@ -2924,16 +2924,16 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
           Handle)>('ParagraphBuilder::pushStyle')
   external void _pushStyle(
       Int32List encoded,
-      List<dynamic> fontFamilies,
+      List<Object?> fontFamilies,
       double fontSize,
       double letterSpacing,
       double wordSpacing,
       double height,
       double decorationThickness,
       String locale,
-      List<dynamic>? backgroundObjects,
+      List<Object?>? backgroundObjects,
       ByteData? backgroundData,
-      List<dynamic>? foregroundObjects,
+      List<Object?>? foregroundObjects,
       ByteData? foregroundData,
       ByteData shadowsData,
       ByteData? fontFeaturesData);
@@ -3057,7 +3057,7 @@ Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
 }
 
 final ByteData _fontChangeMessage = utf8.encoder.convert(
-  json.encode(<String, dynamic>{'type': 'fontsChange'})
+  json.encode(<String, Object?>{'type': 'fontsChange'})
 ).buffer.asByteData();
 
 FutureOr<void> _sendFontChangeMessage() async {

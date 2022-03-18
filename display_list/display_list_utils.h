@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
+#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_
+#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_
 
 #include <optional>
 
@@ -54,12 +54,11 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setColor(SkColor color) override {}
   void setBlendMode(SkBlendMode mode) override {}
   void setBlender(sk_sp<SkBlender> blender) override {}
-  void setShader(sk_sp<SkShader> shader) override {}
+  void setColorSource(const DlColorSource* source) override {}
   void setImageFilter(sk_sp<SkImageFilter> filter) override {}
-  void setColorFilter(sk_sp<SkColorFilter> filter) override {}
+  void setColorFilter(const DlColorFilter* filter) override {}
   void setPathEffect(sk_sp<SkPathEffect> effect) override {}
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override {}
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {}
+  void setMaskFilter(const DlMaskFilter* filter) override {}
 };
 
 // A utility class that will ignore all Dispatcher methods relating
@@ -89,6 +88,7 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {}
   // clang-format on
+  void transformReset() override {}
 };
 
 class IgnoreDrawDispatchHelper : public virtual Dispatcher {
@@ -178,14 +178,13 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setStrokeMiter(SkScalar limit) override;
   void setStrokeCap(SkPaint::Cap cap) override;
   void setStrokeJoin(SkPaint::Join join) override;
-  void setShader(sk_sp<SkShader> shader) override;
-  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setColorSource(const DlColorSource* source) override;
+  void setColorFilter(const DlColorFilter* filter) override;
   void setInvertColors(bool invert) override;
   void setBlendMode(SkBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
   void setPathEffect(sk_sp<SkPathEffect> effect) override;
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+  void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
 
   const SkPaint& paint() { return paint_; }
@@ -209,9 +208,9 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
  private:
   SkPaint paint_;
   bool invert_colors_ = false;
-  sk_sp<SkColorFilter> color_filter_;
+  std::shared_ptr<const DlColorFilter> color_filter_;
 
-  sk_sp<SkColorFilter> makeColorFilter();
+  sk_sp<SkColorFilter> makeColorFilter() const;
 
   struct SaveInfo {
     SaveInfo(SkScalar opacity) : opacity(opacity) {}
@@ -274,6 +273,8 @@ class SkMatrixDispatchHelper : public virtual Dispatcher,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
 
   // clang-format on
+
+  void transformReset() override;
 
   void save() override;
   void restore() override;
@@ -400,10 +401,9 @@ class DisplayListBoundsCalculator final
   void setBlendMode(SkBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
-  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setColorFilter(const DlColorFilter* filter) override;
   void setPathEffect(sk_sp<SkPathEffect> effect) override;
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+  void setMaskFilter(const DlMaskFilter* filter) override;
 
   void save() override;
   void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
@@ -571,7 +571,7 @@ class DisplayListBoundsCalculator final
   static constexpr SkScalar kMinStrokeWidth = 0.01;
 
   std::optional<SkBlendMode> blend_mode_ = SkBlendMode::kSrcOver;
-  sk_sp<SkColorFilter> color_filter_;
+  std::shared_ptr<const DlColorFilter> color_filter_;
 
   SkScalar half_stroke_width_ = kMinStrokeWidth;
   SkScalar miter_limit_ = 4.0;
@@ -580,8 +580,7 @@ class DisplayListBoundsCalculator final
   bool cap_is_square_ = false;
   sk_sp<SkImageFilter> image_filter_;
   sk_sp<SkPathEffect> path_effect_;
-  sk_sp<SkMaskFilter> mask_filter_;
-  SkScalar mask_sigma_pad_ = 0.0;
+  std::shared_ptr<const DlMaskFilter> mask_filter_;
 
   bool paint_nops_on_transparency();
 
@@ -616,4 +615,4 @@ class DisplayListBoundsCalculator final
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
+#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_

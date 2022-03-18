@@ -55,6 +55,8 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
 
   MOCK_METHOD0(OnPlatformViewDestroyed, void());
 
+  MOCK_METHOD0(OnPlatformViewScheduleFrame, void());
+
   MOCK_METHOD1(OnPlatformViewSetNextFrameCallback,
                void(const fml::closure& closure));
 
@@ -83,6 +85,11 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
 
   MOCK_METHOD1(OnPlatformViewMarkTextureFrameAvailable,
                void(int64_t texture_id));
+
+  MOCK_METHOD(const Settings&,
+              OnPlatformViewGetSettings,
+              (),
+              (const, override));
 
   MOCK_METHOD3(LoadDartDeferredLibrary,
                void(intptr_t loading_unit_id,
@@ -533,6 +540,7 @@ TEST_F(ShellTest,
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
   flags.push_back("--random_seed 42");
+  flags.push_back("--max_subtype_cache_entries=22");
   if (!DartVM::IsRunningPrecompiledCode()) {
     flags.push_back("--enable_mirrors");
   }
@@ -1269,12 +1277,14 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
+// flakiness.
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
 #if defined(OS_FUCHSIA)
        DISABLED_ResubmitFrame
 #else
-       ResubmitFrame
+       DISABLED_ResubmitFrame
 #endif
 ) {
   auto settings = CreateSettingsForFixture();
@@ -1828,6 +1838,80 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
+TEST_F(ShellTest, CanScheduleFrameFromPlatform) {
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback(
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
+  fml::AutoResetWaitableEvent check_latch;
+  AddNativeCallback("NativeOnBeginFrame",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      check_latch.Signal();
+                    }));
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+  ASSERT_TRUE(shell->IsSetup());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("onBeginFrameWithNotifyNativeMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  // Wait for the application to attach the listener.
+  latch.Wait();
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell]() { shell->GetPlatformView()->ScheduleFrame(); });
+  check_latch.Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
+  bool is_on_begin_frame_called = false;
+  bool is_secondary_callback_called = false;
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback(
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
+  fml::CountDownLatch count_down_latch(2);
+  AddNativeCallback("NativeOnBeginFrame",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      EXPECT_FALSE(is_on_begin_frame_called);
+                      EXPECT_FALSE(is_secondary_callback_called);
+                      is_on_begin_frame_called = true;
+                      count_down_latch.CountDown();
+                    }));
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+  ASSERT_TRUE(shell->IsSetup());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("onBeginFrameWithNotifyNativeMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  // Wait for the application to attach the listener.
+  latch.Wait();
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetUITaskRunner(), [&]() {
+        shell->GetEngine()->ScheduleSecondaryVsyncCallback(0, [&]() {
+          EXPECT_TRUE(is_on_begin_frame_called);
+          EXPECT_FALSE(is_secondary_callback_called);
+          is_secondary_callback_called = true;
+          count_down_latch.CountDown();
+        });
+        shell->GetEngine()->ScheduleFrame();
+      });
+  count_down_latch.Wait();
+  EXPECT_TRUE(is_on_begin_frame_called);
+  EXPECT_TRUE(is_secondary_callback_called);
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
 static void LogSkData(sk_sp<SkData> data, const char* title) {
   FML_LOG(ERROR) << "---------- " << title;
   std::ostringstream ostr;
@@ -2310,7 +2394,9 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, DiscardLayerTreeOnResize) {
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
+// flakiness.
+TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
   SkISize wrong_size = SkISize::Make(400, 100);
@@ -2360,7 +2446,9 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, DiscardResubmittedLayerTreeOnResize) {
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
+// flakiness.
+TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
   SkISize origin_size = SkISize::Make(400, 100);
@@ -3032,6 +3120,54 @@ TEST_F(ShellTest, IOManagerInSpawnedShellIsNotNullAfterParentShellDestroyed) {
                // Get io_manager directly from shell and check its existence.
                ASSERT_NE(spawn->GetIOManager().get(), nullptr);
              });
+  });
+  // Destroy the child shell.
+  DestroyShell(std::move(spawn));
+}
+
+TEST_F(ShellTest, ImageGeneratorRegistryNotNullAfterParentShellDestroyed) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  std::unique_ptr<Shell> spawn;
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell, &settings,
+                                                             &spawn] {
+    auto second_configuration = RunConfiguration::InferFromSettings(settings);
+    ASSERT_TRUE(second_configuration.IsValid());
+    second_configuration.SetEntrypoint("emptyMain");
+    const std::string initial_route("/foo");
+    MockPlatformViewDelegate platform_view_delegate;
+    auto child = shell->Spawn(
+        std::move(second_configuration), initial_route,
+        [&platform_view_delegate](Shell& shell) {
+          auto result = std::make_unique<MockPlatformView>(
+              platform_view_delegate, shell.GetTaskRunners());
+          ON_CALL(*result, CreateRenderingSurface())
+              .WillByDefault(::testing::Invoke(
+                  [] { return std::make_unique<MockSurface>(); }));
+          return result;
+        },
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+    spawn = std::move(child);
+  });
+
+  PostSync(spawn->GetTaskRunners().GetUITaskRunner(), [&spawn] {
+    std::shared_ptr<const DartIsolate> isolate =
+        spawn->GetEngine()->GetRuntimeController()->GetRootIsolate().lock();
+    ASSERT_TRUE(isolate);
+    ASSERT_TRUE(isolate->GetImageGeneratorRegistry());
+  });
+
+  // Destroy the parent shell.
+  DestroyShell(std::move(shell));
+
+  PostSync(spawn->GetTaskRunners().GetUITaskRunner(), [&spawn] {
+    std::shared_ptr<const DartIsolate> isolate =
+        spawn->GetEngine()->GetRuntimeController()->GetRootIsolate().lock();
+    ASSERT_TRUE(isolate);
+    ASSERT_TRUE(isolate->GetImageGeneratorRegistry());
   });
   // Destroy the child shell.
   DestroyShell(std::move(spawn));

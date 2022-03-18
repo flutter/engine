@@ -15,6 +15,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/runtime/dart_plugin_registrant.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
@@ -260,6 +261,10 @@ Dart_Handle DartRuntimeHooks::GetCallbackHandle(Dart_Handle func) {
 
 Dart_Handle DartRuntimeHooks::GetCallbackFromHandle(int64_t handle) {
   return DartCallbackCache::GetCallback(handle);
+}
+
+void DartPluginRegistrant_EnsureInitialized() {
+  FindAndInvokeDartPluginRegistrant();
 }
 
 }  // namespace flutter
