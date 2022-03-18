@@ -471,7 +471,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     return NO;
   }
 
-  // NSTextInputContext sometimes randomly deactivates itself without calling
+  // NSTextInputContext sometimes deactivates itself without calling
   // deactivate. One such example is when the composing region is deleted.
   // TODO(LongCatIsLooong): put FlutterTextInputPlugin in the view hierarchy and
   // request/resign first responder when needed. Activate/deactivate shouldn't
