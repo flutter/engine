@@ -29,20 +29,24 @@ class SkiaUnrefQueue : public fml::RefCountedThreadSafe<SkiaUnrefQueue> {
   // after this call.
   void Drain();
 
+  void UpdateResourceContext(sk_sp<GrDirectContext> context) {
+    context_ = context;
+  }
+
  private:
   const fml::RefPtr<fml::TaskRunner> task_runner_;
   const fml::TimeDelta drain_delay_;
   std::mutex mutex_;
   std::deque<SkRefCnt*> objects_;
   bool drain_pending_;
-  fml::WeakPtr<GrDirectContext> context_;
+  sk_sp<GrDirectContext> context_;
 
   // The `GrDirectContext* context` is only used for signaling Skia to
   // performDeferredCleanup. It can be nullptr when such signaling is not needed
   // (e.g., in unit tests).
   SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
                  fml::TimeDelta delay,
-                 fml::WeakPtr<GrDirectContext> context = {});
+                 sk_sp<GrDirectContext> context = nullptr);
 
   ~SkiaUnrefQueue();
 

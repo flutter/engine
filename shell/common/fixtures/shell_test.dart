@@ -270,3 +270,8 @@ void onBeginFrameWithNotifyNativeMain() {
   };
   notifyNative();
 }
+
+@pragma('vm:entry-point')
+void frameCallback(_Image, int) {
+  print('called back');
+}
