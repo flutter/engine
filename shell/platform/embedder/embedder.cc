@@ -718,7 +718,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
-      1,                         // sample count
+      4,                         // sample count
       kBGRA_8888_SkColorType,    // color type
       nullptr,                   // color space
       &surface_properties,       // surface properties
