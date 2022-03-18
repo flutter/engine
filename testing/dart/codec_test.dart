@@ -48,7 +48,15 @@ void main() {
   });
 
   test('getNextFrame fails with empty image data', () async {
-    final ui.Codec codec = await ui.instantiateImageCodec(Uint8List(0));
+    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(Uint8List(0));
+    final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
+      buffer,
+      width: 1,
+      height: 1,
+      rowBytes: 1,
+      pixelFormat: ui.PixelFormat.rgba8888,
+    );
+    final ui.Codec codec = await descriptor.instantiateCodec();
     try {
       await codec.getNextFrame();
       fail('exception not thrown');
