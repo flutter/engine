@@ -215,8 +215,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
                     object:nil
                   userInfo:@{
                     @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
-                    @"UIKeyboardAnimationDurationUserInfoKey" : [NSNumber numberWithDouble:0.25],
-                    @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal]
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
                   }];
 
   viewControllerMock.targetViewInsetBottom = 10;
