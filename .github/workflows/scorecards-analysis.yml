@@ -4,6 +4,9 @@ on:
   branch_protection_rule:
   push:
     branches: [ main ]
+  pull_request:
+    branches:
+      - main
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -21,12 +24,20 @@ jobs:
 
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
         with:
           persist-credentials: false
 
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7.7' # install the python version needed
+
+      - name: execute py script
+        run: python ci/deps_parser.py
+
       - name: "Run analysis"
-        uses: ossf/scorecard-action@c8416b0b2bf627c349ca92fc8e3de51a64b005cf # v1.0.2
+        uses: ossf/scorecard-action@c8416b0b2bf627c349ca92fc8e3de51a64b005cf
         with:
           results_file: results.sarif
           results_format: sarif
