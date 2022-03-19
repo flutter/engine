@@ -50,6 +50,9 @@ class SkiaUnrefQueue : public fml::RefCountedThreadSafe<SkiaUnrefQueue> {
 
   ~SkiaUnrefQueue();
 
+  static void DoDrain(const std::deque<SkRefCnt*>& skia_objects,
+                      sk_sp<GrDirectContext> context);
+
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(SkiaUnrefQueue);
   FML_FRIEND_MAKE_REF_COUNTED(SkiaUnrefQueue);
   FML_DISALLOW_COPY_AND_ASSIGN(SkiaUnrefQueue);

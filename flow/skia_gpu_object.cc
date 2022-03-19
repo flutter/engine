@@ -18,7 +18,12 @@ SkiaUnrefQueue::SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
       context_(context) {}
 
 SkiaUnrefQueue::~SkiaUnrefQueue() {
-  FML_DCHECK(objects_.empty());
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runner_,
+      [objects = std::move(objects_), context = std::move(context_)]() mutable {
+        DoDrain(objects, context);
+        context.reset();
+      });
 }
 
 void SkiaUnrefQueue::Unref(SkRefCnt* object) {
@@ -39,13 +44,18 @@ void SkiaUnrefQueue::Drain() {
     objects_.swap(skia_objects);
     drain_pending_ = false;
   }
+  DoDrain(skia_objects, context_);
+}
 
+// static
+void SkiaUnrefQueue::DoDrain(const std::deque<SkRefCnt*>& skia_objects,
+                             sk_sp<GrDirectContext> context) {
   for (SkRefCnt* skia_object : skia_objects) {
     skia_object->unref();
   }
 
-  if (context_ && skia_objects.size() > 0) {
-    context_->performDeferredCleanup(std::chrono::milliseconds(0));
+  if (context && skia_objects.size() > 0) {
+    context->performDeferredCleanup(std::chrono::milliseconds(0));
   }
 }
 

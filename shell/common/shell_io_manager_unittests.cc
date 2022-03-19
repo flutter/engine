@@ -114,6 +114,17 @@ TEST_F(ShellIOManagerTest,
     // 'SkiaUnrefQueue.Drain' will be called after 'io_manager.reset()' in this
     // test, If the resource context has been destroyed at that time, it will
     // crash.
+    //
+    // 'Drain()' currently checks whether the weak pointer is still valid or not
+    // before trying to call anything on it.
+    //
+    // However, calling 'unref' on the 'SkImage_Lazy' ends up freeing a
+    // 'GrBackendTexture'. That object seems to assume that something else is
+    // keeping the context alive. This seems like it might be a bad assumption
+    // on Skia's part, but in Skia's defense we're doing something pretty weird
+    // here by keeping GPU resident objects alive without keeping the
+    // 'GrDirectContext' alive ourselves.
+    //
     // See https://github.com/flutter/flutter/issues/87895
     io_manager.reset();
     gl_surface.reset();
