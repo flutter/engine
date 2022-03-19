@@ -1998,6 +1998,9 @@ class Codec extends NativeFieldWrapperClass1 {
     final String? error = _getNextFrame((_Image? image, int durationMilliseconds) {
       if (image == null) {
         final Exception exception = Exception('Codec failed to produce an image, possibly due to invalid image data.');
+        if (sync) {
+          throw exception;
+        }
         completer.completeError(exception);
       } else {
         completer.complete(FrameInfo._(
