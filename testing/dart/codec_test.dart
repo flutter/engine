@@ -48,7 +48,7 @@ void main() {
   });
 
   test('getNextFrame fails with empty image data', () async {
-    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(Uint8List(0));
+    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(Uint8List.fromList(<int>[1, 2, 3, 4, 5, 6, 7, 8]));
     final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
       buffer,
       width: 1,
