@@ -500,6 +500,8 @@ const char* getEventString(NSString* characters) {
 
 @implementation FlutterEmbedderKeyResponder
 
+@synthesize overrideLayoutMap;
+
 - (nonnull instancetype)initWithSendEvent:(FlutterSendEmbedderKeyEvent)sendEvent {
   self = [super init];
   if (self != nil) {

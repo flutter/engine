@@ -29,6 +29,8 @@
 
 @implementation FlutterChannelKeyResponder
 
+@synthesize overrideLayoutMap;
+
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel {
   self = [super init];
   if (self != nil) {
@@ -75,6 +77,10 @@
   if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
     keyMessage[@"characters"] = event.characters;
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
+  }
+  NSNumber* overrideLogicalKey = overrideLayoutMap[@(event.keyCode)];
+  if (overrideLogicalKey != nil) {
+    keyMessage[@"overrideLogicalKey"] = overrideLogicalKey;
   }
   [self.channel sendMessage:keyMessage
                       reply:^(id reply) {

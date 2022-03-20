@@ -24,4 +24,7 @@ typedef void (^FlutterAsyncKeyCallback)(BOOL handled);
 @required
 - (void)handleEvent:(nonnull NSEvent*)event callback:(nonnull FlutterAsyncKeyCallback)callback;
 
+@required
+@property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* _Nullable overrideLayoutMap;
+
 @end
