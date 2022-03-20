@@ -141,10 +141,10 @@ class DlBlurImageFilter final : public DlImageFilter {
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
     SkVector device_sigma = ctm.mapVector(sigma_x_, sigma_y_);
-    if (!finite(device_sigma.fX)) {
+    if (!SkScalarIsFinite(device_sigma.fX)) {
       device_sigma.fX = 0;
     }
-    if (!finite(device_sigma.fY)) {
+    if (!SkScalarIsFinite(device_sigma.fY)) {
       device_sigma.fY = 0;
     }
     output_bounds = input_bounds.makeOutset(ceil(abs(device_sigma.fX)),
