@@ -345,15 +345,14 @@ WindowWin32::HandleMessage(UINT const message,
         mouse_x_ = static_cast<double>(xPos);
         mouse_y_ = static_cast<double>(yPos);
 
-        OnPointerMove(mouse_x_, mouse_y_,
-                      device_kind, kDefaultPointerDeviceId);
+        OnPointerMove(mouse_x_, mouse_y_, device_kind, kDefaultPointerDeviceId);
       }
       break;
     case WM_MOUSELEAVE:
       device_kind = GetFlutterPointerDeviceKind();
       if (device_kind == kFlutterPointerDeviceKindMouse) {
-        OnPointerLeave(mouse_x_, mouse_y_,
-                       device_kind, kDefaultPointerDeviceId);
+        OnPointerLeave(mouse_x_, mouse_y_, device_kind,
+                       kDefaultPointerDeviceId);
       }
 
       // Once the tracked event is received, the TrackMouseEvent function

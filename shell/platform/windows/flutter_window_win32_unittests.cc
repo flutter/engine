@@ -330,14 +330,17 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
       .Times(1);
 
   // Leave
-  EXPECT_CALL(delegate, OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindMouse,
-                                       kDefaultPointerDeviceId))
+  EXPECT_CALL(delegate,
+              OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                             kDefaultPointerDeviceId))
       .Times(1);
-  EXPECT_CALL(delegate, OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindTouch,
-                                       kDefaultPointerDeviceId))
+  EXPECT_CALL(delegate,
+              OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                             kDefaultPointerDeviceId))
       .Times(1);
-  EXPECT_CALL(delegate, OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindStylus,
-                                       kDefaultPointerDeviceId))
+  EXPECT_CALL(delegate,
+              OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                             kDefaultPointerDeviceId))
       .Times(1);
 
   win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse,
