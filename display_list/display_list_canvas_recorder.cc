@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_canvas_recorder.h"
 
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 
 namespace flutter {
@@ -28,6 +29,10 @@ void DisplayListCanvasRecorder::didConcat44(const SkM44& m44) {
       m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3));
 }
 // clang-format on
+void DisplayListCanvasRecorder::didSetM44(const SkM44& matrix) {
+  builder_->transformReset();
+  didConcat44(matrix);
+}
 void DisplayListCanvasRecorder::didTranslate(SkScalar tx, SkScalar ty) {
   builder_->translate(tx, ty);
 }
@@ -143,7 +148,7 @@ void DisplayListCanvasRecorder::onDrawVerticesObject(const SkVertices* vertices,
                                                      SkBlendMode mode,
                                                      const SkPaint& paint) {
   builder_->setAttributesFromPaint(paint, kDrawVerticesFlags);
-  builder_->drawVertices(sk_ref_sp(vertices), mode);
+  builder_->drawVertices(sk_ref_sp(vertices), ToDl(mode));
 }
 
 void DisplayListCanvasRecorder::onDrawImage2(const SkImage* image,
@@ -200,7 +205,7 @@ void DisplayListCanvasRecorder::onDrawAtlas2(const SkImage* image,
   if (paint != nullptr) {
     builder_->setAttributesFromPaint(*paint, kDrawAtlasWithPaintFlags);
   }
-  builder_->drawAtlas(sk_ref_sp(image), xform, src, colors, count, mode,
+  builder_->drawAtlas(sk_ref_sp(image), xform, src, colors, count, ToDl(mode),
                       sampling, cull, paint != nullptr);
 }
 
@@ -211,13 +216,6 @@ void DisplayListCanvasRecorder::onDrawTextBlob(const SkTextBlob* blob,
   builder_->setAttributesFromPaint(paint, kDrawTextBlobFlags);
   builder_->drawTextBlob(sk_ref_sp(blob), x, y);
 }
-void DisplayListCanvasRecorder::onDrawShadowRec(const SkPath& path,
-                                                const SkDrawShadowRec& rec) {
-  // Skia does not expose the SkDrawShadowRec structure in a public
-  // header file so we cannot record this operation.
-  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
-  FML_DCHECK(false);
-}
 
 void DisplayListCanvasRecorder::onDrawPicture(const SkPicture* picture,
                                               const SkMatrix* matrix,
@@ -226,6 +224,57 @@ void DisplayListCanvasRecorder::onDrawPicture(const SkPicture* picture,
     builder_->setAttributesFromPaint(*paint, kDrawPictureWithPaintFlags);
   }
   builder_->drawPicture(sk_ref_sp(picture), matrix, paint != nullptr);
+}
+
+void DisplayListCanvasRecorder::onDrawShadowRec(const SkPath& path,
+                                                const SkDrawShadowRec& rec) {
+  // Skia does not expose the SkDrawShadowRec structure in a public
+  // header file so we cannot record this operation.
+  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
+  FML_DLOG(ERROR) << "Unimplemented DisplayListCanvasRecorder::"
+                  << __FUNCTION__;
+}
+
+void DisplayListCanvasRecorder::onDrawBehind(const SkPaint&) {
+  FML_DLOG(ERROR) << "Unimplemented DisplayListCanvasRecorder::"
+                  << __FUNCTION__;
+}
+
+void DisplayListCanvasRecorder::onDrawRegion(const SkRegion& region,
+                                             const SkPaint& paint) {
+  FML_DLOG(ERROR) << "Unimplemented DisplayListCanvasRecorder::"
+                  << __FUNCTION__;
+}
+
+void DisplayListCanvasRecorder::onDrawPatch(const SkPoint cubics[12],
+                                            const SkColor colors[4],
+                                            const SkPoint texCoords[4],
+                                            SkBlendMode mode,
+                                            const SkPaint& paint) {
+  FML_DLOG(ERROR) << "Unimplemented DisplayListCanvasRecorder::"
+                  << __FUNCTION__;
+}
+
+void DisplayListCanvasRecorder::onDrawEdgeAAQuad(const SkRect& rect,
+                                                 const SkPoint clip[4],
+                                                 SkCanvas::QuadAAFlags aaFlags,
+                                                 const SkColor4f& color,
+                                                 SkBlendMode mode) {
+  FML_DLOG(ERROR) << "Unimplemented DisplayListCanvasRecorder::"
+                  << __FUNCTION__;
+}
+
+void DisplayListCanvasRecorder::onDrawAnnotation(const SkRect& rect,
+                                                 const char key[],
+                                                 SkData* value) {
+  FML_DLOG(ERROR) << "Unimplemented DisplayListCanvasRecorder::"
+                  << __FUNCTION__;
+}
+
+void DisplayListCanvasRecorder::onDrawDrawable(SkDrawable* drawable,
+                                               const SkMatrix* matrix) {
+  FML_DLOG(ERROR) << "Unimplemented DisplayListCanvasRecorder::"
+                  << __FUNCTION__;
 }
 
 }  // namespace flutter

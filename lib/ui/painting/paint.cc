@@ -98,7 +98,7 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
       Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
       auto sampling =
           ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-      paint.setShader(decoded->shader(sampling));
+      paint.setShader(decoded->shader(sampling)->skia_object());
     }
 
     Dart_Handle color_filter = values[kColorFilterIndex];
@@ -196,7 +196,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   Dart_Handle values[kObjectCount];
   if (Dart_IsNull(paint_objects_)) {
     if (flags.applies_shader()) {
-      builder->setShader(nullptr);
+      builder->setColorSource(nullptr);
     }
     if (flags.applies_color_filter()) {
       builder->setColorFilter(nullptr);
@@ -218,12 +218,12 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     if (flags.applies_shader()) {
       Dart_Handle shader = values[kShaderIndex];
       if (Dart_IsNull(shader)) {
-        builder->setShader(nullptr);
+        builder->setColorSource(nullptr);
       } else {
         Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
         auto sampling =
             ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-        builder->setShader(decoded->shader(sampling));
+        builder->setColorSource(decoded->shader(sampling).get());
       }
     }
 
@@ -262,7 +262,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   if (flags.applies_blend()) {
     uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
     uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
-    builder->setBlendMode(static_cast<SkBlendMode>(blend_mode));
+    builder->setBlendMode(static_cast<DlBlendMode>(blend_mode));
   }
 
   if (flags.applies_style()) {

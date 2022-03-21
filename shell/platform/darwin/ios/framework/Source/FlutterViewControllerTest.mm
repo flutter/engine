@@ -6,6 +6,8 @@
 #import <XCTest/XCTest.h>
 
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
+#import "flutter/lib/ui/window/platform_configuration.h"
+#include "flutter/lib/ui/window/pointer_data.h"
 #import "flutter/lib/ui/window/viewport_metrics.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
@@ -24,10 +26,6 @@ FLUTTER_ASSERT_ARC
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData;
 @end
-
-namespace flutter {
-class PointerDataPacket {};
-}
 
 /// Sometimes we have to use a custom mock to avoid retain cycles in OCMock.
 /// Used for testing low memory notification.
@@ -141,6 +139,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateDisplayLink;
 - (void)addInternalPlugins;
+- (flutter::PointerData)generatePointerDataForFake;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -421,6 +420,17 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 }
 
+// Regression test for https://github.com/flutter/engine/pull/32098.
+- (void)testInternalPluginsInvokeInViewDidLoad {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController viewDidLoad];
+  OCMVerify([viewController addInternalPlugins]);
+}
+
 - (void)testBinaryMessenger {
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
@@ -615,6 +625,46 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [partialMockVC stopMocking];
   [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
+}
+
+- (void)testItReportsAccessibilityOnOffSwitchLabelsFlagNotSet {
+  if (@available(iOS 13, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  // Setup test.
+  FlutterViewController* viewController =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
+  id partialMockViewController = OCMPartialMock(viewController);
+  OCMStub([partialMockViewController accessibilityIsOnOffSwitchLabelsEnabled]).andReturn(NO);
+
+  // Exercise behavior under test.
+  int32_t flags = [partialMockViewController accessibilityFlags];
+
+  // Verify behavior.
+  XCTAssert((flags & (int32_t)flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels) == 0);
+}
+
+- (void)testItReportsAccessibilityOnOffSwitchLabelsFlagSet {
+  if (@available(iOS 13, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  // Setup test.
+  FlutterViewController* viewController =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
+  id partialMockViewController = OCMPartialMock(viewController);
+  OCMStub([partialMockViewController accessibilityIsOnOffSwitchLabelsEnabled]).andReturn(YES);
+
+  // Exercise behavior under test.
+  int32_t flags = [partialMockViewController accessibilityFlags];
+
+  // Verify behavior.
+  XCTAssert((flags & (int32_t)flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels) != 0);
 }
 
 - (void)testPerformOrientationUpdateForcesOrientationChange {
@@ -1052,7 +1102,20 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [vc scrollEvent:mockPanGestureRecognizer];
 
   [[[self.mockEngine verify] ignoringNonObjectArgs]
-      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>()];
+      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];
 }
 
+- (void)testFakeEventTimeStamp {
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  flutter::PointerData pointer_data = [vc generatePointerDataForFake];
+  int64_t current_micros = [[NSProcessInfo processInfo] systemUptime] * 1000 * 1000;
+  int64_t interval_micros = current_micros - pointer_data.time_stamp;
+  const int64_t tolerance_millis = 2;
+  XCTAssertTrue(interval_micros / 1000 < tolerance_millis,
+                @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
+}
 @end

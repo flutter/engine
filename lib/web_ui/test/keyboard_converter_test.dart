@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+const int kLocationStandard = 0;
 const int kLocationLeft = 1;
 const int kLocationRight = 2;
 const int kLocationNumpad = 3;
@@ -24,6 +25,8 @@ final int kPhysicalMetaLeft = kWebToPhysicalKey['MetaLeft']!;
 final int kPhysicalTab = kWebToPhysicalKey['Tab']!;
 final int kPhysicalCapsLock = kWebToPhysicalKey['CapsLock']!;
 final int kPhysicalScrollLock = kWebToPhysicalKey['ScrollLock']!;
+// A web-specific physical key when code is empty.
+const int kPhysicalEmptyCode = 0x1700000000;
 
 const int kLogicalKeyA = 0x00000000061;
 const int kLogicalKeyU = 0x00000000075;
@@ -31,6 +34,8 @@ const int kLogicalDigit1 = 0x00000000031;
 final int kLogicalNumpad1 = kWebLogicalLocationMap['1']![kLocationNumpad]!;
 final int kLogicalShiftLeft = kWebLogicalLocationMap['Shift']![kLocationLeft]!;
 final int kLogicalShiftRight = kWebLogicalLocationMap['Shift']![kLocationRight]!;
+final int kLogicalCtrlLeft = kWebLogicalLocationMap['Control']![kLocationLeft]!;
+final int kLogicalAltLeft = kWebLogicalLocationMap['Alt']![kLocationLeft]!;
 final int kLogicalMetaLeft = kWebLogicalLocationMap['Meta']![kLocationLeft]!;
 const int kLogicalTab = 0x0000000009;
 final int kLogicalCapsLock = kWebToLogicalKey['CapsLock']!;
@@ -260,6 +265,78 @@ void testMain() {
       type: ui.KeyEventType.up,
       physical: kPhysicalShiftRight,
       logical: kLogicalShiftRight,
+      character: null,
+    );
+  });
+
+  test('Treat modifiers at standard locations as if at left', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
+    converter.handleEvent(keyDownEvent('', 'Shift', kShift, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalShiftLeft,
+      character: null,
+    );
+
+    converter.handleEvent(keyUpEvent('', 'Shift', kShift, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalShiftLeft,
+      character: null,
+    );
+
+    converter.handleEvent(keyDownEvent('', 'Control', kCtrl, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalCtrlLeft,
+      character: null,
+    );
+
+    converter.handleEvent(keyUpEvent('', 'Control', kCtrl, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalCtrlLeft,
+      character: null,
+    );
+
+    converter.handleEvent(keyDownEvent('', 'Alt', kAlt, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalAltLeft,
+      character: null,
+    );
+
+    converter.handleEvent(keyUpEvent('', 'Alt', kAlt, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalAltLeft,
+      character: null,
+    );
+
+    converter.handleEvent(keyDownEvent('', 'Meta', kMeta, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalMetaLeft,
+      character: null,
+    );
+
+    converter.handleEvent(keyUpEvent('', 'Meta', kMeta, kLocationStandard));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalEmptyCode,
+      logical: kLogicalMetaLeft,
       character: null,
     );
   });
@@ -918,6 +995,60 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/99297.
+  //
+  // On Linux Chrome, when holding ShiftLeft and pressing MetaLeft (Win key),
+  // the MetaLeft down event has metaKey true, while the Meta up event has
+  // metaKey false. This violates the definition of metaKey, and does not happen
+  // in nearly any other cases for any other keys.
+  test('Ignore inconsistent modifier flag of the current modifier', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    }, onMacOs: false);
+
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShiftLeft,
+      character: null,
+    );
+    keyDataList.clear();
+
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kShift /* No kMeta here! */, kLocationLeft));
+    // Only a MetaLeft down event, no synthesized MetaLeft up events.
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.first,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalMetaLeft,
+      logical: kLogicalMetaLeft,
+      character: null,
+    );
+    keyDataList.clear();
+
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', kShift | kMeta /* Yes, kMeta here! */, kLocationLeft));
+    // Only a MetaLeft down event, no synthesized MetaLeft up events.
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.first,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalMetaLeft,
+      logical: kLogicalMetaLeft,
+      character: null,
+    );
+    keyDataList.clear();
+
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShiftLeft,
+      character: null,
+    );
+    keyDataList.clear();
   });
 }
 

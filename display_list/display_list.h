@@ -74,19 +74,22 @@ namespace flutter {
                                     \
   V(SetBlender)                     \
   V(ClearBlender)                   \
-  V(SetShader)                      \
-  V(ClearShader)                    \
   V(SetImageFilter)                 \
   V(ClearImageFilter)               \
   V(SetPathEffect)                  \
   V(ClearPathEffect)                \
                                     \
   V(ClearColorFilter)               \
-  V(SetColorFilter)                 \
+  V(SetPodColorFilter)              \
   V(SetSkColorFilter)               \
                                     \
+  V(ClearColorSource)               \
+  V(SetPodColorSource)              \
+  V(SetSkColorSource)               \
+  V(SetImageColorSource)            \
+                                    \
   V(ClearMaskFilter)                \
-  V(SetMaskFilter)                  \
+  V(SetPodMaskFilter)               \
   V(SetSkMaskFilter)                \
                                     \
   V(Save)                           \
@@ -100,6 +103,7 @@ namespace flutter {
   V(Skew)                           \
   V(Transform2DAffine)              \
   V(TransformFullPerspective)       \
+  V(TransformReset)                 \
                                     \
   V(ClipIntersectRect)              \
   V(ClipIntersectRRect)             \
@@ -178,6 +182,10 @@ class SaveLayerOptions {
     return options;
   }
 
+  SaveLayerOptions& operator=(const SaveLayerOptions& other) {
+    flags_ = other.flags_;
+    return *this;
+  }
   bool operator==(const SaveLayerOptions& other) const {
     return flags_ == other.flags_;
   }

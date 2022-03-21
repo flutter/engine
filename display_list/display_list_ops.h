@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_OPS_H_
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
@@ -141,9 +142,9 @@ struct SetColorOp final : DLOp {
 struct SetBlendModeOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetBlendMode;
 
-  explicit SetBlendModeOp(SkBlendMode mode) : mode(mode) {}
+  explicit SetBlendModeOp(DlBlendMode mode) : mode(mode) {}
 
-  const SkBlendMode mode;
+  const DlBlendMode mode;
 
   void dispatch(Dispatcher& dispatcher) const { dispatcher.setBlendMode(mode); }
 };
@@ -175,7 +176,6 @@ struct SetBlendModeOp final : DLOp {
     }                                                                          \
   };
 DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
-DEFINE_SET_CLEAR_SKREF_OP(Shader, shader)
 DEFINE_SET_CLEAR_SKREF_OP(ImageFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_SKREF_OP
@@ -189,7 +189,7 @@ DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
 // SetSk: 4 byte header + an sk_sp (ptr) uses 16 bytes due to the
 //        alignment of the ptr.
 //        (4 bytes unused)
-#define DEFINE_SET_CLEAR_DLATTR_OP(name, field)                             \
+#define DEFINE_SET_CLEAR_DLATTR_OP(name, sk_name, field)                    \
   struct Clear##name##Op final : DLOp {                                     \
     static const auto kType = DisplayListOpType::kClear##name;              \
                                                                             \
@@ -199,10 +199,10 @@ DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
       dispatcher.set##name(nullptr);                                        \
     }                                                                       \
   };                                                                        \
-  struct Set##name##Op final : DLOp {                                       \
-    static const auto kType = DisplayListOpType::kSet##name;                \
+  struct SetPod##name##Op final : DLOp {                                    \
+    static const auto kType = DisplayListOpType::kSetPod##name;             \
                                                                             \
-    Set##name##Op() {}                                                      \
+    SetPod##name##Op() {}                                                   \
                                                                             \
     void dispatch(Dispatcher& dispatcher) const {                           \
       const Dl##name* filter = reinterpret_cast<const Dl##name*>(this + 1); \
@@ -212,18 +212,38 @@ DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
   struct SetSk##name##Op final : DLOp {                                     \
     static const auto kType = DisplayListOpType::kSetSk##name;              \
                                                                             \
-    SetSk##name##Op(sk_sp<Sk##name> field) : field(field) {}                \
+    SetSk##name##Op(sk_sp<Sk##sk_name> field) : field(field) {}             \
                                                                             \
-    sk_sp<Sk##name> field;                                                  \
+    sk_sp<Sk##sk_name> field;                                               \
                                                                             \
     void dispatch(Dispatcher& dispatcher) const {                           \
       DlUnknown##name dl_filter(field);                                     \
       dispatcher.set##name(&dl_filter);                                     \
     }                                                                       \
   };
-DEFINE_SET_CLEAR_DLATTR_OP(ColorFilter, filter)
-DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, filter)
+DEFINE_SET_CLEAR_DLATTR_OP(ColorFilter, ColorFilter, filter)
+DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, MaskFilter, filter)
+DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
+
+// 4 byte header + 80 bytes for the embedded DlImageColorSource
+// uses 84 total bytes (4 bytes unused)
+struct SetImageColorSourceOp : DLOp {
+  static const auto kType = DisplayListOpType::kSetImageColorSource;
+
+  SetImageColorSourceOp(const DlImageColorSource* source)
+      : source(source->image(),
+               source->horizontal_tile_mode(),
+               source->vertical_tile_mode(),
+               source->sampling(),
+               source->matrix_ptr()) {}
+
+  const DlImageColorSource source;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setColorSource(&source);
+  }
+};
 
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
 struct SaveOp final : DLOp {
@@ -363,6 +383,15 @@ struct TransformFullPerspectiveOp final : DLOp {
   }
 };
 
+// 4 byte header with no payload.
+struct TransformResetOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransformReset;
+
+  TransformResetOp() = default;
+
+  void dispatch(Dispatcher& dispatcher) const { dispatcher.transformReset(); }
+};
+
 // 4 byte header + 4 byte common payload packs into minimum 8 bytes
 // SkRect is 16 more bytes, which packs efficiently into 24 bytes total
 // SkRRect is 52 more bytes, which rounds up to 56 bytes (4 bytes unused)
@@ -430,10 +459,10 @@ struct DrawPaintOp final : DLOp {
 struct DrawColorOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawColor;
 
-  DrawColorOp(SkColor color, SkBlendMode mode) : color(color), mode(mode) {}
+  DrawColorOp(SkColor color, DlBlendMode mode) : color(color), mode(mode) {}
 
   const SkColor color;
-  const SkBlendMode mode;
+  const DlBlendMode mode;
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.drawColor(color, mode);
@@ -549,10 +578,10 @@ DEFINE_DRAW_POINTS_OP(Polygon, kPolygon_PointMode);
 struct DrawVerticesOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawVertices;
 
-  DrawVerticesOp(sk_sp<SkVertices> vertices, SkBlendMode mode)
+  DrawVerticesOp(sk_sp<SkVertices> vertices, DlBlendMode mode)
       : mode(mode), vertices(std::move(vertices)) {}
 
-  const SkBlendMode mode;
+  const DlBlendMode mode;
   const sk_sp<SkVertices> vertices;
 
   void dispatch(Dispatcher& dispatcher) const {
@@ -693,7 +722,7 @@ struct DrawImageLatticeOp final : DLOp {
 struct DrawAtlasBaseOp : DLOp {
   DrawAtlasBaseOp(const sk_sp<SkImage> atlas,
                   int count,
-                  SkBlendMode mode,
+                  DlBlendMode mode,
                   const SkSamplingOptions& sampling,
                   bool has_colors,
                   bool render_with_attributes)
@@ -719,7 +748,7 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
 
   DrawAtlasOp(const sk_sp<SkImage> atlas,
               int count,
-              SkBlendMode mode,
+              DlBlendMode mode,
               const SkSamplingOptions& sampling,
               bool has_colors,
               bool render_with_attributes)
@@ -735,7 +764,7 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
     const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
     const SkColor* colors =
         has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
-    const SkBlendMode mode = static_cast<SkBlendMode>(mode_index);
+    const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
                          nullptr, render_with_attributes);
   }
@@ -750,7 +779,7 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
 
   DrawAtlasCulledOp(const sk_sp<SkImage> atlas,
                     int count,
-                    SkBlendMode mode,
+                    DlBlendMode mode,
                     const SkSamplingOptions& sampling,
                     bool has_colors,
                     const SkRect& cull_rect,
@@ -770,7 +799,7 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
     const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
     const SkColor* colors =
         has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
-    const SkBlendMode mode = static_cast<SkBlendMode>(mode_index);
+    const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
                          &cull_rect, render_with_attributes);
   }
