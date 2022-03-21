@@ -27,7 +27,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'b3275e1fd64cbbf57a1e9a2ecb2db0812cfba4dc',
+  'skia_revision': 'c71ae5140090290ad16b73bdb0aa6f4543c64a78',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -116,7 +116,7 @@ deps = {
   'src': 'https://github.com/flutter/buildroot.git' + '@' + '8cbf38af7d48cc298ae86e614533b4b2d0dc6758',
 
   'src/flutter/impeller':
-  Var('github_git') + '/flutter/impeller' + '@' + '144d29b12def5058b34c910b5f0343f5355a968d',
+  Var('github_git') + '/flutter/impeller' + '@' + '114e92d2d046b3496f2b9422946295efaae676dd',
 
    # Fuchsia compatibility
    #
@@ -618,7 +618,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'XGk8f98vkWo3LGch7wRT3bjpTDEnC1BPjJy1zAGiDqEC'
+        'version': '5VwmuFnNNvR_3XAVU9Fo51Q0nLkRzeSZHYIOW_omotwC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -628,7 +628,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'bltm6P1RVx6jzhhgmH8-BkzYE4v9iICn_QQ0IUMifCMC'
+        'version': '-T9kCGaceQI0js1gCuXCStBjE0cnE4kWHe-HCPhuzLQC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
@@ -661,6 +661,12 @@ deps = {
 }
 
 hooks = [
+  {
+    # Generate the Dart SDK's .dart_tool/package_confg.json file.
+    'name': 'Generate .dart_tool/package_confg.json',
+    'pattern': '.',
+    'action': ['python3', 'src/third_party/dart/tools/generate_package_config.py'],
+  },
   {
     # Update the Windows toolchain if necessary.
     'name': 'win_toolchain',
