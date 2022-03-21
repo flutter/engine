@@ -216,7 +216,7 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self,
 
   g_autoptr(FlValue) deltas = fl_value_new_list();
   fl_value_append(deltas, deltaValue);
-  g_autoptr(FlValue) value = fl_value_new_map();
+  FlValue* value = fl_value_new_map();
   fl_value_set_string_take(value, "deltas", deltas);
 
   fl_value_append(args, value);
