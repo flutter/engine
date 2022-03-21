@@ -141,7 +141,7 @@ TEST_F(SkiaGpuObjectTest, UnrefResourceContextInTaskRunnerThread) {
       std::make_shared<fml::AutoResetWaitableEvent>();
   fml::RefPtr<UnrefQueue<TestResourceContext>> unref_queue;
   fml::TaskQueueId dtor_task_queue_id(0);
-  unref_task_runner()->PostTask([&]() mutable {
+  unref_task_runner()->PostTask([&]() {
     auto resource_context =
         sk_make_sp<TestResourceContext>(latch, &dtor_task_queue_id);
     unref_queue = fml::MakeRefCounted<UnrefQueue<TestResourceContext>>(
