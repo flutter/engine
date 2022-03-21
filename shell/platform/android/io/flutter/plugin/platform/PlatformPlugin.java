@@ -296,13 +296,11 @@ public class PlatformPlugin {
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
-      System.out.println("Edge to edge mode being applied");
       enabledOverlays =
           View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
     } else {
-      System.out.println("No system ui modes found to apply, returning");
       // When none of the conditions are matched, return without updating the system UI overlays.
       return;
     }
@@ -313,7 +311,6 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
-    System.out.println("Applying overlays for some reason");
     // Start by assuming we want to hide all system overlays (like an immersive
     // game).
     int enabledOverlays =
@@ -356,10 +353,8 @@ public class PlatformPlugin {
    * PlatformPlugin}.
    */
   public void updateSystemUiOverlays() {
-    System.out.println("Update being called");
     activity.getWindow().getDecorView().setSystemUiVisibility(mEnabledOverlays);
     if (currentTheme != null) {
-      System.out.println("currentTheme being updated");
       setSystemChromeSystemUIOverlayStyle(currentTheme);
     }
   }
@@ -370,86 +365,45 @@ public class PlatformPlugin {
 
   private void setSystemChromeSystemUIOverlayStyle(
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
-    System.out.println("Call to update current theme made");
     Window window = activity.getWindow();
     View view = window.getDecorView();
     WindowInsetsControllerCompat windowInsetsControllerCompat =
         new WindowInsetsControllerCompat(window, view);
 
+    // Flag set to specify that this window is responsible for drawing the background for the system
+    // bars.
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+
+    // Flag set to dismiss any requests for translucent system bars to be provided in lieu of what
+    // is specified by systemChromeStyle.
+    window.clearFlags(
+        WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+            | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+
     // SYSTEM STATUS BAR -------------------------------------------------------------------
     // You can't change the color of the system status bar until SDK 21, and you can't change the
     // color of the status icons until SDK 23. We only allow both starting at 23 to ensure buttons
-    // and icons can be visible when changing the background color.
+    // and icons can bse visible when changing the background color.
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
     // proper contrast. This can be overridden with
     // SystemChromeStyle.systemStatusBarContrastEnforced.
-    // TODO(camillesimon): Fix status bars
-    System.out.println(Build.VERSION.SDK_INT);
-    System.out.println(systemChromeStyle.systemNavigationBarDividerColor);
-    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
-      System.out.println("Divider color being set");
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-      window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
-    }
-
     if (Build.VERSION.SDK_INT >= 23) {
       if (systemChromeStyle.statusBarIconBrightness != null) {
         switch (systemChromeStyle.statusBarIconBrightness) {
           case DARK:
             // Dark status bar icon brightness.
             // Light status bar appearance.
-            System.out.println("Status bar icons set to dark");
             windowInsetsControllerCompat.setAppearanceLightStatusBars(true);
             break;
           case LIGHT:
             // Light status bar icon brightness.
             // Dark status bar appearance.
-            System.out.println("Status bar icons set to light");
             windowInsetsControllerCompat.setAppearanceLightStatusBars(false);
             break;
         }
       }
-    }
 
-    if (Build.VERSION.SDK_INT >= 26) {
-      if (systemChromeStyle.systemNavigationBarIconBrightness != null) {
-        switch (systemChromeStyle.systemNavigationBarIconBrightness) {
-          case DARK:
-            // Dark navigation bar icon brightness.
-            // Light navigation bar appearance.
-            System.out.println("Navigation icons set to dark");
-            if (Build.VERSION.SDK_INT == 30) {
-              System.out.println("Made it to 30");
-              // mEnabledOverlays = mEnabledOverlays &~ View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-              // view.setSystemUiVisibility(mEnabledOverlays);
-              windowInsetsControllerCompat.setAppearanceLightNavigationBars(true);
-            } else {
-              windowInsetsControllerCompat.setAppearanceLightNavigationBars(true);
-            }
-            break;
-          case LIGHT:
-            // Light navigation bar icon brightness.
-            // Dark navigation bar appearance.
-            System.out.println("Navigation icons set to light");
-            if (Build.VERSION.SDK_INT == 30) {
-              System.out.println("Made it to 30");
-              // mEnabledOverlays = mEnabledOverlays | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-              // view.setSystemUiVisibility(mEnabledOverlays);
-              windowInsetsControllerCompat.setAppearanceLightNavigationBars(false);
-            } else {
-              windowInsetsControllerCompat.setAppearanceLightNavigationBars(false);
-            }
-
-            break;
-        }
-      }
-    }
-
-    if (Build.VERSION.SDK_INT >= 23) {
       if (systemChromeStyle.statusBarColor != null) {
-        System.out.println("Status bar color being set");
-        // window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.setStatusBarColor(systemChromeStyle.statusBarColor);
       }
     }
@@ -457,7 +411,6 @@ public class PlatformPlugin {
     // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
     // contrast is appropriate when using full screen layout modes like Edge to Edge.
     if (systemChromeStyle.systemStatusBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
-      System.out.println("Status bar contrast being enforced");
       window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
     }
 
@@ -468,14 +421,30 @@ public class PlatformPlugin {
     // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
     // bars to ensure proper contrast. This can be overridden with
     // SystemChromeStyle.systemNavigationBarContrastEnforced.
+    if (Build.VERSION.SDK_INT >= 26) {
+      if (systemChromeStyle.systemNavigationBarIconBrightness != null) {
+        switch (systemChromeStyle.systemNavigationBarIconBrightness) {
+          case DARK:
+            // Dark navigation bar icon brightness.
+            // Light navigation bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightNavigationBars(true);
+            break;
+          case LIGHT:
+            // Light navigation bar icon brightness.
+            // Dark navigation bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightNavigationBars(false);
+            break;
+        }
+      }
+    }
+
+    if (systemChromeStyle.systemNavigationBarColor != null && Build.VERSION.SDK_INT >= 21) {
+      window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
+    }
 
     // You can't change the color of the navigation bar divider color until SDK 28.
-
-    if (systemChromeStyle.systemNavigationBarColor != null) {
-      // TODO(camillesimon): Test clear flag fix for API 28. Seems to cause problems on 30 :/
-      System.out.println("Navigation bar color being set");
-      // window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
+    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
+      window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
 
     // You can't override the enforced contrast for a transparent navigation bar until SDK 29.
@@ -484,7 +453,6 @@ public class PlatformPlugin {
     // Edge to Edge.
     if (systemChromeStyle.systemNavigationBarContrastEnforced != null
         && Build.VERSION.SDK_INT >= 29) {
-      System.out.println("Nav bar contrast being enforced");
       window.setNavigationBarContrastEnforced(
           systemChromeStyle.systemNavigationBarContrastEnforced);
     }
