@@ -225,7 +225,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
           [&](fml::TimePoint frame_target_time, uint64_t frame_number) {
             begin_frame_latch.Signal();
           });
-  // It should always be called when the method 'Animator::Render' is called,
+  // It must always be called when the method 'Animator::Render' is called,
   // regardless of whether the pipeline is empty or not.
   EXPECT_CALL(delegate, OnAnimatorUpdateLatestFrameTargetTime).Times(2);
   // It will only be called once even though we call the method
