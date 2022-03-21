@@ -35,7 +35,7 @@ public class FlutterShellArgsTest {
   @Test
   public void itHandles4xMsaaFlag() {
     Intent intent = new Intent();
-    intent.putExtra("msaa-flags", 4);
+    intent.putExtra("msaa-samples", 4);
 
     FlutterShellArgs args = FlutterShellArgs.fromIntent(intent);
     HashSet<String> argValues = new HashSet<String>(Arrays.asList(args.toArray()));
@@ -47,7 +47,7 @@ public class FlutterShellArgsTest {
   @Test
   public void itHandles1xMsaaFlag() {
     Intent intent = new Intent();
-    intent.putExtra("msaa-flags", 1);
+    intent.putExtra("msaa-samples", 1);
 
     FlutterShellArgs args = FlutterShellArgs.fromIntent(intent);
     HashSet<String> argValues = new HashSet<String>(Arrays.asList(args.toArray()));
