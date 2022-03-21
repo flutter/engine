@@ -383,7 +383,7 @@ public class PlatformPlugin {
     // SYSTEM STATUS BAR -------------------------------------------------------------------
     // You can't change the color of the system status bar until SDK 21, and you can't change the
     // color of the status icons until SDK 23. We only allow both starting at 23 to ensure buttons
-    // and icons can bse visible when changing the background color.
+    // and icons can be visible when changing the background color.
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
     // proper contrast. This can be overridden with
     // SystemChromeStyle.systemStatusBarContrastEnforced.
@@ -441,7 +441,6 @@ public class PlatformPlugin {
         window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
       }
     }
-
     // You can't change the color of the navigation bar divider color until SDK 28.
     if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
