@@ -629,6 +629,7 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
 
   std::string text_before_change = priv->text_model->GetText();
   flutter::TextRange selection_before_change = priv->text_model->selection();
+  std::string text = priv->text_model->GetText();
 
   // Handle the enter/return key.
   gboolean do_action = FALSE;
@@ -649,6 +650,7 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
       case GDK_KEY_ISO_Enter:
         if (priv->input_type == FL_TEXT_INPUT_TYPE_MULTILINE) {
           priv->text_model->AddCodePoint('\n');
+          text = "\n";
           changed = TRUE;
         }
         do_action = TRUE;
@@ -676,8 +678,8 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
   if (changed) {
     if (priv->enable_delta_model) {
       flutter::TextEditingDelta delta = flutter::TextEditingDelta(
-          text_before_change, priv->text_model->selection(),
-          priv->text_model->GetText());
+          text_before_change, selection_before_change,
+          text);
       update_editing_state_with_delta(self, &delta);
     } else {
       update_editing_state(self);
