@@ -39,6 +39,7 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "flutter/shell/common/viewport_size_holder.h"
 
 namespace flutter {
 
@@ -410,6 +411,7 @@ class Shell final : public PlatformView::Delegate,
 
   const TaskRunners task_runners_;
   const fml::RefPtr<fml::RasterThreadMerger> parent_raster_thread_merger_;
+  std::shared_ptr<ViewportSizeHolder> shared_viewport_size_holder_;
   const Settings settings_;
   DartVMRef vm_;
   mutable std::mutex time_recorder_mutex_;
@@ -476,6 +478,7 @@ class Shell final : public PlatformView::Delegate,
   Shell(DartVMRef vm,
         TaskRunners task_runners,
         fml::RefPtr<fml::RasterThreadMerger> parent_merger,
+        std::shared_ptr<ViewportSizeHolder> shared_viewport_size_holder,
         Settings settings,
         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
         bool is_gpu_disabled);
@@ -484,6 +487,7 @@ class Shell final : public PlatformView::Delegate,
       DartVMRef vm,
       fml::RefPtr<fml::RasterThreadMerger> parent_merger,
       std::shared_ptr<ShellIOManager> parent_io_manager,
+      std::shared_ptr<ViewportSizeHolder> shared_viewport_size_holder,
       TaskRunners task_runners,
       const PlatformData& platform_data,
       Settings settings,
@@ -492,11 +496,13 @@ class Shell final : public PlatformView::Delegate,
       const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
       const EngineCreateCallback& on_create_engine,
       bool is_gpu_disabled);
+
   static std::unique_ptr<Shell> CreateWithSnapshot(
       const PlatformData& platform_data,
       TaskRunners task_runners,
       fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
       std::shared_ptr<ShellIOManager> parent_io_manager,
+      std::shared_ptr<ViewportSizeHolder> shared_viewport_size_holder,
       Settings settings,
       DartVMRef vm,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,

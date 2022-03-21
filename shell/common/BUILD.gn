@@ -99,6 +99,8 @@ source_set("common") {
     "variable_refresh_rate_display.cc",
     "variable_refresh_rate_display.h",
     "variable_refresh_rate_reporter.h",
+    "viewport_size_holder.cc",
+    "viewport_size_holder.h",
     "vsync_waiter.cc",
     "vsync_waiter.h",
     "vsync_waiter_fallback.cc",
@@ -274,6 +276,7 @@ if (enable_unittests) {
       "skp_shader_warmup_unittests.cc",
       "switches_unittests.cc",
       "variable_refresh_rate_display_unittests.cc",
+      "viewport_size_holder_unittests.cc",
     ]
 
     deps = [

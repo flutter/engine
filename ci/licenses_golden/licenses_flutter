@@ -1111,6 +1111,9 @@ FILE: ../../../flutter/shell/common/variable_refresh_rate_display.cc
 FILE: ../../../flutter/shell/common/variable_refresh_rate_display.h
 FILE: ../../../flutter/shell/common/variable_refresh_rate_display_unittests.cc
 FILE: ../../../flutter/shell/common/variable_refresh_rate_reporter.h
+FILE: ../../../flutter/shell/common/viewport_size_holder.cc
+FILE: ../../../flutter/shell/common/viewport_size_holder.h
+FILE: ../../../flutter/shell/common/viewport_size_holder_unittests.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
