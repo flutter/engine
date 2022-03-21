@@ -58,7 +58,7 @@ class TextPaintService {
       // Paint the background of the box, if the span has a background.
       final SurfacePaint? background = span.style.background as SurfacePaint?;
       if (background != null) {
-        final ui.Rect rect = box.toTextBox(line).toRect().shift(offset);
+        final ui.Rect rect = box.toTextBox(line, forPainting: true).toRect().shift(offset);
         canvas.drawRect(rect, background.paintData);
       }
     }

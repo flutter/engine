@@ -308,7 +308,7 @@ class TextLayoutService {
         // The box is in the same direction as the paragraph.
         box.startOffset = cumulativeWidth;
         box.lineWidth = line.width;
-        if (box is SpanBox && box.isSpaceOnly) {
+        if (box is SpanBox && box.isSpaceOnly && !box.isTrailingSpace) {
           box._width += justifyPerSpaceBox;
         }
 
@@ -398,7 +398,7 @@ class TextLayoutService {
       assert(box.boxDirection != _paragraphDirection);
       box.startOffset = startOffset + cumulativeWidth;
       box.lineWidth = line.width;
-      if (box is SpanBox && box.isSpaceOnly) {
+      if (box is SpanBox && box.isSpaceOnly &&  !box.isTrailingSpace) {
         box._width += justifyPerSpaceBox;
       }
 
@@ -411,14 +411,9 @@ class TextLayoutService {
   /// added to each space box in order to align the line with the rest of the
   /// paragraph.
   double _calculateJustifyPerSpaceBox(EngineLineMetrics line) {
-    final double justifyTotal = paragraph.width - line.width;
-    final RangeBox lastBox = line.boxes.last;
+    final double justifyTotal = width - line.width;
 
-    int spaceBoxesToJustify = line.spaceBoxCount;
-    // If the last box is a space box, we can't use it to justify text.
-    if (lastBox is SpanBox && lastBox.isSpaceOnly) {
-      spaceBoxesToJustify--;
-    }
+    final int spaceBoxesToJustify = line.nonTrailingSpaceBoxCount;
     if (spaceBoxesToJustify > 0) {
       return justifyTotal / spaceBoxesToJustify;
     }
@@ -431,7 +426,7 @@ class TextLayoutService {
     for (final EngineLineMetrics line in lines) {
       for (final RangeBox box in line.boxes) {
         if (box is PlaceholderBox) {
-          boxes.add(box.toTextBox(line));
+          boxes.add(box.toTextBox(line, forPainting: false));
         }
       }
     }
@@ -461,7 +456,7 @@ class TextLayoutService {
       if (line.overlapsWith(start, end)) {
         for (final RangeBox box in line.boxes) {
           if (box is SpanBox && box.overlapsWith(start, end)) {
-            boxes.add(box.intersect(line, start, end));
+            boxes.add(box.intersect(line, start, end, forPainting: false));
           }
         }
       }
@@ -602,7 +597,12 @@ abstract class RangeBox {
   ///
   /// The coordinates of the resulting [ui.TextBox] are relative to the
   /// paragraph, not to the line.
-  ui.TextBox toTextBox(EngineLineMetrics line);
+  ///
+  /// The [forPainting] parameter specifies whether the text box is wanted for
+  /// painting purposes or not. The difference is observed in the handling of
+  /// trailing spaces. Trailing spaces aren't painted on the screen, but their
+  /// dimensions are still useful for other cases like highlighting selection.
+  ui.TextBox toTextBox(EngineLineMetrics line, {required bool forPainting});
 
   /// Returns the text position within this box's range that's closest to the
   /// given [x] offset.
@@ -627,7 +627,7 @@ class PlaceholderBox extends RangeBox {
   double get width => placeholder.width;
 
   @override
-  ui.TextBox toTextBox(EngineLineMetrics line) {
+  ui.TextBox toTextBox(EngineLineMetrics line, {required bool forPainting}) {
     final double left = line.left + this.left;
     final double right = line.left + this.right;
 
@@ -725,6 +725,10 @@ class SpanBox extends RangeBox {
   /// Whether this box is made of only white space.
   final bool isSpaceOnly;
 
+  /// Whether this box is a trailing space box at the end of a line.
+  bool get isTrailingSpace => _isTrailingSpace;
+  bool _isTrailingSpace = false;
+
   /// This is made mutable so it can be updated later in the layout process for
   /// the purpose of aligning the lines of a paragraph with [ui.TextAlign.justify].
   double _width;
@@ -758,13 +762,9 @@ class SpanBox extends RangeBox {
     return spanometer.paragraph.toPlainText().substring(start.index, end.indexWithoutTrailingNewlines);
   }
 
-  /// Returns a [ui.TextBox] representing this range box in the given [line].
-  ///
-  /// The coordinates of the resulting [ui.TextBox] are relative to the
-  /// paragraph, not to the line.
   @override
-  ui.TextBox toTextBox(EngineLineMetrics line) {
-    return intersect(line, start.index, end.index);
+  ui.TextBox toTextBox(EngineLineMetrics line, {required bool forPainting}) {
+    return intersect(line, start.index, end.index, forPainting: forPainting);
   }
 
   /// Performs the intersection of this box with the range given by [start] and
@@ -772,7 +772,7 @@ class SpanBox extends RangeBox {
   ///
   /// The coordinates of the resulting [ui.TextBox] are relative to the
   /// paragraph, not to the line.
-  ui.TextBox intersect(EngineLineMetrics line, int start, int end) {
+  ui.TextBox intersect(EngineLineMetrics line, int start, int end, {required bool forPainting}) {
     final double top = line.baseline - baseline;
 
     final double before;
@@ -791,7 +791,7 @@ class SpanBox extends RangeBox {
       after = spanometer._measure(end, this.end.indexWithoutTrailingNewlines);
     }
 
-    final double left, right;
+    double left, right;
     if (isContentLtr) {
       // Example: let's say the text is "Loremipsum" and we want to get the box
       // for "rem". In this case, `before` is the width of "Lo", and `after`
@@ -823,6 +823,18 @@ class SpanBox extends RangeBox {
       // because the text flows from right to left.
       left = this.left + after;
       right = this.right - before;
+    }
+
+    // When painting a paragraph, trailing spaces should have a zero width.
+    final bool isZeroWidth = forPainting && isTrailingSpace;
+    if (isZeroWidth) {
+      // Collapse the box to the left or to the right depending on the paragraph
+      // direction.
+      if (paragraphDirection == ui.TextDirection.ltr) {
+        right = left;
+      } else {
+        left = right;
+      }
     }
 
     // The [RangeBox]'s left and right edges are relative to the line. In order
@@ -1467,6 +1479,9 @@ class LineBuilder {
     } else {
       hardBreak = end.isHard;
     }
+
+    _processTrailingSpaces();
+
     return EngineLineMetrics.rich(
       lineNumber,
       ellipsis: ellipsis,
@@ -1483,7 +1498,25 @@ class LineBuilder {
       descent: descent,
       boxes: _boxes,
       spaceBoxCount: _spaceBoxCount,
+      trailingSpaceBoxCount: _trailingSpaceBoxCount,
     );
+  }
+
+  int _trailingSpaceBoxCount = 0;
+
+  void _processTrailingSpaces() {
+    _trailingSpaceBoxCount = 0;
+    for (int i = _boxes.length - 1; i >= 0; i--) {
+      final RangeBox box = _boxes[i];
+      final bool isSpaceBox = box is SpanBox && box.isSpaceOnly;
+      if (!isSpaceBox) {
+        // We traversed all trailing space boxes.
+        break;
+      }
+
+      box._isTrailingSpace = true;
+      _trailingSpaceBoxCount++;
+    }
   }
 
   LineBreakResult? _cachedNextBreak;
