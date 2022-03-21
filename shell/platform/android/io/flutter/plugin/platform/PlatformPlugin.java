@@ -436,10 +436,10 @@ public class PlatformPlugin {
             break;
         }
       }
-    }
 
-    if (systemChromeStyle.systemNavigationBarColor != null && Build.VERSION.SDK_INT >= 21) {
-      window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
+      if (systemChromeStyle.systemNavigationBarColor != null) {
+        window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
+      }
     }
 
     // You can't change the color of the navigation bar divider color until SDK 28.
