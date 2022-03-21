@@ -7,7 +7,9 @@ import 'dart:developer' as developer;
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/assets.dart';
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/canvaskit/initialization.dart';
 import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/keyboard.dart';
 import 'package:ui/src/engine/mouse_cursor.dart';
@@ -16,6 +18,7 @@ import 'package:ui/src/engine/platform_dispatcher.dart';
 import 'package:ui/src/engine/platform_views/content_manager.dart';
 import 'package:ui/src/engine/profiler.dart';
 import 'package:ui/src/engine/safe_browser_api.dart';
+import 'package:ui/src/engine/text/font_collection.dart';
 import 'package:ui/src/engine/text/line_break_properties.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui;
@@ -71,7 +74,9 @@ void debugEmulateHotRestart() {
 ///
 /// This is only available on the Web, as native Flutter configures the
 /// environment in the native embedder.
-void initializeEngine() {
+Future<void> initializeEngine({
+  AssetManager? assetManager,
+}) async {
   if (_engineInitialized) {
     return;
   }
@@ -155,6 +160,59 @@ void initializeEngine() {
 
   Keyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
+
+  // This needs to be after `initializeEngine` because that is where the
+  // canvaskit script is added to the page.
+  if (useCanvasKit) {
+    await initializeCanvasKit();
+  }
+
+  assetManager ??= const AssetManager();
+  await _setAssetManager(assetManager);
+  if (useCanvasKit) {
+    await skiaFontCollection.ensureFontsLoaded();
+  } else {
+    await _fontCollection!.ensureFontsLoaded();
+  }
+}
+
+AssetManager get assetManager => _assetManager!;
+AssetManager? _assetManager;
+
+FontCollection get fontCollection => _fontCollection!;
+FontCollection? _fontCollection;
+
+Future<void> _setAssetManager(AssetManager assetManager) async {
+  // ignore: unnecessary_null_comparison
+  assert(assetManager != null, 'Cannot set assetManager to null');
+  if (assetManager == _assetManager) {
+    return;
+  }
+
+  _assetManager = assetManager;
+
+  if (useCanvasKit) {
+    ensureSkiaFontCollectionInitialized();
+  } else {
+    _fontCollection ??= FontCollection();
+    _fontCollection!.clear();
+  }
+
+  if (_assetManager != null) {
+    if (useCanvasKit) {
+      await skiaFontCollection.registerFonts(_assetManager!);
+    } else {
+      await _fontCollection!.registerFonts(_assetManager!);
+    }
+  }
+
+  if (ui.debugEmulateFlutterTesterEnvironment) {
+    if (useCanvasKit) {
+      skiaFontCollection.debugRegisterTestFonts();
+    } else {
+      _fontCollection!.debugRegisterTestFonts();
+    }
+  }
 }
 
 void _addUrlStrategyListener() {

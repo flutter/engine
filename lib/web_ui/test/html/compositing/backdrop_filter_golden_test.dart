@@ -24,8 +24,8 @@ Future<void> testMain() async {
     }
 
     await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   // The black circle on the left should not be blurred since it is outside

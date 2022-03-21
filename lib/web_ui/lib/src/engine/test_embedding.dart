@@ -29,7 +29,7 @@ Future<void> initializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) 
     return _platformInitializedFuture!;
   }
   return _platformInitializedFuture =
-      ui.webOnlyInitializePlatform(assetManager: WebOnlyMockAssetManager());
+      initializeEngine(assetManager: WebOnlyMockAssetManager());
 }
 
 const bool _debugLogHistoryActions = false;

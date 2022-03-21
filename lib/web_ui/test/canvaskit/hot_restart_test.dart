@@ -6,8 +6,6 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
-import 'package:ui/ui.dart' as ui;
-
 import 'common.dart';
 
 void main() {
@@ -22,16 +20,14 @@ void testMain() {
       expect(windowFlutterCanvasKit, isNull);
 
       FlutterViewEmbedder();
-      await ui.webOnlyInitializePlatform(
-          assetManager: WebOnlyMockAssetManager());
+      await initializeEngine(assetManager: WebOnlyMockAssetManager());
       expect(windowFlutterCanvasKit, isNotNull);
 
       final CanvasKit? firstCanvasKitInstance = windowFlutterCanvasKit;
 
       // Triggers a reset of the CanvasKit script element.
       FlutterViewEmbedder();
-      await ui.webOnlyInitializePlatform(
-          assetManager: WebOnlyMockAssetManager());
+      await initializeEngine(assetManager: WebOnlyMockAssetManager());
       // The instance is the same.
       expect(firstCanvasKitInstance, windowFlutterCanvasKit);
     });

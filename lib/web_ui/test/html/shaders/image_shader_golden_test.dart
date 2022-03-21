@@ -29,8 +29,8 @@ Future<void> testMain() async {
   setUp(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   void _drawShapes(RecordingCanvas rc, SurfacePaint paint, Rect shaderRect) {

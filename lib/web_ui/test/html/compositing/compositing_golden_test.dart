@@ -30,8 +30,8 @@ Future<void> testMain() async {
     }
 
     await ui.webOnlyInitializePlatform();
-    ui.webOnlyFontCollection.debugRegisterTestFonts();
-    await ui.webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   test('pushClipRect', () async {

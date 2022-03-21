@@ -24,8 +24,8 @@ Future<void> testMain() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
     await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   group('Add picture to scene', () {

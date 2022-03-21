@@ -57,8 +57,8 @@ Future<void> testMain() async {
     debugEmulateFlutterTesterEnvironment = true;
     disposeWebGl();
     await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   Future<void> _testVertices(
