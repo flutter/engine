@@ -47,6 +47,8 @@ FILE: ../../../flutter/display_list/display_list_benchmarks_metal.cc
 FILE: ../../../flutter/display_list/display_list_benchmarks_metal.h
 FILE: ../../../flutter/display_list/display_list_benchmarks_software.cc
 FILE: ../../../flutter/display_list/display_list_benchmarks_software.h
+FILE: ../../../flutter/display_list/display_list_blend_mode.cc
+FILE: ../../../flutter/display_list/display_list_blend_mode.h
 FILE: ../../../flutter/display_list/display_list_builder.cc
 FILE: ../../../flutter/display_list/display_list_builder.h
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.cc
@@ -434,6 +436,8 @@ FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/impeller/display_list/display_list_unittests.cc
 FILE: ../../../flutter/impeller/docs/shader_pipeline.png
+FILE: ../../../flutter/impeller/entity/contents/clear_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/clear_contents.h
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.h
 FILE: ../../../flutter/impeller/entity/contents/content_context.cc
@@ -461,6 +465,8 @@ FILE: ../../../flutter/impeller/entity/entity_pass_delegate.h
 FILE: ../../../flutter/impeller/entity/entity_playground.cc
 FILE: ../../../flutter/impeller/entity/entity_playground.h
 FILE: ../../../flutter/impeller/entity/entity_unittests.cc
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.frag
@@ -469,6 +475,10 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
+FILE: ../../../flutter/impeller/entity/shaders/texture_blend.frag
+FILE: ../../../flutter/impeller/entity/shaders/texture_blend.vert
+FILE: ../../../flutter/impeller/entity/shaders/texture_blend_screen.frag
+FILE: ../../../flutter/impeller/entity/shaders/texture_blend_screen.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
 FILE: ../../../flutter/impeller/fixtures/airplane.jpg
