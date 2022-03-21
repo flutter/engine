@@ -64,7 +64,7 @@ public class SpellCheckChannel {
   public void updateSpellCheckerResults(
       ArrayList<String> spellCheckerResults, String spellCheckedText) {
     channel.invokeMethod(
-        "TextInputClient.updateSpellCheckerResults",
+        "SpellCheck.updateSpellCheckerResults",
         Arrays.asList(spellCheckerResults, spellCheckedText));
   }
 
