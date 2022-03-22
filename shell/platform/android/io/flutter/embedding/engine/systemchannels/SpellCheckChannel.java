@@ -34,7 +34,6 @@ public class SpellCheckChannel {
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
             case "SpellCheck.initiateSpellChecking":
-              System.out.println("-----------FETCH RECEIVED IN ENGINE------------------");
               try {
                 final JSONArray argumentList = (JSONArray) args;
                 String locale = argumentList.getString(0);
@@ -47,7 +46,6 @@ public class SpellCheckChannel {
               break;
             default:
               System.out.println(
-                  "-----------WRONG METHOD BEING CALLED IN ENGINE------------------");
               result.notImplemented();
               break;
           }
@@ -70,7 +68,6 @@ public class SpellCheckChannel {
 
   public void setSpellCheckMethodHandler(
       @Nullable SpellCheckMethodHandler spellCheckMethodHandler) {
-    System.out.println("-------------------SPELL CHECK HANDLER SET-------------------");
     this.spellCheckMethodHandler = spellCheckMethodHandler;
   }
 

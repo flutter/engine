@@ -28,7 +28,6 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
   private String currentSpellCheckedText;
 
   public SpellCheckPlugin(@NonNull View view, @NonNull SpellCheckChannel spellCheckChannel) {
-    System.out.println("----------------SpellCheckPlugin INITIATED-------------");
     mView = view;
     mSpellCheckChannel = spellCheckChannel;
     tsm =
@@ -75,7 +74,6 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
     TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
 
     // Make API call. Maximum suggestions requested set to 3 for now.
-    System.out.println("----------------SpellCheckPlugin FETCH INITIATED-------------");
     mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
   }
 

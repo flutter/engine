@@ -45,7 +45,6 @@ public class SettingsChannel {
 
     @NonNull
     public MessageBuilder setDefaultSpellCheckEnabled(@NonNull boolean defaultSpellCheckEnabled) {
-      System.out.println("--------------DefaultSpellCheckEnabled SET TO TRUE--------------------");
       message.put(DEFAULT_SPELL_CHECK_ENABLED, defaultSpellCheckEnabled);
       return this;
     }

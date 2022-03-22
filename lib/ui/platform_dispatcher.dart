@@ -897,8 +897,6 @@ class PlatformDispatcher {
     final double textScaleFactor = (data['textScaleFactor']! as num).toDouble();
     final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat']! as bool;
     _defaultSpellCheckEnabled = data['defaultSpellCheckEnabled']! as bool;
-    print("----------------SETTING defaultSpellCheckEnabled TO:----------------------");
-    print(_defaultSpellCheckEnabled);
     // This field is optional.
     final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
     if (brieflyShowPassword != null) {
