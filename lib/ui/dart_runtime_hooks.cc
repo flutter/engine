@@ -264,6 +264,7 @@ Dart_Handle DartRuntimeHooks::GetCallbackFromHandle(int64_t handle) {
 }
 
 void DartPluginRegistrant_EnsureInitialized() {
+  tonic::DartApiScope api_scope;
   FindAndInvokeDartPluginRegistrant();
 }
 

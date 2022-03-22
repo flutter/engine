@@ -27,7 +27,7 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
   void init(std::string sksl, bool debugPrintSksl);
 
   fml::RefPtr<FragmentShader> shader(Dart_Handle shader,
-                                     const tonic::Float32List& uniforms,
+                                     Dart_Handle uniforms_handle,
                                      Dart_Handle samplers);
 
  private:
