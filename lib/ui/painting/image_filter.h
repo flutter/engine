@@ -5,12 +5,16 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_
 
+#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/color_filter.h"
-#include "flutter/lib/ui/painting/image.h"
-#include "flutter/lib/ui/painting/picture.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/tonic/typed_data/typed_list.h"
+
+using tonic::DartPersistentValue;
+
+namespace tonic {
+class DartLibraryNatives;
+}  // namespace tonic
 
 namespace flutter {
 
@@ -30,14 +34,17 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   void initColorFilter(ColorFilter* colorFilter);
   void initComposeFilter(ImageFilter* outer, ImageFilter* inner);
 
-  const sk_sp<SkImageFilter>& filter() const { return filter_; }
+  const std::shared_ptr<const DlImageFilter> filter() const { return filter_; }
+  const DlImageFilter* dl_filter() const {
+    return (filter_ && filter_->skia_object()) ? filter_.get() : nullptr;
+  }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   ImageFilter();
 
-  sk_sp<SkImageFilter> filter_;
+  std::shared_ptr<const DlImageFilter> filter_;
 };
 
 }  // namespace flutter

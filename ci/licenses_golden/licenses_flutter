@@ -47,6 +47,8 @@ FILE: ../../../flutter/display_list/display_list_benchmarks_metal.cc
 FILE: ../../../flutter/display_list/display_list_benchmarks_metal.h
 FILE: ../../../flutter/display_list/display_list_benchmarks_software.cc
 FILE: ../../../flutter/display_list/display_list_benchmarks_software.h
+FILE: ../../../flutter/display_list/display_list_blend_mode.cc
+FILE: ../../../flutter/display_list/display_list_blend_mode.h
 FILE: ../../../flutter/display_list/display_list_builder.cc
 FILE: ../../../flutter/display_list/display_list_builder.h
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.cc
@@ -74,6 +76,9 @@ FILE: ../../../flutter/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/display_list/display_list_enum_unittests.cc
 FILE: ../../../flutter/display_list/display_list_flags.cc
 FILE: ../../../flutter/display_list/display_list_flags.h
+FILE: ../../../flutter/display_list/display_list_image_filter.cc
+FILE: ../../../flutter/display_list/display_list_image_filter.h
+FILE: ../../../flutter/display_list/display_list_image_filter_unittests.cc
 FILE: ../../../flutter/display_list/display_list_mask_filter.cc
 FILE: ../../../flutter/display_list/display_list_mask_filter.h
 FILE: ../../../flutter/display_list/display_list_mask_filter_unittests.cc
@@ -170,7 +175,6 @@ FILE: ../../../flutter/flow/raster_cache_unittests.cc
 FILE: ../../../flutter/flow/rtree.cc
 FILE: ../../../flutter/flow/rtree.h
 FILE: ../../../flutter/flow/rtree_unittests.cc
-FILE: ../../../flutter/flow/skia_gpu_object.cc
 FILE: ../../../flutter/flow/skia_gpu_object.h
 FILE: ../../../flutter/flow/skia_gpu_object_unittests.cc
 FILE: ../../../flutter/flow/surface.cc
@@ -434,6 +438,8 @@ FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/impeller/display_list/display_list_unittests.cc
 FILE: ../../../flutter/impeller/docs/shader_pipeline.png
+FILE: ../../../flutter/impeller/entity/contents/clear_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/clear_contents.h
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.h
 FILE: ../../../flutter/impeller/entity/contents/content_context.cc
@@ -461,6 +467,8 @@ FILE: ../../../flutter/impeller/entity/entity_pass_delegate.h
 FILE: ../../../flutter/impeller/entity/entity_playground.cc
 FILE: ../../../flutter/impeller/entity/entity_playground.h
 FILE: ../../../flutter/impeller/entity/entity_unittests.cc
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.frag
@@ -1050,6 +1058,7 @@ FILE: ../../../flutter/shell/common/display_manager.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/engine_unittests.cc
+FILE: ../../../flutter/shell/common/fixtures/hello_loop_2.gif
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
 FILE: ../../../flutter/shell/common/fixtures/shelltest_screenshot.png
 FILE: ../../../flutter/shell/common/input_events_unittests.cc
@@ -1075,6 +1084,7 @@ FILE: ../../../flutter/shell/common/shell_benchmarks.cc
 FILE: ../../../flutter/shell/common/shell_fuchsia_unittests.cc
 FILE: ../../../flutter/shell/common/shell_io_manager.cc
 FILE: ../../../flutter/shell/common/shell_io_manager.h
+FILE: ../../../flutter/shell/common/shell_io_manager_unittests.cc
 FILE: ../../../flutter/shell/common/shell_test.cc
 FILE: ../../../flutter/shell/common/shell_test.h
 FILE: ../../../flutter/shell/common/shell_test_external_view_embedder.cc

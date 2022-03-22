@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_builder.h"
 
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
@@ -103,7 +104,7 @@ void DisplayListBuilder::onSetStrokeMiter(SkScalar limit) {
 void DisplayListBuilder::onSetColor(SkColor color) {
   Push<SetColorOp>(0, 0, current_color_ = color);
 }
-void DisplayListBuilder::onSetBlendMode(SkBlendMode mode) {
+void DisplayListBuilder::onSetBlendMode(DlBlendMode mode) {
   current_blender_ = nullptr;
   Push<SetBlendModeOp>(0, 0, current_blend_mode_ = mode);
   UpdateCurrentOpacityCompatibility();
@@ -115,7 +116,7 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
   SkPaint p;
   p.setBlender(blender);
   if (p.asBlendMode()) {
-    setBlendMode(p.asBlendMode().value());
+    setBlendMode(ToDl(p.asBlendMode().value()));
   } else {
     // |current_blender_| supersedes any value of |current_blend_mode_|
     (current_blender_ = blender)  //
@@ -178,10 +179,38 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
     }
   }
 }
-void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
-  (current_image_filter_ = filter)  //
-      ? Push<SetImageFilterOp>(0, 0, std::move(filter))
-      : Push<ClearImageFilterOp>(0, 0);
+void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
+  if (filter == nullptr) {
+    current_image_filter_ = nullptr;
+    Push<ClearImageFilterOp>(0, 0);
+  } else {
+    current_image_filter_ = filter->shared();
+    switch (filter->type()) {
+      case DlImageFilterType::kBlur: {
+        const DlBlurImageFilter* blur_filter = filter->asBlur();
+        FML_DCHECK(blur_filter);
+        void* pod = Push<SetPodImageFilterOp>(blur_filter->size(), 0);
+        new (pod) DlBlurImageFilter(blur_filter);
+        break;
+      }
+      case DlImageFilterType::kMatrix: {
+        const DlMatrixImageFilter* matrix_filter = filter->asMatrix();
+        FML_DCHECK(matrix_filter);
+        void* pod = Push<SetPodImageFilterOp>(matrix_filter->size(), 0);
+        new (pod) DlMatrixImageFilter(matrix_filter);
+        break;
+      }
+      case DlImageFilterType::kComposeFilter:
+      case DlImageFilterType::kColorFilter: {
+        Push<SetSharedImageFilterOp>(0, 0, filter);
+        break;
+      }
+      case DlImageFilterType::kUnknown: {
+        Push<SetSkImageFilterOp>(0, 0, filter->skia_object());
+        break;
+      }
+    }
+  }
 }
 void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   if (filter == nullptr) {
@@ -263,7 +292,7 @@ void DisplayListBuilder::setAttributesFromPaint(
   if (flags.applies_blend()) {
     std::optional<SkBlendMode> mode_optional = paint.asBlendMode();
     if (mode_optional) {
-      setBlendMode(mode_optional.value());
+      setBlendMode(ToDl(mode_optional.value()));
     } else {
       setBlender(sk_ref_sp(paint.getBlender()));
     }
@@ -290,7 +319,7 @@ void DisplayListBuilder::setAttributesFromPaint(
     setColorFilter(DlColorFilter::From(color_filter).get());
   }
   if (flags.applies_image_filter()) {
-    setImageFilter(sk_ref_sp(paint.getImageFilter()));
+    setImageFilter(DlImageFilter::From(paint.getImageFilter()).get());
   }
   if (flags.applies_path_effect()) {
     setPathEffect(sk_ref_sp(paint.getPathEffect()));
@@ -479,7 +508,7 @@ void DisplayListBuilder::drawPaint() {
   Push<DrawPaintOp>(0, 1);
   CheckLayerOpacityCompatibility();
 }
-void DisplayListBuilder::drawColor(SkColor color, SkBlendMode mode) {
+void DisplayListBuilder::drawColor(SkColor color, DlBlendMode mode) {
   Push<DrawColorOp>(0, 1, color, mode);
   CheckLayerOpacityCompatibility(mode);
 }
@@ -559,7 +588,7 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
   UpdateLayerOpacityCompatibility(false);
 }
 void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
-                                      SkBlendMode mode) {
+                                      DlBlendMode mode) {
   Push<DrawVerticesOp>(0, 1, std::move(vertices), mode);
   // DrawVertices applies its colors to the paint so we have no way
   // of controlling opacity using the current paint attributes.
@@ -625,7 +654,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
                                    const SkRect tex[],
                                    const SkColor colors[],
                                    int count,
-                                   SkBlendMode mode,
+                                   DlBlendMode mode,
                                    const SkSamplingOptions& sampling,
                                    const SkRect* cull_rect,
                                    bool render_with_attributes) {
