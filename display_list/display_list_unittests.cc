@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
@@ -427,8 +428,8 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetPathEffect", {
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1.get());}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2.get());}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(nullptr);}},
     }
   },
@@ -1337,16 +1338,18 @@ TEST(DisplayList, DisplayListPathEffectRefHandling) {
   class PathEffectRefTester : public virtual AttributeRefTester {
    public:
     void setRefToPaint(SkPaint& paint) const override {
-      paint.setPathEffect(path_effect);
+      paint.setPathEffect(path_effect->skia_object());
     }
     void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setPathEffect(path_effect);
+      builder.setPathEffect(path_effect.get());
     }
-    bool ref_is_unique() const override { return path_effect->unique(); }
+    bool ref_is_unique() const override {
+      return path_effect->skia_object()->unique();
+    }
 
    private:
-    sk_sp<SkPathEffect> path_effect =
-        SkDashPathEffect::Make(TestDashes1, 2, 0.0);
+    std::shared_ptr<DlPathEffect> path_effect =
+        DlDashPathEffect::Make(TestDashes1, 2, 0.0);
   };
 
   PathEffectRefTester tester;

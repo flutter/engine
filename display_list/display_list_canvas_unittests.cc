@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
@@ -387,13 +388,13 @@ class TestParameters {
         NotEquals(ref_attr.getColorSource(), attr.getColorSource())) {
       return false;
     }
+    auto skia_path_effect = attr.getPathEffect()->skia_object();
     DisplayListSpecialGeometryFlags geo_flags =
-        flags_.WithPathEffect(attr.getPathEffect());
+        flags_.WithPathEffect(skia_path_effect);
     if (flags_.applies_path_effect() &&  //
         ref_attr.getPathEffect() != attr.getPathEffect()) {
       SkPathEffect::DashInfo info;
-      if (attr.getPathEffect()->asADash(&info) !=
-          SkPathEffect::kDash_DashType) {
+      if (skia_path_effect->asADash(&info) != SkPathEffect::kDash_DashType) {
         return false;
       }
       if (!ignores_dashes()) {
@@ -1230,7 +1231,9 @@ class CanvasCompareTester {
     }
 
     {
-      sk_sp<SkPathEffect> effect = SkDiscretePathEffect::Make(3, 5);
+      std::shared_ptr<DlDiscretePathEffect> effect =
+          DlDiscretePathEffect::Make(3, 5);
+      auto skia_effect = effect->skia_object();
       {
         // Discrete path effects need a stroke width for drawPointsAsPoints
         // to do something realistic
@@ -1249,17 +1252,18 @@ class CanvasCompareTester {
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
                          p.setStrokeMiter(3.0);
-                         p.setPathEffect(effect);
+                         p.setPathEffect(skia_effect);
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
                          b.setStrokeMiter(3.0);
-                         b.setPathEffect(effect);
+                         b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
           << "PathEffect == Discrete-3-5 Cleanup";
-      effect = SkDiscretePathEffect::Make(2, 3);
+      effect = DlDiscretePathEffect::Make(2, 3);
+      skia_effect = effect->skia_object();
       {
         // Discrete path effects need a stroke width for drawPointsAsPoints
         // to do something realistic
@@ -1278,15 +1282,15 @@ class CanvasCompareTester {
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
                          p.setStrokeMiter(2.5);
-                         p.setPathEffect(effect);
+                         p.setPathEffect(skia_effect);
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
                          b.setStrokeMiter(2.5);
-                         b.setPathEffect(effect);
+                         b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
           << "PathEffect == Discrete-2-3 Cleanup";
     }
 
@@ -1503,7 +1507,8 @@ class CanvasCompareTester {
     {
       const SkScalar TestDashes1[] = {29.0, 2.0};
       const SkScalar TestDashes2[] = {17.0, 1.5};
-      sk_sp<SkPathEffect> effect = SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
+      auto effect = DlDashPathEffect::Make(TestDashes1, 2, 0.0f);
+      auto skia_effect = effect->skia_object();
       {
         RenderWith(testP, stroke_base_env, tolerance,
                    CaseParameters(
@@ -1513,19 +1518,20 @@ class CanvasCompareTester {
                          p.setStyle(SkPaint::kStroke_Style);
                          // Provide some non-trivial stroke size to get dashed
                          p.setStrokeWidth(5.0);
-                         p.setPathEffect(effect);
+                         p.setPathEffect(skia_effect);
                        },
                        [=](DisplayListBuilder& b) {
                          // Need stroke style to see dashing properly
                          b.setStyle(DlDrawStyle::kStroke);
                          // Provide some non-trivial stroke size to get dashed
                          b.setStrokeWidth(5.0);
-                         b.setPathEffect(effect);
+                         b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
           << "PathEffect == Dash-29-2 Cleanup";
-      effect = SkDashPathEffect::Make(TestDashes2, 2, 0.0f);
+      effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0f);
+      skia_effect = effect->skia_object();
       {
         RenderWith(testP, stroke_base_env, tolerance,
                    CaseParameters(
@@ -1535,17 +1541,17 @@ class CanvasCompareTester {
                          p.setStyle(SkPaint::kStroke_Style);
                          // Provide some non-trivial stroke size to get dashed
                          p.setStrokeWidth(5.0);
-                         p.setPathEffect(effect);
+                         p.setPathEffect(skia_effect);
                        },
                        [=](DisplayListBuilder& b) {
                          // Need stroke style to see dashing properly
                          b.setStyle(DlDrawStyle::kStroke);
                          // Provide some non-trivial stroke size to get dashed
                          b.setStrokeWidth(5.0);
-                         b.setPathEffect(effect);
+                         b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
           << "PathEffect == Dash-17-1.5 Cleanup";
     }
   }

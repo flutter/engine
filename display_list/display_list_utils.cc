@@ -5,12 +5,14 @@
 #include "flutter/display_list/display_list_utils.h"
 
 #include <math.h>
+#include <cstddef>
 #include <optional>
 #include <type_traits>
 
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/fml/logging.h"
+#include "include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRSXform.h"
@@ -85,8 +87,8 @@ void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
   paint_.setColorFilter(makeColorFilter());
 }
-void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
-  paint_.setPathEffect(effect);
+void SkPaintDispatchHelper::setPathEffect(const DlPathEffect* effect) {
+  paint_.setPathEffect(effect ? effect->skia_object() : nullptr);
 }
 void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
   paint_.setMaskFilter(filter ? filter->skia_object() : nullptr);
@@ -277,8 +279,8 @@ void DisplayListBoundsCalculator::setImageFilter(const DlImageFilter* filter) {
 void DisplayListBoundsCalculator::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
 }
-void DisplayListBoundsCalculator::setPathEffect(sk_sp<SkPathEffect> effect) {
-  path_effect_ = std::move(effect);
+void DisplayListBoundsCalculator::setPathEffect(const DlPathEffect* effect) {
+  path_effect_ = effect ? effect->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
   mask_filter_ = filter ? filter->shared() : nullptr;
@@ -578,12 +580,13 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
   }
 
   if (flags.is_geometric()) {
+    auto sk_path_effect = path_effect_->skia_object();
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
-        flags.WithPathEffect(path_effect_);
+        flags.WithPathEffect(sk_path_effect);
     if (path_effect_) {
       SkPaint p;
-      p.setPathEffect(path_effect_);
+      p.setPathEffect(sk_path_effect);
       if (!p.canComputeFastBounds()) {
         return false;
       }
