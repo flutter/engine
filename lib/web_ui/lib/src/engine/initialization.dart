@@ -141,12 +141,14 @@ Future<void> initializeEngineServices({
   }
   _initializationState = DebugEngineInitializationState.initializingServices;
 
-  scheduleMicrotask(() {
-    // Access [lineLookup] to force the lazy unpacking of line break data
-    // now. Removing this line won't break anything. It's just an optimization
-    // to make the unpacking happen while we are waiting for network requests.
-    lineLookup;
-  });
+  if (!useCanvasKit) {
+    scheduleMicrotask(() {
+      // Access [lineLookup] to force the lazy unpacking of line break data
+      // now. Removing this line won't break anything. It's just an optimization
+      // to make the unpacking happen while we are waiting for network requests.
+      lineLookup;
+    });
+  }
 
   // Setup the hook that allows users to customize URL strategy before running
   // the app.
@@ -213,9 +215,6 @@ Future<void> initializeEngineServices({
     }
   };
 
-  Keyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
-  MouseCursor.initialize();
-
   // This needs to be after `initializeEngine` because that is where the
   // canvaskit script is added to the page.
   if (useCanvasKit) {
@@ -254,7 +253,10 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
+  Keyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
+  MouseCursor.initialize();
   ensureFlutterViewEmbedderInitialized();
+
   if (useCanvasKit) {
     /// Add a Skia scene host.
     skiaSceneHost = html.Element.tag('flt-scene');

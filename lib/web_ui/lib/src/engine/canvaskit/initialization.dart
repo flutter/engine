@@ -9,7 +9,6 @@ import 'dart:html' as html;
 import '../../engine.dart' show kProfileMode;
 import '../browser_detection.dart';
 import '../configuration.dart';
-import '../embedder.dart';
 import '../safe_browser_api.dart';
 import 'canvaskit_api.dart';
 import 'fonts.dart';
