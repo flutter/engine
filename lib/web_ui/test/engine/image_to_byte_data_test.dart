@@ -14,7 +14,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUp(() async {
+  setUpAll(() async {
     await webOnlyInitializePlatform();
     fontCollection.debugRegisterTestFonts();
     await fontCollection.ensureFontsLoaded();

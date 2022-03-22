@@ -49,8 +49,6 @@ const String kProfilePrerollFrame = 'preroll_frame';
 /// to the renderer.
 const String kProfileApplyFrame = 'apply_frame';
 
-bool _engineInitialized = false;
-
 final List<ui.VoidCallback> _hotRestartListeners = <ui.VoidCallback>[];
 
 /// Requests that [listener] is called just before hot restarting the app.
@@ -69,17 +67,79 @@ void debugEmulateHotRestart() {
   }
 }
 
-/// This method performs one-time initialization of the Web environment that
-/// supports the Flutter framework.
-///
-/// This is only available on the Web, as native Flutter configures the
-/// environment in the native embedder.
+/// Fully initializes the engine, including services and UI.
 Future<void> initializeEngine({
   AssetManager? assetManager,
 }) async {
-  if (_engineInitialized) {
+  await initializeEngineServices(assetManager: assetManager);
+  await initializeEngineUi();
+}
+
+/// How far along the initialization process the engine is currently is.
+///
+/// The initialization process starts with [none] and proceeds in increasing
+/// `index` number until [initialized].
+enum DebugEngineInitializationState {
+  /// Initialization hasn't started yet.
+  uninitialized,
+
+  /// The engine is initializing its non-UI services.
+  initializingServices,
+
+  /// The engine has initialized its non-UI services, but hasn't started
+  /// initializing the UI.
+  initializedServices,
+
+  /// The engine started attaching UI surfaces to the web page.
+  initializingUi,
+
+  /// The engine has fully completed initialization.
+  ///
+  /// At this point the framework can start using the engine for I/O, rendering,
+  /// etc.
+  ///
+  /// This is the final state of the engine.
+  initialized,
+}
+
+/// The current initialization state of the engine.
+///
+/// See [DebugEngineInitializationState] for possible states.
+DebugEngineInitializationState get initializationState => _initializationState;
+DebugEngineInitializationState _initializationState = DebugEngineInitializationState.uninitialized;
+
+/// Resets the state back to [DebugEngineInitializationState.uninitialized].
+///
+/// This is for testing only.
+void debugResetEngineInitializationState() {
+  _initializationState = DebugEngineInitializationState.uninitialized;
+}
+
+/// Initializes non-UI engine services.
+///
+/// Does not put any UI onto the page. It is therefore safe to call this
+/// function while the page is showing non-Flutter UI, such as a loading
+/// indicator, a splash screen, or in an add-to-app scenario where the host page
+/// is written using a different web framework.
+///
+/// See also:
+///
+///  * [initializeEngineUi], which is typically called after this function, and
+///    puts UI elements on the page.
+Future<void> initializeEngineServices({
+  AssetManager? assetManager,
+}) async {
+  if (_initializationState != DebugEngineInitializationState.uninitialized) {
+    assert(() {
+      throw StateError(
+        'Invalid engine initialization state. `initializeEngineServices` was '
+        'called, but the engine has already started initialization and is '
+        'currently in state "$_initializationState".'
+      );
+    }());
     return;
   }
+  _initializationState = DebugEngineInitializationState.initializingServices;
 
   scheduleMicrotask(() {
     // Access [lineLookup] to force the lazy unpacking of line break data
@@ -106,11 +166,6 @@ Future<void> initializeEngine({
     return Future<developer.ServiceExtensionResponse>.value(
         developer.ServiceExtensionResponse.result('OK'));
   });
-
-  _engineInitialized = true;
-
-  // Initialize the FlutterViewEmbedder before initializing framework bindings.
-  ensureFlutterViewEmbedderInitialized();
 
   if (Profiler.isBenchmarkMode) {
     Profiler.ensureInitialized();
@@ -174,6 +229,38 @@ Future<void> initializeEngine({
   } else {
     await _fontCollection!.ensureFontsLoaded();
   }
+  _initializationState = DebugEngineInitializationState.initializedServices;
+}
+
+/// Initializes the UI surfaces for the Flutter framework to render to.
+///
+/// Must be called after [initializeEngineServices].
+///
+/// This function will start altering the HTML structure of the page. If used
+/// in an add-to-app scenario, the host page is expected to prepare for Flutter
+/// UI appearing on screen prior to calling this function.
+Future<void> initializeEngineUi() async {
+  if (_initializationState != DebugEngineInitializationState.initializedServices) {
+    assert(() {
+      throw StateError(
+        'Invalid engine initialization state. `initializeEngineUi` was '
+        'called while the engine initialization state was '
+        '"$_initializationState". `initializeEngineUi` can only be called '
+        'when the engine is in state '
+        '"${DebugEngineInitializationState.initializedServices}".'
+      );
+    }());
+    return;
+  }
+  _initializationState = DebugEngineInitializationState.initializingUi;
+
+  ensureFlutterViewEmbedderInitialized();
+  if (useCanvasKit) {
+    /// Add a Skia scene host.
+    skiaSceneHost = html.Element.tag('flt-scene');
+    flutterViewEmbedder.renderScene(skiaSceneHost);
+  }
+  _initializationState = DebugEngineInitializationState.initialized;
 }
 
 AssetManager get assetManager => _assetManager!;
@@ -229,6 +316,9 @@ void _addUrlStrategyListener() {
 /// rendering of PlatformViews into the web app.
 // TODO(dit): How to make this overridable from tests?
 final PlatformViewManager platformViewManager = PlatformViewManager();
+
+// TODO(yjbanov): this does not belong here.
+//                https://github.com/flutter/flutter/issues/100394
 
 /// Converts a matrix represented using [Float64List] to one represented using
 /// [Float32List].

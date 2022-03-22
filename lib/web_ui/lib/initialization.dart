@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(yjbanov): rename this file to web_only_api.dart.
+//                https://github.com/flutter/flutter/issues/100394
+
 // This file contains extra web-only API that non-web engines do not have.
 //
 // Why have web-only API?
@@ -18,13 +21,22 @@
 
 part of ui;
 
+/// Performs one-time initialization of the web environment that supports the
+/// Flutter framework.
+///
+/// This is only available on the Web, as native Flutter configures the
+/// environment in the native embedder.
 Future<void> webOnlyInitializePlatform() async {
   await engine.initializeEngine();
 }
 
+/// Emulates the `flutter test` environment.
+///
+/// When set to true, the engine will emulate a specific screen size, and always
+/// use the "Ahem" font to reduce test flakiness and dependence on the test
+/// environment.
 bool get debugEmulateFlutterTesterEnvironment =>
     _debugEmulateFlutterTesterEnvironment;
-
 set debugEmulateFlutterTesterEnvironment(bool value) {
   _debugEmulateFlutterTesterEnvironment = value;
   if (_debugEmulateFlutterTesterEnvironment) {
@@ -36,8 +48,17 @@ set debugEmulateFlutterTesterEnvironment(bool value) {
 
 bool _debugEmulateFlutterTesterEnvironment = false;
 
+/// Provides the asset manager.
+// TODO(yjbanov): this function should not return a private type. Instead, we
+//                should create a public interface for the returned value that's
+//                implemented by the engine.
+//                https://github.com/flutter/flutter/issues/100394
 engine.AssetManager get webOnlyAssetManager => engine.assetManager;
 
+/// Sets the handler that forwards platform messages to web plugins.
+///
+/// This function exists because unlike mobile, on the web plugins are also
+/// implemented using Dart code, and that code needs a way to receive messages.
 void webOnlySetPluginHandler(Future<void> Function(String, ByteData?, PlatformMessageResponseCallback?) handler) {
   engine.pluginMessageCallHandler = handler;
 }

@@ -64,7 +64,7 @@ Future<void> sceneScreenshot(SurfaceSceneBuilder sceneBuilder, String fileName,
 /// Configures the test to use bundled Roboto and Ahem fonts to avoid golden
 /// screenshot differences due to differences in the preinstalled system fonts.
 void setUpStableTestFonts() {
-  setUp(() async {
+  setUpAll(() async {
     await ui.webOnlyInitializePlatform();
     fontCollection.debugRegisterTestFonts();
     await fontCollection.ensureFontsLoaded();

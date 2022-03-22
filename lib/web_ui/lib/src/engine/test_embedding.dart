@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(yjbanov): this does not need to be in the production sources.
+//                https://github.com/flutter/flutter/issues/100394
+
 import 'dart:async';
 import 'dart:html' as html;
 

@@ -17,7 +17,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUp(() async {
+  setUpAll(() async {
     ui.debugEmulateFlutterTesterEnvironment = true;
     await ui.webOnlyInitializePlatform();
     fontCollection.debugRegisterTestFonts();

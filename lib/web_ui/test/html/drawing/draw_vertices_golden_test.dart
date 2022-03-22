@@ -53,12 +53,16 @@ Future<void> testMain() async {
     }
   }
 
-  setUp(() async {
+  setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
-    disposeWebGl();
     await webOnlyInitializePlatform();
     fontCollection.debugRegisterTestFonts();
     await fontCollection.ensureFontsLoaded();
+  });
+
+  setUp(() {
+    GlContextCache.dispose();
+    glRenderer = null;
   });
 
   Future<void> _testVertices(
