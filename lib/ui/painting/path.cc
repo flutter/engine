@@ -284,10 +284,11 @@ void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
 void CanvasPath::transform(Dart_Handle path_handle,
                            Dart_Handle matrix4_handle) {
   tonic::Float64List matrix4(matrix4_handle);
-
+  auto sk_matrix = ToSkMatrix(matrix4);
+  matrix4.Release();
   fml::RefPtr<CanvasPath> path = CreateNew(path_handle);
   auto& other_mutable_path = path->mutable_path();
-  mutable_path().transform(ToSkMatrix(matrix4), &other_mutable_path);
+  mutable_path().transform(sk_matrix, &other_mutable_path);
 }
 
 tonic::Float32List CanvasPath::getBounds() {
