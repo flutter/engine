@@ -165,13 +165,14 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(1));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<p style="${paragraphStyle(lineHeight: 1.5, fontSize: 9)}">'
       '<span style="${spanStyle(top: 0, left: 0, width: (9+2)*5, lineHeight: 1.5, fontSize: 9, fontWeight: 'bold', fontStyle: 'italic', letterSpacing: 2)}">'
       'Hello'
       '</span>'
       '</p>',
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan span = paragraph.spans.single as FlatTextSpan;
