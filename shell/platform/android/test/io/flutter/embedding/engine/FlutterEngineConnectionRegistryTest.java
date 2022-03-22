@@ -80,8 +80,10 @@ public class FlutterEngineConnectionRegistryTest {
     Activity activity = mock(Activity.class);
     when(appComponent.getAppComponent()).thenReturn(activity);
 
-    Lifecycle lifecycle = mock(Lifecycle.class);
     Intent intent = mock(Intent.class);
+    when(activity.getIntent()).thenReturn(intent);
+
+    Lifecycle lifecycle = mock(Lifecycle.class);
     AtomicBoolean isFirstCall = new AtomicBoolean(true);
 
     // Set up the environment to get the required internal data
