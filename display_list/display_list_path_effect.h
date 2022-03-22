@@ -128,7 +128,7 @@ class DlDashPathEffect : public DlPathEffect {
 
  protected:
   bool equals_(DlPathEffect const& other) const override {
-    FML_DCHECK(other.type() == DlPathEffectType::kCorner);
+    FML_DCHECK(other.type() == DlPathEffectType::kDash);
     auto that = static_cast<DlDashPathEffect const*>(&other);
     return intervals_ == that->intervals_ && count_ == that->count_ &&
            phase_ == that->phase_;
@@ -137,37 +137,6 @@ class DlDashPathEffect : public DlPathEffect {
   const SkScalar* intervals_;
   int count_;
   SkScalar phase_;
-};
-
-class DlUnknownPathEffect final : public DlPathEffect {
- public:
-  DlUnknownPathEffect(sk_sp<SkPathEffect> effect)
-      : sk_path_effect_(std::move(effect)) {}
-  DlUnknownPathEffect(const DlUnknownPathEffect& effect)
-      : DlUnknownPathEffect(effect.sk_path_effect_) {}
-  DlUnknownPathEffect(const DlUnknownPathEffect* effect)
-      : DlUnknownPathEffect(effect->sk_path_effect_) {}
-
-  DlPathEffectType type() const override { return DlPathEffectType::kUnknown; }
-  size_t size() const override { return sizeof(*this); }
-
-  std::shared_ptr<DlPathEffect> shared() const override {
-    return std::make_shared<DlUnknownPathEffect>(this);
-  }
-
-  sk_sp<SkPathEffect> skia_object() const override { return sk_path_effect_; }
-
-  virtual ~DlUnknownPathEffect() = default;
-
- protected:
-  bool equals_(const DlPathEffect& other) const override {
-    FML_DCHECK(other.type() == DlPathEffectType::kUnknown);
-    auto that = static_cast<DlUnknownPathEffect const*>(&other);
-    return sk_path_effect_ == that->sk_path_effect_;
-  }
-
- private:
-  sk_sp<SkPathEffect> sk_path_effect_;
 };
 
 class DlDiscretePathEffect : public DlPathEffect {
@@ -218,6 +187,36 @@ class DlDiscretePathEffect : public DlPathEffect {
   uint32_t seedAssist_ = 0;
 };
 
+class DlUnknownPathEffect final : public DlPathEffect {
+ public:
+  DlUnknownPathEffect(sk_sp<SkPathEffect> effect)
+      : sk_path_effect_(std::move(effect)) {}
+  DlUnknownPathEffect(const DlUnknownPathEffect& effect)
+      : DlUnknownPathEffect(effect.sk_path_effect_) {}
+  DlUnknownPathEffect(const DlUnknownPathEffect* effect)
+      : DlUnknownPathEffect(effect->sk_path_effect_) {}
+
+  DlPathEffectType type() const override { return DlPathEffectType::kUnknown; }
+  size_t size() const override { return sizeof(*this); }
+
+  std::shared_ptr<DlPathEffect> shared() const override {
+    return std::make_shared<DlUnknownPathEffect>(this);
+  }
+
+  sk_sp<SkPathEffect> skia_object() const override { return sk_path_effect_; }
+
+  virtual ~DlUnknownPathEffect() = default;
+
+ protected:
+  bool equals_(const DlPathEffect& other) const override {
+    FML_DCHECK(other.type() == DlPathEffectType::kUnknown);
+    auto that = static_cast<DlUnknownPathEffect const*>(&other);
+    return sk_path_effect_ == that->sk_path_effect_;
+  }
+
+ private:
+  sk_sp<SkPathEffect> sk_path_effect_;
+};
 class DlPairPathEffect : public DlPathEffect {
  protected:
   DlPairPathEffect(sk_sp<SkPathEffect> pe0, sk_sp<SkPathEffect> pe1)

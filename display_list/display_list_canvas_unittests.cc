@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <memory>
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
@@ -388,7 +387,8 @@ class TestParameters {
         NotEquals(ref_attr.getColorSource(), attr.getColorSource())) {
       return false;
     }
-    auto skia_path_effect = attr.getPathEffect()->skia_object();
+    auto skia_path_effect =
+        attr.getPathEffect() ? attr.getPathEffect()->skia_object() : nullptr;
     DisplayListSpecialGeometryFlags geo_flags =
         flags_.WithPathEffect(skia_path_effect);
     if (flags_.applies_path_effect() &&  //

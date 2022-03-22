@@ -5,7 +5,6 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_UTILS_H_
 
-#include <memory>
 #include <optional>
 
 #include "flutter/display_list/display_list.h"

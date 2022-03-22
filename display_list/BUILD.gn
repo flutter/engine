@@ -93,6 +93,7 @@ if (enable_unittests) {
       "display_list_color_unittests.cc",
       "display_list_complexity_unittests.cc",
       "display_list_enum_unittests.cc",
+      "display_list_path_effect_unittests.cc",
       "display_list_image_filter_unittests.cc",
       "display_list_mask_filter_unittests.cc",
       "display_list_paint_unittests.cc",

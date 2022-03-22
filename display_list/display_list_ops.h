@@ -176,7 +176,6 @@ struct SetBlendModeOp final : DLOp {
     }                                                                          \
   };
 DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
-DEFINE_SET_CLEAR_SKREF_OP(ImageFilter, filter)
 #undef DEFINE_SET_CLEAR_SKREF_OP
 
 // Clear: 4 byte header + unused 4 byte payload uses 8 bytes

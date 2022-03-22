@@ -5,7 +5,6 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
 
-#include <memory>
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_comparable.h"

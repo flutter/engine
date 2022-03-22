@@ -5,14 +5,12 @@
 #include "flutter/display_list/display_list_utils.h"
 
 #include <math.h>
-#include <cstddef>
 #include <optional>
 #include <type_traits>
 
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/fml/logging.h"
-#include "include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRSXform.h"
@@ -580,7 +578,7 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
   }
 
   if (flags.is_geometric()) {
-    auto sk_path_effect = path_effect_->skia_object();
+    auto sk_path_effect = path_effect_ ? path_effect_->skia_object() : nullptr;
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
         flags.WithPathEffect(sk_path_effect);
