@@ -66,13 +66,13 @@ static NSString* const kCanRedo = @"canRedo";
   [self.undoManager beginUndoGrouping];
   [self.undoManager registerUndoWithTarget:self
                                    handler:^(id target) {
-                                     // register undo with opposite direction
+                                     // Register undo with opposite direction.
                                      FlutterUndoRedoDirection newDirection =
                                          (direction == FlutterUndoRedoDirectionRedo)
                                              ? FlutterUndoRedoDirectionUndo
                                              : FlutterUndoRedoDirectionRedo;
                                      [target registerUndoWithDirection:newDirection];
-                                     // invoke method on delegate
+                                     // Invoke method on delegate.
                                      [_undoManagerDelegate flutterUndoManagerPlugin:self
                                                                          handleUndo:direction];
                                    }];
@@ -86,7 +86,7 @@ static NSString* const kCanRedo = @"canRedo";
   [self.undoManager
       registerUndoWithTarget:self
                      handler:^(id target) {
-                       // register undo with opposite direction
+                       // Register undo with opposite direction.
                        [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
                      }];
   [self.undoManager endUndoGrouping];

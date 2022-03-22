@@ -1966,6 +1966,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   }
 }
 
+// This method is used to inject a mock NSUndoManager in tests.
 - (void)setUndoManager:(NSUndoManager*)undoManager {
   self.undoManagerOverride = undoManager;
 }
