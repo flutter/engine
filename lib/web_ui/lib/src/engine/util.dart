@@ -42,12 +42,10 @@ typedef Callbacker<T> = String? Function(Callback<T> callback);
 /// }
 ///
 /// Future<int> doSomething() {
-///   return _futurize(_doSomethingAndCallback);
+///   return futurize(_doSomethingAndCallback);
 /// }
 /// ```
-// Note: this function is not directly tested so that it remains private, instead an exact
-// copy of it has been inlined into the test at lib/ui/fixtures/ui_test.dart. if you change
-// this function, then you  must update the test.
+// Keep this in sync with _futurize in lib/ui/fixtures/ui_test.dart.
 Future<T> futurize<T>(Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
   // If the callback synchronously throws an error, then synchronously

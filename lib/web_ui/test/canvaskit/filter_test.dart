@@ -46,7 +46,10 @@ void testMain() {
     ];
   }
 
-  setUpCanvasKitTest();
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+  if (!isIosSafari) {
+    setUpCanvasKitTest();
+  }
 
   group('ImageFilters', () {
     test('can be constructed', () {
