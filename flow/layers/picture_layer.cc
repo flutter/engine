@@ -117,8 +117,8 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
     if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
-                         offset_)) {
+      if (cache->Prepare(context, sk_picture, /*for_testing=*/false,
+                         will_change_, matrix, offset_, is_complex_)) {
         context->subtree_can_inherit_opacity = true;
       }
     } else {
