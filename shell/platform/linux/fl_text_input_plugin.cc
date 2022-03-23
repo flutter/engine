@@ -144,12 +144,12 @@ static void update_editing_state(FlTextInputPlugin* self) {
   fl_value_set_string_take(value, kSelectionExtentKey,
                            fl_value_new_int(selection.extent()));
 
-  int composing_base = priv->text_model->composing()
-                           ? priv->text_model->composing_range().base()
-                           : -1;
-  int composing_extent = priv->text_model->composing()
-                             ? priv->text_model->composing_range().extent()
-                             : -1;
+  int composing_base = -1;
+  int composing_extent = -1;
+  if (!priv->text_model->composing_range().collapsed()) {
+    composing_base = priv->text_model->composing_range().base();
+    composing_extent = priv->text_model->composing_range().extent();
+  }
   fl_value_set_string_take(value, kComposingBaseKey,
                            fl_value_new_int(composing_base));
   fl_value_set_string_take(value, kComposingExtentKey,
@@ -203,21 +203,20 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self,
   fl_value_set_string_take(deltaValue, "selectionIsDirectional",
                            fl_value_new_bool(FALSE));
 
-  int composing_base = priv->text_model->composing()
-                           ? priv->text_model->composing_range().base()
-                           : -1;
+  int composing_base = -1;
+  int composing_extent = -1;
+  if (!priv->text_model->composing_range().collapsed()) {
+    composing_base = priv->text_model->composing_range().base();
+    composing_extent = priv->text_model->composing_range().extent();
+  }
   fl_value_set_string_take(deltaValue, "composingBase",
                            fl_value_new_int(composing_base));
-
-  int composing_extent = priv->text_model->composing()
-                             ? priv->text_model->composing_range().extent()
-                             : -1;
   fl_value_set_string_take(deltaValue, "composingExtent",
                            fl_value_new_int(composing_extent));
 
   g_autoptr(FlValue) deltas = fl_value_new_list();
   fl_value_append(deltas, deltaValue);
-  g_autoptr(FlValue) value = fl_value_new_map();
+  FlValue* value = fl_value_new_map();
   fl_value_set_string_take(value, "deltas", deltas);
 
   fl_value_append(args, value);
@@ -630,6 +629,7 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
 
   std::string text_before_change = priv->text_model->GetText();
   flutter::TextRange selection_before_change = priv->text_model->selection();
+  std::string text = priv->text_model->GetText();
 
   // Handle the enter/return key.
   gboolean do_action = FALSE;
@@ -650,6 +650,7 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
       case GDK_KEY_ISO_Enter:
         if (priv->input_type == FL_TEXT_INPUT_TYPE_MULTILINE) {
           priv->text_model->AddCodePoint('\n');
+          text = "\n";
           changed = TRUE;
         }
         do_action = TRUE;
@@ -677,8 +678,7 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
   if (changed) {
     if (priv->enable_delta_model) {
       flutter::TextEditingDelta delta = flutter::TextEditingDelta(
-          text_before_change, priv->text_model->composing_range(),
-          priv->text_model->GetText());
+          text_before_change, selection_before_change, text);
       update_editing_state_with_delta(self, &delta);
     } else {
       update_editing_state(self);
