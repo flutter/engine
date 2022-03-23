@@ -448,7 +448,7 @@ void TextInputPlugin::EnterPressed(TextInputModel* model) {
   if (input_type_ == kMultilineInputType) {
     std::u16string text_before_change = fml::Utf8ToUtf16(model->GetText());
     TextRange selection_before_change = model->selection();
-    model->AddText(std::u16string({u'\n'}));
+    model->AddText(u"\n");
     if (enable_delta_model) {
       TextEditingDelta delta(text_before_change, selection_before_change,
                              u"\n");
