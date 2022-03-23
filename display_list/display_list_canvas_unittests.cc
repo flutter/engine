@@ -1231,9 +1231,7 @@ class CanvasCompareTester {
     }
 
     {
-      std::shared_ptr<DlDiscretePathEffect> effect =
-          DlDiscretePathEffect::Make(3, 5);
-      auto skia_effect = effect->skia_object();
+      sk_sp<SkPathEffect> effect = SkDiscretePathEffect::Make(3, 5);
       {
         // Discrete path effects need a stroke width for drawPointsAsPoints
         // to do something realistic
@@ -1252,18 +1250,17 @@ class CanvasCompareTester {
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
                          p.setStrokeMiter(3.0);
-                         p.setPathEffect(skia_effect);
+                         p.setPathEffect(effect);
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
                          b.setStrokeMiter(3.0);
-                         b.setPathEffect(effect.get());
+                         b.setPathEffect(DlPathEffect::From(effect).get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
           << "PathEffect == Discrete-3-5 Cleanup";
-      effect = DlDiscretePathEffect::Make(2, 3);
-      skia_effect = effect->skia_object();
+      effect = SkDiscretePathEffect::Make(2, 3);
       {
         // Discrete path effects need a stroke width for drawPointsAsPoints
         // to do something realistic
@@ -1282,15 +1279,15 @@ class CanvasCompareTester {
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
                          p.setStrokeMiter(2.5);
-                         p.setPathEffect(skia_effect);
+                         p.setPathEffect(effect);
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
                          b.setStrokeMiter(2.5);
-                         b.setPathEffect(effect.get());
+                         b.setPathEffect(DlPathEffect::From(effect).get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
           << "PathEffect == Discrete-2-3 Cleanup";
     }
 
@@ -1507,8 +1504,7 @@ class CanvasCompareTester {
     {
       const SkScalar TestDashes1[] = {29.0, 2.0};
       const SkScalar TestDashes2[] = {17.0, 1.5};
-      auto effect = DlDashPathEffect::Make(TestDashes1, 2, 0.0f);
-      auto skia_effect = effect->skia_object();
+      auto effect = SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
       {
         RenderWith(testP, stroke_base_env, tolerance,
                    CaseParameters(
@@ -1518,20 +1514,19 @@ class CanvasCompareTester {
                          p.setStyle(SkPaint::kStroke_Style);
                          // Provide some non-trivial stroke size to get dashed
                          p.setStrokeWidth(5.0);
-                         p.setPathEffect(skia_effect);
+                         p.setPathEffect(effect);
                        },
                        [=](DisplayListBuilder& b) {
                          // Need stroke style to see dashing properly
                          b.setStyle(DlDrawStyle::kStroke);
                          // Provide some non-trivial stroke size to get dashed
                          b.setStrokeWidth(5.0);
-                         b.setPathEffect(effect.get());
+                         b.setPathEffect(DlPathEffect::From(effect).get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
           << "PathEffect == Dash-29-2 Cleanup";
-      effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0f);
-      skia_effect = effect->skia_object();
+      effect = SkDashPathEffect::Make(TestDashes2, 2, 0.0f);
       {
         RenderWith(testP, stroke_base_env, tolerance,
                    CaseParameters(
@@ -1541,17 +1536,17 @@ class CanvasCompareTester {
                          p.setStyle(SkPaint::kStroke_Style);
                          // Provide some non-trivial stroke size to get dashed
                          p.setStrokeWidth(5.0);
-                         p.setPathEffect(skia_effect);
+                         p.setPathEffect(effect);
                        },
                        [=](DisplayListBuilder& b) {
                          // Need stroke style to see dashing properly
                          b.setStyle(DlDrawStyle::kStroke);
                          // Provide some non-trivial stroke size to get dashed
                          b.setStrokeWidth(5.0);
-                         b.setPathEffect(effect.get());
+                         b.setPathEffect(DlPathEffect::From(effect).get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || skia_effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
           << "PathEffect == Dash-17-1.5 Cleanup";
     }
   }

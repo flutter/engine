@@ -282,34 +282,10 @@ void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
   } else {
     current_path_effect_ = effect->shared();
     switch (current_path_effect_->type()) {
-      case DlPathEffectType::kCorner: {
-        const DlCornerPathEffect* corner_effect = effect->asCorner();
-        void* pod = Push<SetPodPathEffectOp>(corner_effect->size(), 0);
-        new (pod) DlCornerPathEffect(corner_effect);
-        break;
-      }
       case DlPathEffectType::kDash: {
         const DlDashPathEffect* dash_effect = effect->asDash();
         void* pod = Push<SetPodPathEffectOp>(dash_effect->size(), 0);
         new (pod) DlDashPathEffect(dash_effect);
-        break;
-      }
-      case DlPathEffectType::kDiscrete: {
-        const DlDiscretePathEffect* discrete_effect = effect->asDiscrete();
-        void* pod = Push<SetPodPathEffectOp>(discrete_effect->size(), 0);
-        new (pod) DlDiscretePathEffect(discrete_effect);
-        break;
-      }
-      case DlPathEffectType::kSumPathEffect: {
-        const DlSumPathEffect* sum_effect = effect->asSum();
-        void* pod = Push<SetPodPathEffectOp>(sum_effect->size(), 0);
-        new (pod) DlSumPathEffect(sum_effect);
-        break;
-      }
-      case DlPathEffectType::kComposePathEffect: {
-        const DlComposePathEffect* compose_effect = effect->asCompose();
-        void* pod = Push<SetPodPathEffectOp>(compose_effect->size(), 0);
-        new (pod) DlComposePathEffect(compose_effect);
         break;
       }
       case DlPathEffectType::kUnknown: {

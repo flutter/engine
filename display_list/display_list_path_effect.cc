@@ -12,24 +12,18 @@ std::shared_ptr<DlPathEffect> DlPathEffect::From(SkPathEffect* sk_path_effect) {
   if (sk_path_effect == nullptr) {
     return nullptr;
   }
-  // There are no inspection methods for SkPathEffect so we cannot break
-  // the Skia filter down into a specific subclass (i.e. DlSumPathEffect or
-  // DlComposePathEffect).
+
+  SkPathEffect::DashInfo info;
+  if (SkPathEffect::DashType::kDash_DashType ==
+      sk_path_effect->asADash(&info)) {
+    auto dash_path_effect = std::make_shared<DlDashPathEffect>(
+        info.fIntervals, info.fCount, info.fPhase);
+    info.fIntervals = dash_path_effect->interval();
+    sk_path_effect->asADash(&info);
+    return dash_path_effect;
+  }
+  // If not dash path effect, we will use UnknownPathEffect to wrap it.
   return std::make_shared<DlUnknownPathEffect>(sk_ref_sp(sk_path_effect));
-}
-
-std::shared_ptr<DlPathEffect> DlPathEffect::MakeSum(
-    std::shared_ptr<DlPathEffect> first,
-    std::shared_ptr<DlPathEffect> second) {
-  return std::make_shared<DlSumPathEffect>(first->skia_object(),
-                                           second->skia_object());
-}
-
-std::shared_ptr<DlPathEffect> DlPathEffect::MakeCompose(
-    std::shared_ptr<DlPathEffect> outer,
-    std::shared_ptr<DlPathEffect> inner) {
-  return std::make_shared<DlComposePathEffect>(outer->skia_object(),
-                                               inner->skia_object());
 }
 
 }  // namespace flutter
