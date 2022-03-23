@@ -446,8 +446,17 @@ void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
 
 void TextInputPlugin::EnterPressed(TextInputModel* model) {
   if (input_type_ == kMultilineInputType) {
+    std::string text_before_change = active_model_->GetText();
+    std::string text = "\n";
+    TextRange selection_before_change = active_model_->selection();
     model->AddText(std::u16string({u'\n'}));
-    SendStateUpdate(*model);
+    if (enable_delta_model) {
+      TextEditingDelta delta =
+          TextEditingDelta(text_before_change, selection_before_change, text);
+      SendStateUpdateWithDelta(*active_model_, &delta);
+    } else {
+      SendStateUpdate(*model);
+    }
   }
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = args->GetAllocator();
