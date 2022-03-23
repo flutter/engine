@@ -1,4 +1,4 @@
-Signature: fb9ecb0a8ed206051bd7376e817f859a
+Signature: 69de99bc580ce1bf9623e679c7ea3814
 
 UNUSED LICENSES:
 
@@ -1142,6 +1142,8 @@ FILE: ../../../third_party/skia/modules/skparagraph/samples/SampleParagraph.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.h
+FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/OneLineShaper.cpp
