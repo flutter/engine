@@ -446,13 +446,12 @@ void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
 
 void TextInputPlugin::EnterPressed(TextInputModel* model) {
   if (input_type_ == kMultilineInputType) {
+    std::u16string text_before_change =
+        fml::Utf8ToUtf16(active_model_->GetText());
+    TextRange selection_before_change = active_model_->selection();
     model->AddText(std::u16string({u'\n'}));
     if (enable_delta_model) {
-      std::u16string text_before_change =
-          fml::Utf8ToUtf16(active_model_->GetText());
-      TextRange selection_before_change = active_model_->selection();
-      TextEditingDelta delta(text_before_change, selection_before_change,
-                             std::u16string({u'\n'}));
+      TextEditingDelta delta(text_before_change, selection_before_change, u"\n");
       SendStateUpdateWithDelta(*model, &delta);
     } else {
       SendStateUpdate(*model);
