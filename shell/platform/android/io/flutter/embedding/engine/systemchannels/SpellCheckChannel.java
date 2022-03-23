@@ -45,7 +45,6 @@ public class SpellCheckChannel {
               }
               break;
             default:
-              System.out.println(
               result.notImplemented();
               break;
           }
