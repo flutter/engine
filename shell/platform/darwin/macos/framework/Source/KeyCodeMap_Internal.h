@@ -4,6 +4,7 @@
 
 #import <Cocoa/Cocoa.h>
 #include <cinttypes>
+#include <vector>
 
 /**
  * Maps macOS-specific key code values representing |PhysicalKeyboardKey|.
@@ -80,3 +81,12 @@ typedef enum {
   kModifierFlagAltRight = 0x40,
   kModifierFlagControlRight = 0x200,
 } ModifierFlag;
+
+typedef struct {
+  uint16_t keyCode;
+  uint8_t keyChar;
+  bool mandatory;
+} LayoutPreset;
+
+// TODO
+extern const std::vector<LayoutPreset> layoutPresets;
