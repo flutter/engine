@@ -45,7 +45,7 @@ static KeyChar DetectKeyChar(const UCKeyboardLayout* layout, uint16_t keyCode, b
     &resultChar);
   }
 
-  if (status == noErr && stringLength == 1 && !std::iscntrl(resultChar) && deadKeyState == 0) {
+  if (status == noErr && stringLength == 1 && !std::iscntrl(resultChar)) {
     return KeyChar(resultChar, isDeadKey);
   }
   return KeyChar(0, false);
@@ -257,30 +257,33 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
     // - Mandatory key
     // - Primary EASCII
     // - Non-primary EASCII
-    // - Primary Deadkey
-    // - Non-primary Deadkey
+    // - Primary dead key
+    // - Non-primary dead key
     // - US layout
-    uint64_t easciiKey = 0;
-    uint64_t deadKey = 0;
+    uint32_t easciiKey = 0;
+    uint32_t deadKey = 0;
     for (int charIdx = 0; charIdx < kCharTypes; charIdx += 1) {
       KeyChar keyCharPair = keyChars[charIdx];
       uint32_t keyChar = keyCharPair.first;
       bool isDeadKey = keyCharPair.second;
       auto presetIter = remainingPresets.find(keyChar);
-      if (presetIter != remainingPresets.end() && presetIter->second.mandatory) {
-        // Found a key that produces a mandatory char. Use it.
-        NSAssert(_overrideLayoutMap[@(keyCode)] == nil,
-                 @"Attempting to assign an assigned key code.");
-        _overrideLayoutMap[@(keyCode)] = @(keyChar);
-        remainingPresets.erase(presetIter);
-        NSLog(@"From req");
-        break;
-      }
-      if (easciiKey == 0 && keyChar < 256) {
-        easciiKey = keyChar;
-      }
-      if (deadKey == 0 && isDeadKey) {
-        deadKey = keyChar;
+      if (!isDeadKey) {
+        if (presetIter != remainingPresets.end() && presetIter->second.mandatory) {
+          // Found a key that produces a mandatory char. Use it.
+          NSAssert(_overrideLayoutMap[@(keyCode)] == nil,
+                  @"Attempting to assign an assigned key code.");
+          _overrideLayoutMap[@(keyCode)] = @(keyChar);
+          remainingPresets.erase(presetIter);
+          NSLog(@"From req");
+          break;
+        }
+        if (easciiKey == 0 && keyChar < 256) {
+          easciiKey = keyChar;
+        }
+      } else {
+        if (deadKey == 0) {
+          deadKey = keyChar;
+        }
       }
     }
     // See if any produced char meets the requirement as a logical key.
