@@ -107,6 +107,8 @@ struct Settings {
   std::string isolate_snapshot_instr_path;  // deprecated
   MappingCallback isolate_snapshot_instr;
 
+  std::string route;
+
   // Returns the Mapping to a kernel buffer which contains sources for dart:*
   // libraries.
   MappingCallback dart_library_sources_kernel;
@@ -189,6 +191,10 @@ struct Settings {
 
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
+
+  // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
+  // not supported on the platform.
+  bool enable_impeller = false;
 
   // Selects the DisplayList for storage of rendering operations.
   bool enable_display_list = true;
@@ -293,7 +299,12 @@ struct Settings {
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
 
-  std::string ToString() const;
+  /// The minimum number of samples to require in multipsampled anti-aliasing.
+  ///
+  /// Setting this value to 0 or 1 disables MSAA.
+  /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
+  /// GPU does not support the requested sampling value, MSAA will be disabled.
+  uint8_t msaa_samples = 0;
 };
 
 }  // namespace flutter

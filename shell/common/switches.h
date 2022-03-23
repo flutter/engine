@@ -105,6 +105,9 @@ DEF_SWITCH(EnableSoftwareRendering,
            "Enable rendering using the Skia software backend. This is useful "
            "when testing Flutter on emulators. By default, Flutter will "
            "attempt to either use OpenGL, Metal, or Vulkan.")
+DEF_SWITCH(Route,
+           "route",
+           "Start app with an specific route defined on the framework")
 DEF_SWITCH(SkiaDeterministicRendering,
            "skia-deterministic-rendering",
            "Skips the call to SkGraphics::Init(), thus avoiding swapping out "
@@ -220,12 +223,22 @@ DEF_SWITCH(OldGenHeapSize,
 DEF_SWITCH(EnableSkParagraph,
            "enable-skparagraph",
            "Selects the SkParagraph implementation of the text layout engine.")
-
+DEF_SWITCH(EnableImpeller,
+           "enable-impeller",
+           "Enable the Impeller renderer on supported platforms. Ignored if "
+           "Impeller is not supported on the platform.")
 DEF_SWITCH(LeakVM,
            "leak-vm",
            "When the last shell shuts down, the shared VM is leaked by default "
            "(the leak_vm in VM settings is true). To clean up the leak VM, set "
            "this value to false.")
+DEF_SWITCH(
+    MsaaSamples,
+    "msaa-samples",
+    "The minimum number of samples to require for multisampled anti-aliasing.  "
+    "Setting this value to 0 or 1 disables MSAA. If it is not 0 or 1, it must "
+    "be one of 2, 4, 8, or 16. However, if the GPU does not support the "
+    "requested sampling value, MSAA will be disabled.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

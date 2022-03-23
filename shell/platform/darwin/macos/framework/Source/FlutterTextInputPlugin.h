@@ -6,7 +6,6 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeySecondaryResponder.h"
 
 @class FlutterTextField;
 
@@ -22,7 +21,7 @@
  * When accessibility is on, accessibility bridge creates a NSTextField, i.e. FlutterTextField,
  * for every text field in the Flutter. This plugin acts as a field editor for those NSTextField[s].
  */
-@interface FlutterTextInputPlugin : NSTextView <FlutterKeySecondaryResponder>
+@interface FlutterTextInputPlugin : NSTextView
 
 /**
  * The NSTextField that currently has this plugin as its field editor.
@@ -46,10 +45,32 @@
  */
 - (BOOL)isFirstResponder;
 
+/**
+ * Whether this plugin has composing text.
+ *
+ * This is only true when the text input plugin is actively taking user input with composing text.
+ */
+// TODO (LongCatIsLooong): remove this method and implement a long-term fix for
+// https://github.com/flutter/flutter/issues/85328.
+- (BOOL)isComposing;
+
+/**
+ * Handles key down events received from the view controller, responding YES if
+ * the event was handled.
+ *
+ * Note, the Apple docs suggest that clients should override essentially all the
+ * mouse and keyboard event-handling methods of NSResponder. However, experimentation
+ * indicates that only key events are processed by the native layer; Flutter processes
+ * mouse events. Additionally, processing both keyUp and keyDown results in duplicate
+ * processing of the same keys.
+ */
+- (BOOL)handleKeyEvent:(NSEvent*)event;
+
 @end
 
 // Private methods made visible for testing
 @interface FlutterTextInputPlugin (TestMethods)
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange;
+- (NSDictionary*)editingState;
 @end
