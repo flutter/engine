@@ -453,7 +453,7 @@ void TextInputPlugin::EnterPressed(TextInputModel* model) {
       TextRange selection_before_change = active_model_->selection();
       TextEditingDelta delta(text_before_change, selection_before_change,
                              std::u16string({u'\n'}));
-      SendStateUpdateWithDelta(*active_model_, &delta);
+      SendStateUpdateWithDelta(*model, &delta);
     } else {
       SendStateUpdate(*model);
     }
