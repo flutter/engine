@@ -1,8 +1,10 @@
 package io.flutter.embedding.engine;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.content.Context;
@@ -78,10 +80,8 @@ public class FlutterEngineConnectionRegistryTest {
     Activity activity = mock(Activity.class);
     when(appComponent.getAppComponent()).thenReturn(activity);
 
-    Intent intent = mock(Intent.class);
-    when(activity.getIntent()).thenReturn(intent);
-
     Lifecycle lifecycle = mock(Lifecycle.class);
+    Intent intent = mock(Intent.class);
     AtomicBoolean isFirstCall = new AtomicBoolean(true);
 
     // Set up the environment to get the required internal data
@@ -111,36 +111,6 @@ public class FlutterEngineConnectionRegistryTest {
 
     // The order of the listeners in the HashSet is random: So just check the sum of calls
     assertEquals(3, listener1.callCount + listener2.callCount);
-  }
-
-  @Test
-  public void softwareRendering() {
-    Context context = mock(Context.class);
-
-    FlutterEngine flutterEngine = mock(FlutterEngine.class);
-    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
-    when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
-
-    FlutterLoader flutterLoader = mock(FlutterLoader.class);
-
-    ExclusiveAppComponent appComponent = mock(ExclusiveAppComponent.class);
-    Activity activity = mock(Activity.class);
-    when(appComponent.getAppComponent()).thenReturn(activity);
-
-    Intent intent = mock(Intent.class);
-    when(intent.getBooleanExtra("enable-software-rendering", false)).thenReturn(false);
-    when(activity.getIntent()).thenReturn(intent);
-
-    FlutterEngineConnectionRegistry registry =
-        new FlutterEngineConnectionRegistry(context, flutterEngine, flutterLoader);
-
-    registry.attachToActivity(appComponent, mock(Lifecycle.class));
-    verify(platformViewsController).setSoftwareRendering(false);
-
-    when(intent.getBooleanExtra("enable-software-rendering", false)).thenReturn(true);
-
-    registry.attachToActivity(appComponent, mock(Lifecycle.class));
-    verify(platformViewsController).setSoftwareRendering(true);
   }
 
   private static class FakeFlutterPlugin implements FlutterPlugin {

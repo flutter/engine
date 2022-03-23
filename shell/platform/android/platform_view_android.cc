@@ -235,12 +235,8 @@ void PlatformViewAndroid::UpdateSemantics(
 void PlatformViewAndroid::RegisterExternalTexture(
     int64_t texture_id,
     const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture) {
-  if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
-    RegisterTexture(std::make_shared<AndroidExternalTextureGL>(
-        texture_id, surface_texture, std::move(jni_facade_)));
-  } else {
-    FML_LOG(INFO) << "Attempted to use a GL texture in a non GL context.";
-  }
+  RegisterTexture(std::make_shared<AndroidExternalTextureGL>(
+      texture_id, surface_texture, std::move(jni_facade_)));
 }
 
 // |PlatformView|
