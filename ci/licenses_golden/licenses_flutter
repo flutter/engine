@@ -73,8 +73,6 @@ FILE: ../../../flutter/display_list/display_list_complexity_metal.h
 FILE: ../../../flutter/display_list/display_list_complexity_unittests.cc
 FILE: ../../../flutter/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/display_list/display_list_dispatcher.h
-FILE: ../../../flutter/impeller/display_list/display_list_playground.cc
-FILE: ../../../flutter/impeller/display_list/display_list_playground.h
 FILE: ../../../flutter/display_list/display_list_enum_unittests.cc
 FILE: ../../../flutter/display_list/display_list_flags.cc
 FILE: ../../../flutter/display_list/display_list_flags.h
@@ -438,6 +436,8 @@ FILE: ../../../flutter/impeller/compiler/utilities.cc
 FILE: ../../../flutter/impeller/compiler/utilities.h
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
+FILE: ../../../flutter/impeller/display_list/display_list_playground.cc
+FILE: ../../../flutter/impeller/display_list/display_list_playground.h
 FILE: ../../../flutter/impeller/display_list/display_list_unittests.cc
 FILE: ../../../flutter/impeller/docs/shader_pipeline.png
 FILE: ../../../flutter/impeller/entity/contents/clear_contents.cc
