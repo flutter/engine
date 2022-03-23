@@ -14,7 +14,6 @@
 @interface FlutterUndoManagerPlugin : NSObject
 
 @property(nonatomic, assign) UIViewController* viewController;
-@property(nonatomic, strong) NSUndoManager* undoManager;
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;

@@ -17,12 +17,20 @@ FLUTTER_ASSERT_ARC
 - (nonnull FlutterUndoManagerPlugin*)undoManagerPlugin;
 @end
 
+@interface FlutterUndoManagerPluginForTest : FlutterUndoManagerPlugin
+@property(nonatomic, assign) NSUndoManager* undoManager;
+@end
+
+@implementation FlutterUndoManagerPluginForTest {
+}
+@end
+
 @interface FlutterUndoManagerPluginTest : XCTestCase
 @end
 
 @implementation FlutterUndoManagerPluginTest {
   id engine;
-  FlutterUndoManagerPlugin* undoManagerPlugin;
+  FlutterUndoManagerPluginForTest* undoManagerPlugin;
   FlutterViewController* viewController;
   NSUndoManager* undoManager;
 }
@@ -31,7 +39,7 @@ FLUTTER_ASSERT_ARC
   [super setUp];
   engine = OCMClassMock([FlutterEngine class]);
 
-  undoManagerPlugin = [[FlutterUndoManagerPlugin alloc] initWithDelegate:engine];
+  undoManagerPlugin = [[FlutterUndoManagerPluginForTest alloc] initWithDelegate:engine];
 
   viewController = [FlutterViewController new];
   undoManagerPlugin.viewController = viewController;

@@ -33,9 +33,6 @@ static NSString* const kCanRedo = @"canRedo";
 
 - (void)dealloc {
   [self resetUndoManager];
-  if (_undoManager != nil) {
-    [_undoManager release];
-  }
   [super dealloc];
 }
 
@@ -51,9 +48,6 @@ static NSString* const kCanRedo = @"canRedo";
 }
 
 - (NSUndoManager*)undoManager {
-  if (_undoManager != nil) {
-    return _undoManager;
-  }
   return _viewController.undoManager;
 }
 
