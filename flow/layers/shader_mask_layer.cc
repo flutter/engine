@@ -9,7 +9,10 @@ namespace flutter {
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {
+    : shader_(shader),
+      mask_rect_(mask_rect),
+      blend_mode_(blend_mode),
+      render_count_(1) {
   set_layer_can_inherit_opacity(true);
 }
 
@@ -38,6 +41,7 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     TryToPrepareRasterCache(context, this, matrix);
   } else {
     render_count_++;
+    TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
   }
 }
 
@@ -45,9 +49,18 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  if (context.raster_cache &&
-      context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
-    return;
+  if (context.raster_cache) {
+    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+      return;
+    }
+
+    AutoCachePaint cache_paint(context);
+    if (context.raster_cache->Draw(GetCacheableChild(),
+                                   *context.leaf_nodes_canvas,
+                                   cache_paint.paint())) {
+      DrawMask(context);
+      return;
+    }
   }
 
   AutoCachePaint cache_paint(context);
@@ -55,6 +68,10 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
       context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);
 
+  DrawMask(context);
+}
+
+void ShaderMaskLayer::DrawMask(PaintContext& context) const {
   SkPaint paint;
   paint.setBlendMode(blend_mode_);
   paint.setShader(shader_);
