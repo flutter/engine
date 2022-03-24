@@ -1,4 +1,4 @@
-Signature: d273b6719c27e2c96c5a2a52ecc4ea83
+Signature: 58d8ec8e3dcf9550c10e949c68b4fffe
 
 UNUSED LICENSES:
 
@@ -9871,6 +9871,7 @@ FILE: ../../../third_party/dart/benchmarks/StringPool/dart/version2.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool100.dart
 FILE: ../../../third_party/dart/runtime/bin/abstract_socket_test.cc
+FILE: ../../../third_party/dart/runtime/bin/analyze_snapshot.cc
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.mm
 FILE: ../../../third_party/dart/runtime/bin/secure_socket_utils_test.cc
@@ -9879,6 +9880,8 @@ FILE: ../../../third_party/dart/runtime/bin/virtual_memory.h
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_posix.cc
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory_win.cc
+FILE: ../../../third_party/dart/runtime/include/analyze_snapshot_api.h
+FILE: ../../../third_party/dart/runtime/vm/analyze_snapshot_api_impl.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_riscv_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_riscv.cc
@@ -10132,6 +10135,14 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/Iterators/dart/Iterators.dart
 FILE: ../../../third_party/dart/benchmarks/Iterators/dart/data.dart
 FILE: ../../../third_party/dart/benchmarks/Iterators/dart2/Iterators.dart
+FILE: ../../../third_party/dart/runtime/bin/snapshot_utils_test.cc
+FILE: ../../../third_party/dart/runtime/bin/test_utils.cc
+FILE: ../../../third_party/dart/runtime/bin/test_utils.h
+FILE: ../../../third_party/dart/runtime/bin/thread_absl.cc
+FILE: ../../../third_party/dart/runtime/bin/thread_absl.h
+FILE: ../../../third_party/dart/runtime/platform/mach_o.h
+FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
+FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart
@@ -10141,12 +10152,12 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/date_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/developer.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/errors_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/expando_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/function.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/hash_factories.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/identical_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/immutable_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/int.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/internal_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/list.dart
@@ -18087,6 +18098,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18216,6 +18228,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18355,6 +18368,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18489,6 +18503,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18622,6 +18637,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18760,6 +18776,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -18894,6 +18911,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -19027,6 +19045,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -19133,6 +19152,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -19306,6 +19326,7 @@ FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
 FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/chromeos/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat.hash
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch

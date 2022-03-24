@@ -707,6 +707,9 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
                                : tonic::ToDart("main");
 
   if (!FindAndInvokeDartPluginRegistrant()) {
+    // TODO(gaaclarke): Remove once the framework PR lands that uses `--source`
+    // to compile the Dart Plugin Registrant
+    // (https://github.com/flutter/flutter/pull/100572).
     InvokeDartPluginRegistrantIfAvailable(library_handle);
   }
 

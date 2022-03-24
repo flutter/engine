@@ -74,19 +74,25 @@ namespace flutter {
                                     \
   V(SetBlender)                     \
   V(ClearBlender)                   \
-  V(SetShader)                      \
-  V(ClearShader)                    \
-  V(SetImageFilter)                 \
-  V(ClearImageFilter)               \
   V(SetPathEffect)                  \
   V(ClearPathEffect)                \
                                     \
   V(ClearColorFilter)               \
-  V(SetColorFilter)                 \
+  V(SetPodColorFilter)              \
   V(SetSkColorFilter)               \
                                     \
+  V(ClearColorSource)               \
+  V(SetPodColorSource)              \
+  V(SetSkColorSource)               \
+  V(SetImageColorSource)            \
+                                    \
+  V(ClearImageFilter)               \
+  V(SetPodImageFilter)              \
+  V(SetSkImageFilter)               \
+  V(SetSharedImageFilter)           \
+                                    \
   V(ClearMaskFilter)                \
-  V(SetMaskFilter)                  \
+  V(SetPodMaskFilter)               \
   V(SetSkMaskFilter)                \
                                     \
   V(Save)                           \
@@ -100,6 +106,7 @@ namespace flutter {
   V(Skew)                           \
   V(Transform2DAffine)              \
   V(TransformFullPerspective)       \
+  V(TransformReset)                 \
                                     \
   V(ClipIntersectRect)              \
   V(ClipIntersectRRect)             \

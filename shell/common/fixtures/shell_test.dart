@@ -264,9 +264,16 @@ void canReceiveArgumentsWhenEngineSpawn(List<String> args) {
 }
 
 @pragma('vm:entry-point')
-void canScheduleFrameFromPlatform() {
+void onBeginFrameWithNotifyNativeMain() {
   PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
     nativeOnBeginFrame(beginTime.inMicroseconds);
   };
   notifyNative();
+}
+
+@pragma('vm:entry-point')
+void frameCallback(_Image, int) {
+  // It is used as the frame callback of 'MultiFrameCodec' in the test
+  // 'ItDoesNotCrashThatSkiaUnrefQueueDrainAfterIOManagerReset'.
+  // The test is a regression test and doesn't care about images, so it is empty.
 }
