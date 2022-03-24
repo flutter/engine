@@ -4,7 +4,6 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 
-#include <Carbon/Carbon.h>
 #include <cctype>
 #include <map>
 
@@ -23,34 +22,6 @@ typedef NSResponder* _NSResponderPtr;
 typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
 const uint64_t kDeadKeyPlane = 0x0300000000;
-
-typedef std::pair<uint32_t, bool> LayoutClue;
-static LayoutClue DetectLayoutClue(const UCKeyboardLayout* layout, uint16_t keyCode, bool shift) {
-  UInt32 deadKeyState = 0;
-  UniCharCount stringLength = 0;
-  UniChar resultChar;
-
-  UInt32 modifierState = ((shift ? shiftKey : 0) >> 8) & 0xFF;
-  UInt32 keyboardType = LMGetKbdLast();
-
-  bool isDeadKey = false;
-  OSStatus status =
-      UCKeyTranslate(layout, keyCode, kUCKeyActionDown, modifierState, keyboardType,
-                     kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 1, &stringLength, &resultChar);
-  // For dead keys, press the same key again to get the printable representation of the key.
-  if (status == noErr && stringLength == 0 && deadKeyState != 0) {
-    isDeadKey = true;
-    status =
-        UCKeyTranslate(layout, keyCode, kUCKeyActionDown, modifierState, keyboardType,
-                       kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 1, &stringLength, &resultChar);
-  }
-
-  if (status == noErr && stringLength == 1 && !std::iscntrl(resultChar)) {
-    return LayoutClue(resultChar, isDeadKey);
-  }
-  return LayoutClue(0, false);
-}
-
 }
 
 @interface FlutterKeyboardManager ()
@@ -82,34 +53,6 @@ static LayoutClue DetectLayoutClue(const UCKeyboardLayout* layout, uint16_t keyC
 - (void)buildLayout;
 
 @end
-
-namespace {
-typedef void (*VoidCallback)();
-
-typedef struct {
-  FlutterKeyboardManager* manager;
-} NotificationCallbackData;
-
-void NotificationCallback(CFNotificationCenterRef center,
-                          void* observer,
-                          CFStringRef name,
-                          const void* object,
-                          CFDictionaryRef userInfo) {
-  NotificationCallbackData* data = reinterpret_cast<NotificationCallbackData*>(observer);
-  if (data->manager != nil) {
-    [data->manager buildLayout];
-  }
-}
-
-void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
-  CFNotificationCenterRef center = CFNotificationCenterGetDistributedCenter();
-
-  // add an observer
-  CFNotificationCenterAddObserver(center, data, NotificationCallback,
-                                  kTISNotifySelectedKeyboardInputSourceChanged, NULL,
-                                  CFNotificationSuspensionBehaviorDeliverImmediately);
-}
-}
 
 @implementation FlutterKeyboardManager {
   NextResponderProvider _getNextResponder;
@@ -145,9 +88,9 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
     }
 
     __weak __typeof__(self) weakSelf = self;
-    NotificationCallbackData* notification = new NotificationCallbackData{weakSelf};
-    RegisterKeyboardLayoutChangeListener(notification);
-    // TODO: Unregister
+    [_viewDelegate subscribeToKeyboardLayoutChange:^() {
+      [weakSelf buildLayout];
+    }];
   }
   return self;
 }
@@ -231,21 +174,6 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
     remainingGoals[goal.keyChar] = goal;
   }
 
-  TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
-  CFDataRef layout_data =
-      static_cast<CFDataRef>((TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData)));
-  if (!layout_data) {
-    CFRelease(source);
-    // TISGetInputSourceProperty returns null with Japanese keyboard layout.
-    // Using TISCopyCurrentKeyboardLayoutInputSource to fix NULL return.
-    // https://github.com/microsoft/node-native-keymap/blob/5f0699ded00179410a14c0e1b0e089fe4df8e130/src/keyboard_mac.mm#L91
-    source = TISCopyCurrentKeyboardLayoutInputSource();
-    layout_data = static_cast<CFDataRef>(
-        (TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData)));
-  }
-  const UCKeyboardLayout* layout =
-      reinterpret_cast<const UCKeyboardLayout*>(CFDataGetBytePtr(layout_data));
-
   // Derive key mapping for each key code based on their layout clues.
   // Max key code is 127 for ADB keyboards.
   // https://developer.apple.com/documentation/coreservices/1390584-uckeytranslate?language=objc#parameters
@@ -254,8 +182,8 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
     NSLog(@"# Keycode 0x%x", keyCode);
     const int kNumClueTypes = 2;
     LayoutClue thisKeyClues[kNumClueTypes] = {
-        DetectLayoutClue(layout, keyCode, false),
-        DetectLayoutClue(layout, keyCode, true),
+        [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:false],
+        [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:true],
     };
     // The logical key should be the first available clue from below:
     //
@@ -313,7 +241,6 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
       _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
     }
   }
-  CFRelease(source);
 }
 
 @end

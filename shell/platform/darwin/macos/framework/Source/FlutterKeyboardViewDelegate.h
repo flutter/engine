@@ -6,6 +6,9 @@
 
 #import "flutter/shell/platform/embedder/embedder.h"
 
+typedef void (^KeyboardLayoutNotifier)();
+typedef std::pair<uint32_t, bool> LayoutClue;
+
 /**
  * An interface for a class that can provides |FlutterKeyboardManager| with
  * platform-related features.
@@ -59,5 +62,11 @@
 // TODO (LongCatIsLooong): remove this method and implement a long-term fix for
 // https://github.com/flutter/flutter/issues/85328.
 - (BOOL)isComposing;
+
+// Only supports one callback.
+// Send null to unsubscribe.
+- (void)subscribeToKeyboardLayoutChange:(nullable KeyboardLayoutNotifier)callback;
+
+- (LayoutClue)lookUpLayoutForKeyCode:(uint16_t)keyCode shift:(BOOL)shift;
 
 @end
