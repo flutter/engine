@@ -178,6 +178,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       if (dartEntrypointArgs != null) {
         intent.putExtra(EXTRA_DART_ENTRYPOINT_ARGS, new ArrayList(dartEntrypointArgs));
       }
+      return intent;
     }
   }
 
