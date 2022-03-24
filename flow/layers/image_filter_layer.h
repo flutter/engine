@@ -40,6 +40,7 @@ class ImageFilterLayer : public ContainerLayer {
   sk_sp<SkImageFilter> filter_;
   sk_sp<SkImageFilter> transformed_filter_;
   int render_count_;
+  SkRect child_bounds_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageFilterLayer);
 };
