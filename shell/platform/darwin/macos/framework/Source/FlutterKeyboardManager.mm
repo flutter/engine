@@ -14,7 +14,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h"
 
 namespace {
-typedef void (^VoidBlock)();
 
 // Someohow this pointer type must be defined as a single type for the compiler
 // to compile the function pointer type (due to _Nullable).
@@ -24,6 +23,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 bool isEascii(const LayoutClue& clue) {
   return clue.first < 256 && !clue.second;
 }
+
 }
 
 @interface FlutterKeyboardManager ()

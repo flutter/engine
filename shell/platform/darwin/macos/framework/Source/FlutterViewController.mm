@@ -398,8 +398,7 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)dealloc {
   _engine.viewController = nil;
   CFNotificationCenterRef cfCenter = CFNotificationCenterGetDistributedCenter();
-  __weak __typeof__(self) weakSelf = self;
-  CFNotificationCenterRemoveEveryObserver(cfCenter, (__bridge void*)weakSelf);
+  CFNotificationCenterRemoveEveryObserver(cfCenter, (__bridge void*)self);
 }
 
 #pragma mark - Public methods
