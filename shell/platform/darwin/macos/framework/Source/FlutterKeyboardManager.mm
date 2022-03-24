@@ -21,7 +21,9 @@ typedef void (^VoidBlock)();
 typedef NSResponder* _NSResponderPtr;
 typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
-const uint64_t kDeadKeyPlane = 0x0300000000;
+bool isEascii(const LayoutClue& clue) {
+  return clue.first < 256 && !clue.second;
+}
 }
 
 @interface FlutterKeyboardManager ()
@@ -169,9 +171,14 @@ const uint64_t kDeadKeyPlane = 0x0300000000;
   NSLog(@"# Building");
   [_layoutMap removeAllObjects];
 
-  std::map<uint32_t, LayoutGoal> remainingGoals;
+  std::map<uint32_t, LayoutGoal> mandatoryGoalsByChar;
+  std::map<uint32_t, LayoutGoal> usLayoutGoalsByKeyCode;
   for (const LayoutGoal& goal : layoutGoals) {
-    remainingGoals[goal.keyChar] = goal;
+    if (goal.mandatory) {
+      mandatoryGoalsByChar[goal.keyChar] = goal;
+    } else {
+      usLayoutGoalsByKeyCode[goal.keyCode] = goal;
+    }
   }
 
   // Derive key mapping for each key code based on their layout clues.
@@ -180,66 +187,41 @@ const uint64_t kDeadKeyPlane = 0x0300000000;
   const uint16_t kMaxKeyCode = 127;
   for (uint16_t keyCode = 0; keyCode <= kMaxKeyCode; keyCode += 1) {
     NSLog(@"# Keycode 0x%x", keyCode);
-    const int kNumClueTypes = 2;
-    LayoutClue thisKeyClues[kNumClueTypes] = {
+    std::vector<LayoutClue> thisKeyClues = {
         [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:false],
-        [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:true],
+        [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:true]
     };
     // The logical key should be the first available clue from below:
     //
-    //  - Mandatory key
-    //  - Primary EASCII
-    //  - Non-primary EASCII
-    //  - Primary dead key
-    //  - Non-primary dead key
-    //  - US layout
-    uint32_t easciiKey = 0;
-    uint32_t deadKey = 0;
-    for (int clueId = 0; clueId < kNumClueTypes; clueId += 1) {
-      LayoutClue clue = thisKeyClues[clueId];
+    //  - Mandatory goal, if matches any clue.
+    //    This ensures that all alnum keys can be found somewhere.
+    //  - US layout, if neither clue of the key is EASCII.
+    //    This ensures that there are no non-latin keys.
+    //  - Derived on the fly from keyCode & characters.
+    for (const LayoutClue& clue : thisKeyClues) {
       uint32_t keyChar = clue.first;
-      bool isDeadKey = clue.second;
-      NSLog(@"Char 0x%x dead %d", keyChar, isDeadKey);
-      auto matchingGoal = remainingGoals.find(keyChar);
-      if (!isDeadKey) {
-        if (matchingGoal != remainingGoals.end() && matchingGoal->second.mandatory) {
-          // Found a key that produces a mandatory char. Use it.
-          NSAssert(_layoutMap[@(keyCode)] == nil, @"Attempting to assign an assigned key code.");
-          _layoutMap[@(keyCode)] = @(keyChar);
-          remainingGoals.erase(matchingGoal);
-          NSLog(@"From req");
-          break;
-        }
-        if (easciiKey == 0 && keyChar < 256) {
-          easciiKey = keyChar;
-        }
-      } else {
-        if (deadKey == 0) {
-          deadKey = keyChar;
-        }
+      auto matchingGoal = mandatoryGoalsByChar.find(keyChar);
+      if (matchingGoal != mandatoryGoalsByChar.end()) {
+        // Found a key that produces a mandatory char. Use it.
+        NSAssert(_layoutMap[@(keyCode)] == nil, @"Attempting to assign an assigned key code.");
+        _layoutMap[@(keyCode)] = @(keyChar);
+        mandatoryGoalsByChar.erase(matchingGoal);
+        NSLog(@"From req");
+        break;
       }
     }
+    bool hasAnyEascii = isEascii(thisKeyClues[0]) || isEascii(thisKeyClues[1]);
     // See if any produced char meets the requirement as a logical key.
-    if (_layoutMap[@(keyCode)] == nil) {
-      NSLog(@"Trying eascii 0x%x dead 0x%x", easciiKey, deadKey);
-      if (easciiKey != 0) {
-        NSLog(@"From EASCII");
-        _layoutMap[@(keyCode)] = @(easciiKey);
-      } else if (deadKey != 0) {
-        NSLog(@"From dead");
-        _layoutMap[@(keyCode)] = @(deadKey + kDeadKeyPlane);
-      }
+    if (_layoutMap[@(keyCode)] == nil && !hasAnyEascii) {
+      _layoutMap[@(keyCode)] = @(usLayoutGoalsByKeyCode[keyCode].keyChar);
     }
   }
 
-  // For the unfulfilled goals: mandatory goals should always overwrite
-  // a map, while non-mandatory goals should only overwrite empty maps.
-  for (auto uncompletedGoalIter : remainingGoals) {
-    const LayoutGoal& goal = uncompletedGoalIter.second;
+  // Ensure all mandatory goals are assigned.
+  for (auto mandatoryGoalIter : mandatoryGoalsByChar) {
+    const LayoutGoal& goal = mandatoryGoalIter.second;
     NSLog(@"# Key 0x%hx char 0x%x from US req", goal.keyCode, goal.keyChar);
-    if (goal.mandatory || _layoutMap[@(goal.keyCode)] == nil) {
-      _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
-    }
+    _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
   }
 }
 
