@@ -32,6 +32,8 @@
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
+static NSString* const kFlutterRestorationStateAppData = @"FlutterRestorationStateAppData";
+
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
 NSNotificationName const FlutterViewControllerHideHomeIndicator =
@@ -654,13 +656,13 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidLoad");
 
   if (_engine && _engineNeedsLaunch) {
-    // Register internal plugins before starting the engine.
-    [self addInternalPlugins];
-
     [_engine.get() launchEngine:nil libraryURI:nil entrypointArgs:nil];
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
+
+  // Register internal plugins.
+  [self addInternalPlugins];
 
   if ([_engine.get() viewController] == self) {
     [_engine.get() attachView];
@@ -1811,12 +1813,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
-  [coder encodeDataObject:restorationData];
+  [coder encodeBytes:(const unsigned char*)restorationData.bytes
+              length:restorationData.length
+              forKey:kFlutterRestorationStateAppData];
   [super encodeRestorableStateWithCoder:coder];
 }
 
 - (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
-  NSData* restorationData = [coder decodeDataObject];
+  NSUInteger restorationDataLength;
+  const unsigned char* restorationBytes = [coder decodeBytesForKey:kFlutterRestorationStateAppData
+                                                    returnedLength:&restorationDataLength];
+  NSData* restorationData = [NSData dataWithBytes:restorationBytes length:restorationDataLength];
   [[_engine.get() restorationPlugin] setRestorationData:restorationData];
 }
 

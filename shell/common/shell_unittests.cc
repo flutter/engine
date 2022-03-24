@@ -86,6 +86,11 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewMarkTextureFrameAvailable,
                void(int64_t texture_id));
 
+  MOCK_METHOD(const Settings&,
+              OnPlatformViewGetSettings,
+              (),
+              (const, override));
+
   MOCK_METHOD3(LoadDartDeferredLibrary,
                void(intptr_t loading_unit_id,
                     std::unique_ptr<const fml::Mapping> snapshot_data,
@@ -1272,12 +1277,14 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
+// flakiness.
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
 #if defined(OS_FUCHSIA)
        DISABLED_ResubmitFrame
 #else
-       ResubmitFrame
+       DISABLED_ResubmitFrame
 #endif
 ) {
   auto settings = CreateSettingsForFixture();
@@ -2387,7 +2394,9 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, DiscardLayerTreeOnResize) {
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
+// flakiness.
+TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
   SkISize wrong_size = SkISize::Make(400, 100);
@@ -2437,7 +2446,9 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, DiscardResubmittedLayerTreeOnResize) {
+// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
+// flakiness.
+TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
   SkISize origin_size = SkISize::Make(400, 100);
@@ -3109,6 +3120,54 @@ TEST_F(ShellTest, IOManagerInSpawnedShellIsNotNullAfterParentShellDestroyed) {
                // Get io_manager directly from shell and check its existence.
                ASSERT_NE(spawn->GetIOManager().get(), nullptr);
              });
+  });
+  // Destroy the child shell.
+  DestroyShell(std::move(spawn));
+}
+
+TEST_F(ShellTest, ImageGeneratorRegistryNotNullAfterParentShellDestroyed) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  std::unique_ptr<Shell> spawn;
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell, &settings,
+                                                             &spawn] {
+    auto second_configuration = RunConfiguration::InferFromSettings(settings);
+    ASSERT_TRUE(second_configuration.IsValid());
+    second_configuration.SetEntrypoint("emptyMain");
+    const std::string initial_route("/foo");
+    MockPlatformViewDelegate platform_view_delegate;
+    auto child = shell->Spawn(
+        std::move(second_configuration), initial_route,
+        [&platform_view_delegate](Shell& shell) {
+          auto result = std::make_unique<MockPlatformView>(
+              platform_view_delegate, shell.GetTaskRunners());
+          ON_CALL(*result, CreateRenderingSurface())
+              .WillByDefault(::testing::Invoke(
+                  [] { return std::make_unique<MockSurface>(); }));
+          return result;
+        },
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+    spawn = std::move(child);
+  });
+
+  PostSync(spawn->GetTaskRunners().GetUITaskRunner(), [&spawn] {
+    std::shared_ptr<const DartIsolate> isolate =
+        spawn->GetEngine()->GetRuntimeController()->GetRootIsolate().lock();
+    ASSERT_TRUE(isolate);
+    ASSERT_TRUE(isolate->GetImageGeneratorRegistry());
+  });
+
+  // Destroy the parent shell.
+  DestroyShell(std::move(shell));
+
+  PostSync(spawn->GetTaskRunners().GetUITaskRunner(), [&spawn] {
+    std::shared_ptr<const DartIsolate> isolate =
+        spawn->GetEngine()->GetRuntimeController()->GetRootIsolate().lock();
+    ASSERT_TRUE(isolate);
+    ASSERT_TRUE(isolate->GetImageGeneratorRegistry());
   });
   // Destroy the child shell.
   DestroyShell(std::move(spawn));

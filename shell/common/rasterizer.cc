@@ -576,8 +576,11 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       }
     }
 
-    RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false, damage.get());
+    RasterStatus raster_status = compositor_frame->Raster(
+        layer_tree,                      // layer tree
+        !surface_->EnableRasterCache(),  // ignore raster cache
+        damage.get()                     // frame damage
+    );
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
@@ -824,9 +827,7 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
       return;
     }
 
-    int max_resources;
-    context->getResourceCacheLimits(&max_resources, nullptr);
-    context->setResourceCacheLimits(max_resources, max_bytes);
+    context->setResourceCacheLimit(max_bytes);
   }
 }
 
@@ -836,9 +837,7 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   }
   GrDirectContext* context = surface_->GetContext();
   if (context) {
-    size_t max_bytes;
-    context->getResourceCacheLimits(nullptr, &max_bytes);
-    return max_bytes;
+    return context->getResourceCacheLimit();
   }
   return std::nullopt;
 }
