@@ -206,12 +206,6 @@ std::optional<RasterCacheKey> RasterCache::TryToMakeRasterCacheKeyForLayer(
       auto children_count = children_layers.size();
       if (children_count == 0) {
         return std::nullopt;
-      } else if (children_count == 1) {
-        // When there is only a single child, we use the child's 'unique_id' to
-        // generate the cache key.So that the entry can be reused as much as
-        // possible.
-        return RasterCacheKey(children_layers[0]->unique_id(),
-                              RasterCacheKeyType::kLayer, ctm);
       }
       std::vector<uint64_t> ids;
       std::transform(children_layers.begin(), children_layers.end(),
