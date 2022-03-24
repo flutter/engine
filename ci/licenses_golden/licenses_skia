@@ -1,4 +1,4 @@
-Signature: 21707909713664d8edfc1ab35cbb0715
+Signature: 4693c05fd15adbc833b9bfc433774def
 
 UNUSED LICENSES:
 
@@ -1142,8 +1142,6 @@ FILE: ../../../third_party/skia/modules/skparagraph/samples/SampleParagraph.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.h
-FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.cpp
-FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/OneLineShaper.cpp
@@ -6067,7 +6065,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/experimental/graphite/src/DrawGeometry.h
 FILE: ../../../third_party/skia/experimental/graphite/src/GlobalCache.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/GlobalCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/GraphiteResourceKey.cpp
@@ -6118,7 +6115,6 @@ FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.h
 FILE: ../../../third_party/skia/src/core/SkUniformData.cpp
 FILE: ../../../third_party/skia/src/core/SkUniformData.h
-FILE: ../../../third_party/skia/src/gpu/RefCntedCallback.h
 FILE: ../../../third_party/skia/src/gpu/ops/PathTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/PathTessellator.h
 FILE: ../../../third_party/skia/src/gpu/ops/StrokeTessellator.cpp
