@@ -223,6 +223,7 @@ NSData* currentKeyboardLayoutData() {
 
 #pragma mark - Private dependant functions
 
+namespace {
 void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
                              void* observer,
                              CFStringRef name,
@@ -232,6 +233,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   if (controller != nil) {
     [controller onKeyboardLayoutChanged];
   }
+}
 }
 
 #pragma mark - FlutterViewWrapper implementation.
