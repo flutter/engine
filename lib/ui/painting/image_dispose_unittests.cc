@@ -55,7 +55,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
       ASSERT_FALSE(picture->picture()->unique());
       current_picture_ = picture->picture();
     }
-    current_image_ = image->image();
+    current_image_ = image->image()->skia_image();
   };
 
   auto native_finish = [&](Dart_NativeArguments args) {

@@ -73,6 +73,10 @@ bool SurfaceFrame::PerformSubmit() {
   return false;
 }
 
+sk_sp<DisplayListBuilder> SurfaceFrame::GetDisplayListBuilder() {
+  return dl_recorder_ ? dl_recorder_->builder() : nullptr;
+}
+
 sk_sp<DisplayList> SurfaceFrame::BuildDisplayList() {
   TRACE_EVENT0("impeller", "SurfaceFrame::BuildDisplayList");
   return dl_recorder_ ? dl_recorder_->Build() : nullptr;

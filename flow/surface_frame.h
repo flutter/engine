@@ -84,6 +84,8 @@ class SurfaceFrame {
   }
   const SubmitInfo& submit_info() const { return submit_info_; }
 
+  sk_sp<DisplayListBuilder> GetDisplayListBuilder();
+
   sk_sp<DisplayList> BuildDisplayList();
 
  private:

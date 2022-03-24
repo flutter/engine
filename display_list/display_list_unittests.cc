@@ -66,7 +66,7 @@ static const SkSamplingOptions NearestSampling =
 static const SkSamplingOptions LinearSampling =
     SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
 
-static sk_sp<SkImage> MakeTestImage(int w, int h, int checker_size) {
+static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
   sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
   SkCanvas* canvas = surface->getCanvas();
   SkPaint p0, p1;
@@ -82,11 +82,11 @@ static sk_sp<SkImage> MakeTestImage(int w, int h, int checker_size) {
                        cellp);
     }
   }
-  return surface->makeImageSnapshot();
+  return DlImage::Make(surface->makeImageSnapshot());
 }
 
-static sk_sp<SkImage> TestImage1 = MakeTestImage(40, 40, 5);
-static sk_sp<SkImage> TestImage2 = MakeTestImage(50, 50, 5);
+static auto TestImage1 = MakeTestImage(40, 40, 5);
+static auto TestImage2 = MakeTestImage(50, 50, 5);
 
 static const sk_sp<SkBlender> TestBlender1 =
     SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, false);
@@ -94,7 +94,7 @@ static const sk_sp<SkBlender> TestBlender2 =
     SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
 static const sk_sp<SkBlender> TestBlender3 =
     SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
-static const DlImageColorSource TestSource1(TestImage1,
+static const DlImageColorSource TestSource1(TestImage1->skia_image(),
                                             DlTileMode::kClamp,
                                             DlTileMode::kMirror,
                                             LinearSampling);
