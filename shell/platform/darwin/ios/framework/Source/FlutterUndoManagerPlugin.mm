@@ -11,6 +11,7 @@
 
 #pragma mark - UndoManager channel method names.
 static NSString* const kSetUndoStateMethod = @"UndoManager.setUndoState";
+static NSString* const kPrepareUndoManager = @"UndoManager.prepareUndoManager";
 
 #pragma mark - Undo State field names
 static NSString* const kCanUndo = @"canUndo";
@@ -42,6 +43,8 @@ static NSString* const kCanRedo = @"canRedo";
   if ([method isEqualToString:kSetUndoStateMethod]) {
     [self setUndoState:args];
     result(nil);
+  } else if ([method isEqualToString:kPrepareUndoManager]) {
+    [self ensureUndoEnabled:result];
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -100,6 +103,34 @@ static NSString* const kCanRedo = @"canRedo";
   if (canRedo) {
     [self registerRedo];
   }
+  NSLog(@"setUndoState(%d %d) result %d %d", canUndo, canRedo, [self.undoManager canUndo],
+        [self.undoManager canRedo]);
+}
+
+#pragma mark - Undo/Redo support
+
+- (void)ensureUndoEnabled:(FlutterResult)result API_AVAILABLE(ios(9.0)) {
+  NSLog(@"ensureUndoEnabled %d %d", [self.undoManager canUndo], [self.undoManager canRedo]);
+  NSObject* target = [[[NSObject alloc] init] autorelease];
+  if ([self.undoManager canUndo] || [self.undoManager canRedo]) {
+    result(nil);
+    return;
+  }
+  self.undoManager.groupsByEvent = NO;
+  [self.undoManager beginUndoGrouping];
+  [self.undoManager registerUndoWithTarget:target
+                                   handler:^(id target){
+
+                                   }];
+  [self.undoManager endUndoGrouping];
+  self.undoManager.groupsByEvent = YES;
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.01 * (double)NSEC_PER_SEC),
+                 dispatch_get_main_queue(), ^{
+                   [self.undoManager removeAllActionsWithTarget:target];
+                   NSLog(@"ensureUndoEnabled finished %d %d", [self.undoManager canUndo],
+                         [self.undoManager canRedo]);
+                   result(nil);
+                 });
 }
 
 @end

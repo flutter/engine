@@ -1951,14 +1951,14 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (void)ensureUndoEnabled API_AVAILABLE(ios(9.0)) {
   if (![self.undoManager canUndo]) {
-    self.undoManager.groupsByEvent = NO;
+    // self.undoManager.groupsByEvent = NO;
     [self.undoManager beginUndoGrouping];
     [self.undoManager registerUndoWithTarget:self
                                      handler:^(id target){
 
                                      }];
     [self.undoManager endUndoGrouping];
-    self.undoManager.groupsByEvent = YES;
+    // self.undoManager.groupsByEvent = YES;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.01 * (double)NSEC_PER_SEC),
                    dispatch_get_main_queue(), ^{
                      [self.undoManager removeAllActionsWithTarget:self];
