@@ -1953,8 +1953,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
   for (size_t i = 0; i < events_count; ++i) {
     flutter::PointerData pointer_data;
     pointer_data.Clear();
-    // this is currely in use only on android embedding.
-    pointer_data.embedder_id = 0;
+    pointer_data.embedder_id = SAFE_ACCESS(current, embedder_id, 0);
     pointer_data.time_stamp = SAFE_ACCESS(current, timestamp, 0);
     pointer_data.change = ToPointerDataChange(
         SAFE_ACCESS(current, phase, FlutterPointerPhase::kCancel));

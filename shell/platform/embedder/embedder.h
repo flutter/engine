@@ -911,6 +911,10 @@ typedef struct {
   double scale;
   /// The rotation of the pan/zoom in radians, where 0.0 is the initial angle.
   double rotation;
+  /// Optional embedder specific piece of data.
+  /// Can be accessed by the `embedderId` field on a `PointerEvent` on the Dart
+  /// side.
+  uint32_t embedder_id;
 } FlutterPointerEvent;
 
 typedef enum {
