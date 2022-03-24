@@ -371,7 +371,7 @@ public class TextInputChannel {
   public void setTextInputMethodHandler(@Nullable TextInputMethodHandler textInputMethodHandler) {
     this.textInputMethodHandler = textInputMethodHandler;
   }
-  
+
   public interface SpellCheckMethodHandler {
     /**
      * Requests that spell checking is initiated for the inputted text recognized by the framework,
