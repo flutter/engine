@@ -53,16 +53,16 @@ bool FindAndInvokeDartPluginRegistrant() {
     // TODO(gaaclarke): Find a way to remove this branch so the field is
     // required. I couldn't get it working with unit tests.
     return InvokeDartPluginRegistrantIfAvailable(library);
-  } else {
-    std::string registrant_file_uri_string =
-        tonic::DartConverter<std::string>::FromDart(registrant_file_uri);
-    if (registrant_file_uri_string.empty()) {
-      FML_LOG(ERROR) << "Unexpected empty dartPluginRegistrantLibrary.";
-      return false;
-    } else {
-      Dart_Handle registrant_library = Dart_LookupLibrary(registrant_file_uri);
-      return InvokeDartPluginRegistrantIfAvailable(registrant_library);
-    }
   }
+
+  std::string registrant_file_uri_string =
+      tonic::DartConverter<std::string>::FromDart(registrant_file_uri);
+  if (registrant_file_uri_string.empty()) {
+    FML_LOG(ERROR) << "Unexpected empty dartPluginRegistrantLibrary.";
+    return false;
+  }
+
+  Dart_Handle registrant_library = Dart_LookupLibrary(registrant_file_uri);
+  return InvokeDartPluginRegistrantIfAvailable(registrant_library);
 }
 }  // namespace flutter
