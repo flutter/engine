@@ -69,7 +69,7 @@ def WriteManifest(deps, manifest_file):
 def ParseArgs(args):
     args = args[1:]
     parser = argparse.ArgumentParser(
-        description='A script to generate a jiri manifest for third_party/pkg.')
+        description='A script to flatten a gclient DEPS file.')
 
     parser.add_argument(
         '--deps',
@@ -81,7 +81,7 @@ def ParseArgs(args):
         '--output',
         '-o',
         type=str,
-        help='Output jiri manifest.',
+        help='Output flattened deps file.',
         default=os.path.join(DART_ROOT, 'deps_flatten.txt'))
 
     return parser.parse_args(args)
