@@ -1504,7 +1504,7 @@ class CanvasCompareTester {
     {
       const SkScalar TestDashes1[] = {29.0, 2.0};
       const SkScalar TestDashes2[] = {17.0, 1.5};
-      auto effect = SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
+      auto effect = DlDashPathEffect::Make(TestDashes1, 2, 0.0f);
       {
         RenderWith(testP, stroke_base_env, tolerance,
                    CaseParameters(
@@ -1514,19 +1514,19 @@ class CanvasCompareTester {
                          p.setStyle(SkPaint::kStroke_Style);
                          // Provide some non-trivial stroke size to get dashed
                          p.setStrokeWidth(5.0);
-                         p.setPathEffect(effect);
+                         p.setPathEffect(effect->skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          // Need stroke style to see dashing properly
                          b.setStyle(DlDrawStyle::kStroke);
                          // Provide some non-trivial stroke size to get dashed
                          b.setStrokeWidth(5.0);
-                         b.setPathEffect(DlPathEffect::From(effect).get());
+                         b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || effect->skia_object()->unique())
           << "PathEffect == Dash-29-2 Cleanup";
-      effect = SkDashPathEffect::Make(TestDashes2, 2, 0.0f);
+      effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0f);
       {
         RenderWith(testP, stroke_base_env, tolerance,
                    CaseParameters(
@@ -1536,17 +1536,17 @@ class CanvasCompareTester {
                          p.setStyle(SkPaint::kStroke_Style);
                          // Provide some non-trivial stroke size to get dashed
                          p.setStrokeWidth(5.0);
-                         p.setPathEffect(effect);
+                         p.setPathEffect(effect->skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          // Need stroke style to see dashing properly
                          b.setStyle(DlDrawStyle::kStroke);
                          // Provide some non-trivial stroke size to get dashed
                          b.setStrokeWidth(5.0);
-                         b.setPathEffect(DlPathEffect::From(effect).get());
+                         b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->unique())
+      EXPECT_TRUE(testP.is_draw_text_blob() || effect->skia_object()->unique())
           << "PathEffect == Dash-17-1.5 Cleanup";
     }
   }

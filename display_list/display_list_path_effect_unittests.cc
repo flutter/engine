@@ -16,13 +16,13 @@ const SkScalar TestDashes1[] = {4.0, 2.0};
 const SkScalar TestDashes2[] = {1.0, 1.5};
 
 TEST(DisplayListPathEffect, BuilderSetGet) {
-  DlDashPathEffect dash_path_effect(TestDashes1, 2, 0.0);
+  auto dash_path_effect = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
   DisplayListBuilder builder;
   ASSERT_EQ(builder.getPathEffect(), nullptr);
-  builder.setPathEffect(&dash_path_effect);
+  builder.setPathEffect(dash_path_effect.get());
   ASSERT_NE(builder.getPathEffect(), nullptr);
   ASSERT_TRUE(Equals(builder.getPathEffect(),
-                     static_cast<DlPathEffect*>(&dash_path_effect)));
+                     static_cast<DlPathEffect*>(dash_path_effect.get())));
   builder.setPathEffect(nullptr);
   ASSERT_EQ(builder.getPathEffect(), nullptr);
 }
@@ -39,36 +39,39 @@ TEST(DisplayListPathEffect, FromSkiaPathEffect) {
   std::shared_ptr<DlPathEffect> dl_path_effect =
       DlPathEffect::From(sk_path_effect);
 
-  ASSERT_EQ(dl_path_effect->type(), DlPathEffectType::kUnknown);
+  ASSERT_EQ(dl_path_effect->type(), DlPathEffectType::kDash);
   // We cannot recapture the dash parameters from an SkDashPathEffect
-  ASSERT_EQ(dl_path_effect->asDash(), nullptr);
-  ASSERT_EQ(dl_path_effect->skia_object(), sk_path_effect);
+  ASSERT_EQ(dl_path_effect->asDash(), dl_path_effect.get());
+  ASSERT_TRUE(
+      Equals(dl_path_effect, DlDashPathEffect::Make(TestDashes2, 2, 0.0)));
 }
 
 TEST(DisplayListPathEffect, EffectShared) {
-  DlDashPathEffect effect(TestDashes2, 2, 0.0);
-  ASSERT_NE(effect.shared().get(), &effect);
-  ASSERT_EQ(*effect.shared(), effect);
+  auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
+  ASSERT_TRUE(Equals(effect->shared(), effect));
 }
 
 TEST(DisplayListPathEffect, DashEffectAsDash) {
-  DlDashPathEffect effect(TestDashes2, 2, 0.0);
-  ASSERT_NE(effect.asDash(), nullptr);
-  ASSERT_EQ(effect.asDash(), &effect);
+  auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
+  ASSERT_NE(effect->asDash(), nullptr);
+  ASSERT_EQ(effect->asDash(), effect.get());
 }
 
 TEST(DisplayListPathEffect, DashEffectEquals) {
-  DlDashPathEffect effect1(TestDashes2, 2, 0.0);
-  DlDashPathEffect effect2(TestDashes2, 2, 0.0);
-  TestEquals(effect1, effect2);
+  auto effect1 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
+  auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
+  ASSERT_TRUE(Equals(effect1, effect2));
+  ASSERT_TRUE(Equals(effect1->shared(), effect2->shared()));
 }
 
 TEST(DisplayListPathEffect, BlurNotEquals) {
-  DlDashPathEffect effect1(TestDashes1, 2, 0.0);
-  DlDashPathEffect effect2(TestDashes2, 2, 0.0);
-  DlDashPathEffect effect3(TestDashes2, 3, 0.0);
-  TestNotEquals(effect1, effect2, "intervals differs");
-  TestNotEquals(effect2, effect3, "phase differs");
+  auto effect1 = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
+  auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
+  auto effect3 = DlDashPathEffect::Make(TestDashes2, 3, 0.0);
+  ASSERT_NE(effect1, effect2);
+  ASSERT_NE(effect2, effect3);
+  ASSERT_NE(effect1->shared(), effect2->shared());
+  ASSERT_NE(effect2->shared(), effect3->shared());
 }
 
 TEST(DisplayListPathEffect, UnknownConstructor) {
@@ -156,9 +159,9 @@ void testNotEquals(std::shared_ptr<const DlPathEffect> a,
 }
 
 TEST(DisplayListPathEffect, ComparableTemplates) {
-  DlDashPathEffect effect1(TestDashes1, 2, 0.0);
-  DlDashPathEffect effect2(TestDashes1, 2, 0.0);
-  DlDashPathEffect effect3(TestDashes2, 3, 0.0);
+  auto effect1 = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
+  auto effect2 = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
+  auto effect3 = DlDashPathEffect::Make(TestDashes2, 3, 0.0);
   std::shared_ptr<DlPathEffect> shared_null;
 
   // null to null
@@ -167,43 +170,43 @@ TEST(DisplayListPathEffect, ComparableTemplates) {
   testEquals(shared_null, shared_null);
 
   // ptr to null
-  testNotEquals(&effect1, nullptr);
-  testNotEquals(&effect2, nullptr);
-  testNotEquals(&effect3, nullptr);
+  testNotEquals(effect1.get(), nullptr);
+  testNotEquals(effect2.get(), nullptr);
+  testNotEquals(effect3.get(), nullptr);
 
   // shared_ptr to null and shared_null to ptr
-  testNotEquals(effect1.shared(), nullptr);
-  testNotEquals(effect2.shared(), nullptr);
-  testNotEquals(effect3.shared(), nullptr);
-  testNotEquals(shared_null, &effect1);
-  testNotEquals(shared_null, &effect2);
-  testNotEquals(shared_null, &effect3);
+  testNotEquals(effect1->shared(), nullptr);
+  testNotEquals(effect2->shared(), nullptr);
+  testNotEquals(effect3->shared(), nullptr);
+  testNotEquals(shared_null, effect1.get());
+  testNotEquals(shared_null, effect2.get());
+  testNotEquals(shared_null, effect3.get());
 
   // ptr to ptr
-  testEquals(&effect1, &effect1);
-  testEquals(&effect1, &effect2);
-  testEquals(&effect3, &effect3);
-  testEquals(&effect2, &effect2);
+  testEquals(effect1, effect1);
+  testEquals(effect1, effect2);
+  testEquals(effect3, effect3);
+  testEquals(effect2, effect2);
 
   // shared_ptr to ptr
-  testEquals(effect1.shared(), &effect1);
-  testEquals(effect1.shared(), &effect2);
-  testEquals(effect2.shared(), &effect2);
-  testEquals(effect3.shared(), &effect3);
-  testNotEquals(effect1.shared(), &effect3);
-  testNotEquals(effect2.shared(), &effect3);
-  testNotEquals(effect3.shared(), &effect1);
-  testNotEquals(effect3.shared(), &effect2);
+  testEquals(effect1->shared(), effect1);
+  testEquals(effect1->shared(), effect2);
+  testEquals(effect2->shared(), effect2);
+  testEquals(effect3->shared(), effect3);
+  testNotEquals(effect1->shared(), effect3);
+  testNotEquals(effect2->shared(), effect3);
+  testNotEquals(effect3->shared(), effect1);
+  testNotEquals(effect3->shared(), effect2);
 
   // shared_ptr to shared_ptr
-  testEquals(effect1.shared(), effect1.shared());
-  testEquals(effect1.shared(), effect2.shared());
-  testEquals(effect2.shared(), effect2.shared());
-  testEquals(effect3.shared(), effect3.shared());
-  testNotEquals(effect1.shared(), effect3.shared());
-  testNotEquals(effect2.shared(), effect3.shared());
-  testNotEquals(effect3.shared(), effect1.shared());
-  testNotEquals(effect3.shared(), effect2.shared());
+  testEquals(effect1->shared(), effect1->shared());
+  testEquals(effect1->shared(), effect2->shared());
+  testEquals(effect2->shared(), effect2->shared());
+  testEquals(effect3->shared(), effect3->shared());
+  testNotEquals(effect1->shared(), effect3->shared());
+  testNotEquals(effect2->shared(), effect3->shared());
+  testNotEquals(effect3->shared(), effect1->shared());
+  testNotEquals(effect3->shared(), effect2->shared());
 }
 
 }  // namespace testing

@@ -39,6 +39,12 @@ class DlPathEffect
   }
 
   virtual const DlDashPathEffect* asDash() const { return nullptr; }
+
+ protected:
+  DlPathEffect() = default;
+
+ private:
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlPathEffect);
 };
 
 /// The DashPathEffect which specifies modifying the path effect, and it
@@ -62,37 +68,19 @@ class DlPathEffect
 /// A phase of -5, 25, 55, 85, etc. would all result in the same path,
 /// because the sum of all the intervals is 30.
 ///
-class DlDashPathEffect : public DlPathEffect {
+class DlDashPathEffect final : public DlPathEffect {
  public:
-  DlDashPathEffect(const SkScalar intervals[], int count, SkScalar phase)
-      : count_(count), phase_(phase) {
-    intervals_ = new SkScalar[count];
-    if (intervals != nullptr) {
-      memcpy(intervals_, intervals, sizeof(SkScalar) * count);
-    }
-  }
-
-  DlDashPathEffect(const DlDashPathEffect& dash_effect)
-      : DlDashPathEffect(dash_effect.intervals_,
-                         dash_effect.count_,
-                         dash_effect.phase_) {}
-
-  DlDashPathEffect(const DlDashPathEffect* dash_effect)
-      : DlDashPathEffect(dash_effect->intervals_,
-                         dash_effect->count_,
-                         dash_effect->phase_) {}
-
-  static std::shared_ptr<DlDashPathEffect> Make(const SkScalar intervals[],
-                                                int count,
-                                                SkScalar phase) {
-    return std::make_shared<DlDashPathEffect>(intervals, count, phase);
-  }
+  static std::shared_ptr<DlPathEffect> Make(const SkScalar intervals[],
+                                            int count,
+                                            SkScalar phase);
 
   DlPathEffectType type() const override { return DlPathEffectType::kDash; }
-  size_t size() const override { return sizeof(*this); }
+  size_t size() const override {
+    return sizeof(*this) + sizeof(SkScalar) * count_;
+  }
 
   std::shared_ptr<DlPathEffect> shared() const override {
-    return std::make_shared<DlDashPathEffect>(this);
+    return Make(intervals_, count_, phase_);
   }
 
   const DlDashPathEffect* asDash() const override { return this; }
@@ -101,22 +89,49 @@ class DlDashPathEffect : public DlPathEffect {
     return SkDashPathEffect::Make(intervals_, count_, phase_);
   }
 
-  ~DlDashPathEffect() { delete[] intervals_; }
-
-  SkScalar* interval() const { return intervals_; }
+  SkScalar* intervals() const { return intervals_; }
 
  protected:
   bool equals_(DlPathEffect const& other) const override {
     FML_DCHECK(other.type() == DlPathEffectType::kDash);
     auto that = static_cast<DlDashPathEffect const*>(&other);
-    return memcmp(intervals_, that->intervals_, sizeof(SkScalar) * count_) ==
-               0 &&
-           count_ == that->count_ && phase_ == that->phase_;
+    return count_ == that->count_ && base_equals_(that) &&
+           phase_ == that->phase_;
   }
+
+ private:
+  bool base_equals_(DlDashPathEffect const* other) const {
+    // intervals not nullptr, that has value
+    if (intervals_ != nullptr && other != nullptr) {
+      for (int i = 0; i < count_; i++) {
+        if (intervals_[i] != other->intervals_[i]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  DlDashPathEffect(const SkScalar intervals[], int count, SkScalar phase)
+      : count_(count), phase_(phase) {
+    intervals_ = reinterpret_cast<SkScalar*>(this + 1);
+    if (intervals != nullptr) {
+      memcpy(intervals_, intervals, sizeof(SkScalar) * count);
+    }
+  }
+
+  DlDashPathEffect(const DlDashPathEffect* dash_effect)
+      : DlDashPathEffect(dash_effect->intervals_,
+                         dash_effect->count_,
+                         dash_effect->phase_) {}
 
   SkScalar* intervals_;
   int count_;
   SkScalar phase_;
+
+  friend class DisplayListBuilder;
+
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlDashPathEffect);
 };
 
 class DlUnknownPathEffect final : public DlPathEffect {
