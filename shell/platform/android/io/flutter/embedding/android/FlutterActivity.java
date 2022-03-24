@@ -341,13 +341,15 @@ public class FlutterActivity extends Activity
      */
     @NonNull
     public Intent build(@NonNull Context context) {
-      return new Intent(context, activityClass)
-          .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
-          .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode)
-          .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true)
-          .putExtra(
-              EXTRA_DART_ENTRYPOINT_ARGS,
-              dartEntrypointArgs != null ? new ArrayList(dartEntrypointArgs) : null);
+      Intent intent =
+          new Intent(context, activityClass)
+              .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
+              .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode)
+              .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
+      if (dartEntrypointArgs != null) {
+        intent.putExtra(EXTRA_DART_ENTRYPOINT_ARGS, new ArrayList(dartEntrypointArgs));
+      }
+      return intent;
     }
   }
 
