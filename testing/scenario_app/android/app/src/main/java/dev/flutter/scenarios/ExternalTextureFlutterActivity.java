@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@SuppressWarnings("SyntheticAccessor")
 public class ExternalTextureFlutterActivity extends TestActivity {
   static final String TAG = "Scenarios";
   private static final int SURFACE_WIDTH = 192;
@@ -181,6 +180,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     private Surface surface;
     private CountDownLatch onFirstFrame;
 
+    protected CanvasSurfaceRenderer() {}
+
     @Override
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.surface = surface;
@@ -236,7 +237,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     private Thread decodeThread;
     private final AtomicBoolean atomicCanProduceFrames = new AtomicBoolean(true);
 
-    private MediaSurfaceRenderer(Supplier<MediaExtractor> extractorSupplier, int rotation) {
+    protected MediaSurfaceRenderer(Supplier<MediaExtractor> extractorSupplier, int rotation) {
       this.extractorSupplier = extractorSupplier;
       this.rotation = rotation;
     }
@@ -359,7 +360,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     private boolean canReadImage = true;
     private boolean canWriteImage = true;
 
-    private ImageSurfaceRenderer(SurfaceRenderer inner, Rect crop) {
+    protected ImageSurfaceRenderer(SurfaceRenderer inner, Rect crop) {
       this.inner = inner;
       this.crop = crop;
     }
