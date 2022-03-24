@@ -213,7 +213,7 @@ TEST_F(ColorFilterLayerTest, Readback) {
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 
-TEST_F(ColorFilterLayerTest, ChildIsCached) {
+TEST_F(ColorFilterLayerTest, CacheChild) {
   auto layer_filter =
       SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
@@ -250,7 +250,7 @@ TEST_F(ColorFilterLayerTest, ChildIsCached) {
                                    RasterCacheLayerStrategy::kLayerChildren));
 }
 
-TEST_F(ColorFilterLayerTest, ChildrenNotCached) {
+TEST_F(ColorFilterLayerTest, CacheChildren) {
   auto layer_filter =
       SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
@@ -276,6 +276,10 @@ TEST_F(ColorFilterLayerTest, ChildrenNotCached) {
   EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
 
   layer->Preroll(preroll_context(), initial_transform);
 
@@ -284,6 +288,10 @@ TEST_F(ColorFilterLayerTest, ChildrenNotCached) {
   EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayerChildren));
 }
 
 }  // namespace testing
