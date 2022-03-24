@@ -1,17 +1,15 @@
-# Usage: create_pkg_manifest.py --deps <DEPS file> --output <jiri manifest>
+# Usage: deps_parser.py --deps <DEPS file> --output <flattened deps>
 #
-# This script parses the DEPS file, extracts dependencies that live under
-# third_party/pkg, and writes them to a file suitable for consumption as a
-# jiri manifest for Fuchsia. It is assumed that the Dart tree is under
-# //dart in the Fuchsia world, and so the dependencies extracted by this script
-# will go under //dart/third_party/pkg.
+# This script parses the DEPS file, extracts the fully qualified dependencies
+# and writes the to a file. This file will be later used to validate the dependencies
+# are pinned to a hash.
 
 import argparse
 import os
 import sys
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
-DART_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
+CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 
 
 # Used in parsing the DEPS file.
@@ -76,13 +74,13 @@ def ParseArgs(args):
         '-d',
         type=str,
         help='Input DEPS file.',
-        default=os.path.join(DART_ROOT, 'DEPS'))
+        default=os.path.join(CHECKOUT_ROOT, 'DEPS'))
     parser.add_argument(
         '--output',
         '-o',
         type=str,
         help='Output flattened deps file.',
-        default=os.path.join(DART_ROOT, 'deps_flatten.txt'))
+        default=os.path.join(CHECKOUT_ROOT, 'deps_flatten.txt'))
 
     return parser.parse_args(args)
 
