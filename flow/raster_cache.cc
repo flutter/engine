@@ -63,7 +63,7 @@ static bool CanRasterizeRect(const SkRect& cull_rect) {
 static bool IsPictureWorthRasterizing(SkPicture* picture,
                                       bool will_change,
                                       bool is_complex,
-                                      bool for_testing) {
+                                      bool is_high_priority) {
   if (will_change) {
     // If the picture is going to change in the future, there is no point in
     // doing to extra work to rasterize.
@@ -76,7 +76,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
     return false;
   }
 
-  if (is_complex || for_testing) {
+  if (is_complex || is_high_priority) {
     // The caller seems to have extra information about the picture and thinks
     // the picture is always worth rasterizing.
     return true;
@@ -91,7 +91,7 @@ static bool IsDisplayListWorthRasterizing(
     DisplayList* display_list,
     bool will_change,
     bool is_complex,
-    bool for_testing,
+    bool is_high_priority,
     DisplayListComplexityCalculator* complexity_calculator) {
   if (will_change) {
     // If the display list is going to change in the future, there is no point
@@ -105,7 +105,7 @@ static bool IsDisplayListWorthRasterizing(
     return false;
   }
 
-  if (is_complex || for_testing) {
+  if (is_complex || is_high_priority) {
     // The caller seems to have extra information about the display list and
     // thinks the display list is always worth rasterizing.
     return true;
@@ -222,17 +222,17 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
 
 bool RasterCache::Prepare(PrerollContext* context,
                           SkPicture* picture,
-                          bool for_testing,
+                          bool is_complex,
                           bool will_change,
                           const SkMatrix& untranslated_matrix,
                           const SkPoint& offset,
-                          bool is_complex) {
+                          bool is_high_priority) {
   if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
 
   if (!IsPictureWorthRasterizing(picture, will_change, is_complex,
-                                 for_testing)) {
+                                 is_high_priority)) {
     // We only deal with pictures that are worthy of rasterization.
     return false;
   }
@@ -250,8 +250,8 @@ bool RasterCache::Prepare(PrerollContext* context,
 
   // Creates an entry, if not present prior.
   Entry& entry = cache_[cache_key];
-  entry.is_complex = is_complex;
-  if (!is_complex && entry.access_count < access_threshold_) {
+  entry.is_high_priority = is_high_priority;
+  if (!is_high_priority && entry.access_count < access_threshold_) {
     // Frame threshold has not yet been reached.
     return false;
   }
@@ -273,11 +273,11 @@ bool RasterCache::Prepare(PrerollContext* context,
 
 bool RasterCache::Prepare(PrerollContext* context,
                           DisplayList* display_list,
-                          bool for_testing,
+                          bool is_complex,
                           bool will_change,
                           const SkMatrix& untranslated_matrix,
                           const SkPoint& offset,
-                          bool is_complex) {
+                          bool is_high_priority) {
   if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
@@ -288,7 +288,7 @@ bool RasterCache::Prepare(PrerollContext* context,
                           : DisplayListComplexityCalculator::GetForSoftware();
 
   if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex,
-                                     for_testing, complexity_calculator)) {
+                                     is_high_priority, complexity_calculator)) {
     // We only deal with display lists that are worthy of rasterization.
     return false;
   }
@@ -307,8 +307,8 @@ bool RasterCache::Prepare(PrerollContext* context,
 
   // Creates an entry, if not present prior.
   Entry& entry = cache_[cache_key];
-  entry.is_complex = is_complex;
-  if (!is_complex && entry.access_count < access_threshold_) {
+  entry.is_high_priority = is_high_priority;
+  if (!is_high_priority && entry.access_count < access_threshold_) {
     // Frame threshold has not yet been reached.
     return false;
   }

@@ -99,8 +99,8 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, disp_list, /*for_testing=*/false,
-                         will_change_, matrix, offset_, is_complex_)) {
+      if (cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
+                         offset_)) {
         context->subtree_can_inherit_opacity = true;
       }
     } else {

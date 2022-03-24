@@ -196,18 +196,18 @@ class RasterCache {
   // 4. The picture is accessed too few times
   bool Prepare(PrerollContext* context,
                SkPicture* picture,
-               bool for_testing,
+               bool is_complex,
                bool will_change,
                const SkMatrix& untranslated_matrix,
                const SkPoint& offset = SkPoint(),
-               bool is_complex = false);
+               bool is_high_priority = false);
   bool Prepare(PrerollContext* context,
                DisplayList* display_list,
-               bool for_testing,
+               bool is_complex,
                bool will_change,
                const SkMatrix& untranslated_matrix,
                const SkPoint& offset = SkPoint(),
-               bool is_complex = false);
+               bool is_high_priority = false);
 
   // If there is cache entry for this picture, display list or layer, mark it as
   // used for this frame in order to not get evicted. This is needed during
@@ -303,14 +303,14 @@ class RasterCache {
   struct Entry {
     // If the entry is high priority, it will always cache on first usage and
     // survive 3 frames without usage.
-    bool is_complex = false;
+    bool is_high_priority = false;
     bool used_this_frame = false;
     size_t access_count = 0;
     size_t unused_count = 0;
     std::unique_ptr<RasterCacheResult> image;
     // Return the number of frames the entry survives if it is not used. If the
     // number is 0, then it will be evicted when not in use.
-    size_t unused_threshold() const { return is_complex ? 3 : 0; }
+    size_t unused_threshold() const { return is_high_priority ? 3 : 0; }
   };
 
   void Touch(const RasterCacheKey& cache_key);
