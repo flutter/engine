@@ -201,8 +201,8 @@ std::optional<RasterCacheKey> RasterCache::TryToMakeRasterCacheKeyForLayer(
       return RasterCacheKey(layer->unique_id(), RasterCacheKeyType::kLayer,
                             ctm);
     case RasterCacheLayerStrategy::kLayerChildren:
-      auto& children_layers =
-          static_cast<const ContainerLayer*>(layer)->layers();
+      FML_DCHECK(layer->as_container_layer());
+      auto& children_layers = layer->as_container_layer()->layers();
       auto children_count = children_layers.size();
       if (children_count == 0) {
         return std::nullopt;
@@ -257,8 +257,8 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
             }
             break;
           case RasterCacheLayerStrategy::kLayerChildren:
-            auto& children_layers =
-                static_cast<const ContainerLayer*>(layer)->layers();
+            FML_DCHECK(layer->as_container_layer());
+            auto& children_layers = layer->as_container_layer()->layers();
             for (auto& child_layer : children_layers) {
               if (child_layer->needs_painting(paintContext)) {
                 child_layer->Paint(paintContext);

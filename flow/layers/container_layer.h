@@ -27,6 +27,7 @@ class ContainerLayer : public Layer {
 
   virtual void DiffChildren(DiffContext* context,
                             const ContainerLayer* old_layer);
+  const ContainerLayer* as_container_layer() const override { return this; }
 
  protected:
   void PrerollChildren(PrerollContext* context,
