@@ -74,7 +74,7 @@ TEST(RasterCache, HighPriorityIsRespectedForSkPicture) {
   // Prepare should cache it when 1st access.
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
                             picture.get(), true, false, matrix, SkPoint(),
-                            /**is_complex=*/true));
+                            /**is_high_priority=*/true));
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 }
 
@@ -177,7 +177,7 @@ TEST(RasterCache, HighPriorityIsRespectedForDisplayList) {
   // Prepare should cache it when 1st access.
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
                             display_list.get(), true, false, matrix, SkPoint(),
-                            /**is_complex=*/true));
+                            /**is_high_priority=*/true));
   ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
 }
 
@@ -354,7 +354,7 @@ TEST(RasterCache, KeepUnusedSkPicturesIfIsHighPriority) {
 
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
                             picture.get(), true, false, matrix, SkPoint(),
-                            /**is_complex=*/true));
+                            /**is_high_priority=*/true));
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 
   cache.CleanupAfterFrame();
@@ -397,7 +397,7 @@ TEST(RasterCache, KeepUnusedDisplayListsIfIsHighPriority) {
 
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
                             display_list.get(), true, false, matrix, SkPoint(),
-                            /**is_complex=*/true));
+                            /**is_high_priority=*/true));
   ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
 
   cache.CleanupAfterFrame();
