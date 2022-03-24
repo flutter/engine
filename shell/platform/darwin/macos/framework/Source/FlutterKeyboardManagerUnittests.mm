@@ -606,6 +606,9 @@ TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
   sendTap(kVK_ANSI_A, @"å", @"a"); // Option-KeyA
   VERIFY_DOWN(kLogicalKeyA, "å");
 
+  sendTap(kVK_ANSI_T, @"t", @"t"); // KeyT
+  VERIFY_DOWN(kLogicalKeyT, "t");
+
   sendTap(kVK_ANSI_1, @"1", @"1"); // Digit1
   VERIFY_DOWN(kLogicalDigit1, "1");
 
