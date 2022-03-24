@@ -4,15 +4,15 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 
+#include <Carbon/Carbon.h>
 #include <cctype>
 #include <map>
-#include <Carbon/Carbon.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h"
 
 namespace {
 typedef void (^VoidBlock)();
@@ -24,8 +24,8 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
 const uint64_t kDeadKeyPlane = 0x0300000000;
 
-typedef std::pair<uint32_t, bool> KeyChar;
-static KeyChar DetectKeyChar(const UCKeyboardLayout* layout, uint16_t keyCode, bool shift) {
+typedef std::pair<uint32_t, bool> LayoutClue;
+static LayoutClue DetectLayoutClue(const UCKeyboardLayout* layout, uint16_t keyCode, bool shift) {
   UInt32 deadKeyState = 0;
   UniCharCount stringLength = 0;
   UniChar resultChar;
@@ -34,21 +34,21 @@ static KeyChar DetectKeyChar(const UCKeyboardLayout* layout, uint16_t keyCode, b
   UInt32 keyboardType = LMGetKbdLast();
 
   bool isDeadKey = false;
-  OSStatus status = UCKeyTranslate(layout, keyCode, kUCKeyActionDown,
-                                   modifierState, keyboardType, kUCKeyTranslateNoDeadKeysBit,
-                                   &deadKeyState, 1, &stringLength, &resultChar);
+  OSStatus status =
+      UCKeyTranslate(layout, keyCode, kUCKeyActionDown, modifierState, keyboardType,
+                     kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 1, &stringLength, &resultChar);
   // For dead keys, press the same key again to get the printable representation of the key.
   if (status == noErr && stringLength == 0 && deadKeyState != 0) {
     isDeadKey = true;
-    status = UCKeyTranslate(layout, keyCode, kUCKeyActionDown, modifierState,
-    keyboardType, kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 1, &stringLength,
-    &resultChar);
+    status =
+        UCKeyTranslate(layout, keyCode, kUCKeyActionDown, modifierState, keyboardType,
+                       kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 1, &stringLength, &resultChar);
   }
 
   if (status == noErr && stringLength == 1 && !std::iscntrl(resultChar)) {
-    return KeyChar(resultChar, isDeadKey);
+    return LayoutClue(resultChar, isDeadKey);
   }
-  return KeyChar(0, false);
+  return LayoutClue(0, false);
 }
 
 }
@@ -69,7 +69,7 @@ static KeyChar DetectKeyChar(const UCKeyboardLayout* layout, uint16_t keyCode, b
 
 @property(nonatomic) BOOL processingEvent;
 
-@property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* overrideLayoutMap;
+@property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* layoutMap;
 
 /**
  * Add a primary responder, which asynchronously decides whether to handle an
@@ -138,10 +138,10 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
                                                                      codec:[FlutterJSONMessageCodec
                                                                                sharedInstance]]]];
     _pendingTextEvents = [[NSMutableArray alloc] init];
-    _overrideLayoutMap = [NSMutableDictionary<NSNumber*, NSNumber*> dictionary];
+    _layoutMap = [NSMutableDictionary<NSNumber*, NSNumber*> dictionary];
     [self buildLayout];
     for (id<FlutterKeyPrimaryResponder> responder in _primaryResponders) {
-      responder.overrideLayoutMap = _overrideLayoutMap;
+      responder.layoutMap = _layoutMap;
     }
 
     __weak __typeof__(self) weakSelf = self;
@@ -224,10 +224,11 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
 
 - (void)buildLayout {
   NSLog(@"# Building");
-  [_overrideLayoutMap removeAllObjects];
-  std::map<uint32_t, LayoutPreset> remainingPresets;
-  for (const LayoutPreset& preset : layoutPresets) {
-    remainingPresets[preset.keyChar] = preset;
+  [_layoutMap removeAllObjects];
+
+  std::map<uint32_t, LayoutGoal> remainingGoals;
+  for (const LayoutGoal& goal : layoutGoals) {
+    remainingGoals[goal.keyChar] = goal;
   }
 
   TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
@@ -243,37 +244,39 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
   const UCKeyboardLayout* layout =
       reinterpret_cast<const UCKeyboardLayout*>(CFDataGetBytePtr(layout_data));
 
+  // Derive key mapping for each key code based on their layout clues.
   // Max key code is 127 for ADB keyboards.
   // https://developer.apple.com/documentation/coreservices/1390584-uckeytranslate?language=objc#parameters
   const uint16_t kMaxKeyCode = 127;
   for (uint16_t keyCode = 0; keyCode <= kMaxKeyCode; keyCode += 1) {
     NSLog(@"# Keycode 0x%x", keyCode);
-    const int kCharTypes = 2;
-    KeyChar keyChars[kCharTypes] = {
-        DetectKeyChar(layout, keyCode, false),
-        DetectKeyChar(layout, keyCode, true),
+    const int kNumClueTypes = 2;
+    LayoutClue thisKeyClues[kNumClueTypes] = {
+        DetectLayoutClue(layout, keyCode, false),
+        DetectLayoutClue(layout, keyCode, true),
     };
-    // Determine what key to use in the following order:
-    // - Mandatory key
-    // - Primary EASCII
-    // - Non-primary EASCII
-    // - Primary dead key
-    // - Non-primary dead key
-    // - US layout
+    // The logical key should be the first available clue from below:
+    //
+    //  - Mandatory key
+    //  - Primary EASCII
+    //  - Non-primary EASCII
+    //  - Primary dead key
+    //  - Non-primary dead key
+    //  - US layout
     uint32_t easciiKey = 0;
     uint32_t deadKey = 0;
-    for (int charIdx = 0; charIdx < kCharTypes; charIdx += 1) {
-      KeyChar keyCharPair = keyChars[charIdx];
-      uint32_t keyChar = keyCharPair.first;
-      bool isDeadKey = keyCharPair.second;
-      auto presetIter = remainingPresets.find(keyChar);
+    for (int clueId = 0; clueId < kNumClueTypes; clueId += 1) {
+      LayoutClue clue = thisKeyClues[clueId];
+      uint32_t keyChar = clue.first;
+      bool isDeadKey = clue.second;
+      NSLog(@"Char 0x%x dead %d", keyChar, isDeadKey);
+      auto matchingGoal = remainingGoals.find(keyChar);
       if (!isDeadKey) {
-        if (presetIter != remainingPresets.end() && presetIter->second.mandatory) {
+        if (matchingGoal != remainingGoals.end() && matchingGoal->second.mandatory) {
           // Found a key that produces a mandatory char. Use it.
-          NSAssert(_overrideLayoutMap[@(keyCode)] == nil,
-                  @"Attempting to assign an assigned key code.");
-          _overrideLayoutMap[@(keyCode)] = @(keyChar);
-          remainingPresets.erase(presetIter);
+          NSAssert(_layoutMap[@(keyCode)] == nil, @"Attempting to assign an assigned key code.");
+          _layoutMap[@(keyCode)] = @(keyChar);
+          remainingGoals.erase(matchingGoal);
           NSLog(@"From req");
           break;
         }
@@ -287,24 +290,25 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
       }
     }
     // See if any produced char meets the requirement as a logical key.
-    if (_overrideLayoutMap[@(keyCode)] == nil) {
+    if (_layoutMap[@(keyCode)] == nil) {
+      NSLog(@"Trying eascii 0x%x dead 0x%x", easciiKey, deadKey);
       if (easciiKey != 0) {
         NSLog(@"From EASCII");
-        _overrideLayoutMap[@(keyCode)] = @(easciiKey);
+        _layoutMap[@(keyCode)] = @(easciiKey);
       } else if (deadKey != 0) {
         NSLog(@"From dead");
-        _overrideLayoutMap[@(keyCode)] = @(deadKey + kDeadKeyPlane);
+        _layoutMap[@(keyCode)] = @(deadKey + kDeadKeyPlane);
       }
     }
   }
 
-  // For the unfulfilled presets: mandatory presets should always overwrite
-  // a map, while non-mandatory presets should only overwrite empty maps.
-  for (auto presetIter : remainingPresets) {
-    const LayoutPreset& preset = presetIter.second;
-    NSLog(@"# Key 0x%hx char 0x%x from US req", preset.keyCode, preset.keyChar);
-    if (preset.mandatory || _overrideLayoutMap[@(preset.keyCode)] == nil) {
-      _overrideLayoutMap[@(preset.keyCode)] = @(preset.keyChar);
+  // For the unfulfilled goals: mandatory goals should always overwrite
+  // a map, while non-mandatory goals should only overwrite empty maps.
+  for (auto uncompletedGoalIter : remainingGoals) {
+    const LayoutGoal& goal = uncompletedGoalIter.second;
+    NSLog(@"# Key 0x%hx char 0x%x from US req", goal.keyCode, goal.keyChar);
+    if (goal.mandatory || _layoutMap[@(goal.keyCode)] == nil) {
+      _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
     }
   }
 }

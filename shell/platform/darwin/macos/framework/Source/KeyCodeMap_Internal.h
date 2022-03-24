@@ -86,7 +86,7 @@ typedef struct {
   uint16_t keyCode;
   uint8_t keyChar;
   bool mandatory;
-} LayoutPreset;
+} LayoutGoal;
 
 // TODO
-extern const std::vector<LayoutPreset> layoutPresets;
+extern const std::vector<LayoutGoal> layoutGoals;
