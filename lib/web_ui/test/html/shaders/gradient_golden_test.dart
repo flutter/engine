@@ -40,6 +40,10 @@ Future<void> testMain() async {
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      sceneElement.style.transform = 'scale(0.5)';
+    }
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body!.append(sceneElement);

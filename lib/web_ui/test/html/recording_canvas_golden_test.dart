@@ -12,6 +12,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common.dart';
 import '../matchers.dart';
 
 void main() {
@@ -673,6 +674,10 @@ Future<void> testMain() async {
     }
 
     final html.Element sceneElement = sb.build().webOnlyRootElement!;
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      sceneElement.style.transform = 'scale(0.5)';
+    }
     html.document.body!.append(sceneElement);
     try {
       await matchGoldenFile(
