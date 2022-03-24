@@ -62,8 +62,7 @@ static bool CanRasterizeRect(const SkRect& cull_rect) {
 
 static bool IsPictureWorthRasterizing(SkPicture* picture,
                                       bool will_change,
-                                      bool is_complex,
-                                      bool is_high_priority) {
+                                      bool is_complex) {
   if (will_change) {
     // If the picture is going to change in the future, there is no point in
     // doing to extra work to rasterize.
@@ -76,7 +75,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
     return false;
   }
 
-  if (is_complex || is_high_priority) {
+  if (is_complex) {
     // The caller seems to have extra information about the picture and thinks
     // the picture is always worth rasterizing.
     return true;
@@ -91,7 +90,6 @@ static bool IsDisplayListWorthRasterizing(
     DisplayList* display_list,
     bool will_change,
     bool is_complex,
-    bool is_high_priority,
     DisplayListComplexityCalculator* complexity_calculator) {
   if (will_change) {
     // If the display list is going to change in the future, there is no point
@@ -105,7 +103,7 @@ static bool IsDisplayListWorthRasterizing(
     return false;
   }
 
-  if (is_complex || is_high_priority) {
+  if (is_complex) {
     // The caller seems to have extra information about the display list and
     // thinks the display list is always worth rasterizing.
     return true;
@@ -231,8 +229,7 @@ bool RasterCache::Prepare(PrerollContext* context,
     return false;
   }
 
-  if (!IsPictureWorthRasterizing(picture, will_change, is_complex,
-                                 is_high_priority)) {
+  if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
     // We only deal with pictures that are worthy of rasterization.
     return false;
   }
@@ -288,7 +285,7 @@ bool RasterCache::Prepare(PrerollContext* context,
                           : DisplayListComplexityCalculator::GetForSoftware();
 
   if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex,
-                                     is_high_priority, complexity_calculator)) {
+                                     complexity_calculator)) {
     // We only deal with display lists that are worthy of rasterization.
     return false;
   }
