@@ -375,7 +375,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the host's Dart entrypoint was used.
     verify(mockFlutterEngine.getDartExecutor(), times(1))
-        .executeDartEntrypoint(eq(dartEntrypoint), eq(dartEntrypointArgs));
+        .executeDartEntrypoint(any(DartExecutor.DartEntrypoint.class), eq(dartEntrypointArgs));
   }
 
   @Test

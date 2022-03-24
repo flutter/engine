@@ -68,7 +68,7 @@ import java.util.List;
  *   <li>Displays an Android launch screen.
  *   <li>Displays a Flutter splash screen.
  *   <li>Configures the status bar appearance.
- *   <li>Chooses the Dart execution app bundle path, entrypoint and entrypoint args.
+ *   <li>Chooses the Dart execution app bundle path, entrypoint and entrypoint arguments.
  *   <li>Chooses Flutter's initial route.
  *   <li>Renders {@code Activity} transparently, if desired.
  *   <li>Offers hooks for subclasses to provide and configure a {@link
@@ -76,7 +76,7 @@ import java.util.List;
  *   <li>Save and restore instance state, see {@code #shouldRestoreAndSaveState()};
  * </ul>
  *
- * <p><strong>Dart entrypoint, entrypoint args, initial route, and app bundle path</strong>
+ * <p><strong>Dart entrypoint, entrypoint arguments, initial route, and app bundle path</strong>
  *
  * <p>The Dart entrypoint executed within this {@code Activity} is "main()" by default. To change
  * the entrypoint that a {@code FlutterActivity} executes, subclass {@code FlutterActivity} and
@@ -84,8 +84,8 @@ import java.util.List;
  * tree-shaken away, you need to annotate those functions with {@code @pragma('vm:entry-point')} in
  * Dart.
  *
- * <p>The Dart entrypoint args will be passed as a list of string to Dart's entrypoint function. It
- * can be passed using a {@link NewEngineIntentBuilder} via {@link
+ * <p>The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint
+ * function. It can be passed using a {@link NewEngineIntentBuilder} via {@link
  * NewEngineIntentBuilder#dartEntrypointArgs}.
  *
  * <p>The Flutter route that is initially loaded within this {@code Activity} is "/". The initial
@@ -95,7 +95,7 @@ import java.util.List;
  * <p>The initial route can each be controlled using a {@link NewEngineIntentBuilder} via {@link
  * NewEngineIntentBuilder#initialRoute}.
  *
- * <p>The app bundle path, Dart entrypoint, Dart entrypoint args, and initial route can also be
+ * <p>The app bundle path, Dart entrypoint, Dart entrypoint arguments, and initial route can also be
  * controlled in a subclass of {@code FlutterActivity} by overriding their respective methods:
  *
  * <ul>
@@ -317,6 +317,15 @@ public class FlutterActivity extends Activity
       return this;
     }
 
+    /**
+     * The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint
+     * function.
+     *
+     * <p>A value of null means do not pass any arguments to Dart's entrypoint function.
+     *
+     * @param dartEntrypointArgs The Dart entrypoint arguments.
+     * @return The engine intent builder.
+     */
     @NonNull
     public NewEngineIntentBuilder dartEntrypointArgs(@Nullable List<String> dartEntrypointArgs) {
       this.dartEntrypointArgs = dartEntrypointArgs;
@@ -860,14 +869,14 @@ public class FlutterActivity extends Activity
     }
   }
 
-  @Nullable
   /**
-   * The Dart entrypoint args will be passed as a list of string to Dart's entrypoint function.
+   * The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint function.
    *
    * <p>A value of null means do not pass any arguments to Dart's entrypoint function.
    *
-   * <p>Subclasses may override this method to directly control the Dart entrypoint args.
+   * <p>Subclasses may override this method to directly control the Dart entrypoint arguments.
    */
+  @Nullable
   public List<String> getDartEntrypointArgs() {
     return (List<String>) getIntent().getSerializableExtra(EXTRA_DART_ENTRYPOINT_ARGS);
   }

@@ -109,7 +109,7 @@ public class FlutterFragment extends Fragment
   protected static final String ARG_DART_ENTRYPOINT = "dart_entrypoint";
   /** The Dart entrypoint method's URI that is executed upon initialization. */
   protected static final String ARG_DART_ENTRYPOINT_URI = "dart_entrypoint_uri";
-  /** The Dart entrypoint args that is executed upon initialization. */
+  /** The Dart entrypoint arguments that is executed upon initialization. */
   protected static final String ARG_DART_ENTRYPOINT_ARGS = "dart_entrypoint_args";
   /** Initial Flutter route that is rendered in a Navigator widget. */
   protected static final String ARG_INITIAL_ROUTE = "initial_route";
@@ -1061,11 +1061,11 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * The Dart entrypoint args will be passed as a list of string to Dart's entrypoint function.
+   * The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint function.
    *
    * <p>A value of null means do not pass any arguments to Dart's entrypoint function.
    *
-   * <p>Subclasses may override this method to directly control the Dart entrypoint args.
+   * <p>Subclasses may override this method to directly control the Dart entrypoint arguments.
    */
   @Override
   @Nullable

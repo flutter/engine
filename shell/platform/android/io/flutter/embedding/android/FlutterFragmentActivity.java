@@ -149,6 +149,15 @@ public class FlutterFragmentActivity extends FragmentActivity
       return this;
     }
 
+    /**
+     * The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint
+     * function.
+     *
+     * <p>A value of null means do not pass any arguments to Dart's entrypoint function.
+     *
+     * @param dartEntrypointArgs The Dart entrypoint arguments.
+     * @return The engine intent builder.
+     */
     @NonNull
     public NewEngineIntentBuilder dartEntrypointArgs(@Nullable List<String> dartEntrypointArgs) {
       this.dartEntrypointArgs = dartEntrypointArgs;
@@ -722,11 +731,11 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
-   * The Dart entrypoint args will be passed as a list of string to Dart's entrypoint function.
+   * The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint function.
    *
    * <p>A value of null means do not pass any arguments to Dart's entrypoint function.
    *
-   * <p>Subclasses may override this method to directly control the Dart entrypoint args.
+   * <p>Subclasses may override this method to directly control the Dart entrypoint arguments.
    */
   @Nullable
   public List<String> getDartEntrypointArgs() {
