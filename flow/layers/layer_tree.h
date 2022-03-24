@@ -68,6 +68,13 @@ class LayerTree {
     checkerboard_offscreen_layers_ = checkerboard;
   }
 
+  /// When enabled, during rasterization stats for leaf layer are recorded.
+  /// This is typically set during
+  /// `ServiceProtocol::kRenderLastFrameWithRasterStatsExtensionName` requests.
+  void enable_leaf_layer_tracing(bool enable) {
+    enable_leaf_layer_tracing_ = enable;
+  }
+
  private:
   std::shared_ptr<Layer> root_layer_;
   SkISize frame_size_ = SkISize::MakeEmpty();  // Physical pixels.
@@ -75,6 +82,7 @@ class LayerTree {
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;
+  bool enable_leaf_layer_tracing_ = false;
 
   PaintRegionMap paint_region_map_;
 
