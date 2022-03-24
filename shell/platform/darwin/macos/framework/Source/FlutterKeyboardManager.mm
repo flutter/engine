@@ -13,6 +13,17 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h"
 
+// #define DEBUG_PRINT_LAYOUT
+#ifdef DEBUG_PRINT_LAYOUT
+NSString* debugFormatLayoutData(NSString* debugLayoutData, uint16_t keyCode, LayoutClue clue1, LayoutClue clue2) {
+    return [NSString
+        stringWithFormat:@"    %@%@0x%d%04x, 0x%d%04x,", debugLayoutData,
+                         keyCode % 4 == 0 ? [NSString stringWithFormat:@"\n/* 0x%02x */ ", keyCode]
+                                          : @" ",
+                         clue1.second, clue1.first, clue2.second, clue2.first];
+}
+#endif
+
 namespace {
 
 // Someohow this pointer type must be defined as a single type for the compiler
@@ -168,7 +179,6 @@ bool isEascii(const LayoutClue& clue) {
 }
 
 - (void)buildLayout {
-  NSLog(@"# Building");
   [_layoutMap removeAllObjects];
 
   std::map<uint32_t, LayoutGoal> mandatoryGoalsByChar;
@@ -185,12 +195,16 @@ bool isEascii(const LayoutClue& clue) {
   // Max key code is 127 for ADB keyboards.
   // https://developer.apple.com/documentation/coreservices/1390584-uckeytranslate?language=objc#parameters
   const uint16_t kMaxKeyCode = 127;
+#ifdef DEBUG_PRINT_LAYOUT
+  NSString* debugLayoutData = @"";
+#endif
   for (uint16_t keyCode = 0; keyCode <= kMaxKeyCode; keyCode += 1) {
-    NSLog(@"# Keycode 0x%x", keyCode);
     std::vector<LayoutClue> thisKeyClues = {
         [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:false],
-        [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:true]
-    };
+        [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:true]};
+#ifdef DEBUG_PRINT_LAYOUT
+    debugLayoutData = debugFormatLayoutData(debugLayoutData, keyCode, thisKeyClues[0], thisKeyClues[1]);
+#endif
     // The logical key should be the first available clue from below:
     //
     //  - Mandatory goal, if matches any clue.
@@ -206,7 +220,6 @@ bool isEascii(const LayoutClue& clue) {
         NSAssert(_layoutMap[@(keyCode)] == nil, @"Attempting to assign an assigned key code.");
         _layoutMap[@(keyCode)] = @(keyChar);
         mandatoryGoalsByChar.erase(matchingGoal);
-        NSLog(@"From req");
         break;
       }
     }
@@ -216,11 +229,13 @@ bool isEascii(const LayoutClue& clue) {
       _layoutMap[@(keyCode)] = @(usLayoutGoalsByKeyCode[keyCode].keyChar);
     }
   }
+#ifdef DEBUG_PRINT_LAYOUT
+  NSLog(@"%@", debugLayoutData);
+#endif
 
   // Ensure all mandatory goals are assigned.
   for (auto mandatoryGoalIter : mandatoryGoalsByChar) {
     const LayoutGoal& goal = mandatoryGoalIter.second;
-    NSLog(@"# Key 0x%hx char 0x%x from US req", goal.keyCode, goal.keyChar);
     _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
   }
 }

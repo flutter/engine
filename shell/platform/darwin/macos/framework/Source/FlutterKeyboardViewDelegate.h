@@ -18,7 +18,6 @@ typedef std::pair<uint32_t, bool> LayoutClue;
 @protocol FlutterKeyboardViewDelegate
 
 @required
-
 /**
  * Get the next responder to dispatch events that the keyboard system
  * (including text input) do not handle.
