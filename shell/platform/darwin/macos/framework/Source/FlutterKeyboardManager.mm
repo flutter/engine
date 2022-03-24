@@ -235,8 +235,10 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
   CFDataRef layout_data =
       static_cast<CFDataRef>((TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData)));
   if (!layout_data) {
+    CFRelease(source);
     // TISGetInputSourceProperty returns null with Japanese keyboard layout.
     // Using TISCopyCurrentKeyboardLayoutInputSource to fix NULL return.
+    // https://github.com/microsoft/node-native-keymap/blob/5f0699ded00179410a14c0e1b0e089fe4df8e130/src/keyboard_mac.mm#L91
     source = TISCopyCurrentKeyboardLayoutInputSource();
     layout_data = static_cast<CFDataRef>(
         (TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData)));
@@ -311,6 +313,7 @@ void RegisterKeyboardLayoutChangeListener(NotificationCallbackData* data) {
       _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
     }
   }
+  CFRelease(source);
 }
 
 @end
