@@ -40,11 +40,29 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
  */
 - (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)responder;
 
+/**
+ * Start processing the next event if not started already.
+ *
+ * This function might initiate an async process, whose callback calls this
+ * function again.
+ */
 - (void)processNextEvent;
 
-- (void)processEvent:(NSEvent*)event onFinish:(VoidBlock)onFinish;
+/**
+ * Implement how to process an event.
+ *
+ * The `onFinish` must be called eventually, either during this function or
+ * asynchronously later, otherwise the event queue will be stuck.
+ *
+ * This function is called by processNextEvent.
+ */
+- (void)performProcessEvent:(NSEvent*)event onFinish:(nonnull VoidBlock)onFinish;
 
-- (void)dispatchTextEvent:(NSEvent*)pendingEvent;
+/**
+ * Dispatch an event that's not hadled by the responders to text input plugin,
+ * and potentially to the next responder.
+ */
+- (void)dispatchTextEvent:(nonnull NSEvent*)pendingEvent;
 
 @end
 
@@ -114,10 +132,10 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     weakSelf.processingEvent = FALSE;
     [weakSelf processNextEvent];
   };
-  [self processEvent:pendingEvent onFinish:onFinish];
+  [self performProcessEvent:pendingEvent onFinish:onFinish];
 }
 
-- (void)processEvent:(NSEvent*)event onFinish:(VoidBlock)onFinish {
+- (void)performProcessEvent:(NSEvent*)event onFinish:(VoidBlock)onFinish {
   if (_viewDelegate.isComposing) {
     [self dispatchTextEvent:event];
     onFinish();
