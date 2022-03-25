@@ -1814,7 +1814,7 @@ bool Shell::OnServiceProtocolRenderLastFrameWithRasterStats(
     last_layer_tree->enable_leaf_layer_tracing(false);
 
     response->SetObject();
-    response->AddMember("type", "LeafLayerRasterStats",
+    response->AddMember("type", "RenderLastFrameWithRasterStats",
                         response->GetAllocator());
     return true;
   } else {

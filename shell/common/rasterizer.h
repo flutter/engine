@@ -14,6 +14,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/layers/offscreen_utils.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"

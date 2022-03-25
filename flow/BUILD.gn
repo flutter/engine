@@ -38,6 +38,8 @@ source_set("flow") {
     "layers/layer.h",
     "layers/layer_tree.cc",
     "layers/layer_tree.h",
+    "layers/offscreen_utils.cc",
+    "layers/offscreen_utils.h",
     "layers/opacity_layer.cc",
     "layers/opacity_layer.h",
     "layers/performance_overlay_layer.cc",

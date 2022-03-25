@@ -84,7 +84,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       checkerboard_offscreen_layers_,
-      device_pixel_ratio_};
+      device_pixel_ratio_,
+      enable_leaf_layer_tracing_};
 
   if (root_layer_->needs_painting(context)) {
     root_layer_->Paint(context);

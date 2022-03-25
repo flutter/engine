@@ -674,7 +674,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     bool compressed) {
   // Attempt to create a snapshot surface depending on whether we have access to
   // a valid GPU rendering context.
-  auto snapshot_surface =
+  sk_sp<SkSurface> snapshot_surface =
       CreateSnapshotSurface(surface_context, tree->frame_size());
   if (snapshot_surface == nullptr) {
     FML_LOG(ERROR) << "Screenshot: unable to create snapshot surface";
@@ -706,33 +706,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   frame->Raster(*tree, true, nullptr);
   canvas->flush();
 
-  // Prepare an image from the surface, this image may potentially be on th GPU.
-  auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
-  if (!potentially_gpu_snapshot) {
-    FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
-    return nullptr;
-  }
-
-  // Copy the GPU image snapshot into CPU memory.
-  auto cpu_snapshot = potentially_gpu_snapshot->makeRasterImage();
-  if (!cpu_snapshot) {
-    FML_LOG(ERROR) << "Screenshot: unable to make raster image";
-    return nullptr;
-  }
-
-  // If the caller want the pixels to be compressed, there is a Skia utility to
-  // compress to PNG. Use that.
-  if (compressed) {
-    return cpu_snapshot->encodeToData();
-  }
-
-  // Copy it into a bitmap and return the same.
-  SkPixmap pixmap;
-  if (!cpu_snapshot->peekPixels(&pixmap)) {
-    FML_LOG(ERROR) << "Screenshot: unable to obtain bitmap pixels";
-    return nullptr;
-  }
-  return SkData::MakeWithCopy(pixmap.addr32(), pixmap.computeByteSize());
+  return GetRasterData(snapshot_surface, compressed);
 }
 
 Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(

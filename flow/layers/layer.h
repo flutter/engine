@@ -166,6 +166,7 @@ class Layer {
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
     const float frame_device_pixel_ratio;
+    const bool enable_leaf_layer_tracing;
 
     // The following value should be used to modulate the opacity of the
     // layer during |Paint|. If the layer does not set the corresponding
