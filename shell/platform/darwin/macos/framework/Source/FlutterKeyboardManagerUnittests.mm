@@ -325,7 +325,7 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
 
 - (void)recordEmbedderEventsTo:(nonnull std::vector<FlutterKeyEvent>*)storage
                      returning:(bool)handled {
-  _embedderHandler = ^(const FlutterKeyEvent* event, AsyncKeyCallback callback) {
+  _embedderHandler = ^(const FlutterKeyEvent* event, FlutterAsyncKeyCallback callback) {
     FlutterKeyEvent newEvent = *event;
     if (event->character != nullptr) {
       size_t charLen = strlen(event->character);
