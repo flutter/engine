@@ -270,7 +270,7 @@ FLUTTER_ASSERT_ARC
                                 withClient:0]);
 }
 
-- (void)testIngoresSelectionChangeIfselectionIsDisabled {
+- (void)testIngoresSelectionChangeIfSelectionIsDisabled {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   __block int updateCount = 0;
   OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withState:[OCMArg isNotNil]])
