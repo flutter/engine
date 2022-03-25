@@ -14,7 +14,19 @@ typedef void (^KeyboardLayoutNotifier)();
 
 // The printable result of a key under certain modifiers, used to derive key
 // mapping.
-typedef std::pair<uint32_t, bool> LayoutClue;
+typedef struct {
+  // The printable character.
+  //
+  // If `isDeadKey` is true, then this is the character when pressing the same
+  // dead key twice.
+  uint32_t character;
+
+  // Whether this character is a dead key.
+  //
+  // A dead key is a key that is not counted as text per se, but holds a
+  // diacritics to be added to the next key.
+  bool isDeadKey;
+} LayoutClue;
 
 }  // namespace flutter
 

@@ -27,11 +27,11 @@ NSString* debugFormatLayoutData(NSString* debugLayoutData,
                                 uint16_t keyCode,
                                 LayoutClue clue1,
                                 LayoutClue clue2) {
-  return [NSString stringWithFormat:@"    %@%@0x%d%04x, 0x%d%04x,", debugLayoutData,
-                                    keyCode % 4 == 0
-                                        ? [NSString stringWithFormat:@"\n/* 0x%02x */ ", keyCode]
+  return [NSString
+      stringWithFormat:@"    %@%@0x%d%04x, 0x%d%04x,", debugLayoutData,
+                       keyCode % 4 == 0 ? [NSString stringWithFormat:@"\n/* 0x%02x */ ", keyCode]
                                         : @" ",
-                                    clue1.second, clue1.first, clue2.second, clue2.first];
+                       clue1.isDeadKey, clue1.character, clue2.isDeadKey, clue2.character];
 }
 #endif
 
@@ -41,7 +41,7 @@ typedef NSResponder* _NSResponderPtr;
 typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
 bool isEascii(const LayoutClue& clue) {
-  return clue.first < 256 && !clue.second;
+  return clue.character < 256 && !clue.isDeadKey;
 }
 
 typedef void (^VoidBlock)();
@@ -73,7 +73,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
  */
 @property(nonatomic) NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
 
-@property(nonatomic) NSMutableArray<NSEvent*>* pendingTextEvents;
+@property(nonatomic) NSMutableArray<NSEvent*>* pendingEvents;
 
 @property(nonatomic) BOOL processingEvent;
 
@@ -296,7 +296,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     //    there are no non-latin logical keys.
     //  - Derived on the fly from keyCode & characters.
     for (const LayoutClue& clue : thisKeyClues) {
-      uint32_t keyChar = clue.first;
+      uint32_t keyChar = clue.isDeadKey ? 0 : clue.character;
       auto matchingGoal = mandatoryGoalsByChar.find(keyChar);
       if (matchingGoal != mandatoryGoalsByChar.end()) {
         // Found a key that produces a mandatory char. Use it.

@@ -41,7 +41,8 @@ constexpr uint32_t kTextCall = 0x4;
 //
 //  - M is whether the key is a dead key (0x1 for true, 0x0 for false).
 //  - N is the character for this key. (It only supports UTF-16, but we don't
-//    need full UTF-32 support for unit tests anyway.)
+//    need full UTF-32 support for unit tests. Moreover, Carbon's UCKeyTranslate
+//    only returns UniChar (UInt16) anyway.)
 typedef const std::array<uint32_t, 256> MockLayoutData;
 
 // The following layout data is generated using DEBUG_PRINT_LAYOUT.
@@ -628,6 +629,82 @@ TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
   return true;
 }
 
+// Regression test for https://github.com/flutter/flutter/issues/82673.
+- (bool)racingConditionBetweenKeyAndText {
+  KeyboardTester* tester = [[KeyboardTester alloc] init];
+
+  // Use Vietnamese IME (GoTiengViet, Telex mode) to type "uco".
+
+  // The events received by the framework. The engine might receive
+  // a channel message "setEditingState" from the framework.
+  NSMutableArray<FlutterAsyncKeyCallback>* keyCallbacks =
+      [NSMutableArray<FlutterAsyncKeyCallback> array];
+  [tester recordEmbedderCallsTo:keyCallbacks];
+
+  NSMutableArray<NSNumber*>* allCalls = [NSMutableArray<NSNumber*> array];
+  [tester recordCallTypesTo:allCalls forTypes:(kEmbedderCall | kTextCall)];
+
+  // Tap key U, which is converted by IME into a pure text message "ư".
+
+  [tester.manager handleEvent:keyDownEvent(kKeyCodeEmpty, @"ư", @"ư")];
+  EXPECT_EQ([keyCallbacks count], 1u);
+  EXPECT_EQ([allCalls count], 1u);
+  EXPECT_EQ(allCalls[0], @(kEmbedderCall));
+  keyCallbacks[0](false);
+  EXPECT_EQ([keyCallbacks count], 1u);
+  EXPECT_EQ([allCalls count], 2u);
+  EXPECT_EQ(allCalls[1], @(kTextCall));
+  [keyCallbacks removeAllObjects];
+  [allCalls removeAllObjects];
+
+  [tester.manager handleEvent:keyUpEvent(kKeyCodeEmpty)];
+  EXPECT_EQ([keyCallbacks count], 1u);
+  keyCallbacks[0](false);
+  EXPECT_EQ([keyCallbacks count], 1u);
+  EXPECT_EQ([allCalls count], 2u);
+  [keyCallbacks removeAllObjects];
+  [allCalls removeAllObjects];
+
+  // Tap key O, which is converted to normal KeyO events, but the responses are
+  // slow.
+
+  [tester.manager handleEvent:keyDownEvent(kVK_ANSI_O, @"o", @"o")];
+  [tester.manager handleEvent:keyUpEvent(kVK_ANSI_O)];
+  EXPECT_EQ([keyCallbacks count], 1u);
+  EXPECT_EQ([allCalls count], 1u);
+  EXPECT_EQ(allCalls[0], @(kEmbedderCall));
+
+  // Tap key C, which results in two Backspace messages first - and here they
+  // arrive before the key O messages are responded.
+
+  [tester.manager handleEvent:keyDownEvent(kVK_Delete)];
+  [tester.manager handleEvent:keyUpEvent(kVK_Delete)];
+  EXPECT_EQ([keyCallbacks count], 1u);
+  EXPECT_EQ([allCalls count], 1u);
+
+  // The key O down is responded, which releases a text call (for KeyO down) and
+  // an embedder call (for KeyO up) immediately.
+  keyCallbacks[0](false);
+  EXPECT_EQ([keyCallbacks count], 2u);
+  EXPECT_EQ([allCalls count], 3u);
+  EXPECT_EQ(allCalls[1], @(kTextCall));  // The order is important!
+  EXPECT_EQ(allCalls[2], @(kEmbedderCall));
+
+  // The key O up is responded, which releases a text call (for KeyO up) and
+  // an embedder call (for Backspace down) immediately.
+  keyCallbacks[1](false);
+  EXPECT_EQ([keyCallbacks count], 3u);
+  EXPECT_EQ([allCalls count], 5u);
+  EXPECT_EQ(allCalls[3], @(kTextCall));  // The order is important!
+  EXPECT_EQ(allCalls[4], @(kEmbedderCall));
+
+  // Finish up callbacks.
+  keyCallbacks[2](false);
+  keyCallbacks[3](false);
+
+  return true;
+}
+
 - (bool)correctLogicalKeyForLayouts {
   KeyboardTester* tester = [[KeyboardTester alloc] init];
   tester.nextResponder = nil;
@@ -708,82 +785,6 @@ TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
   VERIFY_DOWN(kLogicalBracketLeft, "х");
 
   return TRUE;
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/82673.
-- (bool)racingConditionBetweenKeyAndText {
-  KeyboardTester* tester = [[KeyboardTester alloc] init];
-
-  // Use Vietnamese IME (GoTiengViet, Telex mode) to type "uco".
-
-  // The events received by the framework. The engine might receive
-  // a channel message "setEditingState" from the framework.
-  NSMutableArray<FlutterAsyncKeyCallback>* keyCallbacks =
-      [NSMutableArray<FlutterAsyncKeyCallback> array];
-  [tester recordEmbedderCallsTo:keyCallbacks];
-
-  NSMutableArray<NSNumber*>* allCalls = [NSMutableArray<NSNumber*> array];
-  [tester recordCallTypesTo:allCalls forTypes:(kEmbedderCall | kTextCall)];
-
-  // Tap key U, which is converted by IME into a pure text message "ư".
-
-  [tester.manager handleEvent:keyDownEvent(kKeyCodeEmpty, @"ư", @"ư")];
-  EXPECT_EQ([keyCallbacks count], 1u);
-  EXPECT_EQ([allCalls count], 1u);
-  EXPECT_EQ(allCalls[0], @(kEmbedderCall));
-  keyCallbacks[0](false);
-  EXPECT_EQ([keyCallbacks count], 1u);
-  EXPECT_EQ([allCalls count], 2u);
-  EXPECT_EQ(allCalls[1], @(kTextCall));
-  [keyCallbacks removeAllObjects];
-  [allCalls removeAllObjects];
-
-  [tester.manager handleEvent:keyUpEvent(kKeyCodeEmpty)];
-  EXPECT_EQ([keyCallbacks count], 1u);
-  keyCallbacks[0](false);
-  EXPECT_EQ([keyCallbacks count], 1u);
-  EXPECT_EQ([allCalls count], 2u);
-  [keyCallbacks removeAllObjects];
-  [allCalls removeAllObjects];
-
-  // Tap key O, which is converted to normal KeyO events, but the responses are
-  // slow.
-
-  [tester.manager handleEvent:keyDownEvent(kVK_ANSI_O, @"o", @"o")];
-  [tester.manager handleEvent:keyUpEvent(kVK_ANSI_O)];
-  EXPECT_EQ([keyCallbacks count], 1u);
-  EXPECT_EQ([allCalls count], 1u);
-  EXPECT_EQ(allCalls[0], @(kEmbedderCall));
-
-  // Tap key C, which results in two Backspace messages first - and here they
-  // arrive before the key O messages are responded.
-
-  [tester.manager handleEvent:keyDownEvent(kVK_Delete)];
-  [tester.manager handleEvent:keyUpEvent(kVK_Delete)];
-  EXPECT_EQ([keyCallbacks count], 1u);
-  EXPECT_EQ([allCalls count], 1u);
-
-  // The key O down is responded, which releases a text call (for KeyO down) and
-  // an embedder call (for KeyO up) immediately.
-  keyCallbacks[0](false);
-  EXPECT_EQ([keyCallbacks count], 2u);
-  EXPECT_EQ([allCalls count], 3u);
-  EXPECT_EQ(allCalls[1], @(kTextCall));  // The order is important!
-  EXPECT_EQ(allCalls[2], @(kEmbedderCall));
-
-  // The key O up is responded, which releases a text call (for KeyO up) and
-  // an embedder call (for Backspace down) immediately.
-  keyCallbacks[1](false);
-  EXPECT_EQ([keyCallbacks count], 3u);
-  EXPECT_EQ([allCalls count], 5u);
-  EXPECT_EQ(allCalls[3], @(kTextCall));  // The order is important!
-  EXPECT_EQ(allCalls[4], @(kEmbedderCall));
-
-  // Finish up callbacks.
-  keyCallbacks[2](false);
-  keyCallbacks[3](false);
-
-  return true;
 }
 
 @end

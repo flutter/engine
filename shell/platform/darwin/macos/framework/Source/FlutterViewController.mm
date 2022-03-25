@@ -772,9 +772,9 @@ static void CommonInit(FlutterViewController* controller) {
   }
 
   if (status == noErr && stringLength == 1 && !std::iscntrl(resultChar)) {
-    return LayoutClue(resultChar, isDeadKey);
+    return LayoutClue{resultChar, isDeadKey};
   }
-  return LayoutClue(0, false);
+  return LayoutClue{0, false};
 }
 
 #pragma mark - NSResponder
