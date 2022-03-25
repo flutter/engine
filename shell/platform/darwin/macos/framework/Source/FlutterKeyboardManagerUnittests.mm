@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <Carbon/Carbon.h>
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
-#include <Carbon/Carbon.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
-#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 
 namespace {
 
@@ -20,7 +20,8 @@ using namespace flutter::testing::keycodes;
 typedef BOOL (^BoolGetter)();
 typedef void (^AsyncKeyCallback)(BOOL handled);
 typedef void (^AsyncKeyCallbackHandler)(AsyncKeyCallback callback);
-typedef void (^AsyncEmbedderCallbackHandler)(const FlutterKeyEvent* event, AsyncKeyCallback callback);
+typedef void (^AsyncEmbedderCallbackHandler)(const FlutterKeyEvent* event,
+                                             AsyncKeyCallback callback);
 
 typedef const std::array<uint32_t, 256> MockLayoutData;
 
@@ -33,11 +34,11 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
   events.clear();
 }
 
-#define VERIFY_DOWN(OUT_LOGICAL, OUT_CHAR) \
-    EXPECT_EQ(events[0].type, kFlutterKeyEventTypeDown); \
-    EXPECT_EQ(events[0].logical, static_cast<uint64_t>(OUT_LOGICAL)); \
-    EXPECT_STREQ(events[0].character, (OUT_CHAR)); \
-    clearEvents(events);
+#define VERIFY_DOWN(OUT_LOGICAL, OUT_CHAR)                          \
+  EXPECT_EQ(events[0].type, kFlutterKeyEventTypeDown);              \
+  EXPECT_EQ(events[0].logical, static_cast<uint64_t>(OUT_LOGICAL)); \
+  EXPECT_STREQ(events[0].character, (OUT_CHAR));                    \
+  clearEvents(events);
 
 MockLayoutData kUsLayout = {
     //         +0x0     Shift    +0x1     Shift    +0x2     Shift    +0x3     Shift
@@ -200,7 +201,8 @@ NSResponder* mockOwnerWithDownOnlyNext() {
 - (nonnull instancetype)init;
 - (void)respondEmbedderCallsWith:(BOOL)response;
 - (void)recordEmbedderCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
-- (void)recordEmbedderEventsTo:(nonnull std::vector<FlutterKeyEvent>*)storage returning:(bool)handled;
+- (void)recordEmbedderEventsTo:(nonnull std::vector<FlutterKeyEvent>*)storage
+                     returning:(bool)handled;
 - (void)respondChannelCallsWith:(BOOL)response;
 - (void)recordChannelCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
 
@@ -281,12 +283,13 @@ NSResponder* mockOwnerWithDownOnlyNext() {
   };
 }
 
-- (void)recordEmbedderEventsTo:(nonnull std::vector<FlutterKeyEvent>*)storage returning:(bool)handled {
+- (void)recordEmbedderEventsTo:(nonnull std::vector<FlutterKeyEvent>*)storage
+                     returning:(bool)handled {
   _embedderHandler = ^(const FlutterKeyEvent* event, AsyncKeyCallback callback) {
     FlutterKeyEvent newEvent = *event;
     if (event->character != nullptr) {
       size_t charLen = strlen(event->character);
-      char* newCharacter = new char[charLen+1];
+      char* newCharacter = new char[charLen + 1];
       strcpy(newCharacter, event->character);
       newEvent.character = newCharacter;
     }

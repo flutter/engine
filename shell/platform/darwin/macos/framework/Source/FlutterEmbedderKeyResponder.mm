@@ -674,7 +674,8 @@ const char* getEventString(NSString* characters) {
 - (void)handleDownEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* logicalKeyFromMap = self.layoutMap[@(event.keyCode)];
-  uint64_t logicalKey = logicalKeyFromMap != nil ? [logicalKeyFromMap unsignedLongLongValue] : GetLogicalKeyForEvent(event, physicalKey);
+  uint64_t logicalKey = logicalKeyFromMap != nil ? [logicalKeyFromMap unsignedLongLongValue]
+                                                 : GetLogicalKeyForEvent(event, physicalKey);
   [self synchronizeModifiers:event.modifierFlags
                ignoringFlags:0
                    timestamp:event.timestamp

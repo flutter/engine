@@ -15,12 +15,15 @@
 
 // #define DEBUG_PRINT_LAYOUT
 #ifdef DEBUG_PRINT_LAYOUT
-NSString* debugFormatLayoutData(NSString* debugLayoutData, uint16_t keyCode, LayoutClue clue1, LayoutClue clue2) {
-    return [NSString
-        stringWithFormat:@"    %@%@0x%d%04x, 0x%d%04x,", debugLayoutData,
-                         keyCode % 4 == 0 ? [NSString stringWithFormat:@"\n/* 0x%02x */ ", keyCode]
-                                          : @" ",
-                         clue1.second, clue1.first, clue2.second, clue2.first];
+NSString* debugFormatLayoutData(NSString* debugLayoutData,
+                                uint16_t keyCode,
+                                LayoutClue clue1,
+                                LayoutClue clue2) {
+  return [NSString stringWithFormat:@"    %@%@0x%d%04x, 0x%d%04x,", debugLayoutData,
+                                    keyCode % 4 == 0
+                                        ? [NSString stringWithFormat:@"\n/* 0x%02x */ ", keyCode]
+                                        : @" ",
+                                    clue1.second, clue1.first, clue2.second, clue2.first];
 }
 #endif
 
@@ -203,7 +206,8 @@ bool isEascii(const LayoutClue& clue) {
         [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:false],
         [_viewDelegate lookUpLayoutForKeyCode:keyCode shift:true]};
 #ifdef DEBUG_PRINT_LAYOUT
-    debugLayoutData = debugFormatLayoutData(debugLayoutData, keyCode, thisKeyClues[0], thisKeyClues[1]);
+    debugLayoutData =
+        debugFormatLayoutData(debugLayoutData, keyCode, thisKeyClues[0], thisKeyClues[1]);
 #endif
     // The logical key should be the first available clue from below:
     //
