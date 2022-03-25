@@ -105,27 +105,25 @@ class ScopedClipboard {
   ScopedClipboard(ScopedClipboard const&) = delete;
   ScopedClipboard& operator=(ScopedClipboard const&) = delete;
 
-  // Attempts to open the clipboard for the given window, returning true if
-  // successful.
-  bool Open(HWND window);
+  // Attempts to open the clipboard for the given window, returning the error
+  // code in the case of failure and -1 otherwise.
+  int Open(HWND window);
 
   // Returns true if there is string data available to get.
   bool HasString();
 
   // Returns string data from the clipboard.
   //
-  // If getting a string fails, returns no value. Get error information with
-  // ::GetLastError().
+  // If getting a string fails, returns the error code.
   //
   // Open(...) must have succeeded to call this method.
-  std::optional<std::wstring> GetString();
+  std::variant<std::wstring, int> GetString();
 
-  // Sets the string content of the clipboard, returning true on success.
-  //
-  // On failure, get error information with ::GetLastError().
+  // Sets the string content of the clipboard, returning the error code on
+  // failure and -1 otherwise.
   //
   // Open(...) must have succeeded to call this method.
-  bool SetString(const std::wstring string);
+  int SetString(const std::wstring string);
 
  private:
   bool opened_ = false;
@@ -139,9 +137,20 @@ ScopedClipboard::~ScopedClipboard() {
   }
 }
 
-bool ScopedClipboard::Open(HWND window) {
+int ScopedClipboard::Open(HWND window) {
   opened_ = ::OpenClipboard(window);
-  return opened_;
+
+  if (!opened_) {
+    int error_code = ::GetLastError();
+    // Swallow errors of type ERROR_ACCESS_DENIED. These happen when the app is
+    // not in the foreground and HasStrings is irrelevant.
+    // See https://github.com/flutter/flutter/issues/95817.
+    if (error_code != kAccessDeniedErrorCode) {
+      return error_code;
+    }
+  }
+
+  return -1;
 }
 
 bool ScopedClipboard::HasString() {
@@ -150,24 +159,28 @@ bool ScopedClipboard::HasString() {
          ::IsClipboardFormatAvailable(CF_TEXT);
 }
 
-std::optional<std::wstring> ScopedClipboard::GetString() {
+std::variant<std::wstring, int> ScopedClipboard::GetString() {
   assert(opened_);
 
   HANDLE data = ::GetClipboardData(CF_UNICODETEXT);
   if (data == nullptr) {
-    return std::nullopt;
+    return ::GetLastError();
   }
   ScopedGlobalLock locked_data(data);
   if (!locked_data.get()) {
-    return std::nullopt;
+    return ::GetLastError();
   }
-  return std::optional<std::wstring>(static_cast<wchar_t*>(locked_data.get()));
+  std::optional<std::wstring> string = static_cast<wchar_t*>(locked_data.get());
+  if (!string) {
+    return ::GetLastError();
+  }
+  return string.value();
 }
 
-bool ScopedClipboard::SetString(const std::wstring string) {
+int ScopedClipboard::SetString(const std::wstring string) {
   assert(opened_);
   if (!::EmptyClipboard()) {
-    return false;
+    return ::GetLastError();
   }
   size_t null_terminated_byte_count =
       sizeof(decltype(string)::traits_type::char_type) * (string.size() + 1);
@@ -175,15 +188,15 @@ bool ScopedClipboard::SetString(const std::wstring string) {
                                         null_terminated_byte_count);
   ScopedGlobalLock locked_memory(destination_memory.get());
   if (!locked_memory.get()) {
-    return false;
+    return ::GetLastError();
   }
   memcpy(locked_memory.get(), string.c_str(), null_terminated_byte_count);
   if (!::SetClipboardData(CF_UNICODETEXT, locked_memory.get())) {
-    return false;
+    return ::GetLastError();
   }
   // The clipboard now owns the global memory.
   destination_memory.release();
-  return true;
+  return -1;
 }
 
 }  // namespace
@@ -205,9 +218,10 @@ void PlatformHandlerWin32::GetPlainText(
     std::unique_ptr<MethodResult<rapidjson::Document>> result,
     std::string_view key) {
   ScopedClipboard clipboard;
-  if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
+  int open_result = clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()));
+  if (open_result != -1) {
     rapidjson::Document error_code;
-    error_code.SetInt(::GetLastError());
+    error_code.SetInt(open_result);
     result->Error(kClipboardError, "Unable to open clipboard", error_code);
     return;
   }
@@ -215,10 +229,10 @@ void PlatformHandlerWin32::GetPlainText(
     result->Success(rapidjson::Document());
     return;
   }
-  std::optional<std::wstring> clipboard_string = clipboard.GetString();
-  if (!clipboard_string) {
+  std::variant<std::wstring, int> get_string_result = clipboard.GetString();
+  if (std::holds_alternative<int>(get_string_result)) {
     rapidjson::Document error_code;
-    error_code.SetInt(::GetLastError());
+    error_code.SetInt(std::get<int>(get_string_result));
     result->Error(kClipboardError, "Unable to get clipboard data", error_code);
     return;
   }
@@ -228,7 +242,7 @@ void PlatformHandlerWin32::GetPlainText(
   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
   document.AddMember(
       rapidjson::Value(key.data(), allocator),
-      rapidjson::Value(fml::WideStringToUtf8(*clipboard_string), allocator),
+      rapidjson::Value(fml::WideStringToUtf8(std::get<std::wstring>(get_string_result)), allocator),
       allocator);
   result->Success(document);
 }
@@ -237,9 +251,10 @@ void PlatformHandlerWin32::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   ScopedClipboard clipboard;
   bool hasStrings;
-  if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
+  int open_result = clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()));
+  if (open_result != -1) {
     rapidjson::Document error_code;
-    error_code.SetInt(::GetLastError());
+    error_code.SetInt(open_result);
     // Swallow errors of type ERROR_ACCESS_DENIED. These happen when the app is
     // not in the foreground and HasStrings is irrelevant.
     // See https://github.com/flutter/flutter/issues/95817.
@@ -264,15 +279,17 @@ void PlatformHandlerWin32::SetPlainText(
     const std::string& text,
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   ScopedClipboard clipboard;
-  if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
+  int open_result = clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()));
+  if (open_result != -1) {
     rapidjson::Document error_code;
-    error_code.SetInt(::GetLastError());
+    error_code.SetInt(open_result);
     result->Error(kClipboardError, "Unable to open clipboard", error_code);
     return;
   }
-  if (!clipboard.SetString(fml::Utf8ToWideString(text))) {
+  int set_result = clipboard.SetString(fml::Utf8ToWideString(text));
+  if (set_result != -1) {
     rapidjson::Document error_code;
-    error_code.SetInt(::GetLastError());
+    error_code.SetInt(set_result);
     result->Error(kClipboardError, "Unable to set clipboard data", error_code);
     return;
   }
