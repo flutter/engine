@@ -64,19 +64,21 @@ Future<void> testMain() async {
     canvas.drawPath(path, paint!);
 
     final html.Element sceneElement = html.Element.tag('flt-scene');
-    if (isIosSafari) {
-      // Shrink to fit on the iPhone screen.
-      sceneElement.style.transform = 'scale(0.1)';
-    }
     html.document.body!.append(sceneElement);
 
     final html.Element svgElement = pathToSvgElement(path, paint, enableFill);
 
-    sceneElement.append(bitmapCanvas.rootElement);
-    sceneElement.append(svgElement);
-
     canvas.endRecording();
     canvas.apply(bitmapCanvas, canvasBounds);
+
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      sceneElement.style.position = 'absolute';
+      sceneElement.style.transformOrigin = '0 0 0';
+      sceneElement.style.transform = 'scale(0.3)';
+    }
+    sceneElement.append(bitmapCanvas.rootElement);
+    sceneElement.append(svgElement);
 
     await matchGoldenFile('$scubaFileName.png',
         region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);

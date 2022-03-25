@@ -9,6 +9,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common.dart';
+
 /// Commit a recording canvas to a bitmap, and compare with the expected.
 Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
     {ui.Rect region = const ui.Rect.fromLTWH(0, 0, 600, 800),
@@ -22,6 +24,12 @@ Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
 
   // Wrap in <flt-scene> so that our CSS selectors kick in.
   final html.Element sceneElement = html.Element.tag('flt-scene');
+  if (isIosSafari) {
+    // Shrink to fit on the iPhone screen.
+    sceneElement.style.position = 'absolute';
+    sceneElement.style.transformOrigin = '0 0 0';
+    sceneElement.style.transform = 'scale(0.3)';
+  }
   try {
     if (setupPerspective) {
       // iFrame disables perspective, set it explicitly for test.
