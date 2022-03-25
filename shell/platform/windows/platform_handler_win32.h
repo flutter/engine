@@ -15,11 +15,24 @@ namespace flutter {
 
 class FlutterWindowsView;
 
+// A public interface for ScopedClipboard, so that it can be injected into
+// PlatformHandlerWin32.
+class ScopedClipboardInterface {
+ public:
+  virtual int Open(HWND window) = 0;
+
+  virtual bool HasString() = 0;
+
+  virtual std::variant<std::wstring, int> GetString() = 0;
+
+  virtual int SetString(const std::wstring string) = 0;
+};
+
 // Win32 implementation of PlatformHandler.
 class PlatformHandlerWin32 : public PlatformHandler {
  public:
   explicit PlatformHandlerWin32(BinaryMessenger* messenger,
-                                FlutterWindowsView* view);
+                                FlutterWindowsView* view, std::optional<ScopedClipboardInterface*> clipboard_reference);
 
   virtual ~PlatformHandlerWin32();
 
@@ -45,6 +58,8 @@ class PlatformHandlerWin32 : public PlatformHandler {
  private:
   // A reference to the Flutter view.
   FlutterWindowsView* view_;
+  // A clipboard instance that can be passed in.
+  ScopedClipboardInterface* clipboard_;
 };
 
 }  // namespace flutter
