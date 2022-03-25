@@ -89,6 +89,7 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMacOSExternalTexture.h",
     "framework/Source/FlutterMenuPlugin.h",
     "framework/Source/FlutterMenuPlugin.mm",
+    "framework/Source/FlutterMenuPlugin_Internal.h",
     "framework/Source/FlutterMetalCompositor.h",
     "framework/Source/FlutterMetalCompositor.mm",
     "framework/Source/FlutterMetalRenderer.h",

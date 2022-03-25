@@ -8,6 +8,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "gtest/gtest.h"
@@ -61,19 +62,16 @@
       @"id" : [NSNumber numberWithInt:1],
       @"label" : @"APP_NAME",
       @"enabled" : @(YES),
-      @"isDivider" : @(NO),
       @"children" : @[
         @{
           @"id" : [NSNumber numberWithInt:3],
           @"platformProvidedMenu" : @(1),  // Quit
           @"enabled" : @(YES),
-          @"isDivider" : @(NO),
         },
         @{
           @"id" : [NSNumber numberWithInt:2],
           @"label" : @"APP_NAME Info",
           @"enabled" : @(YES),
-          @"isDivider" : @(NO),
           @"shortcutTrigger" : [NSNumber numberWithUnsignedLongLong:0x61],
           @"shortcutModifiers" : [NSNumber numberWithUnsignedInt:0],
         },
@@ -83,13 +81,11 @@
       @"id" : [NSNumber numberWithInt:4],
       @"label" : @"Help for APP_NAME",
       @"enabled" : @(YES),
-      @"isDivider" : @(NO),
       @"children" : @[
         @{
           @"id" : [NSNumber numberWithInt:5],
           @"label" : @"Help me!",
           @"enabled" : @(YES),
-          @"isDivider" : @(NO),
         },
         @{
           @"id" : [NSNumber numberWithInt:6],
@@ -101,26 +97,23 @@
           @"id" : [NSNumber numberWithInt:7],
           @"label" : @"Search help",
           @"enabled" : @(NO),
-          @"isDivider" : @(NO),
         },
       ],
     },
   ];
-  FlutterMethodCall* call = [FlutterMethodCall methodCallWithMethodName:@"Menu.SetMenu"
-                                                              arguments:testMenus];
-  [plugin handleMethodCall:call
+
+  [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"Menu.setMenu"
+                                                             arguments:testMenus]
                     result:^(id _Nullable result){
                     }];
 
-  // Replacing the actual app name in the first item is ignored by NSApp.mainMenu.
-  // AppKit will show the right name there, regardless.
   EXPECT_EQ([NSApp.mainMenu numberOfItems], 2);
   NSMenuItem* firstMenu = [NSApp.mainMenu itemAtIndex:0];
-  EXPECT_TRUE([[firstMenu title] isEqualToString:@"APP_NAME"]);
-  EXPECT_EQ([firstMenu tag], 0);
+  EXPECT_TRUE([[firstMenu title] isEqualToString:@"flutter_desktop_darwin_unittests"]);
+  EXPECT_EQ([firstMenu tag], 1);
   EXPECT_TRUE([firstMenu isEnabled]);
   EXPECT_FALSE([firstMenu isHidden]);
-  EXPECT_TRUE([[firstMenu keyEquivalent] isEqualToString:@""]);
+  EXPECT_TRUE([[firstMenu keyEquivalent] isEqualToString:@"\0"]);
 
   EXPECT_EQ([[firstMenu submenu] numberOfItems], 1);
   NSMenuItem* firstItem = [[firstMenu submenu] itemAtIndex:0];

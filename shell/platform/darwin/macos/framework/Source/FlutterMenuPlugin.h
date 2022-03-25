@@ -12,20 +12,12 @@
  * A plugin to configure and control the native system menu.
  *
  * Responsible for bridging the native macOS menu system with the Flutter
- * framework menu system classes, via system channels.
+ * framework's PlatformMenuBar class, via method channels.
  */
 @interface FlutterMenuPlugin : NSObject <FlutterPlugin>
 
 /**
- * Handles the method call that sets the current menu configuration.
- *
- * Returns a FlutterError if the arguments can not be recognized. Otherwise
- * returns nil.
+ * Registers a FlutterMenuPlugin with the given registrar.
  */
-- (void)setMenu:(nonnull NSArray*)arguments;
-
-/**
- * Handles all method calls for the menu channel from Flutter.
- */
-- (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result;
++ (void)registerWithRegistrar:(nonnull id<FlutterPluginRegistrar>)registrar;
 @end

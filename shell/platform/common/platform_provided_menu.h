@@ -42,7 +42,7 @@ enum PlatformProvidedMenu {
   zoomWindow,
 
   // arrangeInFront macOS provided menu
-  arrangeWindowInFront,
+  arrangeWindowsInFront,
 };
 
 #endif  // PLATFORM_COMMON_PLATFORM_provided_MENU_H_

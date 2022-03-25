@@ -1631,6 +1631,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOS
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPluginTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositorUnittests.mm
