@@ -74,6 +74,11 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     }
   }
 
+  // clear the previous snapshots.
+  if (enable_leaf_layer_tracing_) {
+    frame.context().snapshot_store().Clear();
+  }
+
   Layer::PaintContext context = {
       static_cast<SkCanvas*>(&internal_nodes_canvas),
       frame.canvas(),
@@ -85,7 +90,9 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       checkerboard_offscreen_layers_,
       device_pixel_ratio_,
-      enable_leaf_layer_tracing_};
+      enable_leaf_layer_tracing_,
+      enable_leaf_layer_tracing_ ? &frame.context().snapshot_store() : nullptr,
+  };
 
   if (root_layer_->needs_painting(context)) {
     root_layer_->Paint(context);

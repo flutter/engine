@@ -60,6 +60,8 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             nullptr, /* raster_cache */
             false,   /* checkerboard_offscreen_layers */
             1.0f,    /* frame_device_pixel_ratio */
+            false,   /* enable_leaf_layer_tracing */
+            nullptr, /* layer_snapshot_store */
         }),
         check_board_context_({
             TestT::mock_canvas().internal_canvas(), /* internal_nodes_canvas */

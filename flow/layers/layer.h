@@ -12,6 +12,7 @@
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
+#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
@@ -166,7 +167,10 @@ class Layer {
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
     const float frame_device_pixel_ratio;
+
+    // only when leaf layer tracing is enabled, snapshot store gets populated.
     const bool enable_leaf_layer_tracing;
+    LayerSnapshotStore* layer_snapshot_store;
 
     // The following value should be used to modulate the opacity of the
     // layer during |Paint|. If the layer does not set the corresponding

@@ -141,26 +141,20 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
     auto offscreen_surface = std::make_unique<OffscreenSurface>(canvas_size);
 
-    {
-      const auto now = fml::TimePoint::Now();
-      // render to an offscreen canvas.
-      auto* canvas = offscreen_surface->GetCanvas();
-      canvas->clear(SK_ColorTRANSPARENT);
-      display_list()->RenderTo(canvas, context.inherited_opacity);
-      canvas->flush();
-      const fml::TimeDelta offscreen_render_time = fml::TimePoint::Now() - now;
-      // TODO (kaushikiska) record a trace event here.
-      FML_LOG(ERROR) << "display_list_layer: " << unique_id() << " took "
-                     << offscreen_render_time.ToMicroseconds()
-                     << " micro seconds";
-    }
+    const auto now = fml::TimePoint::Now();
+    // render to an offscreen canvas.
+    auto* canvas = offscreen_surface->GetCanvas();
+    canvas->clear(SK_ColorTRANSPARENT);
+    display_list()->RenderTo(canvas, context.inherited_opacity);
+    canvas->flush();
+    const fml::TimeDelta offscreen_render_time = fml::TimePoint::Now() - now;
 
-    {
-      // Dump PNG to logs for now.
-      sk_sp<SkData> b64_data = offscreen_surface->GetRasterDataAsBase64(true);
-      FML_LOG(ERROR) << static_cast<const char*>(b64_data->data());
-      FML_LOG(ERROR) << "____";
-    }
+    sk_sp<SkData> b64_data = offscreen_surface->GetRasterDataAsBase64(true);
+    context.layer_snapshot_store->Add(unique_id(), offscreen_render_time,
+                                      b64_data);
+
+    FML_LOG(ERROR) << "layer " << unique_id() << " took "
+                   << offscreen_render_time.ToMicroseconds() << " us.";
   }
 
   display_list()->RenderTo(context.leaf_nodes_canvas,

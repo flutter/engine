@@ -56,10 +56,9 @@ sk_sp<SkData> OffscreenSurface::GetRasterData(bool compressed) {
 sk_sp<SkData> OffscreenSurface::GetRasterDataAsBase64(bool compressed) {
   sk_sp<SkData> data = GetRasterData(compressed);
   size_t size = data->size();
-  size_t b64_size = SkBase64::Encode(data->data(), size + 1, nullptr);
+  size_t b64_size = SkBase64::Encode(data->data(), size, nullptr);
   sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size);
   SkBase64::Encode(data->data(), data->size(), b64_data->writable_data());
-  static_cast<char*>(b64_data->writable_data())[size] = 0;
   return b64_data;
 }
 

@@ -1800,6 +1800,10 @@ bool Shell::OnServiceProtocolRenderLastFrameWithRasterStats(
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   if (auto last_layer_tree = rasterizer_->GetLastLayerTree()) {
+    auto& allocator = response->GetAllocator();
+    response->SetObject();
+    response->AddMember("type", "RenderLastFrameWithRasterStats", allocator);
+
     // When rendering the last layer tree, we do not need to build a frame,
     // invariants in FrameTimingRecorder enforce that raster timings can not be
     // set before build-end.
@@ -1813,9 +1817,34 @@ bool Shell::OnServiceProtocolRenderLastFrameWithRasterStats(
     rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder));
     last_layer_tree->enable_leaf_layer_tracing(false);
 
-    response->SetObject();
-    response->AddMember("type", "RenderLastFrameWithRasterStats",
-                        response->GetAllocator());
+    // TODO (kaushik)
+    LayerSnapshotStore& store =
+        rasterizer_->compositor_context()->snapshot_store();
+
+    rapidjson::Value snapshots;
+    snapshots.SetArray();
+
+    int ctr = 0;
+
+    for (auto data : store) {
+      ctr++;
+      rapidjson::Value snapshot;
+      snapshot.SetObject();
+      snapshot.AddMember("layer_unique_id", data.GetLayerUniqueId(), allocator);
+      snapshot.AddMember("duration_micros", data.GetDuration().ToMicroseconds(),
+                         allocator);
+      sk_sp<SkData> base64 = data.GetBase64PNGSnapshot();
+      if (base64) {
+        rapidjson::Value image;
+        image.SetString(static_cast<const char*>(base64->data()),
+                        base64->size(), allocator);
+        snapshot.AddMember("screenshot", image, allocator);
+      }
+      snapshots.PushBack(snapshot, allocator);
+    }
+
+    response->AddMember("snapshots", snapshots, allocator);
+    FML_LOG(ERROR) << "sending back data for " << ctr << " snapshots";
     return true;
   } else {
     const char* error =
