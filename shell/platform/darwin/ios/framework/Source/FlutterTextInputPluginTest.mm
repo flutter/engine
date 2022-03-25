@@ -80,7 +80,6 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputPlugin* textInputPlugin;
 
   FlutterViewController* viewController;
-  NSUndoManager* undoManager;
 }
 
 - (void)setUp {
@@ -92,14 +91,11 @@ FLUTTER_ASSERT_ARC
   viewController = [FlutterViewController new];
   textInputPlugin.viewController = viewController;
 
-  undoManager = OCMClassMock([NSUndoManager class]);
-
   // Clear pasteboard between tests.
   UIPasteboard.generalPasteboard.items = @[];
 }
 
 - (void)tearDown {
-  [undoManager removeAllActionsWithTarget:textInputPlugin];
   textInputPlugin = nil;
   engine = nil;
   [textInputPlugin.autofillContext removeAllObjects];
@@ -107,7 +103,6 @@ FLUTTER_ASSERT_ARC
   [[[[textInputPlugin textInputView] superview] subviews]
       makeObjectsPerformSelector:@selector(removeFromSuperview)];
   viewController = nil;
-  undoManager = nil;
   [super tearDown];
 }
 
@@ -1869,67 +1864,6 @@ FLUTTER_ASSERT_ARC
   flutterEngine.viewController = flutterViewController;
   XCTAssertNotNil(flutterEngine.textInputPlugin.viewController);
   XCTAssertNotNil([flutterEngine.textInputPlugin hostView]);
-}
-
-#pragma mark - UndoManager - Utilities
-
-#pragma mark - UndoManager - Tests
-
-- (void)testEnsureUndoEnabledOnInsert {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
-  inputView.undoManager = undoManager;
-  OCMStub([undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
-  OCMStub([undoManager removeAllActionsWithTarget:inputView]);
-
-  OCMExpect([undoManager canUndo]).andReturn(NO);
-  [inputView insertText:@"1"];
-  // If undo is not already enabled, register and remove an undo action.
-  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
-  XCTestExpectation* expectation = [[XCTestExpectation alloc]
-      initWithDescription:@"Invokes removeAllActionsWithTarget after delay"];
-
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.02 * (double)NSEC_PER_SEC),
-                 dispatch_get_main_queue(), ^{
-                   OCMVerify(times(1), [undoManager removeAllActionsWithTarget:inputView]);
-                   [expectation fulfill];
-                 });
-
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
-
-  OCMExpect([undoManager canUndo]).andReturn(YES);
-  [inputView insertText:@"2"];
-  // If undo is already enabled, do nothing.
-  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
-}
-
-- (void)testEnsureUndoEnabledOnDelete {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
-  [inputView.text setString:@"12"];
-
-  inputView.undoManager = undoManager;
-  OCMStub([undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
-  OCMStub([undoManager removeAllActionsWithTarget:inputView]);
-
-  OCMExpect([undoManager canUndo]).andReturn(NO);
-  [inputView deleteBackward];
-
-  // If undo is not already enabled, register and remove an undo action.
-  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
-  XCTestExpectation* expectation = [[XCTestExpectation alloc]
-      initWithDescription:@"Invokes removeAllActionsWithTarget after delay"];
-
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.02 * (double)NSEC_PER_SEC),
-                 dispatch_get_main_queue(), ^{
-                   OCMVerify(times(1), [undoManager removeAllActionsWithTarget:inputView]);
-                   [expectation fulfill];
-                 });
-
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
-
-  OCMExpect([undoManager canUndo]).andReturn(YES);
-  [inputView deleteBackward];
-  // If undo is already enabled, do nothing.
-  OCMVerify(times(1), [undoManager registerUndoWithTarget:inputView handler:[OCMArg any]]);
 }
 
 @end

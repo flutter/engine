@@ -712,7 +712,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
-@property(nonatomic, assign) NSUndoManager* undoManagerOverride;
+@property(nonatomic, retain) UITextInteraction* textInteraction API_AVAILABLE(ios(13.0));
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -1851,7 +1851,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [copiedRects release];
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
-  [self ensureUndoEnabled];
 }
 
 - (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size API_AVAILABLE(ios(13.0)) {
@@ -1897,8 +1896,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (!_selectedTextRange.isEmpty) {
     [self replaceRange:_selectedTextRange withText:@""];
   }
-
-  [self ensureUndoEnabled];
 }
 
 - (void)postAccessibilityNotification:(UIAccessibilityNotifications)notification target:(id)target {
@@ -1945,37 +1942,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 - (void)pressesCancelled:(NSSet<UIPress*>*)presses
                withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   [_textInputPlugin.get().viewController pressesCancelled:presses withEvent:event];
-}
-
-#pragma mark - Undo/Redo support
-
-- (void)ensureUndoEnabled API_AVAILABLE(ios(9.0)) {
-  if (![self.undoManager canUndo]) {
-    // self.undoManager.groupsByEvent = NO;
-    [self.undoManager beginUndoGrouping];
-    [self.undoManager registerUndoWithTarget:self
-                                     handler:^(id target){
-
-                                     }];
-    [self.undoManager endUndoGrouping];
-    // self.undoManager.groupsByEvent = YES;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.01 * (double)NSEC_PER_SEC),
-                   dispatch_get_main_queue(), ^{
-                     [self.undoManager removeAllActionsWithTarget:self];
-                   });
-  }
-}
-
-// This method is used to inject a mock NSUndoManager in tests.
-- (void)setUndoManager:(NSUndoManager*)undoManager {
-  self.undoManagerOverride = undoManager;
-}
-
-- (NSUndoManager*)undoManager {
-  if (self.undoManagerOverride != nil) {
-    return self.undoManagerOverride;
-  }
-  return super.undoManager;
 }
 
 @end
