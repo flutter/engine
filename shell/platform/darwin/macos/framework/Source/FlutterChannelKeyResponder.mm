@@ -78,9 +78,9 @@
     keyMessage[@"characters"] = event.characters;
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
   }
-  NSNumber* overrideLogicalKey = layoutMap[@(event.keyCode)];
-  if (overrideLogicalKey != nil) {
-    keyMessage[@"overrideLogicalKey"] = overrideLogicalKey;
+  NSNumber* specifiedLogicalKey = layoutMap[@(event.keyCode)];
+  if (specifiedLogicalKey != nil) {
+    keyMessage[@"specifiedLogicalKey"] = specifiedLogicalKey;
   }
   [self.channel sendMessage:keyMessage
                       reply:^(id reply) {

@@ -4,14 +4,18 @@
 
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
+#include <Carbon/Carbon.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h"
 #import "flutter/testing/testing.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace flutter::testing {
 
 namespace {
+using namespace flutter::testing::keycodes;
+
 NSEvent* keyEvent(NSEventType type,
                   NSEventModifierFlags modifierFlags,
                   NSString* characters,
@@ -76,8 +80,8 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keydown");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 0);
   EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x0);
-  EXPECT_EQ([[messages lastObject][@"characters"] UTF8String], "a");
-  EXPECT_EQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "a");
+  EXPECT_STREQ([[messages lastObject][@"characters"] UTF8String], "a");
+  EXPECT_STREQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "a");
 
   EXPECT_EQ([responses count], 1u);
   EXPECT_EQ([[responses lastObject] boolValue], TRUE);
@@ -97,8 +101,8 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keyup");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 0);
   EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0);
-  EXPECT_EQ([[messages lastObject][@"characters"] UTF8String], "a");
-  EXPECT_EQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "a");
+  EXPECT_STREQ([[messages lastObject][@"characters"] UTF8String], "a");
+  EXPECT_STREQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "a");
 
   EXPECT_EQ([responses count], 1u);
   EXPECT_EQ([[responses lastObject] boolValue], FALSE);
@@ -227,6 +231,56 @@ TEST(FlutterChannelKeyResponderUnittests, EmptyResponseIsTakenAsHandled) {
 
   EXPECT_EQ([responses count], 1u);
   EXPECT_EQ([[responses lastObject] boolValue], TRUE);
+}
+
+TEST(FlutterChannelKeyResponderUnittests, FollowsLayoutMap) {
+  __block NSMutableArray<id>* messages = [[NSMutableArray<id> alloc] init];
+  __block BOOL next_response = TRUE;
+  __block NSMutableArray<NSNumber*>* responses = [[NSMutableArray<NSNumber*> alloc] init];
+
+  id mockKeyEventChannel = OCMStrictClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([mockKeyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
+      .andDo((^(NSInvocation* invocation) {
+        [invocation retainArguments];
+        NSDictionary* message;
+        [invocation getArgument:&message atIndex:2];
+        [messages addObject:message];
+
+        FlutterReply callback;
+        [invocation getArgument:&callback atIndex:3];
+        NSDictionary* keyMessage = @{
+          @"handled" : @(next_response),
+        };
+        callback(keyMessage);
+      }));
+
+  FlutterChannelKeyResponder* responder =
+      [[FlutterChannelKeyResponder alloc] initWithChannel:mockKeyEventChannel];
+
+  NSMutableDictionary<NSNumber*, NSNumber*>* layoutMap = [NSMutableDictionary<NSNumber*, NSNumber*> dictionary];
+  responder.layoutMap = layoutMap;
+  // French layout
+  layoutMap[@(kVK_ANSI_A)] = @(kLogicalKeyQ);
+
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, kVK_ANSI_A, @"q", @"q", FALSE, 0)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
+
+  EXPECT_EQ([messages count], 1u);
+  EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
+  EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keydown");
+  EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 0);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x0);
+  EXPECT_STREQ([[messages lastObject][@"characters"] UTF8String], "q");
+  EXPECT_STREQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "q");
+  EXPECT_EQ([messages lastObject][@"specifiedLogicalKey"], @(kLogicalKeyQ));
+
+  EXPECT_EQ([responses count], 1u);
+  EXPECT_EQ([[responses lastObject] boolValue], TRUE);
+
+  [messages removeAllObjects];
+  [responses removeAllObjects];
 }
 
 }  // namespace flutter::testing
