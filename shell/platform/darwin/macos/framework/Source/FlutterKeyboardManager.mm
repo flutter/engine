@@ -103,6 +103,9 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 }
 
 - (void)handleEvent:(nonnull NSEvent*)event {
+  // The `handleEvent` does not process the event immediately, but instead put
+  // events into a queue. Events are processed one by one by `processNextEvent`.
+
   // Be sure to add a handling method in propagateKeyEvent when allowing more
   // event types here.
   if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
