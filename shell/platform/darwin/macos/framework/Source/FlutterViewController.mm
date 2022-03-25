@@ -23,6 +23,8 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 
 namespace {
+using flutter::LayoutClue;
+using flutter::KeyboardLayoutNotifier;
 
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
@@ -74,6 +76,13 @@ struct MouseState {
   }
 };
 
+/**
+  * Returns the current unicode layout data (kTISPropertyUnicodeKeyLayoutData).
+  *
+  * To use the returned data, convert it to CFDataRef first, finds its bytes
+  * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
+  * It's returned in NSData* to enable auto reference count.
+  */
 NSData* currentKeyboardLayoutData() {
   TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
   CFTypeRef layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);

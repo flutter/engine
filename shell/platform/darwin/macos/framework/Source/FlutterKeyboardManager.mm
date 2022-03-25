@@ -13,8 +13,16 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h"
 
+// Turn on this flag to print complete layout data when switching IMEs. The data
+// is used in unit tests.
 // #define DEBUG_PRINT_LAYOUT
+
+namespace {
+using flutter::LayoutClue;
+using flutter::LayoutGoal;
+
 #ifdef DEBUG_PRINT_LAYOUT
+// Prints layout entries that will be parsed by `MockLayoutData`.
 NSString* debugFormatLayoutData(NSString* debugLayoutData,
                                 uint16_t keyCode,
                                 LayoutClue clue1,
@@ -27,8 +35,6 @@ NSString* debugFormatLayoutData(NSString* debugLayoutData,
 }
 #endif
 
-namespace {
-
 // Someohow this pointer type must be defined as a single type for the compiler
 // to compile the function pointer type (due to _Nullable).
 typedef NSResponder* _NSResponderPtr;
@@ -38,9 +44,6 @@ bool isEascii(const LayoutClue& clue) {
   return clue.first < 256 && !clue.second;
 }
 
-}
-
-namespace {
 typedef void (^VoidBlock)();
 
 // Someohow this pointer type must be defined as a single type for the compiler
@@ -97,6 +100,9 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
  */
 - (void)dispatchTextEvent:(nonnull NSEvent*)pendingEvent;
 
+/**
+ * Clears the current layout and build a new one based on the current layout.
+ */
 - (void)buildLayout;
 
 @end
@@ -250,7 +256,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
   std::map<uint32_t, LayoutGoal> mandatoryGoalsByChar;
   std::map<uint32_t, LayoutGoal> usLayoutGoalsByKeyCode;
-  for (const LayoutGoal& goal : layoutGoals) {
+  for (const LayoutGoal& goal : flutter::layoutGoals) {
     if (goal.mandatory) {
       mandatoryGoalsByChar[goal.keyChar] = goal;
     } else {
@@ -275,10 +281,10 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 #endif
     // The logical key should be the first available clue from below:
     //
-    //  - Mandatory goal, if matches any clue.
-    //    This ensures that all alnum keys can be found somewhere.
-    //  - US layout, if neither clue of the key is EASCII.
-    //    This ensures that there are no non-latin logical keys.
+    //  - Mandatory goal, if matches any clue. This ensures that all alnum keys
+    //    can be found somewhere.
+    //  - US layout, if neither clue of the key is EASCII.  This ensures that
+    //    there are no non-latin logical keys.
     //  - Derived on the fly from keyCode & characters.
     for (const LayoutClue& clue : thisKeyClues) {
       uint32_t keyChar = clue.first;

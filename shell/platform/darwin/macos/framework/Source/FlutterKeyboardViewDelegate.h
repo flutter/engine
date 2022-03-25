@@ -7,8 +7,16 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+namespace flutter {
+
+// Signature used to notify that a keyboard layout has changed.
 typedef void (^KeyboardLayoutNotifier)();
+
+// The printable result of a key under certain modifiers, used to derive key
+// mapping.
 typedef std::pair<uint32_t, bool> LayoutClue;
+
+}  // namespace flutter
 
 /**
  * An interface for a class that can provides |FlutterKeyboardManager| with
@@ -63,10 +71,17 @@ typedef std::pair<uint32_t, bool> LayoutClue;
 // https://github.com/flutter/flutter/issues/85328.
 - (BOOL)isComposing;
 
-// Only supports one callback.
-// Send null to unsubscribe.
-- (void)subscribeToKeyboardLayoutChange:(nullable KeyboardLayoutNotifier)callback;
+/**
+ * Add a listener that is called whenever the user changes keyboard layout.
+ *
+ * Only one listeners is supported. Adding new ones overwrites the current one.
+ * Assigning nil unsubscribes.
+ */
+- (void)subscribeToKeyboardLayoutChange:(nullable flutter::KeyboardLayoutNotifier)callback;
 
-- (LayoutClue)lookUpLayoutForKeyCode:(uint16_t)keyCode shift:(BOOL)shift;
+/**
+ * Querying the printable result of a key under the given modifier state.
+ */
+- (flutter::LayoutClue)lookUpLayoutForKeyCode:(uint16_t)keyCode shift:(BOOL)shift;
 
 @end

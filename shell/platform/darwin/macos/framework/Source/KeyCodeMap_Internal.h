@@ -6,6 +6,8 @@
 #include <cinttypes>
 #include <vector>
 
+namespace flutter {
+
 /**
  * Maps macOS-specific key code values representing |PhysicalKeyboardKey|.
  *
@@ -82,11 +84,26 @@ typedef enum {
   kModifierFlagControlRight = 0x200,
 } ModifierFlag;
 
+/**
+ * A character that Flutter wants to derive layout for, and guides on how to
+ * derive it.
+ */
 typedef struct {
+  // The key code for a key that prints `keyChar` in the US keyboard layout.
   uint16_t keyCode;
+
+  // The printable string to derive logical key for.
   uint8_t keyChar;
+
+  // If the goal is mandatory, the keyboard manager will make sure to find a
+  // logical key for this character, falling back to the US keyboard layout.
   bool mandatory;
 } LayoutGoal;
 
-// TODO
+/**
+ * All keys that Flutter wants to derive layout for, and guides on how to derive
+ * them.
+ */
 extern const std::vector<LayoutGoal> layoutGoals;
+
+}  // namespace flutter

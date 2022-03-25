@@ -16,6 +16,7 @@
 namespace {
 
 using namespace flutter::testing::keycodes;
+using flutter::LayoutClue;
 
 typedef BOOL (^BoolGetter)();
 typedef void (^AsyncKeyCallback)(BOOL handled);
@@ -30,30 +31,21 @@ typedef BOOL (^TextInputCallback)(NSEvent*);
 // The 0 also happens to be the key code for key A.
 constexpr uint16_t kKeyCodeEmpty = 0x00;
 
-constexpr uint16_t kKeyCodeKeyO = 0x1f;
-constexpr uint16_t kKeyCodeBackspace = 0x33;
-
 // Constants used for `recordCallTypesTo:forTypes:`.
 constexpr uint32_t kEmbedderCall = 0x1;
 constexpr uint32_t kChannelCall = 0x2;
 constexpr uint32_t kTextCall = 0x4;
 
+// All key clues for a keyboard layout.
+//
+// The index is (keyCode * 2 + hasShift). The value is 0xMNNNN, where:
+//
+//  - M is whether the key is a dead key (0x1 for true, 0x0 for false).
+//  - N is the character for this key. (It only supports UTF-16, but we don't
+//    need full UTF-32 support for unit tests anyway.)
 typedef const std::array<uint32_t, 256> MockLayoutData;
 
-void clearEvents(std::vector<FlutterKeyEvent>& events) {
-  for (FlutterKeyEvent& event : events) {
-    if (event.character != nullptr) {
-      delete[] event.character;
-    }
-  }
-  events.clear();
-}
-
-#define VERIFY_DOWN(OUT_LOGICAL, OUT_CHAR)                          \
-  EXPECT_EQ(events[0].type, kFlutterKeyEventTypeDown);              \
-  EXPECT_EQ(events[0].logical, static_cast<uint64_t>(OUT_LOGICAL)); \
-  EXPECT_STREQ(events[0].character, (OUT_CHAR));                    \
-  clearEvents(events);
+// The following layout data is generated using DEBUG_PRINT_LAYOUT.
 
 MockLayoutData kUsLayout = {
     //         +0x0     Shift    +0x1     Shift    +0x2     Shift    +0x3     Shift
@@ -199,16 +191,21 @@ id checkKeyDownEvent(unsigned short keyCode) {
   }];
 }
 
-NSResponder* mockOwnerWithDownOnlyNext() {
-  NSResponder* nextResponder = OCMStrictClassMock([NSResponder class]);
-  OCMStub([nextResponder keyDown:[OCMArg any]]).andDo(nil);
-  // The nextResponder is a strict mock and hasn't stubbed keyUp.
-  // An error will be thrown on keyUp.
-
-  NSResponder* owner = OCMStrictClassMock([NSResponder class]);
-  OCMStub([owner nextResponder]).andReturn(nextResponder);
-  return owner;
+// Clear a list of `FlutterKeyEvent` whose `character` is dynamically allocated.
+void clearEvents(std::vector<FlutterKeyEvent>& events) {
+  for (FlutterKeyEvent& event : events) {
+    if (event.character != nullptr) {
+      delete[] event.character;
+    }
+  }
+  events.clear();
 }
+
+#define VERIFY_DOWN(OUT_LOGICAL, OUT_CHAR)                          \
+  EXPECT_EQ(events[0].type, kFlutterKeyEventTypeDown);              \
+  EXPECT_EQ(events[0].logical, static_cast<uint64_t>(OUT_LOGICAL)); \
+  EXPECT_STREQ(events[0].character, (OUT_CHAR));                    \
+  clearEvents(events);
 
 }  // namespace
 
@@ -272,7 +269,7 @@ NSResponder* mockOwnerWithDownOnlyNext() {
   NSMutableArray<NSNumber*>* _typeStorage;
   uint32_t _typeStorageMask;
 
-  KeyboardLayoutNotifier _keyboardLayoutNotifier;
+  flutter::KeyboardLayoutNotifier _keyboardLayoutNotifier;
   const MockLayoutData* _currentLayout;
 }
 
@@ -410,7 +407,7 @@ NSResponder* mockOwnerWithDownOnlyNext() {
   return _textCallback(event);
 }
 
-- (void)onSetKeyboardLayoutNotifier:(nullable KeyboardLayoutNotifier)callback {
+- (void)onSetKeyboardLayoutNotifier:(nullable flutter::KeyboardLayoutNotifier)callback {
   _keyboardLayoutNotifier = callback;
 }
 
@@ -425,7 +422,6 @@ NSResponder* mockOwnerWithDownOnlyNext() {
 @end
 
 @interface FlutterKeyboardManagerUnittestsObjC : NSObject
-- (bool)nextResponderShouldThrowOnKeyUp;
 - (bool)singlePrimaryResponder;
 - (bool)doublePrimaryResponder;
 - (bool)textInputPlugin;
@@ -436,10 +432,6 @@ NSResponder* mockOwnerWithDownOnlyNext() {
 @end
 
 namespace flutter::testing {
-TEST(FlutterKeyboardManagerUnittests, NextResponderShouldThrowOnKeyUp) {
-  ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] nextResponderShouldThrowOnKeyUp]);
-}
-
 TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] singlePrimaryResponder]);
 }
@@ -471,18 +463,6 @@ TEST(FlutterKeyboardManagerUnittests, RacingConditionBetweenKeyAndText) {
 }  // namespace flutter::testing
 
 @implementation FlutterKeyboardManagerUnittestsObjC
-
-// Verify that the nextResponder returned from mockOwnerWithDownOnlyNext()
-// throws exception when keyUp is called.
-- (bool)nextResponderShouldThrowOnKeyUp {
-  NSResponder* owner = mockOwnerWithDownOnlyNext();
-  @try {
-    [owner.nextResponder keyUp:keyUpEvent(0x50)];
-    return false;
-  } @catch (...) {
-    return true;
-  }
-}
 
 - (bool)singlePrimaryResponder {
   KeyboardTester* tester = [[KeyboardTester alloc] init];
@@ -771,8 +751,8 @@ TEST(FlutterKeyboardManagerUnittests, RacingConditionBetweenKeyAndText) {
   // Tap key O, which is converted to normal KeyO events, but the responses are
   // slow.
 
-  [tester.manager handleEvent:keyDownEvent(kKeyCodeKeyO, @"o", @"o")];
-  [tester.manager handleEvent:keyUpEvent(kKeyCodeKeyO)];
+  [tester.manager handleEvent:keyDownEvent(kVK_ANSI_O, @"o", @"o")];
+  [tester.manager handleEvent:keyUpEvent(kVK_ANSI_O)];
   EXPECT_EQ([keyCallbacks count], 1u);
   EXPECT_EQ([allCalls count], 1u);
   EXPECT_EQ(allCalls[0], @(kEmbedderCall));
@@ -780,8 +760,8 @@ TEST(FlutterKeyboardManagerUnittests, RacingConditionBetweenKeyAndText) {
   // Tap key C, which results in two Backspace messages first - and here they
   // arrive before the key O messages are responded.
 
-  [tester.manager handleEvent:keyDownEvent(kKeyCodeBackspace)];
-  [tester.manager handleEvent:keyUpEvent(kKeyCodeBackspace)];
+  [tester.manager handleEvent:keyDownEvent(kVK_Delete)];
+  [tester.manager handleEvent:keyUpEvent(kVK_Delete)];
   EXPECT_EQ([keyCallbacks count], 1u);
   EXPECT_EQ([allCalls count], 1u);
 

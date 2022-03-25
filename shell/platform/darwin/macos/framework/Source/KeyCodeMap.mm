@@ -17,6 +17,8 @@
 //
 // See flutter/flutter:dev/tools/gen_keycodes/README.md for more information.
 
+namespace flutter {
+
 const uint64_t kValueMask = 0x000ffffffff;
 const uint64_t kUnicodePlane = 0x00000000000;
 const uint64_t kMacosPlane = 0x01400000000;
@@ -293,3 +295,5 @@ const std::vector<LayoutGoal> layoutGoals = {
     LayoutGoal{0x10, 0x79, true},   // KeyY
     LayoutGoal{0x06, 0x7a, true},   // KeyZ
 };
+
+}  // namespace flutter
