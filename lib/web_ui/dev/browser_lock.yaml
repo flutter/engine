@@ -30,7 +30,7 @@ safari_ios:
   # Make sure this version is the same version supported by LUCI macOS bots.
   # XCode on these bots will be updated once a year, do not forget to update
   # `heightOfHeader` during this time.
-  major_version: 15
+  major_version: 13
   minor_version: 0
   device: 'iPhone 11'
   # `xcrun simctl` command is used to take screenshots. It takes the screenshot
