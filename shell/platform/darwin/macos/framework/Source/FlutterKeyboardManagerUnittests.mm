@@ -600,71 +600,69 @@ TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
 
   /* US keyboard layout */
 
-  sendTap(kVK_ANSI_A, @"a", @"a"); // KeyA
+  sendTap(kVK_ANSI_A, @"a", @"a");  // KeyA
   VERIFY_DOWN(kLogicalKeyA, "a");
 
-  sendTap(kVK_ANSI_A, @"A", @"A"); // Shift-KeyA
+  sendTap(kVK_ANSI_A, @"A", @"A");  // Shift-KeyA
   VERIFY_DOWN(kLogicalKeyA, "A");
 
-  sendTap(kVK_ANSI_A, @"å", @"a"); // Option-KeyA
+  sendTap(kVK_ANSI_A, @"å", @"a");  // Option-KeyA
   VERIFY_DOWN(kLogicalKeyA, "å");
 
-  sendTap(kVK_ANSI_T, @"t", @"t"); // KeyT
+  sendTap(kVK_ANSI_T, @"t", @"t");  // KeyT
   VERIFY_DOWN(kLogicalKeyT, "t");
 
-  sendTap(kVK_ANSI_1, @"1", @"1"); // Digit1
+  sendTap(kVK_ANSI_1, @"1", @"1");  // Digit1
   VERIFY_DOWN(kLogicalDigit1, "1");
 
-  sendTap(kVK_ANSI_1, @"!", @"!"); // Shift-Digit1
+  sendTap(kVK_ANSI_1, @"!", @"!");  // Shift-Digit1
   VERIFY_DOWN(kLogicalDigit1, "!");
 
-  sendTap(kVK_ANSI_Minus, @"-", @"-"); // Minus
+  sendTap(kVK_ANSI_Minus, @"-", @"-");  // Minus
   VERIFY_DOWN('-', "-");
 
-  sendTap(kVK_ANSI_Minus, @"=", @"="); // Shift-Minus
+  sendTap(kVK_ANSI_Minus, @"=", @"=");  // Shift-Minus
   VERIFY_DOWN('=', "=");
 
   /* French keyboard layout */
   [tester setLayout:kFrenchLayout];
 
-  sendTap(kVK_ANSI_A, @"q", @"q"); // KeyA
+  sendTap(kVK_ANSI_A, @"q", @"q");  // KeyA
   VERIFY_DOWN(kLogicalKeyQ, "q");
 
-  sendTap(kVK_ANSI_A, @"Q", @"Q"); // Shift-KeyA
+  sendTap(kVK_ANSI_A, @"Q", @"Q");  // Shift-KeyA
   VERIFY_DOWN(kLogicalKeyQ, "Q");
 
-  sendTap(kVK_ANSI_Semicolon, @"m", @"m"); // ; but prints M
+  sendTap(kVK_ANSI_Semicolon, @"m", @"m");  // ; but prints M
   VERIFY_DOWN(kLogicalKeyM, "m");
 
-  sendTap(kVK_ANSI_M, @",", @","); // M but prints ,
+  sendTap(kVK_ANSI_M, @",", @",");  // M but prints ,
   VERIFY_DOWN(',', ",");
 
-  sendTap(kVK_ANSI_1, @"&", @"&"); // Digit1
+  sendTap(kVK_ANSI_1, @"&", @"&");  // Digit1
   VERIFY_DOWN(kLogicalDigit1, "&");
 
-  sendTap(kVK_ANSI_1, @"1", @"1"); // Shift-Digit1
+  sendTap(kVK_ANSI_1, @"1", @"1");  // Shift-Digit1
   VERIFY_DOWN(kLogicalDigit1, "1");
 
-  sendTap(kVK_ANSI_Minus, @")", @")"); // Minus
+  sendTap(kVK_ANSI_Minus, @")", @")");  // Minus
   VERIFY_DOWN(')', ")");
 
-  sendTap(kVK_ANSI_Minus, @"°", @"°"); // Shift-Minus
+  sendTap(kVK_ANSI_Minus, @"°", @"°");  // Shift-Minus
   VERIFY_DOWN(L'°', "°");
-
 
   /* Russian keyboard layout */
   [tester setLayout:kRussianLayout];
 
-  sendTap(kVK_ANSI_A, @"ф", @"ф"); // KeyA
+  sendTap(kVK_ANSI_A, @"ф", @"ф");  // KeyA
   VERIFY_DOWN(kLogicalKeyA, "ф");
 
-  sendTap(kVK_ANSI_1, @"1", @"1"); // Digit1
+  sendTap(kVK_ANSI_1, @"1", @"1");  // Digit1
   VERIFY_DOWN(kLogicalDigit1, "1");
 
   sendTap(kVK_ANSI_LeftBracket, @"х", @"х");
   VERIFY_DOWN(kLogicalBracketLeft, "х");
 
-  // Passes if no error is thrown.
   return true;
 }
 
