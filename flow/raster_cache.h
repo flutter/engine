@@ -102,6 +102,9 @@ class RasterCache {
   // on that frame. This limit allows us to throttle the cache and distribute
   // the work across multiple frames.
   static constexpr int kDefaultPictureAndDispLayListCacheLimitPerFrame = 3;
+  // The default number of frames the high-priority entry which is high priority
+  // survives if it is not used.
+  static constexpr int kHighPriorityEvictionThreshold = 3;
 
   explicit RasterCache(size_t access_threshold = 3,
                        size_t picture_and_display_list_cache_limit_per_frame =
@@ -310,7 +313,9 @@ class RasterCache {
     std::unique_ptr<RasterCacheResult> image;
     // Return the number of frames the entry survives if it is not used. If the
     // number is 0, then it will be evicted when not in use.
-    size_t unused_threshold() const { return is_high_priority ? 3 : 0; }
+    size_t unused_threshold() const {
+      return is_high_priority ? kHighPriorityEvictionThreshold : 0;
+    }
   };
 
   void Touch(const RasterCacheKey& cache_key);
@@ -319,9 +324,9 @@ class RasterCache {
             SkCanvas& canvas,
             const SkPaint* paint) const;
 
-  void SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
-                               RasterCacheMetrics& picture_metrics,
-                               RasterCacheMetrics& layer_metrics);
+  void SweepCacheAfterFrame();
+
+  RasterCacheMetrics& GetMetricsForKind(RasterCacheKeyKind kind);
 
   bool GenerateNewCacheInThisFrame() const {
     // Disabling caching when access_threshold is zero is historic behavior.

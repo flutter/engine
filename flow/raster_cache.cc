@@ -405,63 +405,37 @@ void RasterCache::PrepareNewFrame() {
   display_list_cached_this_frame_ = 0;
 }
 
-void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
-                                          RasterCacheMetrics& picture_metrics,
-                                          RasterCacheMetrics& layer_metrics) {
+void RasterCache::SweepCacheAfterFrame() {
   std::vector<RasterCacheKey::Map<Entry>::iterator> dead;
 
-  for (auto it = cache.begin(); it != cache.end(); ++it) {
+  for (auto it = cache_.begin(); it != cache_.end(); ++it) {
     Entry& entry = it->second;
     if (!entry.used_this_frame) {
       if (entry.unused_count < entry.unused_threshold()) {
         entry.unused_count++;
         if (entry.image) {
-          RasterCacheKeyKind kind = it->first.kind();
-          switch (kind) {
-            case RasterCacheKeyKind::kPictureMetrics:
-              picture_metrics.unused_count++;
-              picture_metrics.unused_bytes += entry.image->image_bytes();
-              break;
-            case RasterCacheKeyKind::kLayerMetrics:
-              layer_metrics.unused_count++;
-              layer_metrics.unused_bytes += entry.image->image_bytes();
-              break;
-          }
+          RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
+          metrics.unused_count++;
+          metrics.unused_bytes += entry.image->image_bytes();
         }
       } else {
         dead.push_back(it);
       }
     } else if (entry.image) {
-      RasterCacheKeyKind kind = it->first.kind();
-      switch (kind) {
-        case RasterCacheKeyKind::kPictureMetrics:
-          picture_metrics.in_use_count++;
-          picture_metrics.in_use_bytes += entry.image->image_bytes();
-          break;
-        case RasterCacheKeyKind::kLayerMetrics:
-          layer_metrics.in_use_count++;
-          layer_metrics.in_use_bytes += entry.image->image_bytes();
-          break;
-      }
+      RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
+      metrics.in_use_count++;
+      metrics.in_use_bytes += entry.image->image_bytes();
     }
     entry.used_this_frame = false;
   }
 
   for (auto it : dead) {
     if (it->second.image) {
-      RasterCacheKeyKind kind = it->first.kind();
-      switch (kind) {
-        case RasterCacheKeyKind::kPictureMetrics:
-          picture_metrics.eviction_count++;
-          picture_metrics.eviction_bytes += it->second.image->image_bytes();
-          break;
-        case RasterCacheKeyKind::kLayerMetrics:
-          layer_metrics.eviction_count++;
-          layer_metrics.eviction_bytes += it->second.image->image_bytes();
-          break;
-      }
+      RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
+      metrics.eviction_count++;
+      metrics.eviction_bytes += it->second.image->image_bytes();
     }
-    cache.erase(it);
+    cache_.erase(it);
   }
 }
 
@@ -470,7 +444,7 @@ void RasterCache::CleanupAfterFrame() {
   layer_metrics_ = {};
   {
     TRACE_EVENT0("flutter", "RasterCache::SweepCaches");
-    SweepOneCacheAfterFrame(cache_, picture_metrics_, layer_metrics_);
+    SweepCacheAfterFrame();
   }
   TraceStatsToTimeline();
 }
@@ -479,6 +453,15 @@ void RasterCache::Clear() {
   cache_.clear();
   picture_metrics_ = {};
   layer_metrics_ = {};
+}
+
+RasterCacheMetrics& RasterCache::GetMetricsForKind(RasterCacheKeyKind kind) {
+  switch (kind) {
+    case RasterCacheKeyKind::kPictureMetrics:
+      return picture_metrics_;
+    case RasterCacheKeyKind::kLayerMetrics:
+      return layer_metrics_;
+  }
 }
 
 size_t RasterCache::GetCachedEntriesCount() const {
