@@ -19,10 +19,9 @@ using namespace flutter::testing::keycodes;
 using flutter::LayoutClue;
 
 typedef BOOL (^BoolGetter)();
-typedef void (^AsyncKeyCallback)(BOOL handled);
-typedef void (^AsyncKeyCallbackHandler)(AsyncKeyCallback callback);
+typedef void (^AsyncKeyCallbackHandler)(FlutterAsyncKeyCallback callback);
 typedef void (^AsyncEmbedderCallbackHandler)(const FlutterKeyEvent* event,
-                                             AsyncKeyCallback callback);
+                                             FlutterAsyncKeyCallback callback);
 typedef BOOL (^TextInputCallback)(NSEvent*);
 
 // When the Vietnamese IME converts messages into "pure text" messages, their
@@ -217,7 +216,7 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
 
 // Record embedder calls to the given storage.
 //
-// They are not responded until the stored callbacks are manually called.
+// They are not to responded until the stored callbacks are manually called.
 - (void)recordEmbedderCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
 
 - (void)recordEmbedderEventsTo:(nonnull std::vector<FlutterKeyEvent>*)storage
@@ -228,7 +227,7 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
 
 // Record channel calls to the given storage.
 //
-// They are not responded until the stored callbacks are manually called.
+// They are not responded to until the stored callbacks are manually called.
 - (void)recordChannelCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
 
 // Set text calls to respond with the given response.
@@ -313,13 +312,13 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
 }
 
 - (void)respondEmbedderCallsWith:(BOOL)response {
-  _embedderHandler = ^(const FlutterKeyEvent* event, AsyncKeyCallback callback) {
+  _embedderHandler = ^(const FlutterKeyEvent* event, FlutterAsyncKeyCallback callback) {
     callback(response);
   };
 }
 
 - (void)recordEmbedderCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage {
-  _embedderHandler = ^(const FlutterKeyEvent* event, AsyncKeyCallback callback) {
+  _embedderHandler = ^(const FlutterKeyEvent* event, FlutterAsyncKeyCallback callback) {
     [storage addObject:callback];
   };
 }
@@ -415,7 +414,6 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
   uint32_t cluePair = (*_currentLayout)[(keyCode * 2) + (shift ? 1 : 0)];
   const uint32_t kCharMask = 0xffff;
   const uint32_t kDeadKeyMask = 0x10000;
-  // NSLog(@"%% From lookUpLayoutForKeyCode 0x%x %d -> 0x%x", keyCode, shift, cluePair);
   return LayoutClue{cluePair & kCharMask, (cluePair & kDeadKeyMask) != 0};
 }
 
@@ -452,12 +450,12 @@ TEST(FlutterKeyboardManagerUnittests, EmptyNextResponder) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] emptyNextResponder]);
 }
 
-TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
-  ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] correctLogicalKeyForLayouts]);
-}
-
 TEST(FlutterKeyboardManagerUnittests, RacingConditionBetweenKeyAndText) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] racingConditionBetweenKeyAndText]);
+}
+
+TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
+  ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] correctLogicalKeyForLayouts]);
 }
 
 }  // namespace flutter::testing

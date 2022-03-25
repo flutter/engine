@@ -401,7 +401,7 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
       const;
 
-  const VsyncWaiter& GetVsyncWaiter() const;
+  const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
  private:
   using ServiceProtocolHandler =
@@ -581,6 +581,10 @@ class Shell final : public PlatformView::Delegate,
 
   // |Animator::Delegate|
   void OnAnimatorNotifyIdle(fml::TimePoint deadline) override;
+
+  // |Animator::Delegate|
+  void OnAnimatorUpdateLatestFrameTargetTime(
+      fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
   void OnAnimatorDraw(

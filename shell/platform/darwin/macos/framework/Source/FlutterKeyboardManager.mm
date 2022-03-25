@@ -52,6 +52,15 @@ typedef NSResponder* _NSResponderPtr;
 typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 }
 
+namespace {
+typedef void (^VoidBlock)();
+
+// Someohow this pointer type must be defined as a single type for the compiler
+// to compile the function pointer type (due to _Nullable).
+typedef NSResponder* _NSResponderPtr;
+typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
+}
+
 @interface FlutterKeyboardManager ()
 
 /**
@@ -134,7 +143,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
                                                                                getBinaryMessenger]
                                                                      codec:[FlutterJSONMessageCodec
                                                                                sharedInstance]]]];
-    _pendingTextEvents = [[NSMutableArray alloc] init];
+    _pendingEvents = [[NSMutableArray alloc] init];
     _layoutMap = [NSMutableDictionary<NSNumber*, NSNumber*> dictionary];
     [self buildLayout];
     for (id<FlutterKeyPrimaryResponder> responder in _primaryResponders) {
@@ -164,7 +173,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     return;
   }
 
-  [_pendingTextEvents addObject:event];
+  [_pendingEvents addObject:event];
   [self processNextEvent];
 }
 
@@ -172,14 +181,14 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
 - (void)processNextEvent {
   @synchronized(self) {
-    if (_processingEvent || [_pendingTextEvents count] == 0) {
+    if (_processingEvent || [_pendingEvents count] == 0) {
       return;
     }
     _processingEvent = TRUE;
   }
 
-  NSEvent* pendingEvent = [_pendingTextEvents firstObject];
-  [_pendingTextEvents removeObjectAtIndex:0];
+  NSEvent* pendingEvent = [_pendingEvents firstObject];
+  [_pendingEvents removeObjectAtIndex:0];
 
   __weak __typeof__(self) weakSelf = self;
   VoidBlock onFinish = ^() {

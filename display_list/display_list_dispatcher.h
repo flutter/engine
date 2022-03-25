@@ -6,8 +6,10 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_DISPATCHER_H_
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/display_list/display_list_mask_filter.h"
 
 namespace flutter {
@@ -45,11 +47,11 @@ class Dispatcher {
   // It is not reset by |setColorFilter|, but instead composed with that
   // filter so that the color inversion happens after the ColorFilter.
   virtual void setInvertColors(bool invert) = 0;
-  virtual void setBlendMode(SkBlendMode mode) = 0;
+  virtual void setBlendMode(DlBlendMode mode) = 0;
   virtual void setBlender(sk_sp<SkBlender> blender) = 0;
   virtual void setPathEffect(sk_sp<SkPathEffect> effect) = 0;
   virtual void setMaskFilter(const DlMaskFilter* filter) = 0;
-  virtual void setImageFilter(sk_sp<SkImageFilter> filter) = 0;
+  virtual void setImageFilter(const DlImageFilter* filter) = 0;
 
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
@@ -186,7 +188,7 @@ class Dispatcher {
   // method, the methods here will generally offer a boolean parameter
   // which specifies whether to honor the attributes of the display list
   // stream, or assume default attributes.
-  virtual void drawColor(SkColor color, SkBlendMode mode) = 0;
+  virtual void drawColor(SkColor color, DlBlendMode mode) = 0;
   virtual void drawPaint() = 0;
   virtual void drawLine(const SkPoint& p0, const SkPoint& p1) = 0;
   virtual void drawRect(const SkRect& rect) = 0;
@@ -203,7 +205,7 @@ class Dispatcher {
                           uint32_t count,
                           const SkPoint points[]) = 0;
   virtual void drawVertices(const sk_sp<SkVertices> vertices,
-                            SkBlendMode mode) = 0;
+                            DlBlendMode mode) = 0;
   virtual void drawImage(const sk_sp<SkImage> image,
                          const SkPoint point,
                          const SkSamplingOptions& sampling,
@@ -229,7 +231,7 @@ class Dispatcher {
                          const SkRect tex[],
                          const SkColor colors[],
                          int count,
-                         SkBlendMode mode,
+                         DlBlendMode mode,
                          const SkSamplingOptions& sampling,
                          const SkRect* cull_rect,
                          bool render_with_attributes) = 0;
