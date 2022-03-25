@@ -27,7 +27,6 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 extern NSString* _Nonnull const FlutterEngineWillDealloc;
