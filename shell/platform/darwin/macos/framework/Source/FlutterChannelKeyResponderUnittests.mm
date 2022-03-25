@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <Carbon/Carbon.h>
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
-#include <Carbon/Carbon.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h"
-#import "flutter/testing/testing.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.h"
+#import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace flutter::testing {
@@ -257,7 +257,8 @@ TEST(FlutterChannelKeyResponderUnittests, FollowsLayoutMap) {
   FlutterChannelKeyResponder* responder =
       [[FlutterChannelKeyResponder alloc] initWithChannel:mockKeyEventChannel];
 
-  NSMutableDictionary<NSNumber*, NSNumber*>* layoutMap = [NSMutableDictionary<NSNumber*, NSNumber*> dictionary];
+  NSMutableDictionary<NSNumber*, NSNumber*>* layoutMap =
+      [NSMutableDictionary<NSNumber*, NSNumber*> dictionary];
   responder.layoutMap = layoutMap;
   // French layout
   layoutMap[@(kVK_ANSI_A)] = @(kLogicalKeyQ);
