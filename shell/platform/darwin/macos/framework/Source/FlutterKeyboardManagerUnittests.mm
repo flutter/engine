@@ -88,7 +88,7 @@ NSResponder* mockOwnerWithDownOnlyNext() {
 
 // Record embedder calls to the given storage.
 //
-// They are not responded until the stored callbacks are manually called.
+// They are not responded to until the stored callbacks are manually called.
 - (void)recordEmbedderCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
 
 // Set channel calls to respond immediately with the given response.
@@ -96,7 +96,7 @@ NSResponder* mockOwnerWithDownOnlyNext() {
 
 // Record channel calls to the given storage.
 //
-// They are not responded until the stored callbacks are manually called.
+// They are not responded to until the stored callbacks are manually called.
 - (void)recordChannelCallsTo:(nonnull NSMutableArray<FlutterAsyncKeyCallback>*)storage;
 
 // Set text calls to respond with the given response.
