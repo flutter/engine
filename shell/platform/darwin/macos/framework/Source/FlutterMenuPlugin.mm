@@ -15,10 +15,10 @@
 
 // Channel constants
 static NSString* const kChannelName = @"flutter/menu";
-static NSString* const kMenuSetMethod = @"Menu.SetMenu";
-static NSString* const kMenuItemSelectedCallbackMethod = @"Menu.SelectedCallback";
-static NSString* const kMenuItemOpenedMethod = @"Menu.Opened";
-static NSString* const kMenuItemClosedMethod = @"Menu.Closed";
+static NSString* const kMenuSetMethod = @"Menu.setMenu";
+static NSString* const kMenuItemSelectedCallbackMethod = @"Menu.selectedCallback";
+static NSString* const kMenuItemOpenedMethod = @"Menu.opened";
+static NSString* const kMenuItemClosedMethod = @"Menu.closed";
 
 // Serialization keys for menu objects
 static NSString* const kIdKey = @"id";
@@ -189,7 +189,7 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
 
     // Make a copy of all the platform provided menus for later use.
     _platformProvidedItemArray = [[NSArray alloc] initWithArray:[NSApp.mainMenu itemArray]
-                                                            copyItems:YES];
+                                                      copyItems:YES];
 
     // As copied, these platform provided menu items don't yet have the APP_NAME
     // applied to them, so this rectifies that.
