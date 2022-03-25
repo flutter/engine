@@ -80,16 +80,16 @@ class DlDashPathEffect final : public DlPathEffect {
   }
 
   std::shared_ptr<DlPathEffect> shared() const override {
-    return Make(intervals_, count_, phase_);
+    return Make(pods(), count_, phase_);
   }
 
   const DlDashPathEffect* asDash() const override { return this; }
 
   sk_sp<SkPathEffect> skia_object() const override {
-    return SkDashPathEffect::Make(intervals_, count_, phase_);
+    return SkDashPathEffect::Make(pods(), count_, phase_);
   }
 
-  SkScalar* intervals() const { return intervals_; }
+  SkScalar* intervals() { return reinterpret_cast<SkScalar*>(this + 1); }
 
  protected:
   bool equals_(DlPathEffect const& other) const override {
@@ -100,11 +100,15 @@ class DlDashPathEffect final : public DlPathEffect {
   }
 
  private:
+  const SkScalar* pods() const {
+    return reinterpret_cast<const SkScalar*>(this + 1);
+  }
+
   bool base_equals_(DlDashPathEffect const* other) const {
     // intervals not nullptr, that has value
-    if (intervals_ != nullptr && other != nullptr) {
+    if (other != nullptr) {
       for (int i = 0; i < count_; i++) {
-        if (intervals_[i] != other->intervals_[i]) {
+        if (pods()[i] != other->pods()[i]) {
           return false;
         }
       }
@@ -114,18 +118,17 @@ class DlDashPathEffect final : public DlPathEffect {
 
   DlDashPathEffect(const SkScalar intervals[], int count, SkScalar phase)
       : count_(count), phase_(phase) {
-    intervals_ = reinterpret_cast<SkScalar*>(this + 1);
     if (intervals != nullptr) {
+      SkScalar* intervals_ = reinterpret_cast<SkScalar*>(this + 1);
       memcpy(intervals_, intervals, sizeof(SkScalar) * count);
     }
   }
 
   DlDashPathEffect(const DlDashPathEffect* dash_effect)
-      : DlDashPathEffect(dash_effect->intervals_,
+      : DlDashPathEffect(dash_effect->pods(),
                          dash_effect->count_,
                          dash_effect->phase_) {}
 
-  SkScalar* intervals_;
   int count_;
   SkScalar phase_;
 

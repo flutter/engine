@@ -387,6 +387,7 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   },
   { "SetColorSource", {
       {0, 112, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestSource1);}},
+      // stop_count * (sizeof(float) + sizeof(uint32_t)) = 80
       {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource2.get());}},
       {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource3.get());}},
       {0, 88 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource4.get());}},
@@ -428,8 +429,9 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetPathEffect", {
-      {0, 40, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1.get());}},
-      {0, 40, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2.get());}},
+      // 2 * sizeof(SkScalar)
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1.get());}},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2.get());}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(nullptr);}},
     }
   },

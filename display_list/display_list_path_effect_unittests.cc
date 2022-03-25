@@ -8,6 +8,7 @@
 #include "flutter/display_list/types.h"
 #include "gtest/gtest.h"
 #include "include/core/SkPath.h"
+#include "include/core/SkScalar.h"
 
 namespace flutter {
 namespace testing {
@@ -44,6 +45,19 @@ TEST(DisplayListPathEffect, FromSkiaPathEffect) {
   ASSERT_EQ(dl_path_effect->asDash(), dl_path_effect.get());
   ASSERT_TRUE(
       Equals(dl_path_effect, DlDashPathEffect::Make(TestDashes2, 2, 0.0)));
+  SkScalar s1[]{0.0, 0.0};
+  SkPathEffect::DashInfo info1(s1, 2, 0);
+  sk_path_effect->asADash(&info1);
+
+  SkScalar s2[]{0.0, 0.0};
+  SkPathEffect::DashInfo info2(s2, 2, 0);
+  dl_path_effect->skia_object()->asADash(&info2);
+  // check interval values is equal
+  for (int i = 0; i < 2; i++) {
+    ASSERT_EQ(s1[i], s2[i]);
+  }
+  ASSERT_EQ(info1.fCount, info2.fCount);
+  ASSERT_EQ(info1.fPhase, info2.fPhase);
 }
 
 TEST(DisplayListPathEffect, EffectShared) {
