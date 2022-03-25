@@ -676,7 +676,7 @@ Future<void> testMain() async {
     final html.Element sceneElement = sb.build().webOnlyRootElement!;
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
-      sceneElement.style.transform = 'scale(0.5)';
+      sceneElement.style.transform = 'scale(0.1)';
     }
     html.document.body!.append(sceneElement);
     try {

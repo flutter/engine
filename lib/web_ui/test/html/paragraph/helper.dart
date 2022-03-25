@@ -56,7 +56,7 @@ Future<void> takeScreenshot(
   final html.Element sceneElement = html.Element.tag('flt-scene');
   if (isIosSafari) {
     // Shrink to fit on the iPhone screen.
-    sceneElement.style.transform = 'scale(0.3)';
+    sceneElement.style.transform = 'scale(0.1)';
   }
   try {
     sceneElement.append(canvas.rootElement);
