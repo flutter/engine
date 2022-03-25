@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/picture_layer.h"
 
+#include "flutter/flow/layers/offscreen_utils.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 
@@ -148,6 +149,33 @@ void PictureLayer::Paint(PaintContext& context) const {
                                    cache_paint.paint())) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
       return;
+    }
+  }
+
+  if (context.enable_leaf_layer_tracing) {
+    const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
+    auto offscreen_surface = std::make_unique<OffscreenSurface>(canvas_size);
+
+    {
+      const auto now = fml::TimePoint::Now();
+
+      // render to an offscreen canvas.
+      auto* canvas = offscreen_surface->GetCanvas();
+      canvas->clear(SK_ColorTRANSPARENT);
+      picture()->playback(canvas);
+      canvas->flush();
+
+      const fml::TimeDelta offscreen_render_time = fml::TimePoint::Now() - now;
+      // TODO (kaushikiska) record a trace event here.
+      FML_LOG(ERROR) << "picture_layer: " << unique_id() << " took "
+                     << offscreen_render_time.ToMicroseconds()
+                     << " micro seconds";
+    }
+
+    {
+      // Dump PNG to logs for now.
+      sk_sp<SkData> b64_data = offscreen_surface->GetRasterDataAsBase64(true);
+      FML_LOG(ERROR) << static_cast<const char*>(b64_data->data());
     }
   }
 

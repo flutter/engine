@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/texture_layer.h"
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/flow/layers/offscreen_utils.h"
 
 namespace flutter {
 
@@ -61,6 +62,35 @@ void TextureLayer::Paint(PaintContext& context) const {
     return;
   }
   AutoCachePaint cache_paint(context);
+
+  if (context.enable_leaf_layer_tracing) {
+    const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
+    auto offscreen_surface = std::make_unique<OffscreenSurface>(canvas_size);
+
+    {
+      const auto now = fml::TimePoint::Now();
+
+      // render to an offscreen canvas.
+      auto* canvas = offscreen_surface->GetCanvas();
+      canvas->clear(SK_ColorTRANSPARENT);
+      texture->Paint(*canvas, paint_bounds(), freeze_, context.gr_context,
+                     sampling_, cache_paint.paint());
+      canvas->flush();
+
+      const fml::TimeDelta offscreen_render_time = fml::TimePoint::Now() - now;
+      // TODO (kaushikiska) record a trace event here.
+      FML_LOG(ERROR) << "texture_layer: " << unique_id() << " took "
+                     << offscreen_render_time.ToMicroseconds()
+                     << " micro seconds";
+    }
+
+    {
+      // Dump PNG to logs for now.
+      sk_sp<SkData> b64_data = offscreen_surface->GetRasterDataAsBase64(true);
+      FML_LOG(ERROR) << static_cast<const char*>(b64_data->data());
+    }
+  }
+
   texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
                  context.gr_context, sampling_, cache_paint.paint());
 }

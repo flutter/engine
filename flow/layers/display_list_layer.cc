@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/display_list_layer.h"
+#include <memory>
 
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/flow/layers/offscreen_utils.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 
@@ -126,7 +128,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache) {
+  if (context.raster_cache && !context.enable_leaf_layer_tracing) {
     AutoCachePaint cache_paint(context);
     if (context.raster_cache->Draw(*display_list(), *context.leaf_nodes_canvas,
                                    cache_paint.paint())) {
@@ -136,35 +138,28 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   }
 
   if (context.enable_leaf_layer_tracing) {
-    // The caveat here is that if the app is backgrounded this might not
-    // be the ideal approach: https://github.com/flutter/flutter/issues/73675.
-    // Given that `enable_leaf_layer_tracing` is a debug mode only feature
-    // and is expected to run only when the app is in foreground this is ok.
     const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
-    SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-        canvas_size.width(), canvas_size.height(), SkColorSpace::MakeSRGB());
-    sk_sp<SkSurface> offscreen_surface = SkSurface::MakeRaster(image_info);
-    const auto now = fml::TimePoint::Now();
+    auto offscreen_surface = std::make_unique<OffscreenSurface>(canvas_size);
 
     {
+      const auto now = fml::TimePoint::Now();
       // render to an offscreen canvas.
-      auto* canvas = offscreen_surface->getCanvas();
+      auto* canvas = offscreen_surface->GetCanvas();
       canvas->clear(SK_ColorTRANSPARENT);
       display_list()->RenderTo(canvas, context.inherited_opacity);
       canvas->flush();
+      const fml::TimeDelta offscreen_render_time = fml::TimePoint::Now() - now;
+      // TODO (kaushikiska) record a trace event here.
+      FML_LOG(ERROR) << "display_list_layer: " << unique_id() << " took "
+                     << offscreen_render_time.ToMicroseconds()
+                     << " micro seconds";
     }
 
-    const fml::TimeDelta offscreen_render_time = fml::TimePoint::Now() - now;
-    // TODO (kaushikiska) record a trace event here.
-    FML_LOG(ERROR) << "display_list_layer: " << unique_id() << " took "
-                   << offscreen_render_time.ToMicroseconds() << "micro seconds";
-
     {
-      sk_sp<SkData> png = GetRasterData(offscreen_surface, /*compressed*/ true);
-      size_t b64_size = SkBase64::Encode(png->data(), png->size(), nullptr);
-      sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size);
-      SkBase64::Encode(png->data(), png->size(), b64_data->writable_data());
+      // Dump PNG to logs for now.
+      sk_sp<SkData> b64_data = offscreen_surface->GetRasterDataAsBase64(true);
       FML_LOG(ERROR) << static_cast<const char*>(b64_data->data());
+      FML_LOG(ERROR) << "____";
     }
   }
 
