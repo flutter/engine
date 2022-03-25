@@ -77,12 +77,12 @@ struct MouseState {
 };
 
 /**
-  * Returns the current unicode layout data (kTISPropertyUnicodeKeyLayoutData).
-  *
-  * To use the returned data, convert it to CFDataRef first, finds its bytes
-  * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
-  * It's returned in NSData* to enable auto reference count.
-  */
+ * Returns the current unicode layout data (kTISPropertyUnicodeKeyLayoutData).
+ *
+ * To use the returned data, convert it to CFDataRef first, finds its bytes
+ * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
+ * It's returned in NSData* to enable auto reference count.
+ */
 NSData* currentKeyboardLayoutData() {
   TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
   CFTypeRef layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
