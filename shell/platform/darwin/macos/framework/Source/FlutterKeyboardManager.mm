@@ -40,6 +40,15 @@ bool isEascii(const LayoutClue& clue) {
 
 }
 
+namespace {
+typedef void (^VoidBlock)();
+
+// Someohow this pointer type must be defined as a single type for the compiler
+// to compile the function pointer type (due to _Nullable).
+typedef NSResponder* _NSResponderPtr;
+typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
+}
+
 @interface FlutterKeyboardManager ()
 
 /**
@@ -64,7 +73,29 @@ bool isEascii(const LayoutClue& clue) {
  */
 - (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)responder;
 
-- (void)dispatchToSecondaryResponders:(NSEvent*)event;
+/**
+ * Start processing the next event if not started already.
+ *
+ * This function might initiate an async process, whose callback calls this
+ * function again.
+ */
+- (void)processNextEvent;
+
+/**
+ * Implement how to process an event.
+ *
+ * The `onFinish` must be called eventually, either during this function or
+ * asynchronously later, otherwise the event queue will be stuck.
+ *
+ * This function is called by processNextEvent.
+ */
+- (void)performProcessEvent:(NSEvent*)event onFinish:(nonnull VoidBlock)onFinish;
+
+/**
+ * Dispatch an event that's not hadled by the responders to text input plugin,
+ * and potentially to the next responder.
+ */
+- (void)dispatchTextEvent:(nonnull NSEvent*)pendingEvent;
 
 - (void)buildLayout;
 
@@ -77,6 +108,7 @@ bool isEascii(const LayoutClue& clue) {
 - (nonnull instancetype)initWithViewDelegate:(nonnull id<FlutterKeyboardViewDelegate>)viewDelegate {
   self = [super init];
   if (self != nil) {
+    _processingEvent = FALSE;
     _viewDelegate = viewDelegate;
 
     _primaryResponders = [[NSMutableArray alloc] init];
@@ -116,6 +148,9 @@ bool isEascii(const LayoutClue& clue) {
 }
 
 - (void)handleEvent:(nonnull NSEvent*)event {
+  // The `handleEvent` does not process the event immediately, but instead put
+  // events into a queue. Events are processed one by one by `processNextEvent`.
+
   // Be sure to add a handling method in propagateKeyEvent when allowing more
   // event types here.
   if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
@@ -123,8 +158,35 @@ bool isEascii(const LayoutClue& clue) {
     return;
   }
 
+  [_pendingTextEvents addObject:event];
+  [self processNextEvent];
+}
+
+#pragma mark - Private
+
+- (void)processNextEvent {
+  @synchronized(self) {
+    if (_processingEvent || [_pendingTextEvents count] == 0) {
+      return;
+    }
+    _processingEvent = TRUE;
+  }
+
+  NSEvent* pendingEvent = [_pendingTextEvents firstObject];
+  [_pendingTextEvents removeObjectAtIndex:0];
+
+  __weak __typeof__(self) weakSelf = self;
+  VoidBlock onFinish = ^() {
+    weakSelf.processingEvent = FALSE;
+    [weakSelf processNextEvent];
+  };
+  [self performProcessEvent:pendingEvent onFinish:onFinish];
+}
+
+- (void)performProcessEvent:(NSEvent*)event onFinish:(VoidBlock)onFinish {
   if (_viewDelegate.isComposing) {
-    [self dispatchToSecondaryResponders:event];
+    [self dispatchTextEvent:event];
+    onFinish();
     return;
   }
 
@@ -136,12 +198,16 @@ bool isEascii(const LayoutClue& clue) {
   __weak __typeof__(self) weakSelf = self;
   __block int unreplied = [_primaryResponders count];
   __block BOOL anyHandled = false;
+
   FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
     unreplied -= 1;
     NSAssert(unreplied >= 0, @"More primary responders replied than possible.");
     anyHandled = anyHandled || handled;
-    if (unreplied == 0 && !anyHandled) {
-      [weakSelf dispatchToSecondaryResponders:event];
+    if (unreplied == 0) {
+      if (!anyHandled) {
+        [weakSelf dispatchTextEvent:event];
+      }
+      onFinish();
     }
   };
 
@@ -150,9 +216,7 @@ bool isEascii(const LayoutClue& clue) {
   }
 }
 
-#pragma mark - Private
-
-- (void)dispatchToSecondaryResponders:(NSEvent*)event {
+- (void)dispatchTextEvent:(NSEvent*)event {
   if ([_viewDelegate onTextInputKeyEvent:event]) {
     return;
   }
