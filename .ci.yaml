@@ -307,7 +307,12 @@ targets:
       gcs_goldens_bucket: flutter_logs
       caches: >-
         [
-          {"name":"osx_sdk_13c100_13_15","path":"osx_sdk"},
+          {"name":"flutter_cocoapods","path":"cocoapods"},
+          {"name":"osx_sdk_13c100_13_15","path":"osx_sdk"}
+          {"name":"builder_mac_engine","path":"builder"},
+          {"name":"openjdk","path":"java"},
+          {"name":"xcode_runtime_ios-13-0","path":"xcode_runtime_ios-13-0"},
+          {"name":"xcode_runtime_ios-15-0","path":"xcode_runtime_ios-15-0"}
         ]
       dependencies: >-
         [
