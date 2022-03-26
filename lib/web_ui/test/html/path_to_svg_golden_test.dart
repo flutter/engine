@@ -63,14 +63,13 @@ Future<void> testMain() async {
 
     canvas.drawPath(path, paint!);
 
-    final html.Element sceneElement = html.Element.tag('flt-scene');
-    html.document.body!.append(sceneElement);
-
     final html.Element svgElement = pathToSvgElement(path, paint, enableFill);
 
     canvas.endRecording();
     canvas.apply(bitmapCanvas, canvasBounds);
 
+    final html.Element sceneElement = html.Element.tag('flt-scene');
+    html.document.body!.append(sceneElement);
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
