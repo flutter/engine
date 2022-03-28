@@ -1570,9 +1570,10 @@ static size_t GetRasterizerResourceCacheBytesSync(const Shell& shell) {
   return bytes;
 }
 
-TEST_F(ShellTest, MultipleFluttersSetResourceCacheSize) {
+TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   TaskRunners task_runners = GetTaskRunnersForFixture();
   auto settings = CreateSettingsForFixture();
+  settings.resource_cache_max_bytes_threshold = 4000000U;
   GrMockOptions main_context_options;
   sk_sp<GrDirectContext> main_context =
       GrDirectContext::MakeMock(&main_context_options);
@@ -1614,7 +1615,10 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheSize) {
   PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
     shell->GetPlatformView()->SetViewportMetrics({1.0, 100, 100, 22});
   });
-  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 480000U);
+
+  // first cache bytes
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            static_cast<size_t>(480000U));
 
   auto shell_spawn_callback = [&]() {
     std::unique_ptr<Shell> spawn;
@@ -1635,36 +1639,54 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheSize) {
 
   std::unique_ptr<Shell> second_shell = shell_spawn_callback();
   PlatformViewNotifyCreated(second_shell.get());
-  PostSync(
-      second_shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [&second_shell]() {
-        second_shell->GetPlatformView()->SetViewportMetrics({1.0, 1, 1, 22});
-      });
-  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 480000U);
+  PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&second_shell]() {
+             second_shell->GetPlatformView()->SetViewportMetrics(
+                 {1.0, 100, 100, 22});
+           });
+  // first cache bytes + second cache bytes
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            static_cast<size_t>(960000U));
 
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 200, 22});
+                 {1.0, 100, 300, 22});
            });
-  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 960000U);
+  // first cache bytes + second cache bytes
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            static_cast<size_t>(1920000U));
 
   std::unique_ptr<Shell> third_shell = shell_spawn_callback();
   PlatformViewNotifyCreated(third_shell.get());
+  PostSync(
+      third_shell->GetTaskRunners().GetPlatformTaskRunner(), [&third_shell]() {
+        third_shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 100, 22});
+      });
+  // first cache bytes + second cache bytes + third cache bytes
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            static_cast<size_t>(3840000U));
 
   PostSync(
       third_shell->GetTaskRunners().GetPlatformTaskRunner(), [&third_shell]() {
-        third_shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
+        third_shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 100, 22});
       });
-  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 3840000U);
-
+  // max bytes threshold
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            static_cast<size_t>(4000000U));
   DestroyShell(std::move(third_shell), std::move(task_runners));
-  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 3840000U);
+  // max bytes threshold
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            static_cast<size_t>(4000000U));
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.0, 1, 1, 22});
-  });
-  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 960000U);
+  PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&second_shell]() {
+             second_shell->GetPlatformView()->SetViewportMetrics(
+                 {1.0, 100, 100, 22});
+           });
+  // first cache bytes + second cache bytes
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            static_cast<size_t>(960000U));
 
   DestroyShell(std::move(second_shell), std::move(task_runners));
   DestroyShell(std::move(shell), std::move(task_runners));

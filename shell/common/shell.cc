@@ -147,17 +147,19 @@ std::unique_ptr<Shell> Shell::Create(
   if (!isolate_snapshot) {
     isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
   }
-  auto shared_viewport_size_holder = std::make_shared<ViewportSizeHolder>();
-  return CreateWithSnapshot(std::move(platform_data),                //
-                            std::move(task_runners),                 //
-                            /*parent_merger=*/nullptr,               //
-                            /*parent_io_manager=*/nullptr,           //
-                            std::move(shared_viewport_size_holder),  //
-                            std::move(settings),                     //
-                            std::move(vm),                           //
-                            std::move(isolate_snapshot),             //
-                            std::move(on_create_platform_view),      //
-                            std::move(on_create_rasterizer),         //
+  auto resource_cache_limit_calculator =
+      std::make_shared<ResourceCacheLimitCalculator>(
+          settings.resource_cache_max_bytes_threshold);
+  return CreateWithSnapshot(std::move(platform_data),                    //
+                            std::move(task_runners),                     //
+                            /*parent_merger=*/nullptr,                   //
+                            /*parent_io_manager=*/nullptr,               //
+                            std::move(resource_cache_limit_calculator),  //
+                            std::move(settings),                         //
+                            std::move(vm),                               //
+                            std::move(isolate_snapshot),                 //
+                            std::move(on_create_platform_view),          //
+                            std::move(on_create_rasterizer),             //
                             CreateEngine, is_gpu_disabled);
 }
 
@@ -165,7 +167,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     fml::RefPtr<fml::RasterThreadMerger> parent_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
-    std::shared_ptr<ViewportSizeHolder> shared_viewport_size_holder,
+    std::shared_ptr<ResourceCacheLimitCalculator>
+        resource_cache_limit_calculator,
     TaskRunners task_runners,
     const PlatformData& platform_data,
     Settings settings,
@@ -181,7 +184,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
   auto shell = std::unique_ptr<Shell>(
       new Shell(std::move(vm), task_runners, parent_merger,
-                shared_viewport_size_holder, settings,
+                resource_cache_limit_calculator, settings,
                 std::make_shared<VolatilePathTracker>(
                     task_runners.GetUITaskRunner(),
                     !settings.skia_deterministic_rendering_on_cpu),
@@ -314,7 +317,8 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
     TaskRunners task_runners,
     fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
-    std::shared_ptr<ViewportSizeHolder> shared_viewport_size_holder,
+    std::shared_ptr<ResourceCacheLimitCalculator>
+        resource_cache_limit_calculator,
     Settings settings,
     DartVMRef vm,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -342,7 +346,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
            &shell,                                                        //
            parent_thread_merger,                                          //
            parent_io_manager,                                             //
-           shared_viewport_size_holder,                                   //
+           resource_cache_limit_calculator,                               //
            task_runners = std::move(task_runners),                        //
            platform_data = std::move(platform_data),                      //
            settings = std::move(settings),                                //
@@ -356,7 +360,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
                 std::move(vm),                       //
                 parent_thread_merger,                //
                 parent_io_manager,                   //
-                shared_viewport_size_holder,         //
+                resource_cache_limit_calculator,     //
                 std::move(task_runners),             //
                 std::move(platform_data),            //
                 std::move(settings),                 //
@@ -373,13 +377,14 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 Shell::Shell(DartVMRef vm,
              TaskRunners task_runners,
              fml::RefPtr<fml::RasterThreadMerger> parent_merger,
-             std::shared_ptr<ViewportSizeHolder> shared_viewport_size_holder,
+             std::shared_ptr<ResourceCacheLimitCalculator>
+                 resource_cache_limit_calculator,
              Settings settings,
              std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
              bool is_gpu_disabled)
     : task_runners_(std::move(task_runners)),
       parent_raster_thread_merger_(parent_merger),
-      shared_viewport_size_holder_(shared_viewport_size_holder),
+      resource_cache_limit_calculator_(resource_cache_limit_calculator),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
@@ -446,7 +451,7 @@ Shell::~Shell() {
       task_runners_.GetIOTaskRunner());
 
   vm_->GetServiceProtocol()->RemoveHandler(this);
-  shared_viewport_size_holder_->RemoveViewportSize(
+  resource_cache_limit_calculator_->RemoveResourceCacheBytes(
       reinterpret_cast<uintptr_t>(this));
 
   fml::AutoResetWaitableEvent ui_latch, gpu_latch, platform_latch, io_latch;
@@ -510,7 +515,7 @@ std::unique_ptr<Shell> Shell::Spawn(
           .SetIfTrue([&is_gpu_disabled] { is_gpu_disabled = true; }));
   std::unique_ptr<Shell> result = CreateWithSnapshot(
       PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
-      io_manager_, shared_viewport_size_holder_, GetSettings(), vm_,
+      io_manager_, resource_cache_limit_calculator_, GetSettings(), vm_,
       vm_->GetVMData()->GetIsolateSnapshot(), on_create_platform_view,
       on_create_rasterizer,
       [engine = this->engine_.get(), initial_route](
@@ -919,19 +924,18 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
     return;
   }
 
-  shared_viewport_size_holder_->UpdateViewportSize(
-      reinterpret_cast<uintptr_t>(this),
-      {metrics.physical_width, metrics.physical_height});
-  ViewportSize max_viewport_size =
-      shared_viewport_size_holder_->GetMaxViewportSize();
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
-  size_t max_bytes =
-      max_viewport_size.width * max_viewport_size.height * 12 * 4;
+  size_t resource_cache_bytes =
+      metrics.physical_width * metrics.physical_height * 12 * 4;
+  resource_cache_limit_calculator_->UpdateResourceCacheBytes(
+      reinterpret_cast<uintptr_t>(this), resource_cache_bytes);
+  size_t resource_cache_max_bytes =
+      resource_cache_limit_calculator_->GetResourceCacheMaxBytes();
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+      [rasterizer = rasterizer_->GetWeakPtr(), resource_cache_max_bytes] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+          rasterizer->SetResourceCacheMaxBytes(resource_cache_max_bytes, false);
         }
       });
 

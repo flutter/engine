@@ -1074,6 +1074,9 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/rasterizer_unittests.cc
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.cc
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.h
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator_unittests.cc
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/serialization_callbacks.cc
@@ -1111,9 +1114,6 @@ FILE: ../../../flutter/shell/common/variable_refresh_rate_display.cc
 FILE: ../../../flutter/shell/common/variable_refresh_rate_display.h
 FILE: ../../../flutter/shell/common/variable_refresh_rate_display_unittests.cc
 FILE: ../../../flutter/shell/common/variable_refresh_rate_reporter.h
-FILE: ../../../flutter/shell/common/viewport_size_holder.cc
-FILE: ../../../flutter/shell/common/viewport_size_holder.h
-FILE: ../../../flutter/shell/common/viewport_size_holder_unittests.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc

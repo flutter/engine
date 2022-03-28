@@ -294,6 +294,8 @@ struct Settings {
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t old_gen_heap_size = -1;
 
+  size_t resource_cache_max_bytes_threshold = -1;
+
   /// A timestamp representing when the engine started. The value is based
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
