@@ -144,7 +144,15 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     const auto now = fml::TimePoint::Now();
     // render to an offscreen canvas.
     auto* canvas = offscreen_surface->GetCanvas();
+    SkAutoCanvasRestore save(canvas, true);
     canvas->clear(SK_ColorTRANSPARENT);
+
+    canvas->translate(offset_.x(), offset_.y());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+        context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
+
     display_list()->RenderTo(canvas, context.inherited_opacity);
     canvas->flush();
     const fml::TimeDelta offscreen_render_time = fml::TimePoint::Now() - now;
