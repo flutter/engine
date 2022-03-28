@@ -7,8 +7,7 @@
 
 #include <gdk/gdk.h>
 
-#include "flutter/shell/platform/linux/fl_key_responder.h"
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
+#include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
 
 /**
  * FlKeyboardManagerRedispatcher:
@@ -64,26 +63,12 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
  * objects handle the event. Typically a function that calls #gdk_event_put
  * on #FlKeyEvent::origin.
  *
- * Create a new #FlKeyboardManager. The text input plugin must be specified
- * now, while the responders should be added later with
- * #fl_keyboard_manager_add_responder.
+ * Create a new #FlKeyboardManager.
  *
  * Returns: a new #FlKeyboardManager.
  */
 FlKeyboardManager* fl_keyboard_manager_new(
-    FlTextInputPlugin* text_input_plugin,
-    FlKeyboardManagerRedispatcher redispatch_callback);
-
-/**
- * fl_keyboard_manager_add_responder:
- * @manager: the #FlKeyboardManager self.
- * @responder: the new responder to be added.
- *
- * Add a new #FlKeyResponder to the #FlKeyboardManager. Responders added
- * earlier will receive events earlier.
- */
-void fl_keyboard_manager_add_responder(FlKeyboardManager* manager,
-                                       FlKeyResponder* responder);
+    FlKeyboardViewDelegate* view_delegate);
 
 /**
  * fl_keyboard_manager_handle_event:
@@ -107,6 +92,18 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
  * Returns: true if the manager's various states are cleared.
  */
 gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* manager);
+
+/**
+ * fl_keyboard_manager_wait_for_pending:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Block this thread until the all pending events are resolved.
+ *
+ * Asserts if a manager blocks while it's already blocking.
+ *
+ * This must only be used in unittests.
+ */
+void fl_keyboard_manager_wait_for_pending(FlKeyboardManager* manager);
 
 G_END_DECLS
 

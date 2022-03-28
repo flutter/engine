@@ -5,6 +5,10 @@
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 
 #include <cinttypes>
+#include <memory>
+
+#include "flutter/shell/platform/linux/fl_key_channel_responder.h"
+#include "flutter/shell/platform/linux/fl_key_embedder_responder.h"
 
 /* Declare and define FlKeyboardPendingEvent */
 
@@ -27,8 +31,8 @@ struct _FlKeyboardPendingEvent {
 
   // The target event.
   //
-  // This is freed by #FlKeyboardPendingEvent.
-  FlKeyEvent* event;
+  // This is freed by #FlKeyboardPendingEvent if not null.
+  std::unique_ptr<FlKeyEvent> event;
 
   // Self-incrementing ID attached to an event sent to the framework.
   //
@@ -52,7 +56,9 @@ static void fl_keyboard_pending_event_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEYBOARD_PENDING_EVENT(object));
 
   FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(object);
-  fl_key_event_dispose(self->event);
+  if (self->event != nullptr) {
+    fl_key_event_dispose(self->event.release());
+  }
   G_OBJECT_CLASS(fl_keyboard_pending_event_parent_class)->dispose(object);
 }
 
@@ -81,25 +87,26 @@ static uint64_t fl_keyboard_manager_get_event_hash(FlKeyEvent* event) {
 // the sequence ID, and the number of responders that will reply.
 //
 // This will acquire the ownership of the event.
-FlKeyboardPendingEvent* fl_keyboard_pending_event_new(FlKeyEvent* event,
-                                                      uint64_t sequence_id,
-                                                      size_t to_reply) {
+FlKeyboardPendingEvent* fl_keyboard_pending_event_new(
+    std::unique_ptr<FlKeyEvent> event,
+    uint64_t sequence_id,
+    size_t to_reply) {
   FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(
       g_object_new(fl_keyboard_pending_event_get_type(), nullptr));
 
-  self->event = event;
+  self->event = std::move(event);
   self->sequence_id = sequence_id;
   self->unreplied = to_reply;
   self->any_handled = false;
-  self->hash = fl_keyboard_manager_get_event_hash(event);
+  self->hash = fl_keyboard_manager_get_event_hash(self->event.get());
   return self;
 }
 
 /* Declare and define FlKeyboardManagerUserData */
 
 /**
- * FlKeyEmbedderUserData:
- * The user_data used when #FlKeyboardManagerUserData sends event to
+ * FlKeyboardManagerUserData:
+ * The user_data used when #FlKeyboardManager sends event to
  * responders.
  */
 #define FL_TYPE_KEYBOARD_MANAGER_USER_DATA \
@@ -171,13 +178,7 @@ FlKeyboardManagerUserData* fl_keyboard_manager_user_data_new(
 struct _FlKeyboardManager {
   GObject parent_instance;
 
-  // The callback that unhandled events should be redispatched through.
-  FlKeyboardManagerRedispatcher redispatch_callback;
-
-  // A text plugin.
-  //
-  // Released by the manager on dispose.
-  FlTextInputPlugin* text_input_plugin;
+  FlKeyboardViewDelegate* view_delegate;
 
   // An array of #FlKeyResponder. Elements are added with
   // #fl_keyboard_manager_add_responder immediately after initialization and are
@@ -198,6 +199,13 @@ struct _FlKeyboardManager {
 
   // The last sequence ID used. Increased by 1 by every use.
   uint64_t last_sequence_id;
+
+  // If `debug_pending_lock` is not null, it will quit and be cleared when the
+  // last pending event is resolved.
+  //
+  // It is used in unit tests to let the test body wait for message channels,
+  // which are resolved asynchronously on main loops.
+  GMainLoop* debug_pending_lock;
 };
 
 G_DEFINE_TYPE(FlKeyboardManager, fl_keyboard_manager, G_TYPE_OBJECT);
@@ -213,9 +221,6 @@ static void fl_keyboard_manager_init(FlKeyboardManager* self) {}
 static void fl_keyboard_manager_dispose(GObject* object) {
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(object);
 
-  if (self->text_input_plugin != nullptr) {
-    g_clear_object(&self->text_input_plugin);
-  }
   g_ptr_array_free(self->responder_list, TRUE);
   g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
   g_ptr_array_free(self->pending_responds, TRUE);
@@ -312,32 +317,35 @@ static void responder_handle_event_callback(bool handled,
     gpointer removed =
         g_ptr_array_remove_index_fast(self->pending_responds, result_index);
     g_return_if_fail(removed == pending);
-    bool should_redispatch =
-        !pending->any_handled && (self->text_input_plugin == nullptr ||
-                                  !fl_text_input_plugin_filter_keypress(
-                                      self->text_input_plugin, pending->event));
+    bool should_redispatch = !pending->any_handled &&
+                             !fl_keyboard_view_delegate_text_filter_key_press(
+                                 self->view_delegate, pending->event.get());
     if (should_redispatch) {
       g_ptr_array_add(self->pending_redispatches, pending);
-      self->redispatch_callback(pending->event->origin);
+      fl_keyboard_view_delegate_redispatch_event(self->view_delegate,
+                                                 std::move(pending->event));
     } else {
       g_object_unref(pending);
+    }
+    // Lock `debug_pending_lock` if there are pending responds. This is used in
+    // unit tests to wait for async tasks of the binary messenger to finish.
+    if (self->debug_pending_lock != nullptr &&
+        self->pending_responds->len == 0) {
+      g_autoptr(GMainLoop) loop = self->debug_pending_lock;
+      self->debug_pending_lock = nullptr;
+      g_main_loop_quit(loop);
     }
   }
 }
 
 FlKeyboardManager* fl_keyboard_manager_new(
-    FlTextInputPlugin* text_input_plugin,
-    FlKeyboardManagerRedispatcher redispatch_callback) {
-  g_return_val_if_fail(text_input_plugin == nullptr ||
-                           FL_IS_TEXT_INPUT_PLUGIN(text_input_plugin),
-                       nullptr);
-  g_return_val_if_fail(redispatch_callback != nullptr, nullptr);
+    FlKeyboardViewDelegate* view_delegate) {
+  g_return_val_if_fail(FL_IS_KEYBOARD_VIEW_DELEGATE(view_delegate), nullptr);
 
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(
       g_object_new(fl_keyboard_manager_get_type(), nullptr));
 
-  self->text_input_plugin = text_input_plugin;
-  self->redispatch_callback = redispatch_callback;
+  self->view_delegate = view_delegate;
   self->responder_list = g_ptr_array_new_with_free_func(g_object_unref);
 
   self->pending_responds = g_ptr_array_new();
@@ -345,15 +353,20 @@ FlKeyboardManager* fl_keyboard_manager_new(
 
   self->last_sequence_id = 1;
 
+  // The embedder responder must be added before the channel responder.
+  g_ptr_array_add(
+      self->responder_list,
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(
+          [self](const FlutterKeyEvent* event, FlutterKeyEventCallback callback,
+                 void* user_data) {
+            fl_keyboard_view_delegate_send_key_event(self->view_delegate, event,
+                                                     callback, user_data);
+          })));
+  g_ptr_array_add(self->responder_list,
+                  FL_KEY_RESPONDER(fl_key_channel_responder_new(
+                      fl_keyboard_view_delegate_get_messenger(view_delegate))));
+
   return self;
-}
-
-void fl_keyboard_manager_add_responder(FlKeyboardManager* self,
-                                       FlKeyResponder* responder) {
-  g_return_if_fail(FL_IS_KEYBOARD_MANAGER(self));
-  g_return_if_fail(responder != nullptr);
-
-  g_ptr_array_add(self->responder_list, responder);
 }
 
 // The loop body to dispatch an event to a responder.
@@ -378,7 +391,8 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
   }
 
   FlKeyboardPendingEvent* pending = fl_keyboard_pending_event_new(
-      event, ++self->last_sequence_id, self->responder_list->len);
+      std::unique_ptr<FlKeyEvent>(event), ++self->last_sequence_id,
+      self->responder_list->len);
 
   g_ptr_array_add(self->pending_responds, pending);
   FlKeyboardManagerUserData* user_data =
@@ -396,4 +410,13 @@ gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* self) {
   g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
   return self->pending_responds->len == 0 &&
          self->pending_redispatches->len == 0;
+}
+
+void fl_keyboard_manager_wait_for_pending(FlKeyboardManager* self) {
+  if (self->pending_responds->len == 0) {
+    return;
+  }
+  g_return_if_fail(self->debug_pending_lock == nullptr);
+  self->debug_pending_lock = g_main_loop_new(nullptr, 0);
+  g_main_loop_run(self->debug_pending_lock);
 }
