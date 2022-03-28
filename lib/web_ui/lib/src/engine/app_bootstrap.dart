@@ -46,10 +46,11 @@ class AppBootstrap {
     // Return an object that has a initEngine method...
     return FlutterEngineInitializer(
       // initEngine and runApp in one call. Does not return any lifecycle object,
-      // nor accepts any incoming parameters. This implements the "legacy" way of
-      // bootstrapping an app.
+      // nor accepts any incoming parameters. This is a convenience method that
+      // implements something similar to the "autoStart" mode, but triggered
+      // from from JavaScript.
       runApp: allowInterop(now),
-      // Return a JS Promise that resolves (when ready) to an AppRunner object.
+      // Return a JS Promise that resolves to an AppRunner object.
       initializeEngine: allowInterop(([InitializeEngineFnParameters? params]) {
         // `params` coming from Javascript may be used to configure the engine intialization.
         // The internal `initEngine` function must accept those params, and then this

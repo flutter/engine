@@ -49,15 +49,16 @@ Future<void> webOnlyInitializePlatform() async {
 /// callback, to delegate bootstrapping the app to the programmer.
 ///
 /// If said callback is not defined, this assumes that the Flutter Web app is
-/// initializing "in legacy mode", that is: as soon as possible. This will run
-/// the initEngine and runApp methods (via [engine.AppBootstrap.now]).
+/// initializing "automatically", as was normal before this feature was
+/// introduced. This will immediately run the initEngine and runApp methods
+/// (via [engine.AppBootstrap.now]).
 ///
 /// This is the only bit of `dart:ui` that should be directly called by Flutter
 /// web apps. Everything else should go through the JS-interop layer created in
 /// `engine.warmup`.
 ///
-/// This method should NOT trigger the download of any additional resources (except
-/// in "legacy mode").
+/// This method should NOT trigger the download of any additional resources
+/// (except when the app is in "autoStart" mode).
 Future<void> webOnlyWarmupEngine({
   Function? registerPlugins,
   Function? runApp,
@@ -70,25 +71,29 @@ Future<void> webOnlyWarmupEngine({
       if (registerPlugins != null) {
         registerPlugins();
       }
-      return engine.initializeEngineUi();
-    }, runApp: runApp,
+    }, runApp: () async {
+      await engine.initializeEngineUi();
+      if (runApp != null) {
+        runApp();
+      }
+    },
   );
 
-  // Is this running in "legacy" mode?
-  bool legacyMode = true;
+  // Should the app "autoStart"?
+  bool autoStart = true;
   try {
-    legacyMode = engine.didLoadMainDartJs == null;
+    autoStart = engine.didLoadMainDartJs == null;
   } catch (e) {
     // Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'loader')
-    legacyMode = true;
+    autoStart = true;
   }
-  if (legacyMode) {
-    // Yes: The user does not want control of the app, bootstrap it now.
-    print('Flutter Web Bootstrap: Immediate');
+  if (autoStart) {
+    // The user does not want control of the app, bootstrap immediately.
+    print('Flutter Web Bootstrap: Auto');
     await bootstrap.now();
   } else {
-    // No: Yield control of the bootstrap procedure to the user.
-    print('Flutter Web Bootstrap: User');
+    // Yield control of the bootstrap procedure to the user.
+    print('Flutter Web Bootstrap: Programmatic');
     engine.didLoadMainDartJs!(bootstrap.prepareCustomEngineInitializer());
   }
 }
