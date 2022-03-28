@@ -75,6 +75,10 @@ class LayerTree {
     enable_leaf_layer_tracing_ = enable;
   }
 
+  bool is_leaf_layer_tracing_enabled() const {
+    return enable_leaf_layer_tracing_;
+  }
+
  private:
   std::shared_ptr<Layer> root_layer_;
   SkISize frame_size_ = SkISize::MakeEmpty();  // Physical pixels.
