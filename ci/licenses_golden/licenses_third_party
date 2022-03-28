@@ -1,4 +1,4 @@
-Signature: 19c0363b435b6a2b9b3b00934ef76861
+Signature: 1a6a3758c0b505efb3eba51d6be71ce7
 
 UNUSED LICENSES:
 
@@ -10141,6 +10141,9 @@ FILE: ../../../third_party/dart/runtime/bin/test_utils.h
 FILE: ../../../third_party/dart/runtime/bin/thread_absl.cc
 FILE: ../../../third_party/dart/runtime/bin/thread_absl.h
 FILE: ../../../third_party/dart/runtime/platform/mach_o.h
+FILE: ../../../third_party/dart/runtime/platform/pe.h
+FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.cc
+FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.h
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
@@ -10152,6 +10155,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/date_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/developer.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/errors_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/expando_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/function.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart
