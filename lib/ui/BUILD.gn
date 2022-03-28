@@ -4,6 +4,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("ui") {
@@ -43,8 +44,6 @@ source_set("ui") {
     "painting/image.h",
     "painting/image_decoder.cc",
     "painting/image_decoder.h",
-    "painting/image_decoder_impeller.cc",
-    "painting/image_decoder_impeller.h",
     "painting/image_decoder_skia.cc",
     "painting/image_decoder_skia.h",
     "painting/image_descriptor.cc",
@@ -147,7 +146,6 @@ source_set("ui") {
     "//flutter/common",
     "//flutter/display_list",
     "//flutter/fml",
-    "//flutter/impeller",
     "//flutter/runtime:dart_plugin_registrant",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",
@@ -155,6 +153,15 @@ source_set("ui") {
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
+
+  if (impeller_supports_platform) {
+    sources += [
+      "painting/image_decoder_impeller.cc",
+      "painting/image_decoder_impeller.h",
+    ]
+
+    deps += [ "//flutter/impeller" ]
+  }
 
   if (!defined(defines)) {
     defines = []

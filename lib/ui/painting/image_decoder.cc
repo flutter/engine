@@ -4,8 +4,11 @@
 
 #include "flutter/lib/ui/painting/image_decoder.h"
 
-#include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
+
+#if IMPELLER_SUPPORTS_PLATFORM
+#include "flutter/lib/ui/painting/image_decoder_impeller.h"
+#endif  // IMPELLER_SUPPORTS_PLATFORM
 
 namespace flutter {
 
@@ -14,6 +17,7 @@ std::unique_ptr<ImageDecoder> ImageDecoder::Make(
     TaskRunners runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
     fml::WeakPtr<IOManager> io_manager) {
+#if IMPELLER_SUPPORTS_PLATFORM
   if (settings.enable_impeller) {
     return std::make_unique<ImageDecoderImpeller>(
         std::move(runners),                 //
@@ -21,6 +25,7 @@ std::unique_ptr<ImageDecoder> ImageDecoder::Make(
         std::move(io_manager)               //
     );
   }
+#endif  // IMPELLER_SUPPORTS_PLATFORM
   return std::make_unique<ImageDecoderSkia>(
       std::move(runners),                 //
       std::move(concurrent_task_runner),  //
