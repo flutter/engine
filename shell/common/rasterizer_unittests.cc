@@ -475,16 +475,17 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
 
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
                                                   /*device_pixel_ratio=*/2.0f);
+    auto layer_tree_item = std::make_unique<LayerTreeItem>(
+        std::move(layer_tree), CreateFinishedBuildRecorder());
     PipelineProduceResult result =
-        pipeline->Produce().Complete(std::move(layer_tree));
+        pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     // Always discard the layer tree.
     auto discard_callback = [](LayerTree&) { return true; };
-    RasterStatus status = rasterizer->Draw(CreateFinishedBuildRecorder(),
-                                           pipeline, discard_callback);
+    RasterStatus status = rasterizer->Draw(pipeline, discard_callback);
     EXPECT_EQ(status, RasterStatus::kDiscarded);
     latch.Signal();
   });
