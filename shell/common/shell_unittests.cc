@@ -2526,6 +2526,8 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
 // TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
 // flakiness.
+// TODO(https://github.com/flutter/flutter/issues/100299): Fix it when
+// re-enabling.
 TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
@@ -2578,6 +2580,8 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
 
 // TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
 // flakiness.
+// TODO(https://github.com/flutter/flutter/issues/100299): Fix it when
+// re-enabling.
 TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
