@@ -26,7 +26,7 @@ part of ui;
 ///
 /// This is only available on the Web, as native Flutter configures the
 /// environment in the native embedder.
-@Deprecated('Use webOnlyWarmupEngine')
+//NotYet@Deprecated('Use webOnlyWarmupEngine')
 Future<void> webOnlyInitializePlatform() async {
   await engine.initializeEngine();
 }
