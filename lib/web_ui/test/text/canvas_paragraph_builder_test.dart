@@ -168,7 +168,7 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: (9+2)*5, lineHeight: 1.5, fontSize: 9, fontWeight: 'bold', fontStyle: 'italic', letterSpacing: 2)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: (9+2)*5, lineHeight: 1.5*9, fontSize: 9, fontWeight: 'bold', fontStyle: 'italic', letterSpacing: 2)}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
@@ -280,7 +280,7 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, lineHeight: 2, fontSize: 13, fontWeight: 'bold')}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, lineHeight: 2*13, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
       '</flt-span>'
       '<flt-span style="${spanStyle(top: 6, left: 65, width: 13*1, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
@@ -458,7 +458,6 @@ String spanStyle({
 }) {
   return <String>[
     'color: rgb(255, 0, 0);',
-    if (lineHeight != null) 'line-height: $lineHeight;',
     'font-size: ${fontSize}px;',
     if (fontWeight != null) 'font-weight: $fontWeight;',
     if (fontStyle != null) 'font-style: $fontStyle;',
@@ -468,6 +467,7 @@ String spanStyle({
     if (top != null) 'top: ${top}px;',
     if (left != null) 'left: ${left}px;',
     if (width != null) 'width: ${width}px;',
+    'line-height: ${lineHeight ?? fontSize}px;',
   ].join(' ');
 }
 
@@ -494,19 +494,23 @@ TextStyle styleWithDefaults({
 void expectOuterHtml(CanvasParagraph paragraph, String expected, {required bool ignorePositions}) {
   String outerHtml = paragraph.toDomElement().outerHtml!;
   if (ignorePositions) {
-    outerHtml = removePositionInfo(outerHtml);
-    expected = removePositionInfo(expected);
+    outerHtml = removeMeasurementInfo(outerHtml);
+    expected = removeMeasurementInfo(expected);
   }
 
   expect(outerHtml, expected);
 }
 
-/// Removes "top" and "left" CSS styles from the given html string.
+/// Removes CSS styles that are based on text measurement from the given html
+/// string.
 ///
-/// This is needed when the positioning information in the html output is
-/// unknown and could be different depending on browser and environment.
-String removePositionInfo(String outerHtml) {
+/// Examples: top, left, line-height, width.
+///
+/// This is needed when the measurement is unknown or could be different
+/// depending on browser and environment.
+String removeMeasurementInfo(String outerHtml) {
   return outerHtml
+      .replaceAll(RegExp(r'\s*line-height:\s*[\d\.]+px\s*;\s*'), '')
       .replaceAll(RegExp(r'\s*width:\s*[\d\.]+px\s*;\s*'), '')
       .replaceAll(RegExp(r'\s*top:\s*[\d\.]+px\s*;\s*'), '')
       .replaceAll(RegExp(r'\s*left:\s*[\d\.]+px\s*;\s*'), '');
