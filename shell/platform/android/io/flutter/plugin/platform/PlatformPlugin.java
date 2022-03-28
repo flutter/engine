@@ -15,6 +15,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -432,6 +433,8 @@ public class PlatformPlugin {
     }
     // You can't change the color of the navigation bar divider color until SDK 28.
     if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
+      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+      window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
 
