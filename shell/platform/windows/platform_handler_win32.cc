@@ -141,13 +141,7 @@ int ScopedClipboard::Open(HWND window) {
   opened_ = ::OpenClipboard(window);
 
   if (!opened_) {
-    int error_code = ::GetLastError();
-    // Swallow errors of type ERROR_ACCESS_DENIED. These happen when the app is
-    // not in the foreground and HasStrings is irrelevant.
-    // See https://github.com/flutter/flutter/issues/95817.
-    if (error_code != kAccessDeniedErrorCode) {
-      return error_code;
-    }
+    return ::GetLastError();
   }
 
   return -1;
@@ -260,7 +254,7 @@ void PlatformHandlerWin32::GetHasStrings(
     rapidjson::Document error_code;
     error_code.SetInt(open_result);
     // Swallow errors of type ERROR_ACCESS_DENIED. These happen when the app is
-    // not in the foreground and HasStrings is irrelevant.
+    // not in the foreground and GetHasStrings is irrelevant.
     // See https://github.com/flutter/flutter/issues/95817.
     if (error_code != kAccessDeniedErrorCode) {
       result->Error(kClipboardError, "Unable to open clipboard", error_code);
