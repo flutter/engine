@@ -6,6 +6,7 @@
 #define FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
+#include "include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkShader.h"
 
 namespace flutter {
@@ -28,6 +29,7 @@ class ShaderMaskLayer : public MergedContainerLayer {
   sk_sp<SkShader> shader_;
   SkRect mask_rect_;
   SkBlendMode blend_mode_;
+  sk_sp<SkShader> transfromed_filter_;
 
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
   int render_count_;
