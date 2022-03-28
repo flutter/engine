@@ -5,7 +5,6 @@
 package io.flutter.plugin.editing;
 
 import android.content.Context;
-import android.view.View;
 import android.view.textservice.SentenceSuggestionsInfo;
 import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.SpellCheckerSession;
@@ -17,35 +16,29 @@ import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import java.util.ArrayList;
 import java.util.Locale;
 
+/** Android implementation of the spell check plugin. */
 public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSessionListener {
 
-  @NonNull private final View mView;
+  @NonNull private final Context mContext;
   @NonNull private final SpellCheckChannel mSpellCheckChannel;
   @NonNull private final TextServicesManager tsm;
   private SpellCheckerSession mSpellCheckerSession;
 
-  // String of spell checked text for testing
-  private String currentSpellCheckedText;
-
-  public SpellCheckPlugin(@NonNull View view, @NonNull SpellCheckChannel spellCheckChannel) {
-    mView = view;
+  public SpellCheckPlugin(@NonNull Context context, @NonNull SpellCheckChannel spellCheckChannel) {
+    mContext = context;
     mSpellCheckChannel = spellCheckChannel;
-    tsm =
-        (TextServicesManager)
-            view.getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    tsm = (TextServicesManager) mContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     mSpellCheckChannel.setSpellCheckMethodHandler(
         new SpellCheckChannel.SpellCheckMethodHandler() {
           @Override
-          public void initiateSpellChecking(String locale, String text) {
-            currentSpellCheckedText = text;
+          public void initiateSpellCheck(String locale, String text) {
             performSpellCheck(locale, text);
           }
         });
   }
 
-  // Responsible for calling the Android spell checker API to retrieve spell
-  // checking results.
+  /** Calls on the Android spell check API to spell check specified text. */
   public void performSpellCheck(String locale, String text) {
     String[] localeCodes = locale.split("-");
     Locale localeToUse;
@@ -58,8 +51,6 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
       localeToUse = new Locale(localeCodes[0]);
     }
 
-    // Open a new spell checker session when a new text input client is set.
-    // Closes spell checker session if one previously in use.
     // TODO(camillesimon): Figure out proper session management.
     if (mSpellCheckerSession != null) {
       mSpellCheckerSession.close();
@@ -69,16 +60,15 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
     }
     SpellCheckerInfo infoChecker = mSpellCheckerSession.getSpellChecker();
 
-    // Define TextInfo[] object (textInfos) based on the current input to be
-    // spell checked.
     TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
 
-    // Make API call. Maximum suggestions requested set to 3 for now.
     mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
   }
 
-  // Responsible for decomposing spell checker results into an object that can
-  // then be sent to the framework.
+  /**
+   * Callback for Android spell check API that decomposes results and send results through the
+   * {@link SpellCheckChannel}.
+   */
   @Override
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
     ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
@@ -105,15 +95,12 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
       }
     }
 
-    // Make call to update the spell checker results in the framework.
-    // Current text being passed for testing purposes.
-    // TODO(camillesimon): Don't pass text back to framework.
-    mSpellCheckChannel.updateSpellCheckerResults(
-        spellCheckerSuggestionSpans, currentSpellCheckedText);
+    mSpellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans);
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public void onGetSuggestions(SuggestionsInfo[] results) {
-    // Callback for a deprecated method, so will not use.
+    // Deprecated callback for Android spell check API; will not use.
   }
 }

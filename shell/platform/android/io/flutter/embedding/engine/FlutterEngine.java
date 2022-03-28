@@ -562,7 +562,7 @@ public class FlutterEngine {
     return textInputChannel;
   }
 
-  /** System channel that sends and receives requests related to spell check. */
+  /** System channel that sends and receives spell check requests and results. */
   @NonNull
   public SpellCheckChannel getSpellCheckChannel() {
     return spellCheckChannel;

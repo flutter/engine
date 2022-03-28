@@ -9,7 +9,6 @@ import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -33,12 +32,12 @@ public class SpellCheckChannel {
           Object args = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
-            case "SpellCheck.initiateSpellChecking":
+            case "SpellCheck.initiateSpellCheck":
               try {
                 final JSONArray argumentList = (JSONArray) args;
                 String locale = argumentList.getString(0);
                 String text = argumentList.getString(1);
-                spellCheckMethodHandler.initiateSpellChecking(locale, text);
+                spellCheckMethodHandler.initiateSpellCheck(locale, text);
                 result.success(null);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
@@ -52,19 +51,19 @@ public class SpellCheckChannel {
       };
 
   public SpellCheckChannel(@NonNull DartExecutor dartExecutor) {
-    // TODO(camillesimon): Use JSON?
     this.channel = new MethodChannel(dartExecutor, "flutter/spellcheck", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
-  /** Responsible for sending spell checker results across to the framework. */
-  public void updateSpellCheckerResults(
-      ArrayList<String> spellCheckerResults, String spellCheckedText) {
-    channel.invokeMethod(
-        "SpellCheck.updateSpellCheckerResults",
-        Arrays.asList(spellCheckerResults, spellCheckedText));
+  /** Responsible for sending spell check results through this channel. */
+  public void updateSpellCheckResults(ArrayList<String> spellCheckResults) {
+    channel.invokeMethod("SpellCheck.updateSpellCheckResults", spellCheckResults);
   }
 
+  /**
+   * Sets the {@link SpellCheckMethodHandler} which receives all requests to spell check the
+   * specified text sent through this channel.
+   */
   public void setSpellCheckMethodHandler(
       @Nullable SpellCheckMethodHandler spellCheckMethodHandler) {
     this.spellCheckMethodHandler = spellCheckMethodHandler;
@@ -72,9 +71,11 @@ public class SpellCheckChannel {
 
   public interface SpellCheckMethodHandler {
     /**
-     * Requests that spell checking is initiated for the inputted text recognized by the framework,
-     * which will automatically result in spell checking resutls being sent back to the framework.
+     * Requests that spell check is initiated for the specified text, which will automatically
+     * result in a call to {@code
+     * SpellCheckChannel#setSpellCheckMethodHandler(SpellCheckMethodHandler)} once spell check
+     * results are received from the native spell check service.
      */
-    void initiateSpellChecking(String locale, String text);
+    void initiateSpellCheck(String locale, String text);
   }
 }

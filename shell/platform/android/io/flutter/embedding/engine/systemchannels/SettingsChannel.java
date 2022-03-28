@@ -13,7 +13,7 @@ public class SettingsChannel {
 
   public static final String CHANNEL_NAME = "flutter/settings";
   private static final String TEXT_SCALE_FACTOR = "textScaleFactor";
-  private static final String DEFAULT_SPELL_CHECK_ENABLED = "defaultSpellCheckEnabled";
+  private static final String NATIVE_SPELL_CHECK_SERVICE_DEFINED = "nativeSpellCheckServiceDefined";
   private static final String BRIEFLY_SHOW_PASSWORD = "brieflyShowPassword";
   private static final String ALWAYS_USE_24_HOUR_FORMAT = "alwaysUse24HourFormat";
   private static final String PLATFORM_BRIGHTNESS = "platformBrightness";
@@ -44,8 +44,9 @@ public class SettingsChannel {
     }
 
     @NonNull
-    public MessageBuilder setDefaultSpellCheckEnabled(@NonNull boolean defaultSpellCheckEnabled) {
-      message.put(DEFAULT_SPELL_CHECK_ENABLED, defaultSpellCheckEnabled);
+    public MessageBuilder setNativeSpellCheckServiceDefined(
+        @NonNull boolean nativeSpellCheckServiceDefined) {
+      message.put(NATIVE_SPELL_CHECK_SERVICE_DEFINED, nativeSpellCheckServiceDefined);
       return this;
     }
 

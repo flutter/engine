@@ -1122,7 +1122,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this,
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
-    spellCheckPlugin = new SpellCheckPlugin(this, this.flutterEngine.getSpellCheckChannel());
+    spellCheckPlugin =
+        new SpellCheckPlugin(getContext(), this.flutterEngine.getSpellCheckChannel());
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 
     keyboardManager =
@@ -1401,7 +1402,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    */
   @VisibleForTesting
   /* package */ void sendUserSettingsToFlutter() {
-    System.out.println("-----------------SENDING USER SETTINGS TO FLUTTER----------------");
     // Lookup the current brightness of the Android OS.
     boolean isNightModeOn =
         (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
@@ -1415,7 +1415,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
-        .setDefaultSpellCheckEnabled(true)
+        .setNativeSpellCheckServiceDefined(true)
         .setBrieflyShowPassword(
             Settings.System.getInt(
                     getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1)

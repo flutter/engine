@@ -22,12 +22,6 @@ import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.view.textservice.SentenceSuggestionsInfo;
-import android.view.textservice.SpellCheckerInfo;
-import android.view.textservice.SpellCheckerSession;
-import android.view.textservice.SuggestionsInfo;
-import android.view.textservice.TextInfo;
-import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -38,18 +32,14 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 
 /** Android implementation of the text input plugin. */
-public class TextInputPlugin
-    implements ListenableEditingState.EditingStateWatcher,
-        SpellCheckerSession.SpellCheckerSessionListener {
+public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
   private static final String TAG = "TextInputPlugin";
 
   @NonNull private final View mView;
   @NonNull private final InputMethodManager mImm;
   @NonNull private final AutofillManager afm;
-  @NonNull private final TextServicesManager tsm;
   @NonNull private final TextInputChannel textInputChannel;
   @NonNull private InputTarget inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
   @Nullable private TextInputChannel.Configuration configuration;
@@ -60,10 +50,6 @@ public class TextInputPlugin
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private ImeSyncDeferringInsetsCallback imeSyncCallback;
-  private SpellCheckerSession mSpellCheckerSession;
-
-  // String of spell checked text for testing
-  private String currentSpellCheckedText;
 
   // Initialize the "last seen" text editing values to a non-null value.
   private TextEditState mLastKnownFrameworkTextEditingState;
@@ -167,23 +153,12 @@ public class TextInputPlugin
           public void sendAppPrivateCommand(String action, Bundle data) {
             sendTextInputAppPrivateCommand(action, data);
           }
-
-          @Override
-          public void initiateSpellChecking(String locale, String text) {
-            currentSpellCheckedText = text;
-            performSpellCheck(locale, text);
-          }
         });
 
     textInputChannel.requestExistingInputState();
 
     this.platformViewsController = platformViewsController;
     this.platformViewsController.attachTextInputPlugin(this);
-
-    // Retrieve manager for text services
-    tsm =
-        (TextServicesManager)
-            view.getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
   }
 
   @NonNull
@@ -214,9 +189,6 @@ public class TextInputPlugin
     mEditable.removeEditingStateListener(this);
     if (imeSyncCallback != null) {
       imeSyncCallback.remove();
-    }
-    if (mSpellCheckerSession != null) {
-      mSpellCheckerSession.close();
     }
   }
 
@@ -508,9 +480,6 @@ public class TextInputPlugin
     updateAutofillConfigurationIfNeeded(null);
     inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
     lastClientRect = null;
-    if (mSpellCheckerSession != null) {
-      mSpellCheckerSession.close();
-    }
   }
 
   private static class InputTarget {
@@ -776,76 +745,4 @@ public class TextInputPlugin
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
   }
   // -------- End: Autofill -------
-
-  // -------- Start: Spell Check -------
-  // Responsible for calling the Android spell checker API to retrieve spell
-  // checking results.
-  public void performSpellCheck(String locale, String text) {
-    String[] localeCodes = locale.split("-");
-    Locale localeToUse;
-
-    if (localeCodes.length == 3) {
-      localeToUse = new Locale(localeCodes[0], localeCodes[1], localeCodes[2]);
-    } else if (localeCodes.length == 2) {
-      localeToUse = new Locale(localeCodes[0], localeCodes[1]);
-    } else {
-      localeToUse = new Locale(localeCodes[0]);
-    }
-
-    // Open a new spell checker session when a new text input client is set.
-    // Closes spell checker session if one previously in use.
-    if (mSpellCheckerSession != null) {
-      mSpellCheckerSession.close();
-      mSpellCheckerSession = tsm.newSpellCheckerSession(null, Locale.ENGLISH, this, true);
-    } else {
-      mSpellCheckerSession = tsm.newSpellCheckerSession(null, Locale.ENGLISH, this, true);
-    }
-    SpellCheckerInfo infoChecker = mSpellCheckerSession.getSpellChecker();
-
-    // Define TextInfo[] object (textInfos) based on the current input to be
-    // spell checked.
-    TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
-
-    // Make API call. Maximum suggestions requested set to 3 for now.
-    mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
-  }
-
-  // Responsible for decomposing spell checker results into an object that can
-  // then be sent to the framework.
-  @Override
-  public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
-    ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
-
-    for (int i = 0; i < results[0].getSuggestionsCount(); i++) {
-      SuggestionsInfo suggestionsInfo = results[0].getSuggestionsInfoAt(i);
-      int suggestionsCount = suggestionsInfo.getSuggestionsCount();
-
-      if (suggestionsCount > 0) {
-        String spellCheckerSuggestionSpan = "";
-        int start = results[0].getOffsetAt(i);
-        int length = results[0].getLengthAt(i);
-
-        spellCheckerSuggestionSpan += (String.valueOf(start) + ".");
-        spellCheckerSuggestionSpan += (String.valueOf(start + (length - 1)) + ".");
-
-        for (int j = 0; j < suggestionsCount; j++) {
-          String key = "suggestion_" + String.valueOf(j);
-          spellCheckerSuggestionSpan += (suggestionsInfo.getSuggestionAt(j) + ",");
-        }
-
-        spellCheckerSuggestionSpans.add(
-            spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
-      }
-    }
-
-    // Make call to update the spell checker results in the framework.
-    textInputChannel.updateSpellCheckerResults(
-        inputTarget.id, spellCheckerSuggestionSpans, currentSpellCheckedText);
-  }
-
-  @Override
-  public void onGetSuggestions(SuggestionsInfo[] results) {
-    // Callback for a deprecated method, so will not use.
-  }
-  // -------- End: Spell Check -------
 }
