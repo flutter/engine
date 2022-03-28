@@ -92,13 +92,14 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(1));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
       '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5)}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan textSpan = paragraph.spans.single as FlatTextSpan;
@@ -116,13 +117,14 @@ Future<void> testMain() async {
     expect(paragraph.toPlainText(), 'Hello');
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
       '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5)}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
   });
 
@@ -137,13 +139,14 @@ Future<void> testMain() async {
     expect(paragraph.toPlainText(), 'HelloWorld');
 
     paragraph.layout(const ParagraphConstraints(width: 100.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
+    expectOuterHtml(
+      paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
       '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*4)}">'
       'Hell...'
       '</flt-span>'
       '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
   });
 
