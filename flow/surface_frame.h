@@ -50,7 +50,8 @@ class SurfaceFrame {
   SurfaceFrame(sk_sp<SkSurface> surface,
                FramebufferInfo framebuffer_info,
                const SubmitCallback& submit_callback,
-               std::unique_ptr<GLContextResult> context_result = nullptr);
+               std::unique_ptr<GLContextResult> context_result = nullptr,
+               bool display_list_fallback = false);
 
   ~SurfaceFrame();
 

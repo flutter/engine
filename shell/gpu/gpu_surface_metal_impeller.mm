@@ -84,8 +84,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
                                 }));
       });
 
-  return std::make_unique<SurfaceFrame>(nullptr, SurfaceFrame::FramebufferInfo{}, submit_callback,
-                                        nullptr);
+  return std::make_unique<SurfaceFrame>(nullptr,                          // surface
+                                        SurfaceFrame::FramebufferInfo{},  // framebuffer info
+                                        submit_callback,                  // submit callback
+                                        nullptr,                          // context result
+                                        true                              // display list fallback
+  );
 }
 
 // |Surface|
