@@ -4,6 +4,8 @@
 
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 
+#include <algorithm>
+
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/display_list_image_gpu.h"
