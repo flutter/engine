@@ -5,6 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_PATH_EFFECT_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_PATH_EFFECT_H_
 
+#include <cstring>
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
@@ -95,8 +96,8 @@ class DlDashPathEffect final : public DlPathEffect {
   bool equals_(DlPathEffect const& other) const override {
     FML_DCHECK(other.type() == DlPathEffectType::kDash);
     auto that = static_cast<DlDashPathEffect const*>(&other);
-    return count_ == that->count_ && base_equals_(that) &&
-           phase_ == that->phase_;
+    return memcmp(pods(), that->pods(), count_) == 0 &&
+           count_ == that->count_ && phase_ == that->phase_;
   }
 
  private:
@@ -106,13 +107,7 @@ class DlDashPathEffect final : public DlPathEffect {
 
   bool base_equals_(DlDashPathEffect const* other) const {
     // intervals not nullptr, that has value
-    if (other != nullptr) {
-      for (int i = 0; i < count_; i++) {
-        if (pods()[i] != other->pods()[i]) {
-          return false;
-        }
-      }
-    }
+
     return true;
   }
 
