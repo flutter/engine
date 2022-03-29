@@ -12,12 +12,12 @@ import 'js_promise.dart';
 /// Typedef for the function that notifies JS that the main entrypoint is up and running.
 /// As a parameter, a [FlutterEngineInitializer] instance is passed to JS, so the
 /// programmer can control the initialization sequence.
-typedef DidLoadMainDartJsFn = void Function(FlutterEngineInitializer);
+typedef DidCreateEngineInitializerFn = void Function(FlutterEngineInitializer);
 
-// A JS-interop representation of `_flutter?.loader?.didLoadMainDartJs?`:
+// A JS-interop representation of `_flutter?.loader?.didCreateEngineInitializer?`:
 
-@JS('_flutter.loader.didLoadMainDartJs')
-external DidLoadMainDartJsFn? get didLoadMainDartJs;
+@JS('_flutter.loader.didCreateEngineInitializer')
+external DidCreateEngineInitializerFn? get didCreateEngineInitializer;
 
 // /// window._flutter
 // @JS('_flutter')
@@ -36,7 +36,7 @@ external DidLoadMainDartJsFn? get didLoadMainDartJs;
 // class FlutterJsLoaderNamespace {
 //   /// A hook to notify JavaScript that Flutter is up and running!
 //   /// This is setup by flutter.js when the main entrypoint bundle is injected.
-//   external DidLoadMainDartJsFn? get didLoadMainDartJs;
+//   external DidCreateEngineInitializerFn? get didCreateEngineInitializer;
 // }
 
 // FlutterEngineInitializer

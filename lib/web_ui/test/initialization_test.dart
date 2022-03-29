@@ -10,25 +10,25 @@ import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' as ui;
 
 void main() {
-  // Prepare _flutter.loader.didLoadMainDartJs, so it's ready in the page ASAP.
+  // Prepare _flutter.loader.didCreateEngineInitializer, so it's ready in the page ASAP.
   js.context['_flutter'] = js.JsObject.jsify(<String, Object>{
     'loader': <String, Object>{
-      'didLoadMainDartJs': js.allowInterop(() { print('not mocked'); }),
+      'didCreateEngineInitializer': js.allowInterop(() { print('not mocked'); }),
     },
   });
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  test('webOnlyWarmupEngine calls _flutter.loader.didLoadMainDartJs callback', () async {
+  test('webOnlyWarmupEngine calls _flutter.loader.didCreateEngineInitializer callback', () async {
     js.JsObject? engineInitializer;
 
-    void didLoadMainDartJsMock (js.JsObject obj) {
+    void didCreateEngineInitializerMock (js.JsObject obj) {
       engineInitializer = obj;
     }
 
-    // Prepare the DOM for: _flutter.loader.didLoadMainDartJs
-    js.context['_flutter']['loader']['didLoadMainDartJs'] = js.allowInterop(didLoadMainDartJsMock);
+    // Prepare the DOM for: _flutter.loader.didCreateEngineInitializer
+    js.context['_flutter']['loader']['didCreateEngineInitializer'] = js.allowInterop(didCreateEngineInitializerMock);
 
     // Reset the engine
     engine.debugResetEngineInitializationState();
@@ -44,7 +44,7 @@ void testMain() {
     expect(engineInitializer!.hasProperty('autoStart'), isTrue, reason: 'Missing FlutterEngineInitializer method: autoStart.');
   });
 
-  test('webOnlyWarmupEngine does auto-start when _flutter.loader.didLoadMainDartJs does not exist', () async {
+  test('webOnlyWarmupEngine does auto-start when _flutter.loader.didCreateEngineInitializer does not exist', () async {
     js.context['_flutter']['loader'] = null;
 
     bool pluginsRegistered = false;

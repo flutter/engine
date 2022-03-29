@@ -32,8 +32,8 @@ Future<void> webOnlyInitializePlatform() async {
 }
 
 /// Initializes essential bits of the engine before it fully initializes.
-/// When [didLoadMainDartJs] is set, it delegates engine initialization and app
-/// startup to the programmer.
+/// When [didCreateEngineInitializer] is set, it delegates engine initialization
+/// and app startup to the programmer.
 /// Else, it immediately triggers the full engine + app bootstrap.
 ///
 /// This method is called by the flutter_tools package, from the entrypoint that
@@ -45,8 +45,8 @@ Future<void> webOnlyInitializePlatform() async {
 /// can prepare the js-interop layer that is used by web apps (instead of the
 /// old `ui.webOnlyFoo` methods/getters).
 ///
-/// It then creates a JsObject that is passed to the [didLoadMainDartJs] JS
-/// callback, to delegate bootstrapping the app to the programmer.
+/// It then creates a JsObject that is passed to the [didCreateEngineInitializer]
+/// JS callback, to delegate bootstrapping the app to the programmer.
 ///
 /// If said callback is not defined, this assumes that the Flutter Web app is
 /// initializing "automatically", as was normal before this feature was
@@ -82,7 +82,7 @@ Future<void> webOnlyWarmupEngine({
   // Should the app "autoStart"?
   bool autoStart = true;
   try {
-    autoStart = engine.didLoadMainDartJs == null;
+    autoStart = engine.didCreateEngineInitializer == null;
   } catch (e) {
     // Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'loader')
     autoStart = true;
@@ -94,7 +94,7 @@ Future<void> webOnlyWarmupEngine({
   } else {
     // Yield control of the bootstrap procedure to the user.
     print('Flutter Web Bootstrap: Programmatic');
-    engine.didLoadMainDartJs!(bootstrap.prepareEngineInitializer());
+    engine.didCreateEngineInitializer!(bootstrap.prepareEngineInitializer());
   }
 }
 
