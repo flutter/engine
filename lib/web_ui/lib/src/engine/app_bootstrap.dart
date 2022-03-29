@@ -10,46 +10,43 @@ import 'js_interop/js_promise.dart';
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
   /// Construct a FlutterLoader
-  AppBootstrap({Function? initEngine, Function? runApp, Function? cleanApp}) :
-    _initEngine = initEngine, _runApp = runApp, _cleanApp = cleanApp;
+  AppBootstrap({required Function initEngine, required Function runApp}) :
+    _initEngine = initEngine, _runApp = runApp;
 
   // TODO(dit): Be more strict with the below typedefs, so we can add incoming params for each function.
 
   // A function to initialize the engine
-  final Function? _initEngine;
+  final Function _initEngine;
 
   // A function to run the app
-  final Function? _runApp;
-
-  // A function to clear the app (optional)
-  final Function? _cleanApp;
-
-  // Calls a function that may be null and/or async, and wraps it in a Future<Object?>
-  Future<Object?> _safeCall(Function? fn) async {
-    if (fn != null) {
-      // ignore: avoid_dynamic_calls
-      return Future<Object?>.value(fn());
-    }
-    return null;
-  }
+  final Function _runApp;
 
   /// Immediately bootstraps the app.
   ///
   /// This calls `initEngine` and `runApp` in succession.
-  Future<void> now() async {
-    await _safeCall(_initEngine);
-    await _safeCall(_runApp);
+  Future<void> autoStart() async {
+    await _initEngine();
+    await _runApp();
   }
 
   /// Creates an engineInitializer that runs our encapsulated initEngine function.
-  FlutterEngineInitializer prepareCustomEngineInitializer() {
+  FlutterEngineInitializer prepareEngineInitializer() {
     // Return an object that has a initEngine method...
     return FlutterEngineInitializer(
-      // initEngine and runApp in one call. Does not return any lifecycle object,
-      // nor accepts any incoming parameters. This is a convenience method that
+      // initEngine and runApp in one call. Returns the running App, but does not
+      // accept any incoming parameters. This is a convenience method that
       // implements something similar to the "autoStart" mode, but triggered
       // from from JavaScript.
-      runApp: allowInterop(now),
+      autoStart: allowInterop(() {
+        return Promise<FlutterApp>(allowInterop((
+          PromiseResolver<FlutterApp> resolve,
+          PromiseRejecter _,
+        ) async {
+          await autoStart();
+          // Return the App that was just started
+          resolve(_prepareFlutterApp());
+        }));
+      }),
       // Return a JS Promise that resolves to an AppRunner object.
       initializeEngine: allowInterop(([InitializeEngineFnParameters? params]) {
         // `params` coming from Javascript may be used to configure the engine intialization.
@@ -59,7 +56,7 @@ class AppBootstrap {
           PromiseResolver<FlutterAppRunner> resolve,
           PromiseRejecter _,
         ) async {
-          await _safeCall(_initEngine);
+          await _initEngine();
           // Resolve with an actual AppRunner object, created in a similar way
           // to how the FlutterEngineInitializer was created
           resolve(_prepareAppRunner());
@@ -72,28 +69,19 @@ class AppBootstrap {
   FlutterAppRunner _prepareAppRunner() {
     return FlutterAppRunner(runApp: allowInterop(([RunAppFnParameters? params]) {
       // `params` coming from JS may be used to configure the run app method.
-      return Promise<FlutterAppCleaner>(allowInterop((
-        PromiseResolver<FlutterAppCleaner> resolve,
+      return Promise<FlutterApp>(allowInterop((
+        PromiseResolver<FlutterApp> resolve,
         PromiseRejecter _,
       ) async {
-        await _safeCall(_runApp);
-        // Next step is an AppCleaner
-        resolve(_prepareAppCleaner());
+        await _runApp();
+        // Return the App that was just started
+        resolve(_prepareFlutterApp());
       }));
     }));
   }
 
-  /// Clean the app that was injected above.
-  FlutterAppCleaner _prepareAppCleaner() {
-    return FlutterAppCleaner(
-        cleanApp: allowInterop(([CleanAppFnParameters? params]) {
-      return Promise<bool>(allowInterop((
-        PromiseResolver<bool> resolve,
-        PromiseRejecter _,
-      ) async {
-        await _safeCall(_cleanApp);
-        resolve(true);
-      }));
-    }));
+  /// Represents the App that was just started, and its JS API.
+  FlutterApp _prepareFlutterApp() {
+    return FlutterApp();
   }
 }

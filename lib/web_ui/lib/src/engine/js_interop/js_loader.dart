@@ -27,7 +27,7 @@ external DidLoadMainDartJsFn? get didLoadMainDartJs;
 abstract class FlutterEngineInitializer{
   external factory FlutterEngineInitializer({
     required InitializeEngineFn initializeEngine,
-    required ImmediateRunAppFn runApp,
+    required ImmediateRunAppFn autoStart,
   });
 }
 
@@ -42,9 +42,9 @@ abstract class InitializeEngineFnParameters {
 /// Typedef for the function that initializes the flutter engine.
 typedef InitializeEngineFn = Promise<FlutterAppRunner?> Function([InitializeEngineFnParameters?]);
 
-/// Typedef for the `runApp` function that can be called straight from an engine initializer instance.
-/// (Similar to [RunAppFn], but returning a void).
-typedef ImmediateRunAppFn = void Function();
+/// Typedef for the `autoStart` function that can be called straight from an engine initializer instance.
+/// (Similar to [RunAppFn], but taking no specific "runApp" parameters).
+typedef ImmediateRunAppFn = Promise<FlutterApp> Function();
 
 // FlutterAppRunner
 
@@ -67,28 +67,14 @@ abstract class RunAppFnParameters {
 }
 
 /// Typedef for the function that runs the flutter app main entrypoint.
-typedef RunAppFn = Promise<FlutterAppCleaner> Function([RunAppFnParameters?]);
+typedef RunAppFn = Promise<FlutterApp> Function([RunAppFnParameters?]);
 
-// FlutterAppCleaner
+// FlutterApp
 
-/// A class that exposes a function that cleans up the App that is currently
-/// running. Returns a promise of a boolean value, which resolves to true if
-/// the app has been cleaned up successfully.
+/// A class that exposes the public API of a running Flutter Web App running.
 @JS()
 @anonymous
-abstract class FlutterAppCleaner {
+abstract class FlutterApp {
   /// Cleans a Flutter app
-  external factory FlutterAppCleaner({
-    required CleanAppFn cleanApp,
-  });
+  external factory FlutterApp();
 }
-
-/// The shape of the object that can be passed as parameter to the
-/// cleanApp function of the FlutterAppRunner object (from JS).
-@JS()
-@anonymous
-abstract class CleanAppFnParameters {
-}
-
-/// Typedef for the function that cleans the flutter app initialized by the functions above.
-typedef CleanAppFn = Promise<bool> Function ([CleanAppFnParameters?]);
