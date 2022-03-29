@@ -7,6 +7,9 @@
 namespace flutter {
 
 sk_sp<DlImageGPU> DlImageGPU::Make(SkiaGPUObject<SkImage> image) {
+  if (!image.skia_object()) {
+    return nullptr;
+  }
   return sk_sp<DlImageGPU>(new DlImageGPU(std::move(image)));
 }
 

@@ -29,8 +29,7 @@ int DlImage::height() const {
 };
 
 SkIRect DlImage::bounds() const {
-  auto size = dimensions();
-  return SkIRect::MakeXYWH(0, 0, size.fWidth, size.fHeight);
+  return SkIRect::MakeSize(dimensions());
 }
 
 }  // namespace flutter

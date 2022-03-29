@@ -34,7 +34,7 @@ class ImageDisposeTest : public ShellTest {
 
   sk_sp<SkPicture> current_picture_;
   sk_sp<DisplayList> current_display_list_;
-  sk_sp<SkImage> current_image_;
+  sk_sp<DlImage> current_image_;
 };
 
 TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
@@ -55,7 +55,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
       ASSERT_FALSE(picture->picture()->unique());
       current_picture_ = picture->picture();
     }
-    current_image_ = image->image()->skia_image();
+    current_image_ = image->image();
   };
 
   auto native_finish = [&](Dart_NativeArguments args) {

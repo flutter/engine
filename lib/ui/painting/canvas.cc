@@ -651,6 +651,9 @@ void Canvas::drawAtlas(const Paint& paint,
         blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
         with_attributes);
   } else if (canvas_) {
+    if (!dl_image) {
+      return;
+    }
     auto sk_image = dl_image->skia_image();
     if (!sk_image) {
       return;

@@ -184,6 +184,7 @@ static bool CompareOps(uint8_t* ptrA,
 
 void DisplayList::RenderTo(DisplayListBuilder* builder,
                            SkScalar opacity) const {
+  // TODO(100983): Opacity is not respected and attributes are not reset.
   if (!builder) {
     return;
   }

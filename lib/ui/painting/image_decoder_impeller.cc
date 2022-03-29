@@ -108,7 +108,7 @@ static sk_sp<DlImage> DecompressAndUploadTexture(
 
   if (!texture->SetContents(
           reinterpret_cast<const uint8_t*>(bitmap.getAddr(0, 0)),
-          texture_descriptor.GetSizeOfBaseMipLevel())) {
+          texture_descriptor.GetByteSizeOfBaseMipLevel())) {
     FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
     return nullptr;
   }
