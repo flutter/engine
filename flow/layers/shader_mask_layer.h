@@ -23,13 +23,10 @@ class ShaderMaskLayer : public MergedContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  void DrawMask(PaintContext& context) const;
-
  private:
   sk_sp<SkShader> shader_;
   SkRect mask_rect_;
   SkBlendMode blend_mode_;
-  sk_sp<SkShader> transfromed_filter_;
 
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
   int render_count_;
