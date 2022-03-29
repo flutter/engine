@@ -36,7 +36,7 @@ size_t ResourceCacheLimitCalculator::GetResourceCacheMaxBytes() {
   for (auto it = map_.begin(); it != map_.end(); ++it) {
     max_bytes += it->second;
     if (max_bytes >= max_bytes_threshold) {
-      return max_bytes_threshold_;
+      return max_bytes_threshold;
     }
   }
   return max_bytes;

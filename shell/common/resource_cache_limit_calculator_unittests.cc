@@ -69,7 +69,7 @@ TEST(ResourceCacheLimitCalculatorTest, UpdateMaxBytesThreshold) {
   calculator.UpdateMaxBytesThreshold(1200U);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(1000U));
 
-  calculator.UpdateMaxBytesThreshold(-1);
+  calculator.UpdateMaxBytesThreshold(0U);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(1000U));
 
   calculator.UpdateMaxBytesThreshold(500U);

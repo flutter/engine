@@ -150,16 +150,16 @@ std::unique_ptr<Shell> Shell::Create(
   auto resource_cache_limit_calculator =
       std::make_shared<ResourceCacheLimitCalculator>(
           settings.resource_cache_max_bytes_threshold);
-  return CreateWithSnapshot(std::move(platform_data),                    //
-                            std::move(task_runners),                     //
-                            /*parent_merger=*/nullptr,                   //
-                            /*parent_io_manager=*/nullptr,               //
-                            std::move(resource_cache_limit_calculator),  //
-                            std::move(settings),                         //
-                            std::move(vm),                               //
-                            std::move(isolate_snapshot),                 //
-                            std::move(on_create_platform_view),          //
-                            std::move(on_create_rasterizer),             //
+  return CreateWithSnapshot(std::move(platform_data),            //
+                            std::move(task_runners),             //
+                            /*parent_merger=*/nullptr,           //
+                            /*parent_io_manager=*/nullptr,       //
+                            resource_cache_limit_calculator,     //
+                            std::move(settings),                 //
+                            std::move(vm),                       //
+                            std::move(isolate_snapshot),         //
+                            std::move(on_create_platform_view),  //
+                            std::move(on_create_rasterizer),     //
                             CreateEngine, is_gpu_disabled);
 }
 
