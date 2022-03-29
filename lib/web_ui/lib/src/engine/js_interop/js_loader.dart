@@ -14,14 +14,37 @@ import 'js_promise.dart';
 /// programmer can control the initialization sequence.
 typedef DidLoadMainDartJsFn = void Function(FlutterEngineInitializer);
 
-/// A hook to notify JavaScript that Flutter is up and running!
-/// This is setup by flutter.js when the main entrypoint bundle is injected.
+// A JS-interop representation of `_flutter?.loader?.didLoadMainDartJs?`:
+
 @JS('_flutter.loader.didLoadMainDartJs')
 external DidLoadMainDartJsFn? get didLoadMainDartJs;
 
+// /// window._flutter
+// @JS('_flutter')
+// external FlutterJsNamespace? get flutterjs;
+
+// /// window._flutter.loader
+// @JS()
+// @anonymous
+// class FlutterJsNamespace {
+//   external FlutterJsLoaderNamespace? get loader;
+// }
+
+// /// The bits of window._flutter.loader that the Flutter Engine cares about.
+// @JS()
+// @anonymous
+// class FlutterJsLoaderNamespace {
+//   /// A hook to notify JavaScript that Flutter is up and running!
+//   /// This is setup by flutter.js when the main entrypoint bundle is injected.
+//   external DidLoadMainDartJsFn? get didLoadMainDartJs;
+// }
+
 // FlutterEngineInitializer
 
-/// Base-class for both types of EngineInitializers
+/// An object that allows the user to initialize the Engine of a Flutter App.
+///
+/// As a convenience method, [autoStart] allows the user to immediately initialize
+/// and run a Flutter Web app, from JavaScript.
 @JS()
 @anonymous
 abstract class FlutterEngineInitializer{

@@ -10,43 +10,43 @@ import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' as ui;
 
 void main() {
+  // Prepare _flutter.loader.didLoadMainDartJs, so it's ready in the page ASAP.
+  js.context['_flutter'] = js.JsObject.jsify(<String, Object>{
+    'loader': <String, Object>{
+      'didLoadMainDartJs': js.allowInterop(() { print('not mocked'); }),
+    },
+  });
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
   test('webOnlyWarmupEngine calls _flutter.loader.didLoadMainDartJs callback', () async {
-    late js.JsObject engineInitializer;
+    js.JsObject? engineInitializer;
 
-    void registerPluginsMock() {}
-    void runAppMock() {}
     void didLoadMainDartJsMock (js.JsObject obj) {
       engineInitializer = obj;
     }
 
     // Prepare the DOM for: _flutter.loader.didLoadMainDartJs
-    js.context['_flutter'] = js.JsObject.jsify(<String, Object>{
-      'loader': js.JsObject.jsify(<String, Object>{
-        'didLoadMainDartJs': js.allowInterop(didLoadMainDartJsMock)
-      })
-    });
+    js.context['_flutter']['loader']['didLoadMainDartJs'] = js.allowInterop(didLoadMainDartJsMock);
 
     // Reset the engine
     engine.debugResetEngineInitializationState();
 
     await ui.webOnlyWarmupEngine(
-      registerPlugins: registerPluginsMock,
-      runApp: runAppMock,
+      registerPlugins: () {},
+      runApp: () {},
     );
 
     // Check that the object we captured is actually a loader
     expect(engineInitializer, isNotNull);
-    expect(engineInitializer.hasProperty('initializeEngine'), isTrue, reason: 'Missing FlutterEngineInitializer method: initializeEngine.');
-    expect(engineInitializer.hasProperty('runApp'), isTrue, reason: 'Missing FlutterEngineInitializer method: runApp.');
-
-    js.context['_flutter'] = null;
+    expect(engineInitializer!.hasProperty('initializeEngine'), isTrue, reason: 'Missing FlutterEngineInitializer method: initializeEngine.');
+    expect(engineInitializer!.hasProperty('autoStart'), isTrue, reason: 'Missing FlutterEngineInitializer method: autoStart.');
   });
 
   test('webOnlyWarmupEngine does auto-start when _flutter.loader.didLoadMainDartJs does not exist', () async {
+    js.context['_flutter']['loader'] = null;
+
     bool pluginsRegistered = false;
     bool appRan = false;
     void registerPluginsMock() {
