@@ -57,8 +57,9 @@ void testMain() {
 
     expect(engineInitializer, isNotNull);
 
-    await promiseToFuture<Object>(callMethod<dynamic>(engineInitializer, 'autoStart', <Object?>[]));
+    final Object maybeApp = await promiseToFuture<Object>(callMethod<dynamic>(engineInitializer, 'autoStart', <Object?>[]));
 
+    expect(maybeApp, isA<FlutterApp>());
     expect(initCalled, 1, reason: 'initEngine should be called first.');
     expect(runCalled, 2, reason: 'runApp should be called after init.');
   });
@@ -87,9 +88,9 @@ void testMain() {
     final FlutterEngineInitializer engineInitializer = bootstrap.prepareEngineInitializer();
 
     final Object appInitializer = await promiseToFuture<Object>(callMethod<Object>(engineInitializer, 'initializeEngine', <Object?>[]));
-    final Object maybeAppCleaner = await promiseToFuture<Object>(callMethod<Object>(appInitializer, 'runApp', <Object?>[]));
+    final Object maybeApp = await promiseToFuture<Object>(callMethod<Object>(appInitializer, 'runApp', <Object?>[]));
 
-    expect(maybeAppCleaner, isA<FlutterApp>());
+    expect(maybeApp, isA<FlutterApp>());
     expect(initCalled, 1, reason: 'initEngine should have been called.');
     expect(runCalled, 2, reason: 'runApp should have been called.');
   });
