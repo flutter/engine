@@ -91,8 +91,9 @@ TEST(PlatformHandlerWin32, HasStringsAccessDeniedReturnsFalseWithoutError) {
   TestBinaryMessenger messenger;
   TestScopedClipboard clipboard_reference;
   FlutterWindowsView view(
-            std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
-  PlatformHandlerWin32 platform_handler(&messenger, &view, &clipboard_reference);
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
+  PlatformHandlerWin32 platform_handler(&messenger, &view,
+                                        &clipboard_reference);
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
@@ -104,7 +105,8 @@ TEST(PlatformHandlerWin32, HasStringsAccessDeniedReturnsFalseWithoutError) {
   MockMethodResult result;
   rapidjson::Document document;
   document.SetObject();
-  rapidjson::Document::AllocatorType& document_allocator = document.GetAllocator();
+  rapidjson::Document::AllocatorType& document_allocator =
+      document.GetAllocator();
   document.AddMember(rapidjson::Value(kValueKey, document_allocator),
                      rapidjson::Value(false), document_allocator);
 

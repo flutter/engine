@@ -202,15 +202,17 @@ std::unique_ptr<PlatformHandler> PlatformHandler::Create(
   return std::make_unique<PlatformHandlerWin32>(messenger, view);
 }
 
-PlatformHandlerWin32::PlatformHandlerWin32(BinaryMessenger* messenger,
-                                           FlutterWindowsView* view, std::optional<ScopedClipboardInterface*> clipboard_reference = nullptr)
+PlatformHandlerWin32::PlatformHandlerWin32(
+    BinaryMessenger* messenger,
+    FlutterWindowsView* view,
+    std::optional<ScopedClipboardInterface*> clipboard_reference = nullptr)
     : PlatformHandler(messenger), view_(view) {
-      if (clipboard_reference == nullptr) {
-        ScopedClipboard clipboard;
-        clipboard_reference = &clipboard;
-      }
-      clipboard_ = clipboard_reference.value();
-    }
+  if (clipboard_reference == nullptr) {
+    ScopedClipboard clipboard;
+    clipboard_reference = &clipboard;
+  }
+  clipboard_ = clipboard_reference.value();
+}
 
 PlatformHandlerWin32::~PlatformHandlerWin32() = default;
 
@@ -241,7 +243,9 @@ void PlatformHandlerWin32::GetPlainText(
   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
   document.AddMember(
       rapidjson::Value(key.data(), allocator),
-      rapidjson::Value(fml::WideStringToUtf8(std::get<std::wstring>(get_string_result)), allocator),
+      rapidjson::Value(
+          fml::WideStringToUtf8(std::get<std::wstring>(get_string_result)),
+          allocator),
       allocator);
   result->Success(document);
 }
