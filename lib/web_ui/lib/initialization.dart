@@ -63,15 +63,15 @@ Future<void> webOnlyWarmupEngine({
   Function? registerPlugins,
   Function? runApp,
 }) async {
-  // Prepare the js-interop layer for the app.
-  await engine.initializeEngineServices();
   // Create the object that knows how to bootstrap an app from JS and Dart.
   final engine.AppBootstrap bootstrap = engine.AppBootstrap(
     initEngine: () async {
+      // Prepare the js-interop layer for the app.
+      await engine.initializeEngineServices();
+    }, runApp: () async {
       if (registerPlugins != null) {
         registerPlugins();
       }
-    }, runApp: () async {
       await engine.initializeEngineUi();
       if (runApp != null) {
         runApp();
