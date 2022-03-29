@@ -925,7 +925,7 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   }
 
   // This is the formula Android uses.
-  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
+  // https://android.googlesource.com/platform/frameworks/base/+/39ae5bac216757bc201490f4c7b8c0f63006c6cd/libs/hwui/renderthread/CacheManager.cpp#45
   size_t resource_cache_bytes =
       metrics.physical_width * metrics.physical_height * 12 * 4;
   resource_cache_limit_calculator_->UpdateResourceCacheBytes(
