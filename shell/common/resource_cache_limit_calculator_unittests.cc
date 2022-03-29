@@ -11,46 +11,53 @@ namespace testing {
 
 TEST(ResourceCacheLimitCalculatorTest, UpdateResourceCacheBytes) {
   ResourceCacheLimitCalculator calculator(800U);
-  calculator.UpdateResourceCacheBytes(0, 100U);
-  calculator.UpdateResourceCacheBytes(1, 200U);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(0), static_cast<size_t>(100U));
-  EXPECT_EQ(calculator.GetResourceCacheBytes(1), static_cast<size_t>(200U));
+  int key1 = 1;
+  int key2 = 2;
+  calculator.UpdateResourceCacheBytes(&key1, 100U);
+  calculator.UpdateResourceCacheBytes(&key2, 200U);
+  EXPECT_EQ(calculator.GetResourceCacheBytes(&key1), static_cast<size_t>(100U));
+  EXPECT_EQ(calculator.GetResourceCacheBytes(&key2), static_cast<size_t>(200U));
 
-  calculator.UpdateResourceCacheBytes(0, 300U);
-  calculator.UpdateResourceCacheBytes(1, 400U);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(0), static_cast<size_t>(300U));
-  EXPECT_EQ(calculator.GetResourceCacheBytes(1), static_cast<size_t>(400U));
+  calculator.UpdateResourceCacheBytes(&key1, 300U);
+  calculator.UpdateResourceCacheBytes(&key2, 400U);
+  EXPECT_EQ(calculator.GetResourceCacheBytes(&key1), static_cast<size_t>(300U));
+  EXPECT_EQ(calculator.GetResourceCacheBytes(&key2), static_cast<size_t>(400U));
 }
 
 TEST(ResourceCacheLimitCalculatorTest, RemoveResourceCacheBytes) {
   ResourceCacheLimitCalculator calculator(800U);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(0), static_cast<size_t>(0U));
+  int key = 0;
+  EXPECT_EQ(calculator.GetResourceCacheBytes(&key), static_cast<size_t>(0U));
 
-  calculator.UpdateResourceCacheBytes(0, 100U);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(0), static_cast<size_t>(100U));
+  calculator.UpdateResourceCacheBytes(&key, 100U);
+  EXPECT_EQ(calculator.GetResourceCacheBytes(&key), static_cast<size_t>(100U));
 
-  calculator.RemoveResourceCacheBytes(0);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(0), static_cast<size_t>(0U));
+  calculator.RemoveResourceCacheBytes(&key);
+  EXPECT_EQ(calculator.GetResourceCacheBytes(&key), static_cast<size_t>(0U));
 }
 
 TEST(ResourceCacheLimitCalculatorTest, GetResourceCacheMaxBytes) {
   ResourceCacheLimitCalculator calculator(800U);
-  calculator.UpdateResourceCacheBytes(0, 100U);
+  int key1 = 1;
+  int key2 = 2;
+  int key3 = 3;
+  int key4 = 4;
+  calculator.UpdateResourceCacheBytes(&key1, 100U);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(100U));
 
-  calculator.UpdateResourceCacheBytes(1, 200U);
+  calculator.UpdateResourceCacheBytes(&key2, 200U);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(300U));
 
-  calculator.UpdateResourceCacheBytes(2, 300U);
+  calculator.UpdateResourceCacheBytes(&key3, 300U);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(600U));
 
-  calculator.UpdateResourceCacheBytes(3, 400U);
+  calculator.UpdateResourceCacheBytes(&key4, 400U);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(800U));
 
-  calculator.RemoveResourceCacheBytes(2);
+  calculator.RemoveResourceCacheBytes(&key3);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(700U));
 
-  calculator.RemoveResourceCacheBytes(1);
+  calculator.RemoveResourceCacheBytes(&key2);
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(500U));
 }
 

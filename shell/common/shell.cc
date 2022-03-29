@@ -451,8 +451,7 @@ Shell::~Shell() {
       task_runners_.GetIOTaskRunner());
 
   vm_->GetServiceProtocol()->RemoveHandler(this);
-  resource_cache_limit_calculator_->RemoveResourceCacheBytes(
-      reinterpret_cast<uintptr_t>(this));
+  resource_cache_limit_calculator_->RemoveResourceCacheBytes(this);
 
   fml::AutoResetWaitableEvent ui_latch, gpu_latch, platform_latch, io_latch;
 
@@ -929,7 +928,7 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   size_t resource_cache_bytes =
       metrics.physical_width * metrics.physical_height * 12 * 4;
   resource_cache_limit_calculator_->UpdateResourceCacheBytes(
-      reinterpret_cast<uintptr_t>(this), resource_cache_bytes);
+      this, resource_cache_bytes);
   size_t resource_cache_max_bytes =
       resource_cache_limit_calculator_->GetResourceCacheMaxBytes();
   task_runners_.GetRasterTaskRunner()->PostTask(

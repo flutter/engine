@@ -7,21 +7,21 @@
 namespace flutter {
 
 void ResourceCacheLimitCalculator::UpdateResourceCacheBytes(
-    uintptr_t id,
+    void* key,
     size_t resource_cache_bytes) {
-  map_[id] = resource_cache_bytes;
+  map_[key] = resource_cache_bytes;
 }
 
-void ResourceCacheLimitCalculator::RemoveResourceCacheBytes(uintptr_t id) {
-  auto it = map_.find(id);
+void ResourceCacheLimitCalculator::RemoveResourceCacheBytes(void* key) {
+  auto it = map_.find(key);
   if (it == map_.end()) {
     return;
   }
   map_.erase(it);
 }
 
-size_t ResourceCacheLimitCalculator::GetResourceCacheBytes(uintptr_t id) {
-  auto it = map_.find(id);
+size_t ResourceCacheLimitCalculator::GetResourceCacheBytes(void* key) {
+  auto it = map_.find(key);
   if (it == map_.end()) {
     return 0;
   }

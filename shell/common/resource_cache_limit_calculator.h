@@ -16,16 +16,16 @@ class ResourceCacheLimitCalculator {
   ResourceCacheLimitCalculator(size_t max_bytes_threshold)
       : max_bytes_threshold_(max_bytes_threshold) {}
   ~ResourceCacheLimitCalculator() = default;
-  void UpdateResourceCacheBytes(uintptr_t id, size_t resource_cache_bytes);
-  void RemoveResourceCacheBytes(uintptr_t id);
-  size_t GetResourceCacheBytes(uintptr_t id);
+  void UpdateResourceCacheBytes(void* key, size_t resource_cache_bytes);
+  void RemoveResourceCacheBytes(void* key);
+  size_t GetResourceCacheBytes(void* key);
   size_t GetResourceCacheMaxBytes();
   void UpdateMaxBytesThreshold(size_t max_bytes_threshold) {
     max_bytes_threshold_ = max_bytes_threshold;
   }
 
  private:
-  std::unordered_map<uintptr_t, size_t> map_;
+  std::unordered_map<void*, size_t> map_;
   size_t max_bytes_threshold_;
   FML_DISALLOW_COPY_AND_ASSIGN(ResourceCacheLimitCalculator);
 };
