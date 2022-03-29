@@ -26,7 +26,6 @@ part of ui;
 ///
 /// This is only available on the Web, as native Flutter configures the
 /// environment in the native embedder.
-//NotYet@Deprecated('Use webOnlyWarmupEngine')
 Future<void> webOnlyInitializePlatform() async {
   await engine.initializeEngine();
 }
@@ -66,7 +65,6 @@ Future<void> webOnlyWarmupEngine({
   // Create the object that knows how to bootstrap an app from JS and Dart.
   final engine.AppBootstrap bootstrap = engine.AppBootstrap(
     initEngine: () async {
-      // Prepare the js-interop layer for the app.
       await engine.initializeEngineServices();
     }, runApp: () async {
       if (registerPlugins != null) {

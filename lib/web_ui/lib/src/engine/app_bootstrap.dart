@@ -29,14 +29,12 @@ class AppBootstrap {
     await _runApp();
   }
 
-  /// Creates an engineInitializer that runs our encapsulated initEngine function.
+  /// Creates an engine initializer that runs our encapsulated initEngine function.
   FlutterEngineInitializer prepareEngineInitializer() {
-    // Return an object that has a initEngine method...
     return FlutterEngineInitializer(
-      // initEngine and runApp in one call. Returns the running App, but does not
-      // accept any incoming parameters. This is a convenience method that
-      // implements something similar to the "autoStart" mode, but triggered
-      // from from JavaScript.
+      // This is a convenience method that lets the programmer call "autoStart"
+      // from JavaScript immediately after the main.dart.js has loaded.
+      // Returns a promise that resolves to the Flutter app that was started.
       autoStart: allowInterop(() {
         return Promise<FlutterApp>(allowInterop((
           PromiseResolver<FlutterApp> resolve,
@@ -47,7 +45,8 @@ class AppBootstrap {
           resolve(_prepareFlutterApp());
         }));
       }),
-      // Return a JS Promise that resolves to an AppRunner object.
+      // Calls [_initEngine], and returns a JS Promise that resolves to an
+      // app runner object.
       initializeEngine: allowInterop(([InitializeEngineFnParameters? params]) {
         // `params` coming from Javascript may be used to configure the engine intialization.
         // The internal `initEngine` function must accept those params, and then this
@@ -57,8 +56,7 @@ class AppBootstrap {
           PromiseRejecter _,
         ) async {
           await _initEngine();
-          // Resolve with an actual AppRunner object, created in a similar way
-          // to how the FlutterEngineInitializer was created
+          // Return an app runner object
           resolve(_prepareAppRunner());
         }));
       }),
