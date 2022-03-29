@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/shader_mask_layer.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPaint.h"
 
 namespace flutter {
 
