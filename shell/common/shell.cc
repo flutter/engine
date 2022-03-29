@@ -167,7 +167,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     fml::RefPtr<fml::RasterThreadMerger> parent_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
-    std::shared_ptr<ResourceCacheLimitCalculator>
+    const std::shared_ptr<ResourceCacheLimitCalculator>&
         resource_cache_limit_calculator,
     TaskRunners task_runners,
     const PlatformData& platform_data,
@@ -317,7 +317,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
     TaskRunners task_runners,
     fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
-    std::shared_ptr<ResourceCacheLimitCalculator>
+    const std::shared_ptr<ResourceCacheLimitCalculator>&
         resource_cache_limit_calculator,
     Settings settings,
     DartVMRef vm,
@@ -377,7 +377,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 Shell::Shell(DartVMRef vm,
              TaskRunners task_runners,
              fml::RefPtr<fml::RasterThreadMerger> parent_merger,
-             std::shared_ptr<ResourceCacheLimitCalculator>
+             const std::shared_ptr<ResourceCacheLimitCalculator>&
                  resource_cache_limit_calculator,
              Settings settings,
              std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
