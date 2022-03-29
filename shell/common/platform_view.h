@@ -539,8 +539,7 @@ class PlatformView {
   ///             is free to collect an platform specific resources
   ///             associated with this context.
   ///
-  /// @attention  Unlike all other methods on the platform view, this will
-  /// be
+  /// @attention  Unlike all other methods on the platform view, this will be
   ///             called on IO task runner.
   ///
   virtual void ReleaseResourceContext() const;
