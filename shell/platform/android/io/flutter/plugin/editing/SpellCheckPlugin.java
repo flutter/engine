@@ -38,7 +38,6 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
         });
   }
 
-
   public void destroy() {
     mSpellCheckChannel.setSpellCheckMethodHandler(null);
 
@@ -47,9 +46,7 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
     }
   }
 
-  /** 
-   * Calls on the Android spell check API to spell check specified text.
-   */
+  /** Calls on the Android spell check API to spell check specified text. */
   public void performSpellCheck(String locale, String text) {
     String[] localeCodes = locale.split("-");
     Locale parsedLocale;
