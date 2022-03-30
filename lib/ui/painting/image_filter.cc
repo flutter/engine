@@ -77,14 +77,12 @@ void ImageFilter::initBlur(double sigma_x,
 }
 
 void ImageFilter::initDilate(double radius_x,
-                             double radius_y,
-                             SkTileMode tile_mode) {
+                             double radius_y) {
   filter_ = std::make_shared<DlDilateImageFilter>(radius_x, radius_y);
 }
 
 void ImageFilter::initErode(double radius_x,
-                            double radius_y,
-                            SkTileMode tile_mode) {
+                            double radius_y) {
   filter_ = std::make_shared<DlErodeImageFilter>(radius_x, radius_y);
 }
 
