@@ -92,8 +92,10 @@ typedef enum {
   /// Request that text be rendered at a bold font weight.
   kFlutterAccessibilityFeatureBoldText = 1 << 3,
   /// Request that certain animations be simplified and parallax effects
-  // removed.
+  /// removed.
   kFlutterAccessibilityFeatureReduceMotion = 1 << 4,
+  /// Request that UI be rendered with darker colors.
+  kFlutterAccessibilityFeatureHighContrast = 1 << 5,
 } FlutterAccessibilityFeature;
 
 /// The set of possible actions that can be conveyed to a semantics node.
