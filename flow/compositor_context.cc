@@ -109,8 +109,10 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     FrameDamage* frame_damage) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
 
-  std::optional<SkRect> clip_rect =
-      frame_damage ? frame_damage->ComputeClipRect(layer_tree) : std::nullopt;
+  std::optional<SkRect> clip_rect = std::nullopt;
+  if (frame_damage && !layer_tree.is_leaf_layer_tracing_enabled()) {
+    frame_damage->ComputeClipRect(layer_tree);
+  }
 
   bool root_needs_readback = layer_tree.Preroll(
       *this, ignore_raster_cache, clip_rect ? *clip_rect : kGiantRect);

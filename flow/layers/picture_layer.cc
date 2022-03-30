@@ -154,7 +154,8 @@ void PictureLayer::Paint(PaintContext& context) const {
 
   if (context.enable_leaf_layer_tracing) {
     const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
-    auto offscreen_surface = std::make_unique<OffscreenSurface>(canvas_size);
+    auto offscreen_surface =
+        std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
 
     {
       const auto now = fml::TimePoint::Now();

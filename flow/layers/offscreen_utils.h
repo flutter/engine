@@ -24,7 +24,8 @@ sk_sp<SkData> GetRasterData(sk_sp<SkSurface> offscreen_surface,
 
 class OffscreenSurface {
  public:
-  explicit OffscreenSurface(const SkISize size);
+  explicit OffscreenSurface(GrDirectContext* surface_context,
+                            const SkISize size);
 
   ~OffscreenSurface() = default;
 

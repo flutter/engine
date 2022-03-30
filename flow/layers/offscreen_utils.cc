@@ -5,9 +5,34 @@
 #include "flutter/flow/layers/offscreen_utils.h"
 
 #include "flutter/fml/logging.h"
-#include "include/core/SkSize.h"
+#include "third_party/skia/include/core/SkImageEncoder.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkSerialProcs.h"
+#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
+
+static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
+                                              const SkISize& size) {
+  const auto image_info = SkImageInfo::MakeN32Premul(
+      size.width(), size.height(), SkColorSpace::MakeSRGB());
+  if (surface_context) {
+    // There is a rendering surface that may contain textures that are going to
+    // be referenced in the layer tree about to be drawn.
+    return SkSurface::MakeRenderTarget(
+        reinterpret_cast<GrRecordingContext*>(surface_context),  //
+        SkBudgeted::kNo,                                         //
+        image_info                                               //
+    );
+  }
+
+  // There is no rendering surface, assume no GPU textures are present and
+  // create a raster surface.
+  return SkSurface::MakeRaster(image_info);
+}
+
 sk_sp<SkData> GetRasterData(sk_sp<SkSurface> offscreen_surface,
                             bool compressed) {
   // Prepare an image from the surface, this image may potentially be on th GPU.
@@ -39,14 +64,13 @@ sk_sp<SkData> GetRasterData(sk_sp<SkSurface> offscreen_surface,
   return SkData::MakeWithCopy(pixmap.addr32(), pixmap.computeByteSize());
 }
 
-OffscreenSurface::OffscreenSurface(const SkISize size) {
+OffscreenSurface::OffscreenSurface(GrDirectContext* surface_context,
+                                   const SkISize size) {
   // The caveat here is that if the app is backgrounded this might not
   // be the ideal approach: https://github.com/flutter/flutter/issues/73675.
   // Given that `enable_leaf_layer_tracing` is a debug mode only feature
   // and is expected to run only when the app is in foreground this is ok.
-  SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      size.width(), size.height(), SkColorSpace::MakeSRGB());
-  offscreen_surface_ = SkSurface::MakeRaster(image_info);
+  offscreen_surface_ = CreateSnapshotSurface(surface_context, size);
 }
 
 sk_sp<SkData> OffscreenSurface::GetRasterData(bool compressed) {

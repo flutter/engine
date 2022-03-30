@@ -1814,7 +1814,14 @@ bool Shell::OnServiceProtocolRenderLastFrameWithRasterStats(
     frame_timings_recorder->RecordBuildEnd(now);
 
     last_layer_tree->enable_leaf_layer_tracing(true);
+    // setting platform view to true to disable caching and also to bypass
+    // `needs_painting` checks.
+    bool old = last_layer_tree->root_layer()->subtree_has_platform_view();
+    last_layer_tree->root_layer()->set_subtree_has_platform_view(true);
+
     rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder));
+
+    last_layer_tree->root_layer()->set_subtree_has_platform_view(old);
     last_layer_tree->enable_leaf_layer_tracing(false);
 
     // TODO (kaushik)
