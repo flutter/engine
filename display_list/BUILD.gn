@@ -69,10 +69,10 @@ source_set("unittests") {
     "display_list_enum_unittests.cc",
     "display_list_image_filter_unittests.cc",
     "display_list_mask_filter_unittests.cc",
-    "display_list_vertices_unittests.cc",
     "display_list_test_utils.cc",
     "display_list_test_utils.h",
     "display_list_unittests.cc",
+    "display_list_vertices_unittests.cc",
   ]
 
   deps = [

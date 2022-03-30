@@ -164,14 +164,14 @@ class DlVertices {
     bool needs_indices_;
   };
 
-    //--------------------------------------------------------------------------
-    /// @brief     Constructs a DlVector with compact inline storage for all
-    ///            of its required and optional lists of data.
-    ///
-    /// Vertices are always required. Optional texture coordinates
-    /// and optional colors are stored if the arguments are non-null.
-    /// Optional indices will be stored iff the array argument is
-    /// non-null and the index_count is positive (>0).
+  //--------------------------------------------------------------------------
+  /// @brief     Constructs a DlVector with compact inline storage for all
+  ///            of its required and optional lists of data.
+  ///
+  /// Vertices are always required. Optional texture coordinates
+  /// and optional colors are stored if the arguments are non-null.
+  /// Optional indices will be stored iff the array argument is
+  /// non-null and the index_count is positive (>0).
   static std::shared_ptr<DlVertices> Make(DlVertexMode mode,
                                           int vertex_count,
                                           const SkPoint vertices[],
