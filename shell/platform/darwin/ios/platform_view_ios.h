@@ -87,11 +87,9 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
 
-  // |PlatformView|
-  void NotifyCreated() override;
+  void NotifyViewCreated();
 
-  // |PlatformView|
-  void NotifyDestroyed() override;
+  void NotifyViewDestroyed();
 
   /** Accessor for the `IOSContext` associated with the platform view. */
   const std::shared_ptr<IOSContext>& GetIosContext() { return ios_context_; }

@@ -258,7 +258,7 @@ void PlatformViewIOS::ScopedObserver::reset(id<NSObject> observer) {
   }
 }
 
-void PlatformViewIOS::NotifyCreated() {
+void PlatformViewIOS::NotifyViewCreated() {
   {
     std::lock_guard<std::mutex> guard(ios_surface_mutex_);
     if (!ios_surface_ && owner_controller_ && [owner_controller_.get() isViewLoaded]) {
@@ -268,7 +268,7 @@ void PlatformViewIOS::NotifyCreated() {
   PlatformView::NotifyCreated();
 }
 
-void PlatformViewIOS::NotifyDestroyed() {
+void PlatformViewIOS::NotifyViewDestroyed() {
   PlatformView::NotifyDestroyed();
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (ios_surface_) {
