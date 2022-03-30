@@ -1137,7 +1137,7 @@ class CanvasCompareTester {
       dilate_env.init_ref(cv_dilate_setup, testP.cv_renderer(),
                           dl_dilate_setup);
       DlDilateImageFilter filter_5(5.0, 5.0);
-      BoundsTolerance dilate5Tolerance = tolerance.addBoundsPadding(4, 4);
+      BoundsTolerance dilate5Tolerance = tolerance.addBoundsPadding(21, 21);
       RenderWith(testP, dilate_env, dilate5Tolerance,
                  CaseParameters(
                      "ImageFilter == Dilate 5",
@@ -1166,7 +1166,7 @@ class CanvasCompareTester {
       };
       erode_env.init_ref(cv_erode_setup, testP.cv_renderer(), dl_erode_setup);
       DlErodeImageFilter filter_5(5.0, 5.0);
-      BoundsTolerance erode5Tolerance = tolerance.addBoundsPadding(4, 4);
+      BoundsTolerance erode5Tolerance = tolerance.addBoundsPadding(21, 21);
       RenderWith(testP, erode_env, erode5Tolerance,
                  CaseParameters(
                      "ImageFilter == Erode 5",
