@@ -149,6 +149,10 @@ static const DlBlurImageFilter TestBlurImageFilter3(5.0,
 static const DlBlurImageFilter TestBlurImageFilter4(5.0,
                                                     5.0,
                                                     DlTileMode::kDecal);
+static const DlDilateImageFilter TestDilateImageFilter1(5.0,
+                                                        5.0);
+static const DlErodeImageFilter TestErodeImageFilter1(5.0,
+                                                      5.0);
 static const DlMatrixImageFilter TestMatrixImageFilter1(SkMatrix::RotateDeg(45),
                                                         NearestSampling);
 static const DlMatrixImageFilter TestMatrixImageFilter2(SkMatrix::RotateDeg(85),
@@ -391,6 +395,9 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter2);}},
       {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter3);}},
       {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter4);}},
+      // TODO what are the correct numbers?
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter1);}},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter1);}},
       {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter1);}},
       {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter2);}},
       {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter3);}},
