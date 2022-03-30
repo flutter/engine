@@ -314,8 +314,6 @@ targets:
         [
           {"dependency": "goldctl"}
         ]
-      runtime_versions: >-
-        []
     timeout: 60
     runIf:
       - DEPS
