@@ -100,6 +100,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
+  BOOL _viewAppeared;
   fml::scoped_nsobject<NSMutableSet<NSNumber*>> _ongoingTouches;
   // This scroll view is a workaround to accommodate iOS 13 and higher.  There isn't a way to get
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
@@ -405,9 +406,13 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
 }
 
 - (void)loadView {
-  self.view = GetViewOrPlaceholder(_flutterView.get());
-  self.view.multipleTouchEnabled = YES;
+  self.view = [[UIView alloc] init];
+  UIView* flutterViewOrPlaceholder = GetViewOrPlaceholder(_flutterView.get());
+  flutterViewOrPlaceholder.multipleTouchEnabled = YES;
+  flutterViewOrPlaceholder.autoresizingMask =
+      UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  [self.view addSubview:flutterViewOrPlaceholder];
 
   [self installSplashScreenViewIfNecessary];
   UIScrollView* scrollView = [[UIScrollView alloc] init];
@@ -638,6 +643,10 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and raster
   // thread.
   if (appeared) {
+    if (!_flutterView) {
+      _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+      [self.view insertSubview:_flutterView.get() atIndex:0];
+    }
     [self installFirstFrameCallback];
     [_engine.get() platformViewsController]->SetFlutterView(_flutterView.get());
     [_engine.get() platformViewsController]->SetFlutterViewController(self);
@@ -647,6 +656,10 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     [_engine.get() iosPlatformView]->NotifyDestroyed();
     [_engine.get() platformViewsController]->SetFlutterView(nullptr);
     [_engine.get() platformViewsController]->SetFlutterViewController(nullptr);
+    if (_flutterView) {
+      [_flutterView.get() removeFromSuperview];
+      _flutterView.reset();
+    }
   }
 }
 
@@ -712,6 +725,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
   if ([_engine.get() viewController] == self) {
+    _viewAppeared = YES;
     // Send platform settings to Flutter, e.g., platform brightness.
     [self onUserSettingsChanged:nil];
 
@@ -756,6 +770,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
     [self flushOngoingTouches];
     [_engine.get() notifyLowMemory];
+    _viewAppeared = NO;
   }
 
   [super viewDidDisappear:animated];
@@ -818,9 +833,6 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
   self.view.accessibilityElementsHidden = NO;
-  if (_viewportMetrics.physical_width) {
-    [self surfaceUpdated:YES];
-  }
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
@@ -843,6 +855,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
+  if (_viewportMetrics.physical_width && _viewAppeared) {
+    [self surfaceUpdated:YES];
+  }
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
@@ -1078,6 +1093,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)viewDidLayoutSubviews {
   CGRect viewBounds = self.view.bounds;
   CGFloat scale = [UIScreen mainScreen].scale;
+  _flutterView.get().frame = viewBounds;
 
   // Purposefully place this not visible.
   _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
@@ -1829,6 +1845,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (FlutterRestorationPlugin*)restorationPlugin {
   return [_engine.get() restorationPlugin];
+}
+
+- (UIView*)flutterView {
+  return _flutterView.get();
 }
 
 @end
