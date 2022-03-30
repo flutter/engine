@@ -393,9 +393,8 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter2);}},
       {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter3);}},
       {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter4);}},
-      // TODO what are the correct numbers?
-      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter1);}},
-      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter1);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter1);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter1);}},
       {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter1);}},
       {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter2);}},
       {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter3);}},
