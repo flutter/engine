@@ -57,50 +57,52 @@
       });
   [FlutterMenuPlugin registerWithRegistrar:pluginRegistrarMock];
 
-  NSArray* testMenus = @[
-    @{
-      @"id" : [NSNumber numberWithInt:1],
-      @"label" : @"APP_NAME",
-      @"enabled" : @(YES),
-      @"children" : @[
-        @{
-          @"id" : [NSNumber numberWithInt:3],
-          @"platformProvidedMenu" : @(1),  // Quit
-          @"enabled" : @(YES),
-        },
-        @{
-          @"id" : [NSNumber numberWithInt:2],
-          @"label" : @"APP_NAME Info",
-          @"enabled" : @(YES),
-          @"shortcutTrigger" : [NSNumber numberWithUnsignedLongLong:0x61],
-          @"shortcutModifiers" : [NSNumber numberWithUnsignedInt:0],
-        },
-      ],
-    },
-    @{
-      @"id" : [NSNumber numberWithInt:4],
-      @"label" : @"Help for APP_NAME",
-      @"enabled" : @(YES),
-      @"children" : @[
-        @{
-          @"id" : [NSNumber numberWithInt:5],
-          @"label" : @"Help me!",
-          @"enabled" : @(YES),
-        },
-        @{
-          @"id" : [NSNumber numberWithInt:6],
-          @"label" : @"",
-          @"enabled" : @(NO),
-          @"isDivider" : @(YES),
-        },
-        @{
-          @"id" : [NSNumber numberWithInt:7],
-          @"label" : @"Search help",
-          @"enabled" : @(NO),
-        },
-      ],
-    },
-  ];
+  NSDictionary* testMenus = @{
+    @"0" : @[
+      @{
+        @"id" : [NSNumber numberWithInt:1],
+        @"label" : @"APP_NAME",
+        @"enabled" : @(YES),
+        @"children" : @[
+          @{
+            @"id" : [NSNumber numberWithInt:3],
+            @"platformProvidedMenu" : @(1),  // Quit
+            @"enabled" : @(YES),
+          },
+          @{
+            @"id" : [NSNumber numberWithInt:2],
+            @"label" : @"APP_NAME Info",
+            @"enabled" : @(YES),
+            @"shortcutTrigger" : [NSNumber numberWithUnsignedLongLong:0x61],
+            @"shortcutModifiers" : [NSNumber numberWithUnsignedInt:0],
+          },
+        ],
+      },
+      @{
+        @"id" : [NSNumber numberWithInt:4],
+        @"label" : @"Help for APP_NAME",
+        @"enabled" : @(YES),
+        @"children" : @[
+          @{
+            @"id" : [NSNumber numberWithInt:5],
+            @"label" : @"Help me!",
+            @"enabled" : @(YES),
+          },
+          @{
+            @"id" : [NSNumber numberWithInt:6],
+            @"label" : @"",
+            @"enabled" : @(NO),
+            @"isDivider" : @(YES),
+          },
+          @{
+            @"id" : [NSNumber numberWithInt:7],
+            @"label" : @"Search help",
+            @"enabled" : @(NO),
+          },
+        ],
+      },
+    ],
+  };
 
   [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"Menu.setMenu"
                                                              arguments:testMenus]

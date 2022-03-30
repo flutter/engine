@@ -213,7 +213,7 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
 
 // Replaces the NSApp.mainMenu with menus created from an array of top level
 // menus sent by the framework.
-- (void)setMenu:(nonnull NSArray*)arguments;
+- (void)setMenu:(nonnull NSDictionary*)representation;
 @end
 
 @implementation FlutterMenuPlugin {
@@ -380,7 +380,7 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([call.method isEqualToString:kMenuSetMethod]) {
-    NSArray* menus = call.arguments;
+    NSDictionary* menus = call.arguments;
     [self setMenu:menus];
     result(nil);
   } else {
@@ -388,10 +388,12 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
   }
 }
 
-- (void)setMenu:(NSArray*)representation {
+- (void)setMenu:(NSDictionary*)representation {
   [_menuDelegates removeAllObjects];
   NSMenu* newMenu = [[NSMenu alloc] init];
-  for (NSDictionary* item in representation.objectEnumerator) {
+  // There's currently only one window, named "0", but there could be other
+  // eventually, with different menu configurations.
+  for (NSDictionary* item in representation[@"0"]) {
     NSMenuItem* menuItem = [self menuItemFromFlutterRepresentation:item];
     menuItem.representedObject = self;
     NSNumber* boxedID = item[kIdKey];
