@@ -76,11 +76,13 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
 
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  std::lock_guard<std::mutex> guard(ios_surface_mutex_);
-  if (ios_surface_ || !owner_controller) {
+  bool should_destroy;
+  {
+    std::lock_guard<std::mutex> guard(ios_surface_mutex_);
+    should_destroy = ios_surface_ || !owner_controller;
+  }
+  if (should_destroy) {
     NotifyDestroyed();
-    ios_surface_.reset();
-    accessibility_bridge_.Clear();
   }
   owner_controller_ = owner_controller;
 
@@ -253,6 +255,25 @@ void PlatformViewIOS::ScopedObserver::reset(id<NSObject> observer) {
       [observer_ release];
     }
     observer_ = observer;
+  }
+}
+
+void PlatformViewIOS::NotifyCreated() {
+  {
+    std::lock_guard<std::mutex> guard(ios_surface_mutex_);
+    if (!ios_surface_ && owner_controller_ && [owner_controller_.get() isViewLoaded]) {
+      this->attachView();
+    }
+  }
+  PlatformView::NotifyCreated();
+}
+
+void PlatformViewIOS::NotifyDestroyed() {
+  PlatformView::NotifyDestroyed();
+  std::lock_guard<std::mutex> guard(ios_surface_mutex_);
+  if (ios_surface_) {
+    ios_surface_.reset();
+    accessibility_bridge_.Clear();
   }
 }
 
