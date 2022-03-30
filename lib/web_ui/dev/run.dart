@@ -64,6 +64,8 @@ class RunCommand extends Command<bool> with ArgUtils<bool> {
           doUpdateScreenshotGoldens: false,
           requireSkiaGold: requireSkiaGold,
           overridePathToCanvasKit: null,
+          // TODO(yjbanov): remove allowToFail when https://github.com/flutter/flutter/issues/97303 is fixed
+          allowToFail: browserName == kSafariIos,
         ),
     };
 

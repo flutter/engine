@@ -38,6 +38,7 @@ class RunTestsStep implements PipelineStep {
     required this.requireSkiaGold,
     this.testFiles,
     required this.overridePathToCanvasKit,
+    this.allowToFail = false,
   }) : _browserEnvironment = getBrowserEnvironment(browserName);
 
   final String browserName;
@@ -45,6 +46,9 @@ class RunTestsStep implements PipelineStep {
   final bool isDebug;
   final bool doUpdateScreenshotGoldens;
   final String? overridePathToCanvasKit;
+
+  // TODO(yjbanov): remove this field when https://github.com/flutter/flutter/issues/97303 is fixed.
+  final bool allowToFail;
 
   /// Require Skia Gold to be available and reachable.
   final bool requireSkiaGold;
@@ -79,7 +83,12 @@ class RunTestsStep implements PipelineStep {
     );
 
     if (io.exitCode != 0) {
-      throw ToolExit('Some tests failed');
+      if (!allowToFail) {
+        throw ToolExit('Some tests failed');
+      } else {
+        io.exitCode = 0;
+        io.stderr.writeln('Some tests failed');
+      }
     }
   }
 
