@@ -2487,8 +2487,8 @@ TEST_F(DisplayListCanvas, DrawVerticesWithColors) {
       SK_ColorRED,  SK_ColorBLUE,   SK_ColorGREEN,
       SK_ColorCYAN, SK_ColorYELLOW, SK_ColorMAGENTA,
   };
-  const std::shared_ptr<DlVertices> vertices = DlVertices::Make(
-      DlVertexMode::kTriangles_VertexMode, 6, pts, nullptr, colors);
+  const std::shared_ptr<DlVertices> vertices =
+      DlVertices::Make(DlVertexMode::kTriangles, 6, pts, nullptr, colors);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2531,8 +2531,8 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
       SkPoint::Make(0, 0),
       SkPoint::Make(RenderWidth, 0),
   };
-  const std::shared_ptr<DlVertices> vertices = DlVertices::Make(
-      DlVertexMode::kTriangles_VertexMode, 6, pts, tex, nullptr);
+  const std::shared_ptr<DlVertices> vertices =
+      DlVertices::Make(DlVertexMode::kTriangles, 6, pts, tex, nullptr);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(

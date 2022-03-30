@@ -15,18 +15,18 @@ namespace flutter {
 ///
 enum class DlVertexMode {
   /// The vertices are taken 3 at a time to form a triangle.
-  kTriangles_VertexMode,
+  kTriangles,
 
   /// The vertices are taken in overlapping triplets to form triangles, with
   /// each triplet sharing 2 of its vertices with the preceding and following
   /// triplets.
   /// vertices [ABCDE] yield 3 triangles ABC,BCD,CDE
-  kTriangleStrip_VertexMode,
+  kTriangleStrip,
 
   /// The vertices are taken in overlapping pairs and combined with the first
   /// vertex to form triangles that radiate outward from the initial point.
   /// vertices [ABCDE] yield 3 triangles ABC,ACD,ADE
-  kTriangleFan_VertexMode,
+  kTriangleFan,
 };
 
 inline SkVertices::VertexMode ToSk(DlVertexMode dl_mode) {

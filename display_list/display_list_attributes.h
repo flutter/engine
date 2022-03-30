@@ -77,8 +77,6 @@ namespace flutter {
 
 // ===========================================================================
 
-class IsDlAttribute {};
-
 // |D| is the base type for the attribute
 //     (i.e. DlColorFilter, etc.)
 // |S| is the base type for the Skia version of the attribute
@@ -86,7 +84,7 @@ class IsDlAttribute {};
 // |T| is the enum that describes the specific subclasses
 //     (i.e DlColorFilterType, etc.)
 template <class D, class S, typename T>
-class DlAttribute : IsDlAttribute {
+class DlAttribute {
  public:
   // Return the recognized specific type of the attribute.
   virtual T type() const = 0;

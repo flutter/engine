@@ -239,7 +239,7 @@ void BM_SaveLayer(benchmark::State& state,
                     TriangleStrip/BACKEND,                              \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    DlVertexMode::kTriangleStrip_VertexMode)            \
+                    DlVertexMode::kTriangleStrip)                       \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 2048)                                                 \
       ->UseRealTime()                                                   \
@@ -250,7 +250,7 @@ void BM_SaveLayer(benchmark::State& state,
                     TriangleFan/BACKEND,                                \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    DlVertexMode::kTriangleFan_VertexMode)              \
+                    DlVertexMode::kTriangleFan)                         \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 2048)                                                 \
       ->UseRealTime()                                                   \
@@ -261,7 +261,7 @@ void BM_SaveLayer(benchmark::State& state,
                     Triangles/BACKEND,                                  \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    DlVertexMode::kTriangles_VertexMode)                \
+                    DlVertexMode::kTriangles)                           \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 2048)                                                 \
       ->UseRealTime()                                                   \

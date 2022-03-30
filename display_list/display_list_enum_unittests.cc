@@ -27,19 +27,19 @@ TEST(DisplayListEnum, ToSkTileMode) {
 
 TEST(DisplayListEnum, ToDlVertexMode) {
   ASSERT_EQ(ToDl(SkVertices::VertexMode::kTriangles_VertexMode),
-            DlVertexMode::kTriangles_VertexMode);
+            DlVertexMode::kTriangles);
   ASSERT_EQ(ToDl(SkVertices::VertexMode::kTriangleStrip_VertexMode),
-            DlVertexMode::kTriangleStrip_VertexMode);
+            DlVertexMode::kTriangleStrip);
   ASSERT_EQ(ToDl(SkVertices::VertexMode::kTriangleFan_VertexMode),
-            DlVertexMode::kTriangleFan_VertexMode);
+            DlVertexMode::kTriangleFan);
 }
 
 TEST(DisplayListEnum, ToSkVertexMode) {
-  ASSERT_EQ(ToSk(DlVertexMode::kTriangles_VertexMode),
+  ASSERT_EQ(ToSk(DlVertexMode::kTriangles),
             SkVertices::VertexMode::kTriangles_VertexMode);
-  ASSERT_EQ(ToSk(DlVertexMode::kTriangleStrip_VertexMode),
+  ASSERT_EQ(ToSk(DlVertexMode::kTriangleStrip),
             SkVertices::VertexMode::kTriangleStrip_VertexMode);
-  ASSERT_EQ(ToSk(DlVertexMode::kTriangleFan_VertexMode),
+  ASSERT_EQ(ToSk(DlVertexMode::kTriangleFan),
             SkVertices::VertexMode::kTriangleFan_VertexMode);
 }
 

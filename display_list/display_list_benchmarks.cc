@@ -701,7 +701,7 @@ std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
   std::vector<SkColor> colors;
 
   switch (mode) {
-    case DlVertexMode::kTriangleFan_VertexMode:
+    case DlVertexMode::kTriangleFan:
       // Calling the points on the outer circle O_0, O_1, O_2, ..., and
       // the center point C, this should create a triangle fan with vertices
       // C, O_0, O_1, O_2, O_3, ...
@@ -718,7 +718,7 @@ std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
         }
       }
       break;
-    case DlVertexMode::kTriangles_VertexMode:
+    case DlVertexMode::kTriangles:
       // Calling the points on the outer circle O_0, O_1, O_2, ..., and
       // the center point C, this should create a series of triangles with
       // vertices O_0, O_1, C, O_1, O_2, C, O_2, O_3, C, ...
@@ -731,7 +731,7 @@ std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
         colors.push_back(SK_ColorBLUE);
       }
       break;
-    case DlVertexMode::kTriangleStrip_VertexMode:
+    case DlVertexMode::kTriangleStrip:
       // Calling the points on the outer circle O_0, O_1, O_2, ..., and
       // the center point C, this should create a strip with vertices
       // O_0, O_1, C, O_2, O_3, C, O_4, O_5, C, ...
@@ -755,11 +755,11 @@ std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
 
 std::string VertexModeToString(DlVertexMode mode) {
   switch (mode) {
-    case DlVertexMode::kTriangleStrip_VertexMode:
+    case DlVertexMode::kTriangleStrip:
       return "TriangleStrip";
-    case DlVertexMode::kTriangleFan_VertexMode:
+    case DlVertexMode::kTriangleFan:
       return "TriangleFan";
-    case DlVertexMode::kTriangles_VertexMode:
+    case DlVertexMode::kTriangles:
       return "Triangles";
   }
   return "Unknown";

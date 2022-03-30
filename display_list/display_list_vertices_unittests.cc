@@ -33,9 +33,8 @@ TEST(DisplayListVertices, MakeWithTexAndColorAndIndices) {
       1, 2, 0,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
-                       texture_coords, colors, 6, indices);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, texture_coords, colors, 6, indices);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -44,7 +43,7 @@ TEST(DisplayListVertices, MakeWithTexAndColorAndIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -74,9 +73,8 @@ TEST(DisplayListVertices, MakeWithTexAndColor) {
       SK_ColorGREEN,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
-                       texture_coords, colors, 6, nullptr);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, texture_coords, colors, 6, nullptr);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -85,7 +83,7 @@ TEST(DisplayListVertices, MakeWithTexAndColor) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -111,9 +109,8 @@ TEST(DisplayListVertices, MakeWithTexAndIndices) {
       1, 2, 0,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
-                       texture_coords, nullptr, 6, indices);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, texture_coords, nullptr, 6, indices);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -122,7 +119,7 @@ TEST(DisplayListVertices, MakeWithTexAndIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -150,9 +147,8 @@ TEST(DisplayListVertices, MakeWithColorAndIndices) {
       1, 2, 0,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,  //
-                       nullptr, colors, 6, indices);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, nullptr, colors, 6, indices);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -161,7 +157,7 @@ TEST(DisplayListVertices, MakeWithColorAndIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -185,9 +181,8 @@ TEST(DisplayListVertices, MakeWithTex) {
       SkPoint::Make(115, 120),
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
-                       texture_coords, nullptr, 6, nullptr);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, texture_coords, nullptr, 6, nullptr);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -196,7 +191,7 @@ TEST(DisplayListVertices, MakeWithTex) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -217,9 +212,8 @@ TEST(DisplayListVertices, MakeWithColor) {
       SK_ColorGREEN,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,  //
-                       nullptr, colors, 6, nullptr);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, nullptr, colors, 6, nullptr);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -228,7 +222,7 @@ TEST(DisplayListVertices, MakeWithColor) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -248,9 +242,8 @@ TEST(DisplayListVertices, MakeWithIndices) {
       1, 2, 0,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,  //
-                       nullptr, nullptr, 6, indices);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, nullptr, nullptr, 6, indices);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -259,7 +252,7 @@ TEST(DisplayListVertices, MakeWithIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -277,9 +270,8 @@ TEST(DisplayListVertices, MakeWithNoOptionalData) {
       SkPoint::Make(15, 20),
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,  //
-                       nullptr, nullptr, 6, nullptr);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, nullptr, nullptr, 6, nullptr);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -288,7 +280,7 @@ TEST(DisplayListVertices, MakeWithNoOptionalData) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -307,9 +299,8 @@ TEST(DisplayListVertices, MakeWithIndicesButZeroIndexCount) {
       1, 2, 0,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,  //
-                       nullptr, nullptr, 0, indices);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, nullptr, nullptr, 0, indices);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -318,7 +309,7 @@ TEST(DisplayListVertices, MakeWithIndicesButZeroIndexCount) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -337,9 +328,8 @@ TEST(DisplayListVertices, MakeWithIndicesButNegativeIndexCount) {
       1, 2, 0,
   };
 
-  std::shared_ptr<const DlVertices> vertices =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,  //
-                       nullptr, nullptr, -5, indices);
+  std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, nullptr, nullptr, -5, indices);
 
   ASSERT_NE(vertices, nullptr);
   ASSERT_NE(vertices->vertices(), nullptr);
@@ -348,7 +338,7 @@ TEST(DisplayListVertices, MakeWithIndicesButNegativeIndexCount) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -419,7 +409,7 @@ TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
       1, 2, 0,
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder(DlVertexMode::kTriangles, 3,  //
                   Builder::kHasTextureCoordinates | Builder::kHasColors, 6);
   builder.store_vertices(coords);
   builder.store_texture_coordinates(texture_coords);
@@ -434,7 +424,7 @@ TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -446,7 +436,7 @@ TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
     ASSERT_EQ(vertices->indices()[i], indices[i]);
   }
 
-  Builder builder2(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder2(DlVertexMode::kTriangles, 3,  //
                    Builder::kHasTextureCoordinates | Builder::kHasColors, 6);
   builder2.store_vertices(coords);
   builder2.store_texture_coordinates(texture_coords);
@@ -456,9 +446,8 @@ TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
 
   TestEquals(*vertices, *vertices2);
 
-  std::shared_ptr<const DlVertices> vertices3 =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
-                       texture_coords, colors, 6, indices);
+  std::shared_ptr<const DlVertices> vertices3 = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, texture_coords, colors, 6, indices);
 
   TestEquals(*vertices, *vertices3);
 }
@@ -480,7 +469,7 @@ TEST(DisplayListVertices, BuildWithTexAndColor) {
       SK_ColorGREEN,
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder(DlVertexMode::kTriangles, 3,  //
                   Builder::kHasTextureCoordinates | Builder::kHasColors, 0);
   builder.store_vertices(coords);
   builder.store_texture_coordinates(texture_coords);
@@ -494,7 +483,7 @@ TEST(DisplayListVertices, BuildWithTexAndColor) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -520,7 +509,7 @@ TEST(DisplayListVertices, BuildWithTexAndIndices) {
       1, 2, 0,
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder(DlVertexMode::kTriangles, 3,  //
                   Builder::kHasTextureCoordinates, 6);
   builder.store_vertices(coords);
   builder.store_texture_coordinates(texture_coords);
@@ -534,7 +523,7 @@ TEST(DisplayListVertices, BuildWithTexAndIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -562,7 +551,7 @@ TEST(DisplayListVertices, BuildWithColorAndIndices) {
       1, 2, 0,
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder(DlVertexMode::kTriangles, 3,  //
                   Builder::kHasColors, 6);
   builder.store_vertices(coords);
   builder.store_colors(colors);
@@ -576,7 +565,7 @@ TEST(DisplayListVertices, BuildWithColorAndIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -600,7 +589,7 @@ TEST(DisplayListVertices, BuildWithTexUsingPoints) {
       SkPoint::Make(115, 120),
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder(DlVertexMode::kTriangles, 3,  //
                   Builder::kHasTextureCoordinates, 0);
   builder.store_vertices(coords);
   builder.store_texture_coordinates(texture_coords);
@@ -613,7 +602,7 @@ TEST(DisplayListVertices, BuildWithTexUsingPoints) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -634,7 +623,7 @@ TEST(DisplayListVertices, BuildWithTexUsingFloats) {
       115, 120,
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder(DlVertexMode::kTriangles, 3,  //
                   Builder::kHasTextureCoordinates, 0);
   builder.store_vertices(coords);
   builder.store_texture_coordinates(texture_coords);
@@ -647,7 +636,7 @@ TEST(DisplayListVertices, BuildWithTexUsingFloats) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i].fX, coords[i * 2 + 0]);
@@ -681,13 +670,13 @@ TEST(DisplayListVertices, BuildUsingFloatsSameAsPoints) {
       115, 120,
   };
 
-  Builder builder_points(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder_points(DlVertexMode::kTriangles, 3,  //
                          Builder::kHasTextureCoordinates, 0);
   builder_points.store_vertices(coord_points);
   builder_points.store_texture_coordinates(texture_coord_points);
   std::shared_ptr<const DlVertices> vertices_points = builder_points.build();
 
-  Builder builder_floats(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder_floats(DlVertexMode::kTriangles, 3,  //
                          Builder::kHasTextureCoordinates, 0);
   builder_floats.store_vertices(coord_floats);
   builder_floats.store_texture_coordinates(texture_coord_floats);
@@ -708,7 +697,7 @@ TEST(DisplayListVertices, BuildWithColor) {
       SK_ColorGREEN,
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3,  //
+  Builder builder(DlVertexMode::kTriangles, 3,  //
                   Builder::kHasColors, 0);
   builder.store_vertices(coords);
   builder.store_colors(colors);
@@ -721,7 +710,7 @@ TEST(DisplayListVertices, BuildWithColor) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -741,7 +730,7 @@ TEST(DisplayListVertices, BuildWithIndices) {
       1, 2, 0,
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3, Builder::kNone, 6);
+  Builder builder(DlVertexMode::kTriangles, 3, Builder::kNone, 6);
   builder.store_vertices(coords);
   builder.store_indices(indices);
   std::shared_ptr<const DlVertices> vertices = builder.build();
@@ -753,7 +742,7 @@ TEST(DisplayListVertices, BuildWithIndices) {
   ASSERT_NE(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -771,7 +760,7 @@ TEST(DisplayListVertices, BuildWithNoOptionalData) {
       SkPoint::Make(15, 20),
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3, Builder::kNone, 0);
+  Builder builder(DlVertexMode::kTriangles, 3, Builder::kNone, 0);
   builder.store_vertices(coords);
   std::shared_ptr<const DlVertices> vertices = builder.build();
 
@@ -782,7 +771,7 @@ TEST(DisplayListVertices, BuildWithNoOptionalData) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -797,7 +786,7 @@ TEST(DisplayListVertices, BuildWithNegativeIndexCount) {
       SkPoint::Make(15, 20),
   };
 
-  Builder builder(DlVertexMode::kTriangles_VertexMode, 3, Builder::kNone, -5);
+  Builder builder(DlVertexMode::kTriangles, 3, Builder::kNone, -5);
   builder.store_vertices(coords);
   std::shared_ptr<const DlVertices> vertices = builder.build();
 
@@ -808,7 +797,7 @@ TEST(DisplayListVertices, BuildWithNegativeIndexCount) {
   ASSERT_EQ(vertices->indices(), nullptr);
 
   ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
-  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles_VertexMode);
+  ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i], coords[i]);
@@ -837,12 +826,10 @@ TEST(DisplayListVertices, TestEquals) {
       1, 2, 0,
   };
 
-  std::shared_ptr<const DlVertices> vertices1 =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
-                       texture_coords, colors, 6, indices);
-  std::shared_ptr<const DlVertices> vertices2 =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
-                       texture_coords, colors, 6, indices);
+  std::shared_ptr<const DlVertices> vertices1 = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, texture_coords, colors, 6, indices);
+  std::shared_ptr<const DlVertices> vertices2 = DlVertices::Make(
+      DlVertexMode::kTriangles, 3, coords, texture_coords, colors, 6, indices);
   TestEquals(*vertices1, *vertices2);
 }
 
@@ -894,49 +881,48 @@ TEST(DisplayListVertices, TestNotEquals) {
       2, 3, 1,
   };
 
-  std::shared_ptr<const DlVertices> vertices1 =
-      DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 4, coords,
-                       texture_coords, colors, 9, indices);
+  std::shared_ptr<const DlVertices> vertices1 = DlVertices::Make(
+      DlVertexMode::kTriangles, 4, coords, texture_coords, colors, 9, indices);
 
   {
     std::shared_ptr<const DlVertices> vertices2 =
-        DlVertices::Make(DlVertexMode::kTriangleFan_VertexMode, 4, coords,
+        DlVertices::Make(DlVertexMode::kTriangleFan, 4, coords,  //
                          texture_coords, colors, 9, indices);
     TestNotEquals(*vertices1, *vertices2, "vertex mode differs");
   }
   {
     std::shared_ptr<const DlVertices> vertices2 =
-        DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 3, coords,
+        DlVertices::Make(DlVertexMode::kTriangles, 3, coords,  //
                          texture_coords, colors, 9, indices);
     TestNotEquals(*vertices1, *vertices2, "vertex count differs");
   }
   {
     std::shared_ptr<const DlVertices> vertices2 =
-        DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 4, wrong_coords,
+        DlVertices::Make(DlVertexMode::kTriangles, 4, wrong_coords,  //
                          texture_coords, colors, 9, indices);
     TestNotEquals(*vertices1, *vertices2, "vertex coordinates differ");
   }
   {
     std::shared_ptr<const DlVertices> vertices2 =
-        DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 4, coords,
+        DlVertices::Make(DlVertexMode::kTriangles, 4, coords,  //
                          wrong_texture_coords, colors, 9, indices);
     TestNotEquals(*vertices1, *vertices2, "texture coordinates differ");
   }
   {
     std::shared_ptr<const DlVertices> vertices2 =
-        DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 4, coords,
+        DlVertices::Make(DlVertexMode::kTriangles, 4, coords,  //
                          texture_coords, wrong_colors, 9, indices);
     TestNotEquals(*vertices1, *vertices2, "colors differ");
   }
   {
     std::shared_ptr<const DlVertices> vertices2 =
-        DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 4, coords,
+        DlVertices::Make(DlVertexMode::kTriangles, 4, coords,  //
                          texture_coords, colors, 6, indices);
     TestNotEquals(*vertices1, *vertices2, "index count differs");
   }
   {
     std::shared_ptr<const DlVertices> vertices2 =
-        DlVertices::Make(DlVertexMode::kTriangles_VertexMode, 4, coords,
+        DlVertices::Make(DlVertexMode::kTriangles, 4, coords,  //
                          texture_coords, colors, 9, wrong_indices);
     TestNotEquals(*vertices1, *vertices2, "indices differ");
   }
