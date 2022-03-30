@@ -38,30 +38,36 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
         });
   }
 
-  /** Calls on the Android spell check API to spell check specified text. */
-  public void performSpellCheck(String locale, String text) {
-    String[] localeCodes = locale.split("-");
-    Locale localeToUse;
 
-    if (localeCodes.length == 3) {
-      localeToUse = new Locale(localeCodes[0], localeCodes[1], localeCodes[2]);
-    } else if (localeCodes.length == 2) {
-      localeToUse = new Locale(localeCodes[0], localeCodes[1]);
-    } else {
-      localeToUse = new Locale(localeCodes[0]);
-    }
+  public void destroy() {
+    mSpellCheckChannel.setSpellCheckMethodHandler(null);
 
-    // TODO(camillesimon): Figure out proper session management.
     if (mSpellCheckerSession != null) {
       mSpellCheckerSession.close();
-      mSpellCheckerSession = tsm.newSpellCheckerSession(null, Locale.ENGLISH, this, true);
-    } else {
-      mSpellCheckerSession = tsm.newSpellCheckerSession(null, Locale.ENGLISH, this, true);
     }
+  }
+
+  /** 
+   * Calls on the Android spell check API to spell check specified text.
+   */
+  public void performSpellCheck(String locale, String text) {
+    String[] localeCodes = locale.split("-");
+    Locale parsedLocale;
+
+    if (localeCodes.length == 3) {
+      parsedLocale = new Locale(localeCodes[0], localeCodes[1], localeCodes[2]);
+    } else if (localeCodes.length == 2) {
+      parsedLocale = new Locale(localeCodes[0], localeCodes[1]);
+    } else {
+      parsedLocale = new Locale(localeCodes[0]);
+    }
+
+    if (mSpellCheckerSession == null) {
+      mSpellCheckerSession = tsm.newSpellCheckerSession(null, parsedLocale, this, true);
+    }
+
     SpellCheckerInfo infoChecker = mSpellCheckerSession.getSpellChecker();
-
     TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
-
     mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
   }
 

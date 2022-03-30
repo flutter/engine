@@ -1227,6 +1227,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
     keyboardManager.destroy();
+    spellCheckPlugin.destroy();
 
     if (mouseCursorPlugin != null) {
       mouseCursorPlugin.destroy();
