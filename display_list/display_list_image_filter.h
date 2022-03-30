@@ -191,9 +191,7 @@ class DlDilateImageFilter final : public DlImageFilter {
   DlDilateImageFilter(SkScalar radius_x, SkScalar radius_y)
       : radius_x_(radius_x), radius_y_(radius_y) {}
   explicit DlDilateImageFilter(const DlDilateImageFilter* filter)
-      : DlDilateImageFilter(filter->radius_x_,
-                            filter->radius_y_,
-                            filter->tile_mode_) {}
+      : DlDilateImageFilter(filter->radius_x_, filter->radius_y_) {}
   explicit DlDilateImageFilter(const DlDilateImageFilter& filter)
       : DlDilateImageFilter(&filter) {}
 
@@ -240,14 +238,12 @@ class DlDilateImageFilter final : public DlImageFilter {
   bool equals_(const DlImageFilter& other) const override {
     FML_DCHECK(other.type() == DlImageFilterType::kDilate);
     auto that = static_cast<const DlDilateImageFilter*>(&other);
-    return (radius_x_ == that->radius_x_ && radius_y_ == that->radius_y_ &&
-            tile_mode_ == that->tile_mode_);
+    return (radius_x_ == that->radius_x_ && radius_y_ == that->radius_y_);
   }
 
  private:
   SkScalar radius_x_;
   SkScalar radius_y_;
-  DlTileMode tile_mode_;
 };
 
 class DlErodeImageFilter final : public DlImageFilter {
@@ -255,9 +251,7 @@ class DlErodeImageFilter final : public DlImageFilter {
   DlErodeImageFilter(SkScalar radius_x, SkScalar radius_y)
       : radius_x_(radius_x), radius_y_(radius_y) {}
   explicit DlErodeImageFilter(const DlErodeImageFilter* filter)
-      : DlErodeImageFilter(filter->radius_x_,
-                          filter->radius_y_,
-                          filter->tile_mode_) {}
+      : DlErodeImageFilter(filter->radius_x_, filter->radius_y_) {}
   explicit DlErodeImageFilter(const DlErodeImageFilter& filter)
       : DlErodeImageFilter(&filter) {}
 
@@ -304,14 +298,12 @@ class DlErodeImageFilter final : public DlImageFilter {
   bool equals_(const DlImageFilter& other) const override {
     FML_DCHECK(other.type() == DlImageFilterType::kErode);
     auto that = static_cast<const DlErodeImageFilter*>(&other);
-    return (radius_x_ == that->radius_x_ && radius_y_ == that->radius_y_ &&
-            tile_mode_ == that->tile_mode_);
+    return (radius_x_ == that->radius_x_ && radius_y_ == that->radius_y_);
   }
 
  private:
   SkScalar radius_x_;
   SkScalar radius_y_;
-  DlTileMode tile_mode_;
 };
 
 class DlMatrixImageFilter final : public DlImageFilter {
