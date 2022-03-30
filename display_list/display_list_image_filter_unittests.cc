@@ -221,11 +221,9 @@ TEST(DisplayListImageFilter, DilateNotEquals) {
   DlDilateImageFilter filter1(5.0, 6.0);
   DlDilateImageFilter filter2(7.0, 6.0);
   DlDilateImageFilter filter3(5.0, 8.0);
-  DlDilateImageFilter filter4(5.0, 6.0);
 
   TestNotEquals(filter1, filter2, "Radius X differs");
   TestNotEquals(filter1, filter3, "Radius Y differs");
-  TestNotEquals(filter1, filter4, "Tile Mode differs");
 }
 
 TEST(DisplayListImageFilter, ErodeConstructor) {
@@ -264,11 +262,9 @@ TEST(DisplayListImageFilter, ErodeNotEquals) {
   DlErodeImageFilter filter1(5.0, 6.0);
   DlErodeImageFilter filter2(7.0, 6.0);
   DlErodeImageFilter filter3(5.0, 8.0);
-  DlErodeImageFilter filter4(5.0, 6.0);
 
   TestNotEquals(filter1, filter2, "Radius X differs");
   TestNotEquals(filter1, filter3, "Radius Y differs");
-  TestNotEquals(filter1, filter4, "Tile Mode differs");
 }
 
 TEST(DisplayListImageFilter, MatrixConstructor) {
