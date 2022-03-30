@@ -76,8 +76,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // These platform views use a PlatformViewLayer in the framework. This is different than
   // the platform views that use a TextureLayer.
   //
-  // This distintion is necessary because a PlatformViewLayer allows to embed Android's SurfaceViews
-  // in a Flutter app whereas the texture layer is unable to support such native views.
+  // This distinction is necessary because a PlatformViewLayer allows to embed Android's
+  // SurfaceViews in a Flutter app whereas the texture layer is unable to support such native views.
   //
   // If an entry in `platformViews` doesn't have an entry in this array, the platform view isn't
   // in the view hierarchy.
