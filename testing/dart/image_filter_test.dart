@@ -197,7 +197,7 @@ void main() {
       ..imageFilter = makeErode(1.0, 1.0);
 
     final Uint32List bytes = await getBytesForPaint(paint);
-    checkBytes(bytes, 0xFF000000, 0xFF000000, 0xFF000000);
+    checkBytes(bytes, 0, 0, 0);
   });
 
   test('ImageFilter - matrix', () async {
