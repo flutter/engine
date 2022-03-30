@@ -1158,25 +1158,27 @@ class CanvasCompareTester {
       RenderEnvironment erode_env = RenderEnvironment::MakeN32();
       CvSetup cv_erode_setup = [=](SkCanvas*, SkPaint& p) {
         p.setShader(testImageColorSource.skia_object());
-        p.setStrokeWidth(5.0);
+        p.setStrokeWidth(6.0);
       };
       DlRenderer dl_erode_setup = [=](DisplayListBuilder& b) {
         b.setColorSource(&testImageColorSource);
-        b.setStrokeWidth(5.0);
+        b.setStrokeWidth(6.0);
       };
       erode_env.init_ref(cv_erode_setup, testP.cv_renderer(), dl_erode_setup);
-      DlErodeImageFilter filter_5(5.0, 5.0);
+      // do not erode too much, because some tests assert there are enough
+      // pixels that are changed.
+      DlErodeImageFilter filter_1(1.0, 1.0);
       BoundsTolerance erode5Tolerance = tolerance.addBoundsPadding(21, 21);
       RenderWith(testP, erode_env, erode5Tolerance,
                  CaseParameters(
-                     "ImageFilter == Erode 5",
+                     "ImageFilter == Erode 3",
                      [=](SkCanvas* cv, SkPaint& p) {
                        cv_erode_setup(cv, p);
-                       p.setImageFilter(filter_5.skia_object());
+                       p.setImageFilter(filter_1.skia_object());
                      },
                      [=](DisplayListBuilder& b) {
                        dl_erode_setup(b);
-                       b.setImageFilter(&filter_5);
+                       b.setImageFilter(&filter_1);
                      }));
     }
 
