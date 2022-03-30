@@ -571,7 +571,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
   flutter::TextRange oldSelection = _activeModel->selection();
   flutter::TextRange composingBeforeChange = _activeModel->composing_range();
-  flutter::TextRange replacedRange(-1,-1);
+  flutter::TextRange replacedRange(-1, -1);
 
   std::string textBeforeChange = _activeModel->GetText().c_str();
   std::string utf8String = [string UTF8String];
@@ -582,8 +582,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _activeModel->EndComposing();
   } else {
     replacedRange = range.location == NSNotFound
-              ? flutter::TextRange(oldSelection.base(), oldSelection.extent())
-              : flutter::TextRange(range.location, range.location + range.length);
+                        ? flutter::TextRange(oldSelection.base(), oldSelection.extent())
+                        : flutter::TextRange(range.location, range.location + range.length);
   }
   if (_enableDeltaModel) {
     [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, replacedRange,
@@ -645,8 +645,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->SetSelection(flutter::TextRange(base, extent));
 
   if (_enableDeltaModel) {
-    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, composingBeforeChange,
-                                                             marked_text)];
+    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange,
+                                                             composingBeforeChange, marked_text)];
   } else {
     [self updateEditState];
   }
