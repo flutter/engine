@@ -12,18 +12,18 @@ import org.mockito.ArgumentCaptor;
 
 public class SpellCheckPluginTest {
 
-    private static void sendToBinaryMessageHandler(
-        BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
-      MethodCall methodCall = new MethodCall(method, args);
-      ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall);
-      binaryMessageHandler.onMessage(
-          (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
-    }
+  private static void sendToBinaryMessageHandler(
+      BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
+    MethodCall methodCall = new MethodCall(method, args);
+    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall);
+    binaryMessageHandler.onMessage(
+        (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
+  }
 
-    @Test
-    public void respondsToSpellCheckChannelMessage() {
+  @Test
+  public void respondsToSpellCheckChannelMessage() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
-    ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
     DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
     SpellCheckChannel.SpellCheckMethodHandler mockHandler =
         mock(SpellCheckChannel.SpellCheckMethodHandler.class);
@@ -37,32 +37,35 @@ public class SpellCheckPluginTest {
     BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
         binaryMessageHandlerCaptor.getValue();
 
-    sendToBinaryMessageHandler(binaryMessageHandler, "SpellCheck.initiateSpellCheck", Arrays.asList("en-US", "Hello, world!"));
+    sendToBinaryMessageHandler(
+        binaryMessageHandler,
+        "SpellCheck.initiateSpellCheck",
+        Arrays.asList("en-US", "Hello, world!"));
     verify(mockHandler, times(1)).initiateSpellCheck("en-US", "Hello, world!");
-    }
+  }
 
-    @Test
-    public void performSpellCheckRequestsUpdateSpellCheckResults() {
-        // Verify call to performSpellCheckResults(...) leads to call to "SpellCheck.updateSpellCheckResults"
-        // This would require simulating TextServicesManager because otherwise, there is a lot to mock.
-    }
+  @Test
+  public void performSpellCheckRequestsUpdateSpellCheckResults() {
+    // Verify call to performSpellCheckResults(...) leads to call to
+    // "SpellCheck.updateSpellCheckResults"
+    // This would require simulating TextServicesManager because otherwise, there is a lot to mock.
+  }
 
-    @Test
-    public void onGetSentenceSuggestionsProperlyFormatsSpellCheckResults() {
-        // Verify that spell check results are properly formatted by onGetSentenceSuggestions(...)
-    }
+  @Test
+  public void onGetSentenceSuggestionsProperlyFormatsSpellCheckResults() {
+    // Verify that spell check results are properly formatted by onGetSentenceSuggestions(...)
+  }
 
-    @Test
-    public void destroyClosesSpellCheckerSessionAndClearsSpellCheckMethodHandler() {
-        Context fakeContext = mock(Context.class);
-        SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
-        SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
-        SpellCheckerSesssion fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+  @Test
+  public void destroyClosesSpellCheckerSessionAndClearsSpellCheckMethodHandler() {
+    Context fakeContext = mock(Context.class);
+    SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
+    SpellCheckerSesssion fakeSpellCheckerSession = mock(SpellCheckerSession.class);
 
-        spellCheckPlugin.destroy();
+    spellCheckPlugin.destroy();
 
-        verify(fakeSpellCheckChannel).setSpellCheckMethodHandler(isNull());
-        verify(fakeSpellCheckerSession).close();
-    }
-    
+    verify(fakeSpellCheckChannel).setSpellCheckMethodHandler(isNull());
+    verify(fakeSpellCheckerSession).close();
+  }
 }
