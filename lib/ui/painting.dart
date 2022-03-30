@@ -3224,7 +3224,7 @@ abstract class ImageFilter {
     return _GaussianBlurImageFilter(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
-  /// Creates an image filter that dilates each input pixel's channel values 
+  /// Creates an image filter that dilates each input pixel's channel values
   /// to the max value within the given radii along the x and y axes.
   factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) {
     assert(radiusX != null);
@@ -3232,7 +3232,7 @@ abstract class ImageFilter {
     return _DilateImageFilter(radiusX: radiusX, radiusY: radiusY);
   }
 
-  /// Create a filter that erodes each input pixel's channel values 
+  /// Create a filter that erodes each input pixel's channel values
   /// to the minimum channel value within the given radii along the x and y axes.
   factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) {
     assert(radiusX != null);
@@ -3450,7 +3450,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   }
   void _initBlur(double sigmaX, double sigmaY, int tileMode) native 'ImageFilter_initBlur';
 
-  /// Creates an image filter that dilates each input pixel's channel values 
+  /// Creates an image filter that dilates each input pixel's channel values
   /// to the max value within the given radii along the x and y axes.
   _ImageFilter.dilate(_DilateImageFilter filter)
     : assert(filter != null),
@@ -3460,7 +3460,7 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   }
   void _initDilate(double radiusX, double radiusY) native 'ImageFilter_initDilate';
 
-  /// Create a filter that erodes each input pixel's channel values 
+  /// Create a filter that erodes each input pixel's channel values
   /// to the minimum channel value within the given radii along the x and y axes.
   _ImageFilter.erode(_ErodeImageFilter filter)
     : assert(filter != null),

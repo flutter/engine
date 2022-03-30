@@ -149,10 +149,8 @@ static const DlBlurImageFilter TestBlurImageFilter3(5.0,
 static const DlBlurImageFilter TestBlurImageFilter4(5.0,
                                                     5.0,
                                                     DlTileMode::kDecal);
-static const DlDilateImageFilter TestDilateImageFilter1(5.0,
-                                                        5.0);
-static const DlErodeImageFilter TestErodeImageFilter1(5.0,
-                                                      5.0);
+static const DlDilateImageFilter TestDilateImageFilter1(5.0, 5.0);
+static const DlErodeImageFilter TestErodeImageFilter1(5.0, 5.0);
 static const DlMatrixImageFilter TestMatrixImageFilter1(SkMatrix::RotateDeg(45),
                                                         NearestSampling);
 static const DlMatrixImageFilter TestMatrixImageFilter2(SkMatrix::RotateDeg(85),

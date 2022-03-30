@@ -1134,7 +1134,8 @@ class CanvasCompareTester {
         b.setColorSource(&testImageColorSource);
         b.setStrokeWidth(5.0);
       };
-      dilate_env.init_ref(cv_dilate_setup, testP.cv_renderer(), dl_dilate_setup);
+      dilate_env.init_ref(cv_dilate_setup, testP.cv_renderer(),
+                          dl_dilate_setup);
       DlDilateImageFilter filter_5(5.0, 5.0);
       BoundsTolerance dilate5Tolerance = tolerance.addBoundsPadding(4, 4);
       RenderWith(testP, dilate_env, dilate5Tolerance,
