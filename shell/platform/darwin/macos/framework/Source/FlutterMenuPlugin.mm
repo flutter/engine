@@ -23,6 +23,7 @@ static NSString* const kLabelKey = @"label";
 static NSString* const kEnabledKey = @"enabled";
 static NSString* const kChildrenKey = @"children";
 static NSString* const kDividerKey = @"isDivider";
+static NSString* const kShortcutEquivalentKey = @"shortcutEquivalent";
 static NSString* const kShortcutTriggerKey = @"shortcutTrigger";
 static NSString* const kShortcutModifiersKey = @"shortcutModifiers";
 static NSString* const kPlatformProvidedMenuKey = @"platformProvidedMenu";
@@ -319,17 +320,21 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
   if (platformProvidedMenuId != nil) {
     return [self createPlatformProvidedMenu:(PlatformProvidedMenu)platformProvidedMenuId.intValue];
   } else {
-    NSNumber* triggerKeyId = representation[kShortcutTriggerKey];
-    const NSDictionary<NSNumber*, NSNumber*>* specialKeys = GetMacOsSpecialKeys();
-    NSNumber* trigger = specialKeys[triggerKeyId];
-    if (trigger != nil) {
-      keyEquivalent = [NSString stringWithFormat:@"%C", [trigger unsignedShortValue]];
+    if (representation[kShortcutEquivalentKey] != nil) {
+      keyEquivalent = representation[kShortcutEquivalentKey];
     } else {
-      if (([triggerKeyId unsignedLongLongValue] & kFlutterKeyIdPlaneMask) ==
-          kFlutterKeyIdUnicodePlane) {
-        keyEquivalent =
-            [[NSString stringWithFormat:@"%C", (unichar)([triggerKeyId unsignedLongLongValue] &
-                                                         kFlutterKeyIdValueMask)] lowercaseString];
+      NSNumber* triggerKeyId = representation[kShortcutTriggerKey];
+      const NSDictionary<NSNumber*, NSNumber*>* specialKeys = GetMacOsSpecialKeys();
+      NSNumber* trigger = specialKeys[triggerKeyId];
+      if (trigger != nil) {
+        keyEquivalent = [NSString stringWithFormat:@"%C", [trigger unsignedShortValue]];
+      } else {
+        if (([triggerKeyId unsignedLongLongValue] & kFlutterKeyIdPlaneMask) ==
+            kFlutterKeyIdUnicodePlane) {
+          keyEquivalent = [[NSString
+              stringWithFormat:@"%C", (unichar)([triggerKeyId unsignedLongLongValue] &
+                                                kFlutterKeyIdValueMask)] lowercaseString];
+        }
       }
     }
   }
