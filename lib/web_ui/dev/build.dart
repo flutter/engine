@@ -133,7 +133,7 @@ class NinjaPipelineStep extends ProcessStep {
       'autoninja',
       <String>[
         '-C',
-        environment.hostDebugUnoptDir.path,
+        target.path,
       ],
     );
   }
