@@ -160,7 +160,7 @@ DlVertices::DlVertices(DlVertexMode mode,
       offset += bytes;
       return ret;
     } else {
-      return 0ul;
+      return size_t(0);
     }
   };
 

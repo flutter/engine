@@ -49,7 +49,9 @@ inline DlVertexMode ToDl(SkVertices::VertexMode sk_mode) {
 ///       supplied |DlVertexMode|.
 ///   - texture_coordinates():
 ///       the points in the DlColorSource to map to the coordinates
-///       of the triangles in the vertices().
+///       of the triangles in the vertices(). If missing, the
+///       vertex coordinates themselves will be used to map the
+///       source colors to the vertices.
 ///   - colors():
 ///       colors to map to each triangle vertex. Note that each
 ///       vertex is mapped to exactly 1 color even if the DlVertex
