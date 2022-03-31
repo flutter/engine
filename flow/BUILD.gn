@@ -147,6 +147,7 @@ if (enable_unittests) {
       "layers/display_list_layer_unittests.cc",
       "layers/image_filter_layer_unittests.cc",
       "layers/layer_tree_unittests.cc",
+      "layers/offscreen_surface_unittests.cc",
       "layers/opacity_layer_unittests.cc",
       "layers/performance_overlay_layer_unittests.cc",
       "layers/physical_shape_layer_unittests.cc",
