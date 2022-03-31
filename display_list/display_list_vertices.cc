@@ -104,8 +104,6 @@ DlVertices::DlVertices(DlVertexMode mode,
     : mode_(mode),
       vertex_count_(std::max(unchecked_vertex_count, 0)),
       index_count_(indices ? std::max(unchecked_index_count, 0) : 0) {
-  FML_DCHECK(vertices);
-
   bounds_ = bounds ? *bounds : compute_bounds(vertices, vertex_count_);
 
   char* pod = reinterpret_cast<char*>(this);
