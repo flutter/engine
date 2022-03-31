@@ -407,14 +407,14 @@ class ImageFilter {
 
   // ignore: avoid_unused_constructor_parameters
   factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) {
-    // TODO(fzyzcjy): implement dilate.
+    // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError(
         'ImageFilter.dilate not implemented for web platform.');
   }
 
   // ignore: avoid_unused_constructor_parameters
   factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) {
-    // TODO(fzyzcjy): implement erode.
+    // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
     throw UnimplementedError(
         'ImageFilter.erode not implemented for web platform.');
   }
