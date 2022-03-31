@@ -152,7 +152,7 @@ class DlBlurImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    SkVector device_sigma = ctm.mapVector(sigma_x_, sigma_y_);
+    SkVector device_sigma = ctm.mapVector(sigma_x_ * 3, sigma_y_ * 3);
     if (!SkScalarIsFinite(device_sigma.fX)) {
       device_sigma.fX = 0;
     }
