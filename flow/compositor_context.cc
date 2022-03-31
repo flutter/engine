@@ -117,8 +117,8 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   std::optional<SkRect> clip_rect =
       frame_damage ? frame_damage->ComputeClipRect(layer_tree) : std::nullopt;
 
-  if (frame_damage && frame_damage->GetFrameDamage() 
-      && frame_damage->GetFrameDamage()->isEmpty()) {
+  if (frame_damage && frame_damage->GetFrameDamage() &&
+      frame_damage->GetFrameDamage()->isEmpty()) {
     return RasterStatus::kDiscarded;
   }
   bool root_needs_readback = layer_tree.Preroll(
