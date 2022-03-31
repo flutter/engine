@@ -314,24 +314,20 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
   record->callback(false, record->user_data);
   EXPECT_EQ(redispatched.size(), 1u);
-  EXPECT_EQ(FL_KEY_EVENT(redispatched.back())->keyval,
-            0x62u);
+  EXPECT_EQ(FL_KEY_EVENT(redispatched.back())->keyval, 0x62u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   record->callback(false, record->user_data);
   EXPECT_EQ(redispatched.size(), 2u);
-  EXPECT_EQ(FL_KEY_EVENT(redispatched.back())->keyval,
-            0x61u);
+  EXPECT_EQ(FL_KEY_EVENT(redispatched.back())->keyval, 0x61u);
 
   g_ptr_array_clear(call_records);
 
   // Resolve redispatches
   manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      FL_KEY_EVENT(redispatched[0]));
+      tester.manager(), FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
   manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      FL_KEY_EVENT(redispatched[1]));
+      tester.manager(), FL_KEY_EVENT(redispatched[1]));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
@@ -402,8 +398,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
 
   // Resolve redispatch
   manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      FL_KEY_EVENT(redispatched[0]));
+      tester.manager(), FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
@@ -473,8 +468,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 
   // Resolve redispatch
   manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      FL_KEY_EVENT(redispatched[0]));
+      tester.manager(), FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
@@ -511,8 +505,7 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
 
   // Resolve redispatched event.
   manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      FL_KEY_EVENT(redispatched[0]));
+      tester.manager(), FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
 
   redispatched.clear();

@@ -5,8 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 
-#include <functional>
 #include <gdk/gdk.h>
+#include <functional>
 
 #include "flutter/shell/platform/linux/fl_key_responder.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
