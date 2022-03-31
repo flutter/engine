@@ -6,7 +6,6 @@ package io.flutter.plugin.editing;
 
 import android.content.Context;
 import android.view.textservice.SentenceSuggestionsInfo;
-import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.SpellCheckerSession;
 import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextInfo;
@@ -24,18 +23,22 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
   @NonNull private final SpellCheckChannel mSpellCheckChannel;
   @NonNull private final TextServicesManager tsm;
   private SpellCheckerSession mSpellCheckerSession;
-  @VisibleForTesting @NonNull final SpellCheckChannel.SpellCheckMethodHandler mSpellCheckMethodHandler;
+
+  @VisibleForTesting @NonNull
+  final SpellCheckChannel.SpellCheckMethodHandler mSpellCheckMethodHandler;
 
   public SpellCheckPlugin(@NonNull Context context, @NonNull SpellCheckChannel spellCheckChannel) {
     mContext = context;
     mSpellCheckChannel = spellCheckChannel;
     tsm = (TextServicesManager) mContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
-    mSpellCheckMethodHandler = new SpellCheckChannel.SpellCheckMethodHandler() {
-        @Override
-        public void initiateSpellCheck(String locale, String text) {
-          performSpellCheck(locale, text);
-        }};
+    mSpellCheckMethodHandler =
+        new SpellCheckChannel.SpellCheckMethodHandler() {
+          @Override
+          public void initiateSpellCheck(String locale, String text) {
+            performSpellCheck(locale, text);
+          }
+        };
 
     mSpellCheckChannel.setSpellCheckMethodHandler(mSpellCheckMethodHandler);
   }

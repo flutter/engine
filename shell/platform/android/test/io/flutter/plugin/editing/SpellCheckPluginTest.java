@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.view.textservice.SentenceSuggestionsInfo;
-import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.SpellCheckerSession;
 import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextInfo;
@@ -70,10 +69,13 @@ public class SpellCheckPluginTest {
     Context fakeContext = mock(Context.class);
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE)).thenReturn(fakeTextServicesManager);
+    when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
+        .thenReturn(fakeTextServicesManager);
     SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
-    when(fakeTextServicesManager.newSpellCheckerSession(null, new Locale("en", "US"), spellCheckPlugin, true)).thenReturn(fakeSpellCheckerSession);
+    when(fakeTextServicesManager.newSpellCheckerSession(
+            null, new Locale("en", "US"), spellCheckPlugin, true))
+        .thenReturn(fakeSpellCheckerSession);
 
     spellCheckPlugin.performSpellCheck("en-US", "Hello, wrold!");
     spellCheckPlugin.destroy();
@@ -87,17 +89,21 @@ public class SpellCheckPluginTest {
     Context fakeContext = mock(Context.class);
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE)).thenReturn(fakeTextServicesManager);
+    when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
+        .thenReturn(fakeTextServicesManager);
     SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
-    when(fakeTextServicesManager.newSpellCheckerSession(null, new Locale("en", "US"), spellCheckPlugin, true)).thenReturn(fakeSpellCheckerSession);
+    when(fakeTextServicesManager.newSpellCheckerSession(
+            null, new Locale("en", "US"), spellCheckPlugin, true))
+        .thenReturn(fakeSpellCheckerSession);
 
     ArgumentCaptor<TextInfo[]> textInfosCaptor = ArgumentCaptor.forClass(TextInfo[].class);
     ArgumentCaptor<Integer> maxSuggestionsCaptor = ArgumentCaptor.forClass(Integer.class);
-    
+
     spellCheckPlugin.performSpellCheck("en-US", "Hello, wrold!");
 
-    verify(fakeSpellCheckerSession).getSentenceSuggestions(textInfosCaptor.capture(), maxSuggestionsCaptor.capture());
+    verify(fakeSpellCheckerSession)
+        .getSentenceSuggestions(textInfosCaptor.capture(), maxSuggestionsCaptor.capture());
     assertEquals("Hello, wrold!", textInfosCaptor.getValue()[0].getText());
     assertEquals(Integer.valueOf(3), maxSuggestionsCaptor.getValue());
   }
@@ -107,9 +113,20 @@ public class SpellCheckPluginTest {
     Context fakeContext = mock(Context.class);
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
     SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
-    
-    spellCheckPlugin.onGetSentenceSuggestions(new SentenceSuggestionsInfo[]{new SentenceSuggestionsInfo((new SuggestionsInfo[]{new SuggestionsInfo(SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO, new String[]{"world", "word", "old"})}), new int[]{7}, new int[]{5})});
 
-    verify(fakeSpellCheckChannel).updateSpellCheckResults(new ArrayList<String>(Arrays.asList("7.11.world,word,old")));
+    spellCheckPlugin.onGetSentenceSuggestions(
+        new SentenceSuggestionsInfo[] {
+          new SentenceSuggestionsInfo(
+              (new SuggestionsInfo[] {
+                new SuggestionsInfo(
+                    SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO,
+                    new String[] {"world", "word", "old"})
+              }),
+              new int[] {7},
+              new int[] {5})
+        });
+
+    verify(fakeSpellCheckChannel)
+        .updateSpellCheckResults(new ArrayList<String>(Arrays.asList("7.11.world,word,old")));
   }
 }
