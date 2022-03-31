@@ -1152,7 +1152,7 @@ class CanvasCompareTester {
     }
 
     {
-      // Being able to see a erode requires some non-default attributes,
+      // Being able to see an erode requires some non-default attributes,
       // like a non-trivial stroke width and a shader rather than a color
       // (for drawPaint) so we create a new environment for these tests.
       RenderEnvironment erode_env = RenderEnvironment::MakeN32();
