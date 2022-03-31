@@ -178,10 +178,6 @@ static void g_ptr_array_clear(GPtrArray* array) {
   g_ptr_array_remove_range(array, 0, array->len);
 }
 
-static gpointer g_ptr_array_last(GPtrArray* array) {
-  return g_ptr_array_index(array, array->len - 1);
-}
-
 static void fl_key_event_free_origin_by_mock(gpointer origin) {
   g_free(origin);
 }
@@ -207,39 +203,30 @@ static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
   return event;
 }
 
-namespace {
-// A global variable to store redispatched #FlKeyEvent. It is a global variable
-// so that it can be used in a function without user_data.
-//
-// This array does not free elements upon removal.
-GPtrArray* _g_redispatched_events;
-}  // namespace
-
-static GPtrArray* redispatched_events() {
-  if (_g_redispatched_events == nullptr) {
-    _g_redispatched_events = g_ptr_array_new();
-  }
-  return _g_redispatched_events;
-}
-static void store_redispatched_event(gpointer event) {
-  FlKeyEvent* new_event = g_new(FlKeyEvent, 1);
-  *new_event = *reinterpret_cast<FlKeyEvent*>(event);
-  g_ptr_array_add(redispatched_events(), new_event);
-}
-
 class KeyboardTester {
  public:
   KeyboardTester(FlTextInputPlugin* text_input_plugin) {
-    manager_ = fl_keyboard_manager_new(text_input_plugin, store_redispatched_event);
-    ;
+    manager_ =
+        fl_keyboard_manager_new(text_input_plugin, [this](gpointer event) {
+          if (real_redispatcher_ != nullptr) {
+            real_redispatcher_(event);
+          }
+        });
   }
 
   ~KeyboardTester() { g_clear_object(&manager_); }
 
   FlKeyboardManager* manager() { return manager_; }
 
+  void recordRedispatchedEventsTo(std::vector<gpointer>& storage) {
+    real_redispatcher_ = [&storage](gpointer event) {
+      storage.push_back(event);
+    };
+  }
+
  private:
   FlKeyboardManager* manager_;
+  FlKeyboardManagerRedispatcher real_redispatcher_;
 };
 
 // Make sure that the keyboard can be disposed without crashes when there are
@@ -269,6 +256,7 @@ TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   KeyboardTester tester(nullptr);
+  std::vector<gpointer> redispatched;
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyboardCallRecord* record;
 
@@ -278,13 +266,14 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
       FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1)));
 
   /// Test 1: One event that is handled by the framework
+  tester.recordRedispatchedEventsTo(redispatched);
 
   // Dispatch a key event
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 1u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   EXPECT_EQ(record->responder->delegate_id, 1);
@@ -292,7 +281,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(record->event->keycode, 0x26u);
 
   record->callback(true, record->user_data);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
@@ -302,7 +291,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
       tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 1u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   EXPECT_EQ(record->responder->delegate_id, 1);
@@ -314,7 +303,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
       tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_b, kKeyCodeKeyB, 0x10, false));
   EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 2u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
   EXPECT_EQ(record->responder->delegate_id, 1);
@@ -324,13 +313,13 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   // Resolve the second event first to test out-of-order response
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
   record->callback(false, record->user_data);
-  EXPECT_EQ(redispatched_events()->len, 1u);
-  EXPECT_EQ(FL_KEY_EVENT(g_ptr_array_last(redispatched_events()))->keyval,
+  EXPECT_EQ(redispatched.size(), 1u);
+  EXPECT_EQ(FL_KEY_EVENT(redispatched.back())->keyval,
             0x62u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   record->callback(false, record->user_data);
-  EXPECT_EQ(redispatched_events()->len, 2u);
-  EXPECT_EQ(FL_KEY_EVENT(g_ptr_array_last(redispatched_events()))->keyval,
+  EXPECT_EQ(redispatched.size(), 2u);
+  EXPECT_EQ(FL_KEY_EVENT(redispatched.back())->keyval,
             0x61u);
 
   g_ptr_array_clear(call_records);
@@ -338,15 +327,15 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   // Resolve redispatches
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 1)));
+      FL_KEY_EVENT(redispatched[1]));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
-  g_ptr_array_clear(redispatched_events());
+  redispatched.clear();
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
 
   /// Test 3: Dispatch the same event again to ensure that prevention from
@@ -355,19 +344,20 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
       tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 1u);
 
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   record->callback(true, record->user_data);
 
-  g_ptr_array_clear(redispatched_events());
+  redispatched.clear();
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_unref(call_records);
 }
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   KeyboardTester tester(nullptr);
+  std::vector<gpointer> redispatched;
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyboardCallRecord* record;
 
@@ -377,6 +367,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
                                     FL_KEY_RESPONDER(responder));
 
   /// Test 1: One event that is handled by the framework
+  tester.recordRedispatchedEventsTo(redispatched);
 
   // Dispatch a key event
   responder->callback_handler = respond_true;
@@ -389,7 +380,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(record->responder->delegate_id, 1);
   EXPECT_EQ(record->event->keyval, 0x61u);
   EXPECT_EQ(record->event->keycode, 0x26u);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
@@ -405,24 +396,25 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(record->responder->delegate_id, 1);
   EXPECT_EQ(record->event->keyval, 0x61u);
   EXPECT_EQ(record->event->keycode, 0x26u);
-  EXPECT_EQ(redispatched_events()->len, 1u);
+  EXPECT_EQ(redispatched.size(), 1u);
 
   g_ptr_array_clear(call_records);
 
   // Resolve redispatch
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
-  g_ptr_array_clear(redispatched_events());
+  redispatched.clear();
   g_ptr_array_unref(call_records);
 }
 
 TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   KeyboardTester tester(nullptr);
+  std::vector<gpointer> redispatched;
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyboardCallRecord* record;
 
@@ -434,6 +426,8 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
       tester.manager(),
       FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 2)));
 
+  tester.recordRedispatchedEventsTo(redispatched);
+
   /// Test 1: One delegate responds true, the other false
 
   manager_handled = fl_keyboard_manager_handle_event(
@@ -441,7 +435,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
 
   EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 2u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   EXPECT_EQ(record->responder->delegate_id, 1);
@@ -454,7 +448,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   record->callback(true, record->user_data);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
   record->callback(false, record->user_data);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
@@ -465,29 +459,29 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
 
   EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 2u);
 
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   record->callback(false, record->user_data);
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
   record->callback(false, record->user_data);
-  EXPECT_EQ(redispatched_events()->len, 1u);
+  EXPECT_EQ(redispatched.size(), 1u);
 
   g_ptr_array_clear(call_records);
 
   // Resolve redispatch
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
 
-  g_ptr_array_clear(redispatched_events());
+  redispatched.clear();
   g_ptr_array_unref(call_records);
 }
 
@@ -495,9 +489,11 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
   // The text input plugin doesn't handle events.
   KeyboardTester tester(FL_TEXT_INPUT_PLUGIN(
       fl_mock_text_input_plugin_new(filter_keypress_returns_false)));
+  std::vector<gpointer> redispatched;
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
 
   gboolean manager_handled = false;
+  tester.recordRedispatchedEventsTo(redispatched);
 
   // The responder never handles events.
   FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
@@ -511,15 +507,15 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
   EXPECT_EQ(manager_handled, true);
   // The event was redispatched because no one handles it.
-  EXPECT_EQ(redispatched_events()->len, 1u);
+  EXPECT_EQ(redispatched.size(), 1u);
 
   // Resolve redispatched event.
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      FL_KEY_EVENT(redispatched[0]));
   EXPECT_EQ(manager_handled, false);
 
-  g_ptr_array_clear(redispatched_events());
+  redispatched.clear();
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_unref(call_records);
 }
@@ -527,9 +523,11 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
 TEST(FlKeyboardManagerTest, TextInputPluginReturnsTrue) {
   KeyboardTester tester(FL_TEXT_INPUT_PLUGIN(
       fl_mock_text_input_plugin_new(filter_keypress_returns_true)));
+  std::vector<gpointer> redispatched;
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
 
   gboolean manager_handled = false;
+  tester.recordRedispatchedEventsTo(redispatched);
 
   // The responder never handles events.
   FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
@@ -543,7 +541,7 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsTrue) {
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
   EXPECT_EQ(manager_handled, true);
   // The event was not redispatched because text input plugin handles it.
-  EXPECT_EQ(redispatched_events()->len, 0u);
+  EXPECT_EQ(redispatched.size(), 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_unref(call_records);

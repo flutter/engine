@@ -337,7 +337,7 @@ FlKeyboardManager* fl_keyboard_manager_new(
       g_object_new(fl_keyboard_manager_get_type(), nullptr));
 
   self->text_input_plugin = text_input_plugin;
-  self->redispatch_callback = redispatch_callback;
+  self->redispatch_callback = std::move(redispatch_callback);
   self->responder_list = g_ptr_array_new_with_free_func(g_object_unref);
 
   self->pending_responds = g_ptr_array_new();

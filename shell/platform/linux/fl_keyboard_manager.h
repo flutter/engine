@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 
+#include <functional>
 #include <gdk/gdk.h>
 
 #include "flutter/shell/platform/linux/fl_key_responder.h"
@@ -17,7 +18,7 @@
  * The signature for a callback with which a #FlKeyboardManager redispatches
  * key events that are not handled by anyone.
  **/
-typedef void (*FlKeyboardManagerRedispatcher)(gpointer event);
+typedef std::function<void(gpointer)> FlKeyboardManagerRedispatcher;
 
 G_BEGIN_DECLS
 
