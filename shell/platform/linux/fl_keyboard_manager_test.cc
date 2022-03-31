@@ -50,6 +50,8 @@ struct _FlKeyMockResponder {
   int delegate_id;
 };
 
+/***** FlKeyboardCallRecord *****/
+
 G_DEFINE_TYPE(FlKeyboardCallRecord, fl_keyboard_call_record, G_TYPE_OBJECT)
 
 static void fl_keyboard_call_record_init(FlKeyboardCallRecord* self) {}
@@ -90,6 +92,8 @@ static FlKeyboardCallRecord* fl_keyboard_call_record_new(
   return self;
 }
 
+/***** End FlKeyboardCallRecord *****/
+
 static void dont_respond(FlKeyResponderAsyncCallback callback,
                          gpointer user_data) {}
 static void respond_true(FlKeyResponderAsyncCallback callback,
@@ -111,6 +115,8 @@ static gboolean filter_keypress_returns_false(FlTextInputPlugin* self,
   return FALSE;
 }
 
+/***** FlKeyMockResponder *****/
+
 static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface);
 
 G_DEFINE_TYPE_WITH_CODE(FlKeyMockResponder,
@@ -128,6 +134,8 @@ static void fl_key_mock_responder_handle_event(
 static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface) {
   iface->handle_event = fl_key_mock_responder_handle_event;
 }
+
+/***** End FlKeyMockResponder *****/
 
 // Return a newly allocated #FlKeyEvent that is a clone to the given #event
 // but with #origin and #dispose set to 0.
@@ -219,46 +227,61 @@ static void store_redispatched_event(gpointer event) {
   g_ptr_array_add(redispatched_events(), new_event);
 }
 
+class KeyboardTester {
+ public:
+  KeyboardTester(FlTextInputPlugin* text_input_plugin) {
+    manager_ = fl_keyboard_manager_new(text_input_plugin, store_redispatched_event);
+    ;
+  }
+
+  ~KeyboardTester() { g_clear_object(&manager_); }
+
+  FlKeyboardManager* manager() { return manager_; }
+
+ private:
+  FlKeyboardManager* manager_;
+};
+
 // Make sure that the keyboard can be disposed without crashes when there are
 // unresolved pending events.
 TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
-  FlKeyboardManager* manager =
-      fl_keyboard_manager_new(nullptr, store_redispatched_event);
+  KeyboardTester tester(nullptr);
 
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
-  fl_keyboard_manager_add_responder(manager, FL_KEY_RESPONDER(responder));
+  fl_keyboard_manager_add_responder(tester.manager(),
+                                    FL_KEY_RESPONDER(responder));
 
   responder->callback_handler = dont_respond;
   fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
 
   responder->callback_handler = respond_true;
   fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
 
-  // Passes if the cleanup of `manager` does not crash.
-  g_object_unref(manager);
   g_ptr_array_unref(call_records);
+
+  // Passes if the cleanup does not crash.
 }
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
+  KeyboardTester tester(nullptr);
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyboardCallRecord* record;
 
   gboolean manager_handled = false;
-  g_autoptr(FlKeyboardManager) manager =
-      fl_keyboard_manager_new(nullptr, store_redispatched_event);
   fl_keyboard_manager_add_responder(
-      manager, FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1)));
+      tester.manager(),
+      FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1)));
 
   /// Test 1: One event that is handled by the framework
 
   // Dispatch a key event
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched_events()->len, 0u);
@@ -271,12 +294,12 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   record->callback(true, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
 
   /// Test 2: Two events that are unhandled by the framework
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched_events()->len, 0u);
@@ -288,7 +311,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
 
   // Dispatch another key event
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_b, kKeyCodeKeyB, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched_events()->len, 0u);
@@ -314,20 +337,22 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
 
   // Resolve redispatches
   manager_handled = fl_keyboard_manager_handle_event(
-      manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      tester.manager(),
+      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
   EXPECT_EQ(manager_handled, false);
   manager_handled = fl_keyboard_manager_handle_event(
-      manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 1)));
+      tester.manager(),
+      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 1)));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
   g_ptr_array_clear(redispatched_events());
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
 
   /// Test 3: Dispatch the same event again to ensure that prevention from
   /// redispatching only works once.
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched_events()->len, 0u);
@@ -337,26 +362,26 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   record->callback(true, record->user_data);
 
   g_ptr_array_clear(redispatched_events());
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_unref(call_records);
 }
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
+  KeyboardTester tester(nullptr);
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyboardCallRecord* record;
 
   gboolean manager_handled = false;
-  g_autoptr(FlKeyboardManager) manager =
-      fl_keyboard_manager_new(nullptr, store_redispatched_event);
   FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
-  fl_keyboard_manager_add_responder(manager, FL_KEY_RESPONDER(responder));
+  fl_keyboard_manager_add_responder(tester.manager(),
+                                    FL_KEY_RESPONDER(responder));
 
   /// Test 1: One event that is handled by the framework
 
   // Dispatch a key event
   responder->callback_handler = respond_true;
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(call_records->len, 1u);
@@ -366,15 +391,13 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(record->event->keycode, 0x26u);
   EXPECT_EQ(redispatched_events()->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
-
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
 
   /// Test 2: An event unhandled by the framework
   responder->callback_handler = respond_false;
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(call_records->len, 1u);
@@ -388,31 +411,33 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
 
   // Resolve redispatch
   manager_handled = fl_keyboard_manager_handle_event(
-      manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      tester.manager(),
+      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(redispatched_events());
   g_ptr_array_unref(call_records);
 }
 
 TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
+  KeyboardTester tester(nullptr);
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyboardCallRecord* record;
 
   gboolean manager_handled = false;
-  g_autoptr(FlKeyboardManager) manager =
-      fl_keyboard_manager_new(nullptr, store_redispatched_event);
   fl_keyboard_manager_add_responder(
-      manager, FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1)));
+      tester.manager(),
+      FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1)));
   fl_keyboard_manager_add_responder(
-      manager, FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 2)));
+      tester.manager(),
+      FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 2)));
 
   /// Test 1: One delegate responds true, the other false
 
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
 
   EXPECT_EQ(manager_handled, true);
@@ -431,12 +456,12 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   record->callback(false, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
 
   /// Test 2: All delegates respond false
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
 
   EXPECT_EQ(manager_handled, true);
@@ -454,11 +479,12 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 
   // Resolve redispatch
   manager_handled = fl_keyboard_manager_handle_event(
-      manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      tester.manager(),
+      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_clear(call_records);
 
   g_ptr_array_clear(redispatched_events());
@@ -466,23 +492,22 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 }
 
 TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
+  // The text input plugin doesn't handle events.
+  KeyboardTester tester(FL_TEXT_INPUT_PLUGIN(
+      fl_mock_text_input_plugin_new(filter_keypress_returns_false)));
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
 
   gboolean manager_handled = false;
-  // The text input plugin doesn't handle events.
-  g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new(
-      FL_TEXT_INPUT_PLUGIN(
-          fl_mock_text_input_plugin_new(filter_keypress_returns_false)),
-      store_redispatched_event);
 
   // The responder never handles events.
   FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
-  fl_keyboard_manager_add_responder(manager, FL_KEY_RESPONDER(responder));
+  fl_keyboard_manager_add_responder(tester.manager(),
+                                    FL_KEY_RESPONDER(responder));
   responder->callback_handler = respond_false;
 
   // Dispatch a key event.
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
   EXPECT_EQ(manager_handled, true);
   // The event was redispatched because no one handles it.
@@ -490,37 +515,37 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
 
   // Resolve redispatched event.
   manager_handled = fl_keyboard_manager_handle_event(
-      manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+      tester.manager(),
+      FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
   EXPECT_EQ(manager_handled, false);
 
   g_ptr_array_clear(redispatched_events());
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_unref(call_records);
 }
 
 TEST(FlKeyboardManagerTest, TextInputPluginReturnsTrue) {
+  KeyboardTester tester(FL_TEXT_INPUT_PLUGIN(
+      fl_mock_text_input_plugin_new(filter_keypress_returns_true)));
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
 
   gboolean manager_handled = false;
-  g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new(
-      FL_TEXT_INPUT_PLUGIN(
-          fl_mock_text_input_plugin_new(filter_keypress_returns_true)),
-      store_redispatched_event);
 
   // The responder never handles events.
   FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
-  fl_keyboard_manager_add_responder(manager, FL_KEY_RESPONDER(responder));
+  fl_keyboard_manager_add_responder(tester.manager(),
+                                    FL_KEY_RESPONDER(responder));
   responder->callback_handler = respond_false;
 
   // Dispatch a key event.
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
+      tester.manager(),
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
   EXPECT_EQ(manager_handled, true);
   // The event was not redispatched because text input plugin handles it.
   EXPECT_EQ(redispatched_events()->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   g_ptr_array_unref(call_records);
 }
 
