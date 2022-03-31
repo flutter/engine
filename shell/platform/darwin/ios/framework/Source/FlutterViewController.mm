@@ -1180,12 +1180,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
+  NSDictionary* info = [notification userInfo];
+
+  if (@available(iOS 9, *)) {
+    // Ignore keyboard notifications related to other apps.
+    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+    if (isLocal && ![isLocal boolValue]) {
+      return;
+    }
+  }
+
+  // Ignore keyboard notifications if engine’s viewController is not current viewController.
+  if ([_engine.get() viewController] != self) {
+    return;
+  }
+
   if (self.targetViewInsetBottom != 0) {
     // Ensure the keyboard will be dismissed. Just like the keyboardWillChangeFrame,
     // keyboardWillBeHidden is also in an animation block in iOS sdk, so we don't need to set the
     // animation curve. Related issue: https://github.com/flutter/flutter/issues/99951
     self.targetViewInsetBottom = 0;
-    NSDictionary* info = [notification userInfo];
     NSTimeInterval duration =
         [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
     [self startKeyBoardAnimation:duration];
