@@ -11,7 +11,7 @@ namespace testing {
 
 class TestResourceCacheLimitItem : public ResourceCacheLimitItem {
  public:
-  TestResourceCacheLimitItem(size_t resource_cache_limit)
+  explicit TestResourceCacheLimitItem(size_t resource_cache_limit)
       : resource_cache_limit_(resource_cache_limit), weak_factory_(this) {}
 
   size_t GetResourceCacheLimit() override { return resource_cache_limit_; }
