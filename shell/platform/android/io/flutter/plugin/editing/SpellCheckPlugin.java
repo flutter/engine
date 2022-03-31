@@ -59,9 +59,11 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
       parsedLocale = new Locale(localeCodes[0]);
     }
 
-    if (mSpellCheckerSession == null) {
-      mSpellCheckerSession = tsm.newSpellCheckerSession(null, parsedLocale, this, true);
+    if (mSpellCheckerSession != null) {
+      mSpellCheckerSession.close();
     }
+    mSpellCheckerSession = tsm.newSpellCheckerSession(null, parsedLocale, this, true);
+
 
     SpellCheckerInfo infoChecker = mSpellCheckerSession.getSpellChecker();
     TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
@@ -89,7 +91,6 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
         spellCheckerSuggestionSpan += (String.valueOf(start + (length - 1)) + ".");
 
         for (int j = 0; j < suggestionsCount; j++) {
-          String key = "suggestion_" + String.valueOf(j);
           spellCheckerSuggestionSpan += (suggestionsInfo.getSuggestionAt(j) + ",");
         }
 
