@@ -124,10 +124,8 @@ static void fl_key_mock_responder_handle_event(
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(responder);
-  if (self->call_records != nullptr) {
-    self->call_records->push_back(CallRecord(
-        self, fl_key_event_clone_information_only(event), callback, user_data));
-  }
+  self->call_records->push_back(CallRecord(
+      self, fl_key_event_clone_information_only(event), callback, user_data));
   self->callback_handler(callback, user_data);
 }
 
@@ -203,9 +201,9 @@ class KeyboardTester {
 // unresolved pending events.
 TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
   KeyboardTester tester(nullptr);
-  // std::vector<CallRecord> call_records;
+  std::vector<CallRecord> call_records;
 
-  FlKeyMockResponder* responder = fl_key_mock_responder_new(nullptr, 1);
+  FlKeyMockResponder* responder = fl_key_mock_responder_new(&call_records, 1);
   fl_keyboard_manager_add_responder(tester.manager(),
                                     FL_KEY_RESPONDER(responder));
 
