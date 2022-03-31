@@ -34,7 +34,8 @@ class LayerTree {
                SkRect cull_rect = kGiantRect);
 
   void RasterCache(CompositorContext::ScopedFrame& frame,
-                   PrerollContext* context);
+                   PrerollContext* context,
+                   bool ignore_raster_cache = false);
 
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;

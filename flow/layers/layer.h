@@ -16,6 +16,7 @@
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
@@ -30,9 +31,7 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
-
 namespace flutter {
-
 namespace testing {
 class MockLayer;
 }  // namespace testing
@@ -43,7 +42,6 @@ class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
 class CacheableLayer;
-struct RasterCacheEntry;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
@@ -92,52 +90,7 @@ struct PrerollContext {
   // for its |Paint| method.
   bool subtree_can_inherit_opacity = false;
 
-  std::vector<RasterCacheEntry> raster_cached_entries;
-};
-
-struct RasterCacheEntry {
-  RasterCacheEntry(CacheableLayer* layer,
-                   PrerollContext& context,
-                   const SkMatrix& matrix,
-                   unsigned num_child,
-                   bool need_caching = false)
-      : layer(layer),
-        matrix(matrix),
-        raster_cache(context.raster_cache),
-        mutators_stack(context.mutators_stack),
-        cull_rect(context.cull_rect),
-        color_space(context.dst_color_space),
-        num_child_entries(num_child),
-        need_caching(need_caching) {}
-
-  explicit RasterCacheEntry(CacheableLayer* layer,
-                            PrerollContext& context,
-                            const SkMatrix& matrix,
-                            bool need_caching = false)
-      : RasterCacheEntry(layer, context, matrix, 0, need_caching) {}
-
-  void UpdateRasterCacheEntry(CacheableLayer* layer,
-                              PrerollContext& context,
-                              const SkMatrix& matrix) {
-    this->raster_cache = context.raster_cache;
-    this->layer = layer;
-    this->matrix = matrix;
-    this->mutators_stack = context.mutators_stack;
-    this->cull_rect = context.cull_rect;
-    this->color_space = context.dst_color_space;
-    this->surface_needs_readback = context.surface_needs_readback;
-  }
-
-  CacheableLayer* layer;
-  SkMatrix matrix;
-  RasterCache* raster_cache;
-  MutatorsStack mutators_stack;
-  SkRect cull_rect;
-  SkColorSpace* color_space;
-
-  bool surface_needs_readback;
-  unsigned num_child_entries;
-  bool need_caching;
+  std::vector<std::shared_ptr<RasterCacheableEntry>> raster_cached_entries;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -316,8 +269,6 @@ class Layer {
   };
 
   virtual void Paint(PaintContext& context) const = 0;
-
-  virtual bool IsCacheable() { return false; }
 
   bool subtree_has_platform_view() const { return subtree_has_platform_view_; }
   void set_subtree_has_platform_view(bool value) {

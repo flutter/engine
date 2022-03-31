@@ -18,10 +18,10 @@ class CacheableLayer : public Layer {
  public:
   enum class CacheType { kNone, kCurrent, kChildren };
 
-  bool IsCacheable() { return true; }
-
-  virtual void TryToPrepareRasterCache(PrerollContext* context,
-                                       const SkMatrix& matrix) {}
+  virtual void TryToPrepareRasterCache(
+      PrerollContext* context,
+      const SkMatrix& matrix,
+      RasterCacheLayerStrategy strategy = RasterCacheLayerStrategy::kLayer) {}
 
   virtual CacheType NeedCaching(PrerollContext* context,
                                 const SkMatrix& ctm) = 0;

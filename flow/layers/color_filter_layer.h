@@ -20,6 +20,9 @@ class ColorFilterLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
+  CacheableLayer::CacheType NeedCaching(PrerollContext* context,
+                                        const SkMatrix& ctm) override;
+
  private:
   sk_sp<SkColorFilter> filter_;
 

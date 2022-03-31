@@ -26,6 +26,10 @@ LayerTree::LayerTree(const SkISize& frame_size, float device_pixel_ratio)
   FML_CHECK(device_pixel_ratio_ != 0.0f);
 }
 
+inline SkColorSpace* GetColorSpace(SkCanvas* canvas) {
+  return canvas ? canvas->imageInfo().colorSpace() : nullptr;
+}
+
 bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                         bool ignore_raster_cache,
                         SkRect cull_rect) {
@@ -36,8 +40,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
     return false;
   }
 
-  SkColorSpace* color_space =
-      frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
+  SkColorSpace* color_space = GetColorSpace(frame.canvas());
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   MutatorsStack stack;
@@ -68,24 +71,28 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 }
 
 void LayerTree::RasterCache(CompositorContext::ScopedFrame& frame,
-                            PrerollContext* context) {
+                            PrerollContext* context,
+                            bool ignore_raster_cache) {
+  auto* color_space = GetColorSpace(frame.canvas());
+  auto* raster_cache =
+      ignore_raster_cache ? nullptr : &frame.context().raster_cache();
   for (unsigned i = 0; i < context->raster_cached_entries.size(); i++) {
     auto& entry = context->raster_cached_entries[i];
-    if (entry.need_caching) {
-      PrerollContext context = {entry.raster_cache,
+    if (entry->need_caching) {
+      PrerollContext context = {raster_cache,
                                 frame.gr_context(),
                                 frame.view_embedder(),
-                                entry.mutators_stack,
-                                entry.color_space,
-                                entry.cull_rect,
-                                entry.surface_needs_readback,
+                                entry->mutators_stack,
+                                color_space,
+                                entry->cull_rect,
+                                false,
                                 frame.context().raster_time(),
                                 frame.context().ui_time(),
                                 frame.context().texture_registry(),
                                 checkerboard_offscreen_layers_,
                                 device_pixel_ratio_};
-      entry.layer->TryToPrepareRasterCache(&context, entry.matrix);
-      i += entry.num_child_entries;
+      entry->TryToPrepareRasterCache(&context);
+      i += entry->num_child_entries;
     }
   }
 }

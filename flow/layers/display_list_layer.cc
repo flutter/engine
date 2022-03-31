@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/display_list_layer.h"
 
+#include <utility>
+
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/flow/layer_snapshot_store.h"
@@ -19,7 +21,12 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
     : offset_(offset),
       display_list_(std::move(display_list)),
       is_complex_(is_complex),
-      will_change_(will_change) {}
+      will_change_(will_change) {
+  if (display_list_.skia_object()) {
+    set_layer_can_inherit_opacity(
+        display_list_.skia_object()->can_apply_group_opacity());
+  }
+}
 
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
@@ -86,23 +93,20 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
-  context->raster_cached_entries.emplace_back(
-      RasterCacheEntry(this, *context, matrix));
+  auto cacheable_entry = RasterCacheableEntry::MarkDisplayListCacheable(
+      this->display_list(), *context, matrix, offset_, is_complex_,
+      will_change_);
+  context->raster_cached_entries.push_back(cacheable_entry);
 
   auto& cache_entry = context->raster_cached_entries.back();
-  auto cached_type = NeedCaching(context, matrix);
-  cache_entry.need_caching = cached_type == CacheableLayer::CacheType::kCurrent;
+  cache_entry->need_caching = NeedCaching(context, matrix);
 }
 
-CacheableLayer::CacheType DisplayListLayer::NeedCaching(PrerollContext* context,
-                                                        const SkMatrix& ctm) {
+bool DisplayListLayer::NeedCaching(PrerollContext* context,
+                                   const SkMatrix& ctm) {
   DisplayList* disp_list = display_list();
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
-
-  if (disp_list->can_apply_group_opacity()) {
-    context->subtree_can_inherit_opacity = true;
-  }
-
+  set_paint_bounds(bounds);
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     // For display_list_layer if the context has raster_cache, we will try to
@@ -115,23 +119,9 @@ CacheableLayer::CacheType DisplayListLayer::NeedCaching(PrerollContext* context,
       // subtree_can_inherit_opacity to true
       context->subtree_can_inherit_opacity = true;
     }
-    return CacheableLayer::CacheType::kCurrent;
+    return true;
   }
-  return CacheableLayer::CacheType::kNone;
-}
-
-void DisplayListLayer::TryToPrepareRasterCache(PrerollContext* context,
-                                               const SkMatrix& ctm) {
-  DisplayList* disp_list = display_list();
-
-  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
-  auto* cache = context->raster_cache;
-  if (context->cull_rect.intersects(bounds)) {
-    cache->Prepare(context, disp_list, is_complex_, will_change_, ctm, offset_);
-  } else {
-    // Don't evict raster cache entry during partial repaint
-    cache->Touch(disp_list, ctm);
-  }
+  return false;
 }
 
 void DisplayListLayer::Paint(PaintContext& context) const {

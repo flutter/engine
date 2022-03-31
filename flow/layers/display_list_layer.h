@@ -6,14 +6,14 @@
 #define FLUTTER_FLOW_LAYERS_DISPLAY_LIST_LAYER_H_
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/flow/layers/cacheable_layer.h"
+#include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "include/core/SkMatrix.h"
 
 namespace flutter {
 
-class DisplayListLayer : public CacheableLayer {
+class DisplayListLayer : public Layer {
  public:
   static constexpr size_t kMaxBytesToCompare = 10000;
 
@@ -34,11 +34,7 @@ class DisplayListLayer : public CacheableLayer {
     return this;
   }
 
-  CacheableLayer::CacheType NeedCaching(PrerollContext* context,
-                                        const SkMatrix& ctm) override;
-
-  void TryToPrepareRasterCache(PrerollContext* context,
-                               const SkMatrix& ctm) override;
+  bool NeedCaching(PrerollContext* context, const SkMatrix& ctm);
 
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
 

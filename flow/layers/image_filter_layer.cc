@@ -49,11 +49,10 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  context->raster_cached_entries.emplace_back(
-      RasterCacheEntry(this, *context, matrix));
+  auto cacheable_entry =
+      RasterCacheableEntry::MarkLayerCacheable(this, *context, matrix);
+  context->raster_cached_entries.emplace_back(cacheable_entry);
   auto current_index = context->raster_cached_entries.size();
-
-  auto& cache_entry = context->raster_cached_entries.back();
 
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);
@@ -63,19 +62,16 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   // so we can always apply opacity in any of those cases.
   context->subtree_can_inherit_opacity = true;
 
-  cache_entry.num_child_entries =
+  cacheable_entry->num_child_entries =
       context->raster_cached_entries.size() - current_index;
   auto cache_type = NeedCaching(context, matrix);
-
-  cache_entry.need_caching = false;
-  if (cache_type == CacheableLayer::CacheType::kCurrent) {
-    cache_entry.layer = this;
+  if (cache_type == CacheableLayer::CacheType::kNone) {
+    cacheable_entry->need_caching = false;
   } else if (cache_type == CacheableLayer::CacheType::kChildren) {
     // Replace Cacheable child
-    // auto* cacheable_child = GetCacheableChild();
-    // if (cacheable_child) {
-    //   cache_entry.UpdateRasterCacheEntry(cacheable_child, *context, matrix);
-    // }
+    cacheable_entry->GetCacheableWrapper()
+        ->GetCacheableLayer()
+        ->NeedCacheChildren();
   }
 
   if (!filter_) {

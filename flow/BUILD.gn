@@ -67,6 +67,8 @@ source_set("flow") {
     "raster_cache.h",
     "raster_cache_key.cc",
     "raster_cache_key.h",
+    "raster_cacheable_entry.cc",
+    "raster_cacheable_entry.h",
     "rtree.cc",
     "rtree.h",
     "skia_gpu_object.h",

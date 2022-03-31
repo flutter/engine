@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/layer.h"
 #include <algorithm>
+#include <memory>
 
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/paint_utils.h"
