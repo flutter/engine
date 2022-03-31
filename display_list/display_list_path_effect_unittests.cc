@@ -13,10 +13,8 @@
 namespace flutter {
 namespace testing {
 
-const SkScalar TestDashes1[] = {4.0, 2.0};
-const SkScalar TestDashes2[] = {1.0, 1.5};
-
 TEST(DisplayListPathEffect, BuilderSetGet) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
   auto dash_path_effect = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
   DisplayListBuilder builder;
   ASSERT_EQ(builder.getPathEffect(), nullptr);
@@ -35,43 +33,32 @@ TEST(DisplayListPathEffect, FromSkiaNullPathEffect) {
 }
 
 TEST(DisplayListPathEffect, FromSkiaPathEffect) {
+  const SkScalar TestDashes2[] = {1.0, 1.5};
   sk_sp<SkPathEffect> sk_path_effect =
       SkDashPathEffect::Make(TestDashes2, 2, 0.0);
   std::shared_ptr<DlPathEffect> dl_path_effect =
       DlPathEffect::From(sk_path_effect);
 
   ASSERT_EQ(dl_path_effect->type(), DlPathEffectType::kDash);
-  // We cannot recapture the dash parameters from an SkDashPathEffect
-  ASSERT_EQ(dl_path_effect->asDash(), dl_path_effect.get());
   ASSERT_TRUE(
       Equals(dl_path_effect, DlDashPathEffect::Make(TestDashes2, 2, 0.0)));
-  SkScalar s1[]{0.0, 0.0};
-  SkPathEffect::DashInfo info1(s1, 2, 0);
-  sk_path_effect->asADash(&info1);
-
-  SkScalar s2[]{0.0, 0.0};
-  SkPathEffect::DashInfo info2(s2, 2, 0);
-  dl_path_effect->skia_object()->asADash(&info2);
-  // check interval values is equal
-  for (int i = 0; i < 2; i++) {
-    ASSERT_EQ(s1[i], s2[i]);
-  }
-  ASSERT_EQ(info1.fCount, info2.fCount);
-  ASSERT_EQ(info1.fPhase, info2.fPhase);
 }
 
 TEST(DisplayListPathEffect, EffectShared) {
+  const SkScalar TestDashes2[] = {1.0, 1.5};
   auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   ASSERT_TRUE(Equals(effect->shared(), effect));
 }
 
 TEST(DisplayListPathEffect, DashEffectAsDash) {
+  const SkScalar TestDashes2[] = {1.0, 1.5};
   auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   ASSERT_NE(effect->asDash(), nullptr);
   ASSERT_EQ(effect->asDash(), effect.get());
 }
 
 TEST(DisplayListPathEffect, DashEffectEquals) {
+  const SkScalar TestDashes2[] = {1.0, 1.5};
   auto effect1 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   ASSERT_TRUE(Equals(effect1, effect2));
@@ -79,9 +66,11 @@ TEST(DisplayListPathEffect, DashEffectEquals) {
 }
 
 TEST(DisplayListPathEffect, BlurNotEquals) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
+  const SkScalar TestDashes2[] = {1.0, 1.5};
   auto effect1 = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
   auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
-  auto effect3 = DlDashPathEffect::Make(TestDashes2, 3, 0.0);
+  auto effect3 = DlDashPathEffect::Make(TestDashes2, 2, 1.0);
   ASSERT_NE(effect1, effect2);
   ASSERT_NE(effect2, effect3);
   ASSERT_NE(effect1->shared(), effect2->shared());
@@ -89,16 +78,19 @@ TEST(DisplayListPathEffect, BlurNotEquals) {
 }
 
 TEST(DisplayListPathEffect, UnknownConstructor) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
   DlUnknownPathEffect path_effect(SkDashPathEffect::Make(TestDashes1, 2, 0.0));
 }
 
 TEST(DisplayListPathEffect, UnknownShared) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
   DlUnknownPathEffect path_effect(SkDashPathEffect::Make(TestDashes1, 2, 0.0));
   ASSERT_NE(path_effect.shared().get(), &path_effect);
   ASSERT_EQ(*path_effect.shared(), path_effect);
 }
 
 TEST(DisplayListPathEffect, UnknownContents) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
   sk_sp<SkPathEffect> sk_effect = SkDashPathEffect::Make(TestDashes1, 2, 0.0);
   DlUnknownPathEffect effect(sk_effect);
   ASSERT_EQ(effect.skia_object(), sk_effect);
@@ -106,6 +98,7 @@ TEST(DisplayListPathEffect, UnknownContents) {
 }
 
 TEST(DisplayListPathEffect, UnknownEquals) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
   sk_sp<SkPathEffect> sk_effect = SkDashPathEffect::Make(TestDashes1, 2, 0.0);
   DlUnknownPathEffect effect1(sk_effect);
   DlUnknownPathEffect effect2(sk_effect);
@@ -113,6 +106,7 @@ TEST(DisplayListPathEffect, UnknownEquals) {
 }
 
 TEST(DisplayListPathEffect, UnknownNotEquals) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
   // Even though the effect is the same, it is a different instance
   // and we cannot currently tell them apart because the Skia
   // DashEffect::Make objects do not implement ==
@@ -173,9 +167,11 @@ void testNotEquals(std::shared_ptr<const DlPathEffect> a,
 }
 
 TEST(DisplayListPathEffect, ComparableTemplates) {
+  const SkScalar TestDashes1[] = {4.0, 2.0};
+  const SkScalar TestDashes2[] = {1.0, 1.5};
   auto effect1 = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
   auto effect2 = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
-  auto effect3 = DlDashPathEffect::Make(TestDashes2, 3, 0.0);
+  auto effect3 = DlDashPathEffect::Make(TestDashes2, 2, 1.0);
   std::shared_ptr<DlPathEffect> shared_null;
 
   // null to null

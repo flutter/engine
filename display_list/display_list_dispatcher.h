@@ -12,9 +12,8 @@
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/display_list/display_list_mask_filter.h"
-#include "flutter/display_list/display_list_paint.h"
-#include "flutter/display_list/display_list_vertices.h"
 #include "flutter/display_list/display_list_path_effect.h"
+#include "flutter/display_list/display_list_vertices.h"
 
 namespace flutter {
 
