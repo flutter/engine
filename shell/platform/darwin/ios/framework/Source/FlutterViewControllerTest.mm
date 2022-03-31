@@ -1069,9 +1069,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                     nibName:nil
                                                                      bundle:nil];
   XCTAssertNotNil(vc);
-  UIView* view = vc.flutterView;
+  UIView* view = vc.view;
   XCTAssertNotNil(view);
-  NSArray* gestureRecognizers = view.gestureRecognizers;
+  UIView* flutterView = vc.flutterView;
+  XCTAssertNotNil(flutterView);
+  NSArray* gestureRecognizers = flutterView.gestureRecognizers;
   XCTAssertNotNil(gestureRecognizers);
 
   BOOL found = NO;
