@@ -411,6 +411,14 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   int composingExtent = _activeModel->composing() ? _activeModel->composing_range().extent() : -1;
 
   NSString* const textAffinity = [self textAffinityString];
+  NSLog(@"delta text: %s", delta.delta_text().c_str());
+  NSLog(@"delta oldtext: %s", delta.old_text().c_str());
+  NSLog(@"delta start: %d", delta.delta_start());
+  NSLog(@"delta end: %d", delta.delta_end());
+  NSLog(@"selection base: %lu", selectionBase);
+  NSLog(@"selection extent: %lu", selectionExtent);
+  NSLog(@"composing base: %d", composingBase);
+  NSLog(@"composing extent: %d", composingExtent);
 
   NSDictionary* deltaToFramework = @{
     @"oldText" : @(delta.old_text().c_str()),
