@@ -637,7 +637,7 @@
 
   NSDictionary* deltaToFramework = @{
     @"oldText" : @"",
-    @"deltaText" : @"",
+    @"deltaText" : @"m",
     @"deltaStart" : @(0),
     @"deltaEnd" : @(0),
     @"selectionBase" : @(1),
