@@ -208,7 +208,7 @@ class DlDilateImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    output_bounds = input_bounds.makeOutset(radius_x_ * 3, radius_y_ * 3);
+    output_bounds = input_bounds.makeOutset(radius_x_, radius_y_);
     return &output_bounds;
   }
 
@@ -268,7 +268,7 @@ class DlErodeImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    output_bounds = input_bounds.makeOutset(radius_x_ * 3, radius_y_ * 3);
+    output_bounds = input_bounds.makeOutset(radius_x_, radius_y_);
     return &output_bounds;
   }
 
