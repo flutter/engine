@@ -9,23 +9,35 @@
 #include <unordered_map>
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 
 namespace flutter {
+class ResourceCacheLimitItem {
+ public:
+  // The expected GPU resource cache limit in bytes.
+  virtual size_t GetResourceCacheLimit() = 0;
+
+ protected:
+  virtual ~ResourceCacheLimitItem() = default;
+};
+
 class ResourceCacheLimitCalculator {
  public:
   ResourceCacheLimitCalculator(size_t max_bytes_threshold)
       : max_bytes_threshold_(max_bytes_threshold) {}
+
   ~ResourceCacheLimitCalculator() = default;
-  void UpdateResourceCacheBytes(void* key, size_t resource_cache_bytes);
-  void RemoveResourceCacheBytes(void* key);
-  size_t GetResourceCacheBytes(void* key);
-  size_t GetResourceCacheMaxBytes();
-  void UpdateMaxBytesThreshold(size_t max_bytes_threshold) {
-    max_bytes_threshold_ = max_bytes_threshold;
+
+  void AddResourceCacheLimitItem(fml::WeakPtr<ResourceCacheLimitItem> item) {
+    items_.push_back(item);
   }
 
+  // The maximum GPU resource cache limit in bytes calculated by
+  // 'ResourceCacheLimitItem's.
+  size_t GetResourceCacheMaxBytes();
+
  private:
-  std::unordered_map<void*, size_t> map_;
+  std::vector<fml::WeakPtr<ResourceCacheLimitItem>> items_;
   size_t max_bytes_threshold_;
   FML_DISALLOW_COPY_AND_ASSIGN(ResourceCacheLimitCalculator);
 };

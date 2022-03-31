@@ -9,70 +9,44 @@
 namespace flutter {
 namespace testing {
 
-TEST(ResourceCacheLimitCalculatorTest, UpdateResourceCacheBytes) {
-  ResourceCacheLimitCalculator calculator(800U);
-  int key1 = 1;
-  int key2 = 2;
-  calculator.UpdateResourceCacheBytes(&key1, 100U);
-  calculator.UpdateResourceCacheBytes(&key2, 200U);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(&key1), static_cast<size_t>(100U));
-  EXPECT_EQ(calculator.GetResourceCacheBytes(&key2), static_cast<size_t>(200U));
+class TestResourceCacheLimitItem : public ResourceCacheLimitItem {
+ public:
+  TestResourceCacheLimitItem(size_t resource_cache_limit)
+      : resource_cache_limit_(resource_cache_limit), weak_factory_(this) {}
 
-  calculator.UpdateResourceCacheBytes(&key1, 300U);
-  calculator.UpdateResourceCacheBytes(&key2, 400U);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(&key1), static_cast<size_t>(300U));
-  EXPECT_EQ(calculator.GetResourceCacheBytes(&key2), static_cast<size_t>(400U));
-}
+  size_t GetResourceCacheLimit() override { return resource_cache_limit_; }
 
-TEST(ResourceCacheLimitCalculatorTest, RemoveResourceCacheBytes) {
-  ResourceCacheLimitCalculator calculator(800U);
-  int key = 0;
-  EXPECT_EQ(calculator.GetResourceCacheBytes(&key), static_cast<size_t>(0U));
+  fml::WeakPtr<TestResourceCacheLimitItem> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
 
-  calculator.UpdateResourceCacheBytes(&key, 100U);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(&key), static_cast<size_t>(100U));
-
-  calculator.RemoveResourceCacheBytes(&key);
-  EXPECT_EQ(calculator.GetResourceCacheBytes(&key), static_cast<size_t>(0U));
-}
+ private:
+  size_t resource_cache_limit_;
+  fml::WeakPtrFactory<TestResourceCacheLimitItem> weak_factory_;
+};
 
 TEST(ResourceCacheLimitCalculatorTest, GetResourceCacheMaxBytes) {
   ResourceCacheLimitCalculator calculator(800U);
-  int key1 = 1;
-  int key2 = 2;
-  int key3 = 3;
-  int key4 = 4;
-  calculator.UpdateResourceCacheBytes(&key1, 100U);
+  auto item1 = std::make_unique<TestResourceCacheLimitItem>(100.0);
+  calculator.AddResourceCacheLimitItem(item1->GetWeakPtr());
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(100U));
 
-  calculator.UpdateResourceCacheBytes(&key2, 200U);
+  auto item2 = std::make_unique<TestResourceCacheLimitItem>(200.0);
+  calculator.AddResourceCacheLimitItem(item2->GetWeakPtr());
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(300U));
 
-  calculator.UpdateResourceCacheBytes(&key3, 300U);
+  auto item3 = std::make_unique<TestResourceCacheLimitItem>(300.0);
+  calculator.AddResourceCacheLimitItem(item3->GetWeakPtr());
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(600U));
 
-  calculator.UpdateResourceCacheBytes(&key4, 400U);
+  auto item4 = std::make_unique<TestResourceCacheLimitItem>(400.0);
+  calculator.AddResourceCacheLimitItem(item4->GetWeakPtr());
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(800U));
 
-  calculator.RemoveResourceCacheBytes(&key3);
+  item3.reset();
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(700U));
 
-  calculator.RemoveResourceCacheBytes(&key2);
-  EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(500U));
-}
-
-TEST(ResourceCacheLimitCalculatorTest, UpdateMaxBytesThreshold) {
-  ResourceCacheLimitCalculator calculator(800U);
-  calculator.UpdateResourceCacheBytes(0, 1000U);
-  EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(800U));
-
-  calculator.UpdateMaxBytesThreshold(1200U);
-  EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(1000U));
-
-  calculator.UpdateMaxBytesThreshold(0U);
-  EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(1000U));
-
-  calculator.UpdateMaxBytesThreshold(500U);
+  item2.reset();
   EXPECT_EQ(calculator.GetResourceCacheMaxBytes(), static_cast<size_t>(500U));
 }
 

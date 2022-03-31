@@ -396,6 +396,8 @@ Shell::Shell(DartVMRef vm,
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   display_manager_ = std::make_unique<DisplayManager>();
+  resource_cache_limit_calculator->AddResourceCacheLimitItem(
+      weak_factory_.GetWeakPtr());
 
   // Generate a WeakPtrFactory for use with the raster thread. This does not
   // need to wait on a latch because it can only ever be used from the raster
@@ -451,7 +453,6 @@ Shell::~Shell() {
       task_runners_.GetIOTaskRunner());
 
   vm_->GetServiceProtocol()->RemoveHandler(this);
-  resource_cache_limit_calculator_->RemoveResourceCacheBytes(this);
 
   fml::AutoResetWaitableEvent ui_latch, gpu_latch, platform_latch, io_latch;
 
@@ -925,10 +926,8 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/39ae5bac216757bc201490f4c7b8c0f63006c6cd/libs/hwui/renderthread/CacheManager.cpp#45
-  size_t resource_cache_bytes =
+  resource_cache_limit_ =
       metrics.physical_width * metrics.physical_height * 12 * 4;
-  resource_cache_limit_calculator_->UpdateResourceCacheBytes(
-      this, resource_cache_bytes);
   size_t resource_cache_max_bytes =
       resource_cache_limit_calculator_->GetResourceCacheMaxBytes();
   task_runners_.GetRasterTaskRunner()->PostTask(
