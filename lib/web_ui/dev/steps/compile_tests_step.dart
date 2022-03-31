@@ -52,6 +52,7 @@ class CompileTestsStep implements PipelineStep {
 const Map<String, String> _kTestFonts = <String, String>{
   'Ahem': 'ahem.ttf',
   'Roboto': 'Roboto-Regular.ttf',
+  'RobotoVariable': 'RobotoSlab-VariableFont_wght.ttf',
   'Noto Naskh Arabic UI': 'NotoNaskhArabic-Regular.ttf',
   'Noto Color Emoji': 'NotoColorEmoji.ttf',
 };
@@ -212,7 +213,7 @@ Future<void> compileTests(List<FilePath> testFiles) async {
 }
 
 // Maximum number of concurrent dart2js processes to use.
-const int _dart2jsConcurrency = int.fromEnvironment('FELT_DART2JS_CONCURRENCY', defaultValue: 8);
+int _dart2jsConcurrency = int.parse(io.Platform.environment['FELT_DART2JS_CONCURRENCY'] ?? '8');
 
 final Pool _dart2jsPool = Pool(_dart2jsConcurrency);
 

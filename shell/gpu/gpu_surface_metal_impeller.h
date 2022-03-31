@@ -15,7 +15,8 @@ namespace flutter {
 
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
  public:
-  GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate);
+  GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
+                          std::shared_ptr<impeller::Context> context);
 
   // |Surface|
   ~GPUSurfaceMetalImpeller();
@@ -42,6 +43,9 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
 
   // |Surface|
   bool AllowsDrawingWhenGpuDisabled() const override;
+
+  // |Surface|
+  bool EnableRasterCache() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetalImpeller);
 };
