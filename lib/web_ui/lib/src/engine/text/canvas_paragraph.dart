@@ -9,7 +9,6 @@ import 'package:ui/ui.dart' as ui;
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
-import '../util.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
@@ -148,46 +147,23 @@ class CanvasParagraph implements ui.Paragraph {
 
   html.HtmlElement _createDomElement() {
     final html.HtmlElement rootElement =
-        html.document.createElement('p') as html.HtmlElement;
+        html.document.createElement('flt-paragraph') as html.HtmlElement;
 
     // 1. Set paragraph-level styles.
-    _applyNecessaryParagraphStyles(element: rootElement, style: paragraphStyle);
-    _applySpanStylesToParagraph(element: rootElement, spans: spans);
+
     final html.CssStyleDeclaration cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
       // Prevent the browser from doing any line breaks in the paragraph. We want
-      // to insert our own <BR> breaks based on layout results.
+      // to have full control of the paragraph layout.
       ..whiteSpace = 'pre';
-
-    if (width > longestLine) {
-      // In this case, we set the width so that the CSS text-align property
-      // works correctly.
-      // When `longestLine` is >= `paragraph.width` that means the DOM element
-      // will automatically size itself to fit the longest line, so there's no
-      // need to set an explicit width.
-      cssStyle.width = '${width}px';
-    }
-
-    if (paragraphStyle.maxLines != null || paragraphStyle.ellipsis != null) {
-      cssStyle
-        ..overflowY = 'hidden'
-        ..height = '${height}px';
-    }
 
     // 2. Append all spans to the paragraph.
 
-    FlatTextSpan? span;
-
-    html.HtmlElement element = rootElement;
+    html.HtmlElement? lastSpanElement;
     final List<EngineLineMetrics> lines = computeLineMetrics();
 
     for (int i = 0; i < lines.length; i++) {
-      // Insert a <BR> element before each line except the first line.
-      if (i > 0) {
-        element.append(html.document.createElement('br'));
-      }
-
       final EngineLineMetrics line = lines[i];
       final List<RangeBox> boxes = line.boxes;
       final StringBuffer buffer = StringBuffer();
@@ -195,47 +171,28 @@ class CanvasParagraph implements ui.Paragraph {
       int j = 0;
       while (j < boxes.length) {
         final RangeBox box = boxes[j++];
-        if (box is SpanBox && box.span == span) {
-          buffer.write(box.toText());
-          continue;
-        }
-
-        if (buffer.isNotEmpty) {
-          element.appendText(buffer.toString());
-          buffer.clear();
-        }
 
         if (box is SpanBox) {
-          span = box.span;
-          element = html.document.createElement('span') as html.HtmlElement;
+          lastSpanElement = html.document.createElement('flt-span') as html.HtmlElement;
           applyTextStyleToElement(
-            element: element,
+            element: lastSpanElement,
             style: box.span.style,
             isSpan: true,
           );
-          rootElement.append(element);
+          _positionSpanElement(lastSpanElement, line, box);
+          lastSpanElement.appendText(box.toText());
+          rootElement.append(lastSpanElement);
           buffer.write(box.toText());
         } else if (box is PlaceholderBox) {
-          span = null;
-          // If there's a line-end after this placeholder, we want the <BR> to
-          // be inserted in the root paragraph element.
-          element = rootElement;
-          rootElement.append(
-            createPlaceholderElement(placeholder: box.placeholder),
-          );
+          lastSpanElement = null;
         } else {
           throw UnimplementedError('Unknown box type: ${box.runtimeType}');
         }
       }
 
-      if (buffer.isNotEmpty) {
-        element.appendText(buffer.toString());
-        buffer.clear();
-      }
-
       final String? ellipsis = line.ellipsis;
       if (ellipsis != null) {
-        element.appendText(ellipsis);
+        (lastSpanElement ?? rootElement).appendText(ellipsis);
       }
     }
 
@@ -294,62 +251,16 @@ class CanvasParagraph implements ui.Paragraph {
   }
 }
 
-/// Applies a paragraph [style] to an [element], translating the properties to
-/// their corresponding CSS equivalents.
-///
-/// As opposed to [_applyParagraphStyleToElement], this method only applies
-/// styles that are necessary at the paragraph level. Other styles (e.g. font
-/// size) are always applied at the span level so they aren't needed at the
-/// paragraph level.
-void _applyNecessaryParagraphStyles({
-  required html.HtmlElement element,
-  required EngineParagraphStyle style,
-}) {
-  final html.CssStyleDeclaration cssStyle = element.style;
-
-  if (style.textAlign != null) {
-    cssStyle.textAlign = textAlignToCssValue(
-        style.textAlign, style.textDirection ?? ui.TextDirection.ltr);
-  }
-  if (style.lineHeight != null) {
-    cssStyle.lineHeight = '${style.lineHeight}';
-  }
-  if (style.textDirection != null) {
-    cssStyle.direction = textDirectionToCss(style.textDirection);
-  }
-}
-
-/// Applies some span-level style to a paragraph [element].
-///
-/// For example, it looks for the greatest font size among spans, and applies it
-/// to the paragraph. While this seems to have no effect, it prevents the
-/// paragraph from inheriting its font size from the body tag, which leads to
-/// incorrect vertical alignment of spans.
-void _applySpanStylesToParagraph({
-  required html.HtmlElement element,
-  required List<ParagraphSpan> spans,
-}) {
-  double fontSize = 0.0;
-  String? fontFamily;
-  for (final ParagraphSpan span in spans) {
-    if (span is FlatTextSpan) {
-      final double? spanFontSize = span.style.fontSize;
-      if (spanFontSize != null && spanFontSize > fontSize) {
-        fontSize = spanFontSize;
-        if (span.style.isFontFamilyProvided) {
-          fontFamily = span.style.effectiveFontFamily;
-        }
-      }
-    }
-  }
-
-  final html.CssStyleDeclaration cssStyle = element.style;
-  if (fontSize != 0.0) {
-    cssStyle.fontSize = '${fontSize}px';
-  }
-  if (fontFamily != null) {
-    cssStyle.fontFamily = canonicalizeFontFamily(fontFamily);
-  }
+void _positionSpanElement(html.Element element, EngineLineMetrics line, RangeBox box) {
+  final ui.Rect boxRect = box.toTextBox(line, forPainting: true).toRect();
+  element.style
+    ..position = 'absolute'
+    ..top = '${boxRect.top}px'
+    ..left = '${boxRect.left}px'
+    // This is needed for space-only spans that are used to justify the paragraph.
+    ..width = '${boxRect.width}px'
+    // Makes sure the baseline of each span is positioned as expected.
+    ..lineHeight = '${boxRect.height}px';
 }
 
 /// A common interface for all types of spans that make up a paragraph.
@@ -458,6 +369,7 @@ abstract class StyleNode {
         fontFamily: _fontFamily,
         fontFamilyFallback: _fontFamilyFallback,
         fontFeatures: _fontFeatures,
+        fontVariations: _fontVariations,
         fontSize: _fontSize,
         letterSpacing: _letterSpacing,
         wordSpacing: _wordSpacing,
@@ -482,6 +394,7 @@ abstract class StyleNode {
   String get _fontFamily;
   List<String>? get _fontFamilyFallback;
   List<ui.FontFeature>? get _fontFeatures;
+  List<ui.FontVariation>? get _fontVariations;
   double get _fontSize;
   double? get _letterSpacing;
   double? get _wordSpacing;
@@ -535,6 +448,9 @@ class ChildStyleNode extends StyleNode {
 
   @override
   List<ui.FontFeature>? get _fontFeatures => style.fontFeatures ?? parent._fontFeatures;
+
+  @override
+  List<ui.FontVariation>? get _fontVariations => style.fontVariations ?? parent._fontVariations;
 
   @override
   double get _fontSize => style.fontSize ?? parent._fontSize;
@@ -609,6 +525,9 @@ class RootStyleNode extends StyleNode {
 
   @override
   List<ui.FontFeature>? get _fontFeatures => null;
+
+  @override
+  List<ui.FontVariation>? get _fontVariations => null;
 
   @override
   double get _fontSize => paragraphStyle.fontSize ?? FlutterViewEmbedder.defaultFontSize;
@@ -723,6 +642,13 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     if (_drawOnCanvas) {
       final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
       if (fontFeatures != null && fontFeatures.isNotEmpty) {
+        _drawOnCanvas = false;
+      }
+    }
+
+    if (_drawOnCanvas) {
+      final List<ui.FontVariation>? fontVariations = style.fontVariations;
+      if (fontVariations != null && fontVariations.isNotEmpty) {
         _drawOnCanvas = false;
       }
     }

@@ -244,8 +244,11 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
           io_manager = parent_io_manager;
         } else {
           io_manager = std::make_shared<ShellIOManager>(
-              platform_view_ptr->CreateResourceContext(),
-              is_backgrounded_sync_switch, io_task_runner);
+              platform_view_ptr->CreateResourceContext(),  // resource context
+              is_backgrounded_sync_switch,                 // sync switch
+              io_task_runner,  // unref queue task runner
+              platform_view_ptr->GetImpellerContext()  // impeller context
+          );
         }
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
@@ -1079,6 +1082,11 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
       });
 }
 
+// |PlatformView::Delegate|
+const Settings& Shell::OnPlatformViewGetSettings() const {
+  return settings_;
+}
+
 // |Animator::Delegate|
 void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
                                  uint64_t frame_number) {
@@ -1106,23 +1114,26 @@ void Shell::OnAnimatorNotifyIdle(fml::TimePoint deadline) {
   }
 }
 
-// |Animator::Delegate|
-void Shell::OnAnimatorDraw(
-    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+void Shell::OnAnimatorUpdateLatestFrameTargetTime(
+    fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
 
   // record the target time for use by rasterizer.
   {
     std::scoped_lock time_recorder_lock(time_recorder_mutex_);
-    const fml::TimePoint frame_target_time =
-        frame_timings_recorder->GetVsyncTargetTime();
     if (!latest_frame_target_time_) {
       latest_frame_target_time_ = frame_target_time;
     } else if (latest_frame_target_time_ < frame_target_time) {
       latest_frame_target_time_ = frame_target_time;
     }
   }
+}
+
+// |Animator::Delegate|
+void Shell::OnAnimatorDraw(
+    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+  FML_DCHECK(is_setup_);
 
   auto discard_callback = [this](flutter::LayerTree& tree) {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
@@ -1907,7 +1918,7 @@ Shell::GetPlatformMessageHandler() const {
   return platform_message_handler_;
 }
 
-const VsyncWaiter& Shell::GetVsyncWaiter() const {
+const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
   return engine_->GetVsyncWaiter();
 }
 

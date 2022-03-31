@@ -156,7 +156,7 @@ abstract class FlutterView {
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
-  /// UI (such as the system notification area), or or physical intrusions in
+  /// UI (such as the system notification area), or physical intrusions in
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
@@ -199,7 +199,7 @@ abstract class FlutterView {
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
-  /// UI (such as the system notification area), or or physical intrusions in
+  /// UI (such as the system notification area), or physical intrusions in
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
@@ -480,6 +480,27 @@ class SingletonFlutterWindow extends FlutterWindow {
   VoidCallback? get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
   set onPlatformBrightnessChanged(VoidCallback? callback) {
     platformDispatcher.onPlatformBrightnessChanged = callback;
+  }
+
+  /// The setting indicating the system font of the host platform.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  String? get systemFontFamily => platformDispatcher.systemFontFamily;
+
+  /// A callback that is invoked whenever [systemFontFamily] changes value.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback? get onSystemFontFamilyChanged => platformDispatcher.onSystemFontFamilyChanged;
+  set onSystemFontFamilyChanged(VoidCallback? callback) {
+    platformDispatcher.onSystemFontFamilyChanged = callback;
   }
 
   /// A callback that is invoked to notify the window that it is an appropriate

@@ -151,10 +151,11 @@ void Rasterizer::DrawLastLayerTree(
       DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_) {
+  if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
     bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
+    external_view_embedder_->SetUsedThisFrame(false);
   }
 }
 
@@ -208,9 +209,11 @@ RasterStatus Rasterizer::Draw(
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (surface_ && external_view_embedder_) {
+  if (surface_ && external_view_embedder_ &&
+      external_view_embedder_->GetUsedThisFrame()) {
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
+    external_view_embedder_->SetUsedThisFrame(false);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
@@ -521,6 +524,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
+    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
+    external_view_embedder_->SetUsedThisFrame(true);
     external_view_embedder_->BeginFrame(
         layer_tree.frame_size(), surface_->GetContext(),
         layer_tree.device_pixel_ratio(), raster_thread_merger_);
@@ -552,8 +557,9 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       root_surface_transformation,    // root surface transformation
       true,                           // instrumentation enabled
       frame->framebuffer_info()
-          .supports_readback,  // surface supports pixel reads
-      raster_thread_merger_    // thread merger
+          .supports_readback,               // surface supports pixel reads
+      raster_thread_merger_,                // thread merger
+      frame->GetDisplayListBuilder().get()  // display list builder
   );
   if (compositor_frame) {
     compositor_context_->raster_cache().PrepareNewFrame();
@@ -576,8 +582,11 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       }
     }
 
-    RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false, damage.get());
+    RasterStatus raster_status = compositor_frame->Raster(
+        layer_tree,                      // layer tree
+        !surface_->EnableRasterCache(),  // ignore raster cache
+        damage.get()                     // frame damage
+    );
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
@@ -631,7 +640,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
-      root_surface_transformation, false, true, nullptr);
+      root_surface_transformation, false, true, nullptr, nullptr);
   frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
@@ -696,9 +705,16 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     return nullptr;
   }
 
-  auto frame = compositor_context.AcquireFrame(surface_context, canvas, nullptr,
-                                               root_surface_transformation,
-                                               false, true, nullptr);
+  auto frame = compositor_context.AcquireFrame(
+      surface_context,              // skia context
+      canvas,                       // canvas
+      nullptr,                      // view embedder
+      root_surface_transformation,  // root surface transformation
+      false,                        // instrumentation enabled
+      true,                         // render buffer readback supported
+      nullptr,                      // thread merger
+      nullptr                       // display list builder
+  );
   canvas->clear(SK_ColorTRANSPARENT);
   frame->Raster(*tree, true, nullptr);
   canvas->flush();
@@ -824,9 +840,7 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
       return;
     }
 
-    int max_resources;
-    context->getResourceCacheLimits(&max_resources, nullptr);
-    context->setResourceCacheLimits(max_resources, max_bytes);
+    context->setResourceCacheLimit(max_bytes);
   }
 }
 
@@ -836,9 +850,7 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   }
   GrDirectContext* context = surface_->GetContext();
   if (context) {
-    size_t max_bytes;
-    context->getResourceCacheLimits(nullptr, &max_bytes);
-    return max_bytes;
+    return context->getResourceCacheLimit();
   }
   return std::nullopt;
 }
