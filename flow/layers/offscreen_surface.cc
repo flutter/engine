@@ -43,6 +43,7 @@ static sk_sp<SkData> GetRasterData(sk_sp<SkSurface> offscreen_surface,
   }
 
   // Copy the GPU image snapshot into CPU memory.
+  // TODO (https://github.com/flutter/flutter/issues/13498)
   auto cpu_snapshot = potentially_gpu_snapshot->makeRasterImage();
   if (!cpu_snapshot) {
     FML_LOG(ERROR) << "Screenshot: unable to make raster image";
@@ -66,24 +67,11 @@ static sk_sp<SkData> GetRasterData(sk_sp<SkSurface> offscreen_surface,
 
 OffscreenSurface::OffscreenSurface(GrDirectContext* surface_context,
                                    const SkISize& size) {
-  // The caveat here is that if the app is backgrounded this might not
-  // be the ideal approach: https://github.com/flutter/flutter/issues/73675.
-  // Given that `enable_leaf_layer_tracing` is a debug mode only feature
-  // and is expected to run only when the app is in foreground this is ok.
   offscreen_surface_ = CreateSnapshotSurface(surface_context, size);
 }
 
 sk_sp<SkData> OffscreenSurface::GetRasterData(bool compressed) const {
   return flutter::GetRasterData(offscreen_surface_, compressed);
-}
-
-sk_sp<SkData> OffscreenSurface::GetRasterDataAsBase64(bool compressed) const {
-  sk_sp<SkData> data = GetRasterData(compressed);
-  size_t size = data->size();
-  size_t b64_size = SkBase64::Encode(data->data(), size, nullptr);
-  sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size);
-  SkBase64::Encode(data->data(), data->size(), b64_data->writable_data());
-  return b64_data;
 }
 
 SkCanvas* OffscreenSurface::GetCanvas() const {

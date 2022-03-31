@@ -21,8 +21,6 @@ class OffscreenSurface {
 
   sk_sp<SkData> GetRasterData(bool compressed) const;
 
-  sk_sp<SkData> GetRasterDataAsBase64(bool compressed) const;
-
   SkCanvas* GetCanvas() const;
 
   bool IsValid() const;
