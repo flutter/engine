@@ -12,6 +12,32 @@
 namespace flutter {
 namespace testing {
 
+TEST(DisplayListVertices, MakeWithZeroAndNegativeVerticesAndIndices) {
+  std::shared_ptr<const DlVertices> vertices1 = DlVertices::Make(
+      DlVertexMode::kTriangles, 0, nullptr, nullptr, nullptr, 0, nullptr);
+  EXPECT_NE(vertices1, nullptr);
+  EXPECT_EQ(vertices1->vertex_count(), 0);
+  EXPECT_EQ(vertices1->vertices(), nullptr);
+  EXPECT_EQ(vertices1->texture_coordinates(), nullptr);
+  EXPECT_EQ(vertices1->colors(), nullptr);
+  EXPECT_EQ(vertices1->index_count(), 0);
+  EXPECT_EQ(vertices1->indices(), nullptr);
+  EXPECT_NE(vertices1->skia_object(), nullptr);
+
+  std::shared_ptr<const DlVertices> vertices2 = DlVertices::Make(
+      DlVertexMode::kTriangles, -1, nullptr, nullptr, nullptr, -1, nullptr);
+  EXPECT_NE(vertices2, nullptr);
+  EXPECT_EQ(vertices2->vertex_count(), 0);
+  EXPECT_EQ(vertices2->vertices(), nullptr);
+  EXPECT_EQ(vertices2->texture_coordinates(), nullptr);
+  EXPECT_EQ(vertices2->colors(), nullptr);
+  EXPECT_EQ(vertices2->index_count(), 0);
+  EXPECT_EQ(vertices2->indices(), nullptr);
+  EXPECT_NE(vertices2->skia_object(), nullptr);
+
+  TestEquals(*vertices1, *vertices2);
+}
+
 TEST(DisplayListVertices, MakeWithTexAndColorAndIndices) {
   SkPoint coords[3] = {
       SkPoint::Make(2, 3),
@@ -386,6 +412,34 @@ TEST(DisplayListVertices, BuilderFlags) {
                   .has_texture_coordinates);
   EXPECT_TRUE((Builder::kHasTextureCoordinates | Builder::kHasColors)  //
                   .has_colors);
+}
+
+TEST(DisplayListVertices, BuildWithZeroAndNegativeVerticesAndIndices) {
+  Builder builder1(DlVertexMode::kTriangles, 0, Builder::kNone, 0);
+  EXPECT_TRUE(builder1.is_valid());
+  std::shared_ptr<DlVertices> vertices1 = builder1.build();
+  EXPECT_NE(vertices1, nullptr);
+  EXPECT_EQ(vertices1->vertex_count(), 0);
+  EXPECT_EQ(vertices1->vertices(), nullptr);
+  EXPECT_EQ(vertices1->texture_coordinates(), nullptr);
+  EXPECT_EQ(vertices1->colors(), nullptr);
+  EXPECT_EQ(vertices1->index_count(), 0);
+  EXPECT_EQ(vertices1->indices(), nullptr);
+  EXPECT_NE(vertices1->skia_object(), nullptr);
+
+  Builder builder2(DlVertexMode::kTriangles, -1, Builder::kNone, -1);
+  EXPECT_TRUE(builder2.is_valid());
+  std::shared_ptr<DlVertices> vertices2 = builder2.build();
+  EXPECT_NE(vertices2, nullptr);
+  EXPECT_EQ(vertices2->vertex_count(), 0);
+  EXPECT_EQ(vertices2->vertices(), nullptr);
+  EXPECT_EQ(vertices2->texture_coordinates(), nullptr);
+  EXPECT_EQ(vertices2->colors(), nullptr);
+  EXPECT_EQ(vertices2->index_count(), 0);
+  EXPECT_EQ(vertices2->indices(), nullptr);
+  EXPECT_NE(vertices2->skia_object(), nullptr);
+
+  TestEquals(*vertices1, *vertices2);
 }
 
 TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {

@@ -45,10 +45,13 @@ std::shared_ptr<DlVertices> DlVertices::Make(
     int index_count,
     const uint16_t indices[]) {
   if (!vertices || vertex_count <= 0) {
-    return nullptr;
+    vertex_count = 0;
+    texture_coordinates = nullptr;
+    colors = nullptr;
   }
-  if (!indices || index_count < 0) {
+  if (!indices || index_count <= 0) {
     index_count = 0;
+    indices = nullptr;
   }
 
   Flags flags;
@@ -69,7 +72,7 @@ std::shared_ptr<DlVertices> DlVertices::Make(
   if (colors) {
     builder.store_colors(colors);
   }
-  if (index_count > 0) {
+  if (indices) {
     builder.store_indices(indices);
   }
 
@@ -91,20 +94,19 @@ static SkRect compute_bounds(const SkPoint* points, int count) {
 }
 
 DlVertices::DlVertices(DlVertexMode mode,
-                       int vertex_count,
+                       int unchecked_vertex_count,
                        const SkPoint* vertices,
                        const SkPoint* texture_coordinates,
                        const SkColor* colors,
-                       int index_count,
+                       int unchecked_index_count,
                        const uint16_t* indices,
                        const SkRect* bounds)
     : mode_(mode),
-      vertex_count_(vertex_count),
-      index_count_(index_count > 0 && indices ? index_count : 0) {
+      vertex_count_(std::max(unchecked_vertex_count, 0)),
+      index_count_(indices ? std::max(unchecked_index_count, 0) : 0) {
   FML_DCHECK(vertices);
-  FML_DCHECK(vertex_count > 0);
 
-  bounds_ = bounds ? *bounds : compute_bounds(vertices, vertex_count);
+  bounds_ = bounds ? *bounds : compute_bounds(vertices, vertex_count_);
 
   char* pod = reinterpret_cast<char*>(this);
   size_t offset = sizeof(DlVertices);
@@ -121,13 +123,13 @@ DlVertices::DlVertices(DlVertexMode mode,
     }
   };
 
-  vertices_offset_ = advance(vertices, vertex_count);
-  texture_coordinates_offset_ = advance(texture_coordinates, vertex_count);
-  colors_offset_ = advance(colors, vertex_count);
-  indices_offset_ = advance(indices, index_count);
-  FML_DCHECK(offset == bytes_needed(vertex_count,
+  vertices_offset_ = advance(vertices, vertex_count_);
+  texture_coordinates_offset_ = advance(texture_coordinates, vertex_count_);
+  colors_offset_ = advance(colors, vertex_count_);
+  indices_offset_ = advance(indices, index_count_);
+  FML_DCHECK(offset == bytes_needed(vertex_count_,
                                     {{!!texture_coordinates, !!colors}},
-                                    index_count));
+                                    index_count_));
 }
 
 DlVertices::DlVertices(const DlVertices* other)
@@ -141,14 +143,12 @@ DlVertices::DlVertices(const DlVertices* other)
                  &other->bounds_) {}
 
 DlVertices::DlVertices(DlVertexMode mode,
-                       int vertex_count,
+                       int unchecked_vertex_count,
                        Flags flags,
-                       int index_count)
+                       int unchecked_index_count)
     : mode_(mode),
-      vertex_count_(vertex_count),
-      index_count_(index_count > 0 ? index_count : 0) {
-  FML_DCHECK(vertex_count > 0);
-
+      vertex_count_(std::max(unchecked_vertex_count, 0)),
+      index_count_(std::max(unchecked_index_count, 0)) {
   char* pod = reinterpret_cast<char*>(this);
   size_t offset = sizeof(DlVertices);
 
@@ -164,18 +164,18 @@ DlVertices::DlVertices(DlVertexMode mode,
     }
   };
 
-  vertices_offset_ = advance(sizeof(SkPoint), vertex_count);
+  vertices_offset_ = advance(sizeof(SkPoint), vertex_count_);
   texture_coordinates_offset_ = advance(
-      sizeof(SkPoint), flags.has_texture_coordinates ? vertex_count : 0);
+      sizeof(SkPoint), flags.has_texture_coordinates ? vertex_count_ : 0);
   colors_offset_ =
-      advance(sizeof(SkColor), flags.has_colors ? vertex_count : 0);
-  indices_offset_ = advance(sizeof(uint16_t), index_count);
-  FML_DCHECK(offset == bytes_needed(vertex_count, flags, index_count));
-  FML_CHECK(vertices() != nullptr);
-  FML_DCHECK(flags.has_texture_coordinates ==
+      advance(sizeof(SkColor), flags.has_colors ? vertex_count_ : 0);
+  indices_offset_ = advance(sizeof(uint16_t), index_count_);
+  FML_DCHECK(offset == bytes_needed(vertex_count_, flags, index_count_));
+  FML_DCHECK((vertex_count_ != 0) == (vertices() != nullptr));
+  FML_DCHECK((vertex_count_ != 0 && flags.has_texture_coordinates) ==
              (texture_coordinates() != nullptr));
-  FML_DCHECK(flags.has_colors == (colors() != nullptr));
-  FML_DCHECK((index_count > 0) == (indices() != nullptr));
+  FML_DCHECK((vertex_count_ != 0 && flags.has_colors) == (colors() != nullptr));
+  FML_DCHECK((index_count_ != 0) == (indices() != nullptr));
 }
 
 sk_sp<SkVertices> DlVertices::skia_object() const {
@@ -215,13 +215,13 @@ DlVertices::Builder::Builder(DlVertexMode mode,
       needs_texture_coords_(flags.has_texture_coordinates),
       needs_colors_(flags.has_colors),
       needs_indices_(index_count > 0) {
-  if (vertex_count > 0) {
-    void* storage =
-        ::operator new(bytes_needed(vertex_count, flags, index_count));
-    vertices_.reset(new (storage)
-                        DlVertices(mode, vertex_count, flags, index_count),
-                    DlVerticesDeleter);
-  }
+  vertex_count = std::max(vertex_count, 0);
+  index_count = std::max(index_count, 0);
+  void* storage =
+      ::operator new(bytes_needed(vertex_count, flags, index_count));
+  vertices_.reset(new (storage)
+                      DlVertices(mode, vertex_count, flags, index_count),
+                  DlVerticesDeleter);
 }
 
 static void store_points(char* dst, int offset, const float* src, int count) {
@@ -287,6 +287,12 @@ void DlVertices::Builder::store_indices(const uint16_t indices[]) {
 
 std::shared_ptr<DlVertices> DlVertices::Builder::build() {
   FML_CHECK(is_valid());
+  if (vertices_->vertex_count() <= 0) {
+    // We set this to true in the constructor to make sure that they
+    // call store_vertices() only once, but if there are no vertices
+    // then we will not object to them never having stored any vertices
+    needs_vertices_ = false;
+  }
   FML_CHECK(!needs_vertices_);
   FML_CHECK(!needs_texture_coords_);
   FML_CHECK(!needs_colors_);
