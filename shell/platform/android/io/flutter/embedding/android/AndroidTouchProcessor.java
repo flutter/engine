@@ -28,7 +28,7 @@ public class AndroidTouchProcessor {
     PointerChange.PAN_ZOOM_UPDATE,
     PointerChange.PAN_ZOOM_END
   })
-  private @interface PointerChange {
+  public @interface PointerChange {
     int CANCEL = 0;
     int ADD = 1;
     int REMOVE = 2;
@@ -50,7 +50,7 @@ public class AndroidTouchProcessor {
     PointerDeviceKind.TRACKPAD,
     PointerDeviceKind.UNKNOWN
   })
-  private @interface PointerDeviceKind {
+  public @interface PointerDeviceKind {
     int TOUCH = 0;
     int MOUSE = 1;
     int STYLUS = 2;
@@ -61,7 +61,7 @@ public class AndroidTouchProcessor {
 
   // Must match the PointerSignalKind enum in pointer.dart.
   @IntDef({PointerSignalKind.NONE, PointerSignalKind.SCROLL, PointerSignalKind.UNKNOWN})
-  private @interface PointerSignalKind {
+  public @interface PointerSignalKind {
     int NONE = 0;
     int SCROLL = 1;
     int UNKNOWN = 2;
@@ -69,7 +69,7 @@ public class AndroidTouchProcessor {
 
   // Must match the unpacking code in hooks.dart.
   private static final int POINTER_DATA_FIELD_COUNT = 35;
-  private static final int BYTES_PER_FIELD = 8;
+  public static final int BYTES_PER_FIELD = 8;
 
   // This value must match the value in framework's platform_view.dart.
   // This flag indicates whether the original Android pointer events were batched together.
