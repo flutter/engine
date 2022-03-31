@@ -712,9 +712,9 @@
   };
 
   updateCall = [[FlutterJSONMethodCodec sharedInstance]
-       encodeMethodCall:[FlutterMethodCall
-                            methodCallWithMethodName:@"TextInputClient.updateEditingStateWithDeltas"
-                                           arguments:@[ @(1), expectedState ]]];
+      encodeMethodCall:[FlutterMethodCall
+                           methodCallWithMethodName:@"TextInputClient.updateEditingStateWithDeltas"
+                                          arguments:@[ @(1), expectedState ]]];
 
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
