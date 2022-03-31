@@ -86,18 +86,17 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
-  context->raster_cached_entries.emplace_back(RasterCacheEntry(this));
+  context->raster_cached_entries.emplace_back(
+      RasterCacheEntry(this, *context, matrix));
 
   auto& cache_entry = context->raster_cached_entries.back();
-  // display layer is a leaf node
-  cache_entry.num_child_entries = 0;
-  cache_entry.need_caching = IsNeedCached(context, matrix);
+  auto cached_type = NeedCaching(context, matrix);
+  cache_entry.need_caching = cached_type == CacheableLayer::CacheType::kCurrent;
 }
 
-bool DisplayListLayer::IsNeedCached(PrerollContext* context,
-                                    const SkMatrix& ctm) {
+CacheableLayer::CacheType DisplayListLayer::NeedCaching(PrerollContext* context,
+                                                        const SkMatrix& ctm) {
   DisplayList* disp_list = display_list();
-
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
 
   if (disp_list->can_apply_group_opacity()) {
@@ -106,12 +105,19 @@ bool DisplayListLayer::IsNeedCached(PrerollContext* context,
 
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-    if (context->cull_rect.intersects(bounds)) {
-      return cache->ShouldBeCached(context, disp_list, is_complex_,
-                                   will_change_, ctm);
+    // For display_list_layer if the context has raster_cache, we will try to
+    // collection it when we raster cache it, we will to decision Prepare or
+    // Touch cache
+    if (context->cull_rect.intersect(bounds) &&
+        cache->ShouldBeCached(context, disp_list, is_complex_, will_change_,
+                              ctm)) {
+      // if current Layer can be cached, we change the
+      // subtree_can_inherit_opacity to true
+      context->subtree_can_inherit_opacity = true;
     }
+    return CacheableLayer::CacheType::kCurrent;
   }
-  return false;
+  return CacheableLayer::CacheType::kNone;
 }
 
 void DisplayListLayer::TryToPrepareRasterCache(PrerollContext* context,
@@ -121,10 +127,7 @@ void DisplayListLayer::TryToPrepareRasterCache(PrerollContext* context,
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
   auto* cache = context->raster_cache;
   if (context->cull_rect.intersects(bounds)) {
-    if (cache->Prepare(context, disp_list, is_complex_, will_change_, ctm,
-                       offset_)) {
-      context->subtree_can_inherit_opacity = true;
-    }
+    cache->Prepare(context, disp_list, is_complex_, will_change_, ctm, offset_);
   } else {
     // Don't evict raster cache entry during partial repaint
     cache->Touch(disp_list, ctm);

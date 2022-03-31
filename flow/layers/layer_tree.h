@@ -10,6 +10,7 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -32,7 +33,8 @@ class LayerTree {
                bool ignore_raster_cache = false,
                SkRect cull_rect = kGiantRect);
 
-  void RasterCache(PrerollContext* context, const SkMatrix& ctm);
+  void RasterCache(CompositorContext::ScopedFrame& frame,
+                   PrerollContext* context);
 
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;

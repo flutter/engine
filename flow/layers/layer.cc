@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/layer.h"
 #include <algorithm>
 
+#include "flutter/flow/diff_context.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache.h"
 #include "include/core/SkMatrix.h"
@@ -30,9 +31,6 @@ uint64_t Layer::NextUniqueID() {
 }
 
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
-
-void Layer::TryToPrepareRasterCache(PrerollContext* context,
-                                    const SkMatrix& ctm) {}
 
 Layer::AutoPrerollSaveLayerState::AutoPrerollSaveLayerState(
     PrerollContext* preroll_context,

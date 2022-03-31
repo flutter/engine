@@ -42,20 +42,14 @@ class PictureLayer;
 class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
+class CacheableLayer;
+struct RasterCacheEntry;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
-struct RasterCacheEntry {
-  explicit RasterCacheEntry(Layer* layer)
-      : layer(layer), num_child_entries(0), need_caching(false) {}
-
-  Layer* layer;
-  unsigned num_child_entries;
-  bool need_caching;
-};
 struct PrerollContext {
   RasterCache* raster_cache;
   GrDirectContext* gr_context;
@@ -101,6 +95,51 @@ struct PrerollContext {
   std::vector<RasterCacheEntry> raster_cached_entries;
 };
 
+struct RasterCacheEntry {
+  RasterCacheEntry(CacheableLayer* layer,
+                   PrerollContext& context,
+                   const SkMatrix& matrix,
+                   unsigned num_child,
+                   bool need_caching = false)
+      : layer(layer),
+        matrix(matrix),
+        raster_cache(context.raster_cache),
+        mutators_stack(context.mutators_stack),
+        cull_rect(context.cull_rect),
+        color_space(context.dst_color_space),
+        num_child_entries(num_child),
+        need_caching(need_caching) {}
+
+  explicit RasterCacheEntry(CacheableLayer* layer,
+                            PrerollContext& context,
+                            const SkMatrix& matrix,
+                            bool need_caching = false)
+      : RasterCacheEntry(layer, context, matrix, 0, need_caching) {}
+
+  void UpdateRasterCacheEntry(CacheableLayer* layer,
+                              PrerollContext& context,
+                              const SkMatrix& matrix) {
+    this->raster_cache = context.raster_cache;
+    this->layer = layer;
+    this->matrix = matrix;
+    this->mutators_stack = context.mutators_stack;
+    this->cull_rect = context.cull_rect;
+    this->color_space = context.dst_color_space;
+    this->surface_needs_readback = context.surface_needs_readback;
+  }
+
+  CacheableLayer* layer;
+  SkMatrix matrix;
+  RasterCache* raster_cache;
+  MutatorsStack mutators_stack;
+  SkRect cull_rect;
+  SkColorSpace* color_space;
+
+  bool surface_needs_readback;
+  unsigned num_child_entries;
+  bool need_caching;
+};
+
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
 class Layer {
@@ -119,15 +158,8 @@ class Layer {
     return original_layer_id_ == old_layer->original_layer_id_;
   }
 
-  virtual bool IsNeedCached(PrerollContext* context, const SkMatrix& ctm) {
-    return false;
-  }
-
   // Performs diff with given layer
   virtual void Diff(DiffContext* context, const Layer* old_layer) {}
-
-  virtual void TryToPrepareRasterCache(PrerollContext* context,
-                                       const SkMatrix& ctm);
 
   // Used when diffing retained layer; In case the layer is identical, it
   // doesn't need to be diffed, but the paint region needs to be stored in diff
@@ -284,6 +316,8 @@ class Layer {
   };
 
   virtual void Paint(PaintContext& context) const = 0;
+
+  virtual bool IsCacheable() { return false; }
 
   bool subtree_has_platform_view() const { return subtree_has_platform_view_; }
   void set_subtree_has_platform_view(bool value) {

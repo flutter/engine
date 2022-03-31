@@ -7,11 +7,10 @@
 
 #include <vector>
 
-#include "flutter/flow/layers/layer.h"
-
+#include "flutter/flow/layers/cacheable_layer.h"
 namespace flutter {
 
-class ContainerLayer : public Layer {
+class ContainerLayer : public CacheableLayer {
  public:
   ContainerLayer();
 
@@ -19,9 +18,6 @@ class ContainerLayer : public Layer {
   void PreservePaintRegion(DiffContext* context) override;
 
   virtual void Add(std::shared_ptr<Layer> layer);
-
-  void TryToPrepareRasterCache(PrerollContext* context,
-                               const SkMatrix& ctm) override;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
@@ -34,6 +30,14 @@ class ContainerLayer : public Layer {
   const ContainerLayer* as_container_layer() const override { return this; }
 
   const SkRect& child_paint_bounds() const { return child_paint_bounds_; }
+  
+  CacheableLayer::CacheType NeedCaching(PrerollContext* context,
+                                        const SkMatrix& ctm) override {
+    return CacheableLayer::CacheType::kNone;
+  }
+
+  void TryToPrepareRasterCache(PrerollContext* context,
+                               const SkMatrix& matrix) override;
 
  protected:
   void PrerollChildren(PrerollContext* context,

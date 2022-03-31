@@ -6,6 +6,7 @@
 
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layer_snapshot_store.h"
+#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/time/time_point.h"
@@ -61,16 +62,29 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
 
-  RasterCache(&context, frame.root_surface_transformation());
+  RasterCache(frame, &context);
 
   return context.surface_needs_readback;
 }
 
-void LayerTree::RasterCache(PrerollContext* context, const SkMatrix& ctm) {
+void LayerTree::RasterCache(CompositorContext::ScopedFrame& frame,
+                            PrerollContext* context) {
   for (unsigned i = 0; i < context->raster_cached_entries.size(); i++) {
     auto& entry = context->raster_cached_entries[i];
     if (entry.need_caching) {
-      entry.layer->TryToPrepareRasterCache(context, ctm);
+      PrerollContext context = {entry.raster_cache,
+                                frame.gr_context(),
+                                frame.view_embedder(),
+                                entry.mutators_stack,
+                                entry.color_space,
+                                entry.cull_rect,
+                                entry.surface_needs_readback,
+                                frame.context().raster_time(),
+                                frame.context().ui_time(),
+                                frame.context().texture_registry(),
+                                checkerboard_offscreen_layers_,
+                                device_pixel_ratio_};
+      entry.layer->TryToPrepareRasterCache(&context, entry.matrix);
       i += entry.num_child_entries;
     }
   }

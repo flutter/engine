@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/image_filter_layer.h"
+#include "flutter/flow/layers/layer.h"
 
 namespace flutter {
 
@@ -48,7 +49,8 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  context->raster_cached_entries.emplace_back(RasterCacheEntry(this));
+  context->raster_cached_entries.emplace_back(
+      RasterCacheEntry(this, *context, matrix));
   auto current_index = context->raster_cached_entries.size();
 
   auto& cache_entry = context->raster_cached_entries.back();
@@ -63,7 +65,18 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   cache_entry.num_child_entries =
       context->raster_cached_entries.size() - current_index;
-  cache_entry.need_caching = IsNeedCached(context, matrix);
+  auto cache_type = NeedCaching(context, matrix);
+
+  cache_entry.need_caching = false;
+  if (cache_type == CacheableLayer::CacheType::kCurrent) {
+    cache_entry.layer = this;
+  } else if (cache_type == CacheableLayer::CacheType::kChildren) {
+    // Replace Cacheable child
+    // auto* cacheable_child = GetCacheableChild();
+    // if (cacheable_child) {
+    //   cache_entry.UpdateRasterCacheEntry(cacheable_child, *context, matrix);
+    // }
+  }
 
   if (!filter_) {
     set_paint_bounds(child_bounds);
@@ -78,10 +91,10 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   set_paint_bounds(child_bounds);
 }
 
-bool ImageFilterLayer::IsNeedCached(PrerollContext* context,
-                                    const SkMatrix& ctm) {
+CacheableLayer::CacheType ImageFilterLayer::NeedCaching(PrerollContext* context,
+                                                        const SkMatrix& ctm) {
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    return true;
+    return CacheableLayer::CacheType::kCurrent;
   }
   transformed_filter_ = nullptr;
   // This ImageFilterLayer is not yet considered stable so we
@@ -103,9 +116,9 @@ bool ImageFilterLayer::IsNeedCached(PrerollContext* context,
     // stable between frames and also avoiding a rendering surface
     // switch during the Paint phase even if they are not stable.
     // This benefit is seen most during animations.
-    return true;
+    return CacheableLayer::CacheType::kChildren;
   }
-  return false;
+  return CacheableLayer::CacheType::kNone;
 }
 
 void ImageFilterLayer::Paint(PaintContext& context) const {
