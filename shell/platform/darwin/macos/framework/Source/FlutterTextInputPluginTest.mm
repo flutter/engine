@@ -662,7 +662,7 @@
   } @catch (...) {
     return false;
   }
-    
+
   [plugin setMarkedText:@"ma" selectedRange:NSMakeRange(0, 1)];
 
   deltaToFramework = @{
@@ -692,7 +692,7 @@
   } @catch (...) {
     return false;
   }
-    
+
   [plugin setMarkedText:@"mar" selectedRange:NSMakeRange(0, 1)];
 
   deltaToFramework = @{
@@ -722,7 +722,7 @@
   } @catch (...) {
     return false;
   }
-    
+
   [plugin setMarkedText:@"mark" selectedRange:NSMakeRange(0, 1)];
 
   deltaToFramework = @{
@@ -752,7 +752,7 @@
   } @catch (...) {
     return false;
   }
-    
+
   [plugin setMarkedText:@"marke" selectedRange:NSMakeRange(0, 1)];
 
   deltaToFramework = @{
@@ -782,7 +782,7 @@
   } @catch (...) {
     return false;
   }
-    
+
   [plugin setMarkedText:@"marked" selectedRange:NSMakeRange(0, 1)];
 
   deltaToFramework = @{
@@ -812,7 +812,7 @@
   } @catch (...) {
     return false;
   }
-    
+
   [plugin unmarkText];
 
   deltaToFramework = @{
