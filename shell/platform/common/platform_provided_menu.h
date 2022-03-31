@@ -5,44 +5,48 @@
 #ifndef PLATFORM_COMMON_PLATFORM_PROVIDED_MENU_H_
 #define PLATFORM_COMMON_PLATFORM_PROVIDED_MENU_H_
 
+namespace flutter {
+
 // Enumerates the provided menus that a platform may support.
 // Must be kept in sync with the framework enum in widgets/menu.dart.
-enum PlatformProvidedMenu {
+enum class PlatformProvidedMenu {
   // orderFrontStandardAboutPanel macOS provided menu
-  about,
+  kAbout,
 
   // terminate macOS provided menu
-  quit,
+  kQuit,
 
   // Services macOS provided submenu.
-  servicesSubmenu,
+  kServicesSubmenu,
 
   // hide macOS provided menu
-  hide,
+  kHide,
 
   // hideOtherApplications macOS provided menu
-  hideOtherApplications,
+  kHideOtherApplications,
 
   // unhideAllApplications macOS provided menu
-  showAllApplications,
+  kShowAllApplications,
 
   // startSpeaking macOS provided menu
-  startSpeaking,
+  kStartSpeaking,
 
   // stopSpeaking macOS provided menu
-  stopSpeaking,
+  kStopSpeaking,
 
   // toggleFullScreen macOS provided menu
-  toggleFullScreen,
+  kToggleFullScreen,
 
   // performMiniaturize macOS provided menu
-  minimizeWindow,
+  kMinimizeWindow,
 
   // performZoom macOS provided menu
-  zoomWindow,
+  kZoomWindow,
 
   // arrangeInFront macOS provided menu
-  arrangeWindowsInFront,
+  kArrangeWindowsInFront,
 };
+
+}  // namespace flutter
 
 #endif  // PLATFORM_COMMON_PLATFORM_provided_MENU_H_

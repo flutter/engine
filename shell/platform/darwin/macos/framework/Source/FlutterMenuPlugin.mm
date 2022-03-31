@@ -29,14 +29,14 @@ static NSString* const kShortcutModifiersKey = @"shortcutModifiers";
 static NSString* const kPlatformProvidedMenuKey = @"platformProvidedMenu";
 
 // Key shortcut constants
-static const int kFlutterShortcutModifierMeta = 1 << 0;
-static const int kFlutterShortcutModifierShift = 1 << 1;
-static const int kFlutterShortcutModifierAlt = 1 << 2;
-static const int kFlutterShortcutModifierControl = 1 << 3;
+constexpr int kFlutterShortcutModifierMeta = 1 << 0;
+constexpr int kFlutterShortcutModifierShift = 1 << 1;
+constexpr int kFlutterShortcutModifierAlt = 1 << 2;
+constexpr int kFlutterShortcutModifierControl = 1 << 3;
 
-static const uint64_t kFlutterKeyIdPlaneMask = 0xff00000000l;
-static const uint64_t kFlutterKeyIdUnicodePlane = 0x0000000000l;
-static const uint64_t kFlutterKeyIdValueMask = 0x00ffffffffl;
+constexpr uint64_t kFlutterKeyIdPlaneMask = 0xff00000000l;
+constexpr uint64_t kFlutterKeyIdUnicodePlane = 0x0000000000l;
+constexpr uint64_t kFlutterKeyIdValueMask = 0x00ffffffffl;
 
 static const NSDictionary* logicalKeyToKeyCode = {};
 
@@ -107,23 +107,23 @@ static NSDictionary<NSNumber*, NSNumber*>* GetMacOsSpecialKeys() {
  * The mapping from the PlatformProvidedMenu enum to the macOS selectors for the provided
  * menus.
  */
-static const std::map<int, SEL> GetMacOSProvidedMenus() {
+static const std::map<flutter::PlatformProvidedMenu, SEL> GetMacOSProvidedMenus() {
   return {
-      {PlatformProvidedMenu::about, @selector(orderFrontStandardAboutPanel:)},
-      {PlatformProvidedMenu::quit, @selector(terminate:)},
+      {flutter::PlatformProvidedMenu::kAbout, @selector(orderFrontStandardAboutPanel:)},
+      {flutter::PlatformProvidedMenu::kQuit, @selector(terminate:)},
       // servicesSubmenu is handled specially below: it is assumed to be the first
       // submenu in the preserved platform provided menus, since it doesn't have a
       // definitive selector like the rest.
-      {PlatformProvidedMenu::servicesSubmenu, @selector(submenuAction:)},
-      {PlatformProvidedMenu::hide, @selector(hide:)},
-      {PlatformProvidedMenu::hideOtherApplications, @selector(hideOtherApplications:)},
-      {PlatformProvidedMenu::showAllApplications, @selector(unhideAllApplications:)},
-      {PlatformProvidedMenu::startSpeaking, @selector(startSpeaking:)},
-      {PlatformProvidedMenu::stopSpeaking, @selector(stopSpeaking:)},
-      {PlatformProvidedMenu::toggleFullScreen, @selector(toggleFullScreen:)},
-      {PlatformProvidedMenu::minimizeWindow, @selector(performMiniaturize:)},
-      {PlatformProvidedMenu::zoomWindow, @selector(performZoom:)},
-      {PlatformProvidedMenu::arrangeWindowsInFront, @selector(arrangeInFront:)},
+      {flutter::PlatformProvidedMenu::kServicesSubmenu, @selector(submenuAction:)},
+      {flutter::PlatformProvidedMenu::kHide, @selector(hide:)},
+      {flutter::PlatformProvidedMenu::kHideOtherApplications, @selector(hideOtherApplications:)},
+      {flutter::PlatformProvidedMenu::kShowAllApplications, @selector(unhideAllApplications:)},
+      {flutter::PlatformProvidedMenu::kStartSpeaking, @selector(startSpeaking:)},
+      {flutter::PlatformProvidedMenu::kStopSpeaking, @selector(stopSpeaking:)},
+      {flutter::PlatformProvidedMenu::kToggleFullScreen, @selector(toggleFullScreen:)},
+      {flutter::PlatformProvidedMenu::kMinimizeWindow, @selector(performMiniaturize:)},
+      {flutter::PlatformProvidedMenu::kZoomWindow, @selector(performZoom:)},
+      {flutter::PlatformProvidedMenu::kArrangeWindowsInFront, @selector(arrangeInFront:)},
   };
 }
 
@@ -152,7 +152,7 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
 }
 
 /*
- * An NSMenuDelegate used to listen for changes in the menu: when it opens and
+ * An NSMenuDelegate used to listen for changes in the menu when it opens and
  * closes.
  */
 @interface FlutterMenuDelegate : NSObject <NSMenuDelegate>
@@ -196,12 +196,12 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
 // with the localized running application name.
 - (void)replaceAppName:(NSArray<NSMenuItem*>*)items;
 
-// Look up the menu item with the given selector and tag in the list of provided
-// menus and return it.
-- (NSMenuItem*)findProvidedMenu:(NSMenu*)menu ofType:(SEL)selector withTag:(int)tag;
+// Look up the menu item with the given selector in the list of provided menus
+// and return it.
+- (NSMenuItem*)findProvidedMenuItem:(NSMenu*)menu ofType:(SEL)selector;
 
 // Create a platform-provided menu from the given enum type.
-- (NSMenuItem*)createPlatformProvidedMenu:(PlatformProvidedMenu)type;
+- (NSMenuItem*)createPlatformProvidedMenu:(flutter::PlatformProvidedMenu)type;
 
 // Create an NSMenuItem from information in the dictionary sent by the framework.
 - (NSMenuItem*)menuItemFromFlutterRepresentation:(NSDictionary*)representation;
@@ -264,15 +264,15 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
   }
 }
 
-- (NSMenuItem*)findProvidedMenu:(NSMenu*)menu ofType:(SEL)selector withTag:(int)tag {
-  const NSArray<NSMenuItem*>* items = menu != nil ? menu.itemArray : _platformProvidedItems;
+- (NSMenuItem*)findProvidedMenuItem:(NSMenu*)menu ofType:(SEL)selector {
+  const NSArray<NSMenuItem*>* items = menu ? menu.itemArray : _platformProvidedItems;
   for (NSMenuItem* item in items) {
-    if ([item action] == selector && (tag == 0 || [item tag] == tag)) {
+    if ([item action] == selector) {
       return item;
     }
     if ([[item submenu] numberOfItems] > 0) {
-      NSMenuItem* foundChild = [self findProvidedMenu:[item submenu] ofType:selector withTag:tag];
-      if (foundChild != nil) {
+      NSMenuItem* foundChild = [self findProvidedMenuItem:[item submenu] ofType:selector];
+      if (foundChild) {
         return foundChild;
       }
     }
@@ -280,8 +280,8 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
   return nil;
 }
 
-- (NSMenuItem*)createPlatformProvidedMenu:(PlatformProvidedMenu)type {
-  const std::map<int, SEL> providedMenus = GetMacOSProvidedMenus();
+- (NSMenuItem*)createPlatformProvidedMenu:(flutter::PlatformProvidedMenu)type {
+  const std::map<flutter::PlatformProvidedMenu, SEL> providedMenus = GetMacOSProvidedMenus();
   auto found_type = providedMenus.find(type);
   if (found_type == providedMenus.end()) {
     return nil;
@@ -291,42 +291,34 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
   // assumed to be the first item with a submenu action in the first menu item
   // of the default menu set. We can't just get the title to check, since that
   // is localized, and the contents of the menu aren't fixed (or even available).
-  NSMenu* startingMenu =
-      type == PlatformProvidedMenu::servicesSubmenu ? [_platformProvidedItems[0] submenu] : nil;
-  NSMenuItem* found = [self findProvidedMenu:startingMenu ofType:selectorTarget withTag:0];
-  if (found != nil) {
-    // Return a copy because the original menu item might not have been removed
-    // from the main menu yet, and AppKit doesn't like menu items that exist in
-    // more than one menu at a time.
-    return [found copy];
-  }
-  return nil;
+  NSMenu* startingMenu = type == flutter::PlatformProvidedMenu::kServicesSubmenu
+                             ? [_platformProvidedItems[0] submenu]
+                             : nil;
+  NSMenuItem* found = [self findProvidedMenuItem:startingMenu ofType:selectorTarget];
+  // Return a copy because the original menu item might not have been removed
+  // from the main menu yet, and AppKit doesn't like menu items that exist in
+  // more than one menu at a time.
+  return [found copy];
 }
 
 - (NSMenuItem*)menuItemFromFlutterRepresentation:(NSDictionary*)representation {
   if ([(NSNumber*)([representation valueForKey:kDividerKey]) intValue] == YES) {
     return [NSMenuItem separatorItem];
   }
-  NSString* appName = [NSRunningApplication currentApplication].localizedName;
-  NSString* title = representation[kLabelKey];
-  if (title != nil) {
-    title = [title stringByReplacingOccurrencesOfString:kAppName withString:appName];
-  }
-  NSNumber* boxedID = representation[kIdKey];
   NSNumber* platformProvidedMenuId = representation[kPlatformProvidedMenuKey];
-  SEL action = (boxedID ? @selector(flutterMenuItemSelected:) : NULL);
   NSString* keyEquivalent = @"";
 
-  if (platformProvidedMenuId != nil) {
-    return [self createPlatformProvidedMenu:(PlatformProvidedMenu)platformProvidedMenuId.intValue];
+  if (platformProvidedMenuId) {
+    return [self
+        createPlatformProvidedMenu:(flutter::PlatformProvidedMenu)platformProvidedMenuId.intValue];
   } else {
-    if (representation[kShortcutEquivalentKey] != nil) {
+    if (representation[kShortcutEquivalentKey]) {
       keyEquivalent = representation[kShortcutEquivalentKey];
     } else {
       NSNumber* triggerKeyId = representation[kShortcutTriggerKey];
       const NSDictionary<NSNumber*, NSNumber*>* specialKeys = GetMacOsSpecialKeys();
       NSNumber* trigger = specialKeys[triggerKeyId];
-      if (trigger != nil) {
+      if (trigger) {
         keyEquivalent = [NSString stringWithFormat:@"%C", [trigger unsignedShortValue]];
       } else {
         if (([triggerKeyId unsignedLongLongValue] & kFlutterKeyIdPlaneMask) ==
@@ -338,6 +330,12 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
       }
     }
   }
+
+  NSNumber* identifier = representation[kIdKey];
+  SEL action = (identifier ? @selector(flutterMenuItemSelected:) : NULL);
+  NSString* appName = [NSRunningApplication currentApplication].localizedName;
+  NSString* title = [representation[kLabelKey] stringByReplacingOccurrencesOfString:kAppName
+                                                                         withString:appName];
   NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:title
                                                 action:action
                                          keyEquivalent:keyEquivalent];
@@ -345,8 +343,8 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
     item.keyEquivalentModifierMask =
         KeyEquivalentModifierMaskForModifiers(representation[kShortcutModifiersKey]);
   }
-  if (boxedID) {
-    item.tag = boxedID.longLongValue;
+  if (identifier) {
+    item.tag = identifier.longLongValue;
     item.target = self;
   }
   NSNumber* enabled = representation[kEnabledKey];
@@ -364,7 +362,7 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
     submenu.autoenablesItems = NO;
     for (NSDictionary* child in children) {
       NSMenuItem* newItem = [self menuItemFromFlutterRepresentation:child];
-      if (newItem != nil) {
+      if (newItem) {
         [submenu addItem:newItem];
       }
     }
@@ -396,9 +394,9 @@ static NSEventModifierFlags KeyEquivalentModifierMaskForModifiers(NSNumber* modi
   for (NSDictionary* item in representation[@"0"]) {
     NSMenuItem* menuItem = [self menuItemFromFlutterRepresentation:item];
     menuItem.representedObject = self;
-    NSNumber* boxedID = item[kIdKey];
+    NSNumber* identifier = item[kIdKey];
     FlutterMenuDelegate* delegate =
-        [[FlutterMenuDelegate alloc] initWithIdentifier:boxedID.longLongValue channel:_channel];
+        [[FlutterMenuDelegate alloc] initWithIdentifier:identifier.longLongValue channel:_channel];
     [_menuDelegates addObject:delegate];
     [menuItem submenu].delegate = delegate;
     [newMenu addItem:menuItem];

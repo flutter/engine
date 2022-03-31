@@ -213,6 +213,7 @@ executable("flutter_desktop_darwin_unittests") {
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
     "//flutter/shell/platform/common:common_cpp_accessibility",
+    "//flutter/shell/platform/common:common_cpp_enums",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/darwin/graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",

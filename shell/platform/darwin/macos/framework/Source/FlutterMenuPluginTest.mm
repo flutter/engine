@@ -11,6 +11,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+
+#include "flutter/shell/platform/common/platform_provided_menu.h"
 #include "gtest/gtest.h"
 
 #import <OCMock/OCMock.h>
@@ -66,7 +68,7 @@
         @"children" : @[
           @{
             @"id" : [NSNumber numberWithInt:3],
-            @"platformProvidedMenu" : @(1),  // Quit
+            @"platformProvidedMenu" : @(static_cast<int>(flutter::PlatformProvidedMenu::kQuit)),
             @"enabled" : @(YES),
           },
           @{
