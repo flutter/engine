@@ -72,7 +72,7 @@ class DlImageFilter
   // type of ImageFilter, otherwise return nullptr.
   virtual const DlDilateImageFilter* asDilate() const { return nullptr; }
 
-  // Return a DlErodeImageFilter pointer to this object iff it is a Erode
+  // Return a DlErodeImageFilter pointer to this object iff it is an Erode
   // type of ImageFilter, otherwise return nullptr.
   virtual const DlErodeImageFilter* asErode() const { return nullptr; }
 

@@ -3349,7 +3349,6 @@ class _DilateImageFilter implements ImageFilter {
   final double radiusX;
   final double radiusY;
 
-  // MakeBlurFilter
   late final _ImageFilter nativeFilter = _ImageFilter.dilate(this);
   @override
   _ImageFilter _toNativeImageFilter() => nativeFilter;
@@ -3379,7 +3378,6 @@ class _ErodeImageFilter implements ImageFilter {
   final double radiusX;
   final double radiusY;
 
-  // MakeBlurFilter
   late final _ImageFilter nativeFilter = _ImageFilter.erode(this);
   @override
   _ImageFilter _toNativeImageFilter() => nativeFilter;
