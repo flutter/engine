@@ -12,6 +12,7 @@ import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextInfo;
 import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -23,19 +24,20 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
   @NonNull private final SpellCheckChannel mSpellCheckChannel;
   @NonNull private final TextServicesManager tsm;
   private SpellCheckerSession mSpellCheckerSession;
+  @VisibleForTesting @NonNull final SpellCheckChannel.SpellCheckMethodHandler mSpellCheckMethodHandler;
 
   public SpellCheckPlugin(@NonNull Context context, @NonNull SpellCheckChannel spellCheckChannel) {
     mContext = context;
     mSpellCheckChannel = spellCheckChannel;
     tsm = (TextServicesManager) mContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
-    mSpellCheckChannel.setSpellCheckMethodHandler(
-        new SpellCheckChannel.SpellCheckMethodHandler() {
-          @Override
-          public void initiateSpellCheck(String locale, String text) {
-            performSpellCheck(locale, text);
-          }
-        });
+    mSpellCheckMethodHandler = new SpellCheckChannel.SpellCheckMethodHandler() {
+        @Override
+        public void initiateSpellCheck(String locale, String text) {
+          performSpellCheck(locale, text);
+        }};
+
+    mSpellCheckChannel.setSpellCheckMethodHandler(mSpellCheckMethodHandler);
   }
 
   public void destroy() {
@@ -64,8 +66,6 @@ public class SpellCheckPlugin implements SpellCheckerSession.SpellCheckerSession
     }
     mSpellCheckerSession = tsm.newSpellCheckerSession(null, parsedLocale, this, true);
 
-
-    SpellCheckerInfo infoChecker = mSpellCheckerSession.getSpellChecker();
     TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
     mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
   }

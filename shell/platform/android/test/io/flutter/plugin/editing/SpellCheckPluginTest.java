@@ -1,15 +1,35 @@
 package io.flutter.plugin.editing;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.view.textservice.SentenceSuggestionsInfo;
+import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.SpellCheckerSession;
+import android.view.textservice.SuggestionsInfo;
+import android.view.textservice.TextInfo;
+import android.view.textservice.TextServicesManager;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.MethodCall;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+@RunWith(AndroidJUnit4.class)
 public class SpellCheckPluginTest {
 
   private static void sendToBinaryMessageHandler(
@@ -40,32 +60,56 @@ public class SpellCheckPluginTest {
     sendToBinaryMessageHandler(
         binaryMessageHandler,
         "SpellCheck.initiateSpellCheck",
-        Arrays.asList("en-US", "Hello, world!"));
-    verify(mockHandler, times(1)).initiateSpellCheck("en-US", "Hello, world!");
-  }
+        Arrays.asList("en-US", "Hello, wrold!"));
 
-  @Test
-  public void performSpellCheckRequestsUpdateSpellCheckResults() {
-    // Verify call to performSpellCheckResults(...) leads to call to
-    // "SpellCheck.updateSpellCheckResults"
-    // This would require simulating TextServicesManager because otherwise, there is a lot to mock.
-  }
-
-  @Test
-  public void onGetSentenceSuggestionsProperlyFormatsSpellCheckResults() {
-    // Verify that spell check results are properly formatted by onGetSentenceSuggestions(...)
+    verify(mockHandler).initiateSpellCheck("en-US", "Hello, wrold!");
   }
 
   @Test
   public void destroyClosesSpellCheckerSessionAndClearsSpellCheckMethodHandler() {
     Context fakeContext = mock(Context.class);
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE)).thenReturn(fakeTextServicesManager);
     SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
-    SpellCheckerSesssion fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+    SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+    when(fakeTextServicesManager.newSpellCheckerSession(null, new Locale("en", "US"), spellCheckPlugin, true)).thenReturn(fakeSpellCheckerSession);
 
+    spellCheckPlugin.performSpellCheck("en-US", "Hello, wrold!");
     spellCheckPlugin.destroy();
 
     verify(fakeSpellCheckChannel).setSpellCheckMethodHandler(isNull());
     verify(fakeSpellCheckerSession).close();
+  }
+
+  @Test
+  public void performSpellCheckSendsRequestToAndroidSpellCheckService() {
+    Context fakeContext = mock(Context.class);
+    SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE)).thenReturn(fakeTextServicesManager);
+    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
+    SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+    when(fakeTextServicesManager.newSpellCheckerSession(null, new Locale("en", "US"), spellCheckPlugin, true)).thenReturn(fakeSpellCheckerSession);
+
+    ArgumentCaptor<TextInfo[]> textInfosCaptor = ArgumentCaptor.forClass(TextInfo[].class);
+    ArgumentCaptor<Integer> maxSuggestionsCaptor = ArgumentCaptor.forClass(Integer.class);
+    
+    spellCheckPlugin.performSpellCheck("en-US", "Hello, wrold!");
+
+    verify(fakeSpellCheckerSession).getSentenceSuggestions(textInfosCaptor.capture(), maxSuggestionsCaptor.capture());
+    assertEquals("Hello, wrold!", textInfosCaptor.getValue()[0].getText());
+    assertEquals(Integer.valueOf(3), maxSuggestionsCaptor.getValue());
+  }
+
+  @Test
+  public void onGetSentenceSuggestionsProperlyRequestsUpdateSpellCheckResults() {
+    Context fakeContext = mock(Context.class);
+    SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
+    
+    spellCheckPlugin.onGetSentenceSuggestions(new SentenceSuggestionsInfo[]{new SentenceSuggestionsInfo((new SuggestionsInfo[]{new SuggestionsInfo(SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO, new String[]{"world", "word", "old"})}), new int[]{7}, new int[]{5})});
+
+    verify(fakeSpellCheckChannel).updateSpellCheckResults(new ArrayList<String>(Arrays.asList("7.11.world,word,old")));
   }
 }
