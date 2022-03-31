@@ -242,12 +242,12 @@ TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
   responder->callback_handler = dont_respond;
   fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
 
   responder->callback_handler = respond_true;
   fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
 
   g_ptr_array_unref(call_records);
 
@@ -271,7 +271,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   // Dispatch a key event
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 1u);
@@ -289,7 +289,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   /// Test 2: Two events that are unhandled by the framework
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 1u);
@@ -301,7 +301,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   // Dispatch another key event
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_b, kKeyCodeKeyB, 0x10, false));
+      fl_key_event_new_by_mock(true, GDK_KEY_b, kKeyCodeKeyB, 0x0, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 2u);
@@ -342,7 +342,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   /// redispatching only works once.
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records->len, 1u);
@@ -373,7 +373,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   responder->callback_handler = respond_true;
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(call_records->len, 1u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
@@ -389,7 +389,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   responder->callback_handler = respond_false;
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(call_records->len, 1u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
@@ -432,7 +432,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
 
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched.size(), 0u);
@@ -456,7 +456,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   /// Test 2: All delegates respond false
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
 
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched.size(), 0u);
