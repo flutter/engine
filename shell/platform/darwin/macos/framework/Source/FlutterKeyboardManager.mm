@@ -50,7 +50,7 @@ typedef void (^VoidBlock)();
 // to compile the function pointer type (due to _Nullable).
 typedef NSResponder* _NSResponderPtr;
 typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
-} // namespace
+}  // namespace
 
 @interface FlutterKeyboardManager ()
 
