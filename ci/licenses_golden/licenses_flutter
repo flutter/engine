@@ -146,6 +146,9 @@ FILE: ../../../flutter/flow/layers/layer.h
 FILE: ../../../flutter/flow/layers/layer_tree.cc
 FILE: ../../../flutter/flow/layers/layer_tree.h
 FILE: ../../../flutter/flow/layers/layer_tree_unittests.cc
+FILE: ../../../flutter/flow/layers/offscreen_surface.cc
+FILE: ../../../flutter/flow/layers/offscreen_surface.h
+FILE: ../../../flutter/flow/layers/offscreen_surface_unittests.cc
 FILE: ../../../flutter/flow/layers/opacity_layer.cc
 FILE: ../../../flutter/flow/layers/opacity_layer.h
 FILE: ../../../flutter/flow/layers/opacity_layer_unittests.cc
@@ -1108,6 +1111,9 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/rasterizer_unittests.cc
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.cc
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.h
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator_unittests.cc
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/serialization_callbacks.cc

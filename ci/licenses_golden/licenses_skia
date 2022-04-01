@@ -1,4 +1,4 @@
-Signature: 8c3f9580284bd04e4817abab58579317
+Signature: 7dbb55c122363f739801daa4151d5d0a
 
 UNUSED LICENSES:
 
@@ -1138,6 +1138,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/bench/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/gm/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/include/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/include/DartTypes.h
+FILE: ../../../third_party/skia/modules/skparagraph/include/FontArguments.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/FontCollection.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/Metrics.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/Paragraph.h
@@ -1153,7 +1154,6 @@ FILE: ../../../third_party/skia/modules/skparagraph/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.cpp
-FILE: ../../../third_party/skia/modules/skparagraph/src/FontArguments.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/OneLineShaper.cpp

@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 
 #include <cstring>
+#include <vector>
 
 #include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
@@ -57,7 +58,6 @@ char* cloneString(const char* source) {
   strcpy(target, source);
   return target;
 }
-}  // namespace
 
 G_BEGIN_DECLS
 
@@ -73,62 +73,7 @@ G_DECLARE_FINAL_TYPE(FlMockKeyBinaryMessenger,
                      MOCK_KEY_BINARY_MESSENGER,
                      GObject)
 
-// G_DECLARE_FINAL_TYPE(FlKeyboardCallRecord,
-//                      fl_keyboard_call_record,
-//                      FL,
-//                      KEYBOARD_CALL_RECORD,
-//                      GObject);
-
 G_END_DECLS
-
-/***** FlKeyboardCallRecord *****/
-
-// struct _FlKeyboardCallRecord {
-//   GObject parent_instance;
-
-//   // FlKeyMockResponder* responder;
-//   FlKeyEvent* event;
-//   // FlKeyResponderAsyncCallback callback;
-//   gpointer user_data;
-// };
-
-// G_DEFINE_TYPE(FlKeyboardCallRecord, fl_keyboard_call_record, G_TYPE_OBJECT)
-
-// static void fl_keyboard_call_record_init(FlKeyboardCallRecord* self) {}
-
-// // Dispose method for FlKeyboardCallRecord.
-// static void fl_keyboard_call_record_dispose(GObject* object) {
-//   g_return_if_fail(FL_IS_KEYBOARD_CALL_RECORD(object));
-
-//   FlKeyboardCallRecord* self = FL_KEYBOARD_CALL_RECORD(object);
-//   fl_key_event_dispose(self->event);
-//   G_OBJECT_CLASS(fl_keyboard_call_record_parent_class)->dispose(object);
-// }
-
-// // Class Initialization method for FlKeyboardCallRecord class.
-// static void fl_keyboard_call_record_class_init(
-//     FlKeyboardCallRecordClass* klass) {
-//   G_OBJECT_CLASS(klass)->dispose = fl_keyboard_call_record_dispose;
-// }
-
-// static FlKeyboardCallRecord* fl_keyboard_call_record_new(
-//     // FlKeyMockResponder* responder,
-//     FlKeyEvent* event,
-//     // FlKeyResponderAsyncCallback callback,
-//     gpointer user_data) {
-//   g_return_val_if_fail(event != nullptr, nullptr);
-//   // g_return_val_if_fail(callback != nullptr, nullptr);
-//   g_return_val_if_fail(user_data != nullptr, nullptr);
-
-//   FlKeyboardCallRecord* self = FL_KEYBOARD_CALL_RECORD(
-//       g_object_new(fl_keyboard_call_record_get_type(), nullptr));
-
-//   self->event = event;
-//   // self->callback = callback;
-//   self->user_data = user_data;
-
-//   return self;
-// }
 
 /***** FlMockKeyBinaryMessenger *****/
 
@@ -273,6 +218,8 @@ static void fl_mock_view_delegate_class_init(FlMockViewDelegateClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_mock_view_delegate_dispose;
 }
 
+static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event);
+
 static void fl_mock_view_keyboard_send_key_event(
     FlKeyboardViewDelegate* view_delegate,
     const FlutterKeyEvent* event,
@@ -343,7 +290,41 @@ static void fl_mock_view_set_redispatch_handler(FlMockViewDelegate* self,
   self->redispatch_handler = std::move(handler);
 }
 
-/***** End definitions *****/
+/***** End FlMockViewDelegate *****/
+
+// Return a newly allocated #FlKeyEvent that is a clone to the given #event
+// but with #origin and #dispose set to 0.
+static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event) {
+  FlKeyEvent* new_event = fl_key_event_clone(event);
+  new_event->origin = nullptr;
+  new_event->dispose_origin = nullptr;
+  return new_event;
+}
+
+static void fl_key_event_free_origin_by_mock(gpointer origin) {
+  g_free(origin);
+}
+// Create a new #FlKeyEvent with the given information.
+//
+// The #origin will be another #FlKeyEvent with the exact information,
+// so that it can be used to redispatch, and is freed upon disposal.
+static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
+                                            guint keyval,
+                                            guint16 keycode,
+                                            int state,
+                                            gboolean is_modifier) {
+  FlKeyEvent* event = g_new(FlKeyEvent, 1);
+  event->is_press = is_press;
+  event->time = 0;
+  event->state = state;
+  event->keyval = keyval;
+  event->string = nullptr;
+  event->keycode = keycode;
+  FlKeyEvent* origin_event = fl_key_event_clone_information_only(event);
+  event->origin = origin_event;
+  event->dispose_origin = fl_key_event_free_origin_by_mock;
+  return event;
+}
 
 class KeyboardTester {
  public:
@@ -482,49 +463,6 @@ class KeyboardTester {
     return FALSE;
   }
 };
-
-// Return a newly allocated #FlKeyEvent that is a clone to the given #event
-// but with #origin and #dispose set to 0.
-static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event) {
-  FlKeyEvent* new_event = fl_key_event_clone(event);
-  new_event->origin = nullptr;
-  new_event->dispose_origin = nullptr;
-  return new_event;
-}
-// static void g_ptr_array_clear(GPtrArray* array) {
-//   g_ptr_array_remove_range(array, 0, array->len);
-// }
-
-// static gpointer g_ptr_array_last(GPtrArray* array) {
-//   return g_ptr_array_index(array, array->len - 1);
-// }
-
-static void fl_key_event_free_origin_by_mock(gpointer origin) {
-  g_free(origin);
-}
-// Create a new #FlKeyEvent with the given information.
-//
-// The #origin will be another #FlKeyEvent with the exact information,
-// so that it can be used to redispatch, and is freed upon disposal.
-static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
-                                            guint keyval,
-                                            guint16 keycode,
-                                            int state,
-                                            gboolean is_modifier) {
-  FlKeyEvent* event = g_new(FlKeyEvent, 1);
-  event->is_press = is_press;
-  event->time = 0;
-  event->state = state;
-  event->keyval = keyval;
-  event->string = nullptr;
-  event->keycode = keycode;
-  FlKeyEvent* origin_event = fl_key_event_clone_information_only(event);
-  event->origin = origin_event;
-  event->dispose_origin = fl_key_event_free_origin_by_mock;
-  return event;
-}
-
-namespace {
 
 // Make sure that the keyboard can be disposed without crashes when there are
 // unresolved pending events.
