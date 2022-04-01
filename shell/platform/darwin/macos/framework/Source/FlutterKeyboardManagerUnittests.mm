@@ -15,7 +15,13 @@
 
 namespace {
 
-using flutter::testing::keycodes;
+using flutter::testing::keycodes::kLogicalKeyA;
+using flutter::testing::keycodes::kLogicalKeyM;
+using flutter::testing::keycodes::kLogicalKeyQ;
+using flutter::testing::keycodes::kLogicalKeyT;
+using flutter::testing::keycodes::kLogicalDigit1;
+using flutter::testing::keycodes::kLogicalBracketLeft;
+
 using flutter::LayoutClue;
 
 typedef BOOL (^BoolGetter)();
@@ -331,7 +337,7 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
     if (event->character != nullptr) {
       size_t charLen = strlen(event->character);
       char* newCharacter = new char[charLen + 1];
-      strcpy_s(newCharacter, charLen + 1, event->character);
+      strcpy(newCharacter, event->character);
       newEvent.character = newCharacter;
     }
     storage->push_back(newEvent);
@@ -722,22 +728,22 @@ TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
   /* US keyboard layout */
 
   sendTap(kVK_ANSI_A, @"a", @"a");  // KeyA
-  VERIFY_DOWN(keycodes::kLogicalKeyA, "a");
+  VERIFY_DOWN(kLogicalKeyA, "a");
 
   sendTap(kVK_ANSI_A, @"A", @"A");  // Shift-KeyA
-  VERIFY_DOWN(keycodes::kLogicalKeyA, "A");
+  VERIFY_DOWN(kLogicalKeyA, "A");
 
   sendTap(kVK_ANSI_A, @"å", @"a");  // Option-KeyA
-  VERIFY_DOWN(keycodes::kLogicalKeyA, "å");
+  VERIFY_DOWN(kLogicalKeyA, "å");
 
   sendTap(kVK_ANSI_T, @"t", @"t");  // KeyT
-  VERIFY_DOWN(keycodes::kLogicalKeyT, "t");
+  VERIFY_DOWN(kLogicalKeyT, "t");
 
   sendTap(kVK_ANSI_1, @"1", @"1");  // Digit1
-  VERIFY_DOWN(keycodes::kLogicalDigit1, "1");
+  VERIFY_DOWN(kLogicalDigit1, "1");
 
   sendTap(kVK_ANSI_1, @"!", @"!");  // Shift-Digit1
-  VERIFY_DOWN(keycodes::kLogicalDigit1, "!");
+  VERIFY_DOWN(kLogicalDigit1, "!");
 
   sendTap(kVK_ANSI_Minus, @"-", @"-");  // Minus
   VERIFY_DOWN('-', "-");
@@ -749,22 +755,22 @@ TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
   [tester setLayout:kFrenchLayout];
 
   sendTap(kVK_ANSI_A, @"q", @"q");  // KeyA
-  VERIFY_DOWN(keycodes::kLogicalKeyQ, "q");
+  VERIFY_DOWN(kLogicalKeyQ, "q");
 
   sendTap(kVK_ANSI_A, @"Q", @"Q");  // Shift-KeyA
-  VERIFY_DOWN(keycodes::kLogicalKeyQ, "Q");
+  VERIFY_DOWN(kLogicalKeyQ, "Q");
 
   sendTap(kVK_ANSI_Semicolon, @"m", @"m");  // ; but prints M
-  VERIFY_DOWN(keycodes::kLogicalKeyM, "m");
+  VERIFY_DOWN(kLogicalKeyM, "m");
 
   sendTap(kVK_ANSI_M, @",", @",");  // M but prints ,
   VERIFY_DOWN(',', ",");
 
   sendTap(kVK_ANSI_1, @"&", @"&");  // Digit1
-  VERIFY_DOWN(keycodes::kLogicalDigit1, "&");
+  VERIFY_DOWN(kLogicalDigit1, "&");
 
   sendTap(kVK_ANSI_1, @"1", @"1");  // Shift-Digit1
-  VERIFY_DOWN(keycodes::kLogicalDigit1, "1");
+  VERIFY_DOWN(kLogicalDigit1, "1");
 
   sendTap(kVK_ANSI_Minus, @")", @")");  // Minus
   VERIFY_DOWN(')', ")");
@@ -776,13 +782,13 @@ TEST(FlutterKeyboardManagerUnittests, CorrectLogicalKeyForLayouts) {
   [tester setLayout:kRussianLayout];
 
   sendTap(kVK_ANSI_A, @"ф", @"ф");  // KeyA
-  VERIFY_DOWN(keycodes::kLogicalKeyA, "ф");
+  VERIFY_DOWN(kLogicalKeyA, "ф");
 
   sendTap(kVK_ANSI_1, @"1", @"1");  // Digit1
-  VERIFY_DOWN(keycodes::kLogicalDigit1, "1");
+  VERIFY_DOWN(kLogicalDigit1, "1");
 
   sendTap(kVK_ANSI_LeftBracket, @"х", @"х");
-  VERIFY_DOWN(keycodes::kLogicalBracketLeft, "х");
+  VERIFY_DOWN(kLogicalBracketLeft, "х");
 
   return TRUE;
 }
