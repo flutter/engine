@@ -29,6 +29,7 @@ class ResourceCacheLimitCalculator {
 
   ~ResourceCacheLimitCalculator() = default;
 
+  // This will be called on the platform thread.
   void AddResourceCacheLimitItem(fml::WeakPtr<ResourceCacheLimitItem> item) {
     items_.push_back(item);
   }
