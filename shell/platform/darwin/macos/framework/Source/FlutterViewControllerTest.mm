@@ -11,6 +11,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #import "flutter/testing/testing.h"
 
@@ -21,6 +22,7 @@
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
 - (bool)testPerformKeyEquivalentSynthesizesKeyUp;
 - (bool)testKeyboardIsRestartedOnEngineRestart;
+- (bool)testTrackpadGesturesAreSentToFramework;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -174,6 +176,10 @@ TEST(FlutterViewControllerTest, TestPerformKeyEquivalentSynthesizesKeyUp) {
 
 TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyboardIsRestartedOnEngineRestart]);
+}
+
+TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testTrackpadGesturesAreSentToFramework]);
 }
 
 }  // namespace flutter::testing
@@ -521,6 +527,79 @@ TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
   if (callback != nullptr) {
     callback(false, userData);
   }
+}
+
+- (bool)testTrackpadGesturesAreSentToFramework {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  // Need to return a real renderer to allow view controller to load.
+  id renderer_ = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engineMock];
+  OCMStub([engineMock renderer]).andReturn(renderer_);
+  __block bool called = false;
+  __block FlutterPointerEvent last_event;
+  OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:FlutterPointerEvent{}])
+      .andDo((^(NSInvocation* invocation) {
+        FlutterPointerEvent* event;
+        [invocation getArgument:&event atIndex:2];
+        called = true;
+        last_event = *event;
+      }));
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewController loadView];
+
+  // Start gesture.
+  CGEventRef cgEventStart = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
+  CGEventSetType(cgEventStart, kCGEventScrollWheel);
+  CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventScrollPhase, kCGScrollPhaseBegan);
+  CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventIsContinuous, 1);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventStart]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.phase, kPanZoomStart);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // Update gesture.
+  CGEventRef cgEventUpdate = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventScrollPhase, kCGScrollPhaseChanged);
+  CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis2, 1);  // pan_x
+  CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis1, 2);  // pan_y
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 8 * viewController.flutterView.layer.contentsScale);
+  EXPECT_EQ(last_event.pan_y, 16 * viewController.flutterView.layer.contentsScale);
+
+  // Make sure the pan values accumulate.
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 16 * viewController.flutterView.layer.contentsScale);
+  EXPECT_EQ(last_event.pan_y, 32 * viewController.flutterView.layer.contentsScale);
+
+  // End gesture.
+  CGEventRef cgEventEnd = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventEnd, kCGScrollWheelEventScrollPhase, kCGScrollPhaseEnded);
+  NSEvent* eventEnd = [NSEvent eventWithCGEvent:cgEventEnd];
+
+  called = false;
+  [viewController scrollWheel:eventEnd];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.phase, kPanZoomEnd);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  return true;
 }
 
 @end

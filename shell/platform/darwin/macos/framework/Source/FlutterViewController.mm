@@ -36,7 +36,7 @@ static NSString* const EnhancedUserInterfaceNotification =
 static NSString* const EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
 // Use different device ID for mouse and pan/zoom events, since we can't differentiate the actual
-// device (mouse v.s. trackpad)
+// device (mouse v.s. trackpad).
 static constexpr int32_t kMousePointerDeviceId = 0;
 static constexpr int32_t kPointerPanZoomDeviceId = 1;
 
@@ -651,8 +651,10 @@ static void CommonInit(FlutterViewController* controller) {
 
   NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
   NSPoint locationInBackingCoordinates = [self.flutterView convertPointToBacking:locationInView];
+  int32_t device = kMousePointerDeviceId;
   FlutterPointerDeviceKind deviceKind = kFlutterPointerDeviceKindMouse;
   if (phase == kPanZoomStart || phase == kPanZoomUpdate || phase == kPanZoomEnd) {
+    device = kPointerPanZoomDeviceId;
     deviceKind = kFlutterPointerDeviceKindTrackpad;
   }
   FlutterPointerEvent flutterEvent = {
@@ -661,18 +663,13 @@ static void CommonInit(FlutterViewController* controller) {
       .timestamp = static_cast<size_t>(event.timestamp * USEC_PER_SEC),
       .x = locationInBackingCoordinates.x,
       .y = -locationInBackingCoordinates.y,  // convertPointToBacking makes this negative.
-      .device = kMousePointerDeviceId,
+      .device = device,
       .device_kind = deviceKind,
       // If a click triggered a synthesized kAdd, don't pass the buttons in that event.
       .buttons = phase == kAdd ? 0 : _mouseState.buttons,
   };
 
-  if (phase == kPanZoomStart) {
-    flutterEvent.device_kind = kFlutterPointerDeviceKindTouch;
-    flutterEvent.device = kPointerPanZoomDeviceId;
-  } else if (phase == kPanZoomUpdate) {
-    flutterEvent.device_kind = kFlutterPointerDeviceKindTouch;
-    flutterEvent.device = kPointerPanZoomDeviceId;
+  if (phase == kPanZoomUpdate) {
     if (event.type == NSEventTypeScrollWheel) {
       _mouseState.deltaX += event.scrollingDeltaX * self.flutterView.layer.contentsScale;
       _mouseState.deltaY += event.scrollingDeltaY * self.flutterView.layer.contentsScale;
@@ -683,18 +680,21 @@ static void CommonInit(FlutterViewController* controller) {
     }
     flutterEvent.pan_x = _mouseState.deltaX;
     flutterEvent.pan_y = _mouseState.deltaY;
-    // Scale value needs to be normalized to range 0->infinity
+    // Scale value needs to be normalized to range 0->infinity.
     flutterEvent.scale = pow(2.0, _mouseState.scale);
     flutterEvent.rotation = _mouseState.rotation;
   } else if (phase == kPanZoomEnd) {
-    flutterEvent.device_kind = kFlutterPointerDeviceKindTouch;
-    flutterEvent.device = kPointerPanZoomDeviceId;
     _mouseState.GestureReset();
-  } else if (event.type == NSEventTypeScrollWheel) {
+  } else if (phase != kPanZoomStart && event.type == NSEventTypeScrollWheel) {
     flutterEvent.signal_kind = kFlutterPointerSignalKindScroll;
 
     double pixelsPerLine = 1.0;
     if (!event.hasPreciseScrollingDeltas) {
+      // The scrollingDelta needs to be multiplied by the line height.
+      // CGEventSourceGetPixelsPerLine() will return 10, which will result in
+      // scrolling that is noticeably slower than in other applications.
+      // Using 40.0 as the multiplier to match Chromium.
+      // See https://source.chromium.org/chromium/chromium/src/+/main:ui/events/cocoa/events_mac.mm
       pixelsPerLine = 40.0;
     }
     double scaleFactor = self.flutterView.layer.contentsScale;
@@ -1011,7 +1011,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)swipeWithEvent:(NSEvent*)event {
-  // Not needed, it's handled by scrollWheel
+  // Not needed, it's handled by scrollWheel.
 }
 
 @end
