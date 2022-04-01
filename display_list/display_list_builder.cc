@@ -587,9 +587,19 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
   // See: https://fiddle.skia.org/c/228459001d2de8db117ce25ef5cedb0c
   UpdateLayerOpacityCompatibility(false);
 }
-void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
+void DisplayListBuilder::drawSkVertices(const sk_sp<SkVertices> vertices,
+                                        SkBlendMode mode) {
+  Push<DrawSkVerticesOp>(0, 1, std::move(vertices), mode);
+  // DrawVertices applies its colors to the paint so we have no way
+  // of controlling opacity using the current paint attributes.
+  // Although, examination of the |mode| might find some predictable
+  // cases.
+  UpdateLayerOpacityCompatibility(false);
+}
+void DisplayListBuilder::drawVertices(const DlVertices* vertices,
                                       DlBlendMode mode) {
-  Push<DrawVerticesOp>(0, 1, std::move(vertices), mode);
+  void* pod = Push<DrawVerticesOp>(vertices->size(), 1, mode);
+  new (pod) DlVertices(vertices);
   // DrawVertices applies its colors to the paint so we have no way
   // of controlling opacity using the current paint attributes.
   // Although, examination of the |mode| might find some predictable
@@ -597,7 +607,7 @@ void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
   UpdateLayerOpacityCompatibility(false);
 }
 
-void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
                                    const SkPoint point,
                                    const SkSamplingOptions& sampling,
                                    bool render_with_attributes) {
@@ -606,7 +616,7 @@ void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
       : Push<DrawImageOp>(0, 1, std::move(image), point, sampling);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& src,
                                        const SkRect& dst,
                                        const SkSamplingOptions& sampling,
@@ -616,7 +626,7 @@ void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
                         render_with_attributes, constraint);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
                                        const SkIRect& center,
                                        const SkRect& dst,
                                        SkFilterMode filter,
@@ -627,7 +637,7 @@ void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
       : Push<DrawImageNineOp>(0, 1, std::move(image), center, dst, filter);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImageLattice(const sk_sp<DlImage> image,
                                           const SkCanvas::Lattice& lattice,
                                           const SkRect& dst,
                                           SkFilterMode filter,
@@ -649,7 +659,7 @@ void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
         lattice.fColors, cellCount, lattice.fRectTypes, cellCount);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
+void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const SkRSXform xform[],
                                    const SkRect tex[],
                                    const SkColor colors[],
