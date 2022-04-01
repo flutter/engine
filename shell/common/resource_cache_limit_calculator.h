@@ -14,7 +14,8 @@
 namespace flutter {
 class ResourceCacheLimitItem {
  public:
-  // The expected GPU resource cache limit in bytes.
+  // The expected GPU resource cache limit in bytes. This will be called on the
+  // platform thread.
   virtual size_t GetResourceCacheLimit() = 0;
 
  protected:
@@ -33,7 +34,7 @@ class ResourceCacheLimitCalculator {
   }
 
   // The maximum GPU resource cache limit in bytes calculated by
-  // 'ResourceCacheLimitItem's.
+  // 'ResourceCacheLimitItem's. This will be called on the platform thread.
   size_t GetResourceCacheMaxBytes();
 
  private:

@@ -11,16 +11,14 @@ size_t ResourceCacheLimitCalculator::GetResourceCacheMaxBytes() {
   size_t max_bytes_threshold = max_bytes_threshold_ > 0
                                    ? max_bytes_threshold_
                                    : std::numeric_limits<size_t>::max();
-  auto it = items_.begin();
-  while (it != items_.end()) {
-    fml::WeakPtr<ResourceCacheLimitItem> item = *it;
+  std::vector<fml::WeakPtr<ResourceCacheLimitItem>> live_items;
+  for (auto item : items_) {
     if (item) {
+      live_items.push_back(item);
       max_bytes += item->GetResourceCacheLimit();
-      ++it;
-    } else {
-      it = items_.erase(it);
     }
   }
+  items_ = std::move(live_items);
   return std::min(max_bytes, max_bytes_threshold);
 }
 
