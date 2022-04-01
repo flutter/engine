@@ -40,7 +40,7 @@
 - (double)getRefreshRate;
 
 // For testing only.
-- (CADisplayLink *)getDisplayLink;
+- (CADisplayLink*)getDisplayLink;
 
 @end
 

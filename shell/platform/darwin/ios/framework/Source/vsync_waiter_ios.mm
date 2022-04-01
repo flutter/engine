@@ -134,7 +134,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   return current_refresh_rate_;
 }
 
-- (CADisplayLink *)getDisplayLink {
+- (CADisplayLink*)getDisplayLink {
   return display_link_.get();
 }
 
