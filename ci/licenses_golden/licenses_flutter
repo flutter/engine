@@ -76,9 +76,13 @@ FILE: ../../../flutter/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/display_list/display_list_enum_unittests.cc
 FILE: ../../../flutter/display_list/display_list_flags.cc
 FILE: ../../../flutter/display_list/display_list_flags.h
+FILE: ../../../flutter/display_list/display_list_image.cc
+FILE: ../../../flutter/display_list/display_list_image.h
 FILE: ../../../flutter/display_list/display_list_image_filter.cc
 FILE: ../../../flutter/display_list/display_list_image_filter.h
 FILE: ../../../flutter/display_list/display_list_image_filter_unittests.cc
+FILE: ../../../flutter/display_list/display_list_image_skia.cc
+FILE: ../../../flutter/display_list/display_list_image_skia.h
 FILE: ../../../flutter/display_list/display_list_mask_filter.cc
 FILE: ../../../flutter/display_list/display_list_mask_filter.h
 FILE: ../../../flutter/display_list/display_list_mask_filter_unittests.cc
@@ -90,11 +94,15 @@ FILE: ../../../flutter/display_list/display_list_tile_mode.h
 FILE: ../../../flutter/display_list/display_list_unittests.cc
 FILE: ../../../flutter/display_list/display_list_utils.cc
 FILE: ../../../flutter/display_list/display_list_utils.h
+FILE: ../../../flutter/display_list/display_list_vertices.cc
+FILE: ../../../flutter/display_list/display_list_vertices.h
+FILE: ../../../flutter/display_list/display_list_vertices_unittests.cc
 FILE: ../../../flutter/display_list/types.h
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h
 FILE: ../../../flutter/flow/diff_context.cc
 FILE: ../../../flutter/flow/diff_context.h
+FILE: ../../../flutter/flow/diff_context_unittests.cc
 FILE: ../../../flutter/flow/embedded_view_params_unittests.cc
 FILE: ../../../flutter/flow/embedded_views.cc
 FILE: ../../../flutter/flow/embedded_views.h
@@ -436,6 +444,8 @@ FILE: ../../../flutter/impeller/compiler/utilities.cc
 FILE: ../../../flutter/impeller/compiler/utilities.h
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
+FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.cc
+FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.h
 FILE: ../../../flutter/impeller/display_list/display_list_playground.cc
 FILE: ../../../flutter/impeller/display_list/display_list_playground.h
 FILE: ../../../flutter/impeller/display_list/display_list_unittests.cc
@@ -452,10 +462,14 @@ FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/filter_input.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.h
+FILE: ../../../flutter/impeller/entity/contents/snapshot.cc
+FILE: ../../../flutter/impeller/entity/contents/snapshot.h
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.cc
@@ -703,6 +717,7 @@ FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
 FILE: ../../../flutter/lib/ui/hooks_unittests.cc
+FILE: ../../../flutter/lib/ui/io_manager.cc
 FILE: ../../../flutter/lib/ui/io_manager.h
 FILE: ../../../flutter/lib/ui/isolate_name_server.dart
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.cc
@@ -719,6 +734,8 @@ FILE: ../../../flutter/lib/ui/painting/codec.cc
 FILE: ../../../flutter/lib/ui/painting/codec.h
 FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
+FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.cc
+FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
 FILE: ../../../flutter/lib/ui/painting/engine_layer.h
 FILE: ../../../flutter/lib/ui/painting/fragment_program.cc
@@ -731,6 +748,10 @@ FILE: ../../../flutter/lib/ui/painting/image.cc
 FILE: ../../../flutter/lib/ui/painting/image.h
 FILE: ../../../flutter/lib/ui/painting/image_decoder.cc
 FILE: ../../../flutter/lib/ui/painting/image_decoder.h
+FILE: ../../../flutter/lib/ui/painting/image_decoder_impeller.cc
+FILE: ../../../flutter/lib/ui/painting/image_decoder_impeller.h
+FILE: ../../../flutter/lib/ui/painting/image_decoder_skia.cc
+FILE: ../../../flutter/lib/ui/painting/image_decoder_skia.h
 FILE: ../../../flutter/lib/ui/painting/image_decoder_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/image_descriptor.cc
 FILE: ../../../flutter/lib/ui/painting/image_descriptor.h
@@ -853,6 +874,7 @@ FILE: ../../../flutter/lib/web_ui/lib/pointer.dart
 FILE: ../../../flutter/lib/web_ui/lib/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/alarm_clock.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/app_bootstrap.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/assets.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/browser_detection.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvas_pool.dart
@@ -937,6 +959,8 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/surface_stats.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/transform.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html_image_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/initialization.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/js_interop/js_loader.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/js_interop/js_promise.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/key_map.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard_binding.dart
@@ -1084,6 +1108,9 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/rasterizer_unittests.cc
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.cc
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator.h
+FILE: ../../../flutter/shell/common/resource_cache_limit_calculator_unittests.cc
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/serialization_callbacks.cc
@@ -1402,6 +1429,7 @@ FILE: ../../../flutter/shell/platform/common/json_method_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/path_utils.cc
 FILE: ../../../flutter/shell/platform/common/path_utils.h
 FILE: ../../../flutter/shell/platform/common/path_utils_unittests.cc
+FILE: ../../../flutter/shell/platform/common/platform_provided_menu.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_export.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_messenger.h
 FILE: ../../../flutter/shell/platform/common/public/flutter_plugin_registrar.h
@@ -1627,6 +1655,10 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeybo
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManagerUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPluginTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositorUnittests.mm

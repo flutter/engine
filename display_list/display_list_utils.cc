@@ -448,11 +448,16 @@ void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
     }
   }
 }
-void DisplayListBoundsCalculator::drawVertices(const sk_sp<SkVertices> vertices,
+void DisplayListBoundsCalculator::drawSkVertices(
+    const sk_sp<SkVertices> vertices,
+    SkBlendMode mode) {
+  AccumulateOpBounds(vertices->bounds(), kDrawVerticesFlags);
+}
+void DisplayListBoundsCalculator::drawVertices(const DlVertices* vertices,
                                                DlBlendMode mode) {
   AccumulateOpBounds(vertices->bounds(), kDrawVerticesFlags);
 }
-void DisplayListBoundsCalculator::drawImage(const sk_sp<SkImage> image,
+void DisplayListBoundsCalculator::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
                                             const SkSamplingOptions& sampling,
                                             bool render_with_attributes) {
@@ -464,7 +469,7 @@ void DisplayListBoundsCalculator::drawImage(const sk_sp<SkImage> image,
   AccumulateOpBounds(bounds, flags);
 }
 void DisplayListBoundsCalculator::drawImageRect(
-    const sk_sp<SkImage> image,
+    const sk_sp<DlImage> image,
     const SkRect& src,
     const SkRect& dst,
     const SkSamplingOptions& sampling,
@@ -475,7 +480,7 @@ void DisplayListBoundsCalculator::drawImageRect(
                                         : kDrawImageRectFlags;
   AccumulateOpBounds(dst, flags);
 }
-void DisplayListBoundsCalculator::drawImageNine(const sk_sp<SkImage> image,
+void DisplayListBoundsCalculator::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
                                                 SkFilterMode filter,
@@ -486,7 +491,7 @@ void DisplayListBoundsCalculator::drawImageNine(const sk_sp<SkImage> image,
   AccumulateOpBounds(dst, flags);
 }
 void DisplayListBoundsCalculator::drawImageLattice(
-    const sk_sp<SkImage> image,
+    const sk_sp<DlImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
     SkFilterMode filter,
@@ -496,7 +501,7 @@ void DisplayListBoundsCalculator::drawImageLattice(
                                         : kDrawImageLatticeFlags;
   AccumulateOpBounds(dst, flags);
 }
-void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
+void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
                                             const SkRSXform xform[],
                                             const SkRect tex[],
                                             const SkColor colors[],

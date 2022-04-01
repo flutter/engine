@@ -131,6 +131,7 @@ namespace flutter {
   V(DrawLines)                      \
   V(DrawPolygon)                    \
   V(DrawVertices)                   \
+  V(DrawSkVertices)                 \
                                     \
   V(DrawImage)                      \
   V(DrawImageWithAttr)              \
@@ -224,6 +225,9 @@ class DisplayList : public SkRefCnt {
     uint8_t* ptr = storage_.get();
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
+
+  void RenderTo(DisplayListBuilder* builder,
+                SkScalar opacity = SK_Scalar1) const;
 
   void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
 
