@@ -258,13 +258,6 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   g_ptr_array_clear(g_call_records);
 
   clear_g_call_records();
-  // TODO
-  // TODO(dkwingsmt): Convert `engine` and `responder` to `g_autofree`.
-  // The current implementation is because `responder` must be unreferenced
-  // after `engine`, otherwise crash will *consistantly* occur on CI even if
-  // everything passes locally.  This is a strange bug I've tried to track for
-  // dozens of hours in vain.  It shouldn't affect real application anyway,
-  // since it seems to appear only during the "reboot" of the engine.
   g_object_unref(responder);
 }
 
