@@ -19,6 +19,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 }
 }
 
+@interface VSyncClient (Testing)
+
+- (CADisplayLink*)getDisplayLink;
+
+@end
+
 @interface VsyncWaiterIosTest : XCTestCase
 @end
 

@@ -39,9 +39,6 @@
 
 - (double)getRefreshRate;
 
-// For testing only.
-- (CADisplayLink*)getDisplayLink;
-
 @end
 
 namespace flutter {
