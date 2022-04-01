@@ -389,5 +389,32 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(200, 0, 250, 150));
 }
 
+TEST_F(ContainerLayerTest, OriginChildPaintBounds) {
+  SkPath child_path1;
+  child_path1.addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  SkPath child_path2;
+  child_path2.addRect(3.0f, 2.0f, 15.5f, 28.5f);
+
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
+  auto layer = std::make_shared<ContainerLayer>();
+  layer->Add(mock_layer1);
+  layer->Add(mock_layer2);
+
+  SkRect child_paint_bounds = child_path1.getBounds();
+  child_paint_bounds.join(child_path2.getBounds());
+  layer->Preroll(preroll_context(), SkMatrix());
+
+  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
+  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
+  EXPECT_EQ(layer->paint_bounds(), child_paint_bounds);
+  EXPECT_EQ(layer->origin_child_paint_bounds(), child_paint_bounds);
+
+  SkRect custom_paint_bounds = SkRect::MakeLTRB(0, 0, 30.0f, 30.0f);
+  layer->set_paint_bounds(custom_paint_bounds);
+  EXPECT_EQ(layer->paint_bounds(), custom_paint_bounds);
+  EXPECT_EQ(layer->origin_child_paint_bounds(), child_paint_bounds);
+}
+
 }  // namespace testing
 }  // namespace flutter

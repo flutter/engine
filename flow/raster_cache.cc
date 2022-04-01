@@ -223,9 +223,11 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
     RasterCacheLayerStrategy strategy,
     const SkMatrix& ctm,
     bool checkerboard) const {
+  const SkRect& paint_bounds = GetPaintBoundsFromLayer(layer, strategy);
+
   return Rasterize(
       context->gr_context, ctm, context->dst_color_space, checkerboard,
-      layer->paint_bounds(), "RasterCacheFlow::Layer",
+      paint_bounds, "RasterCacheFlow::Layer",
       [layer, context, strategy](SkCanvas* canvas) {
         SkISize canvas_size = canvas->getBaseLayerSize();
         SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
@@ -256,6 +258,18 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
             break;
         }
       });
+}
+
+const SkRect& RasterCache::GetPaintBoundsFromLayer(
+    Layer* layer,
+    RasterCacheLayerStrategy strategy) const {
+  switch (strategy) {
+    case RasterCacheLayerStrategy::kLayer:
+      return layer->paint_bounds();
+    case RasterCacheLayerStrategy::kLayerChildren:
+      FML_DCHECK(layer->as_container_layer());
+      return layer->as_container_layer()->origin_child_paint_bounds();
+  }
 }
 
 bool RasterCache::Prepare(PrerollContext* context,

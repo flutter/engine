@@ -170,6 +170,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   context->has_texture_layer = child_has_texture_layer;
   context->subtree_can_inherit_opacity = subtree_can_inherit_opacity;
   set_subtree_has_platform_view(child_has_platform_view);
+  origin_child_paint_bounds_ = *child_paint_bounds;
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {

@@ -325,6 +325,10 @@ class RasterCache {
       RasterCacheLayerStrategy strategy,
       const SkMatrix& ctm) const;
 
+  const SkRect& GetPaintBoundsFromLayer(
+      Layer* layer,
+      RasterCacheLayerStrategy strategy) const;
+
   const size_t access_threshold_;
   const size_t picture_and_display_list_cache_limit_per_frame_;
   size_t picture_cached_this_frame_ = 0;
