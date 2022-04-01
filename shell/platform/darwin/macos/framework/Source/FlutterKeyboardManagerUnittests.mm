@@ -337,7 +337,7 @@ void clearEvents(std::vector<FlutterKeyEvent>& events) {
     if (event->character != nullptr) {
       size_t charLen = strlen(event->character);
       char* newCharacter = new char[charLen + 1];
-      strcpy(newCharacter, event->character);
+      strlcpy(newCharacter, event->character, charLen + 1);
       newEvent.character = newCharacter;
     }
     storage->push_back(newEvent);
