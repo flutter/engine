@@ -58,8 +58,7 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
       context, paint_bounds(), cache_paint.paint());
   if (!context.raster_cache ||
       !context.raster_cache->Draw(GetCacheableChild(),
-                                  *context.leaf_nodes_canvas,
-                                  cache_paint.paint())) {
+                                  *context.leaf_nodes_canvas)) {
     PaintChildren(context);
   }
 
