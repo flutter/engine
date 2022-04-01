@@ -148,7 +148,9 @@ static void handle_response(GObject* object,
   }
   bool handled = false;
   if (error != nullptr) {
-    g_warning("Unable to retrieve framework response: %s", error->message);
+    g_warning("Unable to retrieve framework response: %s (message: %s)",
+              error->message,
+              message != nullptr ? fl_value_to_string(message) : "");
   } else {
     g_autoptr(FlValue) handled_value =
         fl_value_lookup_string(message, "handled");
