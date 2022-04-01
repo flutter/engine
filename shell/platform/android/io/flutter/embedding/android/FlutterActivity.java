@@ -262,7 +262,7 @@ public class FlutterActivity extends Activity
     private final Class<? extends FlutterActivity> activityClass;
     private String initialRoute = DEFAULT_INITIAL_ROUTE;
     private String backgroundMode = DEFAULT_BACKGROUND_MODE;
-    private List<String> dartEntrypointArgs;
+    @Nullable private List<String> dartEntrypointArgs;
 
     /**
      * Constructor that allows this {@code NewEngineIntentBuilder} to be used by subclasses of

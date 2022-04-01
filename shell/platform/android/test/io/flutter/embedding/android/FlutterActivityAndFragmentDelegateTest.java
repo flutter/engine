@@ -78,7 +78,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.getLifecycle()).thenReturn(mock(Lifecycle.class));
     when(mockHost.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[] {}));
     when(mockHost.getDartEntrypointFunctionName()).thenReturn("main");
-    when(mockHost.getDartEntrypointArgs()).thenReturn(new ArrayList<String>());
+    when(mockHost.getDartEntrypointArgs()).thenReturn(null);
     when(mockHost.getAppBundlePath()).thenReturn("/fake/path");
     when(mockHost.getInitialRoute()).thenReturn("/");
     when(mockHost.getRenderMode()).thenReturn(RenderMode.surface);
@@ -348,7 +348,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the host's Dart entrypoint was used.
     verify(mockFlutterEngine.getDartExecutor(), times(1))
-        .executeDartEntrypoint(eq(dartEntrypoint), any(List.class));
+        .executeDartEntrypoint(eq(dartEntrypoint), isNull());
   }
 
   @Test
@@ -394,7 +394,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onStart();
 
     verify(mockFlutterEngine.getDartExecutor(), times(1))
-        .executeDartEntrypoint(eq(expectedEntrypoint), any(List.class));
+        .executeDartEntrypoint(eq(expectedEntrypoint), isNull());
   }
 
   @Test
@@ -424,7 +424,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the host's Dart entrypoint was used.
     verify(mockFlutterEngine.getDartExecutor(), times(1))
-        .executeDartEntrypoint(eq(dartEntrypoint), any(List.class));
+        .executeDartEntrypoint(eq(dartEntrypoint), isNull());
   }
 
   // "Attaching" to the surrounding Activity refers to Flutter being able to control
