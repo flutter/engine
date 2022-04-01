@@ -30,7 +30,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
 @implementation VsyncWaiterIosTest
 
-- (void)testSetCorrectVirableRefreshRates {
+- (void)testSetCorrectVariableRefreshRates {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
   auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {};
   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
@@ -53,7 +53,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [vsyncClient release];
 }
 
-- (void)testDoNotSetVirableRefreshRatesIfCADisableMinimumFrameDurationOnPhoneIsNotOn {
+- (void)testDoNotSetVariableRefreshRatesIfCADisableMinimumFrameDurationOnPhoneIsNotOn {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
   auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {};
   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
@@ -76,7 +76,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [vsyncClient release];
 }
 
-- (void)testDoNotSetVirableRefreshRatesIfCADisableMinimumFrameDurationOnPhoneIsNotSet {
+- (void)testDoNotSetVariableRefreshRatesIfCADisableMinimumFrameDurationOnPhoneIsNotSet {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
   auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {};
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
