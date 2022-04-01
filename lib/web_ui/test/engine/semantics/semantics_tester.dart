@@ -368,9 +368,9 @@ void expectSemanticsTree(String semanticsHtml) {
 
 /// Finds the first HTML element in the semantics tree used for scrolling.
 html.Element? findScrollable() {
-  return appHostNode.querySelectorAll('flt-semantics').cast<html.Element>().firstWhereOrNull(
-    (html.Element? element) {
-      return element!.style.overflow == 'hidden' ||
+  return appHostNode.querySelectorAll('flt-semantics').firstWhereOrNull(
+    (html.Element element) {
+      return element.style.overflow == 'hidden' ||
         element.style.overflowY == 'scroll' ||
         element.style.overflowX == 'scroll';
     },
