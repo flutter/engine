@@ -5,6 +5,7 @@
 #include "flutter/display_list/display_list_path_effect.h"
 
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "include/core/SkRefCnt.h"
@@ -30,7 +31,7 @@ std::shared_ptr<DlPathEffect> DlPathEffect::From(SkPathEffect* sk_path_effect) {
   if (SkPathEffect::DashType::kDash_DashType ==
       sk_path_effect->asADash(&info)) {
     auto dash_path_effect =
-        DlDashPathEffect::Make(info.fIntervals, info.fCount, info.fPhase);
+        DlDashPathEffect::Make(nullptr, info.fCount, info.fPhase);
     info.fIntervals =
         reinterpret_cast<DlDashPathEffect*>(dash_path_effect.get())
             ->intervals();
@@ -51,6 +52,24 @@ std::shared_ptr<DlPathEffect> DlDashPathEffect::Make(const SkScalar* intervals,
   ret.reset(new (storage) DlDashPathEffect(intervals, count, phase),
             DlPathEffectDeleter);
   return std::move(ret);
+}
+
+std::optional<SkRect> DlDashPathEffect::effect_bounds(SkRect& rect) const {
+  // SkDashPathEffect's computeFastBounds is return true which mean it bounds is
+  // the input value;
+  return rect;
+}
+
+std::optional<SkRect> DlUnknownPathEffect::effect_bounds(SkRect& rect) const {
+  if (rect.isSorted()) {
+    return std::nullopt;
+  }
+  SkPaint p;
+  p.setPathEffect(sk_path_effect_);
+  if (!p.canComputeFastBounds()) {
+    return std::nullopt;
+  }
+  return p.computeFastBounds(rect, &rect);
 }
 
 }  // namespace flutter

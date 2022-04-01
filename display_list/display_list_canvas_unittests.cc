@@ -387,14 +387,12 @@ class TestParameters {
         NotEquals(ref_attr.getColorSource(), attr.getColorSource())) {
       return false;
     }
-    auto skia_path_effect =
-        attr.getPathEffect() ? attr.getPathEffect()->skia_object() : nullptr;
+
     DisplayListSpecialGeometryFlags geo_flags =
-        flags_.WithPathEffect(skia_path_effect);
+        flags_.WithPathEffect(attr.getPathEffect().get());
     if (flags_.applies_path_effect() &&  //
         ref_attr.getPathEffect() != attr.getPathEffect()) {
-      SkPathEffect::DashInfo info;
-      if (skia_path_effect->asADash(&info) != SkPathEffect::kDash_DashType) {
+      if (attr.getPathEffect()->asDash() == nullptr) {
         return false;
       }
       if (!ignores_dashes()) {
@@ -485,8 +483,10 @@ class TestParameters {
       adjust =
           half_width * paint.getStrokeMiter() + tolerance.discrete_offset();
     }
+    auto paint_effect = paint.refPathEffect();
+
     DisplayListSpecialGeometryFlags geo_flags =
-        flags_.WithPathEffect(paint.refPathEffect());
+        flags_.WithPathEffect(DlPathEffect::From(paint.refPathEffect()).get());
     if (paint.getStrokeCap() == SkPaint::kButt_Cap &&
         !geo_flags.butt_cap_becomes_square()) {
       adjust = std::max(adjust, half_width);
@@ -1524,8 +1524,6 @@ class CanvasCompareTester {
                          b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->skia_object()->unique())
-          << "PathEffect == Dash-29-2 Cleanup";
       effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0f);
       {
         RenderWith(testP, stroke_base_env, tolerance,
@@ -1546,8 +1544,6 @@ class CanvasCompareTester {
                          b.setPathEffect(effect.get());
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || effect->skia_object()->unique())
-          << "PathEffect == Dash-17-1.5 Cleanup";
     }
   }
 

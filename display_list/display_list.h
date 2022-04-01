@@ -74,6 +74,7 @@ namespace flutter {
                                     \
   V(SetBlender)                     \
   V(ClearBlender)                   \
+                                    \
   V(SetSkPathEffect)                \
   V(SetPodPathEffect)               \
   V(ClearPathEffect)                \

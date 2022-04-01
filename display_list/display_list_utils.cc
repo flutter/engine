@@ -578,17 +578,15 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
   }
 
   if (flags.is_geometric()) {
-    auto sk_path_effect = path_effect_ ? path_effect_->skia_object() : nullptr;
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
-        flags.WithPathEffect(sk_path_effect);
+        flags.WithPathEffect(path_effect_.get());
     if (path_effect_) {
-      SkPaint p;
-      p.setPathEffect(sk_path_effect);
-      if (!p.canComputeFastBounds()) {
+      auto effect_bounds = path_effect_->effect_bounds(bounds);
+      if (!effect_bounds.has_value()) {
         return false;
       }
-      bounds = p.computeFastBounds(bounds, &bounds);
+      bounds = effect_bounds.value();
     }
 
     if (flags.is_stroked(style_)) {

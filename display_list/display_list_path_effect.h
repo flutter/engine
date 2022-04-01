@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_PATH_EFFECT_H_
 
 #include <cstring>
+#include <optional>
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
@@ -40,6 +41,8 @@ class DlPathEffect
   }
 
   virtual const DlDashPathEffect* asDash() const { return nullptr; }
+
+  virtual std::optional<SkRect> effect_bounds(SkRect&) const = 0;
 
  protected:
   DlPathEffect() = default;
@@ -81,36 +84,36 @@ class DlDashPathEffect final : public DlPathEffect {
   }
 
   std::shared_ptr<DlPathEffect> shared() const override {
-    return Make(pods(), count_, phase_);
+    return Make(intervals(), count_, phase_);
   }
 
   const DlDashPathEffect* asDash() const override { return this; }
 
   sk_sp<SkPathEffect> skia_object() const override {
-    return SkDashPathEffect::Make(pods(), count_, phase_);
+    return SkDashPathEffect::Make(intervals(), count_, phase_);
   }
 
-  SkScalar* intervals() { return reinterpret_cast<SkScalar*>(this + 1); }
+  const SkScalar* intervals() const {
+    return reinterpret_cast<const SkScalar*>(this + 1);
+  }
+
+  std::optional<SkRect> effect_bounds(SkRect& rect) const override;
 
  protected:
   bool equals_(DlPathEffect const& other) const override {
     FML_DCHECK(other.type() == DlPathEffectType::kDash);
     auto that = static_cast<DlDashPathEffect const*>(&other);
-    return memcmp(pods(), that->pods(), count_) == 0 &&
-           count_ == that->count_ && phase_ == that->phase_;
+    return count_ == that->count_ &&
+           memcmp(intervals(), that->intervals(), sizeof(SkScalar) * count_) ==
+               0 &&
+           phase_ == that->phase_;
   }
 
  private:
-  const SkScalar* pods() const {
-    return reinterpret_cast<const SkScalar*>(this + 1);
-  }
-
-  bool base_equals_(DlDashPathEffect const* other) const {
-    // intervals not nullptr, that has value
-
-    return true;
-  }
-
+  SkScalar* intervals() { return reinterpret_cast<SkScalar*>(this + 1); }
+  // DlDashPathEffect constructor assumes the caller has prealloced storage for
+  // the intervals. If the intervals is nullptr the intervals will
+  // uninitialized.
   DlDashPathEffect(const SkScalar intervals[], int count, SkScalar phase)
       : count_(count), phase_(phase) {
     if (intervals != nullptr) {
@@ -120,7 +123,7 @@ class DlDashPathEffect final : public DlPathEffect {
   }
 
   DlDashPathEffect(const DlDashPathEffect* dash_effect)
-      : DlDashPathEffect(dash_effect->pods(),
+      : DlDashPathEffect(dash_effect->intervals(),
                          dash_effect->count_,
                          dash_effect->phase_) {}
 
@@ -128,6 +131,7 @@ class DlDashPathEffect final : public DlPathEffect {
   SkScalar phase_;
 
   friend class DisplayListBuilder;
+  friend class DlPathEffect;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlDashPathEffect);
 };
@@ -151,6 +155,8 @@ class DlUnknownPathEffect final : public DlPathEffect {
   sk_sp<SkPathEffect> skia_object() const override { return sk_path_effect_; }
 
   virtual ~DlUnknownPathEffect() = default;
+
+  std::optional<SkRect> effect_bounds(SkRect& rect) const override;
 
  protected:
   bool equals_(const DlPathEffect& other) const override {
