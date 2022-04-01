@@ -373,8 +373,6 @@ static void dispatch_to_responder(gpointer responder_data,
 
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
                                           FlKeyEvent* event) {
-  printf("handle\n");
-  fflush(stdout);
   g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
   g_return_val_if_fail(event != nullptr, FALSE);
 
