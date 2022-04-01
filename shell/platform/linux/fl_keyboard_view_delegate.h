@@ -24,7 +24,10 @@ G_DECLARE_INTERFACE(FlKeyboardViewDelegate,
 /**
  * FlKeyboardViewDelegate:
  *
- * TODO
+ * An interface for a class that can provides `FlKeyboardManager` with
+ * platform-related features.
+ *
+ * This interface is typically implemented by `FlView`.
  */
 
 struct _FlKeyboardViewDelegateInterface {
@@ -46,22 +49,53 @@ struct _FlKeyboardViewDelegateInterface {
 
 /**
  * fl_keyboard_view_delegate_send_key_event:
- * TODO
+ *
+ * Handles `FlKeyboardManager`'s request to send a `FlutterKeyEvent` through the
+ * embedder API to the framework.
+ *
+ * The ownership of the `event` is kept by the keyboard manager, and the `event`
+ * might be immediately destroyed after this function returns.
+ *
+ * The `callback` must eventually be called exactly once with the event result
+ * and the user_data.
  */
 void fl_keyboard_view_delegate_send_key_event(FlKeyboardViewDelegate* delegate,
                                               const FlutterKeyEvent* event,
                                               FlutterKeyEventCallback callback,
                                               void* user_data);
 
-// This does not take over the ownership of `event`.
+/**
+ * fl_keyboard_view_delegate_text_filter_key_press:
+ *
+ * Handles `FlKeyboardManager`'s request to check if the GTK text input IM
+ * filter would like to handle a GDK event.
+ *
+ * The ownership of the `event` is kept by the keyboard manager.
+ */
 gboolean fl_keyboard_view_delegate_text_filter_key_press(
     FlKeyboardViewDelegate* delegate,
     FlKeyEvent* event);
 
+/**
+ * fl_keyboard_view_delegate_get_messenger:
+ *
+ * Returns a binary messenger that can be used to send messages to the
+ * framework.
+ *
+ * The ownership of messenger should be kept by the view delegate.
+ */
 FlBinaryMessenger* fl_keyboard_view_delegate_get_messenger(
     FlKeyboardViewDelegate* delegate);
 
-// This will take over the ownership of `event`. Must call fl_key_event_dispose.
+/**
+ * fl_keyboard_view_delegate_redispatch_event:
+ *
+ * Handles `FlKeyboardManager`'s request to insert a GDK event to the system for
+ * redispatching.
+ *
+ * The ownership of event will be transferred to the view delegate. The view
+ * delegate is responsible to call fl_key_event_dispose or use g_autofree.
+ */
 void fl_keyboard_view_delegate_redispatch_event(
     FlKeyboardViewDelegate* delegate,
     std::unique_ptr<FlKeyEvent> event);

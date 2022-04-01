@@ -411,12 +411,3 @@ gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* self) {
   return self->pending_responds->len == 0 &&
          self->pending_redispatches->len == 0;
 }
-
-void fl_keyboard_manager_wait_for_pending(FlKeyboardManager* self) {
-  if (self->pending_responds->len == 0) {
-    return;
-  }
-  g_return_if_fail(self->debug_pending_lock == nullptr);
-  self->debug_pending_lock = g_main_loop_new(nullptr, 0);
-  g_main_loop_run(self->debug_pending_lock);
-}

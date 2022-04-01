@@ -35,38 +35,23 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
 /**
  * FlKeyboardManager:
  *
- * A hub that manages how key events are dispatched to various processing
- * objects of Flutter, or possibly back to the system.
+ * Processes keyboard events and cooperate with `TextInputPlugin`.
  *
- * This class manage one or more objects of #FlKeyResponder, as well as a
- * #TextInputPlugin.
+ * A keyboard event goes through a few sections, each can choose to handled the
+ * event, and only unhandled events can move to the next section:
  *
- * An event that is received by #fl_keyboard_manager_handle_event is first
- * dispatched to *all* responders. Each responder responds *ascynchronously*
- * with a boolean, indicating whether it handles the event.
- *
- * An event that is not handled by any responders is then passed to to the
- * #TextInputPlugin, which responds *synchronously* with a boolean, indicating
- * whether it handles the event.
- *
- * If no processing objects handle the event, the event is then "redispatched":
- * sent back to the system using #redispatch_callback.
- *
- * Preventing responders from receiving events is not supported, because in
- * reality this class will only support 2 hardcoded ones (channel and
- * embedder), where the only purpose of supporting two is to support the legacy
- * API (channel) during the deprecation window, after which the channel
- * responder should be removed.
+ * - Keyboard: Dispatch to the embedder responder and the channel responder
+ *   simultaneously. After both responders have responded (asynchronously), the
+ *   event is considered handled if either responder handles.
+ * - Text input: Events are sent to IM filter (usually owned by
+ *   `TextInputPlugin`) and are handled synchronously.
+ * - Redispatching: Events are inserted back to the system for redispatching.
  */
 
 /**
  * fl_keyboard_manager_new:
- * @text_input_plugin: the #FlTextInputPlugin to send key events to if the
- * framework doesn't handle them. This object will be managed and freed by
- * #FlKeyboardManager.
- * @redispatch_callback: how the events should be sent if no processing
- * objects handle the event. Typically a function that calls #gdk_event_put
- * on #FlKeyEvent::origin.
+ * @view_delegate: An interfaces that the manager requires to communicate with
+ * the system. Usually implemented by FlView.
  *
  * Create a new #FlKeyboardManager.
  *
@@ -78,11 +63,12 @@ FlKeyboardManager* fl_keyboard_manager_new(
 /**
  * fl_keyboard_manager_handle_event:
  * @manager: the #FlKeyboardManager self.
- * @event: the event to be dispatched. This event will be managed and
- * released by #FlKeyboardManager.
+ * @event: the event to be dispatched. It is usually a wrap of a GdkEventKey.
+ * This event will be managed and released by #FlKeyboardManager.
  *
- * Add a new #FlKeyResponder to the #FlKeyboardManager. Responders added
- * earlier will receive events earlier.
+ * Make the manager process a system key event. This might eventually send
+ * messages to the framework, trigger text input effects, or redispatch the
+ * event back to the system.
  */
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
                                           FlKeyEvent* event);
@@ -91,24 +77,12 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
  * fl_keyboard_manager_is_state_clear:
  * @manager: the #FlKeyboardManager self.
  *
- * Whether the manager's various states are cleared, i.e. no pending events
- * for redispatching or for responding. This is mostly used in unittests.
+ * A debug-only method that queries whether the manager's various states are
+ * cleared, i.e. no pending events for redispatching or for responding.
  *
  * Returns: true if the manager's various states are cleared.
  */
 gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* manager);
-
-/**
- * fl_keyboard_manager_wait_for_pending:
- * @manager: the #FlKeyboardManager self.
- *
- * Block this thread until the all pending events are resolved.
- *
- * Asserts if a manager blocks while it's already blocking.
- *
- * This must only be used in unittests.
- */
-void fl_keyboard_manager_wait_for_pending(FlKeyboardManager* manager);
 
 G_END_DECLS
 
