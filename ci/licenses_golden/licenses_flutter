@@ -2059,7 +2059,6 @@ FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_platform_view.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_view_factory.cc
-FILE: ../../../flutter/shell/platform/linux/fl_platform_view_factory.h
 FILE: ../../../flutter/shell/platform/linux/fl_platform_view_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin.h
