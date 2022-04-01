@@ -10,19 +10,6 @@
 
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
 
-/**
- * FlKeyboardManagerRedispatcher:
- * @event: the pointer to the event to dispatch.
- *
- * The signature for a callback with which a #FlKeyboardManager redispatches
- * key events that are not handled by anyone.
- *
- * The callee takes ownership of the received event, and is responsible for
- * disposing of it.
- **/
-typedef std::function<void(std::unique_ptr<FlKeyEvent>)>
-    FlKeyboardManagerRedispatcher;
-
 G_BEGIN_DECLS
 
 #define FL_TYPE_KEYBOARD_MANAGER fl_keyboard_manager_get_type()

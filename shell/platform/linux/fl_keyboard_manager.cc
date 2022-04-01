@@ -199,13 +199,6 @@ struct _FlKeyboardManager {
 
   // The last sequence ID used. Increased by 1 by every use.
   uint64_t last_sequence_id;
-
-  // If `debug_pending_lock` is not null, it will quit and be cleared when the
-  // last pending event is resolved.
-  //
-  // It is used in unit tests to let the test body wait for message channels,
-  // which are resolved asynchronously on main loops.
-  GMainLoop* debug_pending_lock;
 };
 
 G_DEFINE_TYPE(FlKeyboardManager, fl_keyboard_manager, G_TYPE_OBJECT);
@@ -326,14 +319,6 @@ static void responder_handle_event_callback(bool handled,
                                                  std::move(pending->event));
     } else {
       g_object_unref(pending);
-    }
-    // Lock `debug_pending_lock` if there are pending responds. This is used in
-    // unit tests to wait for async tasks of the binary messenger to finish.
-    if (self->debug_pending_lock != nullptr &&
-        self->pending_responds->len == 0) {
-      g_autoptr(GMainLoop) loop = self->debug_pending_lock;
-      self->debug_pending_lock = nullptr;
-      g_main_loop_quit(loop);
     }
   }
 }

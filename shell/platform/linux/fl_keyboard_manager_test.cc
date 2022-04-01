@@ -12,8 +12,6 @@
 #include "flutter/shell/platform/linux/testing/mock_text_input_plugin.h"
 #include "gtest/gtest.h"
 
-#define FL_KEY_EVENT(target) reinterpret_cast<FlKeyEvent*>(target)
-
 // Define compound `expect` in macros. If they were defined in functions, the
 // stacktrace wouldn't print where the function is called in the unit tests.
 
@@ -25,12 +23,12 @@
   EXPECT_EQ((EVENT)->synthesized, (SYNTHESIZED));
 
 namespace {
-using namespace ::flutter::testing::keycodes;
+using ::flutter::testing::keycodes::kLogicalKeyA;
+using ::flutter::testing::keycodes::kLogicalKeyB;
+using ::flutter::testing::keycodes::kPhysicalKeyA;
+using ::flutter::testing::keycodes::kPhysicalKeyB;
 
 // Hardware key codes.
-constexpr guint16 kKeyCodeKeyA = 0x26u;
-constexpr guint16 kKeyCodeKeyB = 0x38u;
-
 typedef std::function<void(bool handled)> AsyncKeyCallback;
 typedef std::function<void(AsyncKeyCallback callback)> ChannelCallHandler;
 typedef std::function<void(const FlutterKeyEvent* event,
@@ -38,6 +36,10 @@ typedef std::function<void(const FlutterKeyEvent* event,
     EmbedderCallHandler;
 typedef std::function<void(std::unique_ptr<FlKeyEvent>)> RedispatchHandler;
 
+// A type that can record all kinds of effects that the keyboard manager
+// triggers.
+//
+// An instance of `CallRecord` might not have all the fields filled.
 typedef struct {
   enum {
     kKeyCallEmbedder,
@@ -49,6 +51,9 @@ typedef struct {
   std::unique_ptr<char[]> event_character;
 } CallRecord;
 
+// Clone a C-string.
+//
+// Must be deleted by delete[].
 char* cloneString(const char* source) {
   if (source == nullptr) {
     return nullptr;
@@ -58,6 +63,11 @@ char* cloneString(const char* source) {
   strcpy(target, source);
   return target;
 }
+
+constexpr guint16 kKeyCodeKeyA = 0x26u;
+constexpr guint16 kKeyCodeKeyB = 0x38u;
+
+static constexpr char kKeyEventChannelName[] = "flutter/keyevent";
 
 G_BEGIN_DECLS
 
@@ -76,12 +86,12 @@ G_DECLARE_FINAL_TYPE(FlMockKeyBinaryMessenger,
 G_END_DECLS
 
 /***** FlMockKeyBinaryMessenger *****/
+/* Mock a binary messenger that only processes messages from the embedding on
+ * the key event channel, and does so according to the callback set by
+ * fl_mock_key_binary_messenger_set_callback_handler */
 
 struct _FlMockKeyBinaryMessenger {
   GObject parent_instance;
-
-  // FlBinaryMessengerMessageHandler message_handler;
-  // gpointer message_handler_user_data;
 
   ChannelCallHandler callback_handler;
 };
@@ -99,16 +109,6 @@ G_DEFINE_TYPE_WITH_CODE(
 static void fl_mock_key_binary_messenger_class_init(
     FlMockKeyBinaryMessengerClass* klass) {}
 
-// static void set_message_handler_on_channel {
-//   FlMockKeyBinaryMessenger* self = FL_MOCK_KEY_BINARY_MESSENGER(messenger);
-
-//   EXPECT_STREQ(channel, "flutter/keyevent");
-
-//   // Send message.
-//   self->message_handler = handler;
-//   self->message_handler_user_data = user_data;
-// }
-
 static void fl_mock_key_binary_messenger_send_on_channel(
     FlBinaryMessenger* messenger,
     const gchar* channel,
@@ -119,7 +119,7 @@ static void fl_mock_key_binary_messenger_send_on_channel(
   FlMockKeyBinaryMessenger* self = FL_MOCK_KEY_BINARY_MESSENGER(messenger);
 
   if (callback != nullptr) {
-    EXPECT_STREQ(channel, "flutter/keyevent");
+    EXPECT_STREQ(channel, kKeyEventChannelName);
     self->callback_handler([self, cancellable, callback,
                             user_data](bool handled) {
       g_autoptr(GTask) task =
@@ -150,14 +150,16 @@ static void fl_mock_key_binary_messenger_iface_init(
       [](FlBinaryMessenger* messenger, const gchar* channel,
          FlBinaryMessengerMessageHandler handler, gpointer user_data,
          GDestroyNotify destroy_notify) {
-        printf("## set_message_handler_on_channel\n");
-        fflush(stdout);
+        EXPECT_STREQ(channel, kKeyEventChannelName);
+        // No need to mock. The key event channel expects no incoming messages
+        // from the framework.
       };
   iface->send_response = [](FlBinaryMessenger* messenger,
                             FlBinaryMessengerResponseHandle* response_handle,
                             GBytes* response, GError** error) -> gboolean {
-    printf("## send_response\n");
-    fflush(stdout);
+    // The key event channel expects no incoming messages from the framework,
+    // hence no responses either.
+    g_return_val_if_reached(TRUE);
     return TRUE;
   };
   iface->send_on_channel = fl_mock_key_binary_messenger_send_on_channel;
@@ -301,9 +303,6 @@ static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event) {
   return new_event;
 }
 
-static void fl_key_event_free_origin_by_mock(gpointer origin) {
-  g_free(origin);
-}
 // Create a new #FlKeyEvent with the given information.
 //
 // The #origin will be another #FlKeyEvent with the exact information,
@@ -322,7 +321,7 @@ static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
   event->keycode = keycode;
   FlKeyEvent* origin_event = fl_key_event_clone_information_only(event);
   event->origin = origin_event;
-  event->dispose_origin = fl_key_event_free_origin_by_mock;
+  event->dispose_origin = [](gpointer origin) { g_free(origin); };
   return event;
 }
 
