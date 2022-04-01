@@ -174,7 +174,7 @@ static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
 
 class KeyboardTester {
  public:
-  KeyboardTester(FlTextInputPlugin* text_input_plugin) {
+  explicit KeyboardTester(FlTextInputPlugin* text_input_plugin) {
     manager_ = fl_keyboard_manager_new(
         text_input_plugin, [this](std::unique_ptr<FlKeyEvent> event) {
           if (real_redispatcher_ != nullptr) {
