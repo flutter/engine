@@ -2057,6 +2057,13 @@ FILE: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_platform_view.cc
+FILE: ../../../flutter/shell/platform/linux/fl_platform_view_factory.cc
+FILE: ../../../flutter/shell/platform/linux/fl_platform_view_factory.h
+FILE: ../../../flutter/shell/platform/linux/fl_platform_view_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin.cc
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_test.cc
@@ -2110,6 +2117,8 @@ FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_chann
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_response.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_pixel_buffer_texture.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_platform_view.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_platform_view_factory.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registrar.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_standard_message_codec.h

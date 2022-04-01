@@ -8,6 +8,17 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 #include "flutter/shell/platform/linux/fl_gl_area.h"
+#include "flutter/shell/platform/linux/fl_platform_views_plugin.h"
+
+/**
+ * fl_view_get_platform_views_plugin:
+ * @view: an #FlView.
+ *
+ * Get #FlPlatformViewsPlugin related to @view.
+ *
+ * Returns: an #FlPlatformViewsPlugin.
+ */
+FlPlatformViewsPlugin* fl_view_get_platform_views_plugin(FlView* view);
 
 /**
  * fl_view_begin_frame:

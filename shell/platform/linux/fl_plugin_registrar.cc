@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registrar.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
+#include "flutter/shell/platform/linux/fl_view_private.h"
 
 #include <gmodule.h>
 
@@ -131,4 +132,19 @@ G_MODULE_EXPORT FlView* fl_plugin_registrar_get_view(FlPluginRegistrar* self) {
   g_return_val_if_fail(FL_IS_PLUGIN_REGISTRAR(self), nullptr);
 
   return FL_PLUGIN_REGISTRAR_GET_IFACE(self)->get_view(self);
+}
+
+G_MODULE_EXPORT void fl_plugin_registrar_register_view_factory(
+    FlPluginRegistrar* self,
+    FlPlatformViewFactory* factory,
+    const gchar* view_type) {
+  g_return_if_fail(FL_IS_PLUGIN_REGISTRAR_IMPL(self));
+
+  if (FL_PLUGIN_REGISTRAR_IMPL(self)->view) {
+    FlPlatformViewsPlugin* plugin =
+        fl_view_get_platform_views_plugin(FL_PLUGIN_REGISTRAR_IMPL(self)->view);
+    fl_platform_views_plugin_register_view_factory(plugin, factory, view_type);
+  } else {
+    g_warning("Cannot register view factory before FlView is initialized");
+  }
 }
