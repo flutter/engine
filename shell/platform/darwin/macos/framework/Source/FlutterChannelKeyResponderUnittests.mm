@@ -14,7 +14,7 @@
 namespace flutter::testing {
 
 namespace {
-using namespace flutter::testing::keycodes;
+using flutter::testing::keycodes::kLogicalKeyQ;
 
 NSEvent* keyEvent(NSEventType type,
                   NSEventModifierFlags modifierFlags,

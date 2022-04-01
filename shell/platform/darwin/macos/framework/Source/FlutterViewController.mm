@@ -244,7 +244,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
     [controller onKeyboardLayoutChanged];
   }
 }
-}
+}  // namespace
 
 #pragma mark - FlutterViewWrapper implementation.
 
