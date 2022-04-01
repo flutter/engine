@@ -94,7 +94,7 @@ FlBinaryMessenger* fl_keyboard_view_delegate_get_messenger(
  * redispatching.
  *
  * The ownership of event will be transferred to the view delegate. The view
- * delegate is responsible to call fl_key_event_dispose or use g_autofree.
+ * delegate is responsible to call fl_key_event_dispose.
  */
 void fl_keyboard_view_delegate_redispatch_event(
     FlKeyboardViewDelegate* delegate,
