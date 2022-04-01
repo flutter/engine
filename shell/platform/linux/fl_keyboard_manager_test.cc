@@ -60,7 +60,7 @@ char* cloneString(const char* source) {
   }
   size_t charLen = strlen(source);
   char* target = new char[charLen + 1];
-  strcpy(target, source);
+  strncpy(target, source, charLen + 1);
   return target;
 }
 
