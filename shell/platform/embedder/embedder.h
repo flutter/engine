@@ -153,6 +153,8 @@ typedef enum {
   kFlutterSemanticsActionMoveCursorForwardByWord = 1 << 19,
   /// Move the cursor backward by one word.
   kFlutterSemanticsActionMoveCursorBackwardByWord = 1 << 20,
+  /// Replace the current text in the text field.
+  kFlutterSemanticsActionSetText = 1 << 21,
 } FlutterSemanticsAction;
 
 /// The set of properties that may be associated with a semantics node.
