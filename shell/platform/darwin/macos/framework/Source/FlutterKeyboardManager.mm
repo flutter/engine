@@ -52,15 +52,6 @@ typedef NSResponder* _NSResponderPtr;
 typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 }
 
-namespace {
-typedef void (^VoidBlock)();
-
-// Someohow this pointer type must be defined as a single type for the compiler
-// to compile the function pointer type (due to _Nullable).
-typedef NSResponder* _NSResponderPtr;
-typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
-}
-
 @interface FlutterKeyboardManager ()
 
 /**
@@ -290,8 +281,8 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 #endif
     // The logical key should be the first available clue from below:
     //
-    //  - Mandatory goal, if matches any clue. This ensures that all alnum keys
-    //    can be found somewhere.
+    //  - Mandatory goal, if it matches any clue. This ensures that all alnum
+    //    keys can be found somewhere.
     //  - US layout, if neither clue of the key is EASCII.  This ensures that
     //    there are no non-latin logical keys.
     //  - Derived on the fly from keyCode & characters.

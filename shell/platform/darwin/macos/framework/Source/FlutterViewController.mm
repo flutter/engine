@@ -78,7 +78,7 @@ struct MouseState {
 };
 
 /**
- * Returns the current unicode layout data (kTISPropertyUnicodeKeyLayoutData).
+ * Returns the current Unicode layout data (kTISPropertyUnicodeKeyLayoutData).
  *
  * To use the returned data, convert it to CFDataRef first, finds its bytes
  * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
