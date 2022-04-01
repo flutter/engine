@@ -35,7 +35,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
 
   VSyncClient* vsyncClient = [[[VSyncClient alloc] initWithTaskRunner:thread_task_runner
-                                                            callback:callback] autorelease];
+                                                             callback:callback] autorelease];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   if (@available(iOS 15.0, *)) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, maxFrameRate);
@@ -58,7 +58,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
 
   VSyncClient* vsyncClient = [[[VSyncClient alloc] initWithTaskRunner:thread_task_runner
-                                                            callback:callback] autorelease];
+                                                             callback:callback] autorelease];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   if (@available(iOS 15.0, *)) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, 0);
@@ -77,7 +77,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   double maxFrameRate = 120;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
   VSyncClient* vsyncClient = [[[VSyncClient alloc] initWithTaskRunner:thread_task_runner
-                                                            callback:callback] autorelease];
+                                                             callback:callback] autorelease];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   if (@available(iOS 15.0, *)) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, 0);
