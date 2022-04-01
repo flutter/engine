@@ -71,9 +71,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 - (void)testDoNotSetVirableRefreshRatesIfCADisableMinimumFrameDurationOnPhoneIsNotSet {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
   auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {};
-  //   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
-  //   OCMStub([bundleMock objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"])
-  //       .andReturn(nil);
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
   double maxFrameRate = 120;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
