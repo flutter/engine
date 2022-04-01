@@ -228,16 +228,12 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
 
   gboolean manager_handled = false;
-  printf("1\n");
-  fflush(stdout);
   fl_keyboard_manager_add_responder(
       tester.manager(),
       FL_KEY_RESPONDER(fl_key_mock_responder_new(&call_records, 1)));
 
   /// Test 1: One event that is handled by the framework
   tester.recordRedispatchedEventsTo(redispatched);
-  printf("2\n");
-  fflush(stdout);
 
   // Dispatch a key event
   manager_handled = fl_keyboard_manager_handle_event(
@@ -249,16 +245,12 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(call_records[0].responder->delegate_id, 1);
   EXPECT_EQ(call_records[0].event->keyval, 0x61u);
   EXPECT_EQ(call_records[0].event->keycode, 0x26u);
-  printf("3\n");
-  fflush(stdout);
 
   call_records[0].callback(true);
   EXPECT_EQ(redispatched.size(), 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   call_records.clear();
-  printf("4\n");
-  fflush(stdout);
 
   /// Test 2: Two events that are unhandled by the framework
   manager_handled = fl_keyboard_manager_handle_event(
@@ -270,8 +262,6 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(call_records[0].responder->delegate_id, 1);
   EXPECT_EQ(call_records[0].event->keyval, 0x61u);
   EXPECT_EQ(call_records[0].event->keycode, 0x26u);
-  printf("5\n");
-  fflush(stdout);
 
   // Dispatch another key event
   manager_handled = fl_keyboard_manager_handle_event(
@@ -283,8 +273,6 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(call_records[1].responder->delegate_id, 1);
   EXPECT_EQ(call_records[1].event->keyval, 0x62u);
   EXPECT_EQ(call_records[1].event->keycode, 0x38u);
-  printf("6\n");
-  fflush(stdout);
 
   // Resolve the second event first to test out-of-order response
   call_records[1].callback(false);
@@ -293,41 +281,31 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   call_records[0].callback(false);
   EXPECT_EQ(redispatched.size(), 2u);
   EXPECT_EQ(redispatched[1]->keyval, 0x61u);
-  printf("7\n");
-  fflush(stdout);
 
   call_records.clear();
 
   // Resolve redispatches
   manager_handled = fl_keyboard_manager_handle_event(tester.manager(),
                                                      redispatched[0].release());
-  printf("7.1\n");
-  fflush(stdout);
   EXPECT_EQ(manager_handled, false);
   manager_handled = fl_keyboard_manager_handle_event(tester.manager(),
                                                      redispatched[1].release());
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records.size(), 0u);
-  printf("8\n");
-  fflush(stdout);
 
   redispatched.clear();
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
-  printf("9\n");
-  fflush(stdout);
 
   /// Test 3: Dispatch the same event again to ensure that prevention from
   /// redispatching only works once.
   manager_handled = fl_keyboard_manager_handle_event(
       tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched.size(), 0u);
   EXPECT_EQ(call_records.size(), 1u);
 
   call_records[0].callback(true);
-  printf("10\n");
-  fflush(stdout);
 
   redispatched.clear();
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
