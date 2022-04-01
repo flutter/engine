@@ -18,8 +18,8 @@
  * The signature for a callback with which a #FlKeyboardManager redispatches
  * key events that are not handled by anyone.
  *
- * The callee takes ownership of the received event, and is responsible to
- * dispose it.
+ * The callee takes ownership of the received event, and is responsible for
+ * disposing of it.
  **/
 typedef std::function<void(std::unique_ptr<FlKeyEvent>)>
     FlKeyboardManagerRedispatcher;
