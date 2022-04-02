@@ -37,6 +37,7 @@ TEST_F(ImageFilterLayerTest, PaintBeforePrerollDies) {
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
 }
@@ -53,6 +54,7 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -87,6 +89,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_rounded_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -121,6 +124,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), filter_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -163,6 +167,7 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_rounded_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), children_bounds);
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -217,7 +222,9 @@ TEST_F(ImageFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_rounded_bounds);
+  EXPECT_EQ(layer1->child_paint_bounds(), children_bounds);
   EXPECT_EQ(layer2->paint_bounds(), mock_layer2_rounded_bounds);
+  EXPECT_EQ(layer2->child_paint_bounds(), child_path2.getBounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer1->needs_painting(paint_context()));

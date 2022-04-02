@@ -118,8 +118,8 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   // case the bounds of the child may not be the same as the filtered version
   // so we use the bounds of the child container which do not include any
   // modifications that the filter might apply.
-  Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
-      context, origin_child_paint_bounds(), &paint);
+  Layer::AutoSaveLayer save_layer =
+      Layer::AutoSaveLayer::Create(context, child_paint_bounds(), &paint);
   PaintChildren(context);
 }
 

@@ -268,7 +268,7 @@ const SkRect& RasterCache::GetPaintBoundsFromLayer(
       return layer->paint_bounds();
     case RasterCacheLayerStrategy::kLayerChildren:
       FML_DCHECK(layer->as_container_layer());
-      return layer->as_container_layer()->origin_child_paint_bounds();
+      return layer->as_container_layer()->child_paint_bounds();
   }
 }
 
