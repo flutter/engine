@@ -16,6 +16,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/native_library.h"
+#include "flutter/fml/thread.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 
@@ -620,7 +621,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       config.size.width,   // width
       config.size.height,  // height
       1,                   // sample count
-      0,                   // stencil bits
+      8,                   // stencil bits
       framebuffer_info     // framebuffer info
   );
 
@@ -717,10 +718,12 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
-      1,                         // sample count
-      kBGRA_8888_SkColorType,    // color type
-      nullptr,                   // color space
-      &surface_properties,       // surface properties
+      // TODO(dnfield): Update this when embedders support MSAA, see
+      // https://github.com/flutter/flutter/issues/100392
+      1,                       // sample count
+      kBGRA_8888_SkColorType,  // color type
+      nullptr,                 // color space
+      &surface_properties,     // surface properties
       static_cast<SkSurface::TextureReleaseProc>(
           metal->texture.destruction_callback),  // release proc
       metal->texture.user_data                   // release context
@@ -1450,10 +1453,33 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
   }
 #endif
-
+  auto custom_task_runners = SAFE_ACCESS(args, custom_task_runners, nullptr);
+  auto thread_config_callback = [&custom_task_runners](
+                                    const fml::Thread::ThreadConfig& config) {
+    fml::Thread::SetCurrentThreadName(config);
+    if (!custom_task_runners || !custom_task_runners->thread_priority_setter) {
+      return;
+    }
+    FlutterThreadPriority priority = FlutterThreadPriority::kNormal;
+    switch (config.priority) {
+      case fml::Thread::ThreadPriority::BACKGROUND:
+        priority = FlutterThreadPriority::kBackground;
+        break;
+      case fml::Thread::ThreadPriority::NORMAL:
+        priority = FlutterThreadPriority::kNormal;
+        break;
+      case fml::Thread::ThreadPriority::DISPLAY:
+        priority = FlutterThreadPriority::kDisplay;
+        break;
+      case fml::Thread::ThreadPriority::RASTER:
+        priority = FlutterThreadPriority::kRaster;
+        break;
+    }
+    custom_task_runners->thread_priority_setter(priority);
+  };
   auto thread_host =
       flutter::EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
-          SAFE_ACCESS(args, custom_task_runners, nullptr));
+          custom_task_runners, thread_config_callback);
 
   if (!thread_host || !thread_host->IsValid()) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments,
@@ -1647,6 +1673,12 @@ inline flutter::PointerData::Change ToPointerDataChange(
       return flutter::PointerData::Change::kRemove;
     case kHover:
       return flutter::PointerData::Change::kHover;
+    case kPanZoomStart:
+      return flutter::PointerData::Change::kPanZoomStart;
+    case kPanZoomUpdate:
+      return flutter::PointerData::Change::kPanZoomUpdate;
+    case kPanZoomEnd:
+      return flutter::PointerData::Change::kPanZoomEnd;
   }
   return flutter::PointerData::Change::kCancel;
 }
@@ -1662,6 +1694,8 @@ inline flutter::PointerData::DeviceKind ToPointerDataKind(
       return flutter::PointerData::DeviceKind::kTouch;
     case kFlutterPointerDeviceKindStylus:
       return flutter::PointerData::DeviceKind::kStylus;
+    case kFlutterPointerDeviceKindTrackpad:
+      return flutter::PointerData::DeviceKind::kTrackpad;
   }
   return flutter::PointerData::DeviceKind::kMouse;
 }
@@ -1694,6 +1728,9 @@ inline int64_t PointerDataButtonsForLegacyEvent(
     case flutter::PointerData::Change::kRemove:
     case flutter::PointerData::Change::kHover:
     case flutter::PointerData::Change::kUp:
+    case flutter::PointerData::Change::kPanZoomStart:
+    case flutter::PointerData::Change::kPanZoomUpdate:
+    case flutter::PointerData::Change::kPanZoomEnd:
       return 0;
   }
   return 0;
@@ -1759,6 +1796,13 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
         pointer_data.buttons = SAFE_ACCESS(current, buttons, 0);
       }
     }
+    pointer_data.pan_x = SAFE_ACCESS(current, pan_x, 0.0);
+    pointer_data.pan_y = SAFE_ACCESS(current, pan_y, 0.0);
+    // Delta will be generated in pointer_data_packet_converter.cc.
+    pointer_data.pan_delta_x = 0.0;
+    pointer_data.pan_delta_y = 0.0;
+    pointer_data.scale = SAFE_ACCESS(current, scale, 0.0);
+    pointer_data.rotation = SAFE_ACCESS(current, rotation, 0.0);
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);
@@ -2532,6 +2576,18 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
   }
 }
 
+FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                   engine) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->ScheduleFrame()
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "Could not schedule frame.");
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -2582,6 +2638,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(PostCallbackOnAllNativeThreads,
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
+  SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
 #undef SET_PROC
 
   return kSuccess;

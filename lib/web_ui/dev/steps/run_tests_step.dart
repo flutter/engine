@@ -25,9 +25,6 @@ import '../pipeline.dart';
 import '../test_platform.dart';
 import '../utils.dart';
 
-// Maximum number of tests that run concurrently.
-const int _testConcurrency = int.fromEnvironment('FELT_TEST_CONCURRENCY', defaultValue: 10);
-
 /// Runs web tests.
 ///
 /// Assumes the artifacts from [CompileTestsStep] are available, either from
@@ -54,17 +51,6 @@ class RunTestsStep implements PipelineStep {
 
   final BrowserEnvironment _browserEnvironment;
 
-  /// Global list of shards that failed.
-  ///
-  /// This is used to make sure that when there's a test failure anywhere we
-  /// exit with a non-zero exit code.
-  ///
-  /// Shards must never be removed from this list, only added.
-  List<String> failedShards = <String>[];
-
-  /// Whether all test shards succeeded.
-  bool get allShardsPassed => failedShards.isEmpty;
-
   @override
   String get description => 'run_tests';
 
@@ -80,82 +66,21 @@ class RunTestsStep implements PipelineStep {
     await _browserEnvironment.prepare();
 
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
-
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
-    // Separate screenshot tests from unit-tests. Screenshot tests must run
-    // one at a time. Otherwise, they will end up screenshotting each other.
-    // This is not an issue for unit-tests.
-    final List<FilePath> screenshotTestFiles = <FilePath>[];
-    final List<FilePath> unitTestFiles = <FilePath>[];
-
-    for (final FilePath testFilePath in testFiles) {
-      if (!testFilePath.absolute.endsWith('_test.dart')) {
-        // Not a test file at all. Skip.
-        continue;
-      }
-
-      // Any file whose name ends with "_golden_test.dart" is run as a golden test.
-      final bool isGoldenTestFile = pathlib
-          .basename(testFilePath.relativeToWebUi)
-          .endsWith('_golden_test.dart');
-      if (isGoldenTestFile) {
-        screenshotTestFiles.add(testFilePath);
-      } else {
-        unitTestFiles.add(testFilePath);
-      }
-    }
-
-    // Run non-screenshot tests with high concurrency.
-    if (unitTestFiles.isNotEmpty) {
-      await _runTestBatch(
-        testFiles: unitTestFiles,
-        browserEnvironment: _browserEnvironment,
-        concurrency: _testConcurrency,
-        expectFailure: false,
-        isDebug: isDebug,
-        doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
-        skiaClient: skiaClient,
-        overridePathToCanvasKit: overridePathToCanvasKit,
-      );
-      _checkExitCode('Unit tests');
-    }
-
-    // Run screenshot tests one at a time to prevent tests from screenshotting
-    // each other.
-    if (screenshotTestFiles.isNotEmpty) {
-      await _runTestBatch(
-        testFiles: screenshotTestFiles,
-        browserEnvironment: _browserEnvironment,
-        concurrency: 1,
-        expectFailure: false,
-        isDebug: isDebug,
-        doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
-        skiaClient: skiaClient,
-        overridePathToCanvasKit: overridePathToCanvasKit,
-      );
-      _checkExitCode('Golden tests');
-    }
-
-    if (!allShardsPassed) {
-      throw ToolExit(_createFailedShardsMessage());
-    }
-  }
-
-  void _checkExitCode(String shard) {
-    if (io.exitCode != 0) {
-      failedShards.add(shard);
-    }
-  }
-
-  String _createFailedShardsMessage() {
-    final StringBuffer message = StringBuffer(
-      'The following test shards failed:\n',
+    await _runTestBatch(
+      testFiles: testFiles,
+      browserEnvironment: _browserEnvironment,
+      expectFailure: false,
+      isDebug: isDebug,
+      doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+      skiaClient: skiaClient,
+      overridePathToCanvasKit: overridePathToCanvasKit,
     );
-    for (final String failedShard in failedShards) {
-      message.writeln(' - $failedShard');
+
+    if (io.exitCode != 0) {
+      throw ToolExit('Some tests failed');
     }
-    return message.toString();
   }
 
   Future<SkiaGoldClient?> _createSkiaClient() async {
@@ -219,7 +144,6 @@ Future<void> _runTestBatch({
   required bool isDebug,
   required BrowserEnvironment browserEnvironment,
   required bool doUpdateScreenshotGoldens,
-  required int concurrency,
   required bool expectFailure,
   required SkiaGoldClient? skiaClient,
   required String? overridePathToCanvasKit,
@@ -230,7 +154,8 @@ Future<void> _runTestBatch({
   );
   final List<String> testArgs = <String>[
     ...<String>['-r', 'compact'],
-    '--concurrency=$concurrency',
+    // Disable concurrency. Running with concurrency proved to be flaky.
+    '--concurrency=1',
     if (isDebug) '--pause-after-load',
     // Don't pollute logs with output from tests that are expected to fail.
     if (expectFailure)

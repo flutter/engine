@@ -21,6 +21,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -31,6 +32,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.plugin.platform.PlatformPlugin;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -38,13 +40,12 @@ import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterAndroidComponentTest {
   @Test
   public void pluginsReceiveFlutterPluginBinding() {
@@ -311,6 +312,12 @@ public class FlutterAndroidComponentTest {
       return null;
     }
 
+    @Nullable
+    @Override
+    public List<String> getDartEntrypointArgs() {
+      return null;
+    }
+
     @NonNull
     @Override
     public String getAppBundlePath() {
@@ -377,6 +384,11 @@ public class FlutterAndroidComponentTest {
 
     @Override
     public boolean shouldRestoreAndSaveState() {
+      return true;
+    }
+
+    @Override
+    public boolean shouldDispatchAppLifecycleState() {
       return true;
     }
 

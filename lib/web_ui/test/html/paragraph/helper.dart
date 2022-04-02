@@ -8,6 +8,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../../common.dart';
+
 const Color white = Color(0xFFFFFFFF);
 const Color black = Color(0xFF000000);
 const Color red = Color(0xFFFF0000);
@@ -52,6 +54,12 @@ Future<void> takeScreenshot(
   double? maxDiffRatePercent,
 }) async {
   final html.Element sceneElement = html.Element.tag('flt-scene');
+  if (isIosSafari) {
+    // Shrink to fit on the iPhone screen.
+    sceneElement.style.position = 'absolute';
+    sceneElement.style.transformOrigin = '0 0 0';
+    sceneElement.style.transform = 'scale(0.3)';
+  }
   try {
     sceneElement.append(canvas.rootElement);
     html.document.body!.append(sceneElement);
@@ -65,5 +73,31 @@ Future<void> takeScreenshot(
     // The page is reused across tests, so remove the element after taking the
     // Scuba screenshot.
     sceneElement.remove();
+  }
+}
+
+/// Fills the single placeholder in the given [paragraph] with a red rectangle.
+///
+/// The placeholder is filled relative to [offset].
+///
+/// Throws if the paragraph contains more than one placeholder.
+void fillPlaceholder(
+  EngineCanvas canvas,
+  Offset offset,
+  CanvasParagraph paragraph,
+) {
+  final TextBox placeholderBox = paragraph.getBoxesForPlaceholders().single;
+  final SurfacePaint paint = SurfacePaint()..color = red;
+  canvas.drawRect(placeholderBox.toRect().shift(offset), paint.paintData);
+}
+
+
+/// Fill the given [boxes] with rectangles of the given [color].
+///
+/// All rectangles are filled relative to [offset].
+void fillBoxes(EngineCanvas canvas, Offset offset, List<TextBox> boxes, Color color) {
+  for (final TextBox box in boxes) {
+    final Rect rect = box.toRect().shift(offset);
+    canvas.drawRect(rect, SurfacePaintData()..color = color);
   }
 }

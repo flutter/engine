@@ -75,6 +75,9 @@ bool AngleSurfaceManager::InitializeEGL(
 }
 
 bool AngleSurfaceManager::Initialize() {
+  // TODO(dnfield): Enable MSAA here, see similar code in android_context_gl.cc
+  // Will need to plumb in argument from project bundle for sampling rate.
+  // https://github.com/flutter/flutter/issues/100392
   const EGLint config_attributes[] = {EGL_RED_SIZE,   8, EGL_GREEN_SIZE,   8,
                                       EGL_BLUE_SIZE,  8, EGL_ALPHA_SIZE,   8,
                                       EGL_DEPTH_SIZE, 8, EGL_STENCIL_SIZE, 8,
@@ -95,6 +98,12 @@ bool AngleSurfaceManager::Initialize() {
       // behalf of the application when it gets suspended.
       EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE,
       EGL_TRUE,
+
+      // This extension allows angle to render directly on a D3D swapchain
+      // in the correct orientation on D3D11.
+      EGL_EXPERIMENTAL_PRESENT_PATH_ANGLE,
+      EGL_EXPERIMENTAL_PRESENT_PATH_FAST_ANGLE,
+
       EGL_NONE,
   };
 

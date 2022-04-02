@@ -26,7 +26,6 @@ import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
@@ -425,14 +424,6 @@ public class FlutterView extends SurfaceView
   @Override
   public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
     return mTextInputPlugin.createInputConnection(this, mKeyboardManager, outAttrs);
-  }
-
-  @Override
-  public boolean checkInputConnectionProxy(View view) {
-    return mNativeView
-        .getPluginRegistry()
-        .getPlatformViewsController()
-        .checkInputConnectionProxy(view);
   }
 
   @Override
@@ -855,13 +846,16 @@ public class FlutterView extends SurfaceView
 
   @Override
   @UiThread
-  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+  public void setMessageHandler(@NonNull String channel, @NonNull BinaryMessageHandler handler) {
     mNativeView.setMessageHandler(channel, handler);
   }
 
   @Override
   @UiThread
-  public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
+  public void setMessageHandler(
+      @NonNull String channel,
+      @NonNull BinaryMessageHandler handler,
+      @NonNull TaskQueue taskQueue) {
     mNativeView.setMessageHandler(channel, handler, taskQueue);
   }
 
@@ -871,12 +865,14 @@ public class FlutterView extends SurfaceView
   }
 
   @Override
+  @NonNull
   public TextureRegistry.SurfaceTextureEntry createSurfaceTexture() {
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
     return registerSurfaceTexture(surfaceTexture);
   }
 
   @Override
+  @NonNull
   public TextureRegistry.SurfaceTextureEntry registerSurfaceTexture(
       @NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
@@ -921,6 +917,7 @@ public class FlutterView extends SurfaceView
               // still be called by a stale reference after released==true and mNativeView==null.
               return;
             }
+
             mNativeView
                 .getFlutterJNI()
                 .markTextureFrameAvailable(SurfaceTextureRegistryEntry.this.id);

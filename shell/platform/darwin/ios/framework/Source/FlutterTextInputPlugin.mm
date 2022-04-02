@@ -54,6 +54,7 @@ static NSString* const kKeyboardType = @"inputType";
 static NSString* const kKeyboardAppearance = @"keyboardAppearance";
 static NSString* const kInputAction = @"inputAction";
 static NSString* const kEnableDeltaModel = @"enableDeltaModel";
+static NSString* const kEnableInteractiveSelection = @"enableInteractiveSelection";
 
 static NSString* const kSmartDashesType = @"smartDashesType";
 static NSString* const kSmartQuotesType = @"smartQuotesType";
@@ -469,17 +470,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
                                  (isBelowBottomOfLine && isFartherToRight))));
 }
 
-// Checks whether Scribble features are possibly available – meaning this is an iPad running iOS
-// 14 or higher.
-static BOOL IsScribbleAvailable() {
-  if (@available(iOS 14.0, *)) {
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-      return YES;
-    }
-  }
-  return NO;
-}
-
 #pragma mark - FlutterTextPosition
 
 @implementation FlutterTextPosition
@@ -745,6 +735,7 @@ static BOOL IsScribbleAvailable() {
   // The view has reached end of life, and is no longer
   // allowed to access its textInputDelegate.
   BOOL _decommissioned;
+  bool _enableInteractiveSelection;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -778,6 +769,7 @@ static BOOL IsScribbleAvailable() {
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
     _enableDeltaModel = NO;
+    _enableInteractiveSelection = YES;
     _accessibilityEnabled = NO;
     _decommissioned = NO;
     if (@available(iOS 11.0, *)) {
@@ -809,7 +801,7 @@ static BOOL IsScribbleAvailable() {
   self.keyboardType = ToUIKeyboardType(inputType);
   self.returnKeyType = ToUIReturnKeyType(configuration[kInputAction]);
   self.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
-
+  _enableInteractiveSelection = [configuration[kEnableInteractiveSelection] boolValue];
   if (@available(iOS 11.0, *)) {
     NSString* smartDashesType = configuration[kSmartDashesType];
     // This index comes from the SmartDashesType enum in the framework.
@@ -1015,6 +1007,17 @@ static BOOL IsScribbleAvailable() {
 
 #pragma mark UIScribbleInteractionDelegate
 
+// Checks whether Scribble features are possibly available – meaning this is an iPad running iOS
+// 14 or higher.
+- (BOOL)isScribbleAvailable {
+  if (@available(iOS 14.0, *)) {
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
   _scribbleInteractionStatus = FlutterScribbleInteractionStatusStarted;
@@ -1050,7 +1053,7 @@ static BOOL IsScribbleAvailable() {
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
   // When scribble is available, the FlutterTextInputView will display the native toolbar unless
   // these text editing actions are disabled.
-  if (IsScribbleAvailable()) {
+  if ([self isScribbleAvailable] && sender == NULL) {
     return NO;
   }
   if (action == @selector(paste:)) {
@@ -1117,6 +1120,10 @@ static BOOL IsScribbleAvailable() {
 }
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
+  if (!_enableInteractiveSelection) {
+    return;
+  }
+
   [self setSelectedTextRangeLocal:selectedTextRange];
 
   if (_enableDeltaModel) {
@@ -1655,7 +1662,6 @@ static BOOL IsScribbleAvailable() {
     if (position <= end) {
       if (IsSelectionRectCloserToPoint(point, _selectionRects[i].rect, _closestRect,
                                        /*checkRightBoundary=*/YES)) {
-        _closestIndex = [_selectionRects count];
         _closestPosition = position;
       }
     }
@@ -1743,7 +1749,6 @@ static BOOL IsScribbleAvailable() {
     composingBase = ((FlutterTextPosition*)self.markedTextRange.start).index;
     composingExtent = ((FlutterTextPosition*)self.markedTextRange.end).index;
   }
-
   NSDictionary* state = @{
     @"selectionBase" : @(selectionBase),
     @"selectionExtent" : @(selectionExtent),
@@ -2083,7 +2088,7 @@ static BOOL IsScribbleAvailable() {
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
   [_activeView setEditableTransform:dictionary[@"transform"]];
-  if (IsScribbleAvailable()) {
+  if ([_activeView isScribbleAvailable]) {
     // This is necessary to set up where the scribble interactable element will be.
     int leftIndex = 12;
     int topIndex = 13;

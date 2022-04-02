@@ -32,6 +32,8 @@
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
+static NSString* const kFlutterRestorationStateAppData = @"FlutterRestorationStateAppData";
+
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
 NSNotificationName const FlutterViewControllerHideHomeIndicator =
@@ -331,6 +333,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
                  name:UIAccessibilityDarkerSystemColorsStatusDidChangeNotification
                object:nil];
 
+  if (@available(iOS 13.0, *)) {
+    [center addObserver:self
+               selector:@selector(onAccessibilityStatusChanged:)
+                   name:UIAccessibilityOnOffSwitchLabelsDidChangeNotification
+                 object:nil];
+  }
+
   [center addObserver:self
              selector:@selector(onUserSettingsChanged:)
                  name:UIContentSizeCategoryDidChangeNotification
@@ -414,16 +423,24 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   _scrollView.reset(scrollView);
 }
 
+- (flutter::PointerData)generatePointerDataForFake {
+  flutter::PointerData pointer_data;
+  pointer_data.Clear();
+  pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
+  // `UITouch.timestamp` is defined as seconds since system startup. Synthesized events can get this
+  // time with `NSProcessInfo.systemUptime`. See
+  // https://developer.apple.com/documentation/uikit/uitouch/1618144-timestamp?language=objc
+  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
+  return pointer_data;
+}
+
 static void SendFakeTouchEvent(FlutterEngine* engine,
                                CGPoint location,
                                flutter::PointerData::Change change) {
   const CGFloat scale = [UIScreen mainScreen].scale;
-  flutter::PointerData pointer_data;
-  pointer_data.Clear();
+  flutter::PointerData pointer_data = [[engine viewController] generatePointerDataForFake];
   pointer_data.physical_x = location.x * scale;
   pointer_data.physical_y = location.y * scale;
-  pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
-  pointer_data.time_stamp = [[NSDate date] timeIntervalSince1970] * kMicrosecondsPerSecond;
   auto packet = std::make_unique<flutter::PointerDataPacket>(/*count=*/1);
   pointer_data.change = change;
   packet->SetPointerData(0, pointer_data);
@@ -639,13 +656,13 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidLoad");
 
   if (_engine && _engineNeedsLaunch) {
-    // Register internal plugins before starting the engine.
-    [self addInternalPlugins];
-
     [_engine.get() launchEngine:nil libraryURI:nil entrypointArgs:nil];
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
+
+  // Register internal plugins.
+  [self addInternalPlugins];
 
   if ([_engine.get() viewController] == self) {
     [_engine.get() attachView];
@@ -752,14 +769,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     // touches to the framework so nothing gets orphaned.
     for (NSNumber* device in _ongoingTouches.get()) {
       // Create fake PointerData to balance out each previously started one for the framework.
-      flutter::PointerData pointer_data;
-      pointer_data.Clear();
-
-      // Use current time.
-      pointer_data.time_stamp = [[NSDate date] timeIntervalSince1970] * kMicrosecondsPerSecond;
+      flutter::PointerData pointer_data = [self generatePointerDataForFake];
 
       pointer_data.change = flutter::PointerData::Change::kCancel;
-      pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
       pointer_data.device = device.longLongValue;
       pointer_data.pointer_identifier = 0;
 
@@ -947,6 +959,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       case flutter::PointerData::Change::kAdd:
       case flutter::PointerData::Change::kRemove:
         // We don't use kAdd/kRemove.
+        break;
+      case flutter::PointerData::Change::kPanZoomStart:
+      case flutter::PointerData::Change::kPanZoomUpdate:
+      case flutter::PointerData::Change::kPanZoomEnd:
+        // We don't send pan/zoom events here
         break;
     }
 
@@ -1163,8 +1180,30 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  // When keyboard hide, the keyboardWillChangeFrame function will be called to update viewport
-  // metrics. So do not call [self updateViewportMetrics] here again.
+  NSDictionary* info = [notification userInfo];
+
+  if (@available(iOS 9, *)) {
+    // Ignore keyboard notifications related to other apps.
+    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+    if (isLocal && ![isLocal boolValue]) {
+      return;
+    }
+  }
+
+  // Ignore keyboard notifications if engine’s viewController is not current viewController.
+  if ([_engine.get() viewController] != self) {
+    return;
+  }
+
+  if (self.targetViewInsetBottom != 0) {
+    // Ensure the keyboard will be dismissed. Just like the keyboardWillChangeFrame,
+    // keyboardWillBeHidden is also in an animation block in iOS sdk, so we don't need to set the
+    // animation curve. Related issue: https://github.com/flutter/flutter/issues/99951
+    self.targetViewInsetBottom = 0;
+    NSTimeInterval duration =
+        [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+    [self startKeyBoardAnimation:duration];
+  }
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration {
@@ -1412,19 +1451,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
   auto platformView = [_engine.get() platformView];
-  int32_t flags = 0;
-  if (UIAccessibilityIsInvertColorsEnabled()) {
-    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors);
-  }
-  if (UIAccessibilityIsReduceMotionEnabled()) {
-    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kReduceMotion);
-  }
-  if (UIAccessibilityIsBoldTextEnabled()) {
-    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kBoldText);
-  }
-  if (UIAccessibilityDarkerSystemColorsEnabled()) {
-    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kHighContrast);
-  }
+  int32_t flags = [self accessibilityFlags];
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the
@@ -1440,6 +1467,35 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
+}
+
+- (int32_t)accessibilityFlags {
+  int32_t flags = 0;
+  if (UIAccessibilityIsInvertColorsEnabled()) {
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors);
+  }
+  if (UIAccessibilityIsReduceMotionEnabled()) {
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kReduceMotion);
+  }
+  if (UIAccessibilityIsBoldTextEnabled()) {
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kBoldText);
+  }
+  if (UIAccessibilityDarkerSystemColorsEnabled()) {
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kHighContrast);
+  }
+  if ([FlutterViewController accessibilityIsOnOffSwitchLabelsEnabled]) {
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels);
+  }
+
+  return flags;
+}
+
++ (BOOL)accessibilityIsOnOffSwitchLabelsEnabled {
+  if (@available(iOS 13, *)) {
+    return UIAccessibilityIsOnOffSwitchLabelsEnabled();
+  } else {
+    return NO;
+  }
 }
 
 #pragma mark - Set user settings
@@ -1785,12 +1841,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
-  [coder encodeDataObject:restorationData];
+  [coder encodeBytes:(const unsigned char*)restorationData.bytes
+              length:restorationData.length
+              forKey:kFlutterRestorationStateAppData];
   [super encodeRestorableStateWithCoder:coder];
 }
 
 - (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
-  NSData* restorationData = [coder decodeDataObject];
+  NSUInteger restorationDataLength;
+  const unsigned char* restorationBytes = [coder decodeBytesForKey:kFlutterRestorationStateAppData
+                                                    returnedLength:&restorationDataLength];
+  NSData* restorationData = [NSData dataWithBytes:restorationBytes length:restorationDataLength];
   [[_engine.get() restorationPlugin] setRestorationData:restorationData];
 }
 

@@ -371,7 +371,7 @@ Future<void> testMain() async {
   });
 
   void testFontFeatures(EngineCanvas canvas) {
-    const String text = 'Aa Bb Dd Ee Ff Difficult';
+    const String text = 'Bb Difficult ';
     const FontFeature enableSmallCaps = FontFeature('smcp');
     const FontFeature disableSmallCaps = FontFeature('smcp', 0);
 
@@ -446,7 +446,7 @@ Future<void> testMain() async {
             enableOnum,
           ],
         ));
-        builder.addText('$text - $numeric');
+        builder.addText('$text  $numeric');
         builder.pop(); // enableSmallCaps, enableOnum
       },
     )..layout(constrain(double.infinity));
@@ -465,6 +465,49 @@ Future<void> testMain() async {
     final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
     testFontFeatures(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_features_dom');
+  });
+
+  void testFontVariations(EngineCanvas canvas) {
+    const String text = 'ABCDE 12345\n';
+    FontVariation weight(double w) => FontVariation('wght', w);
+
+    final CanvasParagraph paragraph = rich(
+      EngineParagraphStyle(fontFamily: 'RobotoVariable'),
+      (CanvasParagraphBuilder builder) {
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 48.0,
+        ));
+        builder.addText(text);
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 48.0,
+          fontVariations: <FontVariation>[weight(900)],
+        ));
+        builder.addText(text);
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 48.0,
+          fontVariations: <FontVariation>[weight(200)],
+        ));
+        builder.addText(text);
+        builder.pop();
+        builder.pop();
+        builder.pop();
+      },
+    )..layout(constrain(double.infinity));
+    canvas.drawParagraph(paragraph, Offset.zero);
+  }
+
+  test('font variations', () {
+    const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
+    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    testFontVariations(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_variations');
+  });
+
+  test('font variations (DOM)', () {
+    const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
+    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    testFontVariations(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_variations_dom');
   });
 
   void testBackgroundStyle(EngineCanvas canvas) {

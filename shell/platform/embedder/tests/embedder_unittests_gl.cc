@@ -36,6 +36,9 @@
 #include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace flutter {
 namespace testing {
 
@@ -3450,7 +3453,7 @@ TEST_F(EmbedderTest, SnapshotRenderTargetScalesDownToDriverMax) {
 
         CanvasImage* small_image = get_arg(1);
         ASSERT_TRUE(ImageMatchesFixture("snapshot_large_scene.png",
-                                        small_image->image()));
+                                        small_image->image()->skia_image()));
 
         latch.Signal();
       })));
@@ -3696,3 +3699,5 @@ INSTANTIATE_TEST_SUITE_P(
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

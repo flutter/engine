@@ -4,6 +4,8 @@
 
 import 'dart:ui';
 
+import 'package:scenario_app/src/texture.dart';
+
 import 'animated_color_square.dart';
 import 'bogus_font_text.dart';
 import 'initial_route_reply.dart';
@@ -11,7 +13,6 @@ import 'locale_initialization.dart';
 import 'platform_view.dart';
 import 'poppable_screen.dart';
 import 'scenario.dart';
-import 'send_text_focus_semantics.dart';
 import 'touches_scenario.dart';
 
 typedef ScenarioFactory = Scenario Function(); // ignore: public_member_api_docs
@@ -45,12 +46,12 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'platform_view_gesture_reject_after_touches_ended': () => PlatformViewForTouchIOSScenario(PlatformDispatcher.instance, 'platform view touch', id: _viewId++, accept: false, rejectUntilTouchesEnded: true),
   'platform_view_scrolling_under_widget':()=>PlatformViewScrollingUnderWidget(PlatformDispatcher.instance, firstPlatformViewId: _viewId++, lastPlatformViewId: _viewId+=16),
   'tap_status_bar': () => TouchesScenario(PlatformDispatcher.instance),
-  'text_semantics_focus': () => SendTextFocusSemantics(PlatformDispatcher.instance),
   'initial_route_reply': () => InitialRouteReply(PlatformDispatcher.instance),
   'platform_view_with_continuous_texture': () => PlatformViewWithContinuousTexture(PlatformDispatcher.instance, 'Platform View', id: _viewId++),
   'bogus_font_text': () => BogusFontText(PlatformDispatcher.instance),
   'spawn_engine_works' : () => BogusFontText(PlatformDispatcher.instance),
   'pointer_events': () => TouchesScenario(PlatformDispatcher.instance),
+  'display_texture': () => DisplayTexture(PlatformDispatcher.instance),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};

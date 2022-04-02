@@ -18,6 +18,9 @@
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 
+// CREATE_NATIVE_ENTRY and MOCK_ENGINE_PROC are leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 @interface FlutterEngine (Test)
 /**
  * The FlutterCompositor object currently in use by the FlutterEngine. This is
@@ -53,6 +56,31 @@ TEST_F(FlutterEngineTest, MessengerSend) {
 
   [engine.binaryMessenger sendOnChannel:@"test" message:test_message];
   EXPECT_TRUE(called);
+}
+
+TEST_F(FlutterEngineTest, CanLogToStdout) {
+  // Replace stdout stream buffer with our own.
+  std::stringstream buffer;
+  std::streambuf* old_buffer = std::cout.rdbuf();
+  std::cout.rdbuf(buffer.rdbuf());
+
+  // Launch the test entrypoint.
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"canLogToStdout"]);
+  EXPECT_TRUE(engine.running);
+
+  // Block until completion of print statement.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("SignalNativeTest",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
+  latch.Wait();
+
+  // Restore old stdout stream buffer.
+  std::cout.rdbuf(old_buffer);
+
+  // Verify hello world was written to stdout.
+  std::string logs = buffer.str();
+  EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
 }
 
 TEST_F(FlutterEngineTest, CanToggleAccessibility) {
@@ -343,7 +371,7 @@ TEST_F(FlutterEngineTest, NativeCallbacks) {
   ASSERT_TRUE(latch_called);
 }
 
-// TODO: Enable after https://github.com/flutter/flutter/issues/96668 is fixed.
+// TODO(iskakaushik): Enable after https://github.com/flutter/flutter/issues/96668 is fixed.
 TEST(FlutterEngine, DISABLED_Compositor) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -475,3 +503,5 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
 }
 
 }  // namespace flutter::testing
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

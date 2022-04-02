@@ -79,11 +79,9 @@ class GradientSweep extends EngineGradient {
     final Object angleRange = gl.getUniformLocation(glProgram.program, 'angle_range');
     gl.setUniform2f(angleRange, startAngle, endAngle);
     normalizedGradient.setupUniforms(gl, glProgram);
-    if (matrix4 != null) {
-      final Object gradientMatrix =
+    final Object gradientMatrix =
           gl.getUniformLocation(glProgram.program, 'm_gradient');
-      gl.setUniformMatrix4fv(gradientMatrix, false, matrix4!);
-    }
+    gl.setUniformMatrix4fv(gradientMatrix, false, matrix4 ?? Matrix4.identity().storage);
     if (createDataUrl) {
       return glRenderer!.drawRectToImageUrl(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
@@ -236,14 +234,6 @@ class GradientLinear extends EngineGradient {
         _createLinearFragmentShader(normalizedGradient, tileMode));
     gl.useProgram(glProgram);
 
-    /// When creating an image to apply to a dom element, render
-    /// contents at 0,0 and adjust gradient vector for shaderBounds.
-    final bool translateToOrigin = createDataUrl;
-
-    if (translateToOrigin) {
-      shaderBounds = shaderBounds.translate(-shaderBounds.left, -shaderBounds.top);
-    }
-
     // Setup from/to uniforms.
     //
     // From/to is relative to shaderBounds.
@@ -293,9 +283,7 @@ class GradientLinear extends EngineGradient {
     // We compute location based on gl_FragCoord to center distance which
     // returns 0.0 at center. To make sure we align center of gradient to this
     // point, we shift by 0.5 to get st value for center of gradient.
-    if (tileMode != ui.TileMode.repeated) {
-      gradientTransform.translate(0.5, 0);
-    }
+    gradientTransform.translate(0.5, 0);
     if (length > kFltEpsilon) {
       gradientTransform.scale(1.0 / length);
     }

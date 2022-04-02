@@ -37,9 +37,9 @@ import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.core.util.Consumer;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.window.layout.FoldingFeature;
 import androidx.window.layout.WindowLayoutInfo;
-import io.flutter.TestUtils;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -59,7 +59,6 @@ import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
@@ -68,7 +67,7 @@ import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowDisplay;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @TargetApi(30)
 public class FlutterViewTest {
   @Mock FlutterJNI mockFlutterJni;
@@ -512,9 +511,8 @@ public class FlutterViewTest {
   }
 
   @Test
-  @Config(minSdk = 23, maxSdk = 29)
+  @Config(minSdk = 23, maxSdk = 29, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarRight() {
-    RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_90);
     assertEquals(0, flutterView.getSystemUiVisibility());
@@ -550,9 +548,8 @@ public class FlutterViewTest {
   }
 
   @Test
-  @Config(minSdk = 20, maxSdk = 22)
+  @Config(minSdk = 20, maxSdk = 22, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarRightBelowSDK23() {
-    RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
@@ -588,9 +585,8 @@ public class FlutterViewTest {
   }
 
   @Test
-  @Config(minSdk = 23, maxSdk = 29)
+  @Config(minSdk = 23, maxSdk = 29, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarLeft() {
-    RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
@@ -629,9 +625,8 @@ public class FlutterViewTest {
   // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
   @TargetApi(30)
-  @Config(sdk = 30)
+  @Config(sdk = 30, qualifiers = "land")
   public void systemInsetGetInsetsFullscreen() {
-    RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
@@ -667,9 +662,8 @@ public class FlutterViewTest {
   // This test uses the pre-API 30 Algorithm for window insets.
   @Test
   @TargetApi(28)
-  @Config(sdk = 28)
+  @Config(sdk = 28, qualifiers = "land")
   public void systemInsetGetInsetsFullscreenLegacy() {
-    RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
@@ -707,9 +701,8 @@ public class FlutterViewTest {
   // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
   @TargetApi(30)
-  @Config(sdk = 30)
+  @Config(sdk = 30, qualifiers = "land")
   public void systemInsetDisplayCutoutSimple() {
-    RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
@@ -989,9 +982,8 @@ public class FlutterViewTest {
 
   @Test
   @SuppressLint("PrivateApi")
+  @Config(sdk = Build.VERSION_CODES.P)
   public void findViewByAccessibilityIdTraversal_returnsRootViewOnAndroid28() throws Exception {
-    TestUtils.setApiVersion(28);
-
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
 
     Method getAccessibilityViewIdMethod = View.class.getDeclaredMethod("getAccessibilityViewId");
@@ -1001,10 +993,9 @@ public class FlutterViewTest {
   }
 
   @Test
+  @Config(sdk = Build.VERSION_CODES.P)
   @SuppressLint("PrivateApi")
   public void findViewByAccessibilityIdTraversal_returnsChildViewOnAndroid28() throws Exception {
-    TestUtils.setApiVersion(28);
-
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
     FrameLayout childView1 = new FrameLayout(RuntimeEnvironment.application);
     flutterView.addView(childView1);
@@ -1019,10 +1010,9 @@ public class FlutterViewTest {
   }
 
   @Test
+  @Config(sdk = Build.VERSION_CODES.Q)
   @SuppressLint("PrivateApi")
   public void findViewByAccessibilityIdTraversal_returnsRootViewOnAndroid29() throws Exception {
-    TestUtils.setApiVersion(29);
-
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
 
     Method getAccessibilityViewIdMethod = View.class.getDeclaredMethod("getAccessibilityViewId");

@@ -226,6 +226,18 @@ typedef enum {
   kFlutterTextDirectionLTR = 2,
 } FlutterTextDirection;
 
+/// Valid values for priority of Thread.
+typedef enum {
+  /// Suitable for threads that shouldn't disrupt high priority work.
+  kBackground = 0,
+  /// Default priority level.
+  kNormal = 1,
+  /// Suitable for threads which generate data for the display.
+  kDisplay = 2,
+  /// Suitable for thread which raster data.
+  kRaster = 3,
+} FlutterThreadPriority;
+
 typedef struct _FlutterEngine* FLUTTER_API_SYMBOL(FlutterEngine);
 
 typedef struct {
@@ -717,6 +729,12 @@ typedef enum {
   kRemove,
   /// The pointer moved while up.
   kHover,
+  /// A pan/zoom started on this pointer.
+  kPanZoomStart,
+  /// The pan/zoom updated.
+  kPanZoomUpdate,
+  /// The pan/zoom ended.
+  kPanZoomEnd,
 } FlutterPointerPhase;
 
 /// The device type that created a pointer event.
@@ -724,6 +742,7 @@ typedef enum {
   kFlutterPointerDeviceKindMouse = 1,
   kFlutterPointerDeviceKindTouch,
   kFlutterPointerDeviceKindStylus,
+  kFlutterPointerDeviceKindTrackpad,
 } FlutterPointerDeviceKind;
 
 /// Flags for the `buttons` field of `FlutterPointerEvent` when `device_kind`
@@ -772,6 +791,14 @@ typedef struct {
   FlutterPointerDeviceKind device_kind;
   /// The buttons currently pressed, if any.
   int64_t buttons;
+  /// The x offset of the pan/zoom in physical pixels.
+  double pan_x;
+  /// The y offset of the pan/zoom in physical pixels.
+  double pan_y;
+  /// The scale of the pan/zoom, where 1.0 is the initial scale.
+  double scale;
+  /// The rotation of the pan/zoom in radians, where 0.0 is the initial angle.
+  double rotation;
 } FlutterPointerEvent;
 
 typedef enum {
@@ -1046,6 +1073,9 @@ typedef struct {
   /// and platform task runners. This makes the Flutter engine use the same
   /// thread for both task runners.
   const FlutterTaskRunnerDescription* render_task_runner;
+  /// Specify a callback that is used to set the thread priority for embedder
+  /// task runners.
+  void (*thread_priority_setter)(FlutterThreadPriority);
 } FlutterCustomTaskRunners;
 
 typedef struct {
@@ -2374,6 +2404,17 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
     const FlutterEngineDisplay* displays,
     size_t display_count);
 
+//------------------------------------------------------------------------------
+/// @brief      Schedule a new frame to redraw the content.
+///
+/// @param[in]  engine     A running engine instance.
+///
+/// @return the result of the call made to the engine.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                   engine);
+
 #endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
 
 // Typedefs for the function pointers in FlutterEngineProcTable.
@@ -2490,6 +2531,8 @@ typedef FlutterEngineResult (*FlutterEngineNotifyDisplayUpdateFnPtr)(
     FlutterEngineDisplaysUpdateType update_type,
     const FlutterEngineDisplay* displays,
     size_t display_count);
+typedef FlutterEngineResult (*FlutterEngineScheduleFrameFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 /// Function-pointer-based versions of the APIs above.
 typedef struct {
@@ -2534,6 +2577,7 @@ typedef struct {
   FlutterEnginePostCallbackOnAllNativeThreadsFnPtr
       PostCallbackOnAllNativeThreads;
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
+  FlutterEngineScheduleFrameFnPtr ScheduleFrame;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------

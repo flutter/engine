@@ -341,7 +341,7 @@ class PlatformDispatcher {
   //  * pointer_data.cc
   //  * pointer.dart
   //  * AndroidTouchProcessor.java
-  static const int _kPointerDataFieldCount = 29;
+  static const int _kPointerDataFieldCount = 35;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
@@ -381,6 +381,12 @@ class PlatformDispatcher {
         platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
         scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        panDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        scale: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        rotation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       ));
       assert(offset == (i + 1) * _kPointerDataFieldCount);
     }
@@ -858,38 +864,61 @@ class PlatformDispatcher {
     _onPlatformBrightnessChangedZone = Zone.current;
   }
 
+
   /// Indicates this device supports capture text from camera (OCR) or not
-  ///
-  /// Used in [EditableTextState], and decide show "scan" toolbar or not
   bool get captureTextFromCameraEnabled => configuration.captureTextFromCameraEnabled;
+
+
+  /// The setting indicating the current system font of the host platform.
+  String? get systemFontFamily => configuration.systemFontFamily;
+
+  /// A callback that is invoked whenever [systemFontFamily] changes value.
+  ///
+  /// The framework invokes this callback in the same zone in which the callback
+  /// was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback? get onSystemFontFamilyChanged => _onSystemFontFamilyChanged;
+  VoidCallback? _onSystemFontFamilyChanged;
+  Zone _onSystemFontFamilyChangedZone = Zone.root;
+  set onSystemFontFamilyChanged(VoidCallback? callback) {
+    _onSystemFontFamilyChanged = callback;
+    _onSystemFontFamilyChangedZone = Zone.current;
+  }
 
   // Called from the engine, via hooks.dart
   void _updateUserSettingsData(String jsonData) {
-    final Map<String, dynamic> data = json.decode(jsonData) as Map<String, dynamic>;
+    final Map<String, Object?> data = json.decode(jsonData) as Map<String, Object?>;
     if (data.isEmpty) {
       return;
     }
 
-    final double textScaleFactor = (data['textScaleFactor'] as num).toDouble();
-    final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat'] as bool;
+    final double textScaleFactor = (data['textScaleFactor']! as num).toDouble();
+    final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat']! as bool;
     // This field is optional.
     final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
     if (brieflyShowPassword != null) {
       _brieflyShowPassword = brieflyShowPassword;
     }
-    final Brightness platformBrightness =
-    data['platformBrightness'] as String == 'dark' ? Brightness.dark : Brightness.light;
     bool captureTextFromCameraEnabled = false;
     if(data['captureTextFromCameraEnabled'] != null){
       captureTextFromCameraEnabled = data['captureTextFromCameraEnabled'] as bool;
     }
+    final Brightness platformBrightness =
+    data['platformBrightness']! as String == 'dark' ? Brightness.dark : Brightness.light;
+    final String? systemFontFamily = data['systemFontFamily'] as String?;
     final PlatformConfiguration previousConfiguration = configuration;
     final bool platformBrightnessChanged =
         previousConfiguration.platformBrightness != platformBrightness;
     final bool textScaleFactorChanged = previousConfiguration.textScaleFactor != textScaleFactor;
     final bool alwaysUse24HourFormatChanged =
         previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
-    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged) {
+    final bool systemFontFamilyChanged =
+        previousConfiguration.systemFontFamily != systemFontFamily;
+    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged) {
       return;
     }
     _configuration = previousConfiguration.copyWith(
@@ -897,6 +926,7 @@ class PlatformDispatcher {
       alwaysUse24HourFormat: alwaysUse24HourFormat,
       platformBrightness: platformBrightness,
       captureTextFromCameraEnabled: captureTextFromCameraEnabled,
+      systemFontFamily: systemFontFamily,
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
@@ -904,6 +934,9 @@ class PlatformDispatcher {
     }
     if (platformBrightnessChanged) {
       _invoke(onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
+    }
+    if (systemFontFamilyChanged) {
+      _invoke(onSystemFontFamilyChanged, _onSystemFontFamilyChangedZone);
     }
   }
 
@@ -1037,6 +1070,7 @@ class PlatformConfiguration {
     this.locales = const <Locale>[],
     this.defaultRouteName,
     this.captureTextFromCameraEnabled = false,
+    this.systemFontFamily,
   });
 
   /// Copy a [PlatformConfiguration] with some fields replaced.
@@ -1048,7 +1082,8 @@ class PlatformConfiguration {
     double? textScaleFactor,
     List<Locale>? locales,
     String? defaultRouteName,
-    bool? captureTextFromCameraEnabled
+    bool? captureTextFromCameraEnabled,
+    String? systemFontFamily,
   }) {
     return PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -1058,7 +1093,8 @@ class PlatformConfiguration {
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
-      captureTextFromCameraEnabled: captureTextFromCameraEnabled ?? this.captureTextFromCameraEnabled
+      captureTextFromCameraEnabled: captureTextFromCameraEnabled ?? this.captureTextFromCameraEnabled,
+      systemFontFamily: systemFontFamily ?? this.systemFontFamily,
     );
   }
 
@@ -1090,6 +1126,10 @@ class PlatformConfiguration {
 
   /// Indicates this device supports capture text from camera or not
   final bool captureTextFromCameraEnabled;
+
+  /// The system-reported default font family.
+  final String? systemFontFamily;
+
 }
 
 /// An immutable view configuration.

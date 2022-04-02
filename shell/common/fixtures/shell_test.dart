@@ -262,3 +262,18 @@ void canReceiveArgumentsWhenEngineRun(List<String> args) {
 void canReceiveArgumentsWhenEngineSpawn(List<String> args) {
   notifyNativeWhenEngineSpawn(args.length == 2 && args[0] == 'arg1' && args[1] == 'arg2');
 }
+
+@pragma('vm:entry-point')
+void onBeginFrameWithNotifyNativeMain() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
+    nativeOnBeginFrame(beginTime.inMicroseconds);
+  };
+  notifyNative();
+}
+
+@pragma('vm:entry-point')
+void frameCallback(_Image, int) {
+  // It is used as the frame callback of 'MultiFrameCodec' in the test
+  // 'ItDoesNotCrashThatSkiaUnrefQueueDrainAfterIOManagerReset'.
+  // The test is a regression test and doesn't care about images, so it is empty.
+}

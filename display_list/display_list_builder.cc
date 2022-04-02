@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_builder.h"
 
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
@@ -103,7 +104,7 @@ void DisplayListBuilder::onSetStrokeMiter(SkScalar limit) {
 void DisplayListBuilder::onSetColor(SkColor color) {
   Push<SetColorOp>(0, 0, current_color_ = color);
 }
-void DisplayListBuilder::onSetBlendMode(SkBlendMode mode) {
+void DisplayListBuilder::onSetBlendMode(DlBlendMode mode) {
   current_blender_ = nullptr;
   Push<SetBlendModeOp>(0, 0, current_blend_mode_ = mode);
   UpdateCurrentOpacityCompatibility();
@@ -115,7 +116,7 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
   SkPaint p;
   p.setBlender(blender);
   if (p.asBlendMode()) {
-    setBlendMode(p.asBlendMode().value());
+    setBlendMode(ToDl(p.asBlendMode().value()));
   } else {
     // |current_blender_| supersedes any value of |current_blend_mode_|
     (current_blender_ = blender)  //
@@ -124,20 +125,130 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
     UpdateCurrentOpacityCompatibility();
   }
 }
-void DisplayListBuilder::onSetShader(sk_sp<SkShader> shader) {
-  (current_shader_ = shader)  //
-      ? Push<SetShaderOp>(0, 0, std::move(shader))
-      : Push<ClearShaderOp>(0, 0);
+void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
+  if (source == nullptr) {
+    current_color_source_ = nullptr;
+    Push<ClearColorSourceOp>(0, 0);
+  } else {
+    current_color_source_ = source->shared();
+    switch (source->type()) {
+      case DlColorSourceType::kColor: {
+        const DlColorColorSource* color_source = source->asColor();
+        current_color_source_ = nullptr;
+        setColor(color_source->color());
+        break;
+      }
+      case DlColorSourceType::kImage: {
+        const DlImageColorSource* image_source = source->asImage();
+        FML_DCHECK(image_source);
+        Push<SetImageColorSourceOp>(0, 0, image_source);
+        break;
+      }
+      case DlColorSourceType::kLinearGradient: {
+        const DlLinearGradientColorSource* linear = source->asLinearGradient();
+        FML_DCHECK(linear);
+        void* pod = Push<SetPodColorSourceOp>(linear->size(), 0);
+        new (pod) DlLinearGradientColorSource(linear);
+        break;
+      }
+      case DlColorSourceType::kRadialGradient: {
+        const DlRadialGradientColorSource* radial = source->asRadialGradient();
+        FML_DCHECK(radial);
+        void* pod = Push<SetPodColorSourceOp>(radial->size(), 0);
+        new (pod) DlRadialGradientColorSource(radial);
+        break;
+      }
+      case DlColorSourceType::kConicalGradient: {
+        const DlConicalGradientColorSource* conical =
+            source->asConicalGradient();
+        FML_DCHECK(conical);
+        void* pod = Push<SetPodColorSourceOp>(conical->size(), 0);
+        new (pod) DlConicalGradientColorSource(conical);
+        break;
+      }
+      case DlColorSourceType::kSweepGradient: {
+        const DlSweepGradientColorSource* sweep = source->asSweepGradient();
+        FML_DCHECK(sweep);
+        void* pod = Push<SetPodColorSourceOp>(sweep->size(), 0);
+        new (pod) DlSweepGradientColorSource(sweep);
+        break;
+      }
+      case DlColorSourceType::kUnknown:
+        Push<SetSkColorSourceOp>(0, 0, source->skia_object());
+        break;
+    }
+  }
 }
-void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
-  (current_image_filter_ = filter)  //
-      ? Push<SetImageFilterOp>(0, 0, std::move(filter))
-      : Push<ClearImageFilterOp>(0, 0);
+void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
+  if (filter == nullptr) {
+    current_image_filter_ = nullptr;
+    Push<ClearImageFilterOp>(0, 0);
+  } else {
+    current_image_filter_ = filter->shared();
+    switch (filter->type()) {
+      case DlImageFilterType::kBlur: {
+        const DlBlurImageFilter* blur_filter = filter->asBlur();
+        FML_DCHECK(blur_filter);
+        void* pod = Push<SetPodImageFilterOp>(blur_filter->size(), 0);
+        new (pod) DlBlurImageFilter(blur_filter);
+        break;
+      }
+      case DlImageFilterType::kMatrix: {
+        const DlMatrixImageFilter* matrix_filter = filter->asMatrix();
+        FML_DCHECK(matrix_filter);
+        void* pod = Push<SetPodImageFilterOp>(matrix_filter->size(), 0);
+        new (pod) DlMatrixImageFilter(matrix_filter);
+        break;
+      }
+      case DlImageFilterType::kComposeFilter:
+      case DlImageFilterType::kColorFilter: {
+        Push<SetSharedImageFilterOp>(0, 0, filter);
+        break;
+      }
+      case DlImageFilterType::kUnknown: {
+        Push<SetSkImageFilterOp>(0, 0, filter->skia_object());
+        break;
+      }
+    }
+  }
 }
-void DisplayListBuilder::onSetColorFilter(sk_sp<SkColorFilter> filter) {
-  (current_color_filter_ = filter)  //
-      ? Push<SetColorFilterOp>(0, 0, std::move(filter))
-      : Push<ClearColorFilterOp>(0, 0);
+void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
+  if (filter == nullptr) {
+    current_color_filter_ = nullptr;
+    Push<ClearColorFilterOp>(0, 0);
+  } else {
+    current_color_filter_ = filter->shared();
+    switch (filter->type()) {
+      case DlColorFilterType::kBlend: {
+        const DlBlendColorFilter* blend_filter = filter->asBlend();
+        FML_DCHECK(blend_filter);
+        void* pod = Push<SetPodColorFilterOp>(blend_filter->size(), 0);
+        new (pod) DlBlendColorFilter(blend_filter);
+        break;
+      }
+      case DlColorFilterType::kMatrix: {
+        const DlMatrixColorFilter* matrix_filter = filter->asMatrix();
+        FML_DCHECK(matrix_filter);
+        void* pod = Push<SetPodColorFilterOp>(matrix_filter->size(), 0);
+        new (pod) DlMatrixColorFilter(matrix_filter);
+        break;
+      }
+      case DlColorFilterType::kSrgbToLinearGamma: {
+        void* pod = Push<SetPodColorFilterOp>(filter->size(), 0);
+        new (pod) DlSrgbToLinearGammaColorFilter();
+        break;
+      }
+      case DlColorFilterType::kLinearToSrgbGamma: {
+        void* pod = Push<SetPodColorFilterOp>(filter->size(), 0);
+        new (pod) DlLinearToSrgbGammaColorFilter();
+        break;
+      }
+      case DlColorFilterType::kUnknown: {
+        Push<SetSkColorFilterOp>(0, 0, filter->skia_object());
+        break;
+      }
+    }
+  }
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
@@ -145,32 +256,24 @@ void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
       ? Push<SetPathEffectOp>(0, 0, std::move(effect))
       : Push<ClearPathEffectOp>(0, 0);
 }
-void DisplayListBuilder::onSetMaskFilter(sk_sp<SkMaskFilter> filter) {
-  current_mask_sigma_ = kInvalidSigma;
-  (current_mask_filter_ = filter)  //
-      ? Push<SetMaskFilterOp>(0, 0, std::move(filter))
-      : Push<ClearMaskFilterOp>(0, 0);
-}
-void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style,
-                                             SkScalar sigma) {
-  // Valid sigma is checked by setMaskBlurFilter
-  FML_DCHECK(mask_sigma_valid(sigma));
-  current_mask_filter_ = nullptr;
-  current_mask_style_ = style;
-  current_mask_sigma_ = sigma;
-  switch (style) {
-    case kNormal_SkBlurStyle:
-      Push<SetMaskBlurFilterNormalOp>(0, 0, sigma);
-      break;
-    case kSolid_SkBlurStyle:
-      Push<SetMaskBlurFilterSolidOp>(0, 0, sigma);
-      break;
-    case kOuter_SkBlurStyle:
-      Push<SetMaskBlurFilterOuterOp>(0, 0, sigma);
-      break;
-    case kInner_SkBlurStyle:
-      Push<SetMaskBlurFilterInnerOp>(0, 0, sigma);
-      break;
+void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
+  if (filter == nullptr) {
+    current_mask_filter_ = nullptr;
+    Push<ClearMaskFilterOp>(0, 0);
+  } else {
+    current_mask_filter_ = filter->shared();
+    switch (filter->type()) {
+      case DlMaskFilterType::kBlur: {
+        const DlBlurMaskFilter* blur_filter = filter->asBlur();
+        FML_DCHECK(blur_filter);
+        void* pod = Push<SetPodMaskFilterOp>(blur_filter->size(), 0);
+        new (pod) DlBlurMaskFilter(blur_filter);
+        break;
+      }
+      case DlMaskFilterType::kUnknown:
+        Push<SetSkMaskFilterOp>(0, 0, filter->skia_object());
+        break;
+    }
   }
 }
 
@@ -189,7 +292,7 @@ void DisplayListBuilder::setAttributesFromPaint(
   if (flags.applies_blend()) {
     std::optional<SkBlendMode> mode_optional = paint.asBlendMode();
     if (mode_optional) {
-      setBlendMode(mode_optional.value());
+      setBlendMode(ToDl(mode_optional.value()));
     } else {
       setBlender(sk_ref_sp(paint.getBlender()));
     }
@@ -204,23 +307,26 @@ void DisplayListBuilder::setAttributesFromPaint(
     setStrokeJoin(paint.getStrokeJoin());
   }
   if (flags.applies_shader()) {
-    setShader(sk_ref_sp(paint.getShader()));
+    SkShader* shader = paint.getShader();
+    setColorSource(DlColorSource::From(shader).get());
   }
   if (flags.applies_color_filter()) {
     // invert colors is a Flutter::Paint thing, not an SkPaint thing
     // we must clear it because it is a second potential color filter
     // that is composed with the paint's color filter.
     setInvertColors(false);
-    setColorFilter(sk_ref_sp(paint.getColorFilter()));
+    SkColorFilter* color_filter = paint.getColorFilter();
+    setColorFilter(DlColorFilter::From(color_filter).get());
   }
   if (flags.applies_image_filter()) {
-    setImageFilter(sk_ref_sp(paint.getImageFilter()));
+    setImageFilter(DlImageFilter::From(paint.getImageFilter()).get());
   }
   if (flags.applies_path_effect()) {
     setPathEffect(sk_ref_sp(paint.getPathEffect()));
   }
   if (flags.applies_mask_filter()) {
-    setMaskFilter(sk_ref_sp(paint.getMaskFilter()));
+    SkMaskFilter* mask_filter = paint.getMaskFilter();
+    setMaskFilter(DlMaskFilter::From(mask_filter).get());
   }
 }
 
@@ -350,8 +456,10 @@ void DisplayListBuilder::transformFullPerspective(
                                      mwx, mwy, mwz, mwt);
   }
 }
-
 // clang-format on
+void DisplayListBuilder::transformReset() {
+  Push<TransformResetOp>(0, 0);
+}
 
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   SkClipOp clip_op,
@@ -400,7 +508,7 @@ void DisplayListBuilder::drawPaint() {
   Push<DrawPaintOp>(0, 1);
   CheckLayerOpacityCompatibility();
 }
-void DisplayListBuilder::drawColor(SkColor color, SkBlendMode mode) {
+void DisplayListBuilder::drawColor(SkColor color, DlBlendMode mode) {
   Push<DrawColorOp>(0, 1, color, mode);
   CheckLayerOpacityCompatibility(mode);
 }
@@ -479,9 +587,19 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
   // See: https://fiddle.skia.org/c/228459001d2de8db117ce25ef5cedb0c
   UpdateLayerOpacityCompatibility(false);
 }
-void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
-                                      SkBlendMode mode) {
-  Push<DrawVerticesOp>(0, 1, std::move(vertices), mode);
+void DisplayListBuilder::drawSkVertices(const sk_sp<SkVertices> vertices,
+                                        SkBlendMode mode) {
+  Push<DrawSkVerticesOp>(0, 1, std::move(vertices), mode);
+  // DrawVertices applies its colors to the paint so we have no way
+  // of controlling opacity using the current paint attributes.
+  // Although, examination of the |mode| might find some predictable
+  // cases.
+  UpdateLayerOpacityCompatibility(false);
+}
+void DisplayListBuilder::drawVertices(const DlVertices* vertices,
+                                      DlBlendMode mode) {
+  void* pod = Push<DrawVerticesOp>(vertices->size(), 1, mode);
+  new (pod) DlVertices(vertices);
   // DrawVertices applies its colors to the paint so we have no way
   // of controlling opacity using the current paint attributes.
   // Although, examination of the |mode| might find some predictable
@@ -489,7 +607,7 @@ void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
   UpdateLayerOpacityCompatibility(false);
 }
 
-void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
                                    const SkPoint point,
                                    const SkSamplingOptions& sampling,
                                    bool render_with_attributes) {
@@ -498,7 +616,7 @@ void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
       : Push<DrawImageOp>(0, 1, std::move(image), point, sampling);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& src,
                                        const SkRect& dst,
                                        const SkSamplingOptions& sampling,
@@ -508,7 +626,7 @@ void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
                         render_with_attributes, constraint);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
                                        const SkIRect& center,
                                        const SkRect& dst,
                                        SkFilterMode filter,
@@ -519,7 +637,7 @@ void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
       : Push<DrawImageNineOp>(0, 1, std::move(image), center, dst, filter);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
+void DisplayListBuilder::drawImageLattice(const sk_sp<DlImage> image,
                                           const SkCanvas::Lattice& lattice,
                                           const SkRect& dst,
                                           SkFilterMode filter,
@@ -541,12 +659,12 @@ void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
         lattice.fColors, cellCount, lattice.fRectTypes, cellCount);
   CheckLayerOpacityCompatibility(render_with_attributes);
 }
-void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
+void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const SkRSXform xform[],
                                    const SkRect tex[],
                                    const SkColor colors[],
                                    int count,
-                                   SkBlendMode mode,
+                                   DlBlendMode mode,
                                    const SkSamplingOptions& sampling,
                                    const SkRect* cull_rect,
                                    bool render_with_attributes) {

@@ -91,7 +91,7 @@ void FlatlandExternalViewEmbedder::BeginFrame(
   Reset();
   frame_size_ = frame_size;
 
-  // TODO(fxbug.dev/64201): Handle device pixel ratio.
+  // TODO(fxbug.dev/94000): Handle device pixel ratio.
 
   // Create the root layer.
   frame_layers_.emplace(
@@ -188,10 +188,20 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         FML_CHECK(view_mutators.total_transform ==
                   view_params.transformMatrix());
 
+        if (viewport.pending_create_viewport_callback) {
+          if (view_size.fWidth && view_size.fHeight) {
+            viewport.pending_create_viewport_callback(view_size);
+            viewport.size = view_size;
+          } else {
+            FML_DLOG(WARNING)
+                << "Failed to create viewport because width or height is zero.";
+          }
+        }
+
         // TODO(fxbug.dev/64201): Handle clips.
 
         // Set transform for the viewport.
-        // TODO(fxbug.dev/64201): Handle scaling.
+        // TODO(fxbug.dev/94000): Handle scaling.
         if (view_mutators.transform != viewport.mutators.transform) {
           flatland_->flatland()->SetTranslation(
               viewport.transform_id,
@@ -200,8 +210,8 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
           viewport.mutators.transform = view_mutators.transform;
         }
 
-        // TODO(fxbug.dev/64201): Set HitTestBehavior.
-        // TODO(fxbug.dev/64201): Set opacity.
+        // TODO(fxbug.dev/94000): Set HitTestBehavior.
+        // TODO(fxbug.dev/94000): Set opacity.
 
         // Set size
         // TODO(): Set occlusion hint, and focusable.
@@ -343,20 +353,24 @@ void FlatlandExternalViewEmbedder::CreateView(
     FlatlandViewCreatedCallback on_view_bound) {
   FML_CHECK(flatland_views_.find(view_id) == flatland_views_.end());
 
-  FlatlandView new_view = {.transform_id = flatland_->NextTransformId(),
-                           .viewport_id = flatland_->NextContentId()};
+  const auto transform_id = flatland_->NextTransformId();
+  const auto viewport_id = flatland_->NextContentId();
+  FlatlandView new_view = {.transform_id = transform_id,
+                           .viewport_id = viewport_id};
   flatland_->flatland()->CreateTransform(new_view.transform_id);
-  fuchsia::ui::composition::ViewportProperties properties;
-  // TODO(fxbug.dev/64201): Investigate if it is possible to avoid using a
-  // default size by finding the size before creation.
-  properties.set_logical_size(
-      {kFlatlandDefaultViewportSize, kFlatlandDefaultViewportSize});
   fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher;
-  flatland_->flatland()->CreateViewport(
-      new_view.viewport_id, {zx::channel((zx_handle_t)view_id)},
-      std::move(properties), child_view_watcher.NewRequest());
-  flatland_->flatland()->SetContent(new_view.transform_id,
-                                    new_view.viewport_id);
+  new_view.pending_create_viewport_callback =
+      [this, transform_id, viewport_id, view_id,
+       child_view_watcher_request =
+           child_view_watcher.NewRequest()](const SkSize& size) mutable {
+        fuchsia::ui::composition::ViewportProperties properties;
+        properties.set_logical_size({static_cast<uint32_t>(size.fWidth),
+                                     static_cast<uint32_t>(size.fHeight)});
+        flatland_->flatland()->CreateViewport(
+            viewport_id, {zx::channel((zx_handle_t)view_id)},
+            std::move(properties), std::move(child_view_watcher_request));
+        flatland_->flatland()->SetContent(transform_id, viewport_id);
+      };
 
   on_view_created();
   on_view_bound(new_view.viewport_id, std::move(child_view_watcher));
@@ -371,7 +385,9 @@ void FlatlandExternalViewEmbedder::DestroyView(
 
   auto viewport_id = flatland_view->second.viewport_id;
   auto transform_id = flatland_view->second.transform_id;
-  flatland_->flatland()->ReleaseViewport(viewport_id, [](auto) {});
+  if (!flatland_view->second.pending_create_viewport_callback) {
+    flatland_->flatland()->ReleaseViewport(viewport_id, [](auto) {});
+  }
   auto itr =
       std::find_if(child_transforms_.begin(), child_transforms_.end(),
                    [transform_id](fuchsia::ui::composition::TransformId id) {
@@ -395,7 +411,8 @@ void FlatlandExternalViewEmbedder::SetViewProperties(
   auto found = flatland_views_.find(view_id);
   FML_CHECK(found != flatland_views_.end());
 
-  // TODO(fxbug.dev/64201): Set occlusion_hint, hit_testable and focusable.
+  // TODO(fxbug.dev/94000): Set occlusion_hint, hit_testable and focusable. Note
+  // that pending_create_viewport_callback might not have run at this point.
 }
 
 void FlatlandExternalViewEmbedder::Reset() {

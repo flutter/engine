@@ -1,4 +1,4 @@
-Signature: 09f1f7f70cf1ff61a825fec52dd70c4c
+Signature: 1430b82fc97aa44356950b5f375db4a7
 
 UNUSED LICENSES:
 
@@ -445,6 +445,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2.hal/meta.json
@@ -457,7 +458,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.runner/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.types/meta.json
@@ -473,6 +476,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.adc/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
@@ -487,7 +491,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/meta.json
@@ -520,12 +523,15 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.interfaces/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.clientlevel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.systemmode/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process.lifecycle/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
@@ -553,6 +559,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ultrasound/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.url/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/meta.json
@@ -580,6 +587,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/inspect.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
@@ -591,7 +600,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/svc/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sync/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_shard_sdk.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp/meta.json
@@ -1187,6 +1195,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2.hal/meta.json
@@ -1199,7 +1208,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.runner/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.types/meta.json
@@ -1215,6 +1226,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.adc/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
@@ -1229,7 +1241,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/meta.json
@@ -1262,12 +1273,15 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.interfaces/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.clientlevel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.systemmode/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process.lifecycle/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
@@ -1295,6 +1309,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ultrasound/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.url/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/meta.json
@@ -1322,6 +1337,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/inspect.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
@@ -1333,7 +1350,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/svc/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sync/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_shard_sdk.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp/meta.json
@@ -1826,6 +1842,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2.hal/meta.json
@@ -1838,7 +1855,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.runner/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.types/meta.json
@@ -1854,6 +1873,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.adc/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
@@ -1868,7 +1888,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/meta.json
@@ -1901,12 +1920,15 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.interfaces/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.clientlevel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.systemmode/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process.lifecycle/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
@@ -1934,6 +1956,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ultrasound/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channel/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.url/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/meta.json
@@ -1961,6 +1984,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/inspect.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
@@ -1972,7 +1997,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/svc/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sync/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_shard_sdk.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp/meta.json
@@ -2250,6 +2274,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/client.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/server.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/types.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/specs.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/value.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/capability.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/child.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/collection.fidl
@@ -2270,10 +2296,10 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/component.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/log_settings.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/realm.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_provider_controller.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/signal_processing.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/codec_connect.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/dai_connect.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/health.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/signal_processing.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_sync.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/port.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/radar.fidl
@@ -2281,8 +2307,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.virtualkeyboard/virtual_keyb
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/keymap.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/calendar.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/time_zones.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/inotify.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/rights-abilities.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/inotify.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/cpu-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/calibrator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/sensor.fidl
@@ -2745,7 +2771,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/reboot
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/consumer_control.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/device_ids.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/keys.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/locking.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/locking.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/debug-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/hypervisor-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/info-resource.fidl
@@ -3323,24 +3349,11 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.inspect/tree.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/property_provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/connection-info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/connection-options.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node-attributes.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/connection-info.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/connection-options.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/connector.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/debuglog.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/deprecated.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/directory-entry.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/directory-iterator.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/directory-watcher.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/directory.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/file.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/io2.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/memory.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/node-attributes.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/node.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/pipe.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/posix-socket.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/rights-abilities.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/directory2.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/file2.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/io.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node-protocols.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node2.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/kernel-counter.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/kernel-debug.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/kernel-stats.fidl
@@ -3369,6 +3382,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story_shell_factory.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/countdown.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/factory_reset.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/prediction_info.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/launcher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/accessibility.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/audio.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/display.fidl
@@ -3656,6 +3670,53 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo.test/buildinfotest.fidl + ../../../fuchsia/sdk/linux/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo.test/buildinfotest.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/component.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/package.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/resolver.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/connector.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/equalizer.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/gain.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/vendor_specific.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.clientlevel/clientlevel.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.systemmode/systemmode.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.config/config.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/driver_features.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.ieee80211/fields.fidl
+FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_absolute.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_base.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/internal/convert.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2022 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/cache.fidl + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/cache.fidl
@@ -3722,4 +3783,4 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
-Total license count: 16
+Total license count: 17

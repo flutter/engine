@@ -6,8 +6,11 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_flags.h"
+#include "flutter/display_list/display_list_image.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
 
@@ -71,31 +74,31 @@ class DisplayListBuilder final : public virtual Dispatcher,
       onSetColor(color);
     }
   }
-  void setBlendMode(SkBlendMode mode) override {
+  void setBlendMode(DlBlendMode mode) override {
     if (current_blender_ || current_blend_mode_ != mode) {
       onSetBlendMode(mode);
     }
   }
   void setBlender(sk_sp<SkBlender> blender) override {
     if (!blender) {
-      setBlendMode(SkBlendMode::kSrcOver);
+      setBlendMode(DlBlendMode::kSrcOver);
     } else if (current_blender_ != blender) {
       onSetBlender(std::move(blender));
     }
   }
-  void setShader(sk_sp<SkShader> shader) override {
-    if (current_shader_ != shader) {
-      onSetShader(std::move(shader));
+  void setColorSource(const DlColorSource* source) override {
+    if (NotEquals(current_color_source_, source)) {
+      onSetColorSource(source);
     }
   }
-  void setImageFilter(sk_sp<SkImageFilter> filter) override {
-    if (current_image_filter_ != filter) {
-      onSetImageFilter(std::move(filter));
+  void setImageFilter(const DlImageFilter* filter) override {
+    if (NotEquals(current_image_filter_, filter)) {
+      onSetImageFilter(filter);
     }
   }
-  void setColorFilter(sk_sp<SkColorFilter> filter) override {
-    if (current_color_filter_ != filter) {
-      onSetColorFilter(std::move(filter));
+  void setColorFilter(const DlColorFilter* filter) override {
+    if (NotEquals(current_color_filter_, filter)) {
+      onSetColorFilter(filter);
     }
   }
   void setPathEffect(sk_sp<SkPathEffect> effect) override {
@@ -103,19 +106,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
       onSetPathEffect(std::move(effect));
     }
   }
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override {
-    if (mask_sigma_valid(current_mask_sigma_) ||
-        current_mask_filter_ != filter) {
-      onSetMaskFilter(std::move(filter));
-    }
-  }
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {
-    if (!mask_sigma_valid(sigma)) {
-      // SkMastFilter::MakeBlur(invalid sigma) returns a nullptr, so we
-      // reset the mask filter here rather than recording the invalid values.
-      setMaskFilter(nullptr);
-    } else if (current_mask_style_ != style || current_mask_sigma_ != sigma) {
-      onSetMaskBlurFilter(style, sigma);
+  void setMaskFilter(const DlMaskFilter* filter) override {
+    if (NotEquals(current_mask_filter_, filter)) {
+      onSetMaskFilter(filter);
     }
   }
 
@@ -127,10 +120,14 @@ class DisplayListBuilder final : public virtual Dispatcher,
   SkScalar getStrokeMiter() const { return current_stroke_miter_; }
   SkPaint::Cap getStrokeCap() const { return current_stroke_cap_; }
   SkPaint::Join getStrokeJoin() const { return current_stroke_join_; }
-  sk_sp<SkShader> getShader() const { return current_shader_; }
-  sk_sp<SkColorFilter> getColorFilter() const { return current_color_filter_; }
+  std::shared_ptr<const DlColorSource> getColorSource() const {
+    return current_color_source_;
+  }
+  std::shared_ptr<const DlColorFilter> getColorFilter() const {
+    return current_color_filter_;
+  }
   bool isInvertColors() const { return current_invert_colors_; }
-  std::optional<SkBlendMode> getBlendMode() const {
+  std::optional<DlBlendMode> getBlendMode() const {
     if (current_blender_) {
       // The setters will turn "Mode" style blenders into "blend_mode"s
       return {};
@@ -139,18 +136,15 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
   sk_sp<SkBlender> getBlender() const {
     return current_blender_ ? current_blender_
-                            : SkBlender::Mode(current_blend_mode_);
+                            : SkBlender::Mode(ToSk(current_blend_mode_));
   }
   sk_sp<SkPathEffect> getPathEffect() const { return current_path_effect_; }
-  sk_sp<SkMaskFilter> getMaskFilter() const {
-    return mask_sigma_valid(current_mask_sigma_)
-               ? SkMaskFilter::MakeBlur(current_mask_style_,
-                                        current_mask_sigma_)
-               : current_mask_filter_;
+  std::shared_ptr<const DlMaskFilter> getMaskFilter() const {
+    return current_mask_filter_;
   }
-  // No utility getter for the utility setter:
-  // void setMaskBlurFilter (SkBlurStyle style, SkScalar sigma)
-  sk_sp<SkImageFilter> getImageFilter() const { return current_image_filter_; }
+  std::shared_ptr<DlImageFilter> getImageFilter() const {
+    return current_image_filter_;
+  }
 
   void save() override;
   // Only the |renders_with_attributes()| option will be accepted here. Any
@@ -186,15 +180,15 @@ class DisplayListBuilder final : public virtual Dispatcher,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
-
   // clang-format on
+  void transformReset() override;
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
 
   void drawPaint() override;
-  void drawColor(SkColor color, SkBlendMode mode) override;
+  void drawColor(SkColor color, DlBlendMode mode) override;
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
   void drawRect(const SkRect& rect) override;
   void drawOval(const SkRect& bounds) override;
@@ -209,36 +203,41 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void drawPoints(SkCanvas::PointMode mode,
                   uint32_t count,
                   const SkPoint pts[]) override;
-  void drawVertices(const sk_sp<SkVertices> vertices,
-                    SkBlendMode mode) override;
-  void drawImage(const sk_sp<SkImage> image,
+  void drawSkVertices(const sk_sp<SkVertices> vertices,
+                      SkBlendMode mode) override;
+  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawVertices(const std::shared_ptr<const DlVertices> vertices,
+                    DlBlendMode mode) {
+    drawVertices(vertices.get(), mode);
+  }
+  void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  const SkSamplingOptions& sampling,
                  bool render_with_attributes) override;
   void drawImageRect(
-      const sk_sp<SkImage> image,
+      const sk_sp<DlImage> image,
       const SkRect& src,
       const SkRect& dst,
       const SkSamplingOptions& sampling,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
-  void drawImageNine(const sk_sp<SkImage> image,
+  void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      SkFilterMode filter,
                      bool render_with_attributes) override;
-  void drawImageLattice(const sk_sp<SkImage> image,
+  void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         SkFilterMode filter,
                         bool render_with_attributes) override;
-  void drawAtlas(const sk_sp<SkImage> atlas,
+  void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
                  const SkColor colors[],
                  int count,
-                 SkBlendMode mode,
+                 DlBlendMode mode,
                  const SkSamplingOptions& sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
@@ -332,8 +331,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   // in the future to include other (rarely used) modes that also modulate
   // the opacity of a rendering operation at the cost of a switch statement
   // or lookup table.
-  static bool IsOpacityCompatible(SkBlendMode mode) {
-    return (mode == SkBlendMode::kSrcOver);
+  static bool IsOpacityCompatible(DlBlendMode mode) {
+    return (mode == DlBlendMode::kSrcOver);
   }
 
   void UpdateCurrentOpacityCompatibility() {
@@ -373,7 +372,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   // Check for opacity compatibility for an op that ignores the current
   // attributes and uses the indicated blend |mode| to render to the layer.
   // This is only used by |drawColor| currently.
-  void CheckLayerOpacityCompatibility(SkBlendMode mode) {
+  void CheckLayerOpacityCompatibility(DlBlendMode mode) {
     UpdateLayerOpacityCompatibility(IsOpacityCompatible(mode));
   }
 
@@ -386,13 +385,13 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void onSetStrokeWidth(SkScalar width);
   void onSetStrokeMiter(SkScalar limit);
   void onSetColor(SkColor color);
-  void onSetBlendMode(SkBlendMode mode);
+  void onSetBlendMode(DlBlendMode mode);
   void onSetBlender(sk_sp<SkBlender> blender);
-  void onSetShader(sk_sp<SkShader> shader);
-  void onSetImageFilter(sk_sp<SkImageFilter> filter);
-  void onSetColorFilter(sk_sp<SkColorFilter> filter);
+  void onSetColorSource(const DlColorSource* source);
+  void onSetImageFilter(const DlImageFilter* filter);
+  void onSetColorFilter(const DlColorFilter* filter);
   void onSetPathEffect(sk_sp<SkPathEffect> effect);
-  void onSetMaskFilter(sk_sp<SkMaskFilter> filter);
+  void onSetMaskFilter(const DlMaskFilter* filter);
   void onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma);
 
   // These values should match the defaults of the Dart Paint object.
@@ -406,15 +405,13 @@ class DisplayListBuilder final : public virtual Dispatcher,
   SkPaint::Cap current_stroke_cap_ = SkPaint::Cap::kButt_Cap;
   SkPaint::Join current_stroke_join_ = SkPaint::Join::kMiter_Join;
   // If |current_blender_| is set then |current_blend_mode_| should be ignored
-  SkBlendMode current_blend_mode_ = SkBlendMode::kSrcOver;
+  DlBlendMode current_blend_mode_ = DlBlendMode::kSrcOver;
   sk_sp<SkBlender> current_blender_;
-  sk_sp<SkShader> current_shader_;
-  sk_sp<SkColorFilter> current_color_filter_;
-  sk_sp<SkImageFilter> current_image_filter_;
+  std::shared_ptr<const DlColorSource> current_color_source_;
+  std::shared_ptr<const DlColorFilter> current_color_filter_;
+  std::shared_ptr<DlImageFilter> current_image_filter_;
   sk_sp<SkPathEffect> current_path_effect_;
-  sk_sp<SkMaskFilter> current_mask_filter_;
-  SkBlurStyle current_mask_style_;
-  SkScalar current_mask_sigma_ = kInvalidSigma;
+  std::shared_ptr<const DlMaskFilter> current_mask_filter_;
 };
 
 }  // namespace flutter

@@ -5,6 +5,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/testing.h"
@@ -267,8 +268,8 @@ class RenderSurface {
 class RenderEnvironment {
  public:
   static RenderEnvironment Make565() {
-    return RenderEnvironment(SkImageInfo::Make({1, 1}, kRGB_565_SkColorType,
-                                               kOpaque_SkAlphaType, nullptr));
+    return RenderEnvironment(
+        SkImageInfo::Make({1, 1}, kRGB_565_SkColorType, kOpaque_SkAlphaType));
   }
 
   static RenderEnvironment MakeN32() {
@@ -286,23 +287,27 @@ class RenderEnvironment {
   }
 
   void init_ref(CvRenderer& cv_renderer, SkColor bg = SK_ColorTRANSPARENT) {
-    init_ref([=](SkCanvas*, SkPaint&) {}, cv_renderer, bg);
+    init_ref([=](SkCanvas*, SkPaint&) {}, cv_renderer,
+             [=](DisplayListBuilder&) {}, bg);
   }
 
   void init_ref(CvSetup& cv_setup,
                 CvRenderer& cv_renderer,
+                DlRenderer& dl_setup,
                 SkColor bg = SK_ColorTRANSPARENT) {
     ref_canvas()->clear(bg);
-    cv_setup(ref_canvas(), ref_paint_);
+    dl_setup(ref_attr_);
+    SkPaint paint;
+    cv_setup(ref_canvas(), paint);
     ref_matrix_ = ref_canvas()->getTotalMatrix();
     ref_clip_ = ref_canvas()->getDeviceClipBounds();
-    cv_renderer(ref_canvas(), ref_paint_);
+    cv_renderer(ref_canvas(), paint);
     ref_pixmap_ = ref_surface_->pixmap();
   }
 
   const SkImageInfo& info() const { return info_; }
   SkCanvas* ref_canvas() { return ref_surface_->canvas(); }
-  const SkPaint& ref_paint() const { return ref_paint_; }
+  const DisplayListBuilder& ref_attr() const { return ref_attr_; }
   const SkMatrix& ref_matrix() const { return ref_matrix_; }
   const SkIRect& ref_clip_bounds() const { return ref_clip_; }
   const SkPixmap* ref_pixmap() const { return ref_pixmap_; }
@@ -314,7 +319,7 @@ class RenderEnvironment {
 
   const SkImageInfo info_;
 
-  SkPaint ref_paint_;
+  DisplayListBuilder ref_attr_;
   SkMatrix ref_matrix_;
   SkIRect ref_clip_;
   std::unique_ptr<RenderSurface> ref_surface_;
@@ -331,7 +336,7 @@ class TestParameters {
   bool uses_paint() const { return !flags_.ignores_paint(); }
 
   bool should_match(const RenderEnvironment& env,
-                    const SkPaint& paint,
+                    const DisplayListBuilder& attr,
                     const SkMatrix& matrix,
                     const SkIRect& device_clip,
                     bool has_diff_clip,
@@ -348,49 +353,46 @@ class TestParameters {
     if (flags_.ignores_paint()) {
       return true;
     }
-    const SkPaint& ref_paint = env.ref_paint();
+    const DisplayListBuilder& ref_attr = env.ref_attr();
     if (flags_.applies_anti_alias() &&  //
-        ref_paint.isAntiAlias() != paint.isAntiAlias()) {
+        ref_attr.isAntiAlias() != attr.isAntiAlias()) {
       return false;
     }
     if (flags_.applies_dither() &&  //
-        ref_paint.isDither() != paint.isDither()) {
+        ref_attr.isDither() != attr.isDither()) {
       return false;
     }
     if (flags_.applies_color() &&  //
-        ref_paint.getColor() != paint.getColor()) {
-      return false;
-    }
-    if (flags_.applies_alpha() &&  //
-        ref_paint.getAlpha() != paint.getAlpha()) {
+        ref_attr.getColor() != attr.getColor()) {
       return false;
     }
     if (flags_.applies_blend() &&  //
-        ref_paint.getBlender() != paint.getBlender()) {
+        ref_attr.getBlender() != attr.getBlender()) {
       return false;
     }
     if (flags_.applies_color_filter() &&  //
-        ref_paint.getColorFilter() != paint.getColorFilter()) {
+        (ref_attr.isInvertColors() != attr.isInvertColors() ||
+         NotEquals(ref_attr.getColorFilter(), attr.getColorFilter()))) {
       return false;
     }
     if (flags_.applies_mask_filter() &&  //
-        ref_paint.getMaskFilter() != paint.getMaskFilter()) {
+        NotEquals(ref_attr.getMaskFilter(), attr.getMaskFilter())) {
       return false;
     }
     if (flags_.applies_image_filter() &&  //
-        ref_paint.getImageFilter() != paint.getImageFilter()) {
+        ref_attr.getImageFilter() != attr.getImageFilter()) {
       return false;
     }
     if (flags_.applies_shader() &&  //
-        ref_paint.getShader() != paint.getShader()) {
+        NotEquals(ref_attr.getColorSource(), attr.getColorSource())) {
       return false;
     }
     DisplayListSpecialGeometryFlags geo_flags =
-        flags_.WithPathEffect(paint.refPathEffect());
+        flags_.WithPathEffect(attr.getPathEffect());
     if (flags_.applies_path_effect() &&  //
-        ref_paint.getPathEffect() != paint.getPathEffect()) {
+        ref_attr.getPathEffect() != attr.getPathEffect()) {
       SkPathEffect::DashInfo info;
-      if (paint.getPathEffect()->asADash(&info) !=
+      if (attr.getPathEffect()->asADash(&info) !=
           SkPathEffect::kDash_DashType) {
         return false;
       }
@@ -398,27 +400,27 @@ class TestParameters {
         return false;
       }
     }
-    bool is_stroked = flags_.is_stroked(ref_paint.getStyle());
-    if (flags_.is_stroked(paint.getStyle()) != is_stroked) {
+    bool is_stroked = flags_.is_stroked(ref_attr.getStyle());
+    if (flags_.is_stroked(attr.getStyle()) != is_stroked) {
       return false;
     }
     if (!is_stroked) {
       return true;
     }
-    if (ref_paint.getStrokeWidth() != paint.getStrokeWidth()) {
+    if (ref_attr.getStrokeWidth() != attr.getStrokeWidth()) {
       return false;
     }
     if (geo_flags.may_have_end_caps() &&  //
-        getCap(ref_paint, geo_flags) != getCap(paint, geo_flags)) {
+        getCap(ref_attr, geo_flags) != getCap(attr, geo_flags)) {
       return false;
     }
     if (geo_flags.may_have_joins()) {
-      if (ref_paint.getStrokeJoin() != paint.getStrokeJoin()) {
+      if (ref_attr.getStrokeJoin() != attr.getStrokeJoin()) {
         return false;
       }
-      if (ref_paint.getStrokeJoin() == SkPaint::kMiter_Join) {
-        SkScalar ref_miter = ref_paint.getStrokeMiter();
-        SkScalar test_miter = paint.getStrokeMiter();
+      if (ref_attr.getStrokeJoin() == SkPaint::kMiter_Join) {
+        SkScalar ref_miter = ref_attr.getStrokeMiter();
+        SkScalar test_miter = attr.getStrokeMiter();
         // miter limit < 1.4 affects right angles
         if (geo_flags.may_have_acute_joins() ||  //
             ref_miter < 1.4 || test_miter < 1.4) {
@@ -431,9 +433,9 @@ class TestParameters {
     return true;
   }
 
-  SkPaint::Cap getCap(const SkPaint& paint,
+  SkPaint::Cap getCap(const DisplayListBuilder& attr,
                       DisplayListSpecialGeometryFlags geo_flags) const {
-    SkPaint::Cap cap = paint.getStrokeCap();
+    SkPaint::Cap cap = attr.getStrokeCap();
     if (geo_flags.butt_cap_becomes_square() && cap == SkPaint::kButt_Cap) {
       return SkPaint::kSquare_Cap;
     }
@@ -759,9 +761,9 @@ class CanvasCompareTester {
                      b.save();
                      b.clipRect(clip, SkClipOp::kIntersect, false);
                      b.drawRect(rect);
-                     b.setBlendMode(SkBlendMode::kClear);
+                     b.setBlendMode(DlBlendMode::kClear);
                      b.drawRect(rect);
-                     b.setBlendMode(SkBlendMode::kSrcOver);
+                     b.setBlendMode(DlBlendMode::kSrcOver);
                      b.restore();
                    }));
     RenderWith(testP, env, tolerance,
@@ -836,92 +838,84 @@ class CanvasCompareTester {
           0, 0, 0, 0.5, 0,
       };
       // clang-format on
-      sk_sp<SkColorFilter> filter =
-          SkColorFilters::Matrix(rotate_alpha_color_matrix);
+      DlMatrixColorFilter filter(rotate_alpha_color_matrix);
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ColorFilter, no bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter);
+                         save_p.setColorFilter(filter.skia_object());
                          cv->saveLayer(nullptr, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                          b.saveLayer(nullptr, true);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
                        .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ColorFilter, no bounds Cleanup";
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ColorFilter and bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setColorFilter(filter);
+                         save_p.setColorFilter(filter.skia_object());
                          cv->saveLayer(RenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                          b.saveLayer(&RenderBounds, true);
                          b.setColorFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
                        .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ColorFilter and bounds Cleanup";
     }
     {
-      sk_sp<SkImageFilter> filter = SkImageFilters::Arithmetic(
+      sk_sp<SkImageFilter> sk_filter = SkImageFilters::Arithmetic(
           0.1, 0.1, 0.1, 0.25, true, nullptr, nullptr);
+      DlUnknownImageFilter filter(sk_filter);
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ImageFilter, no bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setImageFilter(filter);
+                         save_p.setImageFilter(filter.skia_object());
                          cv->saveLayer(nullptr, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setImageFilter(filter);
+                         b.setImageFilter(&filter);
                          b.saveLayer(nullptr, true);
                          b.setImageFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
                        .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ImageFilter, no bounds Cleanup";
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "saveLayer ImageFilter and bounds",
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
-                         save_p.setImageFilter(filter);
+                         save_p.setImageFilter(filter.skia_object());
                          cv->saveLayer(RenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setImageFilter(filter);
+                         b.setImageFilter(&filter);
                          b.saveLayer(&RenderBounds, true);
                          b.setImageFilter(nullptr);
                          b.setStrokeWidth(5.0);
                        })
                        .with_restore(cv_safe_restore, dl_safe_restore, true));
       }
-      EXPECT_TRUE(filter->unique())
-          << "saveLayer ImageFilter and bounds Cleanup";
     }
   }
 
@@ -945,7 +939,7 @@ class CanvasCompareTester {
         b.translate(0.1, 0.1);
         b.setStrokeWidth(5.0);
       };
-      aa_env.init_ref(cv_aa_setup, testP.cv_renderer());
+      aa_env.init_ref(cv_aa_setup, testP.cv_renderer(), dl_aa_setup);
       RenderWith(testP, aa_env, aa_tolerance,
                  CaseParameters(
                      "AntiAlias == True",
@@ -979,16 +973,17 @@ class CanvasCompareTester {
       RenderEnvironment dither_env = RenderEnvironment::Make565();
       SkColor dither_bg = SK_ColorBLACK;
       CvSetup cv_dither_setup = [=](SkCanvas*, SkPaint& p) {
-        p.setShader(testImageShader);
+        p.setShader(testImageColorSource.skia_object());
         p.setAlpha(0xf0);
         p.setStrokeWidth(5.0);
       };
       DlRenderer dl_dither_setup = [=](DisplayListBuilder& b) {
-        b.setShader(testImageShader);
+        b.setColorSource(&testImageColorSource);
         b.setColor(SkColor(0xf0000000));
         b.setStrokeWidth(5.0);
       };
-      dither_env.init_ref(cv_dither_setup, testP.cv_renderer(), dither_bg);
+      dither_env.init_ref(cv_dither_setup, testP.cv_renderer(),  //
+                          dl_dither_setup, dither_bg);
       RenderWith(testP, dither_env, tolerance,
                  CaseParameters(
                      "Dither == True",
@@ -1014,7 +1009,6 @@ class CanvasCompareTester {
                      })
                      .with_bg(dither_bg));
     }
-    EXPECT_TRUE(testImageShader->unique()) << "Dither Cleanup";
 
     RenderWith(testP, env, tolerance,
                CaseParameters(
@@ -1042,7 +1036,7 @@ class CanvasCompareTester {
                        p.setColor(blendableColor);
                      },
                      [=](DisplayListBuilder& b) {
-                       b.setBlendMode(SkBlendMode::kSrcIn);
+                       b.setBlendMode(DlBlendMode::kSrcIn);
                        b.setColor(blendableColor);
                      })
                      .with_bg(bg));
@@ -1054,7 +1048,7 @@ class CanvasCompareTester {
                        p.setColor(blendableColor);
                      },
                      [=](DisplayListBuilder& b) {
-                       b.setBlendMode(SkBlendMode::kDstIn);
+                       b.setBlendMode(DlBlendMode::kDstIn);
                        b.setColor(blendableColor);
                      })
                      .with_bg(bg));
@@ -1088,16 +1082,15 @@ class CanvasCompareTester {
       // (for drawPaint) so we create a new environment for these tests.
       RenderEnvironment blur_env = RenderEnvironment::MakeN32();
       CvSetup cv_blur_setup = [=](SkCanvas*, SkPaint& p) {
-        p.setShader(testImageShader);
+        p.setShader(testImageColorSource.skia_object());
         p.setStrokeWidth(5.0);
       };
       DlRenderer dl_blur_setup = [=](DisplayListBuilder& b) {
-        b.setShader(testImageShader);
+        b.setColorSource(&testImageColorSource);
         b.setStrokeWidth(5.0);
       };
-      blur_env.init_ref(cv_blur_setup, testP.cv_renderer());
-      sk_sp<SkImageFilter> filter =
-          SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr, nullptr);
+      blur_env.init_ref(cv_blur_setup, testP.cv_renderer(), dl_blur_setup);
+      DlBlurImageFilter filter_decal_5(5.0, 5.0, DlTileMode::kDecal);
       BoundsTolerance blur5Tolerance = tolerance.addBoundsPadding(4, 4);
       {
         RenderWith(testP, blur_env, blur5Tolerance,
@@ -1105,30 +1098,27 @@ class CanvasCompareTester {
                        "ImageFilter == Decal Blur 5",
                        [=](SkCanvas* cv, SkPaint& p) {
                          cv_blur_setup(cv, p);
-                         p.setImageFilter(filter);
+                         p.setImageFilter(filter_decal_5.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          dl_blur_setup(b);
-                         b.setImageFilter(filter);
+                         b.setImageFilter(&filter_decal_5);
                        }));
       }
-      EXPECT_TRUE(filter->unique()) << "ImageFilter Cleanup";
-      filter =
-          SkImageFilters::Blur(5.0, 5.0, SkTileMode::kClamp, nullptr, nullptr);
+      DlBlurImageFilter filter_clamp_5(5.0, 5.0, DlTileMode::kClamp);
       {
         RenderWith(testP, blur_env, blur5Tolerance,
                    CaseParameters(
                        "ImageFilter == Clamp Blur 5",
                        [=](SkCanvas* cv, SkPaint& p) {
                          cv_blur_setup(cv, p);
-                         p.setImageFilter(filter);
+                         p.setImageFilter(filter_clamp_5.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          dl_blur_setup(b);
-                         b.setImageFilter(filter);
+                         b.setImageFilter(&filter_clamp_5);
                        }));
       }
-      EXPECT_TRUE(filter->unique()) << "ImageFilter Cleanup";
     }
 
     {
@@ -1146,7 +1136,7 @@ class CanvasCompareTester {
          1.0,  1.0,  1.0, 1.0,   0,
       };
       // clang-format on
-      sk_sp<SkColorFilter> filter = SkColorFilters::Matrix(rotate_color_matrix);
+      DlMatrixColorFilter filter(rotate_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
         RenderWith(testP, env, tolerance,
@@ -1154,16 +1144,15 @@ class CanvasCompareTester {
                        "ColorFilter == RotateRGB",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter);
+                         p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
-                         b.setColorFilter(filter);
+                         b.setColorFilter(&filter);
                        })
                        .with_bg(bg));
       }
-      EXPECT_TRUE(filter->unique()) << "ColorFilter == RotateRGB Cleanup";
-      filter = SkColorFilters::Matrix(invert_color_matrix);
+      filter = DlMatrixColorFilter(invert_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
         RenderWith(testP, env, tolerance,
@@ -1171,7 +1160,7 @@ class CanvasCompareTester {
                        "ColorFilter == Invert",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setColor(SK_ColorYELLOW);
-                         p.setColorFilter(filter);
+                         p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setColor(SK_ColorYELLOW);
@@ -1179,7 +1168,6 @@ class CanvasCompareTester {
                        })
                        .with_bg(bg));
       }
-      EXPECT_TRUE(filter->unique()) << "ColorFilter == Invert Cleanup";
     }
 
     {
@@ -1244,8 +1232,7 @@ class CanvasCompareTester {
     }
 
     {
-      sk_sp<SkMaskFilter> filter =
-          SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 5.0);
+      const DlBlurMaskFilter filter(kNormal_SkBlurStyle, 5.0);
       BoundsTolerance blur5Tolerance = tolerance.addBoundsPadding(4, 4);
       {
         // Stroked primitives need some non-trivial stroke size to be blurred
@@ -1254,30 +1241,13 @@ class CanvasCompareTester {
                        "MaskFilter == Blur 5",
                        [=](SkCanvas*, SkPaint& p) {
                          p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
+                         p.setMaskFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
                          b.setStrokeWidth(5.0);
-                         b.setMaskFilter(filter);
+                         b.setMaskFilter(&filter);
                        }));
       }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur 5 Cleanup";
-      {
-        RenderWith(testP, env, blur5Tolerance,
-                   CaseParameters(
-                       "MaskFilter == Blur(Normal, 5.0)",
-                       [=](SkCanvas*, SkPaint& p) {
-                         p.setStrokeWidth(5.0);
-                         p.setMaskFilter(filter);
-                       },
-                       [=](DisplayListBuilder& b) {
-                         b.setStrokeWidth(5.0);
-                         b.setMaskBlurFilter(kNormal_SkBlurStyle, 5.0);
-                       }));
-      }
-      EXPECT_TRUE(testP.is_draw_text_blob() || filter->unique())
-          << "MaskFilter == Blur(Normal, 5.0) Cleanup";
     }
 
     {
@@ -1295,16 +1265,19 @@ class CanvasCompareTester {
           0.5,
           1.0,
       };
-      sk_sp<SkShader> shader = SkGradientShader::MakeLinear(
-          end_points, colors, stops, 3, SkTileMode::kMirror, 0, nullptr);
+      std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+          end_points[0], end_points[1], 3, colors, stops, DlTileMode::kMirror);
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "LinearGradient GYB",
-                       [=](SkCanvas*, SkPaint& p) { p.setShader(shader); },
-                       [=](DisplayListBuilder& b) { b.setShader(shader); }));
+                       [=](SkCanvas*, SkPaint& p) {
+                         p.setShader(source->skia_object());
+                       },
+                       [=](DisplayListBuilder& b) {
+                         b.setColorSource(source.get());
+                       }));
       }
-      EXPECT_TRUE(shader->unique()) << "LinearGradient GYB Cleanup";
     }
   }
 
@@ -1352,7 +1325,12 @@ class CanvasCompareTester {
       p.setStyle(SkPaint::kStroke_Style);
       p.setStrokeWidth(5.0);
     };
-    stroke_base_env.init_ref(cv_stroke_setup, testP.cv_renderer());
+    DlRenderer dl_stroke_setup = [=](DisplayListBuilder& b) {
+      b.setStyle(SkPaint::kStroke_Style);
+      b.setStrokeWidth(5.0);
+    };
+    stroke_base_env.init_ref(cv_stroke_setup, testP.cv_renderer(),
+                             dl_stroke_setup);
 
     RenderWith(testP, stroke_base_env, tolerance,
                CaseParameters(
@@ -1717,7 +1695,9 @@ class CanvasCompareTester {
     ASSERT_EQ(sk_pixels->info().bytesPerPixel(), 4) << info;
     checkPixels(sk_pixels, sk_bounds, info + " (Skia reference)", bg);
 
-    if (testP.should_match(env, sk_paint, sk_matrix, sk_clip,
+    DisplayListBuilder dl_attr;
+    caseP.dl_setup()(dl_attr);
+    if (testP.should_match(env, dl_attr, sk_matrix, sk_clip,
                            caseP.has_diff_clip(),
                            caseP.has_mutating_save_layer())) {
       quickCompareToReference(env.ref_pixmap(), sk_pixels, true,
@@ -1962,7 +1942,7 @@ class CanvasCompareTester {
                                  bool fuzzyCompares = false,
                                  int width = TestWidth,
                                  int height = TestHeight,
-                                 bool printMismatches = true) {
+                                 bool printMismatches = false) {
     SkPMColor untouched = SkPreMultiplyColor(bg);
     ASSERT_EQ(test_pixels->width(), width) << info;
     ASSERT_EQ(test_pixels->height(), height) << info;
@@ -2089,7 +2069,7 @@ class CanvasCompareTester {
     return surface->makeImageSnapshot();
   }
 
-  static const sk_sp<SkShader> testImageShader;
+  static const DlImageColorSource testImageColorSource;
 
   static sk_sp<SkTextBlob> MakeTextBlob(std::string string,
                                         SkScalar font_height) {
@@ -2104,10 +2084,11 @@ BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
 
 const sk_sp<SkImage> CanvasCompareTester::testImage = makeTestImage();
-const sk_sp<SkShader> CanvasCompareTester::testImageShader =
-    makeTestImage()->makeShader(SkTileMode::kRepeat,
-                                SkTileMode::kRepeat,
-                                SkSamplingOptions());
+const DlImageColorSource CanvasCompareTester::testImageColorSource(
+    testImage,
+    DlTileMode::kRepeat,
+    DlTileMode::kRepeat,
+    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone));
 
 // Eventually this bare bones testing::Test fixture will subsume the
 // CanvasCompareTester and the TestParameters could then become just
@@ -2141,7 +2122,7 @@ TEST_F(DisplayListCanvas, DrawColor) {
             canvas->drawColor(SK_ColorMAGENTA);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawColor(SK_ColorMAGENTA, SkBlendMode::kSrcOver);
+            builder.drawColor(SK_ColorMAGENTA, DlBlendMode::kSrcOver);
           },
           kDrawColorFlags));
 }
@@ -2506,20 +2487,20 @@ TEST_F(DisplayListCanvas, DrawVerticesWithColors) {
       SK_ColorRED,  SK_ColorBLUE,   SK_ColorGREEN,
       SK_ColorCYAN, SK_ColorYELLOW, SK_ColorMAGENTA,
   };
-  const sk_sp<SkVertices> vertices = SkVertices::MakeCopy(
-      SkVertices::kTriangles_VertexMode, 6, pts, nullptr, colors);
+  const std::shared_ptr<DlVertices> vertices =
+      DlVertices::Make(DlVertexMode::kTriangles, 6, pts, nullptr, colors);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawVertices(vertices.get(), SkBlendMode::kSrcOver, paint);
+            canvas->drawVertices(vertices->skia_object(), SkBlendMode::kSrcOver,
+                                 paint);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawVertices(vertices, SkBlendMode::kSrcOver);
+            builder.drawVertices(vertices, DlBlendMode::kSrcOver);
           },
           kDrawVerticesFlags)
           .set_draw_vertices());
-  EXPECT_TRUE(vertices->unique());
 }
 
 TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
@@ -2550,30 +2531,29 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
       SkPoint::Make(0, 0),
       SkPoint::Make(RenderWidth, 0),
   };
-  const sk_sp<SkVertices> vertices = SkVertices::MakeCopy(
-      SkVertices::kTriangles_VertexMode, 6, pts, tex, nullptr);
+  const std::shared_ptr<DlVertices> vertices =
+      DlVertices::Make(DlVertexMode::kTriangles, 6, pts, tex, nullptr);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
             SkPaint v_paint = paint;
             if (v_paint.getShader() == nullptr) {
-              v_paint.setShader(CanvasCompareTester::testImageShader);
+              v_paint.setShader(
+                  CanvasCompareTester::testImageColorSource.skia_object());
             }
-            canvas->drawVertices(vertices.get(), SkBlendMode::kSrcOver,
+            canvas->drawVertices(vertices->skia_object(), SkBlendMode::kSrcOver,
                                  v_paint);
           },
           [=](DisplayListBuilder& builder) {  //
-            if (builder.getShader() == nullptr) {
-              builder.setShader(CanvasCompareTester::testImageShader);
+            if (builder.getColorSource() == nullptr) {
+              builder.setColorSource(
+                  &CanvasCompareTester::testImageColorSource);
             }
-            builder.drawVertices(vertices, SkBlendMode::kSrcOver);
+            builder.drawVertices(vertices, DlBlendMode::kSrcOver);
           },
           kDrawVerticesFlags)
           .set_draw_vertices());
-
-  EXPECT_TRUE(vertices->unique());
-  EXPECT_TRUE(CanvasCompareTester::testImageShader->unique());
 }
 
 TEST_F(DisplayListCanvas, DrawImageNearest) {
@@ -2585,7 +2565,7 @@ TEST_F(DisplayListCanvas, DrawImageNearest) {
                               DisplayList::NearestSampling, &paint);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawImage(CanvasCompareTester::testImage,
+            builder.drawImage(DlImage::Make(CanvasCompareTester::testImage),
                               SkPoint::Make(RenderLeft, RenderTop),
                               DisplayList::NearestSampling, true);
           },
@@ -2601,7 +2581,7 @@ TEST_F(DisplayListCanvas, DrawImageNearestNoPaint) {
                               DisplayList::NearestSampling, nullptr);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawImage(CanvasCompareTester::testImage,
+            builder.drawImage(DlImage::Make(CanvasCompareTester::testImage),
                               SkPoint::Make(RenderLeft, RenderTop),
                               DisplayList::NearestSampling, false);
           },
@@ -2617,7 +2597,7 @@ TEST_F(DisplayListCanvas, DrawImageLinear) {
                               DisplayList::LinearSampling, &paint);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawImage(CanvasCompareTester::testImage,
+            builder.drawImage(DlImage::Make(CanvasCompareTester::testImage),
                               SkPoint::Make(RenderLeft, RenderTop),
                               DisplayList::LinearSampling, true);
           },
@@ -2635,8 +2615,8 @@ TEST_F(DisplayListCanvas, DrawImageRectNearest) {
                                   SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawImageRect(CanvasCompareTester::testImage, src, dst,
-                                  DisplayList::NearestSampling, true);
+            builder.drawImageRect(DlImage::Make(CanvasCompareTester::testImage),
+                                  src, dst, DisplayList::NearestSampling, true);
           },
           kDrawImageRectWithPaintFlags));
 }
@@ -2652,8 +2632,9 @@ TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
                                   SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawImageRect(CanvasCompareTester::testImage, src, dst,
-                                  DisplayList::NearestSampling, false);
+            builder.drawImageRect(DlImage::Make(CanvasCompareTester::testImage),
+                                  src, dst, DisplayList::NearestSampling,
+                                  false);
           },
           kDrawImageRectFlags));
 }
@@ -2669,8 +2650,8 @@ TEST_F(DisplayListCanvas, DrawImageRectLinear) {
                                   SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DisplayListBuilder& builder) {  //
-            builder.drawImageRect(CanvasCompareTester::testImage, src, dst,
-                                  DisplayList::LinearSampling, true);
+            builder.drawImageRect(DlImage::Make(CanvasCompareTester::testImage),
+                                  src, dst, DisplayList::LinearSampling, true);
           },
           kDrawImageRectWithPaintFlags));
 }
@@ -2686,8 +2667,8 @@ TEST_F(DisplayListCanvas, DrawImageNineNearest) {
                                   &paint);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawImageNine(image, src, dst, SkFilterMode::kNearest,
-                                  true);
+            builder.drawImageNine(DlImage::Make(image), src, dst,
+                                  SkFilterMode::kNearest, true);
           },
           kDrawImageNineWithPaintFlags));
 }
@@ -2703,8 +2684,8 @@ TEST_F(DisplayListCanvas, DrawImageNineNearestNoPaint) {
                                   nullptr);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawImageNine(image, src, dst, SkFilterMode::kNearest,
-                                  false);
+            builder.drawImageNine(DlImage::Make(image), src, dst,
+                                  SkFilterMode::kNearest, false);
           },
           kDrawImageNineFlags));
 }
@@ -2720,7 +2701,8 @@ TEST_F(DisplayListCanvas, DrawImageNineLinear) {
                                   &paint);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawImageNine(image, src, dst, SkFilterMode::kLinear, true);
+            builder.drawImageNine(DlImage::Make(image), src, dst,
+                                  SkFilterMode::kLinear, true);
           },
           kDrawImageNineWithPaintFlags));
 }
@@ -2748,7 +2730,7 @@ TEST_F(DisplayListCanvas, DrawImageLatticeNearest) {
                                      SkFilterMode::kNearest, &paint);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawImageLattice(image, lattice, dst,
+            builder.drawImageLattice(DlImage::Make(image), lattice, dst,
                                      SkFilterMode::kNearest, true);
           },
           kDrawImageLatticeWithPaintFlags));
@@ -2777,7 +2759,7 @@ TEST_F(DisplayListCanvas, DrawImageLatticeNearestNoPaint) {
                                      SkFilterMode::kNearest, nullptr);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawImageLattice(image, lattice, dst,
+            builder.drawImageLattice(DlImage::Make(image), lattice, dst,
                                      SkFilterMode::kNearest, false);
           },
           kDrawImageLatticeFlags));
@@ -2806,8 +2788,8 @@ TEST_F(DisplayListCanvas, DrawImageLatticeLinear) {
                                      SkFilterMode::kLinear, &paint);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawImageLattice(image, lattice, dst, SkFilterMode::kLinear,
-                                     true);
+            builder.drawImageLattice(DlImage::Make(image), lattice, dst,
+                                     SkFilterMode::kLinear, true);
           },
           kDrawImageLatticeWithPaintFlags));
 }
@@ -2844,8 +2826,8 @@ TEST_F(DisplayListCanvas, DrawAtlasNearest) {
                               SkBlendMode::kSrcOver, sampling, nullptr, &paint);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawAtlas(image, xform, tex, colors, 4,  //
-                              SkBlendMode::kSrcOver, sampling, nullptr, true);
+            builder.drawAtlas(DlImage::Make(image), xform, tex, colors, 4,  //
+                              DlBlendMode::kSrcOver, sampling, nullptr, true);
           },
           kDrawAtlasWithPaintFlags)
           .set_draw_atlas());
@@ -2884,8 +2866,8 @@ TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
                               nullptr, nullptr);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawAtlas(image, xform, tex, colors, 4,     //
-                              SkBlendMode::kSrcOver, sampling,  //
+            builder.drawAtlas(DlImage::Make(image), xform, tex, colors, 4,  //
+                              DlBlendMode::kSrcOver, sampling,              //
                               nullptr, false);
           },
           kDrawAtlasFlags)
@@ -2924,8 +2906,8 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
                               SkBlendMode::kSrcOver, sampling, nullptr, &paint);
           },
           [=](DisplayListBuilder& builder) {
-            builder.drawAtlas(image, xform, tex, colors, 2,  //
-                              SkBlendMode::kSrcOver, sampling, nullptr, true);
+            builder.drawAtlas(DlImage::Make(image), xform, tex, colors, 2,  //
+                              DlBlendMode::kSrcOver, sampling, nullptr, true);
           },
           kDrawAtlasWithPaintFlags)
           .set_draw_atlas());

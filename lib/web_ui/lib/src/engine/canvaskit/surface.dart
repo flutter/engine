@@ -17,6 +17,11 @@ import 'initialization.dart';
 import 'surface_factory.dart';
 import 'util.dart';
 
+// Only supported in profile/release mode. Allows Flutter to use MSAA but
+// removes the ability for disabling AA on Paint objects.
+const bool _kUsingMSAA =
+    bool.fromEnvironment('flutter.canvaskit.msaa', defaultValue: false);
+
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 
 /// A frame which contains a canvas to be drawn into.
@@ -137,6 +142,11 @@ class Surface {
 
   /// Creates a <canvas> and SkSurface for the given [size].
   CkSurface createOrUpdateSurface(ui.Size size) {
+    if (useH5vccCanvasKit) {
+      _surface ??= CkSurface(canvasKit.getH5vccSkSurface(), null);
+      return _surface!;
+    }
+
     if (size.isEmpty) {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
@@ -302,7 +312,7 @@ class Surface {
         SkWebGLContextOptions(
           // Default to no anti-aliasing. Paint commands can be explicitly
           // anti-aliased by setting their `Paint` object's `antialias` property.
-          antialias: 0,
+          antialias: _kUsingMSAA ? 1 : 0,
           majorVersion: webGLVersion,
         ),
       );

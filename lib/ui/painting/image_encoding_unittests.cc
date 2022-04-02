@@ -14,6 +14,9 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace flutter {
 namespace testing {
 
@@ -137,7 +140,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
           .WillOnce([](const MockSyncSwitch::Handlers& handlers) {
             handlers.true_handler();
           });
-      ConvertToRasterUsingResourceContext(canvas_image->image(),
+      ConvertToRasterUsingResourceContext(canvas_image->image()->skia_image(),
                                           io_manager->GetResourceContext(),
                                           is_gpu_disabled_sync_switch);
       latch.Signal();
@@ -167,3 +170,5 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

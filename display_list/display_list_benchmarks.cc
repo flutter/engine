@@ -114,7 +114,7 @@ void BM_DrawLine(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -162,7 +162,7 @@ void BM_DrawRect(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -207,7 +207,7 @@ void BM_DrawOval(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -254,7 +254,7 @@ void BM_DrawCircle(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -331,7 +331,7 @@ void BM_DrawRRect(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -412,7 +412,7 @@ void BM_DrawDRRect(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -464,7 +464,7 @@ void BM_DrawArc(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -482,7 +482,7 @@ std::vector<SkPoint> GetPolygonPoints(size_t n, SkPoint center, SkScalar r) {
   float angle;
   float full_circle = 2.0f * M_PI;
   for (size_t i = 0; i < n; i++) {
-    angle = (full_circle / (float)n) * (float)i;
+    angle = (full_circle / static_cast<float>(n)) * static_cast<float>(i);
     x = center.x() + r * std::cosf(angle);
     y = center.y() + r * std::sinf(angle);
     points.push_back(SkPoint::Make(x, y));
@@ -666,7 +666,7 @@ void BM_DrawPath(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -688,11 +688,11 @@ void BM_DrawPath(benchmark::State& state,
 // and the final vertex being the center point of the disc.
 //
 // Each vertex colour will alternate through Red, Green, Blue and Cyan.
-sk_sp<SkVertices> GetTestVertices(SkPoint center,
-                                  float radius,
-                                  size_t vertex_count,
-                                  SkVertices::VertexMode mode,
-                                  size_t& final_vertex_count) {
+std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
+                                            float radius,
+                                            size_t vertex_count,
+                                            DlVertexMode mode,
+                                            size_t& final_vertex_count) {
   size_t outer_vertex_count = vertex_count / 2;
   std::vector<SkPoint> outer_points =
       GetPolygonPoints(outer_vertex_count, center, radius);
@@ -701,7 +701,7 @@ sk_sp<SkVertices> GetTestVertices(SkPoint center,
   std::vector<SkColor> colors;
 
   switch (mode) {
-    case SkVertices::VertexMode::kTriangleFan_VertexMode:
+    case DlVertexMode::kTriangleFan:
       // Calling the points on the outer circle O_0, O_1, O_2, ..., and
       // the center point C, this should create a triangle fan with vertices
       // C, O_0, O_1, O_2, O_3, ...
@@ -709,15 +709,16 @@ sk_sp<SkVertices> GetTestVertices(SkPoint center,
       colors.push_back(SK_ColorCYAN);
       for (size_t i = 0; i <= outer_points.size(); i++) {
         vertices.push_back(outer_points[i % outer_points.size()]);
-        if (i % 3 == 0)
+        if (i % 3 == 0) {
           colors.push_back(SK_ColorRED);
-        else if (i % 3 == 1)
+        } else if (i % 3 == 1) {
           colors.push_back(SK_ColorGREEN);
-        else
+        } else {
           colors.push_back(SK_ColorBLUE);
+        }
       }
       break;
-    case SkVertices::VertexMode::kTriangles_VertexMode:
+    case DlVertexMode::kTriangles:
       // Calling the points on the outer circle O_0, O_1, O_2, ..., and
       // the center point C, this should create a series of triangles with
       // vertices O_0, O_1, C, O_1, O_2, C, O_2, O_3, C, ...
@@ -730,7 +731,7 @@ sk_sp<SkVertices> GetTestVertices(SkPoint center,
         colors.push_back(SK_ColorBLUE);
       }
       break;
-    case SkVertices::VertexMode::kTriangleStrip_VertexMode:
+    case DlVertexMode::kTriangleStrip:
       // Calling the points on the outer circle O_0, O_1, O_2, ..., and
       // the center point C, this should create a strip with vertices
       // O_0, O_1, C, O_2, O_3, C, O_4, O_5, C, ...
@@ -748,17 +749,17 @@ sk_sp<SkVertices> GetTestVertices(SkPoint center,
   }
 
   final_vertex_count = vertices.size();
-  return SkVertices::MakeCopy(mode, vertices.size(), vertices.data(), nullptr,
-                              colors.data());
+  return DlVertices::Make(mode, vertices.size(), vertices.data(), nullptr,
+                          colors.data());
 }
 
-std::string VertexModeToString(SkVertices::VertexMode mode) {
+std::string VertexModeToString(DlVertexMode mode) {
   switch (mode) {
-    case SkVertices::VertexMode::kTriangleStrip_VertexMode:
+    case DlVertexMode::kTriangleStrip:
       return "TriangleStrip";
-    case SkVertices::VertexMode::kTriangleFan_VertexMode:
+    case DlVertexMode::kTriangleFan:
       return "TriangleFan";
-    case SkVertices::VertexMode::kTriangles_VertexMode:
+    case DlVertexMode::kTriangles:
       return "Triangles";
   }
   return "Unknown";
@@ -775,7 +776,7 @@ std::string VertexModeToString(SkVertices::VertexMode mode) {
 void BM_DrawVertices(benchmark::State& state,
                      BackendType backend_type,
                      unsigned attributes,
-                     SkVertices::VertexMode mode) {
+                     DlVertexMode mode) {
   auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
   builder.setAttributesFromPaint(GetPaintForRun(attributes),
@@ -798,10 +799,10 @@ void BM_DrawVertices(benchmark::State& state,
 
   state.counters["DrawCallCount"] = center_points.size();
   for (SkPoint p : center_points) {
-    sk_sp<SkVertices> vertices =
+    std::shared_ptr<DlVertices> vertices =
         GetTestVertices(p, radius, 50, mode, vertex_count);
     total_vertex_count += vertex_count;
-    builder.drawVertices(vertices, SkBlendMode::kSrc);
+    builder.drawVertices(vertices, DlBlendMode::kSrc);
   }
 
   state.counters["VertexCount"] = total_vertex_count;
@@ -810,7 +811,7 @@ void BM_DrawVertices(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -913,7 +914,7 @@ void BM_DrawPoints(benchmark::State& state,
 
   auto display_list = builder.Build();
 
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -974,7 +975,7 @@ void BM_DrawImage(benchmark::State& state,
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.drawImage(image, dst, options, true);
+    builder.drawImage(DlImage::Make(image), dst, options, true);
 
     dst.offset(offset, offset);
     if (dst.x() + bitmap_size > canvas_size) {
@@ -987,7 +988,7 @@ void BM_DrawImage(benchmark::State& state,
 
   auto display_list = builder.Build();
 
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -1057,7 +1058,8 @@ void BM_DrawImageRect(benchmark::State& state,
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.drawImageRect(image, src, dst, options, true, constraint);
+    builder.drawImageRect(DlImage::Make(image), src, dst, options, true,
+                          constraint);
     dst.offset(offset, offset);
     if (dst.right() > canvas_size) {
       dst.offsetTo(0, dst.y());
@@ -1069,7 +1071,7 @@ void BM_DrawImageRect(benchmark::State& state,
 
   auto display_list = builder.Build();
 
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -1141,7 +1143,7 @@ void BM_DrawImageNine(benchmark::State& state,
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.drawImageNine(image, center, dst, filter, true);
+    builder.drawImageNine(DlImage::Make(image), center, dst, filter, true);
     dst.offset(offset, offset);
     if (dst.right() > canvas_size) {
       dst.offsetTo(0, dst.y());
@@ -1153,7 +1155,7 @@ void BM_DrawImageNine(benchmark::State& state,
 
   auto display_list = builder.Build();
 
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -1181,58 +1183,30 @@ void BM_DrawTextBlob(benchmark::State& state,
                                  DisplayListOpFlags::kDrawTextBlobFlags);
   AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawTextBlobFlags);
 
-  size_t glyph_runs = state.range(0);
+  size_t draw_calls = state.range(0);
   size_t canvas_size = kFixedCanvasSize;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
   auto canvas = canvas_provider->GetSurface()->getCanvas();
 
-  // We're just using plain Latin-1 where glyph count == character count
-  const char* string_fragment = "This text has exactly 32 glyphs.";
-  size_t fragment_length = strlen(string_fragment);
-  state.SetComplexityN(glyph_runs * fragment_length);
+  state.counters["DrawCallCount_Varies"] = draw_calls;
+  state.counters["GlyphCount"] = draw_calls;
+  char character[2] = {'A', '\0'};
 
-  // TODO(gw280): different fonts
-  SkFont font;
-
-  auto blob_fragment = SkTextBlob::MakeFromString(string_fragment, font);
-  auto bounds = blob_fragment->bounds();
-
-  // Calculate the approximate number of these glyph runs we can fit on a single
-  // canvas.
-  size_t x_count_max = canvas_size / bounds.width();
-  size_t y_count_max = canvas_size / bounds.height();
-  size_t remaining_runs = glyph_runs;
-
-  SkTextBlobBuilder blob_builder;
-  size_t current_y = 0;
-  while (remaining_runs > 0) {
-    size_t runs_this_pass = std::min(x_count_max, remaining_runs);
-    auto buffer = blob_builder.allocRun(
-        font, runs_this_pass * fragment_length, 0,
-        ((current_y % y_count_max) + 1) * bounds.height());
-    for (size_t i = 0; i < runs_this_pass; i++) {
-      font.textToGlyphs(string_fragment, fragment_length, SkTextEncoding::kUTF8,
-                        buffer.glyphs + (i * fragment_length), fragment_length);
-    }
-    remaining_runs -= runs_this_pass;
-    current_y++;
+  for (size_t i = 0; i < draw_calls; i++) {
+    character[0] = 'A' + (i % 26);
+    auto blob = SkTextBlob::MakeFromString(character, SkFont());
+    builder.drawTextBlob(blob, 50.0f, 50.0f);
   }
-
-  auto blob = blob_builder.make();
-
-  state.counters["DrawCallCount"] = 1;
-  state.counters["GlyphCount"] = glyph_runs * fragment_length;
-  builder.drawTextBlob(blob, 0.0f, 0.0f);
 
   auto display_list = builder.Build();
 
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
 
   auto filename = canvas_provider->BackendName() + "-DrawTextBlob-" +
-                  std::to_string(glyph_runs * fragment_length) + ".png";
+                  std::to_string(draw_calls) + ".png";
   canvas_provider->Snapshot(filename);
 }
 
@@ -1290,7 +1264,7 @@ void BM_DrawShadow(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }
@@ -1343,7 +1317,7 @@ void BM_SaveLayer(benchmark::State& state,
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
-  for (auto _ : state) {
+  for ([[maybe_unused]] auto _ : state) {
     display_list->RenderTo(canvas);
     canvas_provider->GetSurface()->flushAndSubmit(true);
   }

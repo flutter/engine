@@ -15,20 +15,22 @@ import static org.mockito.Mockito.when;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.FragmentActivity;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterFragmentTest {
   boolean isDelegateAttached;
 
@@ -39,6 +41,7 @@ public class FlutterFragmentTest {
 
     assertEquals("main", fragment.getDartEntrypointFunctionName());
     assertNull(fragment.getDartEntrypointLibraryUri());
+    assertNull(fragment.getDartEntrypointArgs());
     assertEquals("/", fragment.getInitialRoute());
     assertArrayEquals(new String[] {}, fragment.getFlutterShellArgs().toArray());
     assertTrue(fragment.shouldAttachEngineToActivity());
@@ -56,6 +59,7 @@ public class FlutterFragmentTest {
         FlutterFragment.withNewEngine()
             .dartEntrypoint("custom_entrypoint")
             .dartLibraryUri("package:foo/bar.dart")
+            .dartEntrypointArgs(new ArrayList<String>(Arrays.asList("foo", "bar")))
             .initialRoute("/custom/route")
             .shouldAttachEngineToActivity(false)
             .handleDeeplinking(true)
@@ -67,6 +71,7 @@ public class FlutterFragmentTest {
     assertEquals("custom_entrypoint", fragment.getDartEntrypointFunctionName());
     assertEquals("package:foo/bar.dart", fragment.getDartEntrypointLibraryUri());
     assertEquals("/custom/route", fragment.getInitialRoute());
+    assertArrayEquals(new String[] {"foo", "bar"}, fragment.getDartEntrypointArgs().toArray());
     assertArrayEquals(new String[] {}, fragment.getFlutterShellArgs().toArray());
     assertFalse(fragment.shouldAttachEngineToActivity());
     assertTrue(fragment.shouldHandleDeeplinking());

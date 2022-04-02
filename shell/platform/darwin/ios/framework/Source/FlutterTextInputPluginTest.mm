@@ -25,7 +25,7 @@ FLUTTER_ASSERT_ARC
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
 - (id<FlutterTextInputDelegate>)textInputDelegate;
-
+- (void)configureWithDictionary:(NSDictionary*)configuration;
 @end
 
 @interface FlutterTextInputViewSpy : FlutterTextInputView
@@ -139,7 +139,8 @@ FLUTTER_ASSERT_ARC
       @"inputAction" : @"TextInputAction.unspecified",
       @"smartDashesType" : @"0",
       @"smartQuotesType" : @"0",
-      @"autocorrect" : @YES
+      @"autocorrect" : @YES,
+      @"enableInteractiveSelection" : @YES,
     };
   }
 
@@ -281,6 +282,34 @@ FLUTTER_ASSERT_ARC
       showAutocorrectionPromptRectForStart:0
                                        end:1
                                 withClient:0]);
+}
+
+- (void)testIngoresSelectionChangeIfSelectionIsDisabled {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  __block int updateCount = 0;
+  OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+
+  [inputView.text setString:@"Some initial text"];
+  XCTAssertEqual(updateCount, 0);
+
+  FlutterTextRange* textRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  [inputView setSelectedTextRange:textRange];
+  XCTAssertEqual(updateCount, 1);
+
+  // Disable the interactive selection.
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@(NO) forKey:@"enableInteractiveSelection"];
+  [config setValue:@(NO) forKey:@"obscureText"];
+  [config setValue:@(NO) forKey:@"enableDeltaModel"];
+  [inputView configureWithDictionary:config];
+
+  textRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(2, 3)];
+  [inputView setSelectedTextRange:textRange];
+  // The update count does not change.
+  XCTAssertEqual(updateCount, 1);
 }
 
 - (void)testAutocorrectionPromptRectDoesNotAppearDuringScribble {
@@ -878,6 +907,32 @@ FLUTTER_ASSERT_ARC
   [inputView unmarkText];
   // updateEditingClient fires in response to unmarkText.
   XCTAssertEqual(updateCount, 2);
+}
+
+- (void)testCanCopyPasteWithScribbleEnabled {
+  if (@available(iOS 14.0, *)) {
+    NSDictionary* config = self.mutableTemplateCopy;
+    [self setClientId:123 configuration:config];
+    NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+    FlutterTextInputView* inputView = inputFields[0];
+
+    FlutterTextInputView* mockInputView = OCMPartialMock(inputView);
+    OCMStub([mockInputView isScribbleAvailable]).andReturn(YES);
+
+    [mockInputView insertText:@"aaaa"];
+    [mockInputView selectAll:nil];
+
+    XCTAssertFalse([mockInputView canPerformAction:@selector(copy:) withSender:NULL]);
+    XCTAssertTrue([mockInputView canPerformAction:@selector(copy:) withSender:@"sender"]);
+    XCTAssertFalse([mockInputView canPerformAction:@selector(paste:) withSender:NULL]);
+    XCTAssertFalse([mockInputView canPerformAction:@selector(paste:) withSender:@"sender"]);
+
+    [mockInputView copy:NULL];
+    XCTAssertFalse([mockInputView canPerformAction:@selector(copy:) withSender:NULL]);
+    XCTAssertTrue([mockInputView canPerformAction:@selector(copy:) withSender:@"sender"]);
+    XCTAssertFalse([mockInputView canPerformAction:@selector(paste:) withSender:NULL]);
+    XCTAssertTrue([mockInputView canPerformAction:@selector(paste:) withSender:@"sender"]);
+  }
 }
 
 - (void)testSetMarkedTextDuringScribbleDoesNotTriggerUpdateEditingClient {

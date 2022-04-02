@@ -16,18 +16,20 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.os.Looper;
 import android.view.Surface;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.view.TextureRegistry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterRendererTest {
 
   private FlutterJNI fakeFlutterJNI;
@@ -311,5 +313,30 @@ public class FlutterRendererTest {
           FlutterRenderer.DisplayFeatureState.UNKNOWN.encodedValue
         },
         stateCaptor.getValue());
+  }
+
+  @Test
+  public void itNotifyImageFrameListener() {
+    // Setup the test.
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+
+    AtomicInteger invocationCount = new AtomicInteger(0);
+    final TextureRegistry.OnFrameConsumedListener listener =
+        new TextureRegistry.OnFrameConsumedListener() {
+          @Override
+          public void onFrameConsumed() {
+            invocationCount.incrementAndGet();
+          }
+        };
+
+    FlutterRenderer.SurfaceTextureRegistryEntry entry =
+        (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
+    entry.setOnFrameConsumedListener(listener);
+
+    // Execute the behavior under test.
+    entry.textureWrapper().updateTexImage();
+
+    // Verify behavior under test.
+    assertEquals(1, invocationCount.get());
   }
 }

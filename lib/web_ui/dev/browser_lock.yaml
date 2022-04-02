@@ -4,13 +4,19 @@ chrome:
   # It seems Chrome can't always release from the same build for all operating
   # systems, so we specify per-OS build number.
   #
+  # Follow these instructions to find the correct build number for a specific
+  # Chromium version + OS combo:
+  #
+  # https://www.chromium.org/getting-involved/download-chromium/#downloading-old-builds-of-chrome-chromium
+  #
   # The OS names here must match what recipe Python expression
   # `self.m.platform.name.capitalize()` evaluates to. See:
   #
   # recipe_modules/web_util/api.py
-  Linux: 927388 # Major version 96
-  Mac: 927385 # Major version 96
-  Win: 927369 # Major version 96
+  Linux: 929514
+  Mac: 929514
+  Win: 929514
+  version: '96.2' # CIPD tag for the above Build IDs. Normally "ChromeMajorVersion.UploadAttempt". ;)
 
 ## Firefox does not use CIPD. To update the version, simply update it in this
 ## file.
@@ -45,5 +51,4 @@ safari_ios:
   # phone screeen we enlarge or shrink the area by applying a linear
   # transformation by a scale_factor (a.k.a. we perform isotropic scaling).
   # This value will be differ depending on the phone.
-  # For iOS 13.0 iPhone 11 Pro, this number is 1.15.
-  scale_factor: 1.00
+  scale_factor: 3.00

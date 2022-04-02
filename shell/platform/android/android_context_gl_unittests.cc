@@ -80,12 +80,13 @@ TEST(AndroidContextGl, Create) {
   auto environment = fml::MakeRefCounted<AndroidEnvironmentGL>();
   std::string thread_label =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
-  ThreadHost thread_host(thread_label, ThreadHost::Type::UI |
-                                           ThreadHost::Type::RASTER |
-                                           ThreadHost::Type::IO);
+
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      thread_label,
+      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO));
   TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
   auto context = std::make_unique<AndroidContextGL>(
-      AndroidRenderingAPI::kOpenGLES, environment, task_runners);
+      AndroidRenderingAPI::kOpenGLES, environment, task_runners, 0);
   context->SetMainSkiaContext(main_context);
   EXPECT_NE(context.get(), nullptr);
   context.reset();
@@ -106,7 +107,7 @@ TEST(AndroidContextGl, CreateSingleThread) {
       TaskRunners(thread_label, platform_runner, platform_runner,
                   platform_runner, platform_runner);
   auto context = std::make_unique<AndroidContextGL>(
-      AndroidRenderingAPI::kOpenGLES, environment, task_runners);
+      AndroidRenderingAPI::kOpenGLES, environment, task_runners, 0);
   context->SetMainSkiaContext(main_context);
   EXPECT_NE(context.get(), nullptr);
   context.reset();
@@ -120,12 +121,12 @@ TEST(AndroidSurfaceGL, CreateSnapshopSurfaceWhenOnscreenSurfaceIsNotNull) {
   auto environment = fml::MakeRefCounted<AndroidEnvironmentGL>();
   std::string thread_label =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
-  ThreadHost thread_host(thread_label, ThreadHost::Type::UI |
-                                           ThreadHost::Type::RASTER |
-                                           ThreadHost::Type::IO);
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      thread_label,
+      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO));
   TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
   auto android_context = std::make_shared<AndroidContextGL>(
-      AndroidRenderingAPI::kOpenGLES, environment, task_runners);
+      AndroidRenderingAPI::kOpenGLES, environment, task_runners, 0);
   auto jni = std::make_shared<MockPlatformViewAndroidJNI>();
   auto android_surface =
       std::make_unique<AndroidSurfaceGL>(android_context, jni);
@@ -145,18 +146,43 @@ TEST(AndroidSurfaceGL, CreateSnapshopSurfaceWhenOnscreenSurfaceIsNull) {
   auto environment = fml::MakeRefCounted<AndroidEnvironmentGL>();
   std::string thread_label =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
-  ThreadHost thread_host(thread_label, ThreadHost::Type::UI |
-                                           ThreadHost::Type::RASTER |
-                                           ThreadHost::Type::IO);
+
+  auto mask =
+      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO;
+  flutter::ThreadHost::ThreadHostConfig host_config(mask);
+
+  ThreadHost thread_host(host_config);
   TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
   auto android_context = std::make_shared<AndroidContextGL>(
-      AndroidRenderingAPI::kOpenGLES, environment, task_runners);
+      AndroidRenderingAPI::kOpenGLES, environment, task_runners, 0);
   auto jni = std::make_shared<MockPlatformViewAndroidJNI>();
   auto android_surface =
       std::make_unique<AndroidSurfaceGL>(android_context, jni);
   EXPECT_EQ(android_surface->GetOnscreenSurface(), nullptr);
   android_surface->CreateSnapshotSurface();
   EXPECT_NE(android_surface->GetOnscreenSurface(), nullptr);
+}
+
+TEST(AndroidContextGl, MSAAx4) {
+  GrMockOptions main_context_options;
+  sk_sp<GrDirectContext> main_context =
+      GrDirectContext::MakeMock(&main_context_options);
+  auto environment = fml::MakeRefCounted<AndroidEnvironmentGL>();
+  std::string thread_label =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      thread_label,
+      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO));
+  TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
+  auto context = std::make_unique<AndroidContextGL>(
+      AndroidRenderingAPI::kOpenGLES, environment, task_runners, 4);
+  context->SetMainSkiaContext(main_context);
+
+  EGLint sample_count;
+  eglGetConfigAttrib(environment->Display(), context->Config(), EGL_SAMPLES,
+                     &sample_count);
+  EXPECT_EQ(sample_count, 4);
 }
 }  // namespace android
 }  // namespace testing

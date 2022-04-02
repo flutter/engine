@@ -70,11 +70,6 @@ void initWebGl() {
   glRenderer ??= _WebGlRenderer();
 }
 
-void disposeWebGl() {
-  GlContextCache.dispose();
-  glRenderer = null;
-}
-
 abstract class GlRenderer {
   void drawVertices(
       html.CanvasRenderingContext2D? context,
@@ -317,7 +312,7 @@ class _WebGlRenderer implements GlRenderer {
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     drawRectToGl(
         targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
-    final Object? image = gl.readPatternData();
+    final Object? image = gl.readPatternData(gradient.isOpaque);
     gl.bindArrayBuffer(null);
     gl.bindElementArrayBuffer(null);
     return image;

@@ -7,7 +7,11 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
+#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "gtest/gtest.h"
+
+// winbase.h defines GetCurrentTime as a macro.
+#undef GetCurrentTime
 
 namespace flutter {
 namespace testing {
@@ -62,8 +66,14 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         EXPECT_EQ(strcmp(args->dart_entrypoint_argv[1], "arg2"), 0);
         EXPECT_NE(args->platform_message_callback, nullptr);
         EXPECT_NE(args->custom_task_runners, nullptr);
+        EXPECT_NE(args->custom_task_runners->thread_priority_setter, nullptr);
         EXPECT_EQ(args->custom_dart_entrypoint, nullptr);
+        EXPECT_NE(args->vsync_callback, nullptr);
 
+        args->custom_task_runners->thread_priority_setter(
+            FlutterThreadPriority::kRaster);
+        EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+                  THREAD_PRIORITY_ABOVE_NORMAL);
         return kSuccess;
       }));
 
@@ -93,6 +103,29 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         return kSuccess;
       }));
 
+  // And it should send display info.
+  bool notify_display_update_called = false;
+  modifier.SetFrameInterval(16600000);  // 60 fps.
+  modifier.embedder_api().NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate,
+      ([&notify_display_update_called, engine_instance = engine.get()](
+           FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+           const FlutterEngineDisplaysUpdateType update_type,
+           const FlutterEngineDisplay* embedder_displays,
+           size_t display_count) {
+        EXPECT_EQ(update_type, kFlutterEngineDisplaysUpdateTypeStartup);
+        EXPECT_EQ(display_count, 1);
+
+        FlutterEngineDisplay display = embedder_displays[0];
+
+        EXPECT_EQ(display.display_id, 0);
+        EXPECT_EQ(display.single_display, true);
+        EXPECT_EQ(std::floor(display.refresh_rate), 60.0);
+
+        notify_display_update_called = true;
+        return kSuccess;
+      }));
+
   // Set the AngleSurfaceManager to !nullptr to test ANGLE rendering.
   modifier.SetSurfaceManager(reinterpret_cast<AngleSurfaceManager*>(1));
 
@@ -101,6 +134,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   EXPECT_TRUE(run_called);
   EXPECT_TRUE(update_locales_called);
   EXPECT_TRUE(settings_message_sent);
+  EXPECT_TRUE(notify_display_update_called);
 
   // Ensure that deallocation doesn't call the actual Shutdown with the bogus
   // engine pointer that the overridden Run returned.
@@ -108,9 +142,43 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   modifier.ReleaseSurfaceManager();
 }
 
+TEST(FlutterWindowsEngine, ConfiguresFrameVsync) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+  bool on_vsync_called = false;
+
+  modifier.embedder_api().GetCurrentTime =
+      MOCK_ENGINE_PROC(GetCurrentTime, ([]() -> uint64_t { return 1; }));
+  modifier.embedder_api().OnVsync = MOCK_ENGINE_PROC(
+      OnVsync,
+      ([&on_vsync_called, engine_instance = engine.get()](
+           FLUTTER_API_SYMBOL(FlutterEngine) engine, intptr_t baton,
+           uint64_t frame_start_time_nanos, uint64_t frame_target_time_nanos) {
+        EXPECT_EQ(baton, 1);
+        EXPECT_EQ(frame_start_time_nanos, 16600000);
+        EXPECT_EQ(frame_target_time_nanos, 33200000);
+        on_vsync_called = true;
+        return kSuccess;
+      }));
+  modifier.SetStartTime(0);
+  modifier.SetFrameInterval(16600000);
+
+  engine->OnVsync(1);
+
+  EXPECT_TRUE(on_vsync_called);
+}
+
 TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
+
+  modifier.embedder_api().NotifyDisplayUpdate =
+      MOCK_ENGINE_PROC(NotifyDisplayUpdate,
+                       ([engine_instance = engine.get()](
+                            FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+                            const FlutterEngineDisplaysUpdateType update_type,
+                            const FlutterEngineDisplay* embedder_displays,
+                            size_t display_count) { return kSuccess; }));
 
   // The engine should be run with expected configuration values.
   bool run_called = false;
@@ -253,6 +321,57 @@ TEST(FlutterWindowsEngine, DispatchSemanticsAction) {
   engine->DispatchSemanticsAction(42, kFlutterSemanticsActionDismiss,
                                   std::move(data));
   EXPECT_TRUE(called);
+}
+
+TEST(FlutterWindowsEngine, SetsThreadPriority) {
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kBackground);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+            THREAD_PRIORITY_BELOW_NORMAL);
+
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kDisplay);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+            THREAD_PRIORITY_ABOVE_NORMAL);
+
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kRaster);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
+            THREAD_PRIORITY_ABOVE_NORMAL);
+
+  // FlutterThreadPriority::kNormal does not change thread priority, reset to 0
+  // here.
+  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+
+  WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kNormal);
+  EXPECT_EQ(GetThreadPriority(GetCurrentThread()), THREAD_PRIORITY_NORMAL);
+}
+
+TEST(FlutterWindowsEngine, AddPluginRegistrarDestructionCallback) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  MockEmbedderApiForKeyboard(modifier,
+                             std::make_shared<MockKeyResponseController>());
+
+  engine->RunWithEntrypoint(nullptr);
+
+  // Verify that destruction handlers don't overwrite each other.
+  int result1 = 0;
+  int result2 = 0;
+  engine->AddPluginRegistrarDestructionCallback(
+      [](FlutterDesktopPluginRegistrarRef ref) {
+        auto result = reinterpret_cast<int*>(ref);
+        *result = 1;
+      },
+      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(&result1));
+  engine->AddPluginRegistrarDestructionCallback(
+      [](FlutterDesktopPluginRegistrarRef ref) {
+        auto result = reinterpret_cast<int*>(ref);
+        *result = 2;
+      },
+      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(&result2));
+
+  engine->Stop();
+  EXPECT_EQ(result1, 1);
+  EXPECT_EQ(result2, 2);
 }
 
 }  // namespace testing

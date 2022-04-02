@@ -37,6 +37,10 @@ FlatlandConnection::~FlatlandConnection() = default;
 
 // This method is called from the raster thread.
 void FlatlandConnection::Present() {
+  if (!threadsafe_state_.first_present_called_) {
+    std::scoped_lock<std::mutex> lock(threadsafe_state_.mutex_);
+    threadsafe_state_.first_present_called_ = true;
+  }
   if (present_credits_ > 0) {
     DoPresent();
   } else {
@@ -50,7 +54,7 @@ void FlatlandConnection::DoPresent() {
   --present_credits_;
 
   fuchsia::ui::composition::PresentArgs present_args;
-  // TODO(fxbug.dev/64201): compute a better presentation time;
+  // TODO(fxbug.dev/94000): compute a better presentation time;
   present_args.set_requested_presentation_time(0);
   present_args.set_acquire_fences(std::move(acquire_fences_));
   present_args.set_release_fences(std::move(previous_present_release_fences_));
@@ -67,25 +71,26 @@ void FlatlandConnection::DoPresent() {
 
 // This method is called from the UI thread.
 void FlatlandConnection::AwaitVsync(FireCallbackCallback callback) {
-  if (first_call_to_await_vsync_) {
+  std::scoped_lock<std::mutex> lock(threadsafe_state_.mutex_);
+
+  // Immediately fire callbacks until the first Present. We might receive
+  // multiple requests for AwaitVsync() until the first Present, which relies on
+  // receiving size on FlatlandPlatformView::OnGetLayout() at an uncertain time.
+  if (!threadsafe_state_.first_present_called_) {
     fml::TimePoint now = fml::TimePoint::Now();
     callback(now, now + kDefaultFlatlandPresentationInterval);
-    first_call_to_await_vsync_ = false;
     return;
   }
 
-  {
-    std::scoped_lock<std::mutex> lock(threadsafe_state_.mutex_);
-    threadsafe_state_.fire_callback_ = callback;
+  threadsafe_state_.fire_callback_ = callback;
 
-    if (threadsafe_state_.fire_callback_pending_) {
-      fml::TimePoint now = fml::TimePoint::Now();
-      // TODO(fxbug.dev/64201): Calculate correct frame times.
-      threadsafe_state_.fire_callback_(
-          now, now + kDefaultFlatlandPresentationInterval);
-      threadsafe_state_.fire_callback_ = nullptr;
-      threadsafe_state_.fire_callback_pending_ = false;
-    }
+  if (threadsafe_state_.fire_callback_pending_) {
+    fml::TimePoint now = fml::TimePoint::Now();
+    // TODO(fxbug.dev/94000): Calculate correct frame times.
+    threadsafe_state_.fire_callback_(
+        now, now + kDefaultFlatlandPresentationInterval);
+    threadsafe_state_.fire_callback_ = nullptr;
+    threadsafe_state_.fire_callback_pending_ = false;
   }
 }
 
@@ -116,7 +121,7 @@ void FlatlandConnection::OnNextFrameBegin(
     std::scoped_lock<std::mutex> lock(threadsafe_state_.mutex_);
     if (threadsafe_state_.fire_callback_) {
       fml::TimePoint now = fml::TimePoint::Now();
-      // TODO(fxbug.dev/64201): Calculate correct frame times.
+      // TODO(fxbug.dev/94000): Calculate correct frame times.
       threadsafe_state_.fire_callback_(
           now, now + kDefaultFlatlandPresentationInterval);
       threadsafe_state_.fire_callback_ = nullptr;

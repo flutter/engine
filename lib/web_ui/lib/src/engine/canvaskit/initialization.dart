@@ -9,10 +9,10 @@ import 'dart:html' as html;
 import '../../engine.dart' show kProfileMode;
 import '../browser_detection.dart';
 import '../configuration.dart';
-import '../embedder.dart';
 import '../safe_browser_api.dart';
 import 'canvaskit_api.dart';
 import 'fonts.dart';
+import 'util.dart';
 
 /// Whether to use CanvasKit as the rendering backend.
 final bool useCanvasKit = FlutterConfiguration.flutterWebAutoDetect
@@ -40,21 +40,31 @@ String get canvasKitJavaScriptBindingsUrl =>
 String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
     canvasKitBase + file;
 
-/// Initialize CanvasKit.
+/// Downloads CanvasKit and instantiates its WASM module.
 ///
 /// Uses a cached implemenation if it exists. Otherwise downloads CanvasKit.
 /// Assigns the global [canvasKit] object.
+///
+/// Does not put any UI onto the page. It is therefore safe to call this
+/// function while the page is showing non-Flutter UI, such as a loading
+/// indicator or a splash screen.
+///
+/// See also:
+///
+///  * `initializeEngineUi`, which puts UI elements on the page.
 Future<void> initializeCanvasKit({String? canvasKitBase}) async {
   if (windowFlutterCanvasKit != null) {
     canvasKit = windowFlutterCanvasKit!;
+  } else if (useH5vccCanvasKit) {
+    if (h5vcc?.canvasKit == null) {
+      throw CanvasKitError('H5vcc CanvasKit implementation not found.');
+    }
+    canvasKit = h5vcc!.canvasKit!;
+    windowFlutterCanvasKit = canvasKit;
   } else {
     canvasKit = await downloadCanvasKit(canvasKitBase: canvasKitBase);
     windowFlutterCanvasKit = canvasKit;
   }
-
-  /// Add a Skia scene host.
-  skiaSceneHost = html.Element.tag('flt-scene');
-  flutterViewEmbedder.renderScene(skiaSceneHost);
 }
 
 /// Download and initialize the CanvasKit module.

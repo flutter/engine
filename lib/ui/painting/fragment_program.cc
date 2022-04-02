@@ -55,7 +55,7 @@ void FragmentProgram::init(std::string sksl, bool debugPrintSksl) {
 
 fml::RefPtr<FragmentShader> FragmentProgram::shader(
     Dart_Handle shader,
-    const tonic::Float32List& uniforms,
+    tonic::Float32List& uniforms,
     Dart_Handle samplers) {
   auto sampler_shaders =
       tonic::DartConverter<std::vector<ImageShader*>>::FromDart(samplers);
@@ -69,19 +69,20 @@ fml::RefPtr<FragmentShader> FragmentProgram::shader(
   for (size_t i = 0; i < uniform_count; i++) {
     uniform_floats[i] = uniforms[i];
   }
+  uniforms.Release();
   std::vector<sk_sp<SkShader>> sk_samplers(sampler_shaders.size());
   for (size_t i = 0; i < sampler_shaders.size(); i++) {
+    SkSamplingOptions sampling;
     ImageShader* image_shader = sampler_shaders[i];
     // The default value for SkSamplingOptions is used because ImageShader
     // uses a cached value set by the user in the Dart constructor.
     // Users are instructed to make use of this in the Dart docs.
-    sk_samplers[i] = image_shader->shader(SkSamplingOptions());
+    sk_samplers[i] = image_shader->shader(sampling)->skia_object();
     uniform_floats[uniform_count + 2 * i] = image_shader->width();
     uniform_floats[uniform_count + 2 * i + 1] = image_shader->height();
   }
-  auto sk_shader =
-      runtime_effect_->makeShader(std::move(uniform_data), sk_samplers.data(),
-                                  sk_samplers.size(), nullptr, false);
+  auto sk_shader = runtime_effect_->makeShader(
+      std::move(uniform_data), sk_samplers.data(), sk_samplers.size());
   return FragmentShader::Create(shader, std::move(sk_shader));
 }
 

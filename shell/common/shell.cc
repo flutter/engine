@@ -147,10 +147,14 @@ std::unique_ptr<Shell> Shell::Create(
   if (!isolate_snapshot) {
     isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
   }
+  auto resource_cache_limit_calculator =
+      std::make_shared<ResourceCacheLimitCalculator>(
+          settings.resource_cache_max_bytes_threshold);
   return CreateWithSnapshot(std::move(platform_data),            //
                             std::move(task_runners),             //
                             /*parent_merger=*/nullptr,           //
                             /*parent_io_manager=*/nullptr,       //
+                            resource_cache_limit_calculator,     //
                             std::move(settings),                 //
                             std::move(vm),                       //
                             std::move(isolate_snapshot),         //
@@ -163,6 +167,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     fml::RefPtr<fml::RasterThreadMerger> parent_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
+    const std::shared_ptr<ResourceCacheLimitCalculator>&
+        resource_cache_limit_calculator,
     TaskRunners task_runners,
     const PlatformData& platform_data,
     Settings settings,
@@ -177,7 +183,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   }
 
   auto shell = std::unique_ptr<Shell>(
-      new Shell(std::move(vm), task_runners, parent_merger, settings,
+      new Shell(std::move(vm), task_runners, parent_merger,
+                resource_cache_limit_calculator, settings,
                 std::make_shared<VolatilePathTracker>(
                     task_runners.GetUITaskRunner(),
                     !settings.skia_deterministic_rendering_on_cpu),
@@ -244,8 +251,11 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
           io_manager = parent_io_manager;
         } else {
           io_manager = std::make_shared<ShellIOManager>(
-              platform_view_ptr->CreateResourceContext(),
-              is_backgrounded_sync_switch, io_task_runner);
+              platform_view_ptr->CreateResourceContext(),  // resource context
+              is_backgrounded_sync_switch,                 // sync switch
+              io_task_runner,  // unref queue task runner
+              platform_view_ptr->GetImpellerContext()  // impeller context
+          );
         }
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
@@ -310,6 +320,8 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
     TaskRunners task_runners,
     fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
+    const std::shared_ptr<ResourceCacheLimitCalculator>&
+        resource_cache_limit_calculator,
     Settings settings,
     DartVMRef vm,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -337,6 +349,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
            &shell,                                                        //
            parent_thread_merger,                                          //
            parent_io_manager,                                             //
+           resource_cache_limit_calculator,                               //
            task_runners = std::move(task_runners),                        //
            platform_data = std::move(platform_data),                      //
            settings = std::move(settings),                                //
@@ -350,6 +363,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
                 std::move(vm),                       //
                 parent_thread_merger,                //
                 parent_io_manager,                   //
+                resource_cache_limit_calculator,     //
                 std::move(task_runners),             //
                 std::move(platform_data),            //
                 std::move(settings),                 //
@@ -366,11 +380,14 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 Shell::Shell(DartVMRef vm,
              TaskRunners task_runners,
              fml::RefPtr<fml::RasterThreadMerger> parent_merger,
+             const std::shared_ptr<ResourceCacheLimitCalculator>&
+                 resource_cache_limit_calculator,
              Settings settings,
              std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
              bool is_gpu_disabled)
     : task_runners_(std::move(task_runners)),
       parent_raster_thread_merger_(parent_merger),
+      resource_cache_limit_calculator_(resource_cache_limit_calculator),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
@@ -382,6 +399,8 @@ Shell::Shell(DartVMRef vm,
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   display_manager_ = std::make_unique<DisplayManager>();
+  resource_cache_limit_calculator->AddResourceCacheLimitItem(
+      weak_factory_.GetWeakPtr());
 
   // Generate a WeakPtrFactory for use with the raster thread. This does not
   // need to wait on a latch because it can only ever be used from the raster
@@ -499,8 +518,9 @@ std::unique_ptr<Shell> Shell::Spawn(
           .SetIfTrue([&is_gpu_disabled] { is_gpu_disabled = true; }));
   std::unique_ptr<Shell> result = CreateWithSnapshot(
       PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
-      io_manager_, GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
-      on_create_platform_view, on_create_rasterizer,
+      io_manager_, resource_cache_limit_calculator_, GetSettings(), vm_,
+      vm_->GetVMData()->GetIsolateSnapshot(), on_create_platform_view,
+      on_create_rasterizer,
       [engine = this->engine_.get(), initial_route](
           Engine::Delegate& delegate,
           const PointerDataDispatcherMaker& dispatcher_maker, DartVM& vm,
@@ -869,11 +889,27 @@ void Shell::OnPlatformViewDestroyed() {
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                     raster_task);
   latch.Wait();
-  // On Android, the external view embedder posts a task to the platform thread,
-  // and waits until it completes.
-  // As a result, the platform thread must not be blocked prior to calling
-  // this method.
+  // On Android, the external view embedder may post a task to the platform
+  // thread, and wait until it completes if overlay surfaces must be released.
+  // However, the platform thread might be blocked when Dart is initializing.
+  // In this situation, calling TeardownExternalViewEmbedder is safe because no
+  // platform views have been created before Flutter renders the first frame.
+  // Overall, the longer term plan is to remove this implementation once
+  // https://github.com/flutter/flutter/issues/96679 is fixed.
   rasterizer_->TeardownExternalViewEmbedder();
+}
+
+// |PlatformView::Delegate|
+void Shell::OnPlatformViewScheduleFrame() {
+  TRACE_EVENT0("flutter", "Shell::OnPlatformViewScheduleFrame");
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr()]() {
+    if (engine) {
+      engine->ScheduleFrame();
+    }
+  });
 }
 
 // |PlatformView::Delegate|
@@ -892,12 +928,15 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   }
 
   // This is the formula Android uses.
-  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
-  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  // https://android.googlesource.com/platform/frameworks/base/+/39ae5bac216757bc201490f4c7b8c0f63006c6cd/libs/hwui/renderthread/CacheManager.cpp#45
+  resource_cache_limit_ =
+      metrics.physical_width * metrics.physical_height * 12 * 4;
+  size_t resource_cache_max_bytes =
+      resource_cache_limit_calculator_->GetResourceCacheMaxBytes();
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+      [rasterizer = rasterizer_->GetWeakPtr(), resource_cache_max_bytes] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+          rasterizer->SetResourceCacheMaxBytes(resource_cache_max_bytes, false);
         }
       });
 
@@ -1063,6 +1102,11 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
       });
 }
 
+// |PlatformView::Delegate|
+const Settings& Shell::OnPlatformViewGetSettings() const {
+  return settings_;
+}
+
 // |Animator::Delegate|
 void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
                                  uint64_t frame_number) {
@@ -1090,23 +1134,26 @@ void Shell::OnAnimatorNotifyIdle(fml::TimePoint deadline) {
   }
 }
 
-// |Animator::Delegate|
-void Shell::OnAnimatorDraw(
-    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+void Shell::OnAnimatorUpdateLatestFrameTargetTime(
+    fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
 
   // record the target time for use by rasterizer.
   {
     std::scoped_lock time_recorder_lock(time_recorder_mutex_);
-    const fml::TimePoint frame_target_time =
-        frame_timings_recorder->GetVsyncTargetTime();
     if (!latest_frame_target_time_) {
       latest_frame_target_time_ = frame_target_time;
     } else if (latest_frame_target_time_ < frame_target_time) {
       latest_frame_target_time_ = frame_target_time;
     }
   }
+}
+
+// |Animator::Delegate|
+void Shell::OnAnimatorDraw(
+    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+  FML_DCHECK(is_setup_);
 
   auto discard_callback = [this](flutter::LayerTree& tree) {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
@@ -1891,7 +1938,7 @@ Shell::GetPlatformMessageHandler() const {
   return platform_message_handler_;
 }
 
-const VsyncWaiter& Shell::GetVsyncWaiter() const {
+const std::weak_ptr<VsyncWaiter> Shell::GetVsyncWaiter() const {
   return engine_->GetVsyncWaiter();
 }
 
