@@ -6,7 +6,6 @@
 #define FLUTTER_FLOW_RASTER_CACHEABLE_ENTRY_H_
 
 #include <memory>
-#include <unordered_map>
 
 #include "flutter/flow/embedded_views.h"
 #include "include/core/SkPicture.h"
@@ -157,6 +156,10 @@ class RasterCacheableEntry {
   }
 
   CacheableItemWrapperBase* GetCacheableWrapper() const { return item_.get(); }
+
+  void MarkLayerChildrenNeedCached() {
+    item_->GetCacheableLayer()->NeedCacheChildren();
+  }
 
   void TryToPrepareRasterCache(PrerollContext* context);
 

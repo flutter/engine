@@ -46,9 +46,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
       context->raster_cached_entries.size() - current_index;
   auto cache_type = NeedCaching(context, matrix);
   if (cache_type == CacheableLayer::CacheType::kChildren) {
-    cacheable_entry->GetCacheableWrapper()
-        ->GetCacheableLayer()
-        ->NeedCacheChildren();
+    cacheable_entry->MarkLayerChildrenNeedCached();
   }
 }
 

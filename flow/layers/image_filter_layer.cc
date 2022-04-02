@@ -69,9 +69,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     cacheable_entry->need_caching = false;
   } else if (cache_type == CacheableLayer::CacheType::kChildren) {
     // Replace Cacheable child
-    cacheable_entry->GetCacheableWrapper()
-        ->GetCacheableLayer()
-        ->NeedCacheChildren();
+    cacheable_entry->MarkLayerChildrenNeedCached();
   }
 
   if (!filter_) {
