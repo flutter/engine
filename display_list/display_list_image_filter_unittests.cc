@@ -58,7 +58,7 @@ TEST(DisplayListImageFilter, FromSkiaDilateImageFilter) {
   ASSERT_EQ(filter->type(), DlImageFilterType::kUnknown);
 
   // We cannot recapture the dilate parameters from an SkDilateImageFilter
-  ASSERT_EQ(filter->asDilate(), nullptr);
+  ASSERT_EQ(filter->asBlur(), nullptr);
   ASSERT_EQ(filter->asDilate(), nullptr);
   ASSERT_EQ(filter->asErode(), nullptr);
   ASSERT_EQ(filter->asMatrix(), nullptr);
@@ -74,8 +74,8 @@ TEST(DisplayListImageFilter, FromSkiaErodeImageFilter) {
   ASSERT_EQ(filter->type(), DlImageFilterType::kUnknown);
 
   // We cannot recapture the erode parameters from an SkErodeImageFilter
-  ASSERT_EQ(filter->asErode(), nullptr);
-  ASSERT_EQ(filter->asErode(), nullptr);
+  ASSERT_EQ(filter->asBlur(), nullptr);
+  ASSERT_EQ(filter->asDilate(), nullptr);
   ASSERT_EQ(filter->asErode(), nullptr);
   ASSERT_EQ(filter->asMatrix(), nullptr);
   ASSERT_EQ(filter->asCompose(), nullptr);

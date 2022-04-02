@@ -1137,8 +1137,7 @@ class CanvasCompareTester {
       dilate_env.init_ref(cv_dilate_setup, testP.cv_renderer(),
                           dl_dilate_setup);
       DlDilateImageFilter filter_5(5.0, 5.0);
-      BoundsTolerance dilate5Tolerance = tolerance.addBoundsPadding(21, 21);
-      RenderWith(testP, dilate_env, dilate5Tolerance,
+      RenderWith(testP, dilate_env, tolerance,
                  CaseParameters(
                      "ImageFilter == Dilate 5",
                      [=](SkCanvas* cv, SkPaint& p) {
@@ -1168,10 +1167,9 @@ class CanvasCompareTester {
       // do not erode too much, because some tests assert there are enough
       // pixels that are changed.
       DlErodeImageFilter filter_1(1.0, 1.0);
-      BoundsTolerance erode5Tolerance = tolerance.addBoundsPadding(21, 21);
-      RenderWith(testP, erode_env, erode5Tolerance,
+      RenderWith(testP, erode_env, tolerance,
                  CaseParameters(
-                     "ImageFilter == Erode 3",
+                     "ImageFilter == Erode 1",
                      [=](SkCanvas* cv, SkPaint& p) {
                        cv_erode_setup(cv, p);
                        p.setImageFilter(filter_1.skia_object());
