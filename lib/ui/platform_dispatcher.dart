@@ -864,9 +864,9 @@ class PlatformDispatcher {
     _onPlatformBrightnessChangedZone = Zone.current;
   }
 
-
   /// Indicates this device supports capture text from camera (OCR) or not
-  bool get captureTextFromCameraEnabled => configuration.captureTextFromCameraEnabled;
+  bool _captureTextFromCameraEnabled = false;
+  bool get captureTextFromCameraEnabled => _captureTextFromCameraEnabled;
 
 
   /// The setting indicating the current system font of the host platform.
@@ -903,9 +903,10 @@ class PlatformDispatcher {
     if (brieflyShowPassword != null) {
       _brieflyShowPassword = brieflyShowPassword;
     }
-    bool captureTextFromCameraEnabled = false;
-    if(data['captureTextFromCameraEnabled'] != null){
-      captureTextFromCameraEnabled = data['captureTextFromCameraEnabled'] as bool;
+    // This field is optional.
+    final bool? captureTextFromCameraEnabled = data['captureTextFromCameraEnabled'] as bool?;
+    if (captureTextFromCameraEnabled != null) {
+      _captureTextFromCameraEnabled = captureTextFromCameraEnabled;
     }
     final Brightness platformBrightness =
     data['platformBrightness']! as String == 'dark' ? Brightness.dark : Brightness.light;
@@ -925,7 +926,6 @@ class PlatformDispatcher {
       textScaleFactor: textScaleFactor,
       alwaysUse24HourFormat: alwaysUse24HourFormat,
       platformBrightness: platformBrightness,
-      captureTextFromCameraEnabled: captureTextFromCameraEnabled,
       systemFontFamily: systemFontFamily,
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
@@ -1069,7 +1069,6 @@ class PlatformConfiguration {
     this.textScaleFactor = 1.0,
     this.locales = const <Locale>[],
     this.defaultRouteName,
-    this.captureTextFromCameraEnabled = false,
     this.systemFontFamily,
   });
 
@@ -1082,7 +1081,6 @@ class PlatformConfiguration {
     double? textScaleFactor,
     List<Locale>? locales,
     String? defaultRouteName,
-    bool? captureTextFromCameraEnabled,
     String? systemFontFamily,
   }) {
     return PlatformConfiguration(
@@ -1093,7 +1091,6 @@ class PlatformConfiguration {
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
-      captureTextFromCameraEnabled: captureTextFromCameraEnabled ?? this.captureTextFromCameraEnabled,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
     );
   }
@@ -1124,12 +1121,8 @@ class PlatformConfiguration {
   /// launched.
   final String? defaultRouteName;
 
-  /// Indicates this device supports capture text from camera or not
-  final bool captureTextFromCameraEnabled;
-
   /// The system-reported default font family.
   final String? systemFontFamily;
-
 }
 
 /// An immutable view configuration.
