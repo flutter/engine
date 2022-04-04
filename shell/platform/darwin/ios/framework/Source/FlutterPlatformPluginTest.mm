@@ -24,7 +24,7 @@
   FlutterPlatformPlugin* plugin =
       [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
 
-  XCTestExpectation *setStringExpectation = [self expectationWithDescription:@"setString"];
+  XCTestExpectation* setStringExpectation = [self expectationWithDescription:@"setString"];
   FlutterResult resultSet = ^(id result) {
     [setStringExpectation fulfill];
   };
@@ -34,7 +34,7 @@
   [plugin handleMethodCall:methodCallSet result:resultSet];
   [self waitForExpectationsWithTimeout:1 handler:nil];
 
-  XCTestExpectation *hasStringsExpectation = [self expectationWithDescription:@"hasStrings"];
+  XCTestExpectation* hasStringsExpectation = [self expectationWithDescription:@"hasStrings"];
   FlutterResult result = ^(id result) {
     XCTAssertTrue([result[@"value"] boolValue]);
     [hasStringsExpectation fulfill];
@@ -44,7 +44,7 @@
   [plugin handleMethodCall:methodCall result:result];
   [self waitForExpectationsWithTimeout:1 handler:nil];
 
-  XCTestExpectation *getDataExpectation = [self expectationWithDescription:@"getData"];
+  XCTestExpectation* getDataExpectation = [self expectationWithDescription:@"getData"];
   FlutterResult getDataResult = ^(id result) {
     XCTAssertEqualObjects(result[@"text"], @"some string");
     [getDataExpectation fulfill];
@@ -63,7 +63,7 @@
   FlutterPlatformPlugin* plugin =
       [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
 
-  XCTestExpectation *setStringExpectation = [self expectationWithDescription:@"setData"];
+  XCTestExpectation* setStringExpectation = [self expectationWithDescription:@"setData"];
   FlutterResult resultSet = ^(id result) {
     [setStringExpectation fulfill];
   };
@@ -72,7 +72,7 @@
                                         arguments:@{@"text" : [NSNull null]}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
 
-  XCTestExpectation *getDataExpectation = [self expectationWithDescription:@"getData"];
+  XCTestExpectation* getDataExpectation = [self expectationWithDescription:@"getData"];
   FlutterResult result = ^(id result) {
     XCTAssertEqualObjects(result[@"text"], @"null");
     [getDataExpectation fulfill];
@@ -100,7 +100,7 @@
   id navigationControllerMock = OCMPartialMock(navigationController);
   OCMStub([navigationControllerMock popViewControllerAnimated:YES]);
   // Set some string to the pasteboard.
-  XCTestExpectation *navigationPopCalled = [self expectationWithDescription:@"SystemNavigator.pop"];
+  XCTestExpectation* navigationPopCalled = [self expectationWithDescription:@"SystemNavigator.pop"];
   FlutterResult resultSet = ^(id result) {
     [navigationPopCalled fulfill];
   };

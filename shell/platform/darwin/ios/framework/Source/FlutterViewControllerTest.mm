@@ -18,7 +18,7 @@
 //#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 //#import "flutter/shell/platform/embedder/embedder.h"
 //
-//FLUTTER_ASSERT_ARC
+// FLUTTER_ASSERT_ARC
 //
 //@interface FlutterEngine ()
 //- (FlutterTextInputPlugin*)textInputPlugin;
@@ -79,7 +79,7 @@
 //- (void)notifyLowMemory;
 //@end
 //
-//extern NSNotificationName const FlutterViewControllerWillDealloc;
+// extern NSNotificationName const FlutterViewControllerWillDealloc;
 //
 ///// A simple mock class for FlutterEngine.
 /////
@@ -104,7 +104,7 @@
 //// The following conditional compilation defines an API 13 concept on earlier API targets so that
 //// a compiler compiling against API 12 or below does not blow up due to non-existent members.
 //#if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
-//typedef enum UIAccessibilityContrast : NSInteger {
+// typedef enum UIAccessibilityContrast : NSInteger {
 //  UIAccessibilityContrastUnspecified = 0,
 //  UIAccessibilityContrastNormal = 1,
 //  UIAccessibilityContrastHigh = 2
@@ -274,7 +274,8 @@
 //  mockEngine.lifecycleChannel = lifecycleChannel;
 //  __weak FlutterViewController* weakViewController;
 //  @autoreleasepool {
-//    FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+//    FlutterViewController* viewController = [[FlutterViewController alloc]
+//    initWithEngine:mockEngine
 //                                                                                  nibName:nil
 //                                                                                   bundle:nil];
 //    weakViewController = viewController;
@@ -288,7 +289,8 @@
 //}
 //
 //- (void)
-//    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewWillAppear {
+//    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewWillAppear
+//    {
 //  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
 //  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
 //  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -299,14 +301,17 @@
 //}
 //
 //- (void)
-//    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewWillAppear {
+//    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewWillAppear
+//    {
 //  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
 //  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
-//  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerA = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = nil;
-//  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerB = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = nil;
@@ -316,7 +321,8 @@
 //}
 //
 //- (void)
-//    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewDidAppear {
+//    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewDidAppear
+//    {
 //  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
 //  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
 //  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -327,14 +333,17 @@
 //}
 //
 //- (void)
-//    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewDidAppear {
+//    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewDidAppear
+//    {
 //  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
 //  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
-//  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerA = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = nil;
-//  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerB = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = nil;
@@ -344,7 +353,8 @@
 //}
 //
 //- (void)
-//    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewWillDisappear {
+//    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewWillDisappear
+//    {
 //  id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
 //  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
 //  mockEngine.lifecycleChannel = lifecycleChannel;
@@ -357,14 +367,17 @@
 //}
 //
 //- (void)
-//    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewWillDisappear {
+//    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewWillDisappear
+//    {
 //  id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
 //  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
 //  mockEngine.lifecycleChannel = lifecycleChannel;
-//  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerA = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
-//  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerB = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = viewControllerB;
@@ -375,11 +388,13 @@
 //- (void)testUpdateViewportMetricsDoesntInvokeEngineWhenNotTheViewController {
 //  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
 //  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
-//  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerA = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = nil;
-//  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerB = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = viewControllerB;
@@ -404,11 +419,13 @@
 //- (void)testViewDidLoadDoesntInvokeEngineWhenNotTheViewController {
 //  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
 //  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
-//  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerA = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = nil;
-//  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+//  FlutterViewController* viewControllerB = [[FlutterViewController alloc]
+//  initWithEngine:mockEngine
 //                                                                                 nibName:nil
 //                                                                                  bundle:nil];
 //  mockEngine.viewController = viewControllerB;
@@ -926,7 +943,8 @@
 //                                                                        nibName:nil
 //                                                                         bundle:nil];
 //  XCTAssertFalse(realVC.prefersHomeIndicatorAutoHidden, @"");
-//  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerHideHomeIndicator
+//  [[NSNotificationCenter defaultCenter]
+//  postNotificationName:FlutterViewControllerHideHomeIndicator
 //                                                      object:nil];
 //  XCTAssertTrue(realVC.prefersHomeIndicatorAutoHidden, @"");
 //  engine.viewController = nil;
