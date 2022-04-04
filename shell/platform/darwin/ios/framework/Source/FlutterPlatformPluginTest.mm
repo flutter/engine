@@ -16,7 +16,8 @@
 
 @implementation FlutterPlatformPluginTest
 
-- (void)testHasStrings {
+- (void)testClipboardHasCorrectStrings {
+  [UIPasteboard generalPasteboard].string = nil;
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
@@ -29,7 +30,7 @@
     calledSet = true;
   };
   FlutterMethodCall* methodCallSet =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setClipboardData"
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
                                         arguments:@{@"text" : @"some string"}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
   XCTAssertEqual(calledSet, true);
@@ -39,7 +40,7 @@
   __block bool value;
   FlutterResult result = ^(id result) {
     called = true;
-    value = result[@"value"];
+    value = [result[@"value"] boolValue];
   };
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
@@ -47,6 +48,48 @@
 
   XCTAssertEqual(called, true);
   XCTAssertEqual(value, true);
+
+  // Call getData and expect it to be "null"
+  __block NSString* text;
+  FlutterResult getDataResult = ^(id result) {
+    text = result[@"text"];
+  };
+  FlutterMethodCall* methodCallGetData =
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.getData" arguments:@"text/plain"];
+  [plugin handleMethodCall:methodCallGetData result:getDataResult];
+
+  XCTAssertEqualObjects(text, @"some string");
+}
+
+- (void)testClipboardSetDataToNullDoNotCrash {
+  [UIPasteboard generalPasteboard].string = nil;
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  FlutterPlatformPlugin* plugin =
+      [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
+
+  // Set some string to the pasteboard.
+  __block bool calledSet = false;
+  FlutterResult resultSet = ^(id result) {
+    calledSet = true;
+  };
+  FlutterMethodCall* methodCallSet =
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
+                                        arguments:@{@"text" : [NSNull null]}];
+  [plugin handleMethodCall:methodCallSet result:resultSet];
+  XCTAssertEqual(calledSet, true);
+
+  // Call getData and expect it to be "null"
+  __block NSString* value;
+  FlutterResult result = ^(id result) {
+    value = result[@"text"];
+  };
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Clipboard.getData"
+                                                                    arguments:@"text/plain"];
+  [plugin handleMethodCall:methodCall result:result];
+
+  XCTAssertEqualObjects(value, @"null");
 }
 
 - (void)testPopSystemNavigator {

@@ -84,6 +84,7 @@ using namespace flutter;
   } else if ([method isEqualToString:@"Clipboard.getData"]) {
     result([self getClipboardData:args]);
   } else if ([method isEqualToString:@"Clipboard.setData"]) {
+    NSLog(@"Clipboard.setData called");
     [self setClipboardData:args];
     result(nil);
   } else if ([method isEqualToString:@"Clipboard.hasStrings"]) {
@@ -267,8 +268,9 @@ using namespace flutter;
 
 - (void)setClipboardData:(NSDictionary*)data {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
-  if (data[@"text"]) {
-    pasteboard.string = data[@"text"];
+  id copyText = data[@"text"];
+  if ([copyText isKindOfClass:NSString.class]) {
+    pasteboard.string = copyText;
   } else {
     pasteboard.string = @"null";
   }
