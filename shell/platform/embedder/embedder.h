@@ -209,6 +209,12 @@ typedef enum {
   /// `PageView` widget does not have implicit scrolling, so that users don't
   /// navigate to the next page when reaching the end of the current one.
   kFlutterSemanticsFlagHasImplicitScrolling = 1 << 18,
+  /// Whether the value of the semantics node is coming from a multi-line text
+  /// field.
+  ///
+  /// This is used for text fields to distinguish single-line text fields from
+  /// multi-line ones.
+  kFlutterSemanticsFlagIsMultiline = 1 << 19,
   /// Whether the semantic node is read only.
   ///
   /// Only applicable when kFlutterSemanticsFlagIsTextField flag is on.
