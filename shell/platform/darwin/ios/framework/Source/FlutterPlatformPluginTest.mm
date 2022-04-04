@@ -49,7 +49,7 @@
   XCTAssertEqual(called, true);
   XCTAssertEqual(value, true);
 
-  // Call getData and expect it to be "null"
+  // Call getData and expect it to be "some string"
   __block NSString* text;
   FlutterResult getDataResult = ^(id result) {
     text = result[@"text"];
