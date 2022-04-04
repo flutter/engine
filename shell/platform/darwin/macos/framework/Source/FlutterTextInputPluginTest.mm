@@ -886,7 +886,7 @@
   [plugin setMarkedText:@"~"
           selectedRange:NSMakeRange(1, 0)
        replacementRange:NSMakeRange(NSNotFound, 0)];
-    
+
   NSDictionary* deltaToFramework = @{
     @"oldText" : @"Text",
     @"deltaText" : @"~",
@@ -902,7 +902,7 @@
   NSDictionary* expectedState = @{
     @"deltas" : @[ deltaToFramework ],
   };
-    
+
   NSData* updateCall = [[FlutterJSONMethodCodec sharedInstance]
       encodeMethodCall:[FlutterMethodCall
                            methodCallWithMethodName:@"TextInputClient.updateEditingStateWithDeltas"
