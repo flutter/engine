@@ -647,7 +647,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
   if (_enableDeltaModel) {
     [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange,
-                                                             selectionBeforeChange.collapsed() ? composingBeforeChange : selectionBeforeChange, marked_text)];
+                                                             selectionBeforeChange.collapsed()
+                                                                 ? composingBeforeChange
+                                                                 : selectionBeforeChange,
+                                                             marked_text)];
   } else {
     [self updateEditState];
   }
