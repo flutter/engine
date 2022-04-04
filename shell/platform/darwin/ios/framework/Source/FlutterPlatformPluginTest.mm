@@ -24,41 +24,35 @@
   FlutterPlatformPlugin* plugin =
       [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
 
-  // Set some string to the pasteboard.
-  __block bool calledSet = false;
+  XCTestExpectation *setStringExpectation = [self expectationWithDescription:@"setString"];
   FlutterResult resultSet = ^(id result) {
-    calledSet = true;
+    [setStringExpectation fulfill];
   };
   FlutterMethodCall* methodCallSet =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
                                         arguments:@{@"text" : @"some string"}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
-  XCTAssertEqual(calledSet, true);
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 
-  // Call hasStrings and expect it to be true.
-  __block bool called = false;
-  __block bool value;
+  XCTestExpectation *hasStringsExpectation = [self expectationWithDescription:@"hasStrings"];
   FlutterResult result = ^(id result) {
-    called = true;
-    value = [result[@"value"] boolValue];
+    XCTAssertTrue([result[@"value"] boolValue]);
+    [hasStringsExpectation fulfill];
   };
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
   [plugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 
-  XCTAssertEqual(called, true);
-  XCTAssertEqual(value, true);
-
-  // Call getData and expect it to be "some string"
-  __block NSString* text;
+  XCTestExpectation *getDataExpectation = [self expectationWithDescription:@"getData"];
   FlutterResult getDataResult = ^(id result) {
-    text = result[@"text"];
+    XCTAssertEqualObjects(result[@"text"], @"some string");
+    [getDataExpectation fulfill];
   };
   FlutterMethodCall* methodCallGetData =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.getData" arguments:@"text/plain"];
   [plugin handleMethodCall:methodCallGetData result:getDataResult];
-
-  XCTAssertEqualObjects(text, @"some string");
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 - (void)testClipboardSetDataToNullDoNotCrash {
@@ -69,27 +63,24 @@
   FlutterPlatformPlugin* plugin =
       [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
 
-  // Set some string to the pasteboard.
-  __block bool calledSet = false;
+  XCTestExpectation *setStringExpectation = [self expectationWithDescription:@"setData"];
   FlutterResult resultSet = ^(id result) {
-    calledSet = true;
+    [setStringExpectation fulfill];
   };
   FlutterMethodCall* methodCallSet =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
                                         arguments:@{@"text" : [NSNull null]}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
-  XCTAssertEqual(calledSet, true);
 
-  // Call getData and expect it to be "null"
-  __block NSString* value;
+  XCTestExpectation *getDataExpectation = [self expectationWithDescription:@"getData"];
   FlutterResult result = ^(id result) {
-    value = result[@"text"];
+    XCTAssertEqualObjects(result[@"text"], @"null");
+    [getDataExpectation fulfill];
   };
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Clipboard.getData"
                                                                     arguments:@"text/plain"];
   [plugin handleMethodCall:methodCall result:result];
-
-  XCTAssertEqualObjects(value, @"null");
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 - (void)testPopSystemNavigator {
@@ -109,14 +100,14 @@
   id navigationControllerMock = OCMPartialMock(navigationController);
   OCMStub([navigationControllerMock popViewControllerAnimated:YES]);
   // Set some string to the pasteboard.
-  __block bool calledSet = false;
+  XCTestExpectation *navigationPopCalled = [self expectationWithDescription:@"SystemNavigator.pop"];
   FlutterResult resultSet = ^(id result) {
-    calledSet = true;
+    [navigationPopCalled fulfill];
   };
   FlutterMethodCall* methodCallSet =
       [FlutterMethodCall methodCallWithMethodName:@"SystemNavigator.pop" arguments:@(YES)];
   [plugin handleMethodCall:methodCallSet result:resultSet];
-  XCTAssertEqual(calledSet, true);
+  [self waitForExpectationsWithTimeout:1 handler:nil];
   OCMVerify([navigationControllerMock popViewControllerAnimated:YES]);
 }
 

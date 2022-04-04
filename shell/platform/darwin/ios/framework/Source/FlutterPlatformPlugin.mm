@@ -268,7 +268,7 @@ using namespace flutter;
 - (void)setClipboardData:(NSDictionary*)data {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
   id copyText = data[@"text"];
-  if ([copyText isKindOfClass:NSString.class]) {
+  if ([copyText isKindOfClass:[NSString class]]) {
     pasteboard.string = copyText;
   } else {
     pasteboard.string = @"null";
