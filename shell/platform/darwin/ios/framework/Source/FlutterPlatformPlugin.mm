@@ -84,7 +84,6 @@ using namespace flutter;
   } else if ([method isEqualToString:@"Clipboard.getData"]) {
     result([self getClipboardData:args]);
   } else if ([method isEqualToString:@"Clipboard.setData"]) {
-    NSLog(@"Clipboard.setData called");
     [self setClipboardData:args];
     result(nil);
   } else if ([method isEqualToString:@"Clipboard.hasStrings"]) {
