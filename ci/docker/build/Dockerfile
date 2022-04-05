@@ -59,10 +59,8 @@ RUN apt-get install -y \
     mtools             \
     nasm               \
     net-tools          \
-    openjdk-8-jdk      \
     pkg-config         \
     python             \
-    python-m2crypto    \
     python2.7-dev      \
     tcpdump            \
     texinfo            \
