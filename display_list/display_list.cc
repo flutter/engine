@@ -184,11 +184,38 @@ static bool CompareOps(uint8_t* ptrA,
 
 void DisplayList::RenderTo(DisplayListBuilder* builder,
                            SkScalar opacity) const {
-  // TODO(100983): Opacity is not respected and attributes are not reset.
-  if (!builder) {
+  int alpha = round(opacity * 255.0);
+  if (!builder || alpha <= 0) {
     return;
   }
+
+  using DlAttributes = DisplayListBuilder::DlAttributes;
+
+  DlAttributes restore_attributes = builder->getAttributes();
+
+  int restore_count = builder->getSaveCount();
+  if (opacity < 255) {
+    DlAttributes save_layer_attributes;
+    save_layer_attributes.color = alpha << 24;
+    builder->setAttributes(&save_layer_attributes);
+
+    // In many cases the bounds will already be initialized
+    // and useful for this saveLayer, but there are plans
+    // to have them always initialized:
+    // https://github.com/flutter/flutter/issues/100172
+    const SkRect* save_bounds = bounds_if_initialized();
+
+    builder->saveLayer(save_bounds, true);
+  } else {
+    builder->save();
+  }
+
+  builder->setAttributeDefaults();
+
   Dispatch(*builder);
+
+  builder->restoreToCount(restore_count);
+  builder->setAttributes(&restore_attributes);
 }
 
 void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {

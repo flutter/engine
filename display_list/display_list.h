@@ -246,7 +246,7 @@ class DisplayList : public SkRefCnt {
   uint32_t unique_id() const { return unique_id_; }
 
   const SkRect& bounds() {
-    if (bounds_.width() < 0.0) {
+    if (bounds_are_uninitialized()) {
       // ComputeBounds() will leave the variable with a
       // non-negative width and height
       ComputeBounds();
@@ -278,6 +278,14 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id_;
   SkRect bounds_;
+
+  bool bounds_are_uninitialized() const {
+    return bounds_.width() < 0.0;
+  }
+
+  const SkRect* bounds_if_initialized() const {
+    return (bounds_are_uninitialized()) ? nullptr : &bounds_;
+  }
 
   // Only used for drawPaint() and drawColor()
   SkRect bounds_cull_;

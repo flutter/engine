@@ -1918,5 +1918,160 @@ TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
   EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 304u);
 }
 
+TEST(DisplayList, DlAttributesDefaults) {
+  DisplayListBuilder::DlAttributes attributes;
+  EXPECT_FALSE(attributes.anti_alias);
+  EXPECT_FALSE(attributes.dither);
+  EXPECT_FALSE(attributes.invert_colors);
+  EXPECT_EQ(attributes.color, 0xFF000000);
+  EXPECT_EQ(attributes.style, SkPaint::Style::kFill_Style);
+  EXPECT_EQ(attributes.stroke_width, 0.0);
+  EXPECT_EQ(attributes.stroke_miter, 4.0);
+  EXPECT_EQ(attributes.stroke_cap, SkPaint::Cap::kButt_Cap);
+  EXPECT_EQ(attributes.stroke_join, SkPaint::Join::kMiter_Join);
+  EXPECT_EQ(attributes.blend_mode, DlBlendMode::kSrcOver);
+  EXPECT_EQ(attributes.blender, nullptr);
+  EXPECT_EQ(attributes.color_source, nullptr);
+  EXPECT_EQ(attributes.color_filter, nullptr);
+  EXPECT_EQ(attributes.image_filter, nullptr);
+  EXPECT_EQ(attributes.path_effect, nullptr);
+  EXPECT_EQ(attributes.mask_filter, nullptr);
+}
+
+TEST(DisplayList, DlAttributesResetToDefaults) {
+  DisplayListBuilder::DlAttributes attributes;
+  attributes.anti_alias = true;
+  attributes.dither = true;
+  attributes.invert_colors = true;
+  attributes.color = 42;
+  attributes.style = SkPaint::Style::kStrokeAndFill_Style;
+  attributes.stroke_width = 10.0;
+  attributes.stroke_miter = 10.0;
+  attributes.stroke_cap = SkPaint::Cap::kRound_Cap;
+  attributes.stroke_join = SkPaint::Join::kRound_Join;
+  attributes.blend_mode = DlBlendMode::kSrc;
+  attributes.blender = TestBlender1;
+  attributes.color_source = TestSource1.shared();
+  attributes.color_filter = TestBlendColorFilter1.shared();
+  attributes.image_filter = TestBlurImageFilter1.shared();
+  attributes.path_effect = TestPathEffect1;
+  attributes.mask_filter = TestMaskFilter1.shared();
+
+  EXPECT_TRUE(attributes.anti_alias);
+  EXPECT_TRUE(attributes.dither);
+  EXPECT_TRUE(attributes.invert_colors);
+  EXPECT_NE(attributes.color, 0xFF000000);
+  EXPECT_NE(attributes.style, SkPaint::Style::kFill_Style);
+  EXPECT_NE(attributes.stroke_width, 0.0);
+  EXPECT_NE(attributes.stroke_miter, 4.0);
+  EXPECT_NE(attributes.stroke_cap, SkPaint::Cap::kButt_Cap);
+  EXPECT_NE(attributes.stroke_join, SkPaint::Join::kMiter_Join);
+  EXPECT_NE(attributes.blend_mode, DlBlendMode::kSrcOver);
+  EXPECT_NE(attributes.blender, nullptr);
+  EXPECT_NE(attributes.color_source, nullptr);
+  EXPECT_NE(attributes.color_filter, nullptr);
+  EXPECT_NE(attributes.image_filter, nullptr);
+  EXPECT_NE(attributes.path_effect, nullptr);
+  EXPECT_NE(attributes.mask_filter, nullptr);
+
+  attributes = DisplayListBuilder::kDefaultAttributes;
+
+  EXPECT_FALSE(attributes.anti_alias);
+  EXPECT_FALSE(attributes.dither);
+  EXPECT_FALSE(attributes.invert_colors);
+  EXPECT_EQ(attributes.color, 0xFF000000);
+  EXPECT_EQ(attributes.style, SkPaint::Style::kFill_Style);
+  EXPECT_EQ(attributes.stroke_width, 0.0);
+  EXPECT_EQ(attributes.stroke_miter, 4.0);
+  EXPECT_EQ(attributes.stroke_cap, SkPaint::Cap::kButt_Cap);
+  EXPECT_EQ(attributes.stroke_join, SkPaint::Join::kMiter_Join);
+  EXPECT_EQ(attributes.blend_mode, DlBlendMode::kSrcOver);
+  EXPECT_EQ(attributes.blender, nullptr);
+  EXPECT_EQ(attributes.color_source, nullptr);
+  EXPECT_EQ(attributes.color_filter, nullptr);
+  EXPECT_EQ(attributes.image_filter, nullptr);
+  EXPECT_EQ(attributes.path_effect, nullptr);
+  EXPECT_EQ(attributes.mask_filter, nullptr);
+}
+
+TEST(DisplayList, DisplayListBuilderAttributeDefaults) {
+  DisplayListBuilder builder;
+  EXPECT_FALSE(builder.isAntiAlias());
+  EXPECT_FALSE(builder.isDither());
+  EXPECT_FALSE(builder.isInvertColors());
+  EXPECT_EQ(builder.getColor(), 0xFF000000);
+  EXPECT_EQ(builder.getStyle(), SkPaint::Style::kFill_Style);
+  EXPECT_EQ(builder.getStrokeWidth(), 0.0);
+  EXPECT_EQ(builder.getStrokeMiter(), 4.0);
+  EXPECT_EQ(builder.getStrokeCap(), SkPaint::Cap::kButt_Cap);
+  EXPECT_EQ(builder.getStrokeJoin(), SkPaint::Join::kMiter_Join);
+  EXPECT_TRUE(builder.getBlendMode().has_value());
+  EXPECT_EQ(builder.getBlendMode().value(), DlBlendMode::kSrcOver);
+  EXPECT_EQ(builder.getBlender(), nullptr);
+  EXPECT_EQ(builder.getColorSource(), nullptr);
+  EXPECT_EQ(builder.getColorFilter(), nullptr);
+  EXPECT_EQ(builder.getImageFilter(), nullptr);
+  EXPECT_EQ(builder.getPathEffect(), nullptr);
+  EXPECT_EQ(builder.getMaskFilter(), nullptr);
+}
+
+TEST(DisplayList, DisplayListBuilderAttributeReset) {
+  DisplayListBuilder builder;
+  builder.setAntiAlias(true);
+  builder.setDither(true);
+  builder.setInvertColors(true);
+  builder.setColor(42);
+  builder.setStyle(SkPaint::Style::kStrokeAndFill_Style);
+  builder.setStrokeWidth(10.0);
+  builder.setStrokeMiter(10.0);
+  builder.setStrokeCap(SkPaint::Cap::kRound_Cap);
+  builder.setStrokeJoin(SkPaint::Join::kRound_Join);
+  builder.setBlendMode(DlBlendMode::kSrc);
+  builder.setBlender(TestBlender1);
+  builder.setColorSource(&TestSource1);
+  builder.setColorFilter(&TestBlendColorFilter1);
+  builder.setImageFilter(&TestBlurImageFilter1);
+  builder.setPathEffect(TestPathEffect1);
+  builder.setMaskFilter(&TestMaskFilter1);
+
+  EXPECT_TRUE(builder.isAntiAlias());
+  EXPECT_TRUE(builder.isDither());
+  EXPECT_TRUE(builder.isInvertColors());
+  EXPECT_NE(builder.getColor(), 0xFF000000);
+  EXPECT_NE(builder.getStyle(), SkPaint::Style::kFill_Style);
+  EXPECT_NE(builder.getStrokeWidth(), 0.0);
+  EXPECT_NE(builder.getStrokeMiter(), 4.0);
+  EXPECT_NE(builder.getStrokeCap(), SkPaint::Cap::kButt_Cap);
+  EXPECT_NE(builder.getStrokeJoin(), SkPaint::Join::kMiter_Join);
+  EXPECT_FALSE(builder.getBlendMode().has_value());
+  EXPECT_NE(builder.getBlendMode().value(), DlBlendMode::kSrcOver);
+  EXPECT_NE(builder.getBlender(), nullptr);
+  EXPECT_NE(builder.getColorSource(), nullptr);
+  EXPECT_NE(builder.getColorFilter(), nullptr);
+  EXPECT_NE(builder.getImageFilter(), nullptr);
+  EXPECT_NE(builder.getPathEffect(), nullptr);
+  EXPECT_NE(builder.getMaskFilter(), nullptr);
+
+  builder.setAttributeDefaults();
+
+  EXPECT_FALSE(builder.isAntiAlias());
+  EXPECT_FALSE(builder.isDither());
+  EXPECT_FALSE(builder.isInvertColors());
+  EXPECT_EQ(builder.getColor(), 0xFF000000);
+  EXPECT_EQ(builder.getStyle(), SkPaint::Style::kFill_Style);
+  EXPECT_EQ(builder.getStrokeWidth(), 0.0);
+  EXPECT_EQ(builder.getStrokeMiter(), 4.0);
+  EXPECT_EQ(builder.getStrokeCap(), SkPaint::Cap::kButt_Cap);
+  EXPECT_EQ(builder.getStrokeJoin(), SkPaint::Join::kMiter_Join);
+  EXPECT_TRUE(builder.getBlendMode().has_value());
+  EXPECT_EQ(builder.getBlendMode().value(), DlBlendMode::kSrcOver);
+  EXPECT_EQ(builder.getBlender(), nullptr);
+  EXPECT_EQ(builder.getColorSource(), nullptr);
+  EXPECT_EQ(builder.getColorFilter(), nullptr);
+  EXPECT_EQ(builder.getImageFilter(), nullptr);
+  EXPECT_EQ(builder.getPathEffect(), nullptr);
+  EXPECT_EQ(builder.getMaskFilter(), nullptr);
+}
+
 }  // namespace testing
 }  // namespace flutter

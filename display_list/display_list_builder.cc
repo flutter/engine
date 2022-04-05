@@ -9,6 +9,8 @@
 
 namespace flutter {
 
+const DisplayListBuilder::DlAttributes DisplayListBuilder::kDefaultAttributes;
+
 #define DL_BUILDER_PAGE 4096
 
 // CopyV(dst, src,n, src,n, ...) copies any number of typed srcs into dst.
@@ -77,36 +79,36 @@ DisplayListBuilder::~DisplayListBuilder() {
 }
 
 void DisplayListBuilder::onSetAntiAlias(bool aa) {
-  Push<SetAntiAliasOp>(0, 0, current_anti_alias_ = aa);
+  Push<SetAntiAliasOp>(0, 0, attr_.anti_alias = aa);
 }
 void DisplayListBuilder::onSetDither(bool dither) {
-  Push<SetDitherOp>(0, 0, current_dither_ = dither);
+  Push<SetDitherOp>(0, 0, attr_.dither = dither);
 }
 void DisplayListBuilder::onSetInvertColors(bool invert) {
-  Push<SetInvertColorsOp>(0, 0, current_invert_colors_ = invert);
+  Push<SetInvertColorsOp>(0, 0, attr_.invert_colors = invert);
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetStrokeCap(SkPaint::Cap cap) {
-  Push<SetStrokeCapOp>(0, 0, current_stroke_cap_ = cap);
+  Push<SetStrokeCapOp>(0, 0, attr_.stroke_cap = cap);
 }
 void DisplayListBuilder::onSetStrokeJoin(SkPaint::Join join) {
-  Push<SetStrokeJoinOp>(0, 0, current_stroke_join_ = join);
+  Push<SetStrokeJoinOp>(0, 0, attr_.stroke_join = join);
 }
 void DisplayListBuilder::onSetStyle(SkPaint::Style style) {
-  Push<SetStyleOp>(0, 0, current_style_ = style);
+  Push<SetStyleOp>(0, 0, attr_.style = style);
 }
 void DisplayListBuilder::onSetStrokeWidth(SkScalar width) {
-  Push<SetStrokeWidthOp>(0, 0, current_stroke_width_ = width);
+  Push<SetStrokeWidthOp>(0, 0, attr_.stroke_width = width);
 }
 void DisplayListBuilder::onSetStrokeMiter(SkScalar limit) {
-  Push<SetStrokeMiterOp>(0, 0, current_stroke_miter_ = limit);
+  Push<SetStrokeMiterOp>(0, 0, attr_.stroke_miter = limit);
 }
 void DisplayListBuilder::onSetColor(SkColor color) {
-  Push<SetColorOp>(0, 0, current_color_ = color);
+  Push<SetColorOp>(0, 0, attr_.color = color);
 }
 void DisplayListBuilder::onSetBlendMode(DlBlendMode mode) {
-  current_blender_ = nullptr;
-  Push<SetBlendModeOp>(0, 0, current_blend_mode_ = mode);
+  attr_.blender = nullptr;
+  Push<SetBlendModeOp>(0, 0, attr_.blend_mode = mode);
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
@@ -119,7 +121,7 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
     setBlendMode(ToDl(p.asBlendMode().value()));
   } else {
     // |current_blender_| supersedes any value of |current_blend_mode_|
-    (current_blender_ = blender)  //
+    (attr_.blender = blender)  //
         ? Push<SetBlenderOp>(0, 0, std::move(blender))
         : Push<ClearBlenderOp>(0, 0);
     UpdateCurrentOpacityCompatibility();
@@ -127,14 +129,14 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
 }
 void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
   if (source == nullptr) {
-    current_color_source_ = nullptr;
+    attr_.color_source = nullptr;
     Push<ClearColorSourceOp>(0, 0);
   } else {
-    current_color_source_ = source->shared();
+    attr_.color_source = source->shared();
     switch (source->type()) {
       case DlColorSourceType::kColor: {
         const DlColorColorSource* color_source = source->asColor();
-        current_color_source_ = nullptr;
+        attr_.color_source = nullptr;
         setColor(color_source->color());
         break;
       }
@@ -181,10 +183,10 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
 }
 void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
   if (filter == nullptr) {
-    current_image_filter_ = nullptr;
+    attr_.image_filter = nullptr;
     Push<ClearImageFilterOp>(0, 0);
   } else {
-    current_image_filter_ = filter->shared();
+    attr_.image_filter = filter->shared();
     switch (filter->type()) {
       case DlImageFilterType::kBlur: {
         const DlBlurImageFilter* blur_filter = filter->asBlur();
@@ -214,10 +216,10 @@ void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
 }
 void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   if (filter == nullptr) {
-    current_color_filter_ = nullptr;
+    attr_.color_filter = nullptr;
     Push<ClearColorFilterOp>(0, 0);
   } else {
-    current_color_filter_ = filter->shared();
+    attr_.color_filter = filter->shared();
     switch (filter->type()) {
       case DlColorFilterType::kBlend: {
         const DlBlendColorFilter* blend_filter = filter->asBlend();
@@ -252,16 +254,16 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
-  (current_path_effect_ = effect)  //
+  (attr_.path_effect = effect)  //
       ? Push<SetPathEffectOp>(0, 0, std::move(effect))
       : Push<ClearPathEffectOp>(0, 0);
 }
 void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
-    current_mask_filter_ = nullptr;
+    attr_.mask_filter = nullptr;
     Push<ClearMaskFilterOp>(0, 0);
   } else {
-    current_mask_filter_ = filter->shared();
+    attr_.mask_filter = filter->shared();
     switch (filter->type()) {
       case DlMaskFilterType::kBlur: {
         const DlBlurMaskFilter* blur_filter = filter->asBlur();
@@ -275,6 +277,29 @@ void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
         break;
     }
   }
+}
+
+void DisplayListBuilder::setAttributes(const DlAttributes* attributes) {
+  setAntiAlias(attributes->anti_alias);
+  setDither(attributes->dither);
+  setInvertColors(attributes->invert_colors);
+  setColor(attributes->color);
+  setStyle(attributes->style);
+  setStrokeWidth(attributes->stroke_width);
+  setStrokeMiter(attributes->stroke_miter);
+  setStrokeCap(attributes->stroke_cap);
+  setStrokeJoin(attributes->stroke_join);
+  // If |current_blender_| is set then |current_blend_mode_| should be ignored
+  if (attributes->blender) {
+    setBlender(attributes->blender);
+  } else {
+    setBlendMode(attributes->blend_mode);
+  }
+  setColorSource(attributes->color_source.get());
+  setColorFilter(attributes->color_filter.get());
+  setImageFilter(attributes->image_filter.get());
+  setPathEffect(attributes->path_effect);
+  setMaskFilter(attributes->mask_filter.get());
 }
 
 void DisplayListBuilder::setAttributesFromPaint(
@@ -387,7 +412,7 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     // account because an individual primitive with an ImageFilter can apply
     // opacity on top of it. But, if the layer is applying the ImageFilter
     // then it cannot pass the opacity on.
-    if (!current_opacity_compatibility_ || current_image_filter_ != nullptr) {
+    if (!current_opacity_compatibility_ || attr_.image_filter != nullptr) {
       UpdateLayerOpacityCompatibility(false);
     }
   }

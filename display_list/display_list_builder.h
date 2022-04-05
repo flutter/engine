@@ -25,125 +25,156 @@ class DisplayListBuilder final : public virtual Dispatcher,
                                  public SkRefCnt,
                                  DisplayListOpFlags {
  public:
+  struct DlAttributes {
+    // These values should match the defaults of the Dart Paint object.
+    bool anti_alias = false;
+    bool dither = false;
+    bool invert_colors = false;
+    SkColor color = 0xFF000000;
+    SkPaint::Style style = SkPaint::Style::kFill_Style;
+    SkScalar stroke_width = 0.0;
+    SkScalar stroke_miter = 4.0;
+    SkPaint::Cap stroke_cap = SkPaint::Cap::kButt_Cap;
+    SkPaint::Join stroke_join = SkPaint::Join::kMiter_Join;
+    // If |current_blender_| is set then |current_blend_mode_| should be ignored
+    DlBlendMode blend_mode = DlBlendMode::kSrcOver;
+    sk_sp<SkBlender> blender = nullptr;
+    std::shared_ptr<const DlColorSource> color_source = nullptr;
+    std::shared_ptr<const DlColorFilter> color_filter = nullptr;
+    std::shared_ptr<DlImageFilter> image_filter = nullptr;
+    sk_sp<SkPathEffect> path_effect = nullptr;
+    std::shared_ptr<const DlMaskFilter> mask_filter = nullptr;
+  };
+
+  static const DlAttributes kDefaultAttributes;
+
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect_);
 
   ~DisplayListBuilder();
 
   void setAntiAlias(bool aa) override {
-    if (current_anti_alias_ != aa) {
+    if (attr_.anti_alias != aa) {
       onSetAntiAlias(aa);
     }
   }
   void setDither(bool dither) override {
-    if (current_dither_ != dither) {
+    if (attr_.dither != dither) {
       onSetDither(dither);
     }
   }
   void setInvertColors(bool invert) override {
-    if (current_invert_colors_ != invert) {
+    if (attr_.invert_colors != invert) {
       onSetInvertColors(invert);
     }
   }
   void setStrokeCap(SkPaint::Cap cap) override {
-    if (current_stroke_cap_ != cap) {
+    if (attr_.stroke_cap != cap) {
       onSetStrokeCap(cap);
     }
   }
   void setStrokeJoin(SkPaint::Join join) override {
-    if (current_stroke_join_ != join) {
+    if (attr_.stroke_join != join) {
       onSetStrokeJoin(join);
     }
   }
   void setStyle(SkPaint::Style style) override {
-    if (current_style_ != style) {
+    if (attr_.style != style) {
       onSetStyle(style);
     }
   }
   void setStrokeWidth(SkScalar width) override {
-    if (current_stroke_width_ != width) {
+    if (attr_.stroke_width != width) {
       onSetStrokeWidth(width);
     }
   }
   void setStrokeMiter(SkScalar limit) override {
-    if (current_stroke_miter_ != limit) {
+    if (attr_.stroke_miter != limit) {
       onSetStrokeMiter(limit);
     }
   }
   void setColor(SkColor color) override {
-    if (current_color_ != color) {
+    if (attr_.color != color) {
       onSetColor(color);
     }
   }
   void setBlendMode(DlBlendMode mode) override {
-    if (current_blender_ || current_blend_mode_ != mode) {
+    if (attr_.blender || attr_.blend_mode != mode) {
       onSetBlendMode(mode);
     }
   }
   void setBlender(sk_sp<SkBlender> blender) override {
     if (!blender) {
       setBlendMode(DlBlendMode::kSrcOver);
-    } else if (current_blender_ != blender) {
+    } else if (attr_.blender != blender) {
       onSetBlender(std::move(blender));
     }
   }
   void setColorSource(const DlColorSource* source) override {
-    if (NotEquals(current_color_source_, source)) {
+    if (NotEquals(attr_.color_source, source)) {
       onSetColorSource(source);
     }
   }
   void setImageFilter(const DlImageFilter* filter) override {
-    if (NotEquals(current_image_filter_, filter)) {
+    if (NotEquals(attr_.image_filter, filter)) {
       onSetImageFilter(filter);
     }
   }
   void setColorFilter(const DlColorFilter* filter) override {
-    if (NotEquals(current_color_filter_, filter)) {
+    if (NotEquals(attr_.color_filter, filter)) {
       onSetColorFilter(filter);
     }
   }
   void setPathEffect(sk_sp<SkPathEffect> effect) override {
-    if (current_path_effect_ != effect) {
+    if (attr_.path_effect != effect) {
       onSetPathEffect(std::move(effect));
     }
   }
   void setMaskFilter(const DlMaskFilter* filter) override {
-    if (NotEquals(current_mask_filter_, filter)) {
+    if (NotEquals(attr_.mask_filter, filter)) {
       onSetMaskFilter(filter);
     }
   }
 
-  bool isAntiAlias() const { return current_anti_alias_; }
-  bool isDither() const { return current_dither_; }
-  SkPaint::Style getStyle() const { return current_style_; }
-  SkColor getColor() const { return current_color_; }
-  SkScalar getStrokeWidth() const { return current_stroke_width_; }
-  SkScalar getStrokeMiter() const { return current_stroke_miter_; }
-  SkPaint::Cap getStrokeCap() const { return current_stroke_cap_; }
-  SkPaint::Join getStrokeJoin() const { return current_stroke_join_; }
+  void setAttributes(const DlAttributes* attributes);
+  void setAttributeDefaults() {
+    setAttributes(&kDefaultAttributes);
+  }
+  DlAttributes getAttributes() {
+    return DlAttributes(attr_);
+  }
+
+  bool isAntiAlias() const { return attr_.anti_alias; }
+  bool isDither() const { return attr_.dither; }
+  SkPaint::Style getStyle() const { return attr_.style; }
+  SkColor getColor() const { return attr_.color; }
+  SkScalar getStrokeWidth() const { return attr_.stroke_width; }
+  SkScalar getStrokeMiter() const { return attr_.stroke_miter; }
+  SkPaint::Cap getStrokeCap() const { return attr_.stroke_cap; }
+  SkPaint::Join getStrokeJoin() const { return attr_.stroke_join; }
   std::shared_ptr<const DlColorSource> getColorSource() const {
-    return current_color_source_;
+    return attr_.color_source;
   }
   std::shared_ptr<const DlColorFilter> getColorFilter() const {
-    return current_color_filter_;
+    return attr_.color_filter;
   }
-  bool isInvertColors() const { return current_invert_colors_; }
+  bool isInvertColors() const { return attr_.invert_colors; }
   std::optional<DlBlendMode> getBlendMode() const {
-    if (current_blender_) {
+    if (attr_.blender) {
       // The setters will turn "Mode" style blenders into "blend_mode"s
       return {};
     }
-    return current_blend_mode_;
+    return attr_.blend_mode;
   }
   sk_sp<SkBlender> getBlender() const {
-    return current_blender_ ? current_blender_
-                            : SkBlender::Mode(ToSk(current_blend_mode_));
+    return attr_.blender ? attr_.blender
+                            : SkBlender::Mode(ToSk(attr_.blend_mode));
   }
-  sk_sp<SkPathEffect> getPathEffect() const { return current_path_effect_; }
+  sk_sp<SkPathEffect> getPathEffect() const { return attr_.path_effect; }
   std::shared_ptr<const DlMaskFilter> getMaskFilter() const {
-    return current_mask_filter_;
+    return attr_.mask_filter;
   }
-  std::shared_ptr<DlImageFilter> getImageFilter() const {
-    return current_image_filter_;
+  std::shared_ptr<const DlImageFilter> getImageFilter() const {
+    return attr_.image_filter;
   }
 
   void save() override;
@@ -159,6 +190,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
                           : SaveLayerOptions::kNoAttributes);
   }
   void restore() override;
+  void restoreToCount(int restore_count) {
+    while (getSaveCount() > restore_count) {
+      restore();
+    }
+  }
   int getSaveCount() { return layer_stack_.size(); }
 
   void translate(SkScalar tx, SkScalar ty) override;
@@ -337,10 +373,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   void UpdateCurrentOpacityCompatibility() {
     current_opacity_compatibility_ =         //
-        current_color_filter_ == nullptr &&  //
-        !current_invert_colors_ &&           //
-        current_blender_ == nullptr &&       //
-        IsOpacityCompatible(current_blend_mode_);
+        attr_.color_filter == nullptr &&  //
+        !attr_.invert_colors &&           //
+        attr_.blender == nullptr &&       //
+        IsOpacityCompatible(attr_.blend_mode);
   }
 
   // Update the opacity compatibility flags of the current layer for an op
@@ -366,7 +402,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void CheckLayerOpacityHairlineCompatibility() {
     UpdateLayerOpacityCompatibility(
         current_opacity_compatibility_ &&
-        (current_style_ == SkPaint::kFill_Style || current_stroke_width_ > 0));
+        (attr_.style == SkPaint::kFill_Style || attr_.stroke_width > 0));
   }
 
   // Check for opacity compatibility for an op that ignores the current
@@ -394,24 +430,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void onSetMaskFilter(const DlMaskFilter* filter);
   void onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma);
 
-  // These values should match the defaults of the Dart Paint object.
-  bool current_anti_alias_ = false;
-  bool current_dither_ = false;
-  bool current_invert_colors_ = false;
-  SkColor current_color_ = 0xFF000000;
-  SkPaint::Style current_style_ = SkPaint::Style::kFill_Style;
-  SkScalar current_stroke_width_ = 0.0;
-  SkScalar current_stroke_miter_ = 4.0;
-  SkPaint::Cap current_stroke_cap_ = SkPaint::Cap::kButt_Cap;
-  SkPaint::Join current_stroke_join_ = SkPaint::Join::kMiter_Join;
-  // If |current_blender_| is set then |current_blend_mode_| should be ignored
-  DlBlendMode current_blend_mode_ = DlBlendMode::kSrcOver;
-  sk_sp<SkBlender> current_blender_;
-  std::shared_ptr<const DlColorSource> current_color_source_;
-  std::shared_ptr<const DlColorFilter> current_color_filter_;
-  std::shared_ptr<DlImageFilter> current_image_filter_;
-  sk_sp<SkPathEffect> current_path_effect_;
-  std::shared_ptr<const DlMaskFilter> current_mask_filter_;
+  DlAttributes attr_;
 };
 
 }  // namespace flutter
