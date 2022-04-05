@@ -1,14 +1,13 @@
 package io.flutter.embedding.android;
 
-import static android.view.MotionEvent.PointerCoords;
-import static android.view.MotionEvent.PointerProperties;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
 import android.view.InputDevice;
 import android.view.MotionEvent;
-import androidx.test.core.view.MotionEventBuilder;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
@@ -65,19 +64,38 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(30 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
+  private class MotionEventMocker {
+    int pointerId;
+    int source;
+    int toolType;
+
+    MotionEventMocker(int pointerId, int source, int toolType) {
+      this.pointerId = pointerId;
+      this.source = source;
+      this.toolType = toolType;
+    }
+
+    MotionEvent mockEvent(int action, float x, float y, int buttonState) {
+      MotionEvent event = mock(MotionEvent.class);
+      when(event.getDevice()).thenReturn(null);
+      when(event.getSource()).thenReturn(source);
+      when(event.getPointerCount()).thenReturn(1);
+      when(event.getActionMasked()).thenReturn(action);
+      when(event.getActionIndex()).thenReturn(0);
+      when(event.getButtonState()).thenReturn(buttonState);
+      when(event.getPointerId(0)).thenReturn(pointerId);
+      when(event.getX(0)).thenReturn(x);
+      when(event.getY(0)).thenReturn(y);
+      when(event.getToolType(0)).thenReturn(toolType);
+      return event;
+    }
+  }
+
   @Test
   public void normalTouch() {
-    PointerProperties properties = new PointerProperties();
-    properties.id = 0;
-    properties.toolType = MotionEvent.TOOL_TYPE_FINGER;
-    PointerCoords coordinates = new PointerCoords();
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_DOWN)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .build());
+    MotionEventMocker mocker =
+        new MotionEventMocker(0, InputDevice.SOURCE_TOUCHSCREEN, MotionEvent.TOOL_TYPE_FINGER);
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0));
     InOrder inOrder = inOrder(mockRenderer);
     inOrder
         .verify(mockRenderer)
@@ -88,15 +106,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
     assertEquals(0.0, readPointerPhysicalX(packet));
     assertEquals(0.0, readPointerPhysicalY(packet));
-    coordinates.x = 10;
-    coordinates.y = 5;
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_MOVE)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .build());
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_MOVE, 10.0f, 5.0f, 0));
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
@@ -106,13 +116,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
     assertEquals(10.0, readPointerPhysicalX(packet));
     assertEquals(5.0, readPointerPhysicalY(packet));
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_UP)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .build());
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_UP, 10.0f, 5.0f, 0));
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
@@ -127,18 +131,9 @@ public class AndroidTouchProcessorTest {
 
   @Test
   public void trackpadGesture() {
-    PointerProperties properties = new PointerProperties();
-    properties.id = 0;
-    properties.toolType = MotionEvent.TOOL_TYPE_MOUSE;
-    PointerCoords coordinates = new PointerCoords();
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_DOWN)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .setSource(InputDevice.SOURCE_MOUSE)
-            .build());
+    MotionEventMocker mocker =
+        new MotionEventMocker(1, InputDevice.SOURCE_MOUSE, MotionEvent.TOOL_TYPE_MOUSE);
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0));
     InOrder inOrder = inOrder(mockRenderer);
     inOrder
         .verify(mockRenderer)
@@ -149,16 +144,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
     assertEquals(0.0, readPointerPhysicalX(packet));
     assertEquals(0.0, readPointerPhysicalY(packet));
-    coordinates.x = 10;
-    coordinates.y = 5;
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_MOVE)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .setSource(InputDevice.SOURCE_MOUSE)
-            .build());
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_MOVE, 10.0f, 5.0f, 0));
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
@@ -170,14 +156,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(0.0, readPointerPhysicalY(packet));
     assertEquals(10.0, readPointerPanX(packet));
     assertEquals(5.0, readPointerPanY(packet));
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_UP)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .setSource(InputDevice.SOURCE_MOUSE)
-            .build());
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_UP, 10.0f, 5.0f, 0));
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
@@ -192,17 +171,9 @@ public class AndroidTouchProcessorTest {
 
   @Test
   public void mouse() {
-    PointerProperties properties = new PointerProperties();
-    properties.id = 0;
-    properties.toolType = MotionEvent.TOOL_TYPE_MOUSE;
-    PointerCoords coordinates = new PointerCoords();
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_DOWN)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .build());
+    MotionEventMocker mocker =
+        new MotionEventMocker(2, InputDevice.SOURCE_MOUSE, MotionEvent.TOOL_TYPE_MOUSE);
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 1));
     InOrder inOrder = inOrder(mockRenderer);
     inOrder
         .verify(mockRenderer)
@@ -213,15 +184,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
     assertEquals(0.0, readPointerPhysicalX(packet));
     assertEquals(0.0, readPointerPhysicalY(packet));
-    coordinates.x = 10;
-    coordinates.y = 5;
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_MOVE)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .build());
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_MOVE, 10.0f, 5.0f, 1));
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
@@ -231,13 +194,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
     assertEquals(10.0, readPointerPhysicalX(packet));
     assertEquals(5.0, readPointerPhysicalY(packet));
-    touchProcessor.onTouchEvent(
-        MotionEventBuilder.newBuilder()
-            .setAction(MotionEvent.ACTION_UP)
-            .setActionIndex(0)
-            .setDeviceId(1)
-            .setPointer(properties, coordinates)
-            .build());
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_UP, 10.0f, 5.0f, 1));
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
