@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM debian:bullseye-slim@sha256:82da53aa627b9d5032a1e57903356b8f34d613a5bc1e07ae5e9149bd88fa3128
 
 ENV DEPOT_TOOLS_PATH $HOME/depot_tools
 ENV BUILDROOT_PATH $HOME/buildroot
