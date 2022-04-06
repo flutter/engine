@@ -1966,7 +1966,7 @@ TEST(DisplayList, DlAttributesResetToDefaults) {
   attributes.anti_alias = true;
   attributes.dither = true;
   attributes.invert_colors = true;
-  attributes.color = 42;
+  attributes.color = SK_ColorRED;
   attributes.style = SkPaint::Style::kStrokeAndFill_Style;
   attributes.stroke_width = 10.0;
   attributes.stroke_miter = 10.0;
@@ -2043,7 +2043,7 @@ TEST(DisplayList, DisplayListBuilderAttributeReset) {
   builder.setAntiAlias(true);
   builder.setDither(true);
   builder.setInvertColors(true);
-  builder.setColor(42);
+  builder.setColor(SK_ColorRED);
   builder.setStyle(SkPaint::Style::kStrokeAndFill_Style);
   builder.setStrokeWidth(10.0);
   builder.setStrokeMiter(10.0);
@@ -2095,6 +2095,136 @@ TEST(DisplayList, DisplayListBuilderAttributeReset) {
   EXPECT_EQ(builder.getImageFilter(), nullptr);
   EXPECT_EQ(builder.getPathEffect(), nullptr);
   EXPECT_EQ(builder.getMaskFilter(), nullptr);
+}
+
+TEST(DisplayList, RenderToBuilderRestoresAttributes) {
+  DisplayListBuilder inner_builder;
+  inner_builder.setAntiAlias(false);
+  inner_builder.setDither(false);
+  inner_builder.setInvertColors(false);
+  inner_builder.setColor(SK_ColorRED);
+  inner_builder.setStyle(SkPaint::Style::kStrokeAndFill_Style);
+  inner_builder.setStrokeWidth(10.0);
+  inner_builder.setStrokeMiter(10.0);
+  inner_builder.setStrokeCap(SkPaint::Cap::kRound_Cap);
+  inner_builder.setStrokeJoin(SkPaint::Join::kRound_Join);
+  inner_builder.setBlendMode(DlBlendMode::kSrc);
+  inner_builder.setBlender(TestBlender1);
+  inner_builder.setColorSource(&TestSource1);
+  inner_builder.setColorFilter(&TestBlendColorFilter1);
+  inner_builder.setImageFilter(&TestBlurImageFilter1);
+  inner_builder.setPathEffect(TestPathEffect1);
+  inner_builder.setMaskFilter(&TestMaskFilter1);
+  inner_builder.drawRect({0, 0, 100, 100});
+  auto inner = inner_builder.Build();
+
+  DisplayListBuilder outer_builder;
+  // All of these values should be different from the values set
+  // into inner_builder and different from the default values.
+  outer_builder.setAntiAlias(true);
+  outer_builder.setDither(true);
+  outer_builder.setInvertColors(true);
+  outer_builder.setColor(SK_ColorBLUE);
+  outer_builder.setStyle(SkPaint::Style::kStroke_Style);
+  outer_builder.setStrokeWidth(15.0);
+  outer_builder.setStrokeMiter(8.0);
+  outer_builder.setStrokeCap(SkPaint::Cap::kSquare_Cap);
+  outer_builder.setStrokeJoin(SkPaint::Join::kBevel_Join);
+  outer_builder.setBlendMode(DlBlendMode::kSrcIn);
+  // We don't set a Blender because it is never used in our code
+  // and it would obscure our testing of the more commonly used
+  // BlendMode that its setting interferes with
+  // outer_builder.setBlender(TestBlender2);
+  outer_builder.setColorSource(TestSource2.get());
+  outer_builder.setColorFilter(&TestBlendColorFilter2);
+  outer_builder.setImageFilter(&TestBlurImageFilter2);
+  outer_builder.setPathEffect(TestPathEffect2);
+  outer_builder.setMaskFilter(&TestMaskFilter2);
+  inner->RenderTo(&outer_builder);
+
+  EXPECT_TRUE(outer_builder.isAntiAlias());
+  EXPECT_TRUE(outer_builder.isDither());
+  EXPECT_TRUE(outer_builder.isInvertColors());
+  EXPECT_EQ(outer_builder.getColor(), SK_ColorBLUE);
+  EXPECT_EQ(outer_builder.getStyle(), SkPaint::Style::kStroke_Style);
+  EXPECT_EQ(outer_builder.getStrokeWidth(), 15.0);
+  EXPECT_EQ(outer_builder.getStrokeMiter(), 8.0);
+  EXPECT_EQ(outer_builder.getStrokeCap(), SkPaint::Cap::kSquare_Cap);
+  EXPECT_EQ(outer_builder.getStrokeJoin(), SkPaint::Join::kBevel_Join);
+  EXPECT_TRUE(outer_builder.getBlendMode().has_value());
+  EXPECT_EQ(outer_builder.getBlendMode().value(), DlBlendMode::kSrcIn);
+  // We intentionally don't test blender, see comment above.
+  // EXPECT_EQ(outer_builder.getBlender(), TestBlender2);
+  EXPECT_EQ(*outer_builder.getColorSource(), *TestSource2);
+  EXPECT_EQ(*outer_builder.getColorFilter(), TestBlendColorFilter2);
+  EXPECT_EQ(*outer_builder.getImageFilter(), TestBlurImageFilter2);
+  EXPECT_EQ(outer_builder.getPathEffect(), TestPathEffect2);
+  EXPECT_EQ(*outer_builder.getMaskFilter(), TestMaskFilter2);
+}
+
+TEST(DisplayList, RenderToBuilderWithOpacityRestoresAttributes) {
+  DisplayListBuilder inner_builder;
+  inner_builder.setAntiAlias(false);
+  inner_builder.setDither(false);
+  inner_builder.setInvertColors(false);
+  inner_builder.setColor(SK_ColorRED);
+  inner_builder.setStyle(SkPaint::Style::kStrokeAndFill_Style);
+  inner_builder.setStrokeWidth(10.0);
+  inner_builder.setStrokeMiter(10.0);
+  inner_builder.setStrokeCap(SkPaint::Cap::kRound_Cap);
+  inner_builder.setStrokeJoin(SkPaint::Join::kRound_Join);
+  inner_builder.setBlendMode(DlBlendMode::kSrc);
+  inner_builder.setBlender(TestBlender1);
+  inner_builder.setColorSource(&TestSource1);
+  inner_builder.setColorFilter(&TestBlendColorFilter1);
+  inner_builder.setImageFilter(&TestBlurImageFilter1);
+  inner_builder.setPathEffect(TestPathEffect1);
+  inner_builder.setMaskFilter(&TestMaskFilter1);
+  inner_builder.drawRect({0, 0, 100, 100});
+  auto inner = inner_builder.Build();
+
+  DisplayListBuilder outer_builder;
+  // All of these values should be different from the values set
+  // into inner_builder and different from the default values.
+  outer_builder.setAntiAlias(true);
+  outer_builder.setDither(true);
+  outer_builder.setInvertColors(true);
+  outer_builder.setColor(SK_ColorBLUE);
+  outer_builder.setStyle(SkPaint::Style::kStroke_Style);
+  outer_builder.setStrokeWidth(15.0);
+  outer_builder.setStrokeMiter(8.0);
+  outer_builder.setStrokeCap(SkPaint::Cap::kSquare_Cap);
+  outer_builder.setStrokeJoin(SkPaint::Join::kBevel_Join);
+  outer_builder.setBlendMode(DlBlendMode::kSrcIn);
+  // We don't set a Blender because it is never used in our code
+  // and it would obscure our testing of the more commonly used
+  // BlendMode that its setting interferes with
+  // outer_builder.setBlender(TestBlender2);
+  outer_builder.setColorSource(TestSource2.get());
+  outer_builder.setColorFilter(&TestBlendColorFilter2);
+  outer_builder.setImageFilter(&TestBlurImageFilter2);
+  outer_builder.setPathEffect(TestPathEffect2);
+  outer_builder.setMaskFilter(&TestMaskFilter2);
+  inner->RenderTo(&outer_builder, 0.5f);
+
+  EXPECT_TRUE(outer_builder.isAntiAlias());
+  EXPECT_TRUE(outer_builder.isDither());
+  EXPECT_TRUE(outer_builder.isInvertColors());
+  EXPECT_EQ(outer_builder.getColor(), SK_ColorBLUE);
+  EXPECT_EQ(outer_builder.getStyle(), SkPaint::Style::kStroke_Style);
+  EXPECT_EQ(outer_builder.getStrokeWidth(), 15.0);
+  EXPECT_EQ(outer_builder.getStrokeMiter(), 8.0);
+  EXPECT_EQ(outer_builder.getStrokeCap(), SkPaint::Cap::kSquare_Cap);
+  EXPECT_EQ(outer_builder.getStrokeJoin(), SkPaint::Join::kBevel_Join);
+  EXPECT_TRUE(outer_builder.getBlendMode().has_value());
+  EXPECT_EQ(outer_builder.getBlendMode().value(), DlBlendMode::kSrcIn);
+  // We intentionally don't test blender, see comment above.
+  // EXPECT_EQ(outer_builder.getBlender(), TestBlender2);
+  EXPECT_EQ(*outer_builder.getColorSource(), *TestSource2);
+  EXPECT_EQ(*outer_builder.getColorFilter(), TestBlendColorFilter2);
+  EXPECT_EQ(*outer_builder.getImageFilter(), TestBlurImageFilter2);
+  EXPECT_EQ(outer_builder.getPathEffect(), TestPathEffect2);
+  EXPECT_EQ(*outer_builder.getMaskFilter(), TestMaskFilter2);
 }
 
 }  // namespace testing
