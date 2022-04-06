@@ -366,9 +366,18 @@ class TestParameters {
         ref_attr.getColor() != attr.getColor()) {
       return false;
     }
-    if (flags_.applies_blend() &&  //
-        ref_attr.getBlender() != attr.getBlender()) {
-      return false;
+    if (flags_.applies_blend()) {
+      if (ref_attr.getBlender() != attr.getBlender()) {
+        return false;
+      }
+      if (ref_attr.getBlendMode().has_value() !=
+          attr.getBlendMode().has_value()) {
+        return false;
+      }
+      if (ref_attr.getBlendMode().has_value() &&
+          ref_attr.getBlendMode().value() != attr.getBlendMode().value()) {
+        return false;
+      }
     }
     if (flags_.applies_color_filter() &&  //
         (ref_attr.isInvertColors() != attr.isInvertColors() ||

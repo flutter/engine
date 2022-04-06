@@ -166,8 +166,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
     return attr_.blend_mode;
   }
   sk_sp<SkBlender> getBlender() const {
-    return attr_.blender ? attr_.blender
-                            : SkBlender::Mode(ToSk(attr_.blend_mode));
+    return attr_.blender;
   }
   sk_sp<SkPathEffect> getPathEffect() const { return attr_.path_effect; }
   std::shared_ptr<const DlMaskFilter> getMaskFilter() const {

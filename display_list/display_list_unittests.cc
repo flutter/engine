@@ -1938,6 +1938,29 @@ TEST(DisplayList, DlAttributesDefaults) {
   EXPECT_EQ(attributes.mask_filter, nullptr);
 }
 
+TEST(DisplayList, DlAttributeskDefaultAttributes) {
+  EXPECT_FALSE(DisplayListBuilder::kDefaultAttributes.anti_alias);
+  EXPECT_FALSE(DisplayListBuilder::kDefaultAttributes.dither);
+  EXPECT_FALSE(DisplayListBuilder::kDefaultAttributes.invert_colors);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.color, 0xFF000000);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.style,
+            SkPaint::Style::kFill_Style);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.stroke_width, 0.0);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.stroke_miter, 4.0);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.stroke_cap,
+            SkPaint::Cap::kButt_Cap);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.stroke_join,
+            SkPaint::Join::kMiter_Join);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.blend_mode,
+            DlBlendMode::kSrcOver);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.blender, nullptr);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.color_source, nullptr);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.color_filter, nullptr);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.image_filter, nullptr);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.path_effect, nullptr);
+  EXPECT_EQ(DisplayListBuilder::kDefaultAttributes.mask_filter, nullptr);
+}
+
 TEST(DisplayList, DlAttributesResetToDefaults) {
   DisplayListBuilder::DlAttributes attributes;
   attributes.anti_alias = true;
@@ -2044,7 +2067,8 @@ TEST(DisplayList, DisplayListBuilderAttributeReset) {
   EXPECT_NE(builder.getStrokeCap(), SkPaint::Cap::kButt_Cap);
   EXPECT_NE(builder.getStrokeJoin(), SkPaint::Join::kMiter_Join);
   EXPECT_FALSE(builder.getBlendMode().has_value());
-  EXPECT_NE(builder.getBlendMode().value(), DlBlendMode::kSrcOver);
+  // We cannot test the value in this case because the blender overrides it
+  // EXPECT_NE(builder.getBlendMode().value(), DlBlendMode::kSrcOver);
   EXPECT_NE(builder.getBlender(), nullptr);
   EXPECT_NE(builder.getColorSource(), nullptr);
   EXPECT_NE(builder.getColorFilter(), nullptr);
