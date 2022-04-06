@@ -160,6 +160,13 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   NSNumber* enableSkParagraph = [mainBundle objectForInfoDictionaryKey:@"FLTEnableSkParagraph"];
   settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : true;
 
+  // Whether to enable Impeller.
+  NSNumber* enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
+  // Change the default only if the option is present.
+  if (enableImpeller != nil) {
+    settings.enable_impeller = enableImpeller.boolValue;
+  }
+
   // Leak Dart VM settings, set whether leave or clean up the VM after the last shell shuts down.
   NSNumber* leakDartVM = [mainBundle objectForInfoDictionaryKey:@"FLTLeakDartVM"];
   // It will change the default leak_vm value in settings only if the key exists.
@@ -188,6 +195,14 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
     settings.old_gen_heap_size = std::round([NSProcessInfo processInfo].physicalMemory * .48 /
                                             flutter::kMegaByteSizeInBytes);
   }
+
+  // This is the formula Android uses.
+  // https://android.googlesource.com/platform/frameworks/base/+/39ae5bac216757bc201490f4c7b8c0f63006c6cd/libs/hwui/renderthread/CacheManager.cpp#45
+  CGFloat scale = [UIScreen mainScreen].scale;
+  CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width * scale;
+  CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height * scale;
+  settings.resource_cache_max_bytes_threshold = screenWidth * screenHeight * 12 * 4;
+
   return settings;
 }
 

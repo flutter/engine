@@ -42,18 +42,28 @@ typedef Callbacker<T> = String? Function(Callback<T> callback);
 /// }
 ///
 /// Future<int> doSomething() {
-///   return _futurize(_doSomethingAndCallback);
+///   return futurize(_doSomethingAndCallback);
 /// }
 /// ```
+// Keep this in sync with _futurize in lib/ui/fixtures/ui_test.dart.
 Future<T> futurize<T>(Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
-  final String? error = callbacker((T t) {
+  // If the callback synchronously throws an error, then synchronously
+  // rethrow that error instead of adding it to the completer. This
+  // prevents the Zone from receiving an uncaught exception.
+  bool sync = true;
+  final String? error = callbacker((T? t) {
     if (t == null) {
-      completer.completeError(Exception('operation failed'));
+      if (sync) {
+        throw Exception('operation failed');
+      } else {
+        completer.completeError(Exception('operation failed'));
+      }
     } else {
       completer.complete(t);
     }
   });
+  sync = false;
   if (error != null) {
     throw Exception(error);
   }
@@ -729,5 +739,20 @@ void drawEllipse(
 void removeAllChildren(html.Node node) {
   while (node.lastChild != null) {
     node.lastChild!.remove();
+  }
+}
+
+/// A helper that finds an element in an iterable that satisfy a predicate, or
+/// returns null otherwise.
+///
+/// This is mostly useful for iterables containing non-null elements.
+extension FirstWhereOrNull<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final T element in this) {
+      if (test(element)) {
+        return element;
+      }
+    }
+    return null;
   }
 }
