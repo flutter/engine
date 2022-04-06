@@ -16,8 +16,6 @@ using UnhandledExceptionReporter =
     std::function<void(const std::string&, const std::string&)>;
 
 extern const char kInvalidArgument[];
-extern DartPersistentValue on_error;
-extern UnhandledExceptionReporter log_unhandled_exception;
 }  // namespace DartError
 
 /// Check if a Dart_Handle is an error or exception.
@@ -25,20 +23,25 @@ extern UnhandledExceptionReporter log_unhandled_exception;
 /// If it is an error or exception, this method will return true.
 ///
 /// If it is an unhandled error or exception, first a call will be made to the
-/// Dart code set in |SetErrorHandler|. If that closure returns false, a
-/// fallback is made to the closure in |SetUnhandledExceptionReporter| to log
-/// details of the exception and stack. If that closure throws an exception
-/// itself, the exception and stack are logged via the fallback method, and the
-/// original exception and stack are also logged via the fallback method.
+/// Dart code set in |SetUnhandledErrorHandler|. If that closure returns false
+/// or throws an exception, a fallback is made to the closure in
+/// |SetUnhandledExceptionReporter| to log details of the exception and stack.
+/// If the |SetUnhandledErrorHandler| callback throws an exception, the
+/// |SetUnhandledExceptionReporter| will be called with at least two separate
+/// exceptions and stacktraces: one for the original exception, and one for the
+/// exception thrown in the callback.
 ///
 /// The fallback behavior matches the behavior of Flutter applications before
 /// the introduction of PlatformDispatcher.onError.
 ///
-/// If it is not an unhandled exception, it is logged to stderr or some similar
-/// mechanism provided by the platform. Depending on which type of error occurs,
-/// the process may crash and the Dart isolate may be unusable. Errors that fall
-/// into this category include compilation errors, Dart API errors, and unwind
-/// errors that will terminate the Dart VM.
+/// Dart has errors that are not considered unhandled excpetions, such as
+/// Dart_* API usage errors. In these cases, `Dart_IsUnhandledException` returns
+/// false but `Dart_IsError` returns true. Such errors are logged to stderr or
+/// some similar mechanism provided by the platform such as logcat on Android.
+/// Depending on which type of error occurs, the process may crash and the Dart
+/// isolate may be unusable. Errors that fall into this category include
+/// compilation errors, Dart API errors, and unwind errors that will terminate
+/// the Dart VM.
 ///
 /// Historically known as LogIfError.
 bool CheckAndHandleError(Dart_Handle handle);
@@ -49,17 +52,23 @@ bool CheckAndHandleError(Dart_Handle handle);
 /// The signature of this field must match that of _onError in hooks.dart,
 /// namely `bool _onError(Object error, StackTrace? stackTrace)`.
 ///
-/// This handler will be invoked when an unhandled error occurs. If it returns
-/// false or throws an exception, a fallback handler will be invoked. By
+/// This handler will be invoked when an unhandled exception occurs. If it
+/// returns false or throws an exception, a fallback handler will be invoked. By
 /// default, UIDartState registers its ReportUnhandledError and will either call
 /// a closure provided in the Shell Settings or simply dump the error to stderr
 /// or some similar platform specific mechanism.
-void SetErrorHandler(DartState* dart_state, Dart_Handle value);
-
-/// The fallback mechanism to log errors if |SetErrorHandler| has provided a
-/// null value or a closure that returns false.
 ///
-/// Normally, it UIDartState registers with this method in its constructor.
+/// This must be called from the UI thread for the dart_state.
+///
+/// See also:
+///  - CheckAndHandleError
+///  - SetUnhandledExceptionReporter
+void SetUnhandledErrorHandler(DartState* dart_state, Dart_Handle value);
+
+/// The fallback mechanism to log errors if |SetUnhandledErrorHandler| has
+/// provided a null value or a closure that returns false.
+///
+/// Normally, UIDartState registers with this method in its constructor.
 void SetUnhandledExceptionReporter(
     DartError::UnhandledExceptionReporter reporter);
 

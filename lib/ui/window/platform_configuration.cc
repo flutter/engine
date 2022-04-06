@@ -174,8 +174,9 @@ PlatformConfiguration::~PlatformConfiguration() {}
 
 void PlatformConfiguration::DidCreateIsolate() {
   Dart_Handle library = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
-  tonic::SetErrorHandler(tonic::DartState::Current(),
-                         Dart_GetField(library, tonic::ToDart("_onError")));
+  tonic::SetUnhandledErrorHandler(
+      tonic::DartState::Current(),
+      Dart_GetField(library, tonic::ToDart("_onError")));
 
   update_locales_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_updateLocales")));

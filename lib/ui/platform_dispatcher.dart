@@ -1033,9 +1033,9 @@ class PlatformDispatcher {
   /// `Settings::unhandled_exception_callback`.
   ///
   /// The VM or the process may exit or become unresponsive after calling this
-  /// method. The method will not be called for exceptions that cause the VM or
-  /// process to terminate or become unresponsive before the method can be
-  /// called.
+  /// callback. The callback will not be called for exceptions that cause the VM
+  /// or process to terminate or become unresponsive before the callback can be
+  /// invoked.
   ErrorCallback? get onError => _onError;
   set onError(ErrorCallback? callback) {
     _onError = callback;

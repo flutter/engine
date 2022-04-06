@@ -184,7 +184,6 @@ class UIDartState : public tonic::DartState {
   std::string debug_name_;
   std::unique_ptr<PlatformConfiguration> platform_configuration_;
   tonic::DartMicrotaskQueue microtask_queue_;
-  UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;
   const bool enable_skparagraph_;

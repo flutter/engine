@@ -403,10 +403,10 @@ void hooksTests() {
 
     runZoned(() {
       originalZone = Zone.current;
-      PlatformDispatcher.instance.onError = (Object e, StackTrace? s) {
+      PlatformDispatcher.instance.onError = (Object exception, StackTrace? stackTrace) {
         callbackZone = Zone.current;
-        expectIdentical(e, error);
-        expectNotEquals(s, null);
+        expectIdentical(exception, error);
+        expectNotEquals(stackTrace, null);
         return true;
       };
     });

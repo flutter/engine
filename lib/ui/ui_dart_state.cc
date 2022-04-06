@@ -62,7 +62,6 @@ UIDartState::UIDartState(
       remove_callback_(std::move(remove_callback)),
       logger_prefix_(std::move(logger_prefix)),
       is_root_isolate_(is_root_isolate),
-      unhandled_exception_callback_(unhandled_exception_callback),
       log_message_callback_(log_message_callback),
       isolate_name_server_(std::move(isolate_name_server)),
       enable_skparagraph_(enable_skparagraph),
@@ -70,8 +69,16 @@ UIDartState::UIDartState(
       context_(std::move(context)) {
   AddOrRemoveTaskObserver(true /* add */);
   tonic::SetUnhandledExceptionReporter(
-      [&](const std::string& error, const std::string& stack_trace) {
-        ReportUnhandledException(error, stack_trace);
+      [callback = std::move(unhandled_exception_callback)](
+          const std::string& error, const std::string& stack_trace) {
+        if (callback && callback(error, stack_trace)) {
+          return;
+        }
+
+        // Either the exception handler was not set or it could not handle the
+        // error, just log the exception.
+        FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
+                       << stack_trace;
       });
 }
 
@@ -188,19 +195,6 @@ tonic::DartErrorHandleType UIDartState::GetLastError() {
     error = microtask_queue_.GetLastError();
   }
   return error;
-}
-
-void UIDartState::ReportUnhandledException(const std::string& error,
-                                           const std::string& stack_trace) {
-  if (unhandled_exception_callback_ &&
-      unhandled_exception_callback_(error, stack_trace)) {
-    return;
-  }
-
-  // Either the exception handler was not set or it could not handle the error,
-  // just log the exception.
-  FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
-                 << stack_trace;
 }
 
 void UIDartState::LogMessage(const std::string& tag,

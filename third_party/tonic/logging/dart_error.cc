@@ -24,7 +24,7 @@ void ReportUnhandledException(Dart_Handle exception_handle,
 }
 }  // namespace DartError
 
-void SetErrorHandler(DartState* dart_state, Dart_Handle value) {
+void SetUnhandledErrorHandler(DartState* dart_state, Dart_Handle value) {
   DartError::on_error.Clear();
   if (Dart_IsNull(value)) {
     return;
