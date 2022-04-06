@@ -375,7 +375,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -429,7 +429,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -453,7 +453,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -473,7 +473,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -517,7 +517,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = ../../../../third_party/ocmock/Source/;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};
 			name = Debug;
@@ -562,7 +562,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = ../../../../third_party/ocmock/Source/;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};
 			name = Release;
