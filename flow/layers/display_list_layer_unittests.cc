@@ -178,5 +178,146 @@ TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(20, 20, 70, 70));
 }
 
+TEST_F(DisplayListLayerTest, RenderToWithDefaultOpacity) {
+  DisplayListBuilder builder;
+  builder.setColor(SK_ColorRED);
+  builder.drawRect({10, 10, 50, 50});
+  auto display_list = builder.Build();
+  ASSERT_TRUE(display_list->can_apply_group_opacity());
+
+  SkPoint layer_offset = SkPoint::Make(10, 10);
+  auto dl_layer = DisplayListLayer(
+      layer_offset, SkiaGPUObject(display_list, unref_queue()), false, true);
+
+  dl_layer.Preroll(preroll_context(), SkMatrix::I());
+
+  DisplayListCanvasRecorder recorder({0, 0, 100, 100});
+  SkNWayCanvas internal_nodes_canvas(100, 100);
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  flutter::Layer::PaintContext paint_context = {
+      &internal_nodes_canvas,    // internal_nodes_canvas
+      &recorder,                 // leaf_nodes_canvas
+      nullptr,                   // gr_context
+      nullptr,                   // external_view_embedder
+      raster_time,               // raster_time
+      ui_time,                   // ui_time
+      texture_regitry(),         // texture_registry
+      nullptr,                   // raster_cache
+      false,                     // checkerboard_offscreen_layers
+      1.0f,                      // frame_device_pixel_ratio;
+      1.0f,                      // inherited_opacity
+      recorder.builder().get(),  // leaf_nodes_builder
+  };
+  dl_layer.Paint(paint_context);
+  auto layer_display_list = recorder.Build();
+
+  DisplayListBuilder ref_builder;
+  // DisplayListLayer setup
+  {
+    ref_builder.save();
+    ref_builder.translate(layer_offset.fX, layer_offset.fY);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    ref_builder.transformReset();
+    ref_builder.transformFullPerspective(1, 0, 0, 10,  //
+                                         0, 1, 0, 10,  //
+                                         0, 0, 1, 0,   //
+                                         0, 0, 0, 1    //
+    );
+#endif
+  }
+  // DisplayList::RenderTo(Builder) setup
+  { ref_builder.save(); }
+  // DisplayList contents from above
+  {
+    ref_builder.setColor(SK_ColorRED);
+    ref_builder.drawRect({10, 10, 50, 50});
+  }
+  // DisplayList::RenderTo take down
+  {
+    ref_builder.restore();
+    ref_builder.setColor(0xFF000000);
+  }
+  // DisplayListLayer auto restore
+  { ref_builder.restore(); }
+  auto ref_display_list = ref_builder.Build();
+
+  ASSERT_EQ(layer_display_list->op_count(), ref_display_list->op_count());
+  ASSERT_EQ(layer_display_list->bytes(), ref_display_list->bytes());
+  ASSERT_TRUE(layer_display_list->Equals(*ref_display_list));
+}
+
+TEST_F(DisplayListLayerTest, RenderToWithHalfOpacity) {
+  DisplayListBuilder builder;
+  builder.setColor(SK_ColorRED);
+  builder.drawRect({10, 10, 50, 50});
+  auto display_list = builder.Build();
+  ASSERT_TRUE(display_list->can_apply_group_opacity());
+
+  SkPoint layer_offset = SkPoint::Make(10, 10);
+  auto dl_layer = DisplayListLayer(
+      layer_offset, SkiaGPUObject(display_list, unref_queue()), false, true);
+  dl_layer.Preroll(preroll_context(), SkMatrix::I());
+  DisplayListCanvasRecorder recorder({0, 0, 100, 100});
+  SkNWayCanvas internal_nodes_canvas(100, 100);
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  flutter::Layer::PaintContext paint_context = {
+      &internal_nodes_canvas,    // internal_nodes_canvas
+      &recorder,                 // leaf_nodes_canvas
+      nullptr,                   // gr_context
+      nullptr,                   // external_view_embedder
+      raster_time,               // raster_time
+      ui_time,                   // ui_time
+      texture_regitry(),         // texture_registry
+      nullptr,                   // raster_cache
+      false,                     // checkerboard_offscreen_layers
+      1.0f,                      // frame_device_pixel_ratio;
+      0.5f,                      // inherited_opacity
+      recorder.builder().get(),  // leaf_nodes_builder
+  };
+  dl_layer.Paint(paint_context);
+
+  auto layer_display_list = recorder.Build();
+
+  DisplayListBuilder ref_builder;
+  // DisplayListLayer setup
+  {
+    ref_builder.save();
+    ref_builder.translate(layer_offset.fX, layer_offset.fY);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    ref_builder.transformReset();
+    ref_builder.transformFullPerspective(1, 0, 0, 10,  //
+                                         0, 1, 0, 10,  //
+                                         0, 0, 1, 0,   //
+                                         0, 0, 0, 1    //
+    );
+#endif
+  }
+  // DisplayList::RenderTo(Builder) setup
+  {
+    ref_builder.setColor(0x80000000);  // For saveLayer
+    ref_builder.saveLayer(&display_list->bounds(), true);
+    ref_builder.setColor(0xFF000000);  // Due to reset to defaults
+  }
+  // DisplayList contents from above
+  {
+    ref_builder.setColor(SK_ColorRED);
+    ref_builder.drawRect({10, 10, 50, 50});
+  }
+  // DisplayList::RenderTo take down
+  {
+    ref_builder.restore();
+    ref_builder.setColor(0xFF000000);
+  }
+  // DisplayListLayer auto restore
+  { ref_builder.restore(); }
+  auto ref_display_list = ref_builder.Build();
+
+  ASSERT_EQ(layer_display_list->op_count(), ref_display_list->op_count());
+  ASSERT_EQ(layer_display_list->bytes(), ref_display_list->bytes());
+  ASSERT_TRUE(layer_display_list->Equals(*ref_display_list));
+}
+
 }  // namespace testing
 }  // namespace flutter

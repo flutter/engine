@@ -194,7 +194,7 @@ void DisplayList::RenderTo(DisplayListBuilder* builder,
   DlAttributes restore_attributes = builder->getAttributes();
 
   int restore_count = builder->getSaveCount();
-  if (opacity < 255) {
+  if (alpha < 255) {
     DlAttributes save_layer_attributes;
     save_layer_attributes.color = alpha << 24;
     builder->setAttributes(&save_layer_attributes);
