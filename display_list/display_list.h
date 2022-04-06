@@ -279,9 +279,7 @@ class DisplayList : public SkRefCnt {
   uint32_t unique_id_;
   SkRect bounds_;
 
-  bool bounds_are_uninitialized() const {
-    return bounds_.width() < 0.0;
-  }
+  bool bounds_are_uninitialized() const { return bounds_.width() < 0.0; }
 
   const SkRect* bounds_if_initialized() const {
     return (bounds_are_uninitialized()) ? nullptr : &bounds_;

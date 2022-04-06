@@ -136,12 +136,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   void setAttributes(const DlAttributes* attributes);
-  void setAttributeDefaults() {
-    setAttributes(&kDefaultAttributes);
-  }
-  DlAttributes getAttributes() {
-    return DlAttributes(attr_);
-  }
+  void setAttributeDefaults() { setAttributes(&kDefaultAttributes); }
+  DlAttributes getAttributes() { return DlAttributes(attr_); }
 
   bool isAntiAlias() const { return attr_.anti_alias; }
   bool isDither() const { return attr_.dither; }
@@ -165,9 +161,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
     }
     return attr_.blend_mode;
   }
-  sk_sp<SkBlender> getBlender() const {
-    return attr_.blender;
-  }
+  sk_sp<SkBlender> getBlender() const { return attr_.blender; }
   sk_sp<SkPathEffect> getPathEffect() const { return attr_.path_effect; }
   std::shared_ptr<const DlMaskFilter> getMaskFilter() const {
     return attr_.mask_filter;
@@ -371,7 +365,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   void UpdateCurrentOpacityCompatibility() {
-    current_opacity_compatibility_ =         //
+    current_opacity_compatibility_ =      //
         attr_.color_filter == nullptr &&  //
         !attr_.invert_colors &&           //
         attr_.blender == nullptr &&       //
