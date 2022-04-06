@@ -15,6 +15,8 @@
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest-matchers.h"
 
 namespace flutter {
 namespace testing {
@@ -211,7 +213,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
 
   ASSERT_EQ(throw_count, 1ul);
   ASSERT_EQ(ex, "Exception: false") << ex;
-  ASSERT_EQ(st.rfind("#0      customOnErrorFalse", 0), 0ul) << st;
+  EXPECT_THAT(st, ::testing::MatchesRegex("^#0.+customOnErrorFalse.+")) << st;
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 

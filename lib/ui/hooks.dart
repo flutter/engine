@@ -117,7 +117,7 @@ void _drawFrame() {
 
 @pragma('vm:entry-point')
 bool _onError(Object error, StackTrace? stackTrace) {
-  return PlatformDispatcher.instance._dispatchError(error, stackTrace);
+  return PlatformDispatcher.instance._dispatchError(error, stackTrace ?? StackTrace.empty);
 }
 
 // ignore: always_declare_return_types, prefer_generic_function_type_aliases
@@ -125,8 +125,8 @@ typedef _ListStringArgFunction(List<String> args);
 
 @pragma('vm:entry-point')
 void _runMain(Function startMainIsolateFunction,
-                   Function userMainFunction,
-                   List<String> args) {
+              Function userMainFunction,
+              List<String> args) {
   startMainIsolateFunction(() {
     if (userMainFunction is _ListStringArgFunction) {
       userMainFunction(args);

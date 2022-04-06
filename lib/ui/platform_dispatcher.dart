@@ -61,7 +61,7 @@ typedef PlatformConfigurationChangedCallback = void Function(PlatformConfigurati
 /// After calling this method, the process or the VM may terminate. Some severe
 /// unhandled errors may not be able to call this method either, such as Dart
 /// compilation errors or process terminating errors.
-typedef ErrorCallback = bool Function(Object exception, StackTrace? stackTrace);
+typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
@@ -1027,9 +1027,9 @@ class PlatformDispatcher {
 
   /// A callback that is invoked when an unhandled error occurs in Dart.
   ///
-  /// This callback must return true if it has handled the error. Otherwise, it
-  /// must return false and a fallback mechanism such as printing to stderr may
-  /// be used, as configured by the specific platform embedding via
+  /// This callback must return `true` if it has handled the error. Otherwise,
+  /// it must return `false` and a fallback mechanism such as printing to stderr
+  /// will be used, as configured by the specific platform embedding via
   /// `Settings::unhandled_exception_callback`.
   ///
   /// The VM or the process may exit or become unresponsive after calling this
@@ -1042,7 +1042,7 @@ class PlatformDispatcher {
     _onErrorZone = Zone.current;
   }
 
-  bool _dispatchError(Object error, StackTrace? stackTrace) {
+  bool _dispatchError(Object error, StackTrace stackTrace) {
     if (_onError == null) {
       return false;
     }
@@ -1052,7 +1052,7 @@ class PlatformDispatcher {
       return _onError!(error, stackTrace);
     } else {
       try {
-        return _onErrorZone!.runBinary<bool, Object, StackTrace?>(_onError!, error, stackTrace);
+        return _onErrorZone!.runBinary<bool, Object, StackTrace>(_onError!, error, stackTrace);
       } catch (e, s) {
         _onErrorZone!.handleUncaughtError(e, s);
         return false;

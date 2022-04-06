@@ -51,7 +51,7 @@ bool CheckAndHandleError(Dart_Handle handle) {
     // If it is not null, defer to the return value of that closure
     // to determine whether to report via logging.
     bool handled = false;
-    if (on_error) {
+    if (on_error && !Dart_IsNull(on_error)) {
       Dart_Handle args[2];
       args[0] = exception_handle;
       args[1] = stack_trace_handle;

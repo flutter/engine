@@ -34,7 +34,7 @@ extern const char kInvalidArgument[];
 /// The fallback behavior matches the behavior of Flutter applications before
 /// the introduction of PlatformDispatcher.onError.
 ///
-/// Dart has errors that are not considered unhandled excpetions, such as
+/// Dart has errors that are not considered unhandled exceptions, such as
 /// Dart_* API usage errors. In these cases, `Dart_IsUnhandledException` returns
 /// false but `Dart_IsError` returns true. Such errors are logged to stderr or
 /// some similar mechanism provided by the platform such as logcat on Android.
