@@ -2,7 +2,6 @@ package io.flutter.embedding.engine.systemchannels;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -12,13 +11,39 @@ import java.util.ArrayList;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+/**
+ * {@link SpellCheckChannel} is a platform channel that is used by Flutter to initiate spell check
+ * in the Android engine and for the Android engine to send back the results.
+ *
+ * <p>If the {@link io.flutter.plugin.editing.SpellCheckPlugin} is used to handle spell check
+ * behavior, (such is the case by default) then there is new text to be spell checked, Flutter will
+ * send a message to the engine. In response, the {@link io.flutter.plugin.editing.SpellCheckPlugin}
+ * will make a call to Android's spell check service to fetch spell check results for the specified
+ * text.
+ *
+ * <p>Once the spell check results are received by the {@link
+ * io.flutter.plugin.editing.SpellCheckPlugin}, a message will be sent back to Flutter with the
+ * results. See diagram below for overview:
+ *  -----------------------------------------------------------------------------------------------------------------------------
+ * |      From        |        To         |               Message                |                 Arguments                    |
+ * | ---------------------------------------------------------------------------------------------------------------------------|
+ * |     Flutter      |   Android Engine  |     SpellCheck.iniateSpellCheck      |  {@code String} locale, {@code String} text  |
+ * |----------------------------------------------------------------------------------------------------------------------------|
+ * |  Android Engine  |      Flutter      |  SpellCheck.updateSpellCheckResults  |        {@code ArrayList} of results          |
+ *  -----------------------------------------------------------------------------------------------------------------------------
+ *
+ * <p>By default, {@link io.flutter.plugin.editing.SpellCheckPlugin} implements {@link
+ * io.flutter.plugin.common.MethodChannel.MethodCallHandler} to initiate spell check via the Android
+ * spell check service. Implement {@link SpellCheckMethodHandler} to respond to Flutter spell check
+ * messages.
+ */
 public class SpellCheckChannel {
   private static final String TAG = "SpellCheckChannel";
 
   @NonNull public final MethodChannel channel;
   @Nullable private SpellCheckMethodHandler spellCheckMethodHandler;
 
-  @NonNull @VisibleForTesting
+  @NonNull
   final MethodChannel.MethodCallHandler parsingMethodHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
@@ -26,6 +51,9 @@ public class SpellCheckChannel {
           if (spellCheckMethodHandler == null) {
             // If no explicit SpellCheckMethodHandler has been registered then we don't
             // need to forward this call to an API. Return.
+            Log.v(
+                TAG,
+                "No SpellCheckeMethodHandler registered, call not forwarded to spell check API.");
             return;
           }
           String method = call.method;
@@ -51,7 +79,7 @@ public class SpellCheckChannel {
       };
 
   public SpellCheckChannel(@NonNull DartExecutor dartExecutor) {
-    this.channel = new MethodChannel(dartExecutor, "flutter/spellcheck", JSONMethodCodec.INSTANCE);
+    channel = new MethodChannel(dartExecutor, "flutter/spellcheck", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
@@ -76,6 +104,6 @@ public class SpellCheckChannel {
      * SpellCheckChannel#setSpellCheckMethodHandler(SpellCheckMethodHandler)} once spell check
      * results are received from the native spell check service.
      */
-    void initiateSpellCheck(String locale, String text);
+    void initiateSpellCheck(@NonNull String locale, @NonNull String text);
   }
 }

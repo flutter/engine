@@ -93,9 +93,10 @@ public class SpellCheckPluginTest {
         .thenReturn(fakeTextServicesManager);
     SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
-    when(fakeTextServicesManager.newSpellCheckerSession(
-            null, new Locale("en", "US"), spellCheckPlugin, true))
+    Locale english_US = new Locale("en", "US");
+    when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
         .thenReturn(fakeSpellCheckerSession);
+    int maxSuggestions = 5;
 
     ArgumentCaptor<TextInfo[]> textInfosCaptor = ArgumentCaptor.forClass(TextInfo[].class);
     ArgumentCaptor<Integer> maxSuggestionsCaptor = ArgumentCaptor.forClass(Integer.class);
@@ -105,7 +106,27 @@ public class SpellCheckPluginTest {
     verify(fakeSpellCheckerSession)
         .getSentenceSuggestions(textInfosCaptor.capture(), maxSuggestionsCaptor.capture());
     assertEquals("Hello, wrold!", textInfosCaptor.getValue()[0].getText());
-    assertEquals(Integer.valueOf(3), maxSuggestionsCaptor.getValue());
+    assertEquals(Integer.valueOf(maxSuggestions), maxSuggestionsCaptor.getValue());
+  }
+
+  @Test
+  public void performSpellCheckCreatesNewSpellCheckerSession() {
+    Context fakeContext = mock(Context.class);
+    SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
+        .thenReturn(fakeTextServicesManager);
+    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeContext, fakeSpellCheckChannel);
+    SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+    Locale english_US = new Locale("en", "US");
+    when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
+        .thenReturn(fakeSpellCheckerSession);
+
+    spellCheckPlugin.performSpellCheck("en-US", "Hello, worl!");
+    spellCheckPlugin.performSpellCheck("en-US", "Hello, world!");
+
+    verify(fakeTextServicesManager, times(2))
+        .newSpellCheckerSession(null, english_US, spellCheckPlugin, true);
   }
 
   @Test
