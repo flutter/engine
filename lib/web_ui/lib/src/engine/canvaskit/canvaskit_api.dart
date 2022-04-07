@@ -831,7 +831,10 @@ class SkColorType {
 
 @JS()
 @anonymous
-class SkAnimatedImage {
+@staticInterop
+class SkAnimatedImage {}
+
+extension SkAnimatedImageExtension on SkAnimatedImage {
   external int getFrameCount();
 
   external int getRepetitionCount();
@@ -855,7 +858,10 @@ class SkAnimatedImage {
 
 @JS()
 @anonymous
-class SkImage {
+@staticInterop
+class SkImage {}
+
+extension SkImageExtension on SkImage {
   external void delete();
   external int width();
   external int height();
@@ -880,7 +886,10 @@ class SkImage {
 }
 
 @JS()
-class SkShaderNamespace {
+@staticInterop
+class SkShaderNamespace {}
+
+extension SkShaderNamespaceExtension on SkShaderNamespace {
   external SkShader MakeLinearGradient(
     Float32List from, // 2-element array
     Float32List to, // 2-element array
@@ -927,12 +936,18 @@ class SkShaderNamespace {
 
 @JS()
 @anonymous
-class SkShader {
+@staticInterop
+class SkShader {}
+
+extension SkShaderExtension on SkShader {
   external void delete();
 }
 
 @JS()
-class SkMaskFilterNamespace {
+@staticInterop
+class SkMaskFilterNamespace {}
+
+extension SkMaskFilterNamespaceExtension on SkMaskFilterNamespace {
   // Creates a blur MaskFilter.
   //
   // Returns `null` if [sigma] is 0 or infinite.
@@ -945,8 +960,12 @@ class SkMaskFilterNamespace {
 //
 //     external SkPaint SkPaint();
 @JS('window.flutterCanvasKit.Paint')
+@staticInterop
 class SkPaint {
-  external SkPaint();
+  external factory SkPaint();
+}
+
+extension SkPaintExtension on SkPaint {
   external void setBlendMode(SkBlendMode blendMode);
   external void setStyle(SkPaintStyle paintStyle);
   external void setStrokeWidth(double width);
