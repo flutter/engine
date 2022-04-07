@@ -200,8 +200,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   for (SemanticsObject* object in [objects_ allValues]) {
     [object accessibilityBridgeDidFinishUpdate];
   }
-
-  if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
+  if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_) &&
+      [UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
     layoutChanged = layoutChanged || [doomed_uids count] > 0;
 
     if (routeChanged) {

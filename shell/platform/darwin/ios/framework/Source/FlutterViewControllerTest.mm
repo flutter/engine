@@ -932,7 +932,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   engine.viewController = nil;
 }
 
-- (void)testHideA11yElements {
+- (void)testDoNotHideA11yElements {
   FlutterDartProject* project = [[FlutterDartProject alloc] init];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine createShell:@"" libraryURI:@"" initialRoute:nil];
@@ -943,7 +943,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationWillResignActiveNotification
                     object:nil];
-  XCTAssertTrue(realVC.view.accessibilityElementsHidden);
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidBecomeActiveNotification
                     object:nil];
