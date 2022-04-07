@@ -300,9 +300,9 @@ sk_sp<SkSurface> TestGLSurface::GetOnscreenSurface() {
   const uint32_t height = surface_size_.height();
   framebuffer_info.fFBOID = GetFramebuffer(width, height);
 #if FML_OS_MACOSX
-  framebuffer_info.fFormat = 0x8058; // GL_RGBA8
+  framebuffer_info.fFormat = 0x8058;  // GL_RGBA8
 #else
-  framebuffer_info.fFormat = 0x93A1; // GL_BGRA8;
+  framebuffer_info.fFormat = 0x93A1;  // GL_BGRA8;
 #endif
 
   GrBackendRenderTarget backend_render_target(
