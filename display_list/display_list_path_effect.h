@@ -103,14 +103,12 @@ class DlDashPathEffect final : public DlPathEffect {
   bool equals_(DlPathEffect const& other) const override {
     FML_DCHECK(other.type() == DlPathEffectType::kDash);
     auto that = static_cast<DlDashPathEffect const*>(&other);
-    return count_ == that->count_ &&
+    return count_ == that->count_ && phase_ == that->phase_ &&
            memcmp(intervals(), that->intervals(), sizeof(SkScalar) * count_) ==
-               0 &&
-           phase_ == that->phase_;
+               0;
   }
 
  private:
-  SkScalar* intervals() { return reinterpret_cast<SkScalar*>(this + 1); }
   // DlDashPathEffect constructor assumes the caller has prealloced storage for
   // the intervals. If the intervals is nullptr the intervals will
   // uninitialized.
@@ -126,6 +124,8 @@ class DlDashPathEffect final : public DlPathEffect {
       : DlDashPathEffect(dash_effect->intervals(),
                          dash_effect->count_,
                          dash_effect->phase_) {}
+
+  SkScalar* intervals_unsafe() { return reinterpret_cast<SkScalar*>(this + 1); }
 
   int count_;
   SkScalar phase_;

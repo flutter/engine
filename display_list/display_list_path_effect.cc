@@ -34,7 +34,7 @@ std::shared_ptr<DlPathEffect> DlPathEffect::From(SkPathEffect* sk_path_effect) {
         DlDashPathEffect::Make(nullptr, info.fCount, info.fPhase);
     info.fIntervals =
         reinterpret_cast<DlDashPathEffect*>(dash_path_effect.get())
-            ->intervals();
+            ->intervals_unsafe();
     sk_path_effect->asADash(&info);
     return dash_path_effect;
   }
@@ -61,7 +61,7 @@ std::optional<SkRect> DlDashPathEffect::effect_bounds(SkRect& rect) const {
 }
 
 std::optional<SkRect> DlUnknownPathEffect::effect_bounds(SkRect& rect) const {
-  if (rect.isSorted()) {
+  if (!rect.isSorted()) {
     return std::nullopt;
   }
   SkPaint p;

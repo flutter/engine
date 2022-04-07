@@ -61,26 +61,24 @@ TEST(DisplayListPathEffect, DashEffectEquals) {
   const SkScalar TestDashes2[] = {1.0, 1.5};
   auto effect1 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
-  ASSERT_TRUE(Equals(effect1, effect2));
-  ASSERT_TRUE(Equals(effect1->shared(), effect2->shared()));
+  TestEquals(*effect1, *effect1);
 }
 
-TEST(DisplayListPathEffect, BlurNotEquals) {
+TEST(DisplayListPathEffect, CheckEffectProperties) {
   const SkScalar TestDashes1[] = {4.0, 2.0};
-  const SkScalar TestDashes2[] = {1.0, 1.5};
-  const SkScalar TestDashes3[] = {4.0, 2.5, 2.0};
+  const SkScalar TestDashes2[] = {5.0, 2.0};
+  const SkScalar TestDashes3[] = {4.0, 3.0};
+  const SkScalar TestDashes4[] = {4.0, 2.0, 6.0};
   auto effect1 = DlDashPathEffect::Make(TestDashes1, 2, 0.0);
   auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
-  auto effect3 = DlDashPathEffect::Make(TestDashes3, 3, 1.0);
+  auto effect3 = DlDashPathEffect::Make(TestDashes3, 2, 0.0);
+  auto effect4 = DlDashPathEffect::Make(TestDashes4, 3, 0.0);
+  auto effect5 = DlDashPathEffect::Make(TestDashes1, 2, 1.0);
 
-  ASSERT_NE(effect1, effect2);
-  ASSERT_NE(effect1->shared(), effect2->shared());
-
-  ASSERT_NE(effect1, effect3);
-  ASSERT_NE(effect1->shared(), effect3->shared());
-
-  ASSERT_NE(effect2, effect3);
-  ASSERT_NE(effect2->shared(), effect3->shared());
+  TestNotEquals(*effect1, *effect2, "Interval 1 differs");
+  TestNotEquals(*effect1, *effect3, "Interval 2 differs");
+  TestNotEquals(*effect1, *effect4, "Dash count differs");
+  TestNotEquals(*effect1, *effect5, "Dash phase differs");
 }
 
 TEST(DisplayListPathEffect, UnknownConstructor) {
