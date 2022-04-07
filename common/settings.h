@@ -192,6 +192,10 @@ struct Settings {
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
 
+  // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
+  // not supported on the platform.
+  bool enable_impeller = false;
+
   // Selects the DisplayList for storage of rendering operations.
   bool enable_display_list = true;
 
@@ -290,12 +294,20 @@ struct Settings {
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t old_gen_heap_size = -1;
 
+  // Max bytes threshold of resource cache, or 0 for unlimited.
+  size_t resource_cache_max_bytes_threshold = 0;
+
   /// A timestamp representing when the engine started. The value is based
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
 
-  std::string ToString() const;
+  /// The minimum number of samples to require in multipsampled anti-aliasing.
+  ///
+  /// Setting this value to 0 or 1 disables MSAA.
+  /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
+  /// GPU does not support the requested sampling value, MSAA will be disabled.
+  uint8_t msaa_samples = 0;
 };
 
 }  // namespace flutter
