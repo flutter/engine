@@ -35,8 +35,8 @@ import org.json.JSONException;
 public class SpellCheckChannel {
   private static final String TAG = "SpellCheckChannel";
 
-  @NonNull public final MethodChannel channel;
-  @Nullable private SpellCheckMethodHandler spellCheckMethodHandler;
+  public final MethodChannel channel;
+  private SpellCheckMethodHandler spellCheckMethodHandler;
 
   @NonNull
   final MethodChannel.MethodCallHandler parsingMethodHandler =

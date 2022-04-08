@@ -1421,6 +1421,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     if (Build.VERSION.SDK_INT >= 31) {
       SpellCheckerInfo spellCheckerInfo = textServicesManager.getCurrentSpellCheckerInfo();
+      // List<SpellCheckerInfo> enabledSpellCheckerInfos = textServicesManager.getEnabledSpellCheckerInfos();
+      // for (SpellCheckerInfo enabledSpellChecker : enabledSpellCheckerInfos) {
+
+      // }
 
       if (spellCheckerInfo != null) {
         // Checks if enabled spell checker is the one that is suppported by GBoard, which is
