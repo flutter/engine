@@ -48,7 +48,7 @@ class PlatformHandlerWin32 : public PlatformHandler {
   explicit PlatformHandlerWin32(
       BinaryMessenger* messenger,
       FlutterWindowsView* view,
-      ScopedClipboardInterface* clipboard);
+      ScopedClipboardInterface* clipboard = nullptr);
 
   virtual ~PlatformHandlerWin32();
 
@@ -74,7 +74,7 @@ class PlatformHandlerWin32 : public PlatformHandler {
  private:
   // A reference to the Flutter view.
   FlutterWindowsView* view_;
-  // A clipboard instance that can be passed in.
+  // A clipboard instance that can be passed in for mocking in tests.
   ScopedClipboardInterface* clipboard_;
 };
 

@@ -191,7 +191,7 @@ std::unique_ptr<PlatformHandler> PlatformHandler::Create(
 PlatformHandlerWin32::PlatformHandlerWin32(
     BinaryMessenger* messenger,
     FlutterWindowsView* view,
-    ScopedClipboardInterface* clipboard = nullptr)
+    ScopedClipboardInterface* clipboard)
     : PlatformHandler(messenger), view_(view) {
   if (clipboard == nullptr) {
     ScopedClipboard scoped_clipboard;
