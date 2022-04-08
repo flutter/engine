@@ -100,30 +100,18 @@ class ScopedGlobalLock {
 class ScopedClipboard : public ScopedClipboardInterface {
  public:
   ScopedClipboard();
-  ~ScopedClipboard();
+  virtual ~ScopedClipboard();
 
   // Prevent copying.
   ScopedClipboard(ScopedClipboard const&) = delete;
   ScopedClipboard& operator=(ScopedClipboard const&) = delete;
 
-  // Attempts to open the clipboard for the given window, returning the error
-  // code in the case of failure and 0 otherwise.
   int Open(HWND window);
 
-  // Returns true if there is string data available to get.
   bool HasString();
 
-  // Returns string data from the clipboard.
-  //
-  // If getting a string fails, returns the error code.
-  //
-  // Open(...) must have succeeded to call this method.
   std::variant<std::wstring, int> GetString();
 
-  // Sets the string content of the clipboard, returning the error code on
-  // failure and 0 otherwise.
-  //
-  // Open(...) must have succeeded to call this method.
   int SetString(const std::wstring string);
 
  private:

@@ -19,12 +19,26 @@ class FlutterWindowsView;
 // PlatformHandlerWin32.
 class ScopedClipboardInterface {
  public:
+  virtual ~ScopedClipboardInterface() {};
+
+  // Attempts to open the clipboard for the given window, returning the error
+  // code in the case of failure and 0 otherwise.
   virtual int Open(HWND window) = 0;
 
+  // Returns true if there is string data available to get.
   virtual bool HasString() = 0;
 
+  // Returns string data from the clipboard.
+  //
+  // If getting a string fails, returns the error code.
+  //
+  // Open(...) must have succeeded to call this method.
   virtual std::variant<std::wstring, int> GetString() = 0;
 
+  // Sets the string content of the clipboard, returning the error code on
+  // failure and 0 otherwise.
+  //
+  // Open(...) must have succeeded to call this method.
   virtual int SetString(const std::wstring string) = 0;
 };
 
