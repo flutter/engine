@@ -363,6 +363,7 @@ public class PlatformPlugin {
     updateSystemUiOverlays();
   }
 
+  @SuppressWarnings("deprecation")
   private void setSystemChromeSystemUIOverlayStyle(
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();
@@ -372,13 +373,13 @@ public class PlatformPlugin {
 
     if (Build.VERSION.SDK_INT < 30) {
       // Flag set to specify that this window is responsible for drawing the background for the
-      // system
-      // bars. Must be set for all operations on API < 30 excluding enforcing system bar contrasts.
+      // system bars. Must be set for all operations on API < 30 excluding enforcing system
+      // bar contrasts. Deprecated in API 30.
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 
       // Flag set to dismiss any requests for translucent system bars to be provided in lieu of what
       // is specified by systemChromeStyle. Must be set for all operations on API < 30 operations
-      // excluding enforcing system bar contrasts.
+      // excluding enforcing system bar contrasts. Deprecated in API 30.
       window.clearFlags(
           WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
               | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
