@@ -21,17 +21,29 @@ extern const char kInvalidArgument[];
 ///
 /// If it is an error or exception, this method will return true.
 ///
-/// If it is an unhandled error or exception, first a call will be made to the
-/// Dart platform configuration's on_error closure. If that closure returns
-/// false or throws an exception, a fallback is made to the closure in
-/// |SetUnhandledExceptionReporter| to log details of the exception and stack.
-/// If the on_error callback throws an exception, the
-/// |SetUnhandledExceptionReporter| will be called with at least two separate
-/// exceptions and stacktraces: one for the original exception, and one for the
-/// exception thrown in the callback.
+/// If it is an unhandled error or exception, the closure in
+/// |SetUnhandledExceptionReporter| is called. The DartVMInitializer provides
+/// that closure, which checks with UIDartState::Current() if it is available
+/// and falls back to simply printing the exception and stack to an error log if
+/// the settings callback is not provided.
 ///
-/// The fallback behavior matches the behavior of Flutter applications before
-/// the introduction of PlatformDispatcher.onError.
+/// If UIDartState::Current() is avaialble, it can provide an onError callback
+/// that forwards to `PlatformConfiguration.instance.onError`. If that callback
+/// is not set, the callback from `Settings.unhandled_exception_callback` is
+/// invoked. If that callback is not set, a simple error log is
+/// printed.
+///
+/// If the PlatformDispatcher callback throws an exception, the at least two
+/// separate exceptions and stacktraces will be handled by either the
+/// Settings.unhandled_exception_callback or the error printer: one for the
+/// original exception, and one for the exception thrown in the callback. If the
+/// callback returns false, the original exception and stacktrace are logged. If
+/// it returns true, no additional logging is done.
+///
+/// Leaving the PlatformDispatcher.instance.onError callback unset or returning
+/// false from it matches the behavior of Flutter applications before the
+/// introduction of PlatformDispatcher.onError, which is to print to the error
+/// log.
 ///
 /// Dart has errors that are not considered unhandled exceptions, such as
 /// Dart_* API usage errors. In these cases, `Dart_IsUnhandledException` returns
