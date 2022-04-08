@@ -4,6 +4,8 @@
 
 #include "tonic/logging/dart_error.h"
 
+#include <atomic>
+
 #include "tonic/common/macros.h"
 #include "tonic/converter/dart_converter.h"
 
@@ -14,18 +16,18 @@ const char kInvalidArgument[] = "Invalid argument.";
 
 namespace {
 void DefaultLogUnhandledException(Dart_Handle, Dart_Handle) {}
-DartError::UnhandledExceptionReporter log_unhandled_exception =
+std::atomic<DartError::UnhandledExceptionReporter> log_unhandled_exception =
     DefaultLogUnhandledException;
 
 void ReportUnhandledException(Dart_Handle exception_handle,
                               Dart_Handle stack_trace_handle) {
-  log_unhandled_exception(exception_handle, stack_trace_handle);
+  log_unhandled_exception.load()(exception_handle, stack_trace_handle);
 }
 }  // namespace
 
 void SetUnhandledExceptionReporter(
     DartError::UnhandledExceptionReporter reporter) {
-  log_unhandled_exception = reporter;
+  log_unhandled_exception.store(reporter);
 }
 
 bool CheckAndHandleError(Dart_Handle handle) {
