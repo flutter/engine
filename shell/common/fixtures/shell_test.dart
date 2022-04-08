@@ -15,9 +15,7 @@ void nativeOnPointerDataPacket(List<int> sequences) native 'NativeOnPointerDataP
 
 @pragma('vm:entry-point')
 void onErrorA() {
-  print('A is starting');
   PlatformDispatcher.instance.onError = (Object error, StackTrace? stack) {
-    print('A $error');
     notifyErrorA(error.toString());
     return true;
   };
@@ -28,9 +26,7 @@ void onErrorA() {
 
 @pragma('vm:entry-point')
 void onErrorB() {
-  print('B is starting');
   PlatformDispatcher.instance.onError = (Object error, StackTrace? stack) {
-    print('B $error');
     notifyErrorB(error.toString());
     return true;
   };
