@@ -12,8 +12,7 @@
 namespace tonic {
 
 namespace DartError {
-using UnhandledExceptionReporter =
-    std::function<void(Dart_Handle, Dart_Handle)>;
+using UnhandledExceptionReporter = void(*)(Dart_Handle, Dart_Handle);
 
 extern const char kInvalidArgument[];
 }  // namespace DartError

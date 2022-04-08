@@ -128,9 +128,6 @@ class UIDartState : public tonic::DartState {
 
   tonic::DartErrorHandleType GetLastError();
 
-  void ReportUnhandledException(const std::string& error,
-                                const std::string& stack_trace);
-
   // Logs `print` messages from the application via an embedder-specified
   // logging mechanism.
   //
@@ -153,6 +150,10 @@ class UIDartState : public tonic::DartState {
     auto queue = state->GetSkiaUnrefQueue();
     return {std::move(object), std::move(queue)};
   };
+
+  UnhandledExceptionCallback unhandled_exception_callback() const {
+    return unhandled_exception_callback_;
+  }
 
  protected:
   UIDartState(TaskObserverAdd add_callback,
@@ -184,6 +185,7 @@ class UIDartState : public tonic::DartState {
   std::string debug_name_;
   std::unique_ptr<PlatformConfiguration> platform_configuration_;
   tonic::DartMicrotaskQueue microtask_queue_;
+  UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;
   const bool enable_skparagraph_;

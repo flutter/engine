@@ -10,18 +10,20 @@
 namespace tonic {
 namespace DartError {
 const char kInvalidArgument[] = "Invalid argument.";
-UnhandledExceptionReporter log_unhandled_exception = [](Dart_Handle,
-                                                        Dart_Handle) {};
+}  // namespace DartError
 
+namespace {
+DartError::UnhandledExceptionReporter log_unhandled_exception =
+    [](Dart_Handle, Dart_Handle) {};
 void ReportUnhandledException(Dart_Handle exception_handle,
                               Dart_Handle stack_trace_handle) {
-  DartError::log_unhandled_exception(exception_handle, stack_trace_handle);
+  log_unhandled_exception(exception_handle, stack_trace_handle);
 }
-}  // namespace DartError
+}  // namespace
 
 void SetUnhandledExceptionReporter(
     DartError::UnhandledExceptionReporter reporter) {
-  DartError::log_unhandled_exception = reporter;
+  log_unhandled_exception = reporter;
 }
 
 bool CheckAndHandleError(Dart_Handle handle) {
@@ -31,7 +33,7 @@ bool CheckAndHandleError(Dart_Handle handle) {
     Dart_Handle exception_handle = Dart_ErrorGetException(handle);
     Dart_Handle stack_trace_handle = Dart_ErrorGetStackTrace(handle);
 
-    DartError::ReportUnhandledException(exception_handle, stack_trace_handle);
+    ReportUnhandledException(exception_handle, stack_trace_handle);
     return true;
   } else if (Dart_IsError(handle)) {
     tonic::Log("Dart Error: %s", Dart_GetError(handle));
