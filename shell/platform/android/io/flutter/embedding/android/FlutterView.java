@@ -1420,23 +1420,20 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     boolean isNativeSpellCheckServiceDefined = true;
 
     if (Build.VERSION.SDK_INT >= 31) {
-      SpellCheckerInfo spellCheckerInfo = textServicesManager.getCurrentSpellCheckerInfo();
-      // List<SpellCheckerInfo> enabledSpellCheckerInfos = textServicesManager.getEnabledSpellCheckerInfos();
-      // for (SpellCheckerInfo enabledSpellChecker : enabledSpellCheckerInfos) {
+      List<SpellCheckerInfo> enabledSpellCheckerInfos =
+          textServicesManager.getEnabledSpellCheckerInfos();
+      boolean gboardSpellCheckerEnabled =
+          enabledSpellCheckerInfos.stream()
+              .anyMatch(
+                  spellCheckerInfo ->
+                      spellCheckerInfo
+                          .getPackageName()
+                          .equals("com.google.android.inputmethod.latin"));
 
-      // }
-
-      if (spellCheckerInfo != null) {
-        // Checks if enabled spell checker is the one that is suppported by GBoard, which is
-        // the one Flutter supports by default.
-        isNativeSpellCheckServiceDefined =
-            textServicesManager.isSpellCheckerEnabled()
-                && (spellCheckerInfo
-                    .getPackageName()
-                    .equals("com.google.android.inputmethod.latin"));
-      } else {
-        isNativeSpellCheckServiceDefined = false;
-      }
+      // Checks if enabled spell checker is the one that is suppported by Gboard, which is
+      // the one Flutter supports by default.
+      isNativeSpellCheckServiceDefined =
+          textServicesManager.isSpellCheckerEnabled() && gboardSpellCheckerEnabled;
     }
 
     flutterEngine
