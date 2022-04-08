@@ -15,20 +15,22 @@ import org.json.JSONException;
  * {@link SpellCheckChannel} is a platform channel that is used by Flutter to initiate spell check
  * in the Android engine and for the Android engine to send back the results.
  *
- * <p>If the {@link io.flutter.plugin.editing.SpellCheckPlugin} is used to handle spell check
- * behavior (such is the case by default), then when there is new text to be spell checked, Flutter will
- * send a message to the engine. In response, the {@link io.flutter.plugin.editing.SpellCheckPlugin}
- * will make a call to Android's spell check service to fetch spell check results for the specified
- * text.
+ * <p>When there is new text to be spell checked, Flutter will send to the Android engine the
+ * message {@code SpellCheck.initiateSpellCheck} with the {@code String} locale to spell check with
+ * and the {@code String} of text to spell check as arguments. In response, the {@link
+ * io.flutter.plugin.editing.SpellCheckPlugin} will make a call to Android's spell check service to
+ * fetch spell check results for the specified text.
  *
  * <p>Once the spell check results are received by the {@link
- * io.flutter.plugin.editing.SpellCheckPlugin}, a message will be sent back to Flutter with the
- * results.
+ * io.flutter.plugin.editing.SpellCheckPlugin}, it will send to Flutter the message {@code
+ * SpellCheck.updateSpellCheckResults} with the {@code ArrayList<String>} of encoded spell check
+ * results (see {@link
+ * io.flutter.plugin.editing.SpellCheckPlugin#onGetSentenceSuggestions(SentenceSuggestionsInfo[])}
+ * for details) as an argument.
  *
- * <p>By default, {@link io.flutter.plugin.editing.SpellCheckPlugin} implements {@link
- * io.flutter.plugin.common.MethodChannel.MethodCallHandler} to initiate spell check via the Android
- * spell check service. Implement {@link SpellCheckMethodHandler} to respond to Flutter spell check
- * messages.
+ * <p>{@link io.flutter.plugin.editing.SpellCheckPlugin} implements {@link SpellCheckMethodHandler}
+ * to initiate spell check. Implement {@link SpellCheckMethodHandler} to respond to Flutter spell
+ * check messages.
  */
 public class SpellCheckChannel {
   private static final String TAG = "SpellCheckChannel";
