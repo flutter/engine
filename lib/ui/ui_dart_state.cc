@@ -24,6 +24,26 @@ using tonic::ToDart;
 
 namespace flutter {
 
+namespace {
+void LogUnhandledException(const UnhandledExceptionCallback& callback,
+                           Dart_Handle exception_handle,
+                           Dart_Handle stack_trace_handle) {
+  const std::string error =
+      tonic::StdStringFromDart(Dart_ToString(exception_handle));
+  const std::string stack_trace =
+      tonic::StdStringFromDart(Dart_ToString(stack_trace_handle));
+
+  if (callback && callback(error, stack_trace)) {
+    return;
+  }
+
+  // Either the exception handler was not set or it could not handle the
+  // error, just log the exception.
+  FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
+                 << stack_trace;
+}
+}  // namespace
+
 UIDartState::Context::Context(const TaskRunners& task_runners)
     : task_runners(task_runners) {}
 
@@ -70,15 +90,36 @@ UIDartState::UIDartState(
   AddOrRemoveTaskObserver(true /* add */);
   tonic::SetUnhandledExceptionReporter(
       [callback = std::move(unhandled_exception_callback)](
-          const std::string& error, const std::string& stack_trace) {
-        if (callback && callback(error, stack_trace)) {
-          return;
-        }
+          Dart_Handle exception_handle, Dart_Handle stack_trace_handle) {
+        // Hooks.dart will call the error handler on PlatformDispatcher if it is
+        // not null. If it is null, returns false, fall into the !handled branch
+        // below and log.
+        // If it is not null, defer to the return value of that closure
+        // to determine whether to report via logging.
+        bool handled = false;
+        auto on_error =
+            UIDartState::Current()->platform_configuration()->on_error();
+        if (on_error && !Dart_IsNull(on_error)) {
+          Dart_Handle args[2];
+          args[0] = exception_handle;
+          args[1] = stack_trace_handle;
+          Dart_Handle on_error_result = Dart_InvokeClosure(on_error, 2, args);
 
-        // Either the exception handler was not set or it could not handle the
-        // error, just log the exception.
-        FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
-                       << stack_trace;
+          // An exception was thrown by the exception handler.
+          if (Dart_IsError(on_error_result)) {
+            LogUnhandledException(callback,
+                                  Dart_ErrorGetException(on_error_result),
+                                  Dart_ErrorGetStackTrace(on_error_result));
+
+            handled = false;
+          } else {
+            handled = tonic::DartConverter<bool>::FromDart(on_error_result);
+          }
+          if (!handled) {
+            LogUnhandledException(callback, exception_handle,
+                                  stack_trace_handle);
+          }
+        }
       });
 }
 

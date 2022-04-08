@@ -13,7 +13,7 @@ namespace tonic {
 
 namespace DartError {
 using UnhandledExceptionReporter =
-    std::function<void(const std::string&, const std::string&)>;
+    std::function<void(Dart_Handle, Dart_Handle)>;
 
 extern const char kInvalidArgument[];
 }  // namespace DartError
@@ -23,10 +23,10 @@ extern const char kInvalidArgument[];
 /// If it is an error or exception, this method will return true.
 ///
 /// If it is an unhandled error or exception, first a call will be made to the
-/// Dart code set in |SetUnhandledErrorHandler|. If that closure returns false
-/// or throws an exception, a fallback is made to the closure in
+/// Dart platform configuration's on_error closure. If that closure returns
+/// false or throws an exception, a fallback is made to the closure in
 /// |SetUnhandledExceptionReporter| to log details of the exception and stack.
-/// If the |SetUnhandledErrorHandler| callback throws an exception, the
+/// If the on_error callback throws an exception, the
 /// |SetUnhandledExceptionReporter| will be called with at least two separate
 /// exceptions and stacktraces: one for the original exception, and one for the
 /// exception thrown in the callback.
@@ -46,27 +46,8 @@ extern const char kInvalidArgument[];
 /// Historically known as LogIfError.
 bool CheckAndHandleError(Dart_Handle handle);
 
-/// Provides a Dart_Handle to a top level static field closure to invoke when
-/// an unhandled exception occurs.
-///
-/// The signature of this field must match that of _onError in hooks.dart,
-/// namely `bool _onError(Object error, StackTrace? stackTrace)`.
-///
-/// This handler will be invoked when an unhandled exception occurs. If it
-/// returns false or throws an exception, a fallback handler will be invoked. By
-/// default, UIDartState registers its ReportUnhandledError and will either call
-/// a closure provided in the Shell Settings or simply dump the error to stderr
-/// or some similar platform specific mechanism.
-///
-/// This must be called from the UI thread for the dart_state.
-///
-/// See also:
-///  - CheckAndHandleError
-///  - SetUnhandledExceptionReporter
-void SetUnhandledErrorHandler(DartState* dart_state, Dart_Handle value);
-
-/// The fallback mechanism to log errors if |SetUnhandledErrorHandler| has
-/// provided a null value or a closure that returns false.
+/// The fallback mechanism to log errors if the platform configuration error
+/// handler returns false.
 ///
 /// Normally, UIDartState registers with this method in its constructor.
 void SetUnhandledExceptionReporter(
