@@ -13,8 +13,10 @@ const char kInvalidArgument[] = "Invalid argument.";
 }  // namespace DartError
 
 namespace {
+void DefaultLogUnhandledException(Dart_Handle, Dart_Handle) {}
 DartError::UnhandledExceptionReporter log_unhandled_exception =
-    [](Dart_Handle, Dart_Handle) {};
+    DefaultLogUnhandledException;
+
 void ReportUnhandledException(Dart_Handle exception_handle,
                               Dart_Handle stack_trace_handle) {
   log_unhandled_exception(exception_handle, stack_trace_handle);

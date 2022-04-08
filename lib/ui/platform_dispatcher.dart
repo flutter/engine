@@ -1025,7 +1025,8 @@ class PlatformDispatcher {
   ErrorCallback? _onError;
   Zone? _onErrorZone;
 
-  /// A callback that is invoked when an unhandled error occurs in Dart.
+  /// A callback that is invoked when an unhandled error occurs in the root
+  /// isolate.
   ///
   /// This callback must return `true` if it has handled the error. Otherwise,
   /// it must return `false` and a fallback mechanism such as printing to stderr
@@ -1036,6 +1037,11 @@ class PlatformDispatcher {
   /// callback. The callback will not be called for exceptions that cause the VM
   /// or process to terminate or become unresponsive before the callback can be
   /// invoked.
+  ///
+  /// This callback is not directly invoked by errors in child isolates of the
+  /// root isolate. Programs that create new isolates must listen for errors on
+  /// those isolates and forward the errors to the root isolate. An example of
+  /// this can be found in the Flutter framework's `compute` function.
   ErrorCallback? get onError => _onError;
   set onError(ErrorCallback? callback) {
     _onError = callback;

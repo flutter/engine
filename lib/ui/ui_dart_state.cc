@@ -33,7 +33,6 @@ void LogUnhandledException(Dart_Handle exception_handle,
       tonic::StdStringFromDart(Dart_ToString(stack_trace_handle));
 
   auto state = UIDartState::Current();
-  FML_DCHECK(state);
   if (state && UIDartState::Current()->unhandled_exception_callback()) {
     auto callback = UIDartState::Current()->unhandled_exception_callback();
     if (callback(error, stack_trace)) {
@@ -56,7 +55,6 @@ void ReportUnhandledException(Dart_Handle exception_handle,
   // to determine whether to report via logging.
   bool handled = false;
   auto state = UIDartState::Current();
-  FML_DCHECK(state);
   if (!state || !state->platform_configuration()) {
     LogUnhandledException(exception_handle, stack_trace_handle);
     return;
