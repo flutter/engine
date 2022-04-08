@@ -4,7 +4,6 @@
 
 package io.flutter.plugin.editing;
 
-import android.content.Context;
 import android.view.textservice.SentenceSuggestionsInfo;
 import android.view.textservice.SpellCheckerSession;
 import android.view.textservice.SuggestionsInfo;
@@ -29,21 +28,20 @@ public class SpellCheckPlugin
     implements SpellCheckChannel.SpellCheckMethodHandler,
         SpellCheckerSession.SpellCheckerSessionListener {
 
-  private final Context mContext;
   private final SpellCheckChannel mSpellCheckChannel;
   private final TextServicesManager mTextServicesManager;
   private SpellCheckerSession mSpellCheckerSession;
 
   // The maximum number of suggestions that the Android spell check service is allowed to provide
   // per word.
-  // Same number that is used by default for Android's {@code TextView}'s.
+  // Same number that is used by default for Android's TextViews.
   private static final int MAX_SPELL_CHECK_SUGGESTIONS = 5;
 
-  public SpellCheckPlugin(@NonNull Context context, @NonNull SpellCheckChannel spellCheckChannel) {
-    mContext = context;
+  public SpellCheckPlugin(
+      @NonNull TextServicesManager textServicesManager,
+      @NonNull SpellCheckChannel spellCheckChannel) {
+    mTextServicesManager = textServicesManager;
     mSpellCheckChannel = spellCheckChannel;
-    mTextServicesManager =
-        (TextServicesManager) mContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     mSpellCheckChannel.setSpellCheckMethodHandler(this);
   }

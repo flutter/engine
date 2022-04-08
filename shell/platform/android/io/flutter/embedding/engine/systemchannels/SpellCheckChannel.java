@@ -16,21 +16,14 @@ import org.json.JSONException;
  * in the Android engine and for the Android engine to send back the results.
  *
  * <p>If the {@link io.flutter.plugin.editing.SpellCheckPlugin} is used to handle spell check
- * behavior, (such is the case by default) then there is new text to be spell checked, Flutter will
+ * behavior (such is the case by default), then when there is new text to be spell checked, Flutter will
  * send a message to the engine. In response, the {@link io.flutter.plugin.editing.SpellCheckPlugin}
  * will make a call to Android's spell check service to fetch spell check results for the specified
  * text.
  *
  * <p>Once the spell check results are received by the {@link
  * io.flutter.plugin.editing.SpellCheckPlugin}, a message will be sent back to Flutter with the
- * results. See diagram below for overview:
- *  -----------------------------------------------------------------------------------------------------------------------------
- * |      From        |        To         |               Message                |                 Arguments                    |
- * | ---------------------------------------------------------------------------------------------------------------------------|
- * |     Flutter      |   Android Engine  |     SpellCheck.iniateSpellCheck      |  {@code String} locale, {@code String} text  |
- * |----------------------------------------------------------------------------------------------------------------------------|
- * |  Android Engine  |      Flutter      |  SpellCheck.updateSpellCheckResults  |        {@code ArrayList} of results          |
- *  -----------------------------------------------------------------------------------------------------------------------------
+ * results.
  *
  * <p>By default, {@link io.flutter.plugin.editing.SpellCheckPlugin} implements {@link
  * io.flutter.plugin.common.MethodChannel.MethodCallHandler} to initiate spell check via the Android

@@ -35,6 +35,8 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.textservice.SpellCheckerInfo;
+import android.view.textservice.TextServicesManager;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -130,6 +132,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
+  private TextServicesManager textServicesManager;
 
   // Provides access to foldable/hinge information
   @Nullable private WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo;
@@ -1122,8 +1125,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this,
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
+    textServicesManager =
+        (TextServicesManager) getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
     spellCheckPlugin =
-        new SpellCheckPlugin(getContext(), this.flutterEngine.getSpellCheckChannel());
+        new SpellCheckPlugin(textServicesManager, this.flutterEngine.getSpellCheckChannel());
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 
     keyboardManager =
@@ -1412,11 +1417,28 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             ? SettingsChannel.PlatformBrightness.dark
             : SettingsChannel.PlatformBrightness.light;
 
+    boolean isNativeSpellCheckServiceDefined = true;
+
+    if (Build.VERSION.SDK_INT >= 31) {
+      SpellCheckerInfo spellCheckerInfo = textServicesManager.getCurrentSpellCheckerInfo();
+
+      if (spellCheckerInfo != null) {
+        // Checks if enabled spell checker is that supported by GBoard.
+        isNativeSpellCheckServiceDefined =
+            textServicesManager.isSpellCheckerEnabled()
+                && (spellCheckerInfo
+                    .getPackageName()
+                    .equals("com.google.android.inputmethod.latin"));
+      } else {
+        isNativeSpellCheckServiceDefined = false;
+      }
+    }
+
     flutterEngine
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
-        .setNativeSpellCheckServiceDefined(true)
+        .setNativeSpellCheckServiceDefined(isNativeSpellCheckServiceDefined)
         .setBrieflyShowPassword(
             Settings.System.getInt(
                     getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1)
