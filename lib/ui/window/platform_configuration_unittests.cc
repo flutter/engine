@@ -211,7 +211,7 @@ TEST_F(ShellTest, PlatformConfigurationOnErrorDoesNotHandleError) {
 
   ASSERT_EQ(throw_count, 1ul);
   ASSERT_EQ(ex, "Exception: false") << ex;
-  ASSERT_EQ(st.rfind("#0 customOnErrorFalse", 0), 0ul) << st;
+  ASSERT_EQ(st.rfind("#0      customOnErrorFalse", 0), 0ul) << st;
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
