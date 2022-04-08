@@ -15,6 +15,7 @@
 
 static constexpr char kValueKey[] = "value";
 static constexpr int kAccessDeniedErrorCode = 5;
+static constexpr int kErrorSuccess = 0;
 
 namespace flutter {
 
@@ -106,7 +107,7 @@ class ScopedClipboard : public ScopedClipboardInterface {
   ScopedClipboard& operator=(ScopedClipboard const&) = delete;
 
   // Attempts to open the clipboard for the given window, returning the error
-  // code in the case of failure and -1 otherwise.
+  // code in the case of failure and 0 otherwise.
   int Open(HWND window);
 
   // Returns true if there is string data available to get.
@@ -120,7 +121,7 @@ class ScopedClipboard : public ScopedClipboardInterface {
   std::variant<std::wstring, int> GetString();
 
   // Sets the string content of the clipboard, returning the error code on
-  // failure and -1 otherwise.
+  // failure and 0 otherwise.
   //
   // Open(...) must have succeeded to call this method.
   int SetString(const std::wstring string);
@@ -144,7 +145,7 @@ int ScopedClipboard::Open(HWND window) {
     return ::GetLastError();
   }
 
-  return -1;
+  return kErrorSuccess;
 }
 
 bool ScopedClipboard::HasString() {
@@ -190,7 +191,7 @@ int ScopedClipboard::SetString(const std::wstring string) {
   }
   // The clipboard now owns the global memory.
   destination_memory.release();
-  return -1;
+  return kErrorSuccess;
 }
 
 }  // namespace
@@ -220,7 +221,7 @@ void PlatformHandlerWin32::GetPlainText(
     std::unique_ptr<MethodResult<rapidjson::Document>> result,
     std::string_view key) {
   int open_result = clipboard_->Open(std::get<HWND>(*view_->GetRenderTarget()));
-  if (open_result != -1) {
+  if (open_result != kErrorSuccess) {
     rapidjson::Document error_code;
     error_code.SetInt(open_result);
     result->Error(kClipboardError, "Unable to open clipboard", error_code);
@@ -254,7 +255,7 @@ void PlatformHandlerWin32::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   bool hasStrings;
   int open_result = clipboard_->Open(std::get<HWND>(*view_->GetRenderTarget()));
-  if (open_result != -1) {
+  if (open_result != kErrorSuccess) {
     rapidjson::Document error_code;
     error_code.SetInt(open_result);
     // Swallow errors of type ERROR_ACCESS_DENIED. These happen when the app is
@@ -281,14 +282,14 @@ void PlatformHandlerWin32::SetPlainText(
     const std::string& text,
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   int open_result = clipboard_->Open(std::get<HWND>(*view_->GetRenderTarget()));
-  if (open_result != -1) {
+  if (open_result != kErrorSuccess) {
     rapidjson::Document error_code;
     error_code.SetInt(open_result);
     result->Error(kClipboardError, "Unable to open clipboard", error_code);
     return;
   }
   int set_result = clipboard_->SetString(fml::Utf8ToWideString(text));
-  if (set_result != -1) {
+  if (set_result != kErrorSuccess) {
     rapidjson::Document error_code;
     error_code.SetInt(set_result);
     result->Error(kClipboardError, "Unable to set clipboard data", error_code);
