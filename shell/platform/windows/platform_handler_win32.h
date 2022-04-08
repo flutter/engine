@@ -48,7 +48,7 @@ class PlatformHandlerWin32 : public PlatformHandler {
   explicit PlatformHandlerWin32(
       BinaryMessenger* messenger,
       FlutterWindowsView* view,
-      std::optional<ScopedClipboardInterface*> clipboard_reference);
+      ScopedClipboardInterface* clipboard);
 
   virtual ~PlatformHandlerWin32();
 

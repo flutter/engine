@@ -106,13 +106,13 @@ class ScopedClipboard : public ScopedClipboardInterface {
   ScopedClipboard(ScopedClipboard const&) = delete;
   ScopedClipboard& operator=(ScopedClipboard const&) = delete;
 
-  int Open(HWND window);
+  int Open(HWND window) override;
 
-  bool HasString();
+  bool HasString() override;
 
-  std::variant<std::wstring, int> GetString();
+  std::variant<std::wstring, int> GetString() override;
 
-  int SetString(const std::wstring string);
+  int SetString(const std::wstring string) override;
 
  private:
   bool opened_ = false;
@@ -191,13 +191,13 @@ std::unique_ptr<PlatformHandler> PlatformHandler::Create(
 PlatformHandlerWin32::PlatformHandlerWin32(
     BinaryMessenger* messenger,
     FlutterWindowsView* view,
-    std::optional<ScopedClipboardInterface*> clipboard_reference = nullptr)
+    ScopedClipboardInterface* clipboard = nullptr)
     : PlatformHandler(messenger), view_(view) {
-  if (clipboard_reference == nullptr) {
-    ScopedClipboard clipboard;
-    clipboard_reference = &clipboard;
+  if (clipboard == nullptr) {
+    ScopedClipboard scoped_clipboard;
+    clipboard = &scoped_clipboard;
   }
-  clipboard_ = clipboard_reference.value();
+  clipboard_ = clipboard;
 }
 
 PlatformHandlerWin32::~PlatformHandlerWin32() = default;
