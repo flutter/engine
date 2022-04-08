@@ -32,9 +32,13 @@ void LogUnhandledException(Dart_Handle exception_handle,
   const std::string stack_trace =
       tonic::StdStringFromDart(Dart_ToString(stack_trace_handle));
 
-  auto callback = UIDartState::Current()->unhandled_exception_callback();
-  if (callback && callback(error, stack_trace)) {
-    return;
+  auto state = UIDartState::Current();
+  FML_DCHECK(state);
+  if (state && UIDartState::Current()->unhandled_exception_callback()) {
+    auto callback = UIDartState::Current()->unhandled_exception_callback();
+    if (callback(error, stack_trace)) {
+      return;
+    }
   }
 
   // Either the exception handler was not set or it could not handle the
@@ -51,6 +55,12 @@ void ReportUnhandledException(Dart_Handle exception_handle,
   // If it is not null, defer to the return value of that closure
   // to determine whether to report via logging.
   bool handled = false;
+  auto state = UIDartState::Current();
+  FML_DCHECK(state);
+  if (!state || !state->platform_configuration()) {
+    LogUnhandledException(exception_handle, stack_trace_handle);
+    return;
+  }
   auto on_error = UIDartState::Current()->platform_configuration()->on_error();
   if (on_error) {
     FML_DCHECK(!Dart_IsNull(on_error));
