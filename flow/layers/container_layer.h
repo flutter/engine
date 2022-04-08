@@ -30,7 +30,7 @@ class ContainerLayer : public CacheableLayer {
   const ContainerLayer* as_container_layer() const override { return this; }
 
   const SkRect& child_paint_bounds() const { return child_paint_bounds_; }
-  
+
   CacheableLayer::CacheType NeedCaching(PrerollContext* context,
                                         const SkMatrix& ctm) override {
     return CacheableLayer::CacheType::kNone;

@@ -28,8 +28,7 @@ void CacheableDisplayListWrapper::TryToPrepareRasterCache(
         display_list_->bounds().makeOffset(offset_.x(), offset_.y());
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache");
     if (context->cull_rect.intersects(bounds)) {
-      cache->Prepare(context, display_list_, is_complex_, will_change_, matrix,
-                     offset_);
+      cache->Prepare(context, display_list_, matrix, offset_);
     } else {
       // Don't evict raster cache entry during partial repaint
       cache->Touch(display_list_, matrix);
@@ -46,8 +45,7 @@ void CacheableSkPictureWrapper::TryToPrepareRasterCache(
 
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
     if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, sk_picture_, is_complex_, will_change_,
-                         matrix, offset_)) {
+      if (cache->Prepare(context, sk_picture_, matrix, offset_)) {
         context->subtree_can_inherit_opacity = true;
       }
     } else {

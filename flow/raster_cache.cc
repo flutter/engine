@@ -277,12 +277,12 @@ const SkRect& RasterCache::GetPaintBoundsFromLayer(
   }
 }
 
-bool RasterCache::Prepare(PrerollContext* context,
-                          SkPicture* picture,
-                          bool is_complex,
-                          bool will_change,
-                          const SkMatrix& untranslated_matrix,
-                          const SkPoint& offset) {
+bool RasterCache::ShouldBeCached(PrerollContext* context,
+                                 SkPicture* picture,
+                                 bool is_complex,
+                                 bool will_change,
+                                 const SkMatrix& untranslated_matrix,
+                                 const SkPoint& offset) {
   if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
@@ -291,7 +291,13 @@ bool RasterCache::Prepare(PrerollContext* context,
     // We only deal with pictures that are worthy of rasterization.
     return false;
   }
+  return true;
+}
 
+bool RasterCache::Prepare(PrerollContext* context,
+                          SkPicture* picture,
+                          const SkMatrix& untranslated_matrix,
+                          const SkPoint& offset) {
   SkMatrix transformation_matrix = untranslated_matrix;
   transformation_matrix.preTranslate(offset.x(), offset.y());
 
@@ -346,20 +352,11 @@ bool RasterCache::ShouldBeCached(PrerollContext* context,
     return false;
   }
 
-  SkMatrix transformation_matrix = untranslated_matrix;
-  transformation_matrix.preTranslate(offset.x(), offset.y());
-
-  if (!transformation_matrix.invert(nullptr)) {
-    // The matrix was singular. No point in going further.
-    return false;
-  }
   return true;
 }
 
 bool RasterCache::Prepare(PrerollContext* context,
                           DisplayList* display_list,
-                          bool is_complex,
-                          bool will_change,
                           const SkMatrix& untranslated_matrix,
                           const SkPoint& offset) {
   SkMatrix transformation_matrix = untranslated_matrix;

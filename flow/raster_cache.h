@@ -179,7 +179,7 @@ class RasterCache {
     return result;
   }
 
-  // Return true if the cache is generated.
+  // Return true if the SkPicture can be cached.
   //
   // We may return false and not generate the cache if
   // 1. There are too many pictures to be cached in the current frame.
@@ -187,13 +187,21 @@ class RasterCache {
   // 2. The picture is not worth rasterizing
   // 3. The matrix is singular
   // 4. The picture is accessed too few times
+  bool ShouldBeCached(PrerollContext* context,
+                      SkPicture* picture,
+                      bool is_complex,
+                      bool will_change,
+                      const SkMatrix& untranslated_matrix,
+                      const SkPoint& offset = SkPoint());
+
+  // Prepare to cache the SkPicture.
+  // Return true if the cache is generated.
   bool Prepare(PrerollContext* context,
                SkPicture* picture,
-               bool is_complex,
-               bool will_change,
                const SkMatrix& untranslated_matrix,
                const SkPoint& offset = SkPoint());
 
+  // Return true if the DisplayList can be cached.
   bool ShouldBeCached(PrerollContext* context,
                       DisplayList* display_list,
                       bool is_complex,
@@ -201,10 +209,10 @@ class RasterCache {
                       const SkMatrix& untranslated_matrix,
                       const SkPoint& offset = SkPoint());
 
+  // Prepare to cache the DisplayList.
+  // Return true if the cache is generated.
   bool Prepare(PrerollContext* context,
                DisplayList* display_list,
-               bool is_complex,
-               bool will_change,
                const SkMatrix& untranslated_matrix,
                const SkPoint& offset = SkPoint());
 

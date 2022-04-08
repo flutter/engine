@@ -94,12 +94,9 @@ void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
   auto cacheable_entry = RasterCacheableEntry::MarkDisplayListCacheable(
-      this->display_list(), *context, matrix, offset_, is_complex_,
-      will_change_);
+      this->display_list(), *context, matrix, offset_);
   context->raster_cached_entries.push_back(cacheable_entry);
-
-  auto& cache_entry = context->raster_cached_entries.back();
-  cache_entry->need_caching = NeedCaching(context, matrix);
+  cacheable_entry->need_caching = NeedCaching(context, matrix);
 }
 
 bool DisplayListLayer::NeedCaching(PrerollContext* context,

@@ -55,25 +55,16 @@ class CacheableLayerWrapper : public CacheableItemWrapperBase {
 // CacheableEntry is a wrapper to erasure the Entry type.
 class SkGPUObjectCacheableWrapper : public CacheableItemWrapperBase {
  public:
-  explicit SkGPUObjectCacheableWrapper(SkPoint offset,
-                                       bool is_complex,
-                                       bool will_change)
-      : offset_(offset), is_complex_(is_complex), will_change_(will_change) {}
+  explicit SkGPUObjectCacheableWrapper(SkPoint offset) : offset_(offset) {}
 
  protected:
   SkPoint offset_;
-  bool is_complex_ = false;
-  bool will_change_ = false;
 };
 
 class CacheableDisplayListWrapper : public SkGPUObjectCacheableWrapper {
  public:
-  CacheableDisplayListWrapper(DisplayList* display_list,
-                              SkPoint offset,
-                              bool is_complex,
-                              bool will_change)
-      : SkGPUObjectCacheableWrapper(offset, is_complex, will_change),
-        display_list_(display_list) {}
+  CacheableDisplayListWrapper(DisplayList* display_list, SkPoint offset)
+      : SkGPUObjectCacheableWrapper(offset), display_list_(display_list) {}
 
   void TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
@@ -88,12 +79,8 @@ class CacheableDisplayListWrapper : public SkGPUObjectCacheableWrapper {
 
 class CacheableSkPictureWrapper : public SkGPUObjectCacheableWrapper {
  public:
-  CacheableSkPictureWrapper(SkPicture* sk_picture,
-                            SkPoint offset,
-                            bool is_complex,
-                            bool will_change)
-      : SkGPUObjectCacheableWrapper(offset, is_complex, will_change),
-        sk_picture_(sk_picture) {}
+  CacheableSkPictureWrapper(SkPicture* sk_picture, SkPoint offset)
+      : SkGPUObjectCacheableWrapper(offset), sk_picture_(sk_picture) {}
 
   void TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
@@ -130,13 +117,10 @@ class RasterCacheableEntry {
       const PrerollContext& context,
       const SkMatrix& matrix,
       SkPoint offset,
-      bool is_complex = false,
-      bool will_change = false,
       unsigned num_child = 0,
       bool need_caching = true) {
     return std::make_shared<RasterCacheableEntry>(
-        std::make_unique<CacheableDisplayListWrapper>(display_list, offset,
-                                                      is_complex, will_change),
+        std::make_unique<CacheableDisplayListWrapper>(display_list, offset),
         context, matrix, num_child, need_caching);
   }
 
@@ -145,14 +129,11 @@ class RasterCacheableEntry {
       const PrerollContext& context,
       const SkMatrix& matrix,
       SkPoint offset,
-      bool is_complex = false,
-      bool will_change = false,
       unsigned num_child = 0,
       bool need_caching = true) {
     return std::make_shared<RasterCacheableEntry>(
-        std::make_unique<CacheableSkPictureWrapper>(picture, offset, is_complex,
-                                                    will_change),
-        context, matrix, num_child, need_caching);
+        std::make_unique<CacheableSkPictureWrapper>(picture, offset), context,
+        matrix, num_child, need_caching);
   }
 
   CacheableItemWrapperBase* GetCacheableWrapper() const { return item_.get(); }
