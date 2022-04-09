@@ -27,7 +27,7 @@ extern const char kInvalidArgument[];
 /// and falls back to simply printing the exception and stack to an error log if
 /// the settings callback is not provided.
 ///
-/// If UIDartState::Current() is avaialble, it can provide an onError callback
+/// If UIDartState::Current() is available, it can provide an onError callback
 /// that forwards to `PlatformConfiguration.instance.onError`. If that callback
 /// is not set, the callback from `Settings.unhandled_exception_callback` is
 /// invoked. If that callback is not set, a simple error log is

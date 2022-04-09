@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/third_party/tonic/dart_state.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/isolate_configuration.h"
@@ -11,6 +12,35 @@ namespace flutter {
 namespace testing {
 
 using DartState = FixtureTest;
+
+TEST_F(DartState, CurrentWithNullDataDoesNotSegfault) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  ASSERT_TRUE(vm_ref);
+  auto vm_data = vm_ref.GetVMData();
+  ASSERT_TRUE(vm_data);
+  TaskRunners task_runners(GetCurrentTestName(),    //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner()   //
+  );
+  auto isolate_configuration =
+      IsolateConfiguration::InferFromSettings(settings);
+  char* error;
+  Dart_CreateIsolateGroup(
+      "main.dart", "main", vm_data->GetIsolateSnapshot()->GetDataMapping(),
+      vm_data->GetIsolateSnapshot()->GetInstructionsMapping(), nullptr, nullptr,
+      nullptr, &error);
+  ASSERT_FALSE(error);
+  ::free(error);
+
+  ASSERT_FALSE(tonic::DartState::Current());
+
+  Dart_ShutdownIsolate();
+  ASSERT_TRUE(Dart_CurrentIsolate() == nullptr);
+}
 
 TEST_F(DartState, IsShuttingDown) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
