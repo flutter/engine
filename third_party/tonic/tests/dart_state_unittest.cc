@@ -16,7 +16,9 @@ using DartState = FixtureTest;
 TEST_F(DartState, CurrentWithNullDataDoesNotSegfault) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   auto settings = CreateSettingsForFixture();
-  auto vm_ref = DartVMRef::Create(settings);
+  auto vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
+  auto isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
+  auto vm_ref = DartVMRef::Create(settings, vm_snapshot, isolate_snapshot);
   ASSERT_TRUE(vm_ref);
   auto vm_data = vm_ref.GetVMData();
   ASSERT_TRUE(vm_data);
@@ -28,12 +30,17 @@ TEST_F(DartState, CurrentWithNullDataDoesNotSegfault) {
   );
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
+  Dart_IsolateFlags isolate_flags;
+  Dart_IsolateFlagsInitialize(&isolate_flags);
+  isolate_flags.null_safety =
+      isolate_configuration->IsNullSafetyEnabled(*isolate_snapshot);
+  isolate_flags.snapshot_is_dontneed_safe = isolate_snapshot->IsDontNeedSafe();
   char* error;
   Dart_CreateIsolateGroup(
       "main.dart", "main", vm_data->GetIsolateSnapshot()->GetDataMapping(),
-      vm_data->GetIsolateSnapshot()->GetInstructionsMapping(), nullptr, nullptr,
-      nullptr, &error);
-  ASSERT_FALSE(error);
+      vm_data->GetIsolateSnapshot()->GetInstructionsMapping(), &isolate_flags,
+      nullptr, nullptr, &error);
+  ASSERT_FALSE(error) << error;
   ::free(error);
 
   ASSERT_FALSE(tonic::DartState::Current());

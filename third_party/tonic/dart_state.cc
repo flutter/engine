@@ -56,7 +56,6 @@ DartState* DartState::From(Dart_Isolate isolate) {
 DartState* DartState::Current() {
   auto isolate_data =
       static_cast<std::shared_ptr<DartState>*>(Dart_CurrentIsolateData());
-  // return isolate_data->get();
   return isolate_data ? isolate_data->get() : nullptr;
 }
 
