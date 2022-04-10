@@ -4,6 +4,7 @@ ENV DEPOT_TOOLS_PATH $HOME/depot_tools
 ENV BUILDROOT_PATH $HOME/buildroot
 ENV ENGINE_PATH $HOME/engine
 ENV PATH $PATH:$DEPOT_TOOLS_PATH
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Notes:
 # - libx11-dev is used by Flutter for desktop linux (see also install-build-deps-linux-desktop.sh)
