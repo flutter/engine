@@ -10,9 +10,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 # - libx11-dev is used by Flutter for desktop linux (see also install-build-deps-linux-desktop.sh)
 # - chrome is used by Flutter for web.
 
-# Add repository for firefox-esr
-run add-apt-repository ppa:mozillateam/ppa
-
 # Updates the distribution.
 RUN apt-get update 
 
@@ -87,7 +84,6 @@ RUN apt-get install -y \
 
 # Install browsers
 RUN apt-get install -y \
-    firefox-esr        \
     google-chrome-stable
 
 # Install and config gcloud
