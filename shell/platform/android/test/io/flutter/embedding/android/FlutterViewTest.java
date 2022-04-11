@@ -84,8 +84,8 @@ public class FlutterViewTest {
 
   @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(activity);
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
@@ -94,7 +94,7 @@ public class FlutterViewTest {
     // SpellCheckPlugin, so we mock it.
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     doReturn(fakeTextServicesManager)
-        .when(activitySpy)
+        .when(activity)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     flutterView.attachToFlutterEngine(flutterEngine);
@@ -104,16 +104,15 @@ public class FlutterViewTest {
 
   @Test
   public void detachFromFlutterEngine_alertsPlatformViews() {
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(activity)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = new FlutterView(activity);
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
-
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(activitySpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     flutterView.attachToFlutterEngine(flutterEngine);
     flutterView.detachFromFlutterEngine();
@@ -123,17 +122,16 @@ public class FlutterViewTest {
 
   @Test
   public void detachFromFlutterEngine_turnsOffA11y() {
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(activity)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = new FlutterView(activity);
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
-
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(activitySpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     flutterView.attachToFlutterEngine(flutterEngine);
     flutterView.detachFromFlutterEngine();
@@ -143,15 +141,14 @@ public class FlutterViewTest {
 
   @Test
   public void detachFromFlutterEngine_revertImageView() {
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     doReturn(fakeTextServicesManager)
-        .when(activitySpy)
+        .when(activity)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = new FlutterView(activity);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
 
     flutterView.attachToFlutterEngine(flutterEngine);
     assertFalse(flutterView.renderSurface instanceof FlutterImageView);
@@ -165,20 +162,18 @@ public class FlutterViewTest {
 
   @Test
   public void detachFromFlutterEngine_removeImageView() {
-    Context contextSpy = spy(RuntimeEnvironment.application);
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.application));
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-    when(flutterView.getContext()).thenReturn(contextSpy);
-
-    // when(flutterView.getContext()).thenReturn(contextSpy);
+    // TODO(camillesimon): Debug this test.
+    Context context = spy(RuntimeEnvironment.application);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     doReturn(fakeTextServicesManager)
-        .when(contextSpy)
+        .when(context)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
-    System.out.println(flutterView.getChildCount());
+    FlutterView flutterView = spy(new FlutterView(context));
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    when(flutterView.getContext()).thenReturn(context);
+
     flutterView.attachToFlutterEngine(flutterEngine);
-    System.out.println(flutterView.getChildCount());
     flutterView.convertToImageView();
     assertEquals(flutterView.getChildCount(), 2);
     View view = flutterView.getChildAt(1);
@@ -201,15 +196,14 @@ public class FlutterViewTest {
     FlutterImageView imageViewMock = mock(FlutterImageView.class);
     when(imageViewMock.getAttachedRenderer()).thenReturn(flutterRenderer);
 
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.application));
-    when(flutterView.createImageView()).thenReturn(imageViewMock);
-    when(flutterView.getContext()).thenReturn(contextSpy);
-
+    Context context = spy(RuntimeEnvironment.application);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     doReturn(fakeTextServicesManager)
-        .when(contextSpy)
+        .when(context)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.application));
+    when(flutterView.createImageView()).thenReturn(imageViewMock);
+    when(flutterView.getContext()).thenReturn(context);
 
     flutterView.attachToFlutterEngine(flutterEngine);
 
@@ -225,15 +219,14 @@ public class FlutterViewTest {
 
   @Test
   public void onConfigurationChanged_fizzlesWhenNullEngine() {
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     doReturn(fakeTextServicesManager)
-        .when(activitySpy)
+        .when(activity)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = new FlutterView(activity);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
 
     Configuration configuration = RuntimeEnvironment.application.getResources().getConfiguration();
     // 1 invocation of channels.
@@ -256,15 +249,14 @@ public class FlutterViewTest {
         new AtomicReference<>();
 
     // FYI - The default brightness is LIGHT, which is why we don't need to configure it.
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     doReturn(fakeTextServicesManager)
-        .when(activitySpy)
+        .when(activity)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = new FlutterView(activity);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
 
     SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
     SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
@@ -305,6 +297,10 @@ public class FlutterViewTest {
         new AtomicReference<>();
 
     Context spiedContext = spy(Robolectric.setupActivity(Activity.class));
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(spiedContext)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     Resources spiedResources = spy(spiedContext.getResources());
     when(spiedContext.getResources()).thenReturn(spiedResources);
@@ -318,11 +314,6 @@ public class FlutterViewTest {
     FlutterView flutterView = new FlutterView(spiedContext);
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(spiedContext)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
     SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
@@ -359,10 +350,13 @@ public class FlutterViewTest {
     // Setup test.
     AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
 
-    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
-    when(flutterView.getContext()).thenReturn(contextSpy);
+    Context context = spy(RuntimeEnvironment.systemContext);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(context)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    when(flutterView.getContext()).thenReturn(context);
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     Settings.System.putInt(
@@ -388,9 +382,6 @@ public class FlutterViewTest {
             });
     when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
     when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
-    doReturn(fakeTextServicesManager)
-        .when(contextSpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     flutterView.attachToFlutterEngine(flutterEngine);
 
@@ -446,18 +437,16 @@ public class FlutterViewTest {
         FlutterViewTest.ShadowFullscreenViewGroup.class
       })
   public void setPaddingTopToZeroForFullscreenMode() {
-    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(activity)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = spy(new FlutterView(activity));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
-    when(flutterView.getContext()).thenReturn(contextSpy);
-
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(contextSpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     // When we attach a new FlutterView to the engine without any system insets, the viewport
     // metrics
@@ -493,19 +482,16 @@ public class FlutterViewTest {
         FlutterViewTest.ShadowFullscreenViewGroup.class
       })
   public void setPaddingTopToZeroForFullscreenModeLegacy() {
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(activity)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = new FlutterView(activity);
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
-
-    // Attaching FlutterView to engine requires access to TestServicesManager to initialize
-    // SpellCheckPlugin, so we mock it.
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(activitySpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     // When we attach a new FlutterView to the engine without any system insets, the viewport
     // metrics
@@ -532,14 +518,14 @@ public class FlutterViewTest {
   @TargetApi(30)
   @Config(sdk = 30)
   public void reportSystemInsetWhenNotFullscreen() {
-    // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
-    Context contextSpy = spy(Robolectric.setupActivity(Activity.class));
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    when(flutterView.getContext()).thenReturn(contextSpy);
     doReturn(fakeTextServicesManager)
-        .when(contextSpy)
+        .when(activity)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    // Without custom shadows, the default system ui visibility flags is 0.
+    FlutterView flutterView = spy(new FlutterView(activity));
+
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine =
@@ -578,12 +564,12 @@ public class FlutterViewTest {
   @Config(sdk = 28)
   public void reportSystemInsetWhenNotFullscreenLegacy() {
     // Without custom shadows, the default system ui visibility flags is 0.
-    Activity activitySpy = spy(Robolectric.setupActivity(Activity.class));
-    FlutterView flutterView = new FlutterView(activitySpy);
+    Activity activity = spy(Robolectric.setupActivity(Activity.class));
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     doReturn(fakeTextServicesManager)
-        .when(activitySpy)
+        .when(activity)
         .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = new FlutterView(activity);
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine =
@@ -614,20 +600,17 @@ public class FlutterViewTest {
   @Test
   @Config(minSdk = 23, maxSdk = 29, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarRight() {
+    Context context = spy(RuntimeEnvironment.systemContext);
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(context)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_90);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
-    when(flutterView.getContext()).thenReturn(contextSpy);
-
-    // Attaching FlutterView to engine requires access to TestServicesManager to initialize
-    // SpellCheckPlugin, so we mock it.
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(contextSpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    when(flutterView.getContext()).thenReturn(context);
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -696,17 +679,17 @@ public class FlutterViewTest {
   @Test
   @Config(minSdk = 23, maxSdk = 29, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarLeft() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
+    Context context = spy(RuntimeEnvironment.systemContext);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(context)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    when(flutterView.getContext()).thenReturn(contextSpy);
-    doReturn(fakeTextServicesManager)
-        .when(contextSpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    when(flutterView.getContext()).thenReturn(context);
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -741,17 +724,17 @@ public class FlutterViewTest {
   @TargetApi(30)
   @Config(sdk = 30, qualifiers = "land")
   public void systemInsetGetInsetsFullscreen() {
+    Context context = spy(RuntimeEnvironment.systemContext);
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(context)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
-    when(flutterView.getContext()).thenReturn(contextSpy);
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(contextSpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    when(flutterView.getContext()).thenReturn(context);
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -783,25 +766,22 @@ public class FlutterViewTest {
   @TargetApi(28)
   @Config(sdk = 28, qualifiers = "land")
   public void systemInsetGetInsetsFullscreenLegacy() {
+    Context context = spy(RuntimeEnvironment.systemContext);
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(context)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
-    when(flutterView.getContext()).thenReturn(contextSpy);
+    when(flutterView.getContext()).thenReturn(context);
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
-
-    // Attaching FlutterView to engine requires access to TestServicesManager to initialize
-    // SpellCheckPlugin, so we mock it.
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(contextSpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
 
     // When we attach a new FlutterView to the engine without any system insets,
     // the viewport metrics default to 0.
@@ -830,15 +810,15 @@ public class FlutterViewTest {
   @TargetApi(30)
   @Config(sdk = 30, qualifiers = "land")
   public void systemInsetDisplayCutoutSimple() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    Context context = spy(RuntimeEnvironment.systemContext);
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(context)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    FlutterView flutterView = spy(new FlutterView(context));
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
-    Context contextSpy = spy(RuntimeEnvironment.systemContext);
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    when(flutterView.getContext()).thenReturn(contextSpy);
-    doReturn(fakeTextServicesManager)
-        .when(contextSpy)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    when(flutterView.getContext()).thenReturn(context);
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -909,6 +889,10 @@ public class FlutterViewTest {
   @Test
   public void itSendsHingeDisplayFeatureToFlutter() {
     Context context = spy(Robolectric.setupActivity(Activity.class));
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    doReturn(fakeTextServicesManager)
+        .when(context)
+        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
     FlutterView flutterView = spy(new FlutterView(context));
     ShadowDisplay display =
         Shadows.shadowOf(
@@ -916,10 +900,6 @@ public class FlutterViewTest {
                     RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay());
     when(flutterView.getContext()).thenReturn(context);
-    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
-    doReturn(fakeTextServicesManager)
-        .when(context)
-        .getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
     WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
         mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
     doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
