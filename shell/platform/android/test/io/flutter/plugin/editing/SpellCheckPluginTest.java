@@ -71,7 +71,8 @@ public class SpellCheckPluginTest {
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
         .thenReturn(fakeTextServicesManager);
-    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+    SpellCheckPlugin spellCheckPlugin =
+        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
     when(fakeTextServicesManager.newSpellCheckerSession(
             null, new Locale("en", "US"), spellCheckPlugin, true))
@@ -91,7 +92,8 @@ public class SpellCheckPluginTest {
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
         .thenReturn(fakeTextServicesManager);
-    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+    SpellCheckPlugin spellCheckPlugin =
+        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
     Locale english_US = new Locale("en", "US");
     when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
@@ -116,7 +118,8 @@ public class SpellCheckPluginTest {
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
         .thenReturn(fakeTextServicesManager);
-    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+    SpellCheckPlugin spellCheckPlugin =
+        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
     Locale english_US = new Locale("en", "US");
     when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
@@ -133,7 +136,8 @@ public class SpellCheckPluginTest {
   public void onGetSentenceSuggestionsProperlyRequestsUpdateSpellCheckResults() {
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
-    SpellCheckPlugin spellCheckPlugin = new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+    SpellCheckPlugin spellCheckPlugin =
+        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
 
     spellCheckPlugin.onGetSentenceSuggestions(
         new SentenceSuggestionsInfo[] {
