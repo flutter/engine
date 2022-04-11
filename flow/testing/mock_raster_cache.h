@@ -9,6 +9,8 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/testing/mock_canvas.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
@@ -64,6 +66,7 @@ class MockRasterCache : public RasterCache {
   std::unique_ptr<RasterCacheResult> RasterizeLayer(
       PrerollContext* context,
       Layer* layer,
+      RasterCacheLayerStrategy stategy,
       const SkMatrix& ctm,
       bool checkerboard) const override;
 

@@ -470,6 +470,13 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (!_shown) {
     return NO;
   }
+
+  // NSTextInputContext sometimes deactivates itself without calling
+  // deactivate. One such example is when the composing region is deleted.
+  // TODO(LongCatIsLooong): put FlutterTextInputPlugin in the view hierarchy and
+  // request/resign first responder when needed. Activate/deactivate shouldn't
+  // be called by the application.
+  [_textInputContext activate];
   return [_textInputContext handleEvent:event];
 }
 
@@ -536,6 +543,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   [self.flutterViewController scrollWheel:event];
 }
 
+- (NSTextInputContext*)inputContext {
+  return _textInputContext;
+}
+
 #pragma mark -
 #pragma mark NSTextInputClient
 
@@ -559,19 +570,22 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
 
   flutter::TextRange oldSelection = _activeModel->selection();
+  flutter::TextRange composingBeforeChange = _activeModel->composing_range();
+  flutter::TextRange replacedRange(-1, -1);
 
   std::string textBeforeChange = _activeModel->GetText().c_str();
   std::string utf8String = [string UTF8String];
   _activeModel->AddText(utf8String);
   if (_activeModel->composing()) {
+    replacedRange = composingBeforeChange;
     _activeModel->CommitComposing();
     _activeModel->EndComposing();
+  } else {
+    replacedRange = range.location == NSNotFound
+                        ? flutter::TextRange(oldSelection.base(), oldSelection.extent())
+                        : flutter::TextRange(range.location, range.location + range.length);
   }
   if (_enableDeltaModel) {
-    flutter::TextRange replacedRange =
-        range.location == NSNotFound
-            ? flutter::TextRange(oldSelection.base(), oldSelection.extent())
-            : flutter::TextRange(range.location, range.location + range.length);
     [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, replacedRange,
                                                              utf8String)];
   } else {
@@ -614,6 +628,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (!_activeModel->composing()) {
     _activeModel->BeginComposing();
   }
+  flutter::TextRange composingBeforeChange = _activeModel->composing_range();
+  flutter::TextRange selectionBeforeChange = _activeModel->selection();
 
   // Input string may be NSString or NSAttributedString.
   BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
@@ -630,8 +646,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->SetSelection(flutter::TextRange(base, extent));
 
   if (_enableDeltaModel) {
-    flutter::TextRange composing = _activeModel->composing_range();
-    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, composing,
+    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange,
+                                                             selectionBeforeChange.collapsed()
+                                                                 ? composingBeforeChange
+                                                                 : selectionBeforeChange,
                                                              marked_text)];
   } else {
     [self updateEditState];

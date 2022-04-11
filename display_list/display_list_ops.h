@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_OPS_H_
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
@@ -141,9 +142,9 @@ struct SetColorOp final : DLOp {
 struct SetBlendModeOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetBlendMode;
 
-  explicit SetBlendModeOp(SkBlendMode mode) : mode(mode) {}
+  explicit SetBlendModeOp(DlBlendMode mode) : mode(mode) {}
 
-  const SkBlendMode mode;
+  const DlBlendMode mode;
 
   void dispatch(Dispatcher& dispatcher) const { dispatcher.setBlendMode(mode); }
 };
@@ -175,7 +176,6 @@ struct SetBlendModeOp final : DLOp {
     }                                                                          \
   };
 DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
-DEFINE_SET_CLEAR_SKREF_OP(ImageFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_SKREF_OP
 
@@ -221,6 +221,7 @@ DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
     }                                                                       \
   };
 DEFINE_SET_CLEAR_DLATTR_OP(ColorFilter, ColorFilter, filter)
+DEFINE_SET_CLEAR_DLATTR_OP(ImageFilter, ImageFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, MaskFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
@@ -241,6 +242,26 @@ struct SetImageColorSourceOp : DLOp {
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.setColorSource(&source);
+  }
+};
+
+// 4 byte header + 24 bytes for the DlColorFilterImageFilter
+// uses 32 total bytes (4 bytes unused)
+struct SetSharedImageFilterOp : DLOp {
+  static const auto kType = DisplayListOpType::kSetSharedImageFilter;
+
+  SetSharedImageFilterOp(const DlImageFilter* filter)
+      : filter(filter->shared()) {}
+
+  const std::shared_ptr<DlImageFilter> filter;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setImageFilter(filter.get());
+  }
+
+  DisplayListCompare equals(const SetSharedImageFilterOp* other) const {
+    return Equals(filter, other->filter) ? DisplayListCompare::kEqual
+                                         : DisplayListCompare::kNotEqual;
   }
 };
 
@@ -382,6 +403,15 @@ struct TransformFullPerspectiveOp final : DLOp {
   }
 };
 
+// 4 byte header with no payload.
+struct TransformResetOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransformReset;
+
+  TransformResetOp() = default;
+
+  void dispatch(Dispatcher& dispatcher) const { dispatcher.transformReset(); }
+};
+
 // 4 byte header + 4 byte common payload packs into minimum 8 bytes
 // SkRect is 16 more bytes, which packs efficiently into 24 bytes total
 // SkRRect is 52 more bytes, which rounds up to 56 bytes (4 bytes unused)
@@ -449,10 +479,10 @@ struct DrawPaintOp final : DLOp {
 struct DrawColorOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawColor;
 
-  DrawColorOp(SkColor color, SkBlendMode mode) : color(color), mode(mode) {}
+  DrawColorOp(SkColor color, DlBlendMode mode) : color(color), mode(mode) {}
 
   const SkColor color;
-  const SkBlendMode mode;
+  const DlBlendMode mode;
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.drawColor(color, mode);
@@ -564,18 +594,38 @@ DEFINE_DRAW_POINTS_OP(Lines, kLines_PointMode);
 DEFINE_DRAW_POINTS_OP(Polygon, kPolygon_PointMode);
 #undef DEFINE_DRAW_POINTS_OP
 
-// 4 byte header + 12 byte payload packs efficiently into 16 bytes
+// 4 byte header + 4 byte payload packs efficiently into 8 bytes
+// The DlVertices object will be pod-allocated after this structure
+// and can take any number of bytes so the final efficiency will
+// depend on the size of the DlVertices.
+// Note that the DlVertices object ends with an array of 16-bit
+// indices so the alignment can be up to 6 bytes off leading to
+// up to 6 bytes of overhead
 struct DrawVerticesOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawVertices;
 
-  DrawVerticesOp(sk_sp<SkVertices> vertices, SkBlendMode mode)
+  DrawVerticesOp(DlBlendMode mode) : mode(mode) {}
+
+  const DlBlendMode mode;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    const DlVertices* vertices = reinterpret_cast<const DlVertices*>(this + 1);
+    dispatcher.drawVertices(vertices, mode);
+  }
+};
+
+// 4 byte header + 12 byte payload packs efficiently into 16 bytes
+struct DrawSkVerticesOp final : DLOp {
+  static const auto kType = DisplayListOpType::kDrawSkVertices;
+
+  DrawSkVerticesOp(sk_sp<SkVertices> vertices, SkBlendMode mode)
       : mode(mode), vertices(std::move(vertices)) {}
 
   const SkBlendMode mode;
   const sk_sp<SkVertices> vertices;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawVertices(vertices, mode);
+    dispatcher.drawSkVertices(vertices, mode);
   }
 };
 
@@ -584,14 +634,14 @@ struct DrawVerticesOp final : DLOp {
   struct name##Op final : DLOp {                                       \
     static const auto kType = DisplayListOpType::k##name;              \
                                                                        \
-    name##Op(const sk_sp<SkImage> image,                               \
+    name##Op(const sk_sp<DlImage> image,                               \
              const SkPoint& point,                                     \
              const SkSamplingOptions& sampling)                        \
         : point(point), sampling(sampling), image(std::move(image)) {} \
                                                                        \
     const SkPoint point;                                               \
     const SkSamplingOptions sampling;                                  \
-    const sk_sp<SkImage> image;                                        \
+    const sk_sp<DlImage> image;                                        \
                                                                        \
     void dispatch(Dispatcher& dispatcher) const {                      \
       dispatcher.drawImage(image, point, sampling, with_attributes);   \
@@ -605,7 +655,7 @@ DEFINE_DRAW_IMAGE_OP(DrawImageWithAttr, true)
 struct DrawImageRectOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawImageRect;
 
-  DrawImageRectOp(const sk_sp<SkImage> image,
+  DrawImageRectOp(const sk_sp<DlImage> image,
                   const SkRect& src,
                   const SkRect& dst,
                   const SkSamplingOptions& sampling,
@@ -623,7 +673,7 @@ struct DrawImageRectOp final : DLOp {
   const SkSamplingOptions sampling;
   const bool render_with_attributes;
   const SkCanvas::SrcRectConstraint constraint;
-  const sk_sp<SkImage> image;
+  const sk_sp<DlImage> image;
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.drawImageRect(image, src, dst, sampling, render_with_attributes,
@@ -636,7 +686,7 @@ struct DrawImageRectOp final : DLOp {
   struct name##Op final : DLOp {                                               \
     static const auto kType = DisplayListOpType::k##name;                      \
                                                                                \
-    name##Op(const sk_sp<SkImage> image,                                       \
+    name##Op(const sk_sp<DlImage> image,                                       \
              const SkIRect& center,                                            \
              const SkRect& dst,                                                \
              SkFilterMode filter)                                              \
@@ -645,7 +695,7 @@ struct DrawImageRectOp final : DLOp {
     const SkIRect center;                                                      \
     const SkRect dst;                                                          \
     const SkFilterMode filter;                                                 \
-    const sk_sp<SkImage> image;                                                \
+    const sk_sp<DlImage> image;                                                \
                                                                                \
     void dispatch(Dispatcher& dispatcher) const {                              \
       dispatcher.drawImageNine(image, center, dst, filter,                     \
@@ -660,7 +710,7 @@ DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNineWithAttr, true)
 struct DrawImageLatticeOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawImageLattice;
 
-  DrawImageLatticeOp(const sk_sp<SkImage> image,
+  DrawImageLatticeOp(const sk_sp<DlImage> image,
                      int x_count,
                      int y_count,
                      int cell_count,
@@ -684,7 +734,7 @@ struct DrawImageLatticeOp final : DLOp {
   const SkFilterMode filter;
   const SkIRect src;
   const SkRect dst;
-  const sk_sp<SkImage> image;
+  const sk_sp<DlImage> image;
 
   void dispatch(Dispatcher& dispatcher) const {
     const int* xDivs = reinterpret_cast<const int*>(this + 1);
@@ -710,9 +760,9 @@ struct DrawImageLatticeOp final : DLOp {
 // SkColor list only packs well if the count is even, otherwise there
 // can be 4 unusued bytes at the end.
 struct DrawAtlasBaseOp : DLOp {
-  DrawAtlasBaseOp(const sk_sp<SkImage> atlas,
+  DrawAtlasBaseOp(const sk_sp<DlImage> atlas,
                   int count,
-                  SkBlendMode mode,
+                  DlBlendMode mode,
                   const SkSamplingOptions& sampling,
                   bool has_colors,
                   bool render_with_attributes)
@@ -728,7 +778,7 @@ struct DrawAtlasBaseOp : DLOp {
   const uint8_t has_colors;
   const uint8_t render_with_attributes;
   const SkSamplingOptions sampling;
-  const sk_sp<SkImage> atlas;
+  const sk_sp<DlImage> atlas;
 };
 
 // Packs as efficiently into 40 bytes as per DrawAtlasBaseOp
@@ -736,9 +786,9 @@ struct DrawAtlasBaseOp : DLOp {
 struct DrawAtlasOp final : DrawAtlasBaseOp {
   static const auto kType = DisplayListOpType::kDrawAtlas;
 
-  DrawAtlasOp(const sk_sp<SkImage> atlas,
+  DrawAtlasOp(const sk_sp<DlImage> atlas,
               int count,
-              SkBlendMode mode,
+              DlBlendMode mode,
               const SkSamplingOptions& sampling,
               bool has_colors,
               bool render_with_attributes)
@@ -754,7 +804,7 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
     const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
     const SkColor* colors =
         has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
-    const SkBlendMode mode = static_cast<SkBlendMode>(mode_index);
+    const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
                          nullptr, render_with_attributes);
   }
@@ -767,9 +817,9 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
 struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
   static const auto kType = DisplayListOpType::kDrawAtlasCulled;
 
-  DrawAtlasCulledOp(const sk_sp<SkImage> atlas,
+  DrawAtlasCulledOp(const sk_sp<DlImage> atlas,
                     int count,
-                    SkBlendMode mode,
+                    DlBlendMode mode,
                     const SkSamplingOptions& sampling,
                     bool has_colors,
                     const SkRect& cull_rect,
@@ -789,7 +839,7 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
     const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
     const SkColor* colors =
         has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
-    const SkBlendMode mode = static_cast<SkBlendMode>(mode_index);
+    const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
                          &cull_rect, render_with_attributes);
   }

@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_HELPER_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_HELPER_H_
 
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_complexity.h"
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_utils.h"
@@ -106,10 +107,10 @@ class ComplexityCalculatorHelper
   void setStrokeJoin(SkPaint::Join join) override {}
   void setStrokeMiter(SkScalar limit) override {}
   void setColor(SkColor color) override {}
-  void setBlendMode(SkBlendMode mode) override {}
+  void setBlendMode(DlBlendMode mode) override {}
   void setBlender(sk_sp<SkBlender> blender) override {}
   void setColorSource(const DlColorSource* source) override {}
-  void setImageFilter(sk_sp<SkImageFilter> filter) override {}
+  void setImageFilter(const DlImageFilter* filter) override {}
   void setColorFilter(const DlColorFilter* filter) override {}
   void setPathEffect(sk_sp<SkPathEffect> effect) override {}
   void setMaskFilter(const DlMaskFilter* filter) override {}
@@ -128,7 +129,7 @@ class ComplexityCalculatorHelper
     current_paint_.setStrokeWidth(width);
   }
 
-  void drawColor(SkColor color, SkBlendMode mode) override {
+  void drawColor(SkColor color, DlBlendMode mode) override {
     if (IsComplex()) {
       return;
     }
@@ -145,7 +146,7 @@ class ComplexityCalculatorHelper
     AccumulateComplexity(50);
   }
 
-  void drawImageRect(const sk_sp<SkImage> image,
+  void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      const SkSamplingOptions& sampling,
@@ -158,7 +159,7 @@ class ComplexityCalculatorHelper
               render_with_attributes, constraint);
   }
 
-  void drawImageLattice(const sk_sp<SkImage> image,
+  void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         SkFilterMode filter,
@@ -174,12 +175,12 @@ class ComplexityCalculatorHelper
               SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
   }
 
-  void drawAtlas(const sk_sp<SkImage> atlas,
+  void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
                  const SkColor colors[],
                  int count,
-                 SkBlendMode mode,
+                 DlBlendMode mode,
                  const SkSamplingOptions& sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override {
