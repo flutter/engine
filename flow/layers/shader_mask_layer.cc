@@ -9,7 +9,10 @@ namespace flutter {
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {
+    : shader_(shader),
+      mask_rect_(mask_rect),
+      blend_mode_(blend_mode),
+      render_count_(1) {
   set_layer_can_inherit_opacity(true);
 }
 
@@ -35,7 +38,8 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, matrix);
 
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, matrix);
+    TryToPrepareRasterCache(context, this, matrix,
+                            RasterCacheLayerStrategy::kLayer);
   } else {
     render_count_++;
   }
@@ -46,7 +50,8 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   if (context.raster_cache &&
-      context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+      context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                 RasterCacheLayerStrategy::kLayer)) {
     return;
   }
 
