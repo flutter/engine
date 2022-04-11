@@ -59,6 +59,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureType;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
+import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.plugin.editing.SpellCheckPlugin;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -132,7 +133,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
-  private TextServicesManager textServicesManager;
+  @Nullable private TextServicesManager textServicesManager;
 
   // Provides access to foldable/hinge information
   @Nullable private WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo;
@@ -1126,10 +1127,17 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
 
+    try{
     textServicesManager =
-        (TextServicesManager) getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
-    spellCheckPlugin =
-        new SpellCheckPlugin(textServicesManager, this.flutterEngine.getSpellCheckChannel());
+    (TextServicesManager) getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+      spellCheckPlugin =
+      new SpellCheckPlugin(textServicesManager, this.flutterEngine.getSpellCheckChannel());
+    } catch (Exception e) {
+      spellCheckPlugin = null;
+      textServicesManager = null;
+      Log.v(TAG, "TextServicesManager not supported by device, spell check disabled.");
+
+    }
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 
@@ -1234,7 +1242,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
     keyboardManager.destroy();
-    spellCheckPlugin.destroy();
+    if (spellCheckPlugin != null) {
+      spellCheckPlugin.destroy();
+    }
 
     if (mouseCursorPlugin != null) {
       mouseCursorPlugin.destroy();
@@ -1419,24 +1429,28 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             ? SettingsChannel.PlatformBrightness.dark
             : SettingsChannel.PlatformBrightness.light;
 
-    boolean isNativeSpellCheckServiceDefined = true;
+    boolean isNativeSpellCheckServiceDefined = false;
 
-    if (Build.VERSION.SDK_INT >= 31) {
-      List<SpellCheckerInfo> enabledSpellCheckerInfos =
-          textServicesManager.getEnabledSpellCheckerInfos();
-      boolean gboardSpellCheckerEnabled =
-          enabledSpellCheckerInfos.stream()
-              .anyMatch(
-                  spellCheckerInfo ->
-                      spellCheckerInfo
-                          .getPackageName()
-                          .equals("com.google.android.inputmethod.latin"));
+    if (textServicesManager != null) {
+      if (Build.VERSION.SDK_INT >= 31) {
+        List<SpellCheckerInfo> enabledSpellCheckerInfos =
+        textServicesManager.getEnabledSpellCheckerInfos();
+    boolean gboardSpellCheckerEnabled =
+        enabledSpellCheckerInfos.stream()
+            .anyMatch(
+                spellCheckerInfo ->
+                    spellCheckerInfo
+                        .getPackageName()
+                        .equals("com.google.android.inputmethod.latin"));
 
-      // Checks if enabled spell checker is the one that is suppported by Gboard, which is
-      // the one Flutter supports by default.
-      isNativeSpellCheckServiceDefined =
-          textServicesManager.isSpellCheckerEnabled() && gboardSpellCheckerEnabled;
+    // Checks if enabled spell checker is the one that is suppported by Gboard, which is
+    // the one Flutter supports by default.
+    isNativeSpellCheckServiceDefined =
+        textServicesManager.isSpellCheckerEnabled() && gboardSpellCheckerEnabled;
+    } else {
+      isNativeSpellCheckServiceDefined = true;
     }
+  }
 
     flutterEngine
         .getSettingsChannel()

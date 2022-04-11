@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.editing;
 
+import android.content.Context;
 import android.view.textservice.SentenceSuggestionsInfo;
 import android.view.textservice.SpellCheckerSession;
 import android.view.textservice.SuggestionsInfo;
