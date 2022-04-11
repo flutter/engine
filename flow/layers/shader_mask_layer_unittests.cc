@@ -305,9 +305,13 @@ TEST_F(ShaderMaskLayerTest, LayerCached) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
