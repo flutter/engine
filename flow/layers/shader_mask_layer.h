@@ -10,7 +10,7 @@
 
 namespace flutter {
 
-class ShaderMaskLayer : public MergedContainerLayer {
+class ShaderMaskLayer : public ContainerLayer {
  public:
   ShaderMaskLayer(sk_sp<SkShader> shader,
                   const SkRect& mask_rect,
@@ -21,8 +21,6 @@ class ShaderMaskLayer : public MergedContainerLayer {
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
-
-  void DrawMask(PaintContext& context) const;
 
  private:
   sk_sp<SkShader> shader_;
