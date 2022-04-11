@@ -38,6 +38,8 @@ source_set("flow") {
     "layers/layer.h",
     "layers/layer_tree.cc",
     "layers/layer_tree.h",
+    "layers/offscreen_surface.cc",
+    "layers/offscreen_surface.h",
     "layers/opacity_layer.cc",
     "layers/opacity_layer.h",
     "layers/performance_overlay_layer.cc",
@@ -128,6 +130,7 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
+      "diff_context_unittests.cc",
       "embedded_view_params_unittests.cc",
       "flow_run_all_unittests.cc",
       "flow_test_utils.cc",
@@ -145,6 +148,7 @@ if (enable_unittests) {
       "layers/display_list_layer_unittests.cc",
       "layers/image_filter_layer_unittests.cc",
       "layers/layer_tree_unittests.cc",
+      "layers/offscreen_surface_unittests.cc",
       "layers/opacity_layer_unittests.cc",
       "layers/performance_overlay_layer_unittests.cc",
       "layers/physical_shape_layer_unittests.cc",

@@ -69,6 +69,12 @@ class FrameDamage {
     additional_damage_.join(damage);
   }
 
+  // Specifies clip rect alignment.
+  void SetClipAlignment(int horizontal, int vertical) {
+    horizontal_clip_alignment_ = horizontal;
+    vertical_clip_alignment_ = vertical;
+  }
+
   // Calculates clip rect for current rasterization. This is diff of layer tree
   // and previous layer tree + any additional provideddamage.
   // If previous layer tree is not specified, clip rect will be nulloptional,
@@ -90,6 +96,8 @@ class FrameDamage {
   SkIRect additional_damage_ = SkIRect::MakeEmpty();
   std::optional<Damage> damage_;
   const LayerTree* prev_layer_tree_ = nullptr;
+  int vertical_clip_alignment_ = 1;
+  int horizontal_clip_alignment_ = 1;
 };
 
 class CompositorContext {
@@ -103,11 +111,16 @@ class CompositorContext {
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled,
                 bool surface_supports_readback,
-                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
+                DisplayListBuilder* display_list_builder);
 
     virtual ~ScopedFrame();
 
     SkCanvas* canvas() { return canvas_; }
+
+    DisplayListBuilder* display_list_builder() const {
+      return display_list_builder_;
+    }
 
     ExternalViewEmbedder* view_embedder() { return view_embedder_; }
 
@@ -129,6 +142,7 @@ class CompositorContext {
     CompositorContext& context_;
     GrDirectContext* gr_context_;
     SkCanvas* canvas_;
+    DisplayListBuilder* display_list_builder_;
     ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
@@ -151,7 +165,8 @@ class CompositorContext {
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled,
       bool surface_supports_readback,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
+      DisplayListBuilder* display_list_builder);
 
   void OnGrContextCreated();
 
