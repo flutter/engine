@@ -1,4 +1,4 @@
-Signature: f2271cac36fd8f7258c2fa8bb2d1427c
+Signature: 4cc49c5dc3152d62401c4e7323129da6
 
 UNUSED LICENSES:
 
@@ -501,6 +501,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.sensor/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.bootstrap/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.math/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/meta.json
@@ -1251,6 +1254,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.sensor/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.bootstrap/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.math/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/meta.json
@@ -1898,6 +1904,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.sensor/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.bootstrap/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.math/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/meta.json
@@ -2313,6 +2322,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/cpu-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/calibrator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/sensor.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/types.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/counters.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediastreams/audio_format.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediastreams/compression.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediastreams/encryption.fidl
@@ -2323,7 +2333,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/keyboard.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/client_state.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/allocator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/flatland.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screenshot.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/flatland_tokens.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/wlan_common.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.ieee80211/constants.fidl
@@ -2787,6 +2796,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.position/position.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.sensor/sensor.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.bootstrap/thread.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/device.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/energy_scanner.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/effects_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/properties.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/types.fidl
@@ -3359,6 +3370,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/kernel-debug.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/kernel-stats.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/root-job.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.namedplace/namedplace.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/misc.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/provisioning_params.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/volume_control.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/content_decryption.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/error.fidl
@@ -3714,6 +3727,11 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.device/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/dataset.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/meshcop.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan/lowpan.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/overview.fidl
@@ -3739,6 +3757,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screen_capture.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/overview.fidl
