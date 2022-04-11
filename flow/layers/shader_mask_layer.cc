@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/shader_mask_layer.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPaint.h"
 
 namespace flutter {
 
@@ -37,43 +35,35 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
 void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  SkMatrix child_matrix = matrix;
-  ContainerLayer::Preroll(context, child_matrix);
+  ContainerLayer::Preroll(context, matrix);
 
-  transfromed_filter_ = nullptr;
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     TryToPrepareRasterCache(context, this, matrix);
   } else {
     render_count_++;
-    transfromed_filter_ = shader_->makeWithLocalMatrix(child_matrix);
-
-    if (transfromed_filter_) {
-      TryToPrepareRasterCache(context, GetCacheableChild(), child_matrix);
-    }
+    TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
   }
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
-  AutoCachePaint cache_paint(context);
+
   if (context.raster_cache) {
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
       return;
     }
-    if (transfromed_filter_) {
-      // use saveLayer to generator child size canvas
-      Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-          context, paint_bounds(), cache_paint.paint());
-      if (context.raster_cache->Draw(GetCacheableChild(),
-                                     *context.leaf_nodes_canvas,
-                                     cache_paint.paint())) {
-        DrawMask(context);
-        return;
-      }
+
+    AutoCachePaint cache_paint(context);
+    if (context.raster_cache->Draw(GetCacheableChild(),
+                                   *context.leaf_nodes_canvas,
+                                   cache_paint.paint())) {
+      DrawMask(context);
+      return;
     }
   }
 
+  AutoCachePaint cache_paint(context);
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);
