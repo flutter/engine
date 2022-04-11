@@ -89,11 +89,10 @@ class MockMethodResult : public MethodResult<rapidjson::Document> {
 
 TEST(PlatformHandlerWin32, HasStringsAccessDeniedReturnsFalseWithoutError) {
   TestBinaryMessenger messenger;
-  TestScopedClipboard clipboard_reference;
   FlutterWindowsView view(
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
   PlatformHandlerWin32 platform_handler(&messenger, &view,
-                                        &clipboard_reference);
+                                        std::make_unique<TestScopedClipboard>());
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
