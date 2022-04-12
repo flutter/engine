@@ -23,6 +23,7 @@ TEST_F(ShaderMaskLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -38,6 +39,7 @@ TEST_F(ShaderMaskLayerTest, PaintBeforePrerollDies) {
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
 }
@@ -57,6 +59,7 @@ TEST_F(ShaderMaskLayerTest, EmptyFilter) {
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -98,6 +101,7 @@ TEST_F(ShaderMaskLayerTest, SimpleFilter) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -147,6 +151,7 @@ TEST_F(ShaderMaskLayerTest, MultipleChildren) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), children_bounds);
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -206,7 +211,9 @@ TEST_F(ShaderMaskLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_bounds);
+  EXPECT_EQ(layer1->child_paint_bounds(), children_bounds);
   EXPECT_EQ(layer2->paint_bounds(), mock_layer2->paint_bounds());
+  EXPECT_EQ(layer2->child_paint_bounds(), mock_layer2->paint_bounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer1->needs_painting(paint_context()));
@@ -273,6 +280,43 @@ TEST_F(ShaderMaskLayerTest, Readback) {
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
+}
+
+TEST_F(ShaderMaskLayerTest, LayerCached) {
+  auto layer_filter =
+      SkPerlinNoiseShader::MakeFractalNoise(1.0f, 1.0f, 1, 1.0f);
+  const SkRect layer_bounds = SkRect::MakeLTRB(2.0f, 4.0f, 20.5f, 20.5f);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<ShaderMaskLayer>(layer_filter, layer_bounds,
+                                                 SkBlendMode::kSrc);
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayer));
 }
 
 }  // namespace testing

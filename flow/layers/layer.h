@@ -12,6 +12,7 @@
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
+#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
@@ -82,6 +83,7 @@ struct PrerollContext {
   bool subtree_can_inherit_opacity = false;
 };
 
+class ContainerLayer;
 class PictureLayer;
 class DisplayListLayer;
 class PerformanceOverlayLayer;
@@ -167,6 +169,11 @@ class Layer {
     const bool checkerboard_offscreen_layers;
     const float frame_device_pixel_ratio;
 
+    // Snapshot store to collect leaf layer snapshots. The store is non-null
+    // only when leaf layer tracing is enabled.
+    bool enable_leaf_layer_tracing = false;
+    LayerSnapshotStore* layer_snapshot_store = nullptr;
+
     // The following value should be used to modulate the opacity of the
     // layer during |Paint|. If the layer does not set the corresponding
     // |layer_can_inherit_opacity()| flag, then this value should always
@@ -179,7 +186,7 @@ class Layer {
 
   class AutoCachePaint {
    public:
-    AutoCachePaint(PaintContext& context) : context_(context) {
+    explicit AutoCachePaint(PaintContext& context) : context_(context) {
       needs_paint_ = context.inherited_opacity < SK_Scalar1;
       if (needs_paint_) {
         paint_.setAlphaf(context.inherited_opacity);
@@ -330,6 +337,7 @@ class Layer {
 
   uint64_t unique_id() const { return unique_id_; }
 
+  virtual const ContainerLayer* as_container_layer() const { return nullptr; }
   virtual const PictureLayer* as_picture_layer() const { return nullptr; }
   virtual const DisplayListLayer* as_display_list_layer() const {
     return nullptr;
