@@ -248,8 +248,8 @@ TEST_F(LayerTreeTest, PaintContextInitialization) {
   FixedRefreshRateStopwatch mock_ui_time;
   TextureRegistry mock_registry;
 
-  auto expect_defaults = [&mock_raster_time, &mock_ui_time, &mock_registry]
-      (const Layer::PaintContext& context) {
+  auto expect_defaults = [&mock_raster_time, &mock_ui_time,
+                          &mock_registry](const Layer::PaintContext& context) {
     EXPECT_EQ(context.internal_nodes_canvas, nullptr);
     EXPECT_EQ(context.leaf_nodes_canvas, nullptr);
     EXPECT_EQ(context.gr_context, nullptr);
