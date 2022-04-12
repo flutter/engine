@@ -38,10 +38,11 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   MutatorsStack stack;
+  RasterCache* cache =
+      ignore_raster_cache ? nullptr : &frame.context().raster_cache();
   PrerollContext context = {
       // clang-format off
-      .raster_cache                  =
-          ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
+      .raster_cache                  = cache,
       .gr_context                    = frame.gr_context(),
       .view_embedder                 = frame.view_embedder(),
       .mutators_stack                = stack,
