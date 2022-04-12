@@ -827,7 +827,6 @@ TEST(RasterizerTest, drawWithFrameDamageIsNotEmpty) {
         0.0f,  // elevation
         SkPath::Rect(SkRect::MakeIWH(50, 50), SkPathDirection::kCCW, 0),
         Clip::none);
-    cur_child.get()->AssignOldLayer(last_child.get());
     cur_root_layer.get()->Add(cur_child);
     layer_tree->set_root_layer(cur_root_layer);
 
