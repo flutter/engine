@@ -24,7 +24,7 @@ G_DECLARE_INTERFACE(FlKeyboardViewDelegate,
 /**
  * FlKeyboardViewDelegate:
  *
- * An interface for a class that can provides `FlKeyboardManager` with
+ * An interface for a class that provides `FlKeyboardManager` with
  * platform-related features.
  *
  * This interface is typically implemented by `FlView`.
@@ -57,7 +57,7 @@ struct _FlKeyboardViewDelegateInterface {
  * might be immediately destroyed after this function returns.
  *
  * The `callback` must eventually be called exactly once with the event result
- * and the user_data.
+ * and the `user_data`.
  */
 void fl_keyboard_view_delegate_send_key_event(FlKeyboardViewDelegate* delegate,
                                               const FlutterKeyEvent* event,
@@ -82,7 +82,7 @@ gboolean fl_keyboard_view_delegate_text_filter_key_press(
  * Returns a binary messenger that can be used to send messages to the
  * framework.
  *
- * The ownership of messenger should be kept by the view delegate.
+ * The ownership of messenger is kept by the view delegate.
  */
 FlBinaryMessenger* fl_keyboard_view_delegate_get_messenger(
     FlKeyboardViewDelegate* delegate);

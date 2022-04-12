@@ -24,12 +24,12 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
  *
  * Processes keyboard events and cooperate with `TextInputPlugin`.
  *
- * A keyboard event goes through a few sections, each can choose to handled the
+ * A keyboard event goes through a few sections, each can choose to handle the
  * event, and only unhandled events can move to the next section:
  *
  * - Keyboard: Dispatch to the embedder responder and the channel responder
  *   simultaneously. After both responders have responded (asynchronously), the
- *   event is considered handled if either responder handles.
+ *   event is considered handled if either responder handles it.
  * - Text input: Events are sent to IM filter (usually owned by
  *   `TextInputPlugin`) and are handled synchronously.
  * - Redispatching: Events are inserted back to the system for redispatching.
@@ -37,8 +37,8 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
 
 /**
  * fl_keyboard_manager_new:
- * @view_delegate: An interfaces that the manager requires to communicate with
- * the system. Usually implemented by FlView.
+ * @view_delegate: An interface that the manager requires to communicate with
+ * the platform. Usually implemented by FlView.
  *
  * Create a new #FlKeyboardManager.
  *
