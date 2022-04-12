@@ -288,6 +288,7 @@ if (enable_unittests) {
       "//flutter/shell/version",
       "//flutter/testing:fixture_test",
       "//third_party/googletest:gmock",
+      "//flutter/testing:skia",
     ]
 
     if (is_fuchsia) {
