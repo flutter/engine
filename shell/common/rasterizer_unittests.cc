@@ -75,19 +75,6 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
                     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
   MOCK_METHOD0(SupportsDynamicThreadMerging, bool());
 };
-
-class MockLayerTree : public LayerTree {
- public:
-  MockLayerTree(const SkISize& frameSize, float devicePixelRatio)
-      : LayerTree(frameSize, devicePixelRatio) {}
-  MOCK_CONST_METHOD2(Paint,
-                     void(CompositorContext::ScopedFrame& frame,
-                          bool ignore_raster_cache));
-  //  void Paint(CompositorContext::ScopedFrame& frame,
-  //             bool ignore_raster_cache = false) const {
-  //    return;
-  //  }
-};
 }  // namespace
 
 TEST(RasterizerTest, create) {
@@ -762,7 +749,9 @@ TEST(RasterizerTest, drawWithFrameDamageIsEmpty) {
         std::make_unique<LayerTree>(/*frame_size=*/SkISize::Make(100, 100),
                                     /*device_pixel_ratio=*/2.0f);
     // Use container as the root layer and PhysicalShapeLayer as the child
-    // layer.
+    // layer. Frame size is 100 x 100 PhysicalShapeLayer's size is 50 x 50 The
+    // frame_damage is 50,50 in the first frame, and the frame_damage is empty
+    // in the second frame
     auto last_root_layer = std::make_shared<ContainerLayer>();
     auto last_child = std::make_shared<PhysicalShapeLayer>(
         SK_ColorBLACK, SK_ColorBLACK,
@@ -818,7 +807,9 @@ TEST(RasterizerTest, drawWithFrameDamageIsNotEmpty) {
         std::make_unique<LayerTree>(/*frame_size=*/SkISize::Make(100, 100),
                                     /*device_pixel_ratio=*/2.0f);
     // Use container as the root layer and PhysicalShapeLayer as the child
-    // layer.
+    // layer. Frame size is 100 x 100 PhysicalShapeLayer's size is 50 x 50 The
+    // frame_damage is 50,50 in the first frame, and the frame_damage is 50,50
+    // in the second frame
     auto last_root_layer = std::make_shared<ContainerLayer>();
     auto last_child = std::make_shared<PhysicalShapeLayer>(
         SK_ColorBLACK, SK_ColorBLACK,
