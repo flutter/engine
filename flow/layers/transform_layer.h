@@ -13,7 +13,8 @@ namespace flutter {
 // at all. Hence |set_transform| must be called with an initialized SkMatrix.
 class TransformLayer : public ContainerLayer {
  public:
-  explicit TransformLayer(const SkMatrix& transform);
+  explicit TransformLayer(const SkMatrix& transform,
+                          bool use_raster_cache = false);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -22,7 +23,10 @@ class TransformLayer : public ContainerLayer {
   void Paint(PaintContext& context) const override;
 
  private:
+  static constexpr int kMinimumRendersBeforeCachingTransformLayer = 3;
   SkMatrix transform_;
+  const bool use_raster_cache_;
+  int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
 };

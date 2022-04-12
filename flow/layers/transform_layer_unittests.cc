@@ -340,5 +340,53 @@ TEST_F(TransformLayerLayerDiffTest, TransformNested) {
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(200, 200, 300, 302));
 }
 
+TEST_F(TransformLayerTest, LayerCached) {
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path);
+  auto layer1 = std::make_shared<TransformLayer>(initial_transform);
+  layer1->Add(mock_layer1);
+  auto layer2 = std::make_shared<TransformLayer>(initial_transform,
+                                                 /**use_raster_cache=*/true);
+  layer2->Add(mock_layer2);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer1.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer2.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer1->Preroll(preroll_context(), initial_transform);
+  layer2->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer1.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer2.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer1->Preroll(preroll_context(), initial_transform);
+  layer2->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer1.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer2.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer1->Preroll(preroll_context(), initial_transform);
+  layer2->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(layer1.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_TRUE(raster_cache()->Draw(layer2.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayer));
+}
+
 }  // namespace testing
 }  // namespace flutter

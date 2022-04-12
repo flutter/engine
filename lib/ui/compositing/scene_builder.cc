@@ -97,9 +97,11 @@ void SceneBuilder::pushTransform(Dart_Handle layer_handle,
 void SceneBuilder::pushOffset(Dart_Handle layer_handle,
                               double dx,
                               double dy,
+                              bool use_raster_cache,
                               fml::RefPtr<EngineLayer> oldLayer) {
   SkMatrix sk_matrix = SkMatrix::Translate(dx, dy);
-  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
+  auto layer =
+      std::make_shared<flutter::TransformLayer>(sk_matrix, use_raster_cache);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 

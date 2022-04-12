@@ -39,6 +39,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   void pushOffset(Dart_Handle layer_handle,
                   double dx,
                   double dy,
+                  bool use_raster_cache,
                   fml::RefPtr<EngineLayer> oldLayer);
   void pushClipRect(Dart_Handle layer_handle,
                     double left,
