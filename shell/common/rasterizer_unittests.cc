@@ -13,6 +13,8 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
 
+#include "flow/layers/container_layer.h"
+#include "flow/layers/physical_shape_layer.h"
 #include "gmock/gmock.h"
 
 using testing::_;
