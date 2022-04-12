@@ -27,13 +27,14 @@ static constexpr char kTextPlainFormat[] = "text/plain";
 
 static constexpr char kValueKey[] = "value";
 static constexpr int kAccessDeniedErrorCode = 5;
+static constexpr int kErrorSuccess = 0;
 
 }  // namespace
 
 // A test version of the private ScopedClipboard.
 class TestScopedClipboard : public ScopedClipboardInterface {
  public:
-  TestScopedClipboard();
+  TestScopedClipboard(int open_error, bool has_strings);
   ~TestScopedClipboard();
 
   // Prevent copying.
@@ -50,9 +51,14 @@ class TestScopedClipboard : public ScopedClipboardInterface {
 
  private:
   bool opened_ = false;
+  bool has_strings_;
+  int open_error_;
 };
 
-TestScopedClipboard::TestScopedClipboard() {}
+TestScopedClipboard::TestScopedClipboard(int open_error, bool has_strings) {
+  open_error_ = open_error;
+  has_strings_ = has_strings;
+};
 
 TestScopedClipboard::~TestScopedClipboard() {
   if (opened_) {
@@ -60,13 +66,12 @@ TestScopedClipboard::~TestScopedClipboard() {
   }
 }
 
-// Always fail to open with kAccessDeniedErrorCode.
 int TestScopedClipboard::Open(HWND window) {
-  return kAccessDeniedErrorCode;
+  return open_error_;
 }
 
 bool TestScopedClipboard::HasString() {
-  return true;
+  return has_strings_;
 }
 
 std::variant<std::wstring, int> TestScopedClipboard::GetString() {
@@ -87,12 +92,16 @@ class MockMethodResult : public MethodResult<rapidjson::Document> {
   MOCK_METHOD0(NotImplementedInternal, void());
 };
 
+// Regression test for https://github.com/flutter/flutter/issues/95817.
 TEST(PlatformHandlerWin32, HasStringsAccessDeniedReturnsFalseWithoutError) {
   TestBinaryMessenger messenger;
   FlutterWindowsView view(
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
-  PlatformHandlerWin32 platform_handler(&messenger, &view,
-                                        std::make_unique<TestScopedClipboard>());
+  // HasStrings will receive access denied on the clipboard, but will return
+  // false without error.
+  PlatformHandlerWin32 platform_handler(
+      &messenger, &view,
+      std::make_unique<TestScopedClipboard>(kAccessDeniedErrorCode, true));
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
@@ -113,6 +122,111 @@ TEST(PlatformHandlerWin32, HasStringsAccessDeniedReturnsFalseWithoutError) {
       .WillOnce([](const rapidjson::Document* document) {
         ASSERT_FALSE((*document)[kValueKey].GetBool());
       });
+  EXPECT_TRUE(messenger.SimulateEngineMessage(
+      kChannelName, encoded->data(), encoded->size(),
+      [&](const uint8_t* reply, size_t reply_size) {
+        JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
+            reply, reply_size, &result);
+      }));
+}
+
+TEST(PlatformHandlerWin32, HasStringsSuccessWithStrings) {
+  TestBinaryMessenger messenger;
+  FlutterWindowsView view(
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
+  // HasStrings will succeed and return true.
+  PlatformHandlerWin32 platform_handler(
+      &messenger, &view,
+      std::make_unique<TestScopedClipboard>(kErrorSuccess, true));
+
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
+  auto& allocator = args->GetAllocator();
+  args->SetString(kTextPlainFormat);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
+                                      std::move(args)));
+
+  MockMethodResult result;
+  rapidjson::Document document;
+  document.SetObject();
+  rapidjson::Document::AllocatorType& document_allocator =
+      document.GetAllocator();
+  document.AddMember(rapidjson::Value(kValueKey, document_allocator),
+                     rapidjson::Value(false), document_allocator);
+
+  EXPECT_CALL(result, SuccessInternal(_))
+      .WillOnce([](const rapidjson::Document* document) {
+        ASSERT_TRUE((*document)[kValueKey].GetBool());
+      });
+  EXPECT_TRUE(messenger.SimulateEngineMessage(
+      kChannelName, encoded->data(), encoded->size(),
+      [&](const uint8_t* reply, size_t reply_size) {
+        JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
+            reply, reply_size, &result);
+      }));
+}
+
+TEST(PlatformHandlerWin32, HasStringsSuccessWithoutStrings) {
+  TestBinaryMessenger messenger;
+  FlutterWindowsView view(
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
+  // HasStrings will succeed and return false.
+  PlatformHandlerWin32 platform_handler(
+      &messenger, &view,
+      std::make_unique<TestScopedClipboard>(kErrorSuccess, false));
+
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
+  auto& allocator = args->GetAllocator();
+  args->SetString(kTextPlainFormat);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
+                                      std::move(args)));
+
+  MockMethodResult result;
+  rapidjson::Document document;
+  document.SetObject();
+  rapidjson::Document::AllocatorType& document_allocator =
+      document.GetAllocator();
+  document.AddMember(rapidjson::Value(kValueKey, document_allocator),
+                     rapidjson::Value(false), document_allocator);
+
+  EXPECT_CALL(result, SuccessInternal(_))
+      .WillOnce([](const rapidjson::Document* document) {
+        ASSERT_FALSE((*document)[kValueKey].GetBool());
+      });
+  EXPECT_TRUE(messenger.SimulateEngineMessage(
+      kChannelName, encoded->data(), encoded->size(),
+      [&](const uint8_t* reply, size_t reply_size) {
+        JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
+            reply, reply_size, &result);
+      }));
+}
+
+TEST(PlatformHandlerWin32, HasStringsError) {
+  TestBinaryMessenger messenger;
+  FlutterWindowsView view(
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
+  // HasStrings will fail.
+  PlatformHandlerWin32 platform_handler(
+      &messenger, &view, std::make_unique<TestScopedClipboard>(1, true));
+
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
+  auto& allocator = args->GetAllocator();
+  args->SetString(kTextPlainFormat);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
+                                      std::move(args)));
+
+  MockMethodResult result;
+  rapidjson::Document document;
+  document.SetObject();
+  rapidjson::Document::AllocatorType& document_allocator =
+      document.GetAllocator();
+  document.AddMember(rapidjson::Value(kValueKey, document_allocator),
+                     rapidjson::Value(false), document_allocator);
+
+  EXPECT_CALL(result, SuccessInternal(_)).Times(0);
+  EXPECT_CALL(result, ErrorInternal(_, _, _)).Times(1);
   EXPECT_TRUE(messenger.SimulateEngineMessage(
       kChannelName, encoded->data(), encoded->size(),
       [&](const uint8_t* reply, size_t reply_size) {
