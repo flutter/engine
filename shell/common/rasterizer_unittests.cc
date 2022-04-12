@@ -726,4 +726,195 @@ TEST(
   latch.Wait();
 }
 
+TEST(RasterizerTest, drawWithFrameDamageIsEmpty) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<MockSurface>();
+  auto is_gpu_disabled_sync_switch =
+      std::make_shared<const fml::SyncSwitch>(false);
+
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+  framebuffer_info.supports_partial_repaint = true;
+  framebuffer_info.existing_damage = std::optional<SkIRect>(SkIRect());
+  auto surface_frame1 = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, framebuffer_info,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  auto surface_frame2 = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, framebuffer_info,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
+      .WillByDefault(Return(is_gpu_disabled_sync_switch));
+  EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
+
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
+      .WillRepeatedly(Return(true));
+  // Prepare two frames for Draw().
+  EXPECT_CALL(*surface, AcquireFrame(SkISize::Make(100, 100)))
+      .WillOnce(Return(ByMove(std::move(surface_frame1))))
+      .WillOnce(Return(ByMove(std::move(surface_frame2))));
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+
+  rasterizer->Setup(std::move(surface));
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    // Use container as the root layer and PhysicalShapeLayer as the child
+    // layer. Frame size is 100 x 100 PhysicalShapeLayer's size is 50 x 50 The
+    // frame_damage is 50,50 in the first frame, and the frame_damage is empty
+    // in the second frame
+    auto pipeline1 = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree1 =
+        std::make_unique<LayerTree>(/*frame_size=*/SkISize::Make(100, 100),
+                                    /*device_pixel_ratio=*/2.0f);
+    // Use container as the root layer and PhysicalShapeLayer as the child
+    // layer.
+    auto layer1 = std::make_shared<ContainerLayer>();
+    auto layerChild1 = std::make_shared<PhysicalShapeLayer>(
+        SK_ColorBLACK, SK_ColorBLACK,
+        0.0f,  // elevation
+        SkPath::Rect(SkRect::MakeIWH(50, 50), SkPathDirection::kCCW, 0),
+        Clip::none);
+    layer1.get()->Add(layerChild1);
+    layer_tree1->set_root_layer(layer1);
+    PipelineProduceResult result1 =
+        pipeline1->Produce().Complete(std::move(layer_tree1));
+    EXPECT_TRUE(result1.success);
+    auto no_discard = [](LayerTree&) { return false; };
+    RasterStatus status1 =
+        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline1, no_discard);
+    EXPECT_EQ(status1, RasterStatus::kSuccess);
+
+    auto pipeline2 = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree2 = std::make_unique<LayerTree>(
+        /*frame_size=*/SkISize::Make(100, 100), /*device_pixel_ratio=*/2.0f);
+    // Use container as the root layer and PhysicalShapeLayer as the child layer
+    // for second layerTree
+    auto layer2 = std::make_shared<ContainerLayer>();
+    auto layerChild2 = std::make_shared<PhysicalShapeLayer>(
+        SK_ColorBLACK, SK_ColorBLACK,
+        0.0f,  // elevation
+        SkPath::Rect(SkRect::MakeIWH(50, 50), SkPathDirection::kCCW, 0),
+        Clip::none);
+    layerChild2.get()->AssignOldLayer(layerChild1.get());
+    layer2.get()->Add(layerChild2);
+    layer_tree2->set_root_layer(layer2);
+    PipelineProduceResult result2 =
+        pipeline2->Produce().Complete(std::move(layer_tree2));
+    EXPECT_TRUE(result2.success);
+    RasterStatus status2 =
+        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline2, no_discard);
+    EXPECT_EQ(status2, RasterStatus::kDiscarded);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+TEST(RasterizerTest, drawWithFrameDamageIsNotEmpty) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<MockSurface>();
+  auto is_gpu_disabled_sync_switch =
+      std::make_shared<const fml::SyncSwitch>(false);
+
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+  framebuffer_info.supports_partial_repaint = true;
+  framebuffer_info.existing_damage = std::optional<SkIRect>(SkIRect());
+  auto surface_frame1 = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, framebuffer_info,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  auto surface_frame2 = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, framebuffer_info,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
+      .WillByDefault(Return(is_gpu_disabled_sync_switch));
+  EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
+
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
+      .WillRepeatedly(Return(true));
+  // Prepare two frames for Draw().
+  EXPECT_CALL(*surface, AcquireFrame(SkISize::Make(100, 100)))
+      .WillOnce(Return(ByMove(std::move(surface_frame1))))
+      .WillOnce(Return(ByMove(std::move(surface_frame2))));
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+
+  rasterizer->Setup(std::move(surface));
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    // Use container as the root layer and PhysicalShapeLayer as the child
+    // layer. Frame size is 100 x 100 PhysicalShapeLayer's size is 50 x 50 The
+    // frame_damage is 50,50 in the first frame, and the frame_damage is 50,50
+    // in the second frame
+    auto pipeline1 = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree1 =
+        std::make_unique<LayerTree>(/*frame_size=*/SkISize::Make(100, 100),
+                                    /*device_pixel_ratio=*/2.0f);
+    // Use container as the root layer and PhysicalShapeLayer as the child
+    // layer.
+    auto layer1 = std::make_shared<ContainerLayer>();
+    auto layerChild1 = std::make_shared<PhysicalShapeLayer>(
+        SK_ColorBLACK, SK_ColorBLACK,
+        0.0f,  // elevation
+        SkPath::Rect(SkRect::MakeIWH(50, 50), SkPathDirection::kCCW, 0),
+        Clip::none);
+    layer1.get()->Add(layerChild1);
+    layer_tree1->set_root_layer(layer1);
+    PipelineProduceResult result1 =
+        pipeline1->Produce().Complete(std::move(layer_tree1));
+    EXPECT_TRUE(result1.success);
+    auto no_discard = [](LayerTree&) { return false; };
+    RasterStatus status1 =
+        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline1, no_discard);
+    EXPECT_EQ(status1, RasterStatus::kSuccess);
+
+    auto pipeline2 = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree2 = std::make_unique<LayerTree>(
+        /*frame_size=*/SkISize::Make(100, 100), /*device_pixel_ratio=*/2.0f);
+    // Use container as the root layer and PhysicalShapeLayer as the child layer
+    // for second layerTree
+    auto layer2 = std::make_shared<ContainerLayer>();
+    auto layerChild2 = std::make_shared<PhysicalShapeLayer>(
+        SK_ColorBLACK, SK_ColorBLACK,
+        0.0f,  // elevation
+        SkPath::Rect(SkRect::MakeIWH(50, 50), SkPathDirection::kCCW, 0),
+        Clip::none);
+    layer2.get()->Add(layerChild2);
+    layer_tree2->set_root_layer(layer2);
+    PipelineProduceResult result2 =
+        pipeline2->Produce().Complete(std::move(layer_tree2));
+    EXPECT_TRUE(result2.success);
+    RasterStatus status2 =
+        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline2, no_discard);
+    EXPECT_EQ(status2, RasterStatus::kSuccess);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
 }  // namespace flutter
