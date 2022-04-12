@@ -7,6 +7,8 @@
 #include <iostream>
 #include <string>
 
+//#include "flutter/fml/logging.h"
+
 #include "rapidjson/error/en.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -21,6 +23,7 @@ const JsonMessageCodec& JsonMessageCodec::GetInstance() {
 
 std::unique_ptr<std::vector<uint8_t>> JsonMessageCodec::EncodeMessageInternal(
     const rapidjson::Document& message) const {
+  //    FML_LOG(ERROR) << "---- eggfly: EncodeMessageInternal";
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   // clang-tidy has trouble reasoning about some of the complicated array and
@@ -35,6 +38,7 @@ std::unique_ptr<std::vector<uint8_t>> JsonMessageCodec::EncodeMessageInternal(
 std::unique_ptr<rapidjson::Document> JsonMessageCodec::DecodeMessageInternal(
     const uint8_t* binary_message,
     const size_t message_size) const {
+  //    FML_LOG(ERROR) << "---- eggfly: DecodeMessageInternal";
   auto raw_message = reinterpret_cast<const char*>(binary_message);
   auto json_message = std::make_unique<rapidjson::Document>();
   rapidjson::ParseResult result =

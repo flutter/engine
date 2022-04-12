@@ -11,6 +11,8 @@ _wrapper_includes = [
   "include/flutter/flutter_engine.h",
   "include/flutter/flutter_view_controller.h",
   "include/flutter/flutter_view.h",
+  "include/flutter/platform_view.h",
+  "include/flutter/platform_view_factory.h",
   "include/flutter/plugin_registrar_windows.h",
 ]
 

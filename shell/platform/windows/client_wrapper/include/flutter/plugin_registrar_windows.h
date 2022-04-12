@@ -10,8 +10,10 @@
 
 #include <memory>
 #include <optional>
+#include <iostream>
 
 #include "flutter_view.h"
+#include "platform_view_factory2.h"
 #include "plugin_registrar.h"
 
 namespace flutter {
@@ -50,6 +52,18 @@ class PluginRegistrarWindows : public PluginRegistrar {
   FlutterView* GetView() { return view_.get(); }
 
 #ifndef WINUWP
+  // Registers platformView factory
+  // ---------------- WARNING ------------------
+  // DON'T MODIFY THIS CLASS IN VISUAL STUDIO
+  bool RegisterPlatformViewFactory(std::string view_type, PlatformViewFactory2* factory) {
+    // platform_view_factories_.emplace(view_type, std::move(factory));
+    // std::cout << "---- eggfly:  RegisterPlatformViewFactory(), view_type="<< view_type << ", " << platform_view_factories_.size() << std::endl;
+    FlutterDesktopPluginRegistrarRef ref = this->registrar();
+    std::cout << "---- eggfly ----: FlutterDesktopPluginRegistrarRef=" << ref << std::endl;
+    return FlutterDesktopPluginRegistrarRegisterPlatformViewFactory(ref, view_type.c_str(), factory);
+    // FlutterView *view = GetView();
+    // return true;
+  }
   // Registers |delegate| to receive WindowProc callbacks for the top-level
   // window containing this Flutter instance. Returns an ID that can be used to
   // unregister the handler.
@@ -126,6 +140,8 @@ class PluginRegistrarWindows : public PluginRegistrar {
   int next_window_proc_delegate_id_ = 1;
 
   std::map<int, WindowProcDelegate> window_proc_delegates_;
+
+  // std::map<std::string, std::unique_ptr<PlatformViewFactory>> platform_view_factories_;
 #endif
 };
 

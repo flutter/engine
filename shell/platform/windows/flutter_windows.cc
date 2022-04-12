@@ -15,7 +15,9 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/platform_view_factory2.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -152,6 +154,21 @@ FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
   return HandleForView(registrar->engine->view());
 }
+
+
+// Returns the view associated with this registrar's engine instance. 
+// eggfly
+bool FlutterDesktopPluginRegistrarRegisterPlatformViewFactory(FlutterDesktopPluginRegistrarRef registrar, const char* view_type, void* factory) {
+  std::cout << "---- eggfly ---- FlutterDesktopPluginRegistrarRegisterPlatformViewFactory(): view_type = " << view_type << ", factory = " << factory << std::endl;
+  flutter::FlutterWindowsView* view = registrar->engine->view();
+  if (nullptr == view) {
+    FML_LOG(WARNING) << "Register platform view factory failed because the engine's view is null, maybe SetView() not called.";
+    return false;
+  }
+  return view->GetPlatformViewsHandler()->RegisterViewFactory(std::string(view_type), reinterpret_cast<flutter::PlatformViewFactory2*>(factory));
+  // return true;
+}
+
 
 void FlutterDesktopResyncOutputStreams() {
   FILE* unused;

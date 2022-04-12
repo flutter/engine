@@ -11,8 +11,10 @@
 #include <uiautomationcore.h>
 #include <uiautomationcoreapi.h>
 #include <wrl/client.h>
+#include "flutter/fml/logging.h"
 
 #include <cstring>
+#include <iostream>
 
 #include "dpi_utils_win32.h"
 #include "keyboard_win32_common.h"
@@ -78,12 +80,12 @@ void WindowWin32::InitializeChild(const char* title,
   std::wstring converted_title = NarrowToWide(title);
 
   WNDCLASS window_class = RegisterWindowClass(converted_title);
-
   auto* result = CreateWindowEx(
       0, window_class.lpszClassName, converted_title.c_str(),
       WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
       HWND_MESSAGE, nullptr, window_class.hInstance, this);
 
+  FML_LOG(ERROR) << "---- eggfly ---- InitializeChild: " << result;
   if (result == nullptr) {
     auto error = GetLastError();
     LPWSTR message = nullptr;
@@ -134,6 +136,8 @@ LRESULT CALLBACK WindowWin32::WndProc(HWND const window,
 
     auto that = static_cast<WindowWin32*>(cs->lpCreateParams);
     that->window_handle_ = window;
+    std::cout << "WindowWin32 WM_NCCREATE:"<<window << std::endl;
+
     that->text_input_manager_->SetWindowHandle(window);
     RegisterTouchWindow(window, 0);
   } else if (WindowWin32* that = GetThisFromHandle(window)) {
@@ -508,6 +512,7 @@ UINT WindowWin32::GetCurrentHeight() {
 }
 
 HWND WindowWin32::GetWindowHandle() {
+  std::cout << "WindowWin32::GetWindowHandle="<<window_handle_ << std::endl; 
   return window_handle_;
 }
 

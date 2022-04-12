@@ -23,6 +23,7 @@
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
+#include "flutter/shell/platform/windows/platform_views_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
@@ -65,6 +66,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Return the currently configured PlatformWindow.
   PlatformWindow GetPlatformWindow() const;
+
+  // Return the platform views handler.
+  PlatformViewsHandler* GetPlatformViewsHandler() const;
 
   // Returns the engine backing this view.
   FlutterWindowsEngine* GetEngine();
@@ -334,6 +338,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Handler for the flutter/platform channel.
   std::unique_ptr<PlatformHandler> platform_handler_;
+
+  // Handler for the flutter/platform_views channel.
+  std::unique_ptr<PlatformViewsHandler> platform_views_handler_;
 
   // Handler for cursor events.
   std::unique_ptr<CursorHandler> cursor_handler_;

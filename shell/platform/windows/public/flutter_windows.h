@@ -7,6 +7,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
+#include <string>
 #include <windows.h>
 
 #include "flutter_export.h"
@@ -205,6 +207,8 @@ FlutterDesktopViewGetCoreApplicationView(FlutterDesktopViewRef view);
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 #endif
 
+
+
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h
 
@@ -226,6 +230,16 @@ typedef bool (*FlutterDesktopWindowProcCallback)(HWND /* hwnd */,
 // Returns the view associated with this registrar's engine instance.
 FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar);
+
+// Returns the view associated with this registrar's engine instance. 
+// eggfly
+FLUTTER_EXPORT bool FlutterDesktopPluginRegistrarRegisterPlatformViewFactory(
+    FlutterDesktopPluginRegistrarRef registrar, const char* view_type, void* factory); // TODO
+
+// Returns the view associated with this registrar's engine instance. 
+// eggfly
+// FLUTTER_EXPORT bool FlutterDesktopEngineRegisterPlatformViewFactory(FlutterDesktopEngineRef engine,
+//                                       std::string view_type, void* factory);
 
 #ifndef WINUWP
 FLUTTER_EXPORT void

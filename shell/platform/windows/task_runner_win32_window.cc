@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <iostream>
 
+#include "flutter/fml/logging.h"
+
 namespace flutter {
 
 TaskRunnerWin32Window::TaskRunnerWin32Window() {
@@ -15,6 +17,7 @@ TaskRunnerWin32Window::TaskRunnerWin32Window() {
       CreateWindowEx(0, window_class.lpszClassName, L"", 0, 0, 0, 0, 0,
                      HWND_MESSAGE, nullptr, window_class.hInstance, nullptr);
 
+  FML_LOG(ERROR) << "---- eggfly ---- TaskRunnerWin32Window: " << window_handle_;
   if (window_handle_) {
     SetWindowLongPtr(window_handle_, GWLP_USERDATA,
                      reinterpret_cast<LONG_PTR>(this));

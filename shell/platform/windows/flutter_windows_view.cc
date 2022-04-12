@@ -58,6 +58,7 @@ void FlutterWindowsView::SetEngine(
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   InitializeKeyboard();
   platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
+  platform_views_handler_ = std::make_unique<PlatformViewsHandler>(internal_plugin_messenger, GetPlatformWindow());
   cursor_handler_ = std::make_unique<CursorHandler>(internal_plugin_messenger,
                                                     binding_handler_.get());
 
@@ -558,6 +559,10 @@ WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
 
 PlatformWindow FlutterWindowsView::GetPlatformWindow() const {
   return binding_handler_->GetPlatformWindow();
+}
+
+PlatformViewsHandler* FlutterWindowsView::GetPlatformViewsHandler() const {
+  return platform_views_handler_.get();
 }
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
