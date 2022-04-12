@@ -52,6 +52,33 @@ TEST_F(FlGnomeSettingsTest, ClockFormat) {
   EXPECT_EQ(fl_settings_get_clock_format(settings), FL_CLOCK_FORMAT_12H);
 }
 
+TEST_F(FlGnomeSettingsTest, ColorScheme) {
+  g_autoptr(GSettings) interface_settings =
+      create_settings("ubuntu-22.04", "org.gnome.desktop.interface");
+  g_settings_set_string(interface_settings, "color-scheme", "default");
+
+  g_autoptr(FlSettings) settings = FL_SETTINGS(
+      g_object_new(fl_gnome_settings_get_type(), "interface_settings",
+                   interface_settings, nullptr));
+  EXPECT_EQ(fl_settings_get_color_scheme(settings), FL_COLOR_SCHEME_LIGHT);
+
+  flutter::testing::MockSignalHandler settings_changed(settings, "changed");
+  EXPECT_SIGNAL(settings_changed).Times(1);
+
+  g_settings_set_string(interface_settings, "color-scheme", "prefer-light");
+  EXPECT_EQ(fl_settings_get_color_scheme(settings), FL_COLOR_SCHEME_LIGHT);
+
+  EXPECT_SIGNAL(settings_changed).Times(1);
+
+  g_settings_set_string(interface_settings, "color-scheme", "prefer-dark");
+  EXPECT_EQ(fl_settings_get_color_scheme(settings), FL_COLOR_SCHEME_DARK);
+
+  EXPECT_SIGNAL(settings_changed).Times(0);
+
+  g_settings_set_string(interface_settings, "gtk-theme", "Yaru");
+  EXPECT_EQ(fl_settings_get_color_scheme(settings), FL_COLOR_SCHEME_DARK);
+}
+
 TEST_F(FlGnomeSettingsTest, GtkTheme) {
   g_autoptr(GSettings) interface_settings =
       create_settings("ubuntu-20.04", "org.gnome.desktop.interface");

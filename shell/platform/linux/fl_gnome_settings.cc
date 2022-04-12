@@ -10,9 +10,11 @@
 static constexpr char kDesktopInterfaceSchema[] = "org.gnome.desktop.interface";
 static constexpr char kDesktopTextScalingFactorKey[] = "text-scaling-factor";
 static constexpr char kDesktopClockFormatKey[] = "clock-format";
+static constexpr char kDesktopColorSchemeKey[] = "color-scheme";
 static constexpr char kDesktopGtkThemeKey[] = "gtk-theme";
 
 static constexpr char kClockFormat12Hour[] = "12h";
+static constexpr char kColorSchemePreferDark[] = "prefer-dark";
 static constexpr char kGtkThemeDarkSuffix[] = "-dark";
 static constexpr char kInterfaceSettings[] = "interface-settings";
 
@@ -47,17 +49,32 @@ static FlClockFormat fl_gnome_settings_get_clock_format(FlSettings* settings) {
   return clock_format;
 }
 
+static bool has_setting(GSettings* settings, const gchar* key) {
+  g_autoptr(GSettingsSchema) schema = nullptr;
+  g_object_get(settings, "settings-schema", &schema, nullptr);
+  return g_settings_schema_has_key(schema, key);
+}
+
 static FlColorScheme fl_gnome_settings_get_color_scheme(FlSettings* settings) {
   FlGnomeSettings* self = FL_GNOME_SETTINGS(settings);
 
   FlColorScheme color_scheme = FL_COLOR_SCHEME_LIGHT;
 
   if (self->interface_settings != nullptr) {
-    // check whether org.gnome.desktop.interface.gtk-theme ends with "-dark"
-    g_autofree gchar* value =
-        g_settings_get_string(self->interface_settings, kDesktopGtkThemeKey);
-    if (g_str_has_suffix(value, kGtkThemeDarkSuffix)) {
-      color_scheme = FL_COLOR_SCHEME_DARK;
+    if (has_setting(self->interface_settings, kDesktopColorSchemeKey)) {
+      // org.gnome.desktop.interface.color-scheme in GNOME 42 and later
+      g_autofree gchar* value = g_settings_get_string(self->interface_settings,
+                                                      kDesktopColorSchemeKey);
+      if (g_strcmp0(value, kColorSchemePreferDark) == 0) {
+        color_scheme = FL_COLOR_SCHEME_DARK;
+      }
+    } else {
+      // check whether org.gnome.desktop.interface.gtk-theme ends with "-dark"
+      g_autofree gchar* value =
+          g_settings_get_string(self->interface_settings, kDesktopGtkThemeKey);
+      if (g_str_has_suffix(value, kGtkThemeDarkSuffix)) {
+        color_scheme = FL_COLOR_SCHEME_DARK;
+      }
     }
   }
   return color_scheme;
@@ -82,9 +99,11 @@ static void fl_gnome_settings_set_interface_settings(FlGnomeSettings* self,
   g_signal_connect_object(settings, "changed::clock-format",
                           G_CALLBACK(fl_settings_emit_changed), self,
                           G_CONNECT_SWAPPED);
-  g_signal_connect_object(settings, "changed::gtk-theme",
-                          G_CALLBACK(fl_settings_emit_changed), self,
-                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(
+      settings,
+      has_setting(settings, kDesktopColorSchemeKey) ? "changed::color-scheme"
+                                                    : "changed::gtk-theme",
+      G_CALLBACK(fl_settings_emit_changed), self, G_CONNECT_SWAPPED);
   g_signal_connect_object(settings, "changed::text-scaling-factor",
                           G_CALLBACK(fl_settings_emit_changed), self,
                           G_CONNECT_SWAPPED);

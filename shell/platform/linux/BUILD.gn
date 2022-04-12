@@ -180,7 +180,10 @@ test_fixtures("flutter_linux_fixtures") {
 copy("flutter_linux_gschemas") {
   testonly = true
 
-  sources = [ "testing/gschemas/ubuntu-20.04.compiled" ]
+  sources = [
+    "testing/gschemas/ubuntu-20.04.compiled",
+    "testing/gschemas/ubuntu-22.04.compiled",
+  ]
   outputs = [ "$target_gen_dir/assets/{{source_name_part}}/gschemas.compiled" ]
 }
 
