@@ -195,6 +195,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -206,7 +207,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   _viewOpaque = YES;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   _engine = std::move(engine);
   _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
   [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
@@ -1180,8 +1180,30 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  // When keyboard hide, the keyboardWillChangeFrame function will be called to update viewport
-  // metrics. So do not call [self updateViewportMetrics] here again.
+  NSDictionary* info = [notification userInfo];
+
+  if (@available(iOS 9, *)) {
+    // Ignore keyboard notifications related to other apps.
+    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+    if (isLocal && ![isLocal boolValue]) {
+      return;
+    }
+  }
+
+  // Ignore keyboard notifications if engine’s viewController is not current viewController.
+  if ([_engine.get() viewController] != self) {
+    return;
+  }
+
+  if (self.targetViewInsetBottom != 0) {
+    // Ensure the keyboard will be dismissed. Just like the keyboardWillChangeFrame,
+    // keyboardWillBeHidden is also in an animation block in iOS sdk, so we don't need to set the
+    // animation curve. Related issue: https://github.com/flutter/flutter/issues/99951
+    self.targetViewInsetBottom = 0;
+    NSTimeInterval duration =
+        [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+    [self startKeyBoardAnimation:duration];
+  }
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration {

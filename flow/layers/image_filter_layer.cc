@@ -44,7 +44,6 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);
-  unfiltered_child_bounds_ = child_bounds;
 
   if (!filter_) {
     set_paint_bounds(child_bounds);
@@ -120,7 +119,7 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   // so we use the bounds of the child container which do not include any
   // modifications that the filter might apply.
   Layer::AutoSaveLayer save_layer =
-      Layer::AutoSaveLayer::Create(context, unfiltered_child_bounds_, &paint);
+      Layer::AutoSaveLayer::Create(context, child_paint_bounds(), &paint);
   PaintChildren(context);
 }
 

@@ -17,6 +17,8 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
+class SkColorSpace;
+
 namespace flutter {
 
 enum class RasterCacheLayerStrategy { kLayer, kLayerChildren };
@@ -324,6 +326,10 @@ class RasterCache {
       const Layer* layer,
       RasterCacheLayerStrategy strategy,
       const SkMatrix& ctm) const;
+
+  const SkRect& GetPaintBoundsFromLayer(
+      Layer* layer,
+      RasterCacheLayerStrategy strategy) const;
 
   const size_t access_threshold_;
   const size_t picture_and_display_list_cache_limit_per_frame_;

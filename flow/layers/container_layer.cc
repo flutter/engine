@@ -8,7 +8,7 @@
 
 namespace flutter {
 
-ContainerLayer::ContainerLayer() {}
+ContainerLayer::ContainerLayer() : child_paint_bounds_(SkRect::MakeEmpty()) {}
 
 void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto old_container = static_cast<const ContainerLayer*>(old_layer);
@@ -170,6 +170,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   context->has_texture_layer = child_has_texture_layer;
   context->subtree_can_inherit_opacity = subtree_can_inherit_opacity;
   set_subtree_has_platform_view(child_has_platform_view);
+  child_paint_bounds_ = *child_paint_bounds;
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {

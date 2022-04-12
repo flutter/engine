@@ -12,6 +12,7 @@
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
+#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/raster_thread_merger.h"
@@ -69,6 +70,12 @@ class FrameDamage {
     additional_damage_.join(damage);
   }
 
+  // Specifies clip rect alignment.
+  void SetClipAlignment(int horizontal, int vertical) {
+    horizontal_clip_alignment_ = horizontal;
+    vertical_clip_alignment_ = vertical;
+  }
+
   // Calculates clip rect for current rasterization. This is diff of layer tree
   // and previous layer tree + any additional provideddamage.
   // If previous layer tree is not specified, clip rect will be nulloptional,
@@ -90,6 +97,8 @@ class FrameDamage {
   SkIRect additional_damage_ = SkIRect::MakeEmpty();
   std::optional<Damage> damage_;
   const LayerTree* prev_layer_tree_ = nullptr;
+  int vertical_clip_alignment_ = 1;
+  int horizontal_clip_alignment_ = 1;
 };
 
 class CompositorContext {
@@ -172,11 +181,14 @@ class CompositorContext {
 
   Stopwatch& ui_time() { return ui_time_; }
 
+  LayerSnapshotStore& snapshot_store() { return layer_snapshot_store_; }
+
  private:
   RasterCache raster_cache_;
   TextureRegistry texture_registry_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;
+  LayerSnapshotStore layer_snapshot_store_;
 
   /// Only used by default constructor of `CompositorContext`.
   FixedRefreshRateUpdater fixed_refresh_rate_updater_;

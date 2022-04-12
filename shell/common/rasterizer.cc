@@ -10,6 +10,7 @@
 
 #include "flow/frame_timings.h"
 #include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
@@ -566,7 +567,10 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
     std::unique_ptr<FrameDamage> damage;
-    if (frame->framebuffer_info().supports_partial_repaint) {
+    // when leaf layer tracing is enabled we wish to repaing the whole frame for
+    // accurate performance metrics.
+    if (frame->framebuffer_info().supports_partial_repaint &&
+        !layer_tree.is_leaf_layer_tracing_enabled()) {
       // Disable partial repaint if external_view_embedder_ SubmitFrame is
       // involved - ExternalViewEmbedder unconditionally clears the entire
       // surface and also partial repaint with platform view present is
@@ -579,14 +583,23 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       if (frame->framebuffer_info().existing_damage && !force_full_repaint) {
         damage->SetPreviousLayerTree(last_layer_tree_.get());
         damage->AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
+        damage->SetClipAlignment(
+            frame->framebuffer_info().horizontal_clip_alignment,
+            frame->framebuffer_info().vertical_clip_alignment);
       }
     }
 
-    RasterStatus raster_status = compositor_frame->Raster(
-        layer_tree,                      // layer tree
-        !surface_->EnableRasterCache(),  // ignore raster cache
-        damage.get()                     // frame damage
-    );
+    bool ignore_raster_cache = true;
+    if (surface_->EnableRasterCache() &&
+        !layer_tree.is_leaf_layer_tracing_enabled()) {
+      ignore_raster_cache = false;
+    }
+
+    RasterStatus raster_status =
+        compositor_frame->Raster(layer_tree,           // layer tree
+                                 ignore_raster_cache,  // ignore raster cache
+                                 damage.get()          // frame damage
+        );
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry ||
         raster_status == RasterStatus::kDiscarded) {
@@ -656,24 +669,6 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   return recorder.finishRecordingAsPicture()->serialize(&procs);
 }
 
-static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
-                                              const SkISize& size) {
-  const auto image_info = SkImageInfo::MakeN32Premul(
-      size.width(), size.height(), SkColorSpace::MakeSRGB());
-  if (surface_context) {
-    // There is a rendering surface that may contain textures that are going to
-    // be referenced in the layer tree about to be drawn.
-    return SkSurface::MakeRenderTarget(surface_context,  //
-                                       SkBudgeted::kNo,  //
-                                       image_info        //
-    );
-  }
-
-  // There is no rendering surface, assume no GPU textures are present and
-  // create a raster surface.
-  return SkSurface::MakeRaster(image_info);
-}
-
 sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context,
@@ -681,15 +676,16 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     bool compressed) {
   // Attempt to create a snapshot surface depending on whether we have access to
   // a valid GPU rendering context.
-  auto snapshot_surface =
-      CreateSnapshotSurface(surface_context, tree->frame_size());
-  if (snapshot_surface == nullptr) {
+  std::unique_ptr<OffscreenSurface> snapshot_surface =
+      std::make_unique<OffscreenSurface>(surface_context, tree->frame_size());
+
+  if (!snapshot_surface->IsValid()) {
     FML_LOG(ERROR) << "Screenshot: unable to create snapshot surface";
     return nullptr;
   }
 
   // Draw the current layer tree into the snapshot surface.
-  auto* canvas = snapshot_surface->getCanvas();
+  auto* canvas = snapshot_surface->GetCanvas();
 
   // There is no root surface transformation for the screenshot layer. Reset the
   // matrix to identity.
@@ -720,33 +716,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   frame->Raster(*tree, true, nullptr);
   canvas->flush();
 
-  // Prepare an image from the surface, this image may potentially be on th GPU.
-  auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
-  if (!potentially_gpu_snapshot) {
-    FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
-    return nullptr;
-  }
-
-  // Copy the GPU image snapshot into CPU memory.
-  auto cpu_snapshot = potentially_gpu_snapshot->makeRasterImage();
-  if (!cpu_snapshot) {
-    FML_LOG(ERROR) << "Screenshot: unable to make raster image";
-    return nullptr;
-  }
-
-  // If the caller want the pixels to be compressed, there is a Skia utility to
-  // compress to PNG. Use that.
-  if (compressed) {
-    return cpu_snapshot->encodeToData();
-  }
-
-  // Copy it into a bitmap and return the same.
-  SkPixmap pixmap;
-  if (!cpu_snapshot->peekPixels(&pixmap)) {
-    FML_LOG(ERROR) << "Screenshot: unable to obtain bitmap pixels";
-    return nullptr;
-  }
-  return SkData::MakeWithCopy(pixmap.addr32(), pixmap.computeByteSize());
+  return snapshot_surface->GetRasterData(compressed);
 }
 
 Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(

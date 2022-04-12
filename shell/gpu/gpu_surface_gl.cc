@@ -10,7 +10,10 @@
 #include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/context_options.h"
+#include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
@@ -136,7 +139,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   GrBackendRenderTarget render_target(size.width(),     // width
                                       size.height(),    // height
                                       0,                // sample count
-                                      8,                // stencil bits
+                                      0,                // stencil bits
                                       framebuffer_info  // framebuffer info
   );
 

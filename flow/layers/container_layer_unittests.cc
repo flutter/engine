@@ -29,6 +29,7 @@ TEST_F(ContainerLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
+  EXPECT_EQ(layer->child_paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -43,6 +44,7 @@ TEST_F(ContainerLayerTest, PaintBeforePrerollDies) {
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
+  EXPECT_EQ(layer->child_paint_bounds(), SkRect::MakeEmpty());
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
 }
@@ -62,6 +64,7 @@ TEST_F(ContainerLayerTest, Simple) {
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), child_path.getBounds());
+  EXPECT_EQ(layer->child_paint_bounds(), layer->paint_bounds());
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -96,6 +99,7 @@ TEST_F(ContainerLayerTest, Multiple) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_total_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), layer->paint_bounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -132,6 +136,7 @@ TEST_F(ContainerLayerTest, MultipleWithEmpty) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), SkPath().getBounds());
   EXPECT_EQ(layer->paint_bounds(), child_path1.getBounds());
+  EXPECT_EQ(layer->child_paint_bounds(), layer->paint_bounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_FALSE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -169,6 +174,7 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_total_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), layer->paint_bounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
