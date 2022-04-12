@@ -16,52 +16,42 @@ static constexpr char kPlatformBrightnessKey[] = "platformBrightness";
 static constexpr char kPlatformBrightnessLight[] = "light";
 static constexpr char kPlatformBrightnessDark[] = "dark";
 
-static constexpr char kDesktopInterfaceSchema[] = "org.gnome.desktop.interface";
-static constexpr char kDesktopTextScalingFactorKey[] = "text-scaling-factor";
-static constexpr char kDesktopClockFormatKey[] = "clock-format";
-static constexpr char kDesktopGtkThemeKey[] = "gtk-theme";
-static constexpr char kClockFormat24Hour[] = "24h";
-static constexpr char kGtkThemeDarkSuffix[] = "-dark";
-
 struct _FlSettingsPlugin {
   GObject parent_instance;
 
   FlBasicMessageChannel* channel;
 
-  GSettings* interface_settings;
-
-  GArray* connections;
+  FlSettings* settings;
 };
 
 G_DEFINE_TYPE(FlSettingsPlugin, fl_settings_plugin, G_TYPE_OBJECT)
 
+static const gchar* to_platform_brightness(FlColorScheme color_scheme) {
+  switch (color_scheme) {
+    case FL_COLOR_SCHEME_LIGHT:
+      return kPlatformBrightnessLight;
+    case FL_COLOR_SCHEME_DARK:
+      return kPlatformBrightnessDark;
+    default:
+      g_return_val_if_reached(nullptr);
+  }
+}
+
 // Sends the current settings to the Flutter engine.
 static void update_settings(FlSettingsPlugin* self) {
-  gdouble scaling_factor = 1.0;
-  gboolean always_use_24hr = FALSE;
-  const gchar* platform_brightness = kPlatformBrightnessLight;
-
-  if (self->interface_settings != nullptr) {
-    scaling_factor = g_settings_get_double(self->interface_settings,
-                                           kDesktopTextScalingFactorKey);
-    g_autofree gchar* clock_format =
-        g_settings_get_string(self->interface_settings, kDesktopClockFormatKey);
-    always_use_24hr = g_strcmp0(clock_format, kClockFormat24Hour) == 0;
-
-    g_autofree gchar* gtk_theme =
-        g_settings_get_string(self->interface_settings, kDesktopGtkThemeKey);
-    if (g_str_has_suffix(gtk_theme, kGtkThemeDarkSuffix)) {
-      platform_brightness = kPlatformBrightnessDark;
-    }
-  }
+  FlClockFormat clock_format = fl_settings_get_clock_format(self->settings);
+  FlColorScheme color_scheme = fl_settings_get_color_scheme(self->settings);
+  gdouble scaling_factor = fl_settings_get_text_scaling_factor(self->settings);
 
   g_autoptr(FlValue) message = fl_value_new_map();
   fl_value_set_string_take(message, kTextScaleFactorKey,
                            fl_value_new_float(scaling_factor));
-  fl_value_set_string_take(message, kAlwaysUse24HourFormatKey,
-                           fl_value_new_bool(always_use_24hr));
-  fl_value_set_string_take(message, kPlatformBrightnessKey,
-                           fl_value_new_string(platform_brightness));
+  fl_value_set_string_take(
+      message, kAlwaysUse24HourFormatKey,
+      fl_value_new_bool(clock_format == FL_CLOCK_FORMAT_24H));
+  fl_value_set_string_take(
+      message, kPlatformBrightnessKey,
+      fl_value_new_string(to_platform_brightness(color_scheme)));
   fl_basic_message_channel_send(self->channel, message, nullptr, nullptr,
                                 nullptr);
 }
@@ -69,13 +59,8 @@ static void update_settings(FlSettingsPlugin* self) {
 static void fl_settings_plugin_dispose(GObject* object) {
   FlSettingsPlugin* self = FL_SETTINGS_PLUGIN(object);
 
-  for (guint i = 0; i < self->connections->len; i += 1) {
-    g_signal_handler_disconnect(self->interface_settings,
-                                g_array_index(self->connections, gulong, i));
-  }
-  g_array_unref(self->connections);
   g_clear_object(&self->channel);
-  g_clear_object(&self->interface_settings);
+  g_clear_object(&self->settings);
 
   G_OBJECT_CLASS(fl_settings_plugin_parent_class)->dispose(object);
 }
@@ -95,36 +80,17 @@ FlSettingsPlugin* fl_settings_plugin_new(FlBinaryMessenger* messenger) {
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
   self->channel = fl_basic_message_channel_new(messenger, kChannelName,
                                                FL_MESSAGE_CODEC(codec));
-  self->connections = g_array_new(FALSE, FALSE, sizeof(gulong));
 
   return self;
 }
 
-void fl_settings_plugin_start(FlSettingsPlugin* self) {
+void fl_settings_plugin_start(FlSettingsPlugin* self, FlSettings* settings) {
   g_return_if_fail(FL_IS_SETTINGS_PLUGIN(self));
+  g_return_if_fail(FL_IS_SETTINGS(settings));
 
-  // If we are on GNOME, get settings from GSettings.
-  GSettingsSchemaSource* source = g_settings_schema_source_get_default();
-  if (source != nullptr) {
-    g_autoptr(GSettingsSchema) schema =
-        g_settings_schema_source_lookup(source, kDesktopInterfaceSchema, FALSE);
-    if (schema != nullptr) {
-      self->interface_settings = g_settings_new_full(schema, nullptr, nullptr);
-      gulong new_connections[] = {
-          g_signal_connect_object(
-              self->interface_settings, "changed::text-scaling-factor",
-              G_CALLBACK(update_settings), self, G_CONNECT_SWAPPED),
-          g_signal_connect_object(
-              self->interface_settings, "changed::clock-format",
-              G_CALLBACK(update_settings), self, G_CONNECT_SWAPPED),
-          g_signal_connect_object(
-              self->interface_settings, "changed::gtk-theme",
-              G_CALLBACK(update_settings), self, G_CONNECT_SWAPPED),
-      };
-      g_array_append_vals(self->connections, new_connections,
-                          sizeof(new_connections) / sizeof(gulong));
-    }
-  }
+  self->settings = FL_SETTINGS(g_object_ref(settings));
+  g_signal_connect_object(settings, "changed", G_CALLBACK(update_settings),
+                          self, G_CONNECT_SWAPPED);
 
   update_settings(self);
 }
