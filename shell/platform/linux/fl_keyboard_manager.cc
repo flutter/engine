@@ -355,8 +355,14 @@ static void fl_keyboard_manager_init(FlKeyboardManager* self) {
 static void fl_keyboard_manager_dispose(GObject* object) {
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(object);
 
-  fl_keyboard_view_delegate_subscribe_to_layout_change(self->view_delegate,
-                                                       nullptr);
+  if (self->view_delegate != nullptr) {
+    fl_keyboard_view_delegate_subscribe_to_layout_change(self->view_delegate,
+                                                        nullptr);
+    g_object_remove_weak_pointer(
+        G_OBJECT(self->view_delegate),
+        reinterpret_cast<gpointer*>(&(self->view_delegate)));
+    self->view_delegate = nullptr;
+  }
 
   g_ptr_array_free(self->responder_list, TRUE);
   g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
@@ -436,6 +442,7 @@ static void responder_handle_event_callback(bool handled,
   FlKeyboardManagerUserData* user_data =
       FL_KEYBOARD_MANAGER_USER_DATA(user_data_ptr);
   FlKeyboardManager* self = user_data->manager;
+  g_return_if_fail(self->view_delegate != nullptr);
 
   guint result_index = -1;
   gboolean found = g_ptr_array_find_with_equal_func1(
@@ -478,7 +485,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   guint8 group = event->group;
   // If the current group has been built, don't need to build layout.
   if (self->group_layouts.find(group) != self->group_layouts.end()) {
-    printf("Layout for %d found\n", group);fflush(stdout);
+    // printf("Layout for %d found\n", group);fflush(stdout);
     return;
   }
   // If the target keycode is not a goal, don't need to build layout.
@@ -488,13 +495,13 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
 
   printf("Building layout for %d\n", group);fflush(stdout);
   GroupLayout& layout = self->group_layouts[group];
-  // printf("1\n");fflush(stdout);
+  printf("1\n");fflush(stdout);
 
   // Derive key mapping for each key code based on their layout clues.
   std::map<uint64_t, const LayoutGoal*> remaining_mandatory_goals =
       self->logical_to_mandatory_goals;
 
-  // printf("2\n");fflush(stdout);
+  printf("2 group %d\n", group);fflush(stdout);
 #ifdef DEBUG_PRINT_LAYOUT
   std::string debug_layout_data;
   for (uint16_t keycode = 0; keycode < 128; keycode += 1) {
@@ -507,6 +514,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   }
   printf("%s", debug_layout_data.c_str());
 #endif
+  printf("3\n");fflush(stdout);
 
   for (const LayoutGoal& keycode_goal : layout_goals) {
     uint16_t keycode = keycode_goal.keycode;
@@ -514,7 +522,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
         convert_key_to_char(self->view_delegate, keycode, group, 0),
         convert_key_to_char(self->view_delegate, keycode, group, 1),  // Shift
     };
-    printf("Keycode 0x%x clues 0x%x 0x%x\n", keycode, this_key_clues[0], this_key_clues[1]);fflush(stdout);
+    // printf("Keycode 0x%x clues 0x%x 0x%x\n", keycode, this_key_clues[0], this_key_clues[1]);fflush(stdout);
     // The logical key should be the first available clue from below:
     //
     //  - Mandatory goal, if it matches any clue. This ensures that all alnum
@@ -525,7 +533,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
     for (uint16_t clue : this_key_clues) {
       auto matching_goal = remaining_mandatory_goals.find(clue);
       if (matching_goal != remaining_mandatory_goals.end()) {
-        printf("Found mandatory clue 0x%x <- 0x%x\n", keycode, clue);fflush(stdout);
+        // printf("Found mandatory clue 0x%x <- 0x%x\n", keycode, clue);fflush(stdout);
         // Found a key that produces a mandatory char. Use it.
         g_return_if_fail(layout[keycode] == 0);
         layout[keycode] = clue;
@@ -540,7 +548,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
     if (layout[keycode] == 0 && !has_any_eascii) {
       auto found_us_layout = self->keycode_to_goals.find(keycode);
       if (found_us_layout != self->keycode_to_goals.end()) {
-        printf("Use US layout 0x%x <- 0x%lx\n", keycode, found_us_layout->second->logical_key);fflush(stdout);
+        // printf("Use US layout 0x%x <- 0x%lx\n", keycode, found_us_layout->second->logical_key);fflush(stdout);
         layout[keycode] = found_us_layout->second->logical_key;
       }
     }
@@ -552,13 +560,13 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   // Ensure all mandatory goals are assigned.
   for (const auto mandatory_goal_iter : remaining_mandatory_goals) {
     const LayoutGoal* goal = mandatory_goal_iter.second;
-    printf("Fallback 0x%x <- 0x%lx\n", goal->keycode, goal->logical_key);fflush(stdout);
+    // printf("Fallback 0x%x <- 0x%lx\n", goal->keycode, goal->logical_key);fflush(stdout);
     layout[goal->keycode] = goal->logical_key;
   }
 
-  for (size_t i = 0; i < kLayoutSize; i += 1) {
-    printf("k 0x%zx L 0x%lx\n", i, layout[i]);fflush(stdout);
-  }
+  // for (size_t i = 0; i < kLayoutSize; i += 1) {
+  //   printf("k 0x%zx L 0x%lx\n", i, layout[i]);fflush(stdout);
+  // }
 
   // debug_print_layout_result(layout);
 }
@@ -572,6 +580,8 @@ FlKeyboardManager* fl_keyboard_manager_new(
       g_object_new(fl_keyboard_manager_get_type(), nullptr));
 
   self->view_delegate = view_delegate;
+  g_object_add_weak_pointer(G_OBJECT(view_delegate),
+                            reinterpret_cast<gpointer*>(&(self->view_delegate)));
 
   // The embedder responder must be added before the channel responder.
   g_ptr_array_add(
@@ -579,16 +589,19 @@ FlKeyboardManager* fl_keyboard_manager_new(
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(
           [self](const FlutterKeyEvent* event, FlutterKeyEventCallback callback,
                  void* user_data) {
+            g_return_if_fail(self->view_delegate != nullptr);
             fl_keyboard_view_delegate_send_key_event(self->view_delegate, event,
                                                      callback, user_data);
-          })));
+          },
+          &self->group_layouts)));
   g_ptr_array_add(self->responder_list,
                   FL_KEY_RESPONDER(fl_key_channel_responder_new(
-                      fl_keyboard_view_delegate_get_messenger(view_delegate))));
+                      fl_keyboard_view_delegate_get_messenger(view_delegate),
+                      &self->group_layouts)));
 
   fl_keyboard_view_delegate_subscribe_to_layout_change(
       self->view_delegate, [self]() {
-        printf("# Group layouts cleared!\n");
+        // printf("# Group layouts cleared!\n");
         self->group_layouts.clear();
       });
   return self;
@@ -609,6 +622,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
                                           FlKeyEvent* event) {
   g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
   g_return_val_if_fail(event != nullptr, FALSE);
+  g_return_val_if_fail(self->view_delegate != nullptr, FALSE);
 
   guarantee_layout(self, event);
 
@@ -617,8 +631,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
     return FALSE;
   }
 
-  printf("## Keycode 0x%x Keyval 0x%x gr 0x%x state 0x%x\n", event->keycode, event->keyval, event->group, event->state);
-  fflush(stdout);
+  printf("## Keycode 0x%x Keyval 0x%x gr 0x%x state 0x%x\n", event->keycode, event->keyval, event->group, event->state);fflush(stdout);
 
   FlKeyboardPendingEvent* pending = fl_keyboard_pending_event_new(
       std::unique_ptr<FlKeyEvent>(event), ++self->last_sequence_id,

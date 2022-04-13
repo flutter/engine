@@ -34,7 +34,16 @@
 namespace {
 using ::flutter::testing::keycodes::kLogicalKeyA;
 using ::flutter::testing::keycodes::kLogicalKeyB;
+using ::flutter::testing::keycodes::kLogicalKeyM;
 using ::flutter::testing::keycodes::kLogicalKeyQ;
+using ::flutter::testing::keycodes::kLogicalDigit1;
+using ::flutter::testing::keycodes::kLogicalMinus;
+using ::flutter::testing::keycodes::kLogicalUnderscore;
+using ::flutter::testing::keycodes::kLogicalSemicolon;
+using ::flutter::testing::keycodes::kLogicalComma;
+using ::flutter::testing::keycodes::kLogicalParenthesisRight;
+using ::flutter::testing::keycodes::kLogicalBracketLeft;
+
 using ::flutter::testing::keycodes::kPhysicalKeyA;
 using ::flutter::testing::keycodes::kPhysicalKeyB;
 
@@ -76,6 +85,12 @@ char* cloneString(const char* source) {
 
 constexpr guint16 kKeyCodeKeyA = 0x26u;
 constexpr guint16 kKeyCodeKeyB = 0x38u;
+constexpr guint16 kKeyCodeKeyM = 0x3au;
+constexpr guint16 kKeyCodeDigit1 = 0x0au;
+constexpr guint16 kKeyCodeMinus = 0x14u;
+constexpr guint16 kKeyCodeSemicolon = 0x2fu;
+constexpr guint16 kKeyCodeKeyLeftBracket = 0x22u;
+
 
 static constexpr char kKeyEventChannelName[] = "flutter/keyevent";
 
@@ -285,7 +300,7 @@ static void fl_mock_view_keyboard_subscribe_to_layout_change(FlKeyboardViewDeleg
 static guint fl_mock_view_keyboard_lookup_key(FlKeyboardViewDelegate* delegate, const GdkKeymapKey* key) {
   FlMockViewDelegate* self = FL_MOCK_VIEW_DELEGATE(delegate);
   guint8 group = static_cast<guint8>(key->group);
-  EXPECT_LE(group, self->layout_data->size());
+  EXPECT_LT(group, self->layout_data->size());
   const MockGroupLayoutData* group_layout = (*self->layout_data)[group];
   EXPECT_TRUE(group_layout != nullptr);
   EXPECT_TRUE(key->level == 0 || key->level == 1);
@@ -785,18 +800,78 @@ TEST(FlKeyboardManagerTest, CorrectLogicalKeyForLayouts) {
   sendTap(kKeyCodeKeyA, GDK_KEY_a, 0);  // KeyA
   VERIFY_DOWN(kLogicalKeyA, "a");
 
-  /* French keyboard layout */
+  sendTap(kKeyCodeKeyA, GDK_KEY_A, 0);  // Shift-KeyA
+  VERIFY_DOWN(kLogicalKeyA, "A");
+
+  sendTap(kKeyCodeDigit1, GDK_KEY_1, 0);  // Digit1
+  VERIFY_DOWN(kLogicalDigit1, "1");
+
+  sendTap(kKeyCodeDigit1, GDK_KEY_exclam, 0);  // Shift-Digit1
+  VERIFY_DOWN(kLogicalDigit1, "!");
+
+  sendTap(kKeyCodeMinus, GDK_KEY_minus, 0);  // Minus
+  VERIFY_DOWN(kLogicalMinus, "-");
+
+  sendTap(kKeyCodeMinus, GDK_KEY_underscore, 0);  // Shift-Minus
+  VERIFY_DOWN(kLogicalUnderscore, "_");
+
+
+  /* French keyboard layout, group 3, which is when the input method is showing
+   * "Fr" */
 
   tester.setLayout(kLayoutFrench);
 
   sendTap(kKeyCodeKeyA, GDK_KEY_q, 3);  // KeyA
   VERIFY_DOWN(kLogicalKeyQ, "q");
 
-  /* Russian keyboard layout */
+  sendTap(kKeyCodeKeyA, GDK_KEY_Q, 3);  // Shift-KeyA
+  VERIFY_DOWN(kLogicalKeyQ, "Q");
+
+  sendTap(kKeyCodeSemicolon, GDK_KEY_m, 3);  // ; but prints M
+  VERIFY_DOWN(kLogicalKeyM, "m");
+
+  sendTap(kKeyCodeKeyM, GDK_KEY_comma, 3);  // M but prints ,
+  VERIFY_DOWN(kLogicalComma, ",");
+
+  sendTap(kKeyCodeDigit1, GDK_KEY_ampersand, 3);  // Digit1
+  VERIFY_DOWN(kLogicalDigit1, "&");
+
+  sendTap(kKeyCodeDigit1, GDK_KEY_1, 3);  // Shift-Digit1
+  VERIFY_DOWN(kLogicalDigit1, "1");
+
+  sendTap(kKeyCodeMinus, GDK_KEY_parenright, 3);  // Minus
+  VERIFY_DOWN(kLogicalParenthesisRight, ")");
+
+  sendTap(kKeyCodeMinus, GDK_KEY_degree, 3);  // Shift-Minus
+  VERIFY_DOWN(static_cast<uint32_t>(L'°'), "°");
+
+  /* French keyboard layout, group 0, which is pressing the "extra key for
+   * triggering input method" key once after switching to French IME. */
+
+  sendTap(kKeyCodeKeyA, GDK_KEY_a, 0);  // KeyA
+  VERIFY_DOWN(kLogicalKeyA, "a");
+
+  sendTap(kKeyCodeDigit1, GDK_KEY_1, 0);  // Digit1
+  VERIFY_DOWN(kLogicalDigit1, "1");
+
+  /* Russian keyboard layout, group 2 */
   tester.setLayout(kLayoutRussian);
 
-  sendTap(kKeyCodeKeyA, GDK_KEY_Cyrillic_ef, 3);  // KeyA
+  sendTap(kKeyCodeKeyA, GDK_KEY_Cyrillic_ef, 2);  // KeyA
   VERIFY_DOWN(kLogicalKeyA, "ф");
+
+  sendTap(kKeyCodeDigit1, GDK_KEY_1, 2);  // Shift-Digit1
+  VERIFY_DOWN(kLogicalDigit1, "1");
+
+  sendTap(kKeyCodeKeyLeftBracket, GDK_KEY_Cyrillic_ha, 2);
+  VERIFY_DOWN(kLogicalBracketLeft, "х");
+
+  /* Russian keyboard layout, group 0 */
+  sendTap(kKeyCodeKeyA, GDK_KEY_a, 0);  // KeyA
+  VERIFY_DOWN(kLogicalKeyA, "a");
+
+  sendTap(kKeyCodeKeyLeftBracket, GDK_KEY_bracketleft, 0);
+  VERIFY_DOWN(kLogicalBracketLeft, "[");
 }
 
 const MockGroupLayoutData kLayoutUs0 = {
