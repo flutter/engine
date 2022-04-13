@@ -139,7 +139,8 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
   if not env:
     env = os.environ.copy()
   env['FLUTTER_BUILD_DIRECTORY'] = build_dir
-  env |= extra_env
+  for key, value in extra_env.items():
+    env[key] = value
 
   try:
     RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure, env=env)
