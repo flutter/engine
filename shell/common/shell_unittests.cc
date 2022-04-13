@@ -2546,6 +2546,10 @@ TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
+
+  // It would be better to parse out the json and check for the validity of
+  // fields. Below checks approximate what needs to be checked, this can not be
+  // an exact check since duration will not exactly match.
   std::string expected_json =
       "\"snapshot\":[137,80,78,71,13,10,26,10,0,"
       "0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,0,0,0,1,115,"
@@ -2553,7 +2557,11 @@ TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {
       "0,0,13,73,68,65,84,8,153,99,248,207,192,240,31,0,5,0,1,255,171,206,54,"
       "137,0,0,0,0,73,69,78,68,174,66,96,130]";
   std::string actual_json = buffer.GetString();
+
   EXPECT_THAT(actual_json, ::testing::HasSubstr(expected_json));
+  EXPECT_THAT(actual_json,
+              ::testing::HasSubstr("{\"type\":\"RenderFrameWithRasterStats\""));
+  EXPECT_THAT(actual_json, ::testing::HasSubstr("\"duration_micros\""));
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
