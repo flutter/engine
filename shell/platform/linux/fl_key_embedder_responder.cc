@@ -194,8 +194,6 @@ struct _FlKeyEmbedderResponder {
   // It is a map from primary physical keys to lock bits.  Both keys and values
   // are directly stored uint64s.  This table is freed by the responder.
   GHashTable* logical_key_to_lock_bit;
-
-  const flutter::GroupLayouts* group_layouts;
 };
 
 static void fl_key_embedder_responder_iface_init(
@@ -214,6 +212,7 @@ G_DEFINE_TYPE_WITH_CODE(
 static void fl_key_embedder_responder_handle_event(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+        uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data);
 
@@ -261,8 +260,7 @@ static void initialize_logical_key_to_lock_bit_loop_body(gpointer lock_bit,
 
 // Creates a new FlKeyEmbedderResponder instance.
 FlKeyEmbedderResponder* fl_key_embedder_responder_new(
-    EmbedderSendKeyEvent send_key_event,
-    const flutter::GroupLayouts* group_layouts) {
+    EmbedderSendKeyEvent send_key_event) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(
       g_object_new(FL_TYPE_EMBEDDER_RESPONDER_USER_DATA, nullptr));
 
@@ -287,7 +285,6 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(
                        initialize_logical_key_to_lock_bit_loop_body,
                        self->logical_key_to_lock_bit);
 
-  self->group_layouts = group_layouts;
   return self;
 }
 
@@ -305,15 +302,8 @@ static uint64_t event_to_physical_key(const FlKeyEvent* event) {
   return apply_id_plane(event->keycode, kGtkPlane);
 }
 
-static uint64_t event_to_logical_key(FlKeyEmbedderResponder* self,
-                                     const FlKeyEvent* event) {
+static uint64_t event_to_logical_key(const FlKeyEvent* event) {
   guint keyval = event->keyval;
-
-  uint64_t result_from_layout =
-      flutter::get_logical_key_from_layout(event, self->group_layouts);
-  if (result_from_layout != 0) {
-    return result_from_layout;
-  }
 
   auto found = gtk_keyval_to_logical_key_map.find(keyval);
   if (found != gtk_keyval_to_logical_key_map.end()) {
@@ -710,6 +700,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
 static void fl_key_embedder_responder_handle_event_impl(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+    uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
@@ -718,7 +709,9 @@ static void fl_key_embedder_responder_handle_event_impl(
   g_return_if_fail(callback != nullptr);
 
   const uint64_t physical_key = event_to_physical_key(event);
-  const uint64_t logical_key = event_to_logical_key(self, event);
+  const uint64_t logical_key = specified_logical_key != 0
+                                   ? specified_logical_key
+                                   : event_to_logical_key(event);
   const double timestamp = event_to_timestamp(event);
   const bool is_down_event = event->is_press;
 
@@ -789,11 +782,12 @@ static void fl_key_embedder_responder_handle_event_impl(
 static void fl_key_embedder_responder_handle_event(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+    uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   self->sent_any_events = false;
-  fl_key_embedder_responder_handle_event_impl(responder, event, callback,
+  fl_key_embedder_responder_handle_event_impl(responder, event, specified_logical_key, callback,
                                               user_data);
   if (!self->sent_any_events) {
     self->send_key_event(&empty_event, nullptr, nullptr);

@@ -102,8 +102,6 @@ struct _FlKeyChannelResponder {
   FlBasicMessageChannel* channel;
 
   FlKeyChannelResponderMock* mock;
-
-  const flutter::GroupLayouts* group_layouts;
 };
 
 static void fl_key_channel_responder_iface_init(FlKeyResponderInterface* iface);
@@ -118,6 +116,7 @@ G_DEFINE_TYPE_WITH_CODE(
 static void fl_key_channel_responder_handle_event(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+    uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data);
 
@@ -186,7 +185,6 @@ static void fl_key_channel_responder_init(FlKeyChannelResponder* self) {}
 // optional channel name to use when sending messages.
 FlKeyChannelResponder* fl_key_channel_responder_new(
     FlBinaryMessenger* messenger,
-    const flutter::GroupLayouts* group_layouts,
     FlKeyChannelResponderMock* mock) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
@@ -200,8 +198,6 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
   self->channel = fl_basic_message_channel_new(messenger, channel_name,
                                                FL_MESSAGE_CODEC(codec));
 
-  self->group_layouts = group_layouts;
-
   return self;
 }
 
@@ -209,6 +205,7 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
 static void fl_key_channel_responder_handle_event(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+    uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(responder);
@@ -279,8 +276,6 @@ static void fl_key_channel_responder_handle_event(
                              fl_value_new_int(unicode_scarlar_values));
   }
 
-  uint64_t specified_logical_key =
-      flutter::get_logical_key_from_layout(event, self->group_layouts);
   if (specified_logical_key != 0) {
     fl_value_set_string_take(message, kSpecifiedLogicalKey,
                              fl_value_new_int(specified_logical_key));

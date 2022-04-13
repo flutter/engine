@@ -48,8 +48,7 @@ G_DECLARE_FINAL_TYPE(FlKeyEmbedderResponder,
  * Returns: a new #FlKeyEmbedderResponder.
  */
 FlKeyEmbedderResponder* fl_key_embedder_responder_new(
-    EmbedderSendKeyEvent send_key_event,
-    const flutter::GroupLayouts* group_layouts = nullptr);
+    EmbedderSendKeyEvent send_key_event);
 
 G_END_DECLS
 

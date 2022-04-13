@@ -39,13 +39,16 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManagerUserData,
 
 namespace {
 
-using flutter::GroupLayout;
-using flutter::GroupLayouts;
-using flutter::kLayoutSize;
+constexpr size_t kLayoutSize = 128;
+// Map from keycode to logical key.
+typedef std::array<uint64_t, kLayoutSize> KeyboardGroupLayout;
+
+typedef std::map<guint8, KeyboardGroupLayout> KeyboardLayout;
 
 // Context variables for the foreach call used to dispatch events to responders.
 typedef struct {
   FlKeyEvent* event;
+  uint64_t specified_logical_key;
   FlKeyboardManagerUserData* user_data;
 } DispatchToResponderLoopContext;
 
@@ -77,9 +80,9 @@ void debug_format_layout_data(std::string& debug_layout_data,
 
 }  // namespace
 
-uint64_t flutter::get_logical_key_from_layout(
+static uint64_t get_logical_key_from_layout(
     const FlKeyEvent* event,
-    const GroupLayouts* group_layouts) {
+    const KeyboardLayout* group_layouts) {
   guint8 group = event->group;
   guint16 keycode = event->keycode;
   if (keycode >= kLayoutSize) {
@@ -263,7 +266,7 @@ struct _FlKeyboardManager {
   // The last sequence ID used. Increased by 1 by every use.
   uint64_t last_sequence_id;
 
-  GroupLayouts group_layouts;
+  KeyboardLayout group_layouts;
   std::map<uint16_t, const LayoutGoal*> keycode_to_goals;
   std::map<uint64_t, const LayoutGoal*> logical_to_mandatory_goals;
   std::set<uint16_t> goal_keycodes;
@@ -278,7 +281,7 @@ static void fl_keyboard_manager_class_init(FlKeyboardManagerClass* klass) {
 }
 
 static void fl_keyboard_manager_init(FlKeyboardManager* self) {
-  self->group_layouts = std::map<guint8, GroupLayout>();
+  self->group_layouts = std::map<guint8, KeyboardGroupLayout>();
 
   self->keycode_to_goals = std::map<uint16_t, const LayoutGoal*>();
   self->logical_to_mandatory_goals = std::map<uint64_t, const LayoutGoal*>();
@@ -442,7 +445,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
     return;
   }
 
-  GroupLayout& layout = self->group_layouts[group];
+  KeyboardGroupLayout& layout = self->group_layouts[group];
 
   // Derive key mapping for each key code based on their layout clues.
   std::map<uint64_t, const LayoutGoal*> remaining_mandatory_goals =
@@ -523,12 +526,10 @@ FlKeyboardManager* fl_keyboard_manager_new(
             g_return_if_fail(self->view_delegate != nullptr);
             fl_keyboard_view_delegate_send_key_event(self->view_delegate, event,
                                                      callback, user_data);
-          },
-          &self->group_layouts)));
+          })));
   g_ptr_array_add(self->responder_list,
                   FL_KEY_RESPONDER(fl_key_channel_responder_new(
-                      fl_keyboard_view_delegate_get_messenger(view_delegate),
-                      &self->group_layouts)));
+                      fl_keyboard_view_delegate_get_messenger(view_delegate))));
 
   fl_keyboard_view_delegate_subscribe_to_layout_change(
       self->view_delegate, [self]() { self->group_layouts.clear(); });
@@ -541,9 +542,9 @@ static void dispatch_to_responder(gpointer responder_data,
   DispatchToResponderLoopContext* context =
       reinterpret_cast<DispatchToResponderLoopContext*>(foreach_data_ptr);
   FlKeyResponder* responder = FL_KEY_RESPONDER(responder_data);
-  fl_key_responder_handle_event(responder, context->event,
-                                responder_handle_event_callback,
-                                context->user_data);
+  fl_key_responder_handle_event(
+      responder, context->event, responder_handle_event_callback,
+      context->user_data, context->specified_logical_key);
 }
 
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
@@ -568,6 +569,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
       fl_keyboard_manager_user_data_new(self, pending->sequence_id);
   DispatchToResponderLoopContext data{
       .event = event,
+      .specified_logical_key = get_logical_key_from_layout(event, &self->group_layouts),
       .user_data = user_data,
   };
   g_ptr_array_foreach(self->responder_list, dispatch_to_responder, &data);

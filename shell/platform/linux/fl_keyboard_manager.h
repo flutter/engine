@@ -12,19 +12,6 @@
 
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
 
-namespace flutter {
-
-constexpr size_t kLayoutSize = 128;
-// Map from keycode to logical key.
-typedef std::array<uint64_t, kLayoutSize> GroupLayout;
-
-typedef std::map<guint8, GroupLayout> GroupLayouts;
-
-uint64_t get_logical_key_from_layout(const FlKeyEvent* event,
-                                     const GroupLayouts* layout);
-
-}  // namespace flutter
-
 G_BEGIN_DECLS
 
 #define FL_TYPE_KEYBOARD_MANAGER fl_keyboard_manager_get_type()
