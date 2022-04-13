@@ -19,6 +19,7 @@ static constexpr char kKeyCodeKey[] = "keyCode";
 static constexpr char kScanCodeKey[] = "scanCode";
 static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kToolkitKey[] = "toolkit";
+static constexpr char kSpecifiedLogicalKey[] = "specifiedLogicalKey";
 static constexpr char kUnicodeScalarValuesKey[] = "unicodeScalarValues";
 
 static constexpr char kGtkToolkit[] = "gtk";
@@ -101,6 +102,8 @@ struct _FlKeyChannelResponder {
   FlBasicMessageChannel* channel;
 
   FlKeyChannelResponderMock* mock;
+
+  const flutter::GroupLayouts* group_layouts;
 };
 
 static void fl_key_channel_responder_iface_init(FlKeyResponderInterface* iface);
@@ -197,6 +200,8 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
   self->channel = fl_basic_message_channel_new(messenger, channel_name,
                                                FL_MESSAGE_CODEC(codec));
 
+  self->group_layouts = group_layouts;
+
   return self;
 }
 
@@ -272,6 +277,13 @@ static void fl_key_channel_responder_handle_event(
   if (unicode_scarlar_values != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
                              fl_value_new_int(unicode_scarlar_values));
+  }
+
+  uint64_t specified_logical_key =
+      flutter::get_logical_key_from_layout(event, self->group_layouts);
+  if (specified_logical_key != 0) {
+    fl_value_set_string_take(message, kSpecifiedLogicalKey,
+                             fl_value_new_int(specified_logical_key));
   }
 
   FlKeyChannelUserData* data =

@@ -194,6 +194,8 @@ struct _FlKeyEmbedderResponder {
   // It is a map from primary physical keys to lock bits.  Both keys and values
   // are directly stored uint64s.  This table is freed by the responder.
   GHashTable* logical_key_to_lock_bit;
+
+  const flutter::GroupLayouts* group_layouts;
 };
 
 static void fl_key_embedder_responder_iface_init(
@@ -285,6 +287,7 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(
                        initialize_logical_key_to_lock_bit_loop_body,
                        self->logical_key_to_lock_bit);
 
+  self->group_layouts = group_layouts;
   return self;
 }
 
@@ -302,8 +305,14 @@ static uint64_t event_to_physical_key(const FlKeyEvent* event) {
   return apply_id_plane(event->keycode, kGtkPlane);
 }
 
-static uint64_t event_to_logical_key(const FlKeyEvent* event) {
+static uint64_t event_to_logical_key(FlKeyEmbedderResponder* self, const FlKeyEvent* event) {
   guint keyval = event->keyval;
+
+  uint64_t result_from_layout = flutter::get_logical_key_from_layout(event, self->group_layouts);
+  if (result_from_layout != 0) {
+    return result_from_layout;
+  }
+
   auto found = gtk_keyval_to_logical_key_map.find(keyval);
   if (found != gtk_keyval_to_logical_key_map.end()) {
     return found->second;
@@ -707,7 +716,7 @@ static void fl_key_embedder_responder_handle_event_impl(
   g_return_if_fail(callback != nullptr);
 
   const uint64_t physical_key = event_to_physical_key(event);
-  const uint64_t logical_key = event_to_logical_key(event);
+  const uint64_t logical_key = event_to_logical_key(self, event);
   const double timestamp = event_to_timestamp(event);
   const bool is_down_event = event->is_press;
 

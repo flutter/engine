@@ -74,63 +74,79 @@ void debug_format_layout_data(std::string& debug_layout_data,
   debug_layout_data.append(buffer);
 }
 
-typedef std::vector<uint16_t> PrintLayoutRowKeys;
-typedef std::pair<int, PrintLayoutRowKeys> PrintLayoutRow;
-void debug_print_layout_result(const flutter::GroupLayout& layout) {
-  std::vector<uint16_t> row1 = {
-      // `    1     2     3     4     5     6
-      0x31, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-      // 7    8     9     0     -     =
-      0x10, 0x11, 0x12, 0x13, 0x14, 0x15};
-  std::vector<uint16_t> row2 = {
-      // Q    W     E     R     T     Y     U
-      0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e,
-      // I    O     P     [     ]    '\'
-      0x1f, 0x20, 0x21, 0x22, 0x23, 0x33};
-  std::vector<uint16_t> row3 = {
-      // A    S     D     F     G     H     J     K     L     ;     '
-      0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30};
-  std::vector<uint16_t> row4 = {
-      // ⍉    Z     X     C     V     B     N     M     ,     .     /
-      0x5e, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d,
-  };
-  constexpr const char* kIntlBackslashChar = "⍉";
-  constexpr const char* kNotMappedChar = "◌";
-  constexpr uint64_t kLogicalIntlBackslash = 0x200000020;
+// typedef std::vector<uint16_t> PrintLayoutRowKeys;
+// typedef std::pair<int, PrintLayoutRowKeys> PrintLayoutRow;
+// void debug_print_layout_result(const flutter::GroupLayout& layout) {
+//   std::vector<uint16_t> row1 = {
+//       // `    1     2     3     4     5     6
+//       0x31, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+//       // 7    8     9     0     -     =
+//       0x10, 0x11, 0x12, 0x13, 0x14, 0x15};
+//   std::vector<uint16_t> row2 = {
+//       // Q    W     E     R     T     Y     U
+//       0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e,
+//       // I    O     P     [     ]    '\'
+//       0x1f, 0x20, 0x21, 0x22, 0x23, 0x33};
+//   std::vector<uint16_t> row3 = {
+//       // A    S     D     F     G     H     J     K     L     ;     '
+//       0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30};
+//   std::vector<uint16_t> row4 = {
+//       // ⍉    Z     X     C     V     B     N     M     ,     .     /
+//       0x5e, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d,
+//   };
+//   constexpr const char* kIntlBackslashChar = "⍉";
+//   constexpr const char* kNotMappedChar = "◌";
+//   constexpr uint64_t kLogicalIntlBackslash = 0x200000020;
 
-  std::vector<PrintLayoutRow> rows = {
-      std::make_pair(0, row1),
-      std::make_pair(3, row2),
-      std::make_pair(4, row3),
-      std::make_pair(3, row4),
-  };
-  for (auto row : rows) {
-    for (int space_count = 0; space_count < row.first; space_count += 1) {
-      printf("  ");
-    }
-    for (uint16_t keycode : row.second) {
-      uint64_t mapped = layout[keycode];
-      switch (mapped) {
-        case 0:
-          printf("[%s] ", kNotMappedChar);
-          break;
-        case kLogicalIntlBackslash:
-          printf("[%s] ", kIntlBackslashChar);
-          break;
-        default:
-          if (mapped < 256) {
-            printf("[%c] ", static_cast<char>(mapped));
-          } else {
-            printf("0x%lx ", mapped);
-          }
-      }
-    }
-    printf("\n");
-  }
-}
+//   std::vector<PrintLayoutRow> rows = {
+//       std::make_pair(0, row1),
+//       std::make_pair(3, row2),
+//       std::make_pair(4, row3),
+//       std::make_pair(3, row4),
+//   };
+//   for (auto row : rows) {
+//     for (int space_count = 0; space_count < row.first; space_count += 1) {
+//       printf("  ");
+//     }
+//     for (uint16_t keycode : row.second) {
+//       uint64_t mapped = layout[keycode];
+//       switch (mapped) {
+//         case 0:
+//           printf("[%s] ", kNotMappedChar);
+//           break;
+//         case kLogicalIntlBackslash:
+//           printf("[%s] ", kIntlBackslashChar);
+//           break;
+//         default:
+//           if (mapped < 256) {
+//             printf("[%c] ", static_cast<char>(mapped));
+//           } else {
+//             printf("0x%lx ", mapped);
+//           }
+//       }
+//     }
+//     printf("\n");
+//   }
+// }
 #endif
 
 }  // namespace
+
+uint64_t flutter::get_logical_key_from_layout(const FlKeyEvent* event, const GroupLayouts* group_layouts) {
+  guint8 group = event->group;
+  guint16 keycode = event->keycode;
+  if (keycode >= kLayoutSize) {
+    return 0;
+  }
+
+  if (group_layouts != nullptr) {
+    auto found_group_layout = group_layouts->find(group);
+    if (found_group_layout != group_layouts->end()) {
+      return found_group_layout->second[keycode];
+    }
+  }
+  return 0;
+}
 
 /* Define FlKeyboardPendingEvent */
 
@@ -471,9 +487,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   }
 
   printf("Building layout for %d\n", group);fflush(stdout);
-  GroupLayout layout = new uint64_t[kLayoutSize];
-  memset(layout, 0, sizeof(uint64_t) * kLayoutSize);
-  self->group_layouts[group] = layout;
+  GroupLayout& layout = self->group_layouts[group];
   // printf("1\n");fflush(stdout);
 
   // Derive key mapping for each key code based on their layout clues.
@@ -483,7 +497,17 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   // printf("2\n");fflush(stdout);
 #ifdef DEBUG_PRINT_LAYOUT
   std::string debug_layout_data;
+  for (uint16_t keycode = 0; keycode < 128; keycode += 1) {
+    std::vector<uint16_t> this_key_clues = {
+        convert_key_to_char(self->view_delegate, keycode, group, 0),
+        convert_key_to_char(self->view_delegate, keycode, group, 1),  // Shift
+    };
+    debug_format_layout_data(debug_layout_data, keycode, this_key_clues[0],
+                             this_key_clues[1]);
+  }
+  printf("%s", debug_layout_data.c_str());
 #endif
+
   for (const LayoutGoal& keycode_goal : layout_goals) {
     uint16_t keycode = keycode_goal.keycode;
     std::vector<uint16_t> this_key_clues = {
@@ -491,10 +515,6 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
         convert_key_to_char(self->view_delegate, keycode, group, 1),  // Shift
     };
     printf("Keycode 0x%x clues 0x%x 0x%x\n", keycode, this_key_clues[0], this_key_clues[1]);fflush(stdout);
-#ifdef DEBUG_PRINT_LAYOUT
-    debug_format_layout_data(debug_layout_data, keycode, this_key_clues[0],
-                             this_key_clues[1]);
-#endif
     // The logical key should be the first available clue from below:
     //
     //  - Mandatory goal, if it matches any clue. This ensures that all alnum
@@ -527,9 +547,6 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
     // printf("E\n");fflush(stdout);
   }
   // printf("3\n");fflush(stdout);
-#ifdef DEBUG_PRINT_LAYOUT
-  printf("%s", debug_layout_data.c_str());
-#endif
 
   // printf("4\n");fflush(stdout);
   // Ensure all mandatory goals are assigned.
@@ -543,7 +560,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
     printf("k 0x%zx L 0x%lx\n", i, layout[i]);fflush(stdout);
   }
 
-  debug_print_layout_result(layout);
+  // debug_print_layout_result(layout);
 }
 
 FlKeyboardManager* fl_keyboard_manager_new(
