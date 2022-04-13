@@ -773,15 +773,26 @@ TEST(RasterizerTest, drawWithFrameDamageIsEmpty) {
     cur_root_layer.get()->Add(cur_child);
     layer_tree->set_root_layer(cur_root_layer);
 
-    std::unique_ptr<FrameDamage> damage = std::make_unique<FrameDamage>();
-    damage->SetPreviousLayerTree(last_layer_tree.get());
-    damage->AddAdditonalDamage(SkIRect());
-    RasterStatus raster_status =
+    // Draw Last Frame
+    std::unique_ptr<FrameDamage> last_damage = std::make_unique<FrameDamage>();
+    RasterStatus last_raster_status =
+        compositor_frame->Raster(*last_layer_tree.get(),  // layer tree
+                                 false,                   // ignore raster cache
+                                 last_damage.get()        // frame damage
+        );
+    EXPECT_EQ(last_raster_status, RasterStatus::kSuccess);
+
+    // Draw Current Frame
+    std::unique_ptr<FrameDamage> cur_damage = std::make_unique<FrameDamage>();
+    cur_damage->SetPreviousLayerTree(last_layer_tree.get());
+    cur_damage->AddAdditonalDamage(SkIRect());
+    ;
+    RasterStatus cur_raster_status =
         compositor_frame->Raster(*layer_tree.get(),  // layer tree
                                  false,              // ignore raster cache
-                                 damage.get()        // frame damage
+                                 cur_damage.get()    // frame damage
         );
-    EXPECT_EQ(raster_status, RasterStatus::kDiscarded);
+    EXPECT_EQ(cur_raster_status, RasterStatus::kDiscarded);
     latch.Signal();
   });
   latch.Wait();
@@ -830,14 +841,24 @@ TEST(RasterizerTest, drawWithFrameDamageIsNotEmpty) {
     cur_root_layer.get()->Add(cur_child);
     layer_tree->set_root_layer(cur_root_layer);
 
-    std::unique_ptr<FrameDamage> damage = std::make_unique<FrameDamage>();
-    damage->SetPreviousLayerTree(last_layer_tree.get());
-    RasterStatus raster_status =
+    // Draw Last Frame
+    std::unique_ptr<FrameDamage> last_damage = std::make_unique<FrameDamage>();
+    RasterStatus last_raster_status =
+        compositor_frame->Raster(*last_layer_tree.get(),  // layer tree
+                                 false,                   // ignore raster cache
+                                 last_damage.get()        // frame damage
+        );
+    EXPECT_EQ(last_raster_status, RasterStatus::kSuccess);
+
+    // Draw Current Frame
+    std::unique_ptr<FrameDamage> cur_damage = std::make_unique<FrameDamage>();
+    cur_damage->SetPreviousLayerTree(last_layer_tree.get());
+    RasterStatus cur_raster_status =
         compositor_frame->Raster(*layer_tree.get(),  // layer tree
                                  false,              // ignore raster cache
-                                 damage.get()        // frame damage
+                                 cur_damage.get()    // frame damage
         );
-    EXPECT_EQ(raster_status, RasterStatus::kSuccess);
+    EXPECT_EQ(cur_raster_status, RasterStatus::kSuccess);
     latch.Signal();
   });
   latch.Wait();
