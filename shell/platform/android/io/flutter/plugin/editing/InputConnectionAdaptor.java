@@ -483,15 +483,19 @@ class InputConnectionAdaptor extends BaseInputConnection
   }
 
   @Override
+  @TargetApi(25)
+  @RequiresApi(25)
   public boolean commitContent(InputContentInfo inputContentInfo, int flags, Bundle opts) {
     // Ensure permission is granted.
-    if (BuildCompat.isAtLeastNMR1()
+    if (Build.VERSION.SDK_INT >= 25
         && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
       try {
         inputContentInfo.requestPermission();
       } catch (Exception e) {
         return false;
       }
+    } else {
+      return false;
     }
 
     if (inputContentInfo.getDescription().getMimeTypeCount() > 0) {

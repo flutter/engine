@@ -1357,8 +1357,8 @@ public class TextInputPluginTest {
             null,
             null,
             autofill,
-            new TextInputChannel.Configuration[] {config},
-            null));
+            null,
+            new TextInputChannel.Configuration[] {config}));
 
     final ViewStructure viewStructure = mock(ViewStructure.class);
     final ViewStructure[] children = {mock(ViewStructure.class), mock(ViewStructure.class)};
@@ -1520,8 +1520,8 @@ public class TextInputPluginTest {
             null,
             null,
             autofill1,
-            new TextInputChannel.Configuration[] {config1, config2},
-            null));
+            null,
+            new TextInputChannel.Configuration[] {config1, config2}));
 
     final ViewStructure viewStructure = mock(ViewStructure.class);
     final ViewStructure[] children = {mock(ViewStructure.class), mock(ViewStructure.class)};
@@ -1666,8 +1666,8 @@ public class TextInputPluginTest {
             null,
             null,
             autofill1,
-            new TextInputChannel.Configuration[] {config1, config2},
-            null);
+            null,
+            new TextInputChannel.Configuration[] {config1, config2});
 
     textInputPlugin.setTextInputClient(0, autofillConfiguration);
 
@@ -1799,8 +1799,8 @@ public class TextInputPluginTest {
             null,
             null,
             autofill1,
-            new TextInputChannel.Configuration[] {config1, config2},
-            null);
+            null,
+            new TextInputChannel.Configuration[] {config1, config2});
 
     textInputPlugin.setTextInputClient(0, autofillConfiguration);
     textInputPlugin.setTextInputEditingState(
@@ -1897,8 +1897,8 @@ public class TextInputPluginTest {
             null,
             null,
             autofill1,
-            new TextInputChannel.Configuration[] {config1, config2},
-            null);
+            null,
+            new TextInputChannel.Configuration[] {config1, config2});
 
     textInputPlugin.setTextInputClient(0, autofillConfiguration);
 
