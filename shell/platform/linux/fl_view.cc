@@ -276,13 +276,15 @@ static void fl_view_keyboard_delegate_iface_init(
     fl_key_event_dispose(event);
   };
 
-  iface->subscribe_to_layout_change = [](FlKeyboardViewDelegate* view_delegate, KeyboardLayoutNotifier notifier) {
+  iface->subscribe_to_layout_change = [](FlKeyboardViewDelegate* view_delegate,
+                                         KeyboardLayoutNotifier notifier) {
     FlView* self = FL_VIEW(view_delegate);
     printf("%% Subscribing\n");
     self->keyboard_layout_notifier = std::move(notifier);
   };
 
-  iface->lookup_key = [](FlKeyboardViewDelegate* view_delegate, const GdkKeymapKey* key) -> guint {
+  iface->lookup_key = [](FlKeyboardViewDelegate* view_delegate,
+                         const GdkKeymapKey* key) -> guint {
     FlView* self = FL_VIEW(view_delegate);
     return gdk_keymap_lookup_key(self->keymap, key);
   };

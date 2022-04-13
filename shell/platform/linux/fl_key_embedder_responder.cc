@@ -305,10 +305,12 @@ static uint64_t event_to_physical_key(const FlKeyEvent* event) {
   return apply_id_plane(event->keycode, kGtkPlane);
 }
 
-static uint64_t event_to_logical_key(FlKeyEmbedderResponder* self, const FlKeyEvent* event) {
+static uint64_t event_to_logical_key(FlKeyEmbedderResponder* self,
+                                     const FlKeyEvent* event) {
   guint keyval = event->keyval;
 
-  uint64_t result_from_layout = flutter::get_logical_key_from_layout(event, self->group_layouts);
+  uint64_t result_from_layout =
+      flutter::get_logical_key_from_layout(event, self->group_layouts);
   if (result_from_layout != 0) {
     return result_from_layout;
   }

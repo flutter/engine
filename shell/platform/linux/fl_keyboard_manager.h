@@ -6,8 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 
 #include <gdk/gdk.h>
-#include <functional>
 #include <array>
+#include <functional>
 #include <map>
 
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
@@ -20,9 +20,10 @@ typedef std::array<uint64_t, kLayoutSize> GroupLayout;
 
 typedef std::map<guint8, GroupLayout> GroupLayouts;
 
-uint64_t get_logical_key_from_layout(const FlKeyEvent* event, const GroupLayouts* layout);
+uint64_t get_logical_key_from_layout(const FlKeyEvent* event,
+                                     const GroupLayouts* layout);
 
-} // namespace flutter
+}  // namespace flutter
 
 G_BEGIN_DECLS
 

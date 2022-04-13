@@ -49,9 +49,11 @@ struct _FlKeyboardViewDelegateInterface {
   void (*redispatch_event)(FlKeyboardViewDelegate* delegate,
                            std::unique_ptr<FlKeyEvent> event);
 
-  void (*subscribe_to_layout_change)(FlKeyboardViewDelegate* delegate, KeyboardLayoutNotifier notifier);
+  void (*subscribe_to_layout_change)(FlKeyboardViewDelegate* delegate,
+                                     KeyboardLayoutNotifier notifier);
 
-  guint (*lookup_key)(FlKeyboardViewDelegate* view_delegate, const GdkKeymapKey* key);
+  guint (*lookup_key)(FlKeyboardViewDelegate* view_delegate,
+                      const GdkKeymapKey* key);
 };
 
 /**
@@ -107,9 +109,12 @@ void fl_keyboard_view_delegate_redispatch_event(
     FlKeyboardViewDelegate* delegate,
     std::unique_ptr<FlKeyEvent> event);
 
-void fl_keyboard_view_delegate_subscribe_to_layout_change(FlKeyboardViewDelegate* delegate,KeyboardLayoutNotifier notifier);
+void fl_keyboard_view_delegate_subscribe_to_layout_change(
+    FlKeyboardViewDelegate* delegate,
+    KeyboardLayoutNotifier notifier);
 
-guint fl_keyboard_view_delegate_lookup_key(FlKeyboardViewDelegate* delegate, const GdkKeymapKey* key);
+guint fl_keyboard_view_delegate_lookup_key(FlKeyboardViewDelegate* delegate,
+                                           const GdkKeymapKey* key);
 
 G_END_DECLS
 
