@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.editing;
 
+import android.annotation.TargetApi;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -25,6 +26,7 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
+import androidx.annotation.RequiresApi;
 import androidx.core.os.BuildCompat;
 import androidx.core.view.inputmethod.InputConnectionCompat;
 import io.flutter.Log;
