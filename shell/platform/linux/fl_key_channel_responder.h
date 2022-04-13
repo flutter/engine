@@ -64,6 +64,7 @@ G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
  */
 FlKeyChannelResponder* fl_key_channel_responder_new(
     FlBinaryMessenger* messenger,
+    const flutter::GroupLayouts* group_layouts = nullptr,
     FlKeyChannelResponderMock* mock = nullptr);
 
 G_END_DECLS

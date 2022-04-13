@@ -87,7 +87,7 @@ TEST(FlKeyChannelResponderTest, SendKeyEvent) {
       .channel_name = "test/echo",
   };
   g_autoptr(FlKeyResponder) responder =
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, nullptr, &mock));
 
   fl_key_responder_handle_event(
       responder,
@@ -126,7 +126,7 @@ void test_lock_event(guint key_code,
       .channel_name = "test/echo",
   };
   g_autoptr(FlKeyResponder) responder =
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, nullptr, &mock));
 
   fl_key_responder_handle_event(
       responder,
@@ -188,7 +188,7 @@ TEST(FlKeyChannelResponderTest, TestKeyEventHandledByFramework) {
       .channel_name = "test/echo",
   };
   g_autoptr(FlKeyResponder) responder =
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, nullptr, &mock));
 
   fl_key_responder_handle_event(
       responder,

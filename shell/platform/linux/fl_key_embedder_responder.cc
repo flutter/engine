@@ -259,7 +259,8 @@ static void initialize_logical_key_to_lock_bit_loop_body(gpointer lock_bit,
 
 // Creates a new FlKeyEmbedderResponder instance.
 FlKeyEmbedderResponder* fl_key_embedder_responder_new(
-    EmbedderSendKeyEvent send_key_event) {
+    EmbedderSendKeyEvent send_key_event,
+    const flutter::GroupLayouts* group_layouts) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(
       g_object_new(FL_TYPE_EMBEDDER_RESPONDER_USER_DATA, nullptr));
 

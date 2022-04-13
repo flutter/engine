@@ -183,6 +183,7 @@ static void fl_key_channel_responder_init(FlKeyChannelResponder* self) {}
 // optional channel name to use when sending messages.
 FlKeyChannelResponder* fl_key_channel_responder_new(
     FlBinaryMessenger* messenger,
+    const flutter::GroupLayouts* group_layouts,
     FlKeyChannelResponderMock* mock) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 

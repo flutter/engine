@@ -7,8 +7,20 @@
 
 #include <gdk/gdk.h>
 #include <functional>
+#include <map>
 
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
+
+namespace flutter {
+
+constexpr size_t kLayoutSize = 128;
+// Map from keycode to logical key.
+// typedef std::array<uint64_t, kLayoutSize> GroupLayout;
+typedef uint64_t* GroupLayout;
+
+typedef std::map<guint8, GroupLayout> GroupLayouts;
+
+} // namespace flutter
 
 G_BEGIN_DECLS
 
