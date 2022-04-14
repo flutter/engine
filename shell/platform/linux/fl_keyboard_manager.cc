@@ -39,11 +39,19 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManagerUserData,
 
 namespace {
 
+// The maxiumum keycode in a derived layout.
+//
+// Although X supports higher keycode, Flutter only cares about standard keys,
+// which are below this.
 constexpr size_t kLayoutSize = 128;
-// Map from keycode to logical key.
-typedef std::array<uint64_t, kLayoutSize> KeyboardGroupLayout;
-
-typedef std::map<guint8, KeyboardGroupLayout> KeyboardLayout;
+// Describes the derived layout of a keyboard group.
+//
+// Maps from keycode to logical key. Value being 0 stands for empty.
+typedef std::array<uint64_t, kLayoutSize> DerivedGroupLayout;
+// Describes the derived layout of the entire keyboard.
+//
+// Maps from group ID to group layout.
+typedef std::map<guint8, DerivedGroupLayout> DerivedLayout;
 
 // Context variables for the foreach call used to dispatch events to responders.
 typedef struct {
@@ -82,18 +90,16 @@ void debug_format_layout_data(std::string& debug_layout_data,
 
 static uint64_t get_logical_key_from_layout(
     const FlKeyEvent* event,
-    const KeyboardLayout* group_layouts) {
+    const DerivedLayout& layout) {
   guint8 group = event->group;
   guint16 keycode = event->keycode;
   if (keycode >= kLayoutSize) {
     return 0;
   }
 
-  if (group_layouts != nullptr) {
-    auto found_group_layout = group_layouts->find(group);
-    if (found_group_layout != group_layouts->end()) {
-      return found_group_layout->second[keycode];
-    }
+  auto found_group_layout = layout.find(group);
+  if (found_group_layout != layout.end()) {
+    return found_group_layout->second[keycode];
   }
   return 0;
 }
@@ -266,10 +272,20 @@ struct _FlKeyboardManager {
   // The last sequence ID used. Increased by 1 by every use.
   uint64_t last_sequence_id;
 
-  KeyboardLayout group_layouts;
-  std::map<uint16_t, const LayoutGoal*> keycode_to_goals;
-  std::map<uint64_t, const LayoutGoal*> logical_to_mandatory_goals;
-  std::set<uint16_t> goal_keycodes;
+  // Record the derived layout.
+  //
+  // It is cleared when the platform reports a layout switch. Each entry,
+  // which corresponds to a group, is only initialized on the arrival of the
+  // first event for that group that has a key-of-interest.
+  std::unique_ptr<DerivedLayout> derived_layout;
+  // A static map from keycodes to all layout goals.
+  //
+  // It is set up when the manager is initialized and is not changed ever after.
+  std::unique_ptr<std::map<uint16_t, const LayoutGoal*>> keycode_to_goals;
+  // A static map from logical keys to all mandatory layout goals.
+  //
+  // It is set up when the manager is initialized and is not changed ever after.
+  std::unique_ptr<std::map<uint64_t, const LayoutGoal*>> logical_to_mandatory_goals;
 };
 
 G_DEFINE_TYPE(FlKeyboardManager, fl_keyboard_manager, G_TYPE_OBJECT);
@@ -281,17 +297,15 @@ static void fl_keyboard_manager_class_init(FlKeyboardManagerClass* klass) {
 }
 
 static void fl_keyboard_manager_init(FlKeyboardManager* self) {
-  self->group_layouts = std::map<guint8, KeyboardGroupLayout>();
+  self->derived_layout = std::make_unique<DerivedLayout>();
 
-  self->keycode_to_goals = std::map<uint16_t, const LayoutGoal*>();
-  self->logical_to_mandatory_goals = std::map<uint64_t, const LayoutGoal*>();
-  self->goal_keycodes = std::set<uint16_t>();
+  self->keycode_to_goals = std::make_unique<std::map<uint16_t, const LayoutGoal*>>();
+  self->logical_to_mandatory_goals = std::make_unique<std::map<uint64_t, const LayoutGoal*>>();
   for (const LayoutGoal& goal : layout_goals) {
-    self->keycode_to_goals[goal.keycode] = &goal;
+    (*self->keycode_to_goals)[goal.keycode] = &goal;
     if (goal.mandatory) {
-      self->logical_to_mandatory_goals[goal.logical_key] = &goal;
+      (*self->logical_to_mandatory_goals)[goal.logical_key] = &goal;
     }
-    self->goal_keycodes.insert(goal.keycode);
   }
 
   self->responder_list = g_ptr_array_new_with_free_func(g_object_unref);
@@ -313,6 +327,10 @@ static void fl_keyboard_manager_dispose(GObject* object) {
         reinterpret_cast<gpointer*>(&(self->view_delegate)));
     self->view_delegate = nullptr;
   }
+
+  self->derived_layout.reset();
+  self->keycode_to_goals.reset();
+  self->logical_to_mandatory_goals.reset();
 
   g_ptr_array_free(self->responder_list, TRUE);
   g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
@@ -437,19 +455,20 @@ static uint16_t convert_key_to_char(FlKeyboardViewDelegate* view_delegate,
 static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   guint8 group = event->group;
   // If the current group has been built, don't need to build layout.
-  if (self->group_layouts.find(group) != self->group_layouts.end()) {
+  if (self->derived_layout->find(group) != self->derived_layout->end()) {
     return;
   }
   // If the target keycode is not a goal, don't need to build layout.
-  if (self->goal_keycodes.find(event->keycode) == self->goal_keycodes.end()) {
+  if (self->keycode_to_goals->find(event->keycode) == self->keycode_to_goals->end()) {
     return;
   }
 
-  KeyboardGroupLayout& layout = self->group_layouts[group];
+  DerivedGroupLayout& layout = (*self->derived_layout)[group];
 
-  // Derive key mapping for each key code based on their layout clues.
+  // Clone all mandatory goals. Each goal is removed from this cloned map when
+  // fulfilled, and the remaining ones will be assigned to a default position.
   std::map<uint64_t, const LayoutGoal*> remaining_mandatory_goals =
-      self->logical_to_mandatory_goals;
+      *self->logical_to_mandatory_goals;
 
 #ifdef DEBUG_PRINT_LAYOUT
   std::string debug_layout_data;
@@ -463,19 +482,25 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   }
 #endif
 
+  // It's important to only traverse layout goals instead of all keycodes.
+  // Some key codes outside of the standard keyboard also gives alpha-numeric
+  // letters, and will therefore take over mandatory goals from standard
+  // keyboard keys if they come first. Example: French keyboard digit 1
+  // (included in tests.)
   for (const LayoutGoal& keycode_goal : layout_goals) {
     uint16_t keycode = keycode_goal.keycode;
     std::vector<uint16_t> this_key_clues = {
         convert_key_to_char(self->view_delegate, keycode, group, 0),
         convert_key_to_char(self->view_delegate, keycode, group, 1),  // Shift
     };
+
     // The logical key should be the first available clue from below:
     //
     //  - Mandatory goal, if it matches any clue. This ensures that all alnum
     //    keys can be found somewhere.
     //  - US layout, if neither clue of the key is EASCII. This ensures that
     //    there are no non-latin logical keys.
-    //  - Derived on the fly from keyCode & characters.
+    //  - A value derived on the fly from keycode & keyval.
     for (uint16_t clue : this_key_clues) {
       auto matching_goal = remaining_mandatory_goals.find(clue);
       if (matching_goal != remaining_mandatory_goals.end()) {
@@ -490,8 +515,8 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
         is_eascii(this_key_clues[0]) || is_eascii(this_key_clues[1]);
     // See if any produced char meets the requirement as a logical key.
     if (layout[keycode] == 0 && !has_any_eascii) {
-      auto found_us_layout = self->keycode_to_goals.find(keycode);
-      if (found_us_layout != self->keycode_to_goals.end()) {
+      auto found_us_layout = self->keycode_to_goals->find(keycode);
+      if (found_us_layout != self->keycode_to_goals->end()) {
         layout[keycode] = found_us_layout->second->logical_key;
       }
     }
@@ -532,7 +557,7 @@ FlKeyboardManager* fl_keyboard_manager_new(
                       fl_keyboard_view_delegate_get_messenger(view_delegate))));
 
   fl_keyboard_view_delegate_subscribe_to_layout_change(
-      self->view_delegate, [self]() { self->group_layouts.clear(); });
+      self->view_delegate, [self]() { self->derived_layout->clear(); });
   return self;
 }
 
@@ -569,7 +594,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
       fl_keyboard_manager_user_data_new(self, pending->sequence_id);
   DispatchToResponderLoopContext data{
       .event = event,
-      .specified_logical_key = get_logical_key_from_layout(event, &self->group_layouts),
+      .specified_logical_key = get_logical_key_from_layout(event, *self->derived_layout),
       .user_data = user_data,
   };
   g_ptr_array_foreach(self->responder_list, dispatch_to_responder, &data);
