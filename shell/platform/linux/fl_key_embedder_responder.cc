@@ -304,7 +304,6 @@ static uint64_t event_to_physical_key(const FlKeyEvent* event) {
 
 static uint64_t event_to_logical_key(const FlKeyEvent* event) {
   guint keyval = event->keyval;
-
   auto found = gtk_keyval_to_logical_key_map.find(keyval);
   if (found != gtk_keyval_to_logical_key_map.end()) {
     return found->second;
