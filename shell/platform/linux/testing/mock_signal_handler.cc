@@ -9,7 +9,8 @@ namespace testing {
 
 SignalHandler::SignalHandler(gpointer instance,
                              const gchar* name,
-                             GCallback callback) {
+                             GCallback callback)
+    : instance_(instance) {
   id_ = g_signal_connect_data(instance, name, callback, this, nullptr,
                               G_CONNECT_SWAPPED);
   g_object_add_weak_pointer(G_OBJECT(instance), &instance_);
