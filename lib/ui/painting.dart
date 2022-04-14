@@ -3412,7 +3412,7 @@ class _DilateImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => hashValues(radiusX, radiusY);
+  int get hashCode => Object.hash(radiusX, radiusY);
 }
 
 class _ErodeImageFilter implements ImageFilter {

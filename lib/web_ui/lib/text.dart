@@ -200,7 +200,7 @@ class FontVariation {
   }
 
   @override
-  int get hashCode => hashValues(axis, value);
+  int get hashCode => Object.hash(axis, value);
 
   @override
   String toString() => "FontVariation('$axis', $value)";
