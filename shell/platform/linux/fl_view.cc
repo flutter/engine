@@ -454,8 +454,6 @@ static void fl_view_constructed(GObject* object) {
                    G_CALLBACK(enter_notify_event_cb), self);
   g_signal_connect(self->event_box, "leave-notify-event",
                    G_CALLBACK(leave_notify_event_cb), self);
-  g_signal_connect(self->event_box, "leave-notify-event",
-                   G_CALLBACK(leave_notify_event_cb), self);
   g_signal_connect(self->keymap, "keys-changed",
                    G_CALLBACK(keymap_keys_changed_cb), self);
 }
