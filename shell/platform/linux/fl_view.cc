@@ -279,7 +279,6 @@ static void fl_view_keyboard_delegate_iface_init(
   iface->subscribe_to_layout_change = [](FlKeyboardViewDelegate* view_delegate,
                                          KeyboardLayoutNotifier notifier) {
     FlView* self = FL_VIEW(view_delegate);
-    printf("%% Subscribing\n");
     self->keyboard_layout_notifier = std::move(notifier);
   };
 
