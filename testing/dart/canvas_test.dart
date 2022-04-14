@@ -356,5 +356,5 @@ void main() {
     final bool areEqual =
         await fuzzyGoldenImageCompare(image, 'dotted_path_effect_mixed_with_stroked_geometry.png');
     expect(areEqual, true);
-  });
+  }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
 }

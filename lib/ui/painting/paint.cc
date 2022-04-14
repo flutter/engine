@@ -293,6 +293,8 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   }
 
   if (flags.applies_path_effect()) {
+    // The paint API exposed to Dart does not support path effects.  But other
+    // operations such as text may set a path effect, which must be cleared.
     builder->setPathEffect(nullptr);
   }
 
