@@ -786,7 +786,6 @@ TEST(RasterizerTest, drawWithFrameDamageIsEmpty) {
     std::unique_ptr<FrameDamage> cur_damage = std::make_unique<FrameDamage>();
     cur_damage->SetPreviousLayerTree(last_layer_tree.get());
     cur_damage->AddAdditonalDamage(SkIRect());
-    ;
     RasterStatus cur_raster_status =
         compositor_frame->Raster(*layer_tree.get(),  // layer tree
                                  false,              // ignore raster cache
