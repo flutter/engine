@@ -4,11 +4,9 @@
 
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 
-#include <X11/Xutil.h>
 #include <array>
 #include <cinttypes>
 #include <memory>
-#include <set>
 #include <string>
 
 #include "flutter/shell/platform/linux/fl_key_channel_responder.h"
@@ -70,19 +68,22 @@ void debug_format_layout_data(std::string& debug_layout_data,
                               uint16_t keycode,
                               uint16_t clue1,
                               uint16_t clue2) {
-  constexpr int kBufferSize = 30;
+  if (keycode % 4 == 0) {
+    debug_layout_data.append("    ");
+  }
 
+  constexpr int kBufferSize = 30;
   char buffer[kBufferSize];
   buffer[0] = 0;
   buffer[kBufferSize - 1] = 0;
-  if (keycode % 4 == 0) {
-    snprintf(buffer, kBufferSize, "    /* 0x%02x */ ", keycode);
-  }
+
+  snprintf(buffer, kBufferSize, "0x%04x, 0x%04x, ", clue1, clue2);
   debug_layout_data.append(buffer);
 
-  snprintf(buffer, kBufferSize, "0x%04x, 0x%04x,%s", clue1, clue2,
-           (keycode % 4 == 3) ? "\n" : " ");
-  debug_layout_data.append(buffer);
+  if (keycode % 4 == 3) {
+    snprintf(buffer, kBufferSize, " // 0x%02x", keycode);
+    debug_layout_data.append(buffer);
+  }
 }
 #endif
 
@@ -275,7 +276,7 @@ struct _FlKeyboardManager {
   //
   // It is cleared when the platform reports a layout switch. Each entry,
   // which corresponds to a group, is only initialized on the arrival of the
-  // first event for that group that has a key-of-interest.
+  // first event for that group that has a goal keycode.
   std::unique_ptr<DerivedLayout> derived_layout;
   // A static map from keycodes to all layout goals.
   //
@@ -454,13 +455,13 @@ static uint16_t convert_key_to_char(FlKeyboardViewDelegate* view_delegate,
   return origin < kBmpMax ? origin : 0xFFFF;
 }
 
+// Make sure that Flutter has derived the layout for the group of the event,
+// if the event contains a goal keycode.
 static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   guint8 group = event->group;
-  // If the current group has been built, don't need to build layout.
   if (self->derived_layout->find(group) != self->derived_layout->end()) {
     return;
   }
-  // If the target keycode is not a goal, don't need to build layout.
   if (self->keycode_to_goals->find(event->keycode) ==
       self->keycode_to_goals->end()) {
     return;
@@ -488,8 +489,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
   // It's important to only traverse layout goals instead of all keycodes.
   // Some key codes outside of the standard keyboard also gives alpha-numeric
   // letters, and will therefore take over mandatory goals from standard
-  // keyboard keys if they come first. Example: French keyboard digit 1
-  // (included in tests.)
+  // keyboard keys if they come first. Example: French keyboard digit 1.
   for (const LayoutGoal& keycode_goal : layout_goals) {
     uint16_t keycode = keycode_goal.keycode;
     std::vector<uint16_t> this_key_clues = {
@@ -534,7 +534,6 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
 
 FlKeyboardManager* fl_keyboard_manager_new(
     FlKeyboardViewDelegate* view_delegate) {
-  // Some initialization is done in `fl_keyboard_manager_init`.
   g_return_val_if_fail(FL_IS_KEYBOARD_VIEW_DELEGATE(view_delegate), nullptr);
 
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(

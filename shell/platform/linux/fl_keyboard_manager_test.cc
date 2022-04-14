@@ -880,6 +880,8 @@ TEST(FlKeyboardManagerTest, CorrectLogicalKeyForLayouts) {
   VERIFY_DOWN(kLogicalBracketLeft, "[");
 }
 
+// The following layout data is generated using DEBUG_PRINT_LAYOUT.
+
 const MockGroupLayoutData kLayoutUs0{{
     // +0x0  Shift   +0x1    Shift   +0x2    Shift   +0x3    Shift
     0x0000, 0xffff, 0x0000, 0xffff, 0x0000, 0xffff, 0x0000, 0xffff,  // 0x00
