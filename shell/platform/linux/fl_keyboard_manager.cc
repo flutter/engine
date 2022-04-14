@@ -88,9 +88,8 @@ void debug_format_layout_data(std::string& debug_layout_data,
 
 }  // namespace
 
-static uint64_t get_logical_key_from_layout(
-    const FlKeyEvent* event,
-    const DerivedLayout& layout) {
+static uint64_t get_logical_key_from_layout(const FlKeyEvent* event,
+                                            const DerivedLayout& layout) {
   guint8 group = event->group;
   guint16 keycode = event->keycode;
   if (keycode >= kLayoutSize) {
@@ -285,7 +284,8 @@ struct _FlKeyboardManager {
   // A static map from logical keys to all mandatory layout goals.
   //
   // It is set up when the manager is initialized and is not changed ever after.
-  std::unique_ptr<std::map<uint64_t, const LayoutGoal*>> logical_to_mandatory_goals;
+  std::unique_ptr<std::map<uint64_t, const LayoutGoal*>>
+      logical_to_mandatory_goals;
 };
 
 G_DEFINE_TYPE(FlKeyboardManager, fl_keyboard_manager, G_TYPE_OBJECT);
@@ -299,8 +299,10 @@ static void fl_keyboard_manager_class_init(FlKeyboardManagerClass* klass) {
 static void fl_keyboard_manager_init(FlKeyboardManager* self) {
   self->derived_layout = std::make_unique<DerivedLayout>();
 
-  self->keycode_to_goals = std::make_unique<std::map<uint16_t, const LayoutGoal*>>();
-  self->logical_to_mandatory_goals = std::make_unique<std::map<uint64_t, const LayoutGoal*>>();
+  self->keycode_to_goals =
+      std::make_unique<std::map<uint16_t, const LayoutGoal*>>();
+  self->logical_to_mandatory_goals =
+      std::make_unique<std::map<uint64_t, const LayoutGoal*>>();
   for (const LayoutGoal& goal : layout_goals) {
     (*self->keycode_to_goals)[goal.keycode] = &goal;
     if (goal.mandatory) {
@@ -459,7 +461,8 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
     return;
   }
   // If the target keycode is not a goal, don't need to build layout.
-  if (self->keycode_to_goals->find(event->keycode) == self->keycode_to_goals->end()) {
+  if (self->keycode_to_goals->find(event->keycode) ==
+      self->keycode_to_goals->end()) {
     return;
   }
 
@@ -594,7 +597,8 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
       fl_keyboard_manager_user_data_new(self, pending->sequence_id);
   DispatchToResponderLoopContext data{
       .event = event,
-      .specified_logical_key = get_logical_key_from_layout(event, *self->derived_layout),
+      .specified_logical_key =
+          get_logical_key_from_layout(event, *self->derived_layout),
       .user_data = user_data,
   };
   g_ptr_array_foreach(self->responder_list, dispatch_to_responder, &data);
