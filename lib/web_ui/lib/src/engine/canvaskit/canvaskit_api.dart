@@ -55,13 +55,19 @@ external set debugH5vccSetter(H5vcc? value);
 
 @JS()
 @anonymous
-abstract class H5vcc {
+@staticInterop
+abstract class H5vcc {}
+
+extension H5vccExtension on H5vcc {
   external CanvasKit? get canvasKit;
 }
 
 @JS()
 @anonymous
-class CanvasKit {
+@staticInterop
+class CanvasKit {}
+
+extension CanvasKitExtension on CanvasKit {
   external SkBlendModeEnum get BlendMode;
   external SkPaintStyleEnum get PaintStyle;
   external SkStrokeCapEnum get StrokeCap;
@@ -191,6 +197,7 @@ extension CanvasKitInitPromiseExtension on CanvasKitInitPromise {
 external ColorSpace get SkColorSpaceSRGB;
 
 @JS()
+@staticInterop
 class ColorSpace {}
 
 @JS()
@@ -229,13 +236,19 @@ extension SkGrContextExtension on SkGrContext {
 
 @JS()
 @anonymous
-class SkFontSlantEnum {
+@staticInterop
+class SkFontSlantEnum {}
+
+extension SkFontSlantEnumExtension on SkFontSlantEnum {
   external SkFontSlant get Upright;
   external SkFontSlant get Italic;
 }
 
 @JS('window.flutterCanvasKit.FontSlant')
-class SkFontSlant {
+@staticInterop
+class SkFontSlant {}
+
+extension SkFontSlantExtension on SkFontSlant {
   external int get value;
 }
 
@@ -250,7 +263,10 @@ SkFontSlant toSkFontSlant(ui.FontStyle style) {
 
 @JS()
 @anonymous
-class SkFontWeightEnum {
+@staticInterop
+class SkFontWeightEnum {}
+
+extension SkFontWeightEnumExtension on SkFontWeightEnum {
   external SkFontWeight get Thin;
   external SkFontWeight get ExtraLight;
   external SkFontWeight get Light;
@@ -263,7 +279,10 @@ class SkFontWeightEnum {
 }
 
 @JS()
-class SkFontWeight {
+@staticInterop
+class SkFontWeight {}
+
+extension SkFontWeightExtension on SkFontWeight {
   external int get value;
 }
 
@@ -284,13 +303,19 @@ SkFontWeight toSkFontWeight(ui.FontWeight weight) {
 }
 
 @JS()
-class SkAffinityEnum {
+@staticInterop
+class SkAffinityEnum {}
+
+extension SkAffinityEnumExtension on SkAffinityEnum {
   external SkAffinity get Upstream;
   external SkAffinity get Downstream;
 }
 
 @JS()
-class SkAffinity {
+@staticInterop
+class SkAffinity {}
+
+extension SkAffinityExtension on SkAffinity {
   external int get value;
 }
 
@@ -304,13 +329,19 @@ SkAffinity toSkAffinity(ui.TextAffinity affinity) {
 }
 
 @JS()
-class SkTextDirectionEnum {
+@staticInterop
+class SkTextDirectionEnum {}
+
+extension SkTextDirectionEnumExtension on SkTextDirectionEnum {
   external SkTextDirection get RTL;
   external SkTextDirection get LTR;
 }
 
 @JS()
-class SkTextDirection {
+@staticInterop
+class SkTextDirection {}
+
+extension SkTextDirectionExtension on SkTextDirection {
   external int get value;
 }
 
@@ -326,7 +357,10 @@ SkTextDirection toSkTextDirection(ui.TextDirection direction) {
 }
 
 @JS()
-class SkTextAlignEnum {
+@staticInterop
+class SkTextAlignEnum {}
+
+extension SkTextAlignEnumExtension on SkTextAlignEnum {
   external SkTextAlign get Left;
   external SkTextAlign get Right;
   external SkTextAlign get Center;
@@ -336,7 +370,10 @@ class SkTextAlignEnum {
 }
 
 @JS()
-class SkTextAlign {
+@staticInterop
+class SkTextAlign {}
+
+extension SkTextAlignExtension on SkTextAlign {
   external int get value;
 }
 
@@ -354,7 +391,10 @@ SkTextAlign toSkTextAlign(ui.TextAlign align) {
 }
 
 @JS()
-class SkTextHeightBehaviorEnum {
+@staticInterop
+class SkTextHeightBehaviorEnum {}
+
+extension SkTextHeightBehaviorEnumExtension on SkTextHeightBehaviorEnum {
   external SkTextHeightBehavior get All;
   external SkTextHeightBehavior get DisableFirstAscent;
   external SkTextHeightBehavior get DisableLastDescent;
@@ -362,7 +402,10 @@ class SkTextHeightBehaviorEnum {
 }
 
 @JS()
-class SkTextHeightBehavior {
+@staticInterop
+class SkTextHeightBehavior {}
+
+extension SkTextHeightBehaviorExtension on SkTextHeightBehavior {
   external int get value;
 }
 
@@ -381,7 +424,10 @@ SkTextHeightBehavior toSkTextHeightBehavior(ui.TextHeightBehavior behavior) {
 }
 
 @JS()
-class SkRectHeightStyleEnum {
+@staticInterop
+class SkRectHeightStyleEnum {}
+
+extension SkRectHeightStyleEnumExtension on SkRectHeightStyleEnum {
   external SkRectHeightStyle get Tight;
   external SkRectHeightStyle get Max;
   external SkRectHeightStyle get IncludeLineSpacingMiddle;
@@ -391,7 +437,10 @@ class SkRectHeightStyleEnum {
 }
 
 @JS()
-class SkRectHeightStyle {
+@staticInterop
+class SkRectHeightStyle {}
+
+extension SkRectHeightStyleExtension on SkRectHeightStyle {
   external int get value;
 }
 
@@ -409,13 +458,19 @@ SkRectHeightStyle toSkRectHeightStyle(ui.BoxHeightStyle style) {
 }
 
 @JS()
-class SkRectWidthStyleEnum {
+@staticInterop
+class SkRectWidthStyleEnum {}
+
+extension SkRectWidthStyleEnumExtension on SkRectWidthStyleEnum {
   external SkRectWidthStyle get Tight;
   external SkRectWidthStyle get Max;
 }
 
 @JS()
-class SkRectWidthStyle {
+@staticInterop
+class SkRectWidthStyle {}
+
+extension SkRectWidthStyleExtension on SkRectWidthStyle {
   external int get value;
 }
 
@@ -430,14 +485,20 @@ SkRectWidthStyle toSkRectWidthStyle(ui.BoxWidthStyle style) {
 }
 
 @JS()
-class SkVertexModeEnum {
+@staticInterop
+class SkVertexModeEnum {}
+
+extension SkVertexModeEnumExtension on SkVertexModeEnum {
   external SkVertexMode get Triangles;
   external SkVertexMode get TrianglesStrip;
   external SkVertexMode get TriangleFan;
 }
 
 @JS()
-class SkVertexMode {
+@staticInterop
+class SkVertexMode {}
+
+extension SkVertexModeExtension on SkVertexMode {
   external int get value;
 }
 
@@ -452,14 +513,20 @@ SkVertexMode toSkVertexMode(ui.VertexMode mode) {
 }
 
 @JS()
-class SkPointModeEnum {
+@staticInterop
+class SkPointModeEnum {}
+
+extension SkPointModeEnumExtension on SkPointModeEnum {
   external SkPointMode get Points;
   external SkPointMode get Lines;
   external SkPointMode get Polygon;
 }
 
 @JS()
-class SkPointMode {
+@staticInterop
+class SkPointMode {}
+
+extension SkPointModeExtension on SkPointMode {
   external int get value;
 }
 
@@ -474,13 +541,19 @@ SkPointMode toSkPointMode(ui.PointMode mode) {
 }
 
 @JS()
-class SkClipOpEnum {
+@staticInterop
+class SkClipOpEnum {}
+
+extension SkClipOpEnumExtension on SkClipOpEnum {
   external SkClipOp get Difference;
   external SkClipOp get Intersect;
 }
 
 @JS()
-class SkClipOp {
+@staticInterop
+class SkClipOp {}
+
+extension SkClipOpExtension on SkClipOp {
   external int get value;
 }
 
@@ -494,13 +567,19 @@ SkClipOp toSkClipOp(ui.ClipOp clipOp) {
 }
 
 @JS()
-class SkFillTypeEnum {
+@staticInterop
+class SkFillTypeEnum {}
+
+extension SkFillTypeEnumExtension on SkFillTypeEnum {
   external SkFillType get Winding;
   external SkFillType get EvenOdd;
 }
 
 @JS()
-class SkFillType {
+@staticInterop
+class SkFillType {}
+
+extension SkFillTypeExtension on SkFillType {
   external int get value;
 }
 
@@ -514,7 +593,10 @@ SkFillType toSkFillType(ui.PathFillType fillType) {
 }
 
 @JS()
-class SkPathOpEnum {
+@staticInterop
+class SkPathOpEnum {}
+
+extension SkPathOpEnumExtension on SkPathOpEnum {
   external SkPathOp get Difference;
   external SkPathOp get Intersect;
   external SkPathOp get Union;
@@ -523,7 +605,10 @@ class SkPathOpEnum {
 }
 
 @JS()
-class SkPathOp {
+@staticInterop
+class SkPathOp {}
+
+extension SkPathOpExtension on SkPathOp {
   external int get value;
 }
 
@@ -540,7 +625,10 @@ SkPathOp toSkPathOp(ui.PathOperation pathOp) {
 }
 
 @JS()
-class SkBlurStyleEnum {
+@staticInterop
+class SkBlurStyleEnum {}
+
+extension SkBlurStyleEnumExtension on SkBlurStyleEnum {
   external SkBlurStyle get Normal;
   external SkBlurStyle get Solid;
   external SkBlurStyle get Outer;
@@ -548,7 +636,10 @@ class SkBlurStyleEnum {
 }
 
 @JS()
-class SkBlurStyle {
+@staticInterop
+class SkBlurStyle {}
+
+extension SkBlurStyleExtension on SkBlurStyle {
   external int get value;
 }
 
@@ -564,14 +655,20 @@ SkBlurStyle toSkBlurStyle(ui.BlurStyle style) {
 }
 
 @JS()
-class SkStrokeCapEnum {
+@staticInterop
+class SkStrokeCapEnum {}
+
+extension SkStrokeCapEnumExtension on SkStrokeCapEnum {
   external SkStrokeCap get Butt;
   external SkStrokeCap get Round;
   external SkStrokeCap get Square;
 }
 
 @JS()
-class SkStrokeCap {
+@staticInterop
+class SkStrokeCap {}
+
+extension SkStrokeCapExtension on SkStrokeCap {
   external int get value;
 }
 
@@ -586,13 +683,19 @@ SkStrokeCap toSkStrokeCap(ui.StrokeCap strokeCap) {
 }
 
 @JS()
-class SkPaintStyleEnum {
+@staticInterop
+class SkPaintStyleEnum {}
+
+extension SkPaintStyleEnumExtension on SkPaintStyleEnum {
   external SkPaintStyle get Stroke;
   external SkPaintStyle get Fill;
 }
 
 @JS()
-class SkPaintStyle {
+@staticInterop
+class SkPaintStyle {}
+
+extension SkPaintStyleExtension on SkPaintStyle {
   external int get value;
 }
 
@@ -606,7 +709,10 @@ SkPaintStyle toSkPaintStyle(ui.PaintingStyle paintStyle) {
 }
 
 @JS()
-class SkBlendModeEnum {
+@staticInterop
+class SkBlendModeEnum {}
+
+extension SkBlendModeEnumExtension on SkBlendModeEnum {
   external SkBlendMode get Clear;
   external SkBlendMode get Src;
   external SkBlendMode get Dst;
@@ -639,7 +745,10 @@ class SkBlendModeEnum {
 }
 
 @JS()
-class SkBlendMode {
+@staticInterop
+class SkBlendMode {}
+
+extension SkBlendModeExtension on SkBlendMode {
   external int get value;
 }
 
@@ -680,14 +789,20 @@ SkBlendMode toSkBlendMode(ui.BlendMode blendMode) {
 }
 
 @JS()
-class SkStrokeJoinEnum {
+@staticInterop
+class SkStrokeJoinEnum {}
+
+extension SkStrokeJoinEnumExtension on SkStrokeJoinEnum {
   external SkStrokeJoin get Miter;
   external SkStrokeJoin get Round;
   external SkStrokeJoin get Bevel;
 }
 
 @JS()
-class SkStrokeJoin {
+@staticInterop
+class SkStrokeJoin {}
+
+extension SkStrokeJoinExtension on SkStrokeJoin {
   external int get value;
 }
 
@@ -702,7 +817,10 @@ SkStrokeJoin toSkStrokeJoin(ui.StrokeJoin strokeJoin) {
 }
 
 @JS()
-class SkTileModeEnum {
+@staticInterop
+class SkTileModeEnum {}
+
+extension SkTileModeEnumExtension on SkTileModeEnum {
   external SkTileMode get Clamp;
   external SkTileMode get Repeat;
   external SkTileMode get Mirror;
@@ -710,7 +828,10 @@ class SkTileModeEnum {
 }
 
 @JS()
-class SkTileMode {
+@staticInterop
+class SkTileMode {}
+
+extension SkTileModeExtension on SkTileMode {
   external int get value;
 }
 
@@ -726,13 +847,19 @@ SkTileMode toSkTileMode(ui.TileMode mode) {
 }
 
 @JS()
-class SkFilterModeEnum {
+@staticInterop
+class SkFilterModeEnum {}
+
+extension SkFilterModeEnumExtension on SkFilterModeEnum {
   external SkFilterMode get Nearest;
   external SkFilterMode get Linear;
 }
 
 @JS()
-class SkFilterMode {
+@staticInterop
+class SkFilterMode {}
+
+extension SkFilterModeExtension on SkFilterMode {
   external int get value;
 }
 
@@ -743,14 +870,20 @@ SkFilterMode toSkFilterMode(ui.FilterQuality filterQuality) {
 }
 
 @JS()
-class SkMipmapModeEnum {
+@staticInterop
+class SkMipmapModeEnum {}
+
+extension SkMipmapModeEnumExtension on SkMipmapModeEnum {
   external SkMipmapMode get None;
   external SkMipmapMode get Nearest;
   external SkMipmapMode get Linear;
 }
 
 @JS()
-class SkMipmapMode {
+@staticInterop
+class SkMipmapMode {}
+
+extension SkMipmapModeExtension on SkMipmapMode {
   external int get value;
 }
 
@@ -761,19 +894,28 @@ SkMipmapMode toSkMipmapMode(ui.FilterQuality filterQuality) {
 }
 
 @JS()
-class SkAlphaTypeEnum {
+@staticInterop
+class SkAlphaTypeEnum {}
+
+extension SkAlphaTypeEnumExtension on SkAlphaTypeEnum {
   external SkAlphaType get Opaque;
   external SkAlphaType get Premul;
   external SkAlphaType get Unpremul;
 }
 
 @JS()
-class SkAlphaType {
+@staticInterop
+class SkAlphaType {}
+
+extension SkAlphaTypeExtension on SkAlphaType {
   external int get value;
 }
 
 @JS()
-class SkColorTypeEnum {
+@staticInterop
+class SkColorTypeEnum {}
+
+extension SkColorTypeEnumExtension on SkColorTypeEnum {
   external SkColorType get Alpha_8;
   external SkColorType get RGB_565;
   external SkColorType get ARGB_4444;
@@ -788,13 +930,19 @@ class SkColorTypeEnum {
 }
 
 @JS()
-class SkColorType {
+@staticInterop
+class SkColorType {}
+
+extension SkColorTypeExtension on SkColorType {
   external int get value;
 }
 
 @JS()
 @anonymous
-class SkAnimatedImage {
+@staticInterop
+class SkAnimatedImage {}
+
+extension SkAnimatedImageExtension on SkAnimatedImage {
   external int getFrameCount();
 
   external int getRepetitionCount();
@@ -818,7 +966,10 @@ class SkAnimatedImage {
 
 @JS()
 @anonymous
-class SkImage {
+@staticInterop
+class SkImage {}
+
+extension SkImageExtension on SkImage {
   external void delete();
   external int width();
   external int height();
@@ -843,7 +994,10 @@ class SkImage {
 }
 
 @JS()
-class SkShaderNamespace {
+@staticInterop
+class SkShaderNamespace {}
+
+extension SkShaderNamespaceExtension on SkShaderNamespace {
   external SkShader MakeLinearGradient(
     Float32List from, // 2-element array
     Float32List to, // 2-element array
@@ -890,12 +1044,18 @@ class SkShaderNamespace {
 
 @JS()
 @anonymous
-class SkShader {
+@staticInterop
+class SkShader {}
+
+extension SkShaderExtension on SkShader {
   external void delete();
 }
 
 @JS()
-class SkMaskFilterNamespace {
+@staticInterop
+class SkMaskFilterNamespace {}
+
+extension SkMaskFilterNamespaceExtension on SkMaskFilterNamespace {
   // Creates a blur MaskFilter.
   //
   // Returns `null` if [sigma] is 0 or infinite.
@@ -908,8 +1068,12 @@ class SkMaskFilterNamespace {
 //
 //     external SkPaint SkPaint();
 @JS('window.flutterCanvasKit.Paint')
+@staticInterop
 class SkPaint {
-  external SkPaint();
+  external factory SkPaint();
+}
+
+extension SkPaintExtension on SkPaint {
   external void setBlendMode(SkBlendMode blendMode);
   external void setStyle(SkPaintStyle paintStyle);
   external void setStrokeWidth(double width);
@@ -927,23 +1091,20 @@ class SkPaint {
 
 @JS()
 @anonymous
+@staticInterop
 abstract class CkFilterOptions {}
 
 @JS()
 @anonymous
+@staticInterop
 class _CkCubicFilterOptions extends CkFilterOptions {
-  external double get B;
-  external double get C;
-
   external factory _CkCubicFilterOptions({double B, double C});
 }
 
 @JS()
 @anonymous
+@staticInterop
 class _CkTransformFilterOptions extends CkFilterOptions {
-  external SkFilterMode get filter;
-  external SkMipmapMode get mipmap;
-
   external factory _CkTransformFilterOptions(
       {SkFilterMode filter, SkMipmapMode mipmap});
 }
@@ -974,12 +1135,18 @@ CkFilterOptions toSkFilterOptions(ui.FilterQuality filterQuality) {
 
 @JS()
 @anonymous
-class SkMaskFilter {
+@staticInterop
+class SkMaskFilter {}
+
+extension SkMaskFilterExtension on SkMaskFilter {
   external void delete();
 }
 
 @JS()
-class SkColorFilterNamespace {
+@staticInterop
+class SkColorFilterNamespace {}
+
+extension SkColorFilterNamespaceExtension on SkColorFilterNamespace {
   external SkColorFilter? MakeBlend(Float32List color, SkBlendMode blendMode);
   external SkColorFilter MakeMatrix(
     Float32List matrix, // 20-element matrix
@@ -991,12 +1158,18 @@ class SkColorFilterNamespace {
 
 @JS()
 @anonymous
-class SkColorFilter {
+@staticInterop
+class SkColorFilter {}
+
+extension SkColorFilterExtension on SkColorFilter {
   external void delete();
 }
 
 @JS()
-class SkImageFilterNamespace {
+@staticInterop
+class SkImageFilterNamespace {}
+
+extension SkImageFilterNamespaceExtension on SkImageFilterNamespace {
   external SkImageFilter MakeBlur(
     double sigmaX,
     double sigmaY,
@@ -1023,12 +1196,18 @@ class SkImageFilterNamespace {
 
 @JS()
 @anonymous
-class SkImageFilter {
+@staticInterop
+class SkImageFilter {}
+
+extension SkImageFilterExtension on SkImageFilter {
   external void delete();
 }
 
 @JS()
-class SkPathNamespace {
+@staticInterop
+class SkPathNamespace {}
+
+extension SkPathNamespaceExtension on SkPathNamespace {
   /// Creates an [SkPath] using commands obtained from [SkPath.toCmds].
   external SkPath MakeFromCmds(List<dynamic> pathCommands);
 
@@ -1119,6 +1298,7 @@ Float32List toSkColorStops(List<double>? colorStops) {
 external _NativeFloat32ArrayType get _nativeFloat32ArrayType;
 
 @JS()
+@staticInterop
 class _NativeFloat32ArrayType {}
 
 @JS('window.flutterCanvasKit.Malloc')
@@ -1149,7 +1329,10 @@ external void freeFloat32List(SkFloat32List list);
 /// when WASM grows its memory. Call [toTypedArray] to get a new instance
 /// that's attached to the current WASM memory block.
 @JS()
-class SkFloat32List {
+@staticInterop
+class SkFloat32List {}
+
+extension SkFloat32ListExtension on SkFloat32List {
   /// Returns the [Float32List] object backed by WASM memory.
   ///
   /// Do not reuse the returned list across multiple WASM function/method
@@ -1204,8 +1387,12 @@ Float32List toSharedSkColor3(ui.Color color) {
 final SkFloat32List _sharedSkColor3 = mallocFloat32List(4);
 
 @JS('window.flutterCanvasKit.Path')
+@staticInterop
 class SkPath {
-  external SkPath([SkPath? other]);
+  external factory SkPath([SkPath? other]);
+}
+
+extension SkPathExtension on SkPath {
   external void setFillType(SkFillType fillType);
   external void addArc(
     Float32List oval,
