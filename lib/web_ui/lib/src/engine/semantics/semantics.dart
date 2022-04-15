@@ -274,6 +274,7 @@ class SemanticsObject {
     // DOM nodes created for semantics objects are positioned absolutely using
     // transforms.
     element.style.position = 'absolute';
+    element.setAttribute('id', 'flt-semantic-node-$id');
 
     // The root node has some properties that other nodes do not.
     if (id == 0 && !configuration.debugShowSemanticsNodes) {
@@ -601,6 +602,19 @@ class SemanticsObject {
     _dirtyFields |= _tooltipIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  int get platformViewId => _platformViewId;
+  int _platformViewId = -1;
+
+  /// Whether this object represents a platform view.
+  bool get isPlatformView => _platformViewId != -1;
+
+  static const int _platformViewIdIndex = 1 << 23;
+
+  void _markPlatformViewIdDirty() {
+    _dirtyFields |= _platformViewIdIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -632,7 +646,11 @@ class SemanticsObject {
   html.Element? getOrCreateChildContainer() {
     if (_childContainerElement == null) {
       _childContainerElement = html.Element.tag('flt-semantics-container');
-      _childContainerElement!.style.position = 'absolute';
+      _childContainerElement!.style
+        ..position = 'absolute'
+        // Ignore pointer events on child container so that platform views
+        // behind it can be reached.
+        ..pointerEvents = 'none';
       element.append(_childContainerElement!);
     }
     return _childContainerElement;
@@ -702,9 +720,9 @@ class SemanticsObject {
 
   /// Updates this object from data received from a semantics [update].
   ///
-  /// This method creates [SemanticsObject]s for the direct children of this
-  /// object. However, it does not recursively populate them.
-  void updateWith(SemanticsNodeUpdate update) {
+  /// Does not update children. Children are updated in a separate pass because
+  /// at this point children's self information is not ready yet.
+  void updateSelf(SemanticsNodeUpdate update) {
     // Update all field values and their corresponding dirty flags before
     // applying the updates to the DOM.
     assert(update.flags != null); // ignore: unnecessary_null_comparison
@@ -838,9 +856,13 @@ class SemanticsObject {
       _markAdditionalActionsDirty();
     }
 
+    if (_platformViewId != update.platformViewId) {
+      _platformViewId = update.platformViewId;
+      _markPlatformViewIdDirty();
+    }
+
     // Apply updates to the DOM.
     _updateRoles();
-    _updateChildrenInTraversalOrder();
 
     // All properties that affect positioning and sizing are checked together
     // any one of them triggers position and size recomputation.
@@ -848,9 +870,187 @@ class SemanticsObject {
       recomputePositionAndSize();
     }
 
-    // Make sure we create a child container only when there are children.
-    assert(_childContainerElement == null || hasChildren);
-    _dirtyFields = 0;
+    // Ignore pointer events on all container nodes and all platform view nodes.
+    // This is so that the platform views are not obscured by semantic elements
+    // and can be reached by inspecting the web page.
+    if (!hasChildren && !isPlatformView) {
+      element.style.pointerEvents = 'all';
+    } else {
+      element.style.pointerEvents = 'none';
+    }
+  }
+
+  /// The order children are currently rendered in.
+  List<SemanticsObject>? _currentChildrenInRenderOrder;
+
+  /// Updates direct children of this node, if any.
+  ///
+  /// Specifies two orders of direct children:
+  ///
+  /// * Traversal order: the logical order of child nodes that establishes the
+  ///   next and previous relationship between UI widgets. When the user
+  ///   traverses the UI using next/previous gestures the accessibility focus
+  ///   follows the traversal order.
+  /// * Hit-test order: determines the top/bottom relationship between widgets.
+  ///   When the user is inspecting the UI using the drag gesture, the widgets
+  ///   that appear "on top" hit-test order wise take the focus. This order is
+  ///   communicated in the DOM using the inverse paint order, specified by the
+  ///   z-index CSS style attribute.
+  void updateChildren() {
+    // Trivial case: remove all children.
+    if (_childrenInHitTestOrder == null ||
+        _childrenInHitTestOrder!.isEmpty) {
+      if (_currentChildrenInRenderOrder == null ||
+          _currentChildrenInRenderOrder!.isEmpty) {
+        // We must not have created a container element when child list is empty.
+        assert(_childContainerElement == null);
+        _currentChildrenInRenderOrder = null;
+        return;
+      }
+
+      // We must have created a container element when child list is not empty.
+      assert(_childContainerElement != null);
+
+      // Remove all children from this semantics object.
+      final int len = _currentChildrenInRenderOrder!.length;
+      for (int i = 0; i < len; i++) {
+        owner._detachObject(_currentChildrenInRenderOrder![i].id);
+      }
+      _childContainerElement!.remove();
+      _childContainerElement = null;
+      _currentChildrenInRenderOrder = null;
+      return;
+    }
+
+    // At this point we're guaranteed to have at least one child.
+    final Int32List childrenInTraversalOrder = _childrenInTraversalOrder!;
+    final Int32List childrenInHitTestOrder = _childrenInHitTestOrder!;
+    final int childCount = childrenInHitTestOrder.length;
+    final html.Element? containerElement = getOrCreateChildContainer();
+
+    assert(childrenInTraversalOrder.length == childrenInHitTestOrder.length);
+
+    // We always render in traversal order, because the accessibility traversal
+    // is determined by the DOM order of elements.
+    final List<SemanticsObject> childrenInRenderOrder = <SemanticsObject>[];
+    for (int i = 0; i < childCount; i++) {
+      childrenInRenderOrder.add(owner._semanticsTree[childrenInTraversalOrder[i]]!);
+    }
+
+    // The z-index determines hit testing. Technically, it also affects paint
+    // order. However, this does not matter because our ARIA tree is invisible.
+    // On top of that, it is a bad UI practice when hit test order does not match
+    // paint order, because human eye must be able to predict hit test order
+    // simply by looking at the UI (if a dialog is painted on top of a dismiss
+    // barrier, then tapping on anything inside the dialog should not land on
+    // the barrier).
+    final bool zIndexMatters = childCount > 1;
+    if (zIndexMatters) {
+      for (int i = 0; i < childCount; i++) {
+        final SemanticsObject child = owner._semanticsTree[childrenInHitTestOrder[i]]!;
+
+        // Invert the z-index because hit-test order is inverted with respect to
+        // paint order.
+        child.element.style.zIndex = '${childCount - i}';
+      }
+    }
+
+    // Trivial case: previous list was empty => just populate the container.
+    if (_currentChildrenInRenderOrder == null ||
+        _currentChildrenInRenderOrder!.isEmpty) {
+      for (final SemanticsObject child in childrenInRenderOrder) {
+        containerElement!.append(child.element);
+        owner._attachObject(parent: this, child: child);
+      }
+      _currentChildrenInRenderOrder = childrenInRenderOrder;
+      return;
+    }
+
+    // At this point we're guaranteed to have had a non-empty previous child list.
+    final List<SemanticsObject> previousChildrenInRenderOrder = _currentChildrenInRenderOrder!;
+    final int previousCount = previousChildrenInRenderOrder.length;
+
+    // Both non-empty case.
+
+    // Indices into the new child list pointing at children that also exist in
+    // the old child list.
+    final List<int> intersectionIndicesNew = <int>[];
+
+    // Indices into the old child list pointing at children that also exist in
+    // the new child list.
+    final List<int> intersectionIndicesOld = <int>[];
+
+    int newIndex = 0;
+
+    // The smallest of the two child list lengths.
+    final int minLength = math.min(previousCount, childCount);
+
+    // Scan forward until first discrepancy.
+    while (newIndex < minLength &&
+        previousChildrenInRenderOrder[newIndex] ==
+            childrenInRenderOrder[newIndex]) {
+      intersectionIndicesNew.add(newIndex);
+      intersectionIndicesOld.add(newIndex);
+      newIndex += 1;
+    }
+
+    // Trivial case: child lists are identical both in length and order => do nothing.
+    if (previousCount == childrenInRenderOrder.length && newIndex == childCount) {
+      return;
+    }
+
+    // If child lists are not identical, continue computing the intersection
+    // between the two lists.
+    while (newIndex < childCount) {
+      for (int oldIndex = 0;
+          oldIndex < previousCount;
+          oldIndex += 1) {
+        if (previousChildrenInRenderOrder[oldIndex] ==
+            childrenInRenderOrder[newIndex]) {
+          intersectionIndicesNew.add(newIndex);
+          intersectionIndicesOld.add(oldIndex);
+          break;
+        }
+      }
+      newIndex += 1;
+    }
+
+    // The longest sub-sequence in the old list maximizes the number of children
+    // that do not need to be moved.
+    final List<int?> longestSequence = longestIncreasingSubsequence(intersectionIndicesOld);
+    final List<int> stationaryIds = <int>[];
+    for (int i = 0; i < longestSequence.length; i += 1) {
+      stationaryIds.add(
+        previousChildrenInRenderOrder[intersectionIndicesOld[longestSequence[i]!]].id
+      );
+    }
+
+    // Remove children that are no longer in the list.
+    for (int i = 0; i < previousCount; i++) {
+      if (!intersectionIndicesOld.contains(i)) {
+        // Child not in the intersection. Must be removed.
+        final int childId = previousChildrenInRenderOrder[i].id;
+        owner._detachObject(childId);
+      }
+    }
+
+    html.Element? refNode;
+    for (int i = childCount - 1; i >= 0; i -= 1) {
+      final SemanticsObject child = childrenInRenderOrder[i];
+      if (!stationaryIds.contains(child.id)) {
+        if (refNode == null) {
+          containerElement!.append(child.element);
+        } else {
+          containerElement!.insertBefore(child.element, refNode);
+        }
+        owner._attachObject(parent: this, child: child);
+      } else {
+        assert(child._parent == this);
+      }
+      refNode = child.element;
+    }
+
+    _currentChildrenInRenderOrder = childrenInRenderOrder;
   }
 
   /// Populates the HTML "role" attribute based on a [condition].
@@ -1038,144 +1238,6 @@ class SemanticsObject {
         ..removeProperty('top')
         ..removeProperty('left');
     }
-  }
-
-  Int32List? _previousChildrenInTraversalOrder;
-
-  /// Updates the traversal child list of [object] from the given [update].
-  ///
-  /// This method does not recursively update child elements' properties or
-  /// their grandchildren. This is handled by [updateSemantics] method walking
-  /// all the update nodes.
-  void _updateChildrenInTraversalOrder() {
-    // Remove all children case.
-    if (_childrenInTraversalOrder == null ||
-        _childrenInTraversalOrder!.isEmpty) {
-      if (_previousChildrenInTraversalOrder == null ||
-          _previousChildrenInTraversalOrder!.isEmpty) {
-        // We must not have created a container element when child list is empty.
-        assert(_childContainerElement == null);
-        _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-        return;
-      }
-
-      // We must have created a container element when child list is not empty.
-      assert(_childContainerElement != null);
-
-      // Remove all children from this semantics object.
-      final int len = _previousChildrenInTraversalOrder!.length;
-      for (int i = 0; i < len; i++) {
-        owner._detachObject(_previousChildrenInTraversalOrder![i]);
-      }
-      _previousChildrenInTraversalOrder = null;
-      _childContainerElement!.remove();
-      _childContainerElement = null;
-      _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-      return;
-    }
-
-    final html.Element? containerElement = getOrCreateChildContainer();
-
-    // Empty case.
-    if (_previousChildrenInTraversalOrder == null ||
-        _previousChildrenInTraversalOrder!.isEmpty) {
-      _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-      for (final int id in _previousChildrenInTraversalOrder!) {
-        final SemanticsObject child = owner.getOrCreateObject(id);
-        containerElement!.append(child.element);
-        owner._attachObject(parent: this, child: child);
-      }
-      _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-      return;
-    }
-
-    // Both non-empty case.
-
-    // Indices into the new child list pointing at children that also exist in
-    // the old child list.
-    final List<int> intersectionIndicesNew = <int>[];
-
-    // Indices into the old child list pointing at children that also exist in
-    // the new child list.
-    final List<int> intersectionIndicesOld = <int>[];
-
-    int newIndex = 0;
-
-    // The smallest of the two child list lengths.
-    final int minLength = math.min(
-      _previousChildrenInTraversalOrder!.length,
-      _childrenInTraversalOrder!.length,
-    );
-
-    // Scan forward until first discrepancy.
-    while (newIndex < minLength &&
-        _previousChildrenInTraversalOrder![newIndex] ==
-            _childrenInTraversalOrder![newIndex]) {
-      intersectionIndicesNew.add(newIndex);
-      intersectionIndicesOld.add(newIndex);
-      newIndex += 1;
-    }
-
-    // If child lists are identical, do nothing.
-    if (_previousChildrenInTraversalOrder!.length ==
-            _childrenInTraversalOrder!.length &&
-        newIndex == _childrenInTraversalOrder!.length) {
-      return;
-    }
-
-    // If child lists are not identical, continue computing the intersection
-    // between the two lists.
-    while (newIndex < _childrenInTraversalOrder!.length) {
-      for (int oldIndex = 0;
-          oldIndex < _previousChildrenInTraversalOrder!.length;
-          oldIndex += 1) {
-        if (_previousChildrenInTraversalOrder![oldIndex] ==
-            _childrenInTraversalOrder![newIndex]) {
-          intersectionIndicesNew.add(newIndex);
-          intersectionIndicesOld.add(oldIndex);
-          break;
-        }
-      }
-      newIndex += 1;
-    }
-
-    // The longest sub-sequence in the old list maximizes the number of children
-    // that do not need to be moved.
-    final List<int?> longestSequence =
-        longestIncreasingSubsequence(intersectionIndicesOld);
-    final List<int> stationaryIds = <int>[];
-    for (int i = 0; i < longestSequence.length; i += 1) {
-      stationaryIds.add(_previousChildrenInTraversalOrder![
-          intersectionIndicesOld[longestSequence[i]!]]);
-    }
-
-    // Remove children that are no longer in the list.
-    for (int i = 0; i < _previousChildrenInTraversalOrder!.length; i++) {
-      if (!intersectionIndicesOld.contains(i)) {
-        // Child not in the intersection. Must be removed.
-        final int childId = _previousChildrenInTraversalOrder![i];
-        owner._detachObject(childId);
-      }
-    }
-
-    html.Element? refNode;
-    for (int i = _childrenInTraversalOrder!.length - 1; i >= 0; i -= 1) {
-      final int childId = _childrenInTraversalOrder![i];
-      final SemanticsObject child = owner.getOrCreateObject(childId);
-      if (!stationaryIds.contains(childId)) {
-        if (refNode == null) {
-          containerElement!.append(child.element);
-        } else {
-          containerElement!.insertBefore(child.element, refNode);
-        }
-        owner._attachObject(parent: this, child: child);
-      } else {
-        assert(child._parent == this);
-      }
-      refNode = child.element;
-    }
-
-    _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
   }
 
   @override
@@ -1586,9 +1648,21 @@ class EngineSemanticsOwner {
     }
 
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
+
+    // First, update each object's information about itself. This information is
+    // later used to fix the parent-child and sibling relationships between
+    // objects.
     for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
       final SemanticsObject object = getOrCreateObject(nodeUpdate.id);
-      object.updateWith(nodeUpdate);
+      object.updateSelf(nodeUpdate);
+    }
+
+    // Second, fix the tree structure. This is moved out into its own loop,
+    // because we must make sure each object's own information is up-to-date.
+    for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
+      final SemanticsObject object = _semanticsTree[nodeUpdate.id]!;
+      object.updateChildren();
+      object._dirtyFields = 0;
     }
 
     if (_rootSemanticsElement == null) {
@@ -1602,11 +1676,18 @@ class EngineSemanticsOwner {
     assert(_semanticsTree.containsKey(0)); // must contain root node
     assert(() {
       // Validate tree
-      _semanticsTree.forEach((int? id, SemanticsObject? object) {
-        assert(id == object!.id);
+      _semanticsTree.forEach((int? id, SemanticsObject object) {
+        assert(id == object.id);
+
+        // Dirty fields should be cleared after the tree has been finalized.
+        assert(object._dirtyFields == 0);
+
+        // Make sure we create a child container only when there are children.
+        assert(object._childContainerElement == null || object.hasChildren);
+
         // Ensure child ID list is consistent with the parent-child
         // relationship of the semantics tree.
-        if (object!._childrenInTraversalOrder != null) {
+        if (object._childrenInTraversalOrder != null) {
           for (final int childId in object._childrenInTraversalOrder!) {
             final SemanticsObject? child = _semanticsTree[childId];
             if (child == null) {

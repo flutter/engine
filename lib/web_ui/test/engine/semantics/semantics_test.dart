@@ -71,6 +71,9 @@ Future<void> testMain() async {
   group('live region', () {
     _testLiveRegion();
   });
+  group('platform view', () {
+    _testPlatformView();
+  });
 }
 
 void _testEngineSemanticsOwner() {
@@ -422,12 +425,16 @@ void _testContainer() {
     updateNode(
       builder,
       id: 0,
-      actions: 0,
-      flags: 0,
       transform: Matrix4.identity().toFloat64(),
       rect: zeroOffsetRect,
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: zeroOffsetRect,
     );
 
     semantics().updateSemantics(builder.build());
@@ -477,6 +484,12 @@ void _testContainer() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
@@ -513,6 +526,12 @@ void _testContainer() {
       rect: const ui.Rect.fromLTRB(0, 0, 20, 20),
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
     );
 
     semantics().updateSemantics(builder.build());
@@ -552,6 +571,134 @@ void _testContainer() {
     expect(parentElement.style.transformOrigin, '');
     expect(container.style.transform, '');
     expect(container.style.transformOrigin, '');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('renders in traversal order, hit-tests in reverse z-index order', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    // State 1: render initial tree with middle elements swapped hit-test wise
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
+      );
+
+      for (int id = 1; id <= 4; id++) {
+        updateNode(builder, id: id);
+      }
+
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 4"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    // State 2: update z-index
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+      );
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 4"></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    // State 3: update traversal order
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[4, 2, 3, 1]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+      );
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 1"></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 4"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    // State 3: update both orders
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[3, 4, 1, 2]),
+      );
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 4"></sem>
+    <sem style="z-index: 1"></sem>
+    <sem style="z-index: 3"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('container nodes are transparent and leaf children are opaque hit-test wise', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+    );
+    updateNode(builder, id: 1);
+    updateNode(builder, id: 2);
+
+    semantics().updateSemantics(builder.build());
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final html.Element root = appHostNode.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'none');
+
+    final html.Element child1 = appHostNode.querySelector('#flt-semantic-node-1')!;
+    expect(child1.style.pointerEvents, 'all');
+
+    final html.Element child2 = appHostNode.querySelector('#flt-semantic-node-2')!;
+    expect(child2.style.pointerEvents, 'all');
 
     semantics().semanticsEnabled = false;
   });
@@ -596,6 +743,12 @@ void _testVerticalScrolling() {
       rect: const ui.Rect.fromLTRB(0, 0, 50, 100),
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
     );
 
     semantics().updateSemantics(builder.build());
@@ -670,9 +823,9 @@ void _testVerticalScrolling() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle; touch-action: none; overflow-y: scroll">
   <sem-c>
-    <sem></sem>
-    <sem></sem>
-    <sem></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
   </sem-c>
 </sem>''');
 
@@ -749,6 +902,12 @@ void _testHorizontalScrolling() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
@@ -803,9 +962,9 @@ void _testHorizontalScrolling() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle; touch-action: none; overflow-x: scroll">
   <sem-c>
-    <sem></sem>
-    <sem></sem>
-    <sem></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
   </sem-c>
 </sem>''');
 
@@ -1396,6 +1555,12 @@ void _testImage() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
@@ -1451,6 +1616,12 @@ void _testImage() {
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
     );
 
     semantics().updateSemantics(builder.build());
@@ -1520,6 +1691,28 @@ void _testLiveRegion() {
   });
 }
 
+void _testPlatformView() {
+  test('is transparent w.r.t. hit testing', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      platformViewId: 5,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    semantics().updateSemantics(builder.build());
+
+    expectSemanticsTree('<sem style="$rootSemanticStyle"></sem>');
+    final html.Element element = appHostNode.querySelector('flt-semantics')!;
+    expect(element.style.pointerEvents, 'none');
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that
 /// supplies default values for semantics attributes.
 // TODO(yjbanov): move this to TestSemanticsBuilder
@@ -1532,7 +1725,7 @@ void updateNode(
   int currentValueLength = 0,
   int textSelectionBase = 0,
   int textSelectionExtent = 0,
-  int platformViewId = 0,
+  int platformViewId = -1, // -1 means not a platform view
   int scrollChildren = 0,
   int scrollIndex = 0,
   double scrollPosition = 0.0,
