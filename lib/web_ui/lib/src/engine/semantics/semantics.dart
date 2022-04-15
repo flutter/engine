@@ -972,10 +972,6 @@ class SemanticsObject {
 
     // Both non-empty case.
 
-    // Indices into the new child list pointing at children that also exist in
-    // the old child list.
-    final List<int> intersectionIndicesNew = <int>[];
-
     // Indices into the old child list pointing at children that also exist in
     // the new child list.
     final List<int> intersectionIndicesOld = <int>[];
@@ -989,7 +985,6 @@ class SemanticsObject {
     while (newIndex < minLength &&
         previousChildrenInRenderOrder[newIndex] ==
             childrenInRenderOrder[newIndex]) {
-      intersectionIndicesNew.add(newIndex);
       intersectionIndicesOld.add(newIndex);
       newIndex += 1;
     }
@@ -1007,7 +1002,6 @@ class SemanticsObject {
           oldIndex += 1) {
         if (previousChildrenInRenderOrder[oldIndex] ==
             childrenInRenderOrder[newIndex]) {
-          intersectionIndicesNew.add(newIndex);
           intersectionIndicesOld.add(oldIndex);
           break;
         }
