@@ -51,15 +51,15 @@ class DlPathEffect
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlPathEffect);
 };
 
-/// The DashPathEffect which specifies modifying the path effect, and it
-/// only affects storked paths.
+/// The DashPathEffect which breaks a path up into dash segments, and it
+/// only affects stroked paths.
 /// intervals: array containing an even number of entries (>=2), with
 /// the even indices specifying the length of "on" intervals, and the odd
 /// indices specifying the length of "off" intervals. This array will be
 /// copied in Make, and can be disposed of freely after.
-/// count: number of elements in the intervals array
-/// phase: offset into the intervals array (mod the sum of all of the
-/// intervals).
+/// count: number of elements in the intervals array.
+/// phase: initial distance into the intervals at which to start the dashing
+/// effect for the path.
 ///
 /// For example: if intervals[] = {10, 20}, count = 2, and phase = 25,
 /// this will set up a dashed path like so:

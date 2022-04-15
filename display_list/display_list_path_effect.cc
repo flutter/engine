@@ -55,8 +55,8 @@ std::shared_ptr<DlPathEffect> DlDashPathEffect::Make(const SkScalar* intervals,
 }
 
 std::optional<SkRect> DlDashPathEffect::effect_bounds(SkRect& rect) const {
-  // SkDashPathEffect's computeFastBounds is return true which mean it bounds is
-  // the input value;
+  // SkDashPathEffect returns the original bounds as the bounds of the effect
+  // since the dashed path will always be a subset of the original.
   return rect;
 }
 
