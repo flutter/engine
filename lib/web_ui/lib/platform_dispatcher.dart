@@ -82,6 +82,8 @@ abstract class PlatformDispatcher {
 
   double get textScaleFactor => configuration.textScaleFactor;
 
+  bool get nativeSpellCheckServiceDefined => configuration.nativeSpellCheckServiceDefined;
+
   bool get brieflyShowPassword => true;
 
   VoidCallback? get onTextScaleFactorChanged;
@@ -123,6 +125,7 @@ class PlatformConfiguration {
     this.semanticsEnabled = false,
     this.platformBrightness = Brightness.light,
     this.textScaleFactor = 1.0,
+    this.nativeSpellCheckServiceDefined = false,
     this.locales = const <Locale>[],
     this.defaultRouteName = '/',
     this.systemFontFamily,
@@ -134,6 +137,7 @@ class PlatformConfiguration {
     bool? semanticsEnabled,
     Brightness? platformBrightness,
     double? textScaleFactor,
+    bool? nativeSpellCheckServiceDefined,
     List<Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
@@ -144,6 +148,7 @@ class PlatformConfiguration {
       semanticsEnabled: semanticsEnabled ?? this.semanticsEnabled,
       platformBrightness: platformBrightness ?? this.platformBrightness,
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+      nativeSpellCheckServiceDefined: nativeSpellCheckServiceDefined ?? this.nativeSpellCheckServiceDefined,
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
@@ -155,6 +160,7 @@ class PlatformConfiguration {
   final bool semanticsEnabled;
   final Brightness platformBrightness;
   final double textScaleFactor;
+  final bool nativeSpellCheckServiceDefined;
   final List<Locale> locales;
   final String defaultRouteName;
   final String? systemFontFamily;

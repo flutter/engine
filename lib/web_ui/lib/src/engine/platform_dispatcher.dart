@@ -777,6 +777,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   double get textScaleFactor => configuration.textScaleFactor;
 
+  /// The setting indicating whether or not Flutter currently supports
+  /// spell checking via the native spell check service.
+  ///
+  /// This option is used by [EditableTextState] to define its
+  /// [SpellCheckConfiguration] when a default spell check service
+  /// is requested.
+  @override
+  bool get nativeSpellCheckServiceDefined => configuration.nativeSpellCheckServiceDefined;
+
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
