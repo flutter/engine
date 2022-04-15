@@ -160,6 +160,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
+  void restoreToCount(int restore_count);
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
