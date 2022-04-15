@@ -50,7 +50,7 @@ public class SpellCheckPlugin
    * Unregisters this {@code SpellCheckPlugin} as the {@code
    * SpellCheckChannel.SpellCheckMethodHandler}, for the {@link
    * io.flutter.embedding.engine.systemchannels.SpellCheckChannel}, and closes the most recently
-   * opened {@code SpellCheckerSessions}.
+   * opened {@code SpellCheckerSession}.
    *
    * <p>Do not invoke any methods on a {@code SpellCheckPlugin} after invoking this method.
    */
@@ -92,8 +92,8 @@ public class SpellCheckPlugin
    * {@link SpellCheckChannel}.
    *
    * <p>Spell check results will be encoded as a string representing the span of that result, with
-   * the format [start_index.end_index.suggestion_1,suggestion_2,suggestion_3] where there may be up
-   * to 5 suggestions.
+   * the format [start_index.end_index.suggestion_1,suggestion_2,suggestion_3], where there may be
+   * up to 5 suggestions.
    */
   @Override
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
