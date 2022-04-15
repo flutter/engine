@@ -83,7 +83,7 @@ class FlutterViewEmbedder {
   /// This element is created and inserted in the HTML DOM once. It is never
   /// removed or moved.
   ///
-  /// We render semantics inside the glasspane for proper focus and event
+  /// Render semantics inside the glasspane for proper focus and event
   /// handling. If semantics is behind the glasspane, the phone will disable
   /// focusing by touch, only by tabbing around the UI. If semantics is in
   /// front of glasspane, then DOM event won't bubble up to the glasspane so
@@ -99,7 +99,7 @@ class FlutterViewEmbedder {
   html.Element? _sceneElement;
 
   /// This is state persistent across hot restarts that indicates what
-  /// to clear.  We delay removal of old visible state to make the
+  /// to clear.  Delay removal of old visible state to make the
   /// transition appear smooth.
   static const String _staleHotRestartStore = '__flutter_state';
   List<html.Element?>? _staleHotRestartState;
@@ -133,7 +133,7 @@ class FlutterViewEmbedder {
     }
   }
 
-  /// We don't want to unnecessarily move DOM nodes around. If a DOM node is
+  /// Don't unnecessarily move DOM nodes around. If a DOM node is
   /// already in the right place, skip DOM mutation. This is both faster and
   /// more correct, because moving DOM nodes loses internal state, such as
   /// text selection.
@@ -203,7 +203,7 @@ class FlutterViewEmbedder {
     setElementStyle(bodyElement, 'padding', '0');
     setElementStyle(bodyElement, 'margin', '0');
 
-    // TODO(yjbanov): fix this when we support KVM I/O. Currently we scroll
+    // TODO(yjbanov): fix this when KVM I/O support is added. Currently scroll
     //                using drag, and text selection interferes.
     setElementStyle(bodyElement, 'user-select', 'none');
     setElementStyle(bodyElement, '-webkit-user-select', 'none');
@@ -211,7 +211,7 @@ class FlutterViewEmbedder {
     setElementStyle(bodyElement, '-moz-user-select', 'none');
 
     // This is required to prevent the browser from doing any native touch
-    // handling. If we don't do this, the browser doesn't report 'pointermove'
+    // handling. If this is not done, the browser doesn't report 'pointermove'
     // events properly.
     setElementStyle(bodyElement, 'touch-action', 'none');
 
@@ -227,7 +227,7 @@ class FlutterViewEmbedder {
     for (final html.Element viewportMeta
         in html.document.head!.querySelectorAll('meta[name="viewport"]')) {
       if (assertionsEnabled) {
-        // Filter out the meta tag that we ourselves placed on the page. This is
+        // Filter out the meta tag that the engine placed on the page. This is
         // to avoid UI flicker during hot restart. Hot restart will clean up the
         // old meta tag synchronously with the first post-restart frame.
         if (!viewportMeta.hasAttribute('flt-viewport')) {
@@ -265,7 +265,8 @@ class FlutterViewEmbedder {
       ..bottom = '0'
       ..left = '0';
 
-    // This must be appended to the body, so we can create a host node properly.
+    // This must be appended to the body, so the engine can create a host node
+    // properly.
     bodyElement.append(glassPaneElement);
 
     // Create a [HostNode] under the glass pane element, and attach everything
@@ -293,8 +294,8 @@ class FlutterViewEmbedder {
       _accessibilityPlaceholder,
       _sceneHostElement!,
 
-      // The semantic host goes last because hit-test order-wise we want it to
-      // be first. If semantics goes under the scene host, platform views will
+      // The semantic host goes last because hit-test order-wise it must be
+      // first. If semantics goes under the scene host, platform views will
       // obscure semantic elements.
       //
       // You may be wondering: wouldn't semantics obscure platform views and
@@ -327,10 +328,11 @@ class FlutterViewEmbedder {
       //
       // VisualViewport API is not enabled in Firefox as well. On the other hand
       // Firefox returns correct values for innerHeight, innerWidth.
-      // Firefox also triggers html.window.onResize therefore we don't need this
-      // timer to be set up for Firefox.
+      // Firefox also triggers html.window.onResize therefore this timer does
+      // not need to be set up for Firefox.
       final int initialInnerWidth = html.window.innerWidth!;
-      // Counts how many times we checked screen size. We check up to 5 times.
+      // Counts how many times screen size was checked. It is checked up to 5
+      // times.
       int checkCount = 0;
       Timer.periodic(const Duration(milliseconds: 100), (Timer t) {
         checkCount += 1;
@@ -367,7 +369,7 @@ class FlutterViewEmbedder {
   }
 
   /// The framework specifies semantics in physical pixels, but CSS uses
-  /// logical pixels. To compensate, we inject an inverse scale at the root
+  /// logical pixels. To compensate, an inverse scale is injected at the root
   /// level.
   void updateSemanticsScreenProperties() {
     _semanticsHostElement!.style.transform =

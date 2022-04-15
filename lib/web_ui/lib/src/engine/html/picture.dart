@@ -130,8 +130,8 @@ class PersistedPicture extends PersistedLeafSurface {
     // users. UI semantics are exported as a separate DOM tree rendered parallel
     // to pictures.
     //
-    // Why do we not hide layer and scene elements from ARIA? Because those
-    // elements may contain platform views, and we do want platform views to be
+    // Why are layer and scene elements not hidden from ARIA? Because those
+    // elements may contain platform views, and platform views must be
     // accessible.
     element.setAttribute('aria-hidden', 'true');
 

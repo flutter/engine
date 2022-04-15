@@ -278,11 +278,11 @@ class SemanticsObject {
 
     // The root node has some properties that other nodes do not.
     if (id == 0 && !configuration.debugShowSemanticsNodes) {
-      // Make all semantics transparent. We use `filter` instead of `opacity`
+      // Make all semantics transparent. Use `filter` instead of `opacity`
       // attribute because `filter` is stronger. `opacity` does not apply to
       // some elements, particularly on iOS, such as the slider thumb and track.
       //
-      // We use transparency instead of "visibility:hidden" or "display:none"
+      // Use transparency instead of "visibility:hidden" or "display:none"
       // so that a screen reader does not ignore these elements.
       element.style.filter = 'opacity(0%)';
 
@@ -292,7 +292,7 @@ class SemanticsObject {
     }
 
     // Make semantic elements visible for debugging by outlining them using a
-    // green border. We do not use `border` attribute because it affects layout
+    // green border. Do not use `border` attribute because it affects layout
     // (`outline` does not).
     if (configuration.debugShowSemanticsNodes) {
       element.style.outline = '1px solid green';
@@ -902,13 +902,13 @@ class SemanticsObject {
         _childrenInHitTestOrder!.isEmpty) {
       if (_currentChildrenInRenderOrder == null ||
           _currentChildrenInRenderOrder!.isEmpty) {
-        // We must not have created a container element when child list is empty.
+        // A container element must not have been created when child list is empty.
         assert(_childContainerElement == null);
         _currentChildrenInRenderOrder = null;
         return;
       }
 
-      // We must have created a container element when child list is not empty.
+      // A container element must have been created when child list is not empty.
       assert(_childContainerElement != null);
 
       // Remove all children from this semantics object.
@@ -922,7 +922,7 @@ class SemanticsObject {
       return;
     }
 
-    // At this point we're guaranteed to have at least one child.
+    // At this point it is guaranteed to have at least one child.
     final Int32List childrenInTraversalOrder = _childrenInTraversalOrder!;
     final Int32List childrenInHitTestOrder = _childrenInHitTestOrder!;
     final int childCount = childrenInHitTestOrder.length;
@@ -930,7 +930,7 @@ class SemanticsObject {
 
     assert(childrenInTraversalOrder.length == childrenInHitTestOrder.length);
 
-    // We always render in traversal order, because the accessibility traversal
+    // Always render in traversal order, because the accessibility traversal
     // is determined by the DOM order of elements.
     final List<SemanticsObject> childrenInRenderOrder = <SemanticsObject>[];
     for (int i = 0; i < childCount; i++) {
@@ -966,7 +966,7 @@ class SemanticsObject {
       return;
     }
 
-    // At this point we're guaranteed to have had a non-empty previous child list.
+    // At this point it is guaranteed to have had a non-empty previous child list.
     final List<SemanticsObject> previousChildrenInRenderOrder = _currentChildrenInRenderOrder!;
     final int previousCount = previousChildrenInRenderOrder.length;
 
@@ -1059,10 +1059,10 @@ class SemanticsObject {
   ///
   /// If [condition] is false, removes the HTML "role" attribute from [element]
   /// if the current role is set to [ariaRoleName]. Otherwise, leaves the value
-  /// unchanged. This is done so we gracefully handle multiple competing roles.
+  /// unchanged. This is done to gracefully handle multiple competing roles.
   /// For example, if the role changes from "button" to "img" and tappable role
   /// manager attempts to clean up after the image role manager applied the new
-  /// role, we do not want it to erase the new role.
+  /// role, semantics avoids erasing the new role.
   void setAriaRole(String ariaRoleName, bool condition) {
     if (condition) {
       element.setAttribute('role', ariaRoleName);
@@ -1093,8 +1093,8 @@ class SemanticsObject {
 
     final bool shouldUseTappableRole =
       (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
-      // Text fields manage their own focus/tap interactions. We don't need the
-      // tappable role manager. It only confuses AT.
+      // Text fields manage their own focus/tap interactions. Tappable role
+      // manager is not needed. It only confuses AT.
       !isTextField;
 
     _updateRole(Role.tappable, shouldUseTappableRole);
@@ -1121,8 +1121,8 @@ class SemanticsObject {
       manager.dispose();
       _roleManagers.remove(role);
     }
-    // Nothing to do in the "else case" as it means that we want to disable a
-    // role that we don't currently have in the first place.
+    // Nothing to do in the "else case". There's no existing role manager to
+    // disable.
   }
 
   /// Whether the object represents an UI element with "increase" or "decrease"
@@ -1257,15 +1257,15 @@ class SemanticsObject {
 /// Controls how pointer events and browser-detected gestures are treated by
 /// the Web Engine.
 enum AccessibilityMode {
-  /// We are not told whether the assistive technology is enabled or not.
+  /// Flutter is not told whether the assistive technology is enabled or not.
   ///
   /// This is the default mode.
   ///
-  /// In this mode we use a gesture recognition system that deduplicates
+  /// In this mode a gesture recognition system is used that deduplicates
   /// gestures detected by Flutter with gestures detected by the browser.
   unknown,
 
-  /// We are told whether the assistive technology is enabled.
+  /// Flutter is told whether the assistive technology is enabled.
   known,
 }
 
@@ -1430,7 +1430,7 @@ class EngineSemanticsOwner {
     _semanticsEnabled = value;
 
     if (!_semanticsEnabled) {
-      // We do not process browser events at all when semantics is explicitly
+      // Do not process browser events at all when semantics is explicitly
       // disabled. All gestures are handled by the framework-level gesture
       // recognizers from pointer events.
       if (_gestureMode != GestureMode.pointerEvents) {
@@ -1488,8 +1488,7 @@ class EngineSemanticsOwner {
     return _gestureModeClock;
   }
 
-  /// Disables browser gestures temporarily because we have detected pointer
-  /// events.
+  /// Disables browser gestures temporarily because pointer events were detected.
   ///
   /// This is used to deduplicate gestures detected by Flutter and gestures
   /// detected by the browser. Flutter-detected gestures have higher precedence.
@@ -1509,29 +1508,29 @@ class EngineSemanticsOwner {
   /// The browser sends us both raw pointer events and gestures from
   /// [SemanticsObject.element]s. There could be three possibilities:
   ///
-  /// 1. Assistive technology is enabled and we know that it is.
-  /// 2. Assistive technology is disabled and we know that it isn't.
-  /// 3. We do not know whether an assistive technology is enabled.
+  /// 1. Assistive technology is enabled and Flutter knows that it is.
+  /// 2. Assistive technology is disabled and Flutter knows that it isn't.
+  /// 3. Flutter does not know whether an assistive technology is enabled.
   ///
   /// If [autoEnableOnTap] was called, this will automatically enable semantics
   /// if the user requests it.
   ///
-  /// In the first case we can ignore raw pointer events and only interpret
+  /// In the first case ignore raw pointer events and only interpret
   /// high-level gestures, e.g. "click".
   ///
-  /// In the second case we can ignore high-level gestures and interpret the raw
+  /// In the second case ignore high-level gestures and interpret the raw
   /// pointer events directly.
   ///
-  /// Finally, in a mode when we do not know if an assistive technology is
-  /// enabled or not we do a best-effort estimate which to respond to, raw
-  /// pointer or high-level gestures. We avoid doing both because that will
+  /// Finally, in a mode when Flutter does not know if an assistive technology
+  /// is enabled or not do a best-effort estimate which to respond to, raw
+  /// pointer or high-level gestures. Avoid doing both because that will
   /// result in double-firing of event listeners, such as `onTap` on a button.
-  /// An approach we use is to measure the distance between the last pointer
+  /// The approach is to measure the distance between the last pointer
   /// event and a gesture event. If a gesture is receive "soon" after the last
   /// received pointer event (determined by a heuristic), it is debounced as it
   /// is likely that the gesture detected from the pointer even will do the
-  /// right thing. However, if we receive a standalone gesture we will map it
-  /// onto a [ui.SemanticsAction] to be processed by the framework.
+  /// right thing. However, if a standalone gesture is received, map it onto a
+  /// [ui.SemanticsAction] to be processed by the framework.
   bool receiveGlobalEvent(html.Event event) {
     // For pointer event reference see:
     //
@@ -1598,7 +1597,7 @@ class EngineSemanticsOwner {
   /// [semanticsEnabled] is `false`.
   ///
   /// If [mode] is [AccessibilityMode.unknown] the gesture is accepted if it is
-  /// not accompanied by pointer events. In the presence of pointer events we
+  /// not accompanied by pointer events. In the presence of pointer events,
   /// delegate to Flutter's gesture detection system to produce gestures.
   bool shouldAcceptBrowserGesture(String eventType) {
     if (_mode == AccessibilityMode.known) {
@@ -1658,7 +1657,7 @@ class EngineSemanticsOwner {
     }
 
     // Second, fix the tree structure. This is moved out into its own loop,
-    // because we must make sure each object's own information is up-to-date.
+    // because each object's own information must be updated first.
     for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
       final SemanticsObject object = _semanticsTree[nodeUpdate.id]!;
       object.updateChildren();
@@ -1682,7 +1681,7 @@ class EngineSemanticsOwner {
         // Dirty fields should be cleared after the tree has been finalized.
         assert(object._dirtyFields == 0);
 
-        // Make sure we create a child container only when there are children.
+        // Make sure a child container is created only when there are children.
         assert(object._childContainerElement == null || object.hasChildren);
 
         // Ensure child ID list is consistent with the parent-child
@@ -1754,8 +1753,7 @@ List<int> longestIncreasingSubsequence(List<int> list) {
       mins[expansionIndex] = i;
     }
     if (expansionIndex > longest) {
-      // If we found a subsequence longer than any we've
-      // found yet, update `longest`
+      // Record the longest subsequence found so far.
       longest = expansionIndex;
     }
   }
