@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_TESTING_MOCK_BINARY_MESSENGER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_TESTING_MOCK_BINARY_MESSENGER_H_
 
+#include <map>
+
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 
 #include "gmock/gmock.h"
@@ -40,6 +42,21 @@ class MockBinaryMessenger {
                GBytes*(FlBinaryMessenger* messenger,
                        GAsyncResult* result,
                        GError** error));
+
+  bool HasMessageHandler(const gchar* channel) const;
+
+  void SetMessageHandler(const gchar* channel,
+                         FlBinaryMessengerMessageHandler handler,
+                         gpointer user_data);
+
+  void ReceiveMessage(FlBinaryMessenger* messenger,
+                      const gchar* channel,
+                      GBytes* message);
+
+ private:
+  std::map<std::string, FlBinaryMessengerMessageHandler> message_handlers;
+  std::map<std::string, FlBinaryMessengerResponseHandle*> response_handles;
+  std::map<std::string, gpointer> user_datas;
 };
 
 }  // namespace testing
