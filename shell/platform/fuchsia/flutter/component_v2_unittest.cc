@@ -10,6 +10,9 @@
 namespace flutter_runner {
 namespace {
 
+const std::string kResolvedComponentUrl =
+    "fuchsia-pkg://fuchsia.com/hi_flutter#meta/hi_flutter.cm";
+
 TEST(ComponentV2, ParseProgramMetadataDefaultAssets) {
   // The assets_path defaults to the "data" value if unspecified.
   std::vector<fuchsia::data::DictionaryEntry> entries;
@@ -23,7 +26,8 @@ TEST(ComponentV2, ParseProgramMetadataDefaultAssets) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
   EXPECT_EQ(result.data_path, "pkg/foobar");
   EXPECT_EQ(result.assets_path, "pkg/foobar");
@@ -55,10 +59,48 @@ TEST(ComponentV2, ParseProgramMetadataIgnoreInvalidKeys) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
   EXPECT_EQ(result.data_path, "pkg/bar");
   EXPECT_EQ(result.assets_path, "pkg/baz");
+  EXPECT_EQ(result.old_gen_heap_size, std::nullopt);
+}
+
+TEST(ComponentV2, ParseProgramMetadataUrlFallback) {
+  // If the "data" key is missing, try parsing the component name from the URL.
+  std::vector<fuchsia::data::DictionaryEntry> entries;
+
+  fuchsia::data::DictionaryEntry assets_entry;
+  assets_entry.key = "assets";
+  assets_entry.value = std::make_unique<fuchsia::data::DictionaryValue>(
+      fuchsia::data::DictionaryValue::WithStr("baz"));
+  entries.push_back(std::move(assets_entry));
+
+  fuchsia::data::Dictionary program_metadata;
+  program_metadata.set_entries(std::move(entries));
+
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
+
+  EXPECT_EQ(result.data_path, "pkg/data/hi_flutter");
+  EXPECT_EQ(result.assets_path, "pkg/baz");
+  EXPECT_EQ(result.old_gen_heap_size, std::nullopt);
+}
+
+TEST(ComponentV2, ParseProgramMetadataUrlFallbackAssetsToo) {
+  // If "data" and "assets" keys are missing, "assets" defaults to the "data"
+  // value, from the URL
+  std::vector<fuchsia::data::DictionaryEntry> entries;
+
+  fuchsia::data::Dictionary program_metadata;
+  program_metadata.set_entries(std::move(entries));
+
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
+
+  EXPECT_EQ(result.data_path, "pkg/data/hi_flutter");
+  EXPECT_EQ(result.assets_path, "pkg/data/hi_flutter");
   EXPECT_EQ(result.old_gen_heap_size, std::nullopt);
 }
 
@@ -75,10 +117,11 @@ TEST(ComponentV2, ParseProgramMetadataOldGenHeapSize) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
-  EXPECT_EQ(result.data_path, "");
-  EXPECT_EQ(result.assets_path, "");
+  EXPECT_EQ(result.data_path, "pkg/data/hi_flutter");
+  EXPECT_EQ(result.assets_path, "pkg/data/hi_flutter");
   EXPECT_EQ(result.old_gen_heap_size, 100);
 }
 
@@ -96,10 +139,11 @@ TEST(ComponentV2, ParseProgramMetadataOldGenHeapSizeInvalid) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
-  EXPECT_EQ(result.data_path, "");
-  EXPECT_EQ(result.assets_path, "");
+  EXPECT_EQ(result.data_path, "pkg/data/hi_flutter");
+  EXPECT_EQ(result.assets_path, "pkg/data/hi_flutter");
   EXPECT_EQ(result.old_gen_heap_size, std::nullopt);
 }
 
@@ -110,7 +154,8 @@ TEST(ComponentV2, ParseProgramMetadataNoExposeDirs) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
   EXPECT_EQ(result.expose_dirs.empty(), true);
 }
@@ -128,7 +173,8 @@ TEST(ComponentV2, ParseProgramMetadataWithSingleExposeDirs) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
   ASSERT_EQ(result.expose_dirs.size(), 1u);
   EXPECT_EQ(result.expose_dirs[0], "foo");
@@ -148,7 +194,8 @@ TEST(ComponentV2, ParseProgramMetadataWithMultipleExposeDirs) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
   ASSERT_EQ(result.expose_dirs.size(), 3u);
   EXPECT_EQ(result.expose_dirs[0], "foo");
@@ -170,7 +217,8 @@ TEST(ComponentV2, ParseProgramMetadataWithSingleExposeDirsAndOtherArgs) {
   fuchsia::data::Dictionary program_metadata;
   program_metadata.set_entries(std::move(entries));
 
-  ProgramMetadata result = ComponentV2::ParseProgramMetadata(program_metadata);
+  ProgramMetadata result = ComponentV2::ParseProgramMetadata(
+      program_metadata, kResolvedComponentUrl);
 
   ASSERT_EQ(result.expose_dirs.size(), 1u);
   EXPECT_EQ(result.expose_dirs[0], "foo");

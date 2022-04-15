@@ -79,7 +79,8 @@ class ComponentV2 final
   ///
   /// |old_gen_heap_size| will be set to -1 if no value was specified.
   static ProgramMetadata ParseProgramMetadata(
-      const fuchsia::data::Dictionary& program_metadata);
+      const fuchsia::data::Dictionary& program_metadata,
+      const std::string url);
 
   const std::string& GetDebugLabel() const;
 

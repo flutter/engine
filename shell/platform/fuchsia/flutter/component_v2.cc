@@ -103,10 +103,34 @@ void ParseArgs(std::vector<std::string>& args, ProgramMetadata* metadata) {
   }
 }
 
+// Find the last path of the component.
+// fuchsia-pkg://fuchsia.com/hello_dart#meta/hello_dart.cmx -> hello_dart.cmx
+std::string GetLabelFromUrl(const std::string& url) {
+  for (size_t i = url.length() - 1; i > 0; i--) {
+    if (url[i] == '/') {
+      return url.substr(i + 1, url.length() - 1);
+    }
+  }
+  return url;
+}
+
+// Find the name of the component.
+// fuchsia-pkg://fuchsia.com/hi_flutter#meta/hi_flutter.cm -> hi_flutter
+std::string GetComponentNameFromUrl(const std::string& url) {
+  const std::string label = GetLabelFromUrl(url);
+  for (size_t i = 0; i < label.length(); ++i) {
+    if (label[i] == '.') {
+      return label.substr(0, i);
+    }
+  }
+  return label;
+}
+
 }  // namespace
 
 ProgramMetadata ComponentV2::ParseProgramMetadata(
-    const fuchsia::data::Dictionary& program_metadata) {
+    const fuchsia::data::Dictionary& program_metadata,
+    const std::string url) {
   ProgramMetadata result;
 
   for (const auto& entry : program_metadata.entries()) {
@@ -117,6 +141,15 @@ ProgramMetadata ComponentV2::ParseProgramMetadata(
     } else if (entry.key.compare(kArgsKey) == 0 && entry.value != nullptr) {
       ParseArgs(entry.value->str_vec(), &result);
     }
+  }
+
+  if (result.data_path.empty()) {
+    // TODO(fxb/84537): This data path is configured based how we build Flutter
+    // applications in tree currently, but the way we build the Flutter
+    // application may change. We should avoid assuming the data path and let
+    // the CML file specify this data path instead.
+    const std::string component_name = GetComponentNameFromUrl(url);
+    result.data_path = "pkg/data/" + component_name;
   }
 
   // assets_path defaults to the same as data_path if omitted.
@@ -174,11 +207,12 @@ ComponentV2::ComponentV2(
   // TODO(fxb/88391): Dart launch arguments.
   FML_LOG(WARNING) << "program() arguments are currently ignored (fxb/88391).";
 
-  ProgramMetadata metadata = ParseProgramMetadata(start_info.program());
+  ProgramMetadata metadata =
+      ParseProgramMetadata(start_info.program(), start_info.resolved_url());
 
   if (metadata.data_path.empty()) {
-    FML_DLOG(ERROR) << "Could not find a /pkg/data directory for "
-                    << start_info.resolved_url();
+    FML_LOG(ERROR) << "Could not find a /pkg/data directory for "
+                   << start_info.resolved_url();
     return;
   }
 
