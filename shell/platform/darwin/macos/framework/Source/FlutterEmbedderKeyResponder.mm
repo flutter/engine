@@ -10,8 +10,10 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+#import "flutter/shell/common/key_event_regulator.h"
 
 namespace {
+using flutter::KeyEventRegulator;
 
 /**
  * Isolate the least significant 1-bit.
@@ -470,7 +472,9 @@ struct FlutterKeyPendingResponse {
 
 @end
 
-@implementation FlutterEmbedderKeyResponder
+@implementation FlutterEmbedderKeyResponder {
+  KeyEventRegulator* _regulator;
+}
 
 @synthesize layoutMap;
 
@@ -483,8 +487,24 @@ struct FlutterKeyPendingResponse {
     _responseId = 1;
     _lastModifierFlagsOfInterest = 0;
     _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
+
+    KeyEventRegulator::Config regulator_config{
+      on_duplicate_down: DuplicateDownBehavior::kSynthesizeUp,
+      on_abrupt_up: AbruptUpBehavior::kIgnore,
+    };
+    _regulator = new KeyEventRegulator(regulator_config);
   }
   return self;
+}
+
+- (void)dealloc {
+  delete _regulator;
+  _regulator = nullptr;
+
+  [self shutDownEngine];
+  if (_aotData) {
+    _embedderAPI.CollectAOTData(_aotData);
+  }
 }
 
 - (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {
