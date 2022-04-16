@@ -76,6 +76,9 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
 Cacheable::CacheType ImageFilterLayer::NeedCaching(PrerollContext* context,
                                                    const SkMatrix& ctm) {
+  if (!filter_) {
+    return Cacheable::CacheType::kNone;
+  }
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     return Cacheable::CacheType::kCurrent;
   }

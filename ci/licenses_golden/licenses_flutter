@@ -134,6 +134,8 @@ FILE: ../../../flutter/flow/layer_snapshot_store.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.cc
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/cacheable_layer.cc
+FILE: ../../../flutter/flow/layers/cacheable_layer.h
 FILE: ../../../flutter/flow/layers/checkerboard_layertree_unittests.cc
 FILE: ../../../flutter/flow/layers/clip_path_layer.cc
 FILE: ../../../flutter/flow/layers/clip_path_layer.h
@@ -196,6 +198,8 @@ FILE: ../../../flutter/flow/raster_cache.h
 FILE: ../../../flutter/flow/raster_cache_key.cc
 FILE: ../../../flutter/flow/raster_cache_key.h
 FILE: ../../../flutter/flow/raster_cache_unittests.cc
+FILE: ../../../flutter/flow/raster_cacheable_entry.cc
+FILE: ../../../flutter/flow/raster_cacheable_entry.h
 FILE: ../../../flutter/flow/rtree.cc
 FILE: ../../../flutter/flow/rtree.h
 FILE: ../../../flutter/flow/rtree_unittests.cc
