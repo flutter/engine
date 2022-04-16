@@ -34,29 +34,18 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  auto cacheable_entry =
-      RasterCacheableEntry::MarkLayerCacheable(this, *context, matrix);
-  context->raster_cached_entries.push_back(cacheable_entry);
-
-  auto current_index = context->raster_cached_entries.size();
+  Cacheable::AutoCache::Create(this, context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
-
-  cacheable_entry->num_child_entries =
-      context->raster_cached_entries.size() - current_index;
-  auto cache_type = NeedCaching(context, matrix);
-  if (cache_type == CacheableLayer::CacheType::kChildren) {
-    cacheable_entry->MarkLayerChildrenNeedCached();
-  }
 }
 
-CacheableLayer::CacheType ColorFilterLayer::NeedCaching(PrerollContext* context,
-                                                        const SkMatrix& ctm) {
+Cacheable::CacheType ColorFilterLayer::NeedCaching(PrerollContext* context,
+                                                   const SkMatrix& ctm) {
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    return CacheableLayer::CacheType::kCurrent;
+    return Cacheable::CacheType::kCurrent;
   } else {
     render_count_++;
-    return CacheableLayer::CacheType::kChildren;
+    return Cacheable::CacheType::kChildren;
   }
 }
 

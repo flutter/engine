@@ -10,7 +10,6 @@
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/offscreen_surface.h"
-#include "flutter/flow/raster_cache.h"
 
 namespace flutter {
 
@@ -93,28 +92,35 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
-  auto cacheable_entry = RasterCacheableEntry::MarkDisplayListCacheable(
-      this->display_list(), *context, matrix, offset_);
-  context->raster_cached_entries.push_back(cacheable_entry);
+  auto& cacheable_entry = context->raster_cached_entries.emplace_back(
+      RasterCacheableEntry::MarkDisplayListCacheable(
+          this->display_list(), *context, matrix, offset_));
+
+  DisplayList* disp_list = display_list();
+  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
+  set_paint_bounds(bounds);
+
   cacheable_entry->need_caching = NeedCaching(context, matrix);
 }
 
 bool DisplayListLayer::NeedCaching(PrerollContext* context,
                                    const SkMatrix& ctm) {
-  DisplayList* disp_list = display_list();
-  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
-  set_paint_bounds(bounds);
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     // For display_list_layer if the context has raster_cache, we will try to
     // collection it when we raster cache it, we will to decision Prepare or
     // Touch cache
-    if (context->cull_rect.intersect(bounds) &&
-        cache->ShouldBeCached(context, disp_list, is_complex_, will_change_,
-                              ctm)) {
-      // if current Layer can be cached, we change the
-      // subtree_can_inherit_opacity to true
-      context->subtree_can_inherit_opacity = true;
+    if (context->cull_rect.intersect(paint_bounds())) {
+      if (cache->ShouldBeCached(context, display_list(), is_complex_,
+                                will_change_, ctm)) {
+        SkMatrix transformation_matrix = ctm;
+        transformation_matrix.preTranslate(offset_.x(), offset_.y());
+
+        context->raster_cached_entries.back()->matrix = transformation_matrix;
+        // if current Layer can be cached, we change the
+        // subtree_can_inherit_opacity to true
+        context->subtree_can_inherit_opacity = true;
+      }
     }
     return true;
   }

@@ -41,13 +41,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
   FML_DCHECK(!layers().empty());  // We can't be a leaf.
 
-  auto cacheable_entry =
-      RasterCacheableEntry::MarkLayerCacheable(this, *context, matrix);
-  context->raster_cached_entries.emplace_back(cacheable_entry);
-  auto current_index = context->raster_cached_entries.size();
-
-  SkMatrix child_matrix = matrix;
-  child_matrix.preTranslate(offset_.fX, offset_.fY);
+  child_matrix_ = matrix;
+  child_matrix_.preTranslate(offset_.fX, offset_.fY);
 
   // Similar to what's done in TransformLayer::Preroll, we have to apply the
   // reverse transformation to the cull rect to properly cull child layers.
@@ -56,39 +51,42 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.PushTransform(
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
+
+  Cacheable::AutoCache::Create(this, context, matrix);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, child_matrix);
+
+  ContainerLayer::Preroll(context, child_matrix_);
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
   set_children_can_accept_opacity(context->subtree_can_inherit_opacity);
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 
-  cacheable_entry->num_child_entries =
-      context->raster_cached_entries.size() - current_index;
-
-  auto cache_type = NeedCaching(context, matrix);
-  if (cache_type == CacheableLayer::CacheType::kChildren) {
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
-#endif
-    cacheable_entry->matrix = child_matrix;
-    cacheable_entry->MarkLayerChildrenNeedCached();
-  } else if (cache_type == CacheableLayer::CacheType::kNone) {
-    cacheable_entry->need_caching = false;
-  }
-
   // Restore cull_rect
   context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
 }
 
-CacheableLayer::CacheType OpacityLayer::NeedCaching(PrerollContext* context,
-                                                    const SkMatrix& ctm) {
-  if (!children_can_accept_opacity()) {
-    return CacheableLayer::CacheType::kChildren;
+void OpacityLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
+                                   CacheType cache_type) {
+  if (cache_type == Cacheable::CacheType::kChildren) {
+    auto child_matrix = child_matrix_;
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    child_matrix = RasterCache::GetIntegralTransCTM(child_matrix_);
+#endif
+    cacheable_entry->matrix = child_matrix;
+    cacheable_entry->MarkLayerChildrenNeedCached();
+  } else if (cache_type == Cacheable::CacheType::kNone) {
+    cacheable_entry->need_caching = false;
   }
-  return CacheableLayer::CacheType::kNone;
+}
+
+Cacheable::CacheType OpacityLayer::NeedCaching(PrerollContext* context,
+                                               const SkMatrix& ctm) {
+  if (!children_can_accept_opacity()) {
+    return Cacheable::CacheType::kChildren;
+  }
+  return Cacheable::CacheType::kNone;
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {

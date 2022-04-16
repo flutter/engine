@@ -5,7 +5,10 @@
 #ifndef FLUTTER_FLOW_LAYERS_OPACITY_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_OPACITY_LAYER_H_
 
+#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/layer.h"
+#include "include/core/SkMatrix.h"
 
 namespace flutter {
 
@@ -13,7 +16,7 @@ namespace flutter {
 // OpacityLayer is very costly due to the saveLayer call. If there's no child,
 // having the OpacityLayer or not has the same effect. In debug_unopt build,
 // |Preroll| will assert if there are no children.
-class OpacityLayer : public ContainerLayer {
+class OpacityLayer : public ContainerLayer, public Cacheable {
  public:
   // An offset is provided here because OpacityLayer.addToScene method in the
   // Flutter framework can take an optional offset argument.
@@ -33,8 +36,10 @@ class OpacityLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  CacheableLayer::CacheType NeedCaching(PrerollContext* context,
-                                        const SkMatrix& ctm) override;
+  Cacheable::CacheType NeedCaching(PrerollContext* context,
+                                   const SkMatrix& ctm) override;
+
+  void ConfigCacheType(RasterCacheableEntry* entry, CacheType type) override;
 
   // Returns whether the children are capable of inheriting an opacity value
   // and modifying their rendering accordingly. This value is only guaranteed
@@ -48,9 +53,12 @@ class OpacityLayer : public ContainerLayer {
 
   SkScalar opacity() const { return alpha_ * 1.0 / SK_AlphaOPAQUE; }
 
+  Layer* asLayer() override { return this; }
+
  private:
   SkAlpha alpha_;
   SkPoint offset_;
+  SkMatrix child_matrix_;
   bool children_can_accept_opacity_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);

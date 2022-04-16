@@ -281,8 +281,7 @@ bool RasterCache::ShouldBeCached(PrerollContext* context,
                                  SkPicture* picture,
                                  bool is_complex,
                                  bool will_change,
-                                 const SkMatrix& untranslated_matrix,
-                                 const SkPoint& offset) {
+                                 const SkMatrix& transformation_matrix) {
   if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
@@ -291,15 +290,28 @@ bool RasterCache::ShouldBeCached(PrerollContext* context,
     // We only deal with pictures that are worthy of rasterization.
     return false;
   }
+
+  if (!transformation_matrix.invert(nullptr)) {
+    // The matrix was singular. No point in going further.
+    return false;
+  }
+
+  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyType::kPicture,
+                           transformation_matrix);
+
+  // Creates an entry, if not present prior.
+  Entry& entry = cache_[cache_key];
+  if (entry.access_count < access_threshold_) {
+    // Frame threshold has not yet been reached.
+    return false;
+  }
   return true;
 }
 
 bool RasterCache::Prepare(PrerollContext* context,
                           SkPicture* picture,
-                          const SkMatrix& untranslated_matrix,
-                          const SkPoint& offset) {
-  SkMatrix transformation_matrix = untranslated_matrix;
-  transformation_matrix.preTranslate(offset.x(), offset.y());
+                          const SkMatrix& matrix) {
+  auto transformation_matrix = matrix;
 
   if (!transformation_matrix.invert(nullptr)) {
     // The matrix was singular. No point in going further.
@@ -335,8 +347,7 @@ bool RasterCache::ShouldBeCached(PrerollContext* context,
                                  DisplayList* display_list,
                                  bool is_complex,
                                  bool will_change,
-                                 const SkMatrix& untranslated_matrix,
-                                 const SkPoint& offset) {
+                                 const SkMatrix& transformation_matrix) {
   if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
@@ -352,16 +363,24 @@ bool RasterCache::ShouldBeCached(PrerollContext* context,
     return false;
   }
 
+  RasterCacheKey cache_key(display_list->unique_id(),
+                           RasterCacheKeyType::kDisplayList,
+                           transformation_matrix);
+
+  // Creates an entry, if not present prior.
+  Entry& entry = cache_[cache_key];
+  if (entry.access_count < access_threshold_) {
+    // Frame threshold has not yet been reached.
+    return false;
+  }
+
   return true;
 }
 
 bool RasterCache::Prepare(PrerollContext* context,
                           DisplayList* display_list,
-                          const SkMatrix& untranslated_matrix,
-                          const SkPoint& offset) {
-  SkMatrix transformation_matrix = untranslated_matrix;
-  transformation_matrix.preTranslate(offset.x(), offset.y());
-
+                          const SkMatrix& matrix) {
+  auto transformation_matrix = matrix;
   RasterCacheKey cache_key(display_list->unique_id(),
                            RasterCacheKeyType::kDisplayList,
                            transformation_matrix);

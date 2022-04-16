@@ -7,11 +7,12 @@
 
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
 
 namespace flutter {
 
-class ImageFilterLayer : public ContainerLayer {
+class ImageFilterLayer : public ContainerLayer, public Cacheable {
  public:
   explicit ImageFilterLayer(sk_sp<SkImageFilter> filter);
 
@@ -21,8 +22,10 @@ class ImageFilterLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  CacheableLayer::CacheType NeedCaching(PrerollContext* context,
-                                        const SkMatrix& ctm) override;
+  Cacheable::CacheType NeedCaching(PrerollContext* context,
+                                   const SkMatrix& ctm) override;
+
+  Layer* asLayer() override { return this; }
 
  private:
   // The ImageFilterLayer might cache the filtered output of this layer

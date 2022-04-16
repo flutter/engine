@@ -6,11 +6,11 @@
 #define FLUTTER_FLOW_LAYERS_CONTAINER_LAYER_H_
 
 #include <vector>
+#include "flutter/flow/layers/layer.h"
 
-#include "flutter/flow/layers/cacheable_layer.h"
 namespace flutter {
 
-class ContainerLayer : public CacheableLayer {
+class ContainerLayer : public Layer {
  public:
   ContainerLayer();
 
@@ -26,30 +26,12 @@ class ContainerLayer : public CacheableLayer {
 
   virtual void DiffChildren(DiffContext* context,
                             const ContainerLayer* old_layer);
+
   void PaintChildren(PaintContext& context) const;
+
   const ContainerLayer* as_container_layer() const override { return this; }
 
   const SkRect& child_paint_bounds() const { return child_paint_bounds_; }
-
-  CacheableLayer::CacheType NeedCaching(PrerollContext* context,
-                                        const SkMatrix& ctm) override {
-    return CacheableLayer::CacheType::kNone;
-  }
-
-  // Try to prepare the raster cache for a given layer.
-  //
-  // The raster cache would fail if either of the followings is true:
-  // 1. The context has a platform view.
-  // 2. The context does not have a valid raster cache.
-  // 3. The layer's paint bounds does not intersect with the cull rect.
-  //
-  // We make this a static function instead of a member function that directly
-  // uses the "this" pointer as the layer because we sometimes need to raster
-  // cache a child layer and one can't access its child's protected method.
-  void TryToPrepareRasterCache(PrerollContext* context,
-                               const SkMatrix& matrix,
-                               RasterCacheLayerStrategy strategy =
-                                   RasterCacheLayerStrategy::kLayer) override;
 
  protected:
   void PrerollChildren(PrerollContext* context,

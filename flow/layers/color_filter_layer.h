@@ -5,12 +5,13 @@
 #ifndef FLUTTER_FLOW_LAYERS_COLOR_FILTER_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_COLOR_FILTER_LAYER_H_
 
+#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
-
 namespace flutter {
 
-class ColorFilterLayer : public ContainerLayer {
+class ColorFilterLayer : public ContainerLayer, public Cacheable {
  public:
   explicit ColorFilterLayer(sk_sp<SkColorFilter> filter);
 
@@ -20,8 +21,10 @@ class ColorFilterLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  CacheableLayer::CacheType NeedCaching(PrerollContext* context,
-                                        const SkMatrix& ctm) override;
+  Cacheable::CacheType NeedCaching(PrerollContext* context,
+                                   const SkMatrix& ctm) override;
+
+  Layer* asLayer() override { return this; }
 
  private:
   sk_sp<SkColorFilter> filter_;

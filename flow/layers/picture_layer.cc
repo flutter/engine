@@ -110,22 +110,29 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
-  auto cacheable_entry = RasterCacheableEntry::MarkSkPictureCacheable(
-      this->picture(), *context, matrix, offset_);
-  context->raster_cached_entries.push_back(cacheable_entry);
-  cacheable_entry->need_caching = NeedCaching(context, matrix);
-}
-
-bool PictureLayer::NeedCaching(PrerollContext* context, const SkMatrix& ctm) {
+  auto& cacheable_entry = context->raster_cached_entries.emplace_back(
+      RasterCacheableEntry::MarkSkPictureCacheable(this->picture(), *context,
+                                                   matrix, offset_));
   SkPicture* sk_picture = picture();
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
 
+  cacheable_entry->need_caching = NeedCaching(context, matrix);
+}
+
+bool PictureLayer::NeedCaching(PrerollContext* context, const SkMatrix& ctm) {
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    if (context->cull_rect.intersects(bounds)) {
-      if (cache->ShouldBeCached(context, sk_picture, is_complex_, will_change_,
+    if (context->cull_rect.intersects(paint_bounds())) {
+      if (cache->ShouldBeCached(context, picture(), is_complex_, will_change_,
                                 ctm)) {
+        SkMatrix transformation_matrix = ctm;
+        transformation_matrix.preTranslate(offset_.x(), offset_.y());
+
+        context->raster_cached_entries.back()->matrix = transformation_matrix;
+
+        // if current Layer can be cached, we change the
+        // subtree_can_inherit_opacity to true
         context->subtree_can_inherit_opacity = true;
       }
     }

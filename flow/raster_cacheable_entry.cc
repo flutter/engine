@@ -17,7 +17,10 @@ namespace flutter {
 
 void CacheableLayerWrapper::TryToPrepareRasterCache(PrerollContext* context,
                                                     const SkMatrix& matrix) {
-  layer_->TryToPrepareRasterCache(context, matrix);
+  cacheable_item_->TryToPrepareRasterCache(
+      cacheable_item_->asLayer(), context, matrix,
+      cache_children_ ? RasterCacheLayerStrategy::kLayerChildren
+                      : RasterCacheLayerStrategy::kLayer);
 }
 
 void CacheableDisplayListWrapper::TryToPrepareRasterCache(
@@ -28,7 +31,7 @@ void CacheableDisplayListWrapper::TryToPrepareRasterCache(
         display_list_->bounds().makeOffset(offset_.x(), offset_.y());
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache");
     if (context->cull_rect.intersects(bounds)) {
-      cache->Prepare(context, display_list_, matrix, offset_);
+      cache->Prepare(context, display_list_, matrix);
     } else {
       // Don't evict raster cache entry during partial repaint
       cache->Touch(display_list_, matrix);
@@ -45,9 +48,7 @@ void CacheableSkPictureWrapper::TryToPrepareRasterCache(
 
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
     if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, sk_picture_, matrix, offset_)) {
-        context->subtree_can_inherit_opacity = true;
-      }
+      cache->Prepare(context, sk_picture_, matrix);
     } else {
       // Don't evict raster cache entry during partial repaint
       cache->Touch(sk_picture_, matrix);
@@ -62,24 +63,18 @@ RasterCacheableEntry::RasterCacheableEntry(
     unsigned num_child,
     bool need_caching)
     : matrix(matrix),
-      mutators_stack(context.mutators_stack),
       cull_rect(context.cull_rect),
       num_child_entries(num_child),
       need_caching(need_caching),
+      has_platform_view(context.has_platform_view),
+      has_texture_layer(context.has_texture_layer),
       item_(std::move(item)) {}
 
-// void RasterCacheableEntry::UpdateRasterCacheableEntry(
-//     std::unique_ptr<CacheableEntryBase> entry,
-//     const PrerollContext& context,
-//     const SkMatrix& matrix) {
-//   this->entry_ = std::move(entry);
-//   this->matrix = matrix;
-//   this->mutators_stack = context.mutators_stack;
-//   this->cull_rect = context.cull_rect;
-//   this->color_space = context.dst_color_space;
-// }
-
 void RasterCacheableEntry::TryToPrepareRasterCache(PrerollContext* context) {
+  context->has_platform_view = has_platform_view;
+  context->has_texture_layer = has_texture_layer;
+  context->cull_rect = cull_rect;
+
   item_->TryToPrepareRasterCache(context, matrix);
 }
 

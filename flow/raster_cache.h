@@ -191,30 +191,26 @@ class RasterCache {
                       SkPicture* picture,
                       bool is_complex,
                       bool will_change,
-                      const SkMatrix& untranslated_matrix,
-                      const SkPoint& offset = SkPoint());
+                      const SkMatrix& transformation_matrix);
 
   // Prepare to cache the SkPicture.
   // Return true if the cache is generated.
   bool Prepare(PrerollContext* context,
                SkPicture* picture,
-               const SkMatrix& untranslated_matrix,
-               const SkPoint& offset = SkPoint());
+               const SkMatrix& transformation_matrix);
 
   // Return true if the DisplayList can be cached.
   bool ShouldBeCached(PrerollContext* context,
                       DisplayList* display_list,
                       bool is_complex,
                       bool will_change,
-                      const SkMatrix& untranslated_matrix,
-                      const SkPoint& offset = SkPoint());
+                      const SkMatrix& transformation_matrix);
 
   // Prepare to cache the DisplayList.
   // Return true if the cache is generated.
   bool Prepare(PrerollContext* context,
                DisplayList* display_list,
-               const SkMatrix& untranslated_matrix,
-               const SkPoint& offset = SkPoint());
+               const SkMatrix& transformation_matrix);
 
   // If there is cache entry for this picture, display list or layer, mark it as
   // used for this frame in order to not get evicted. This is needed during

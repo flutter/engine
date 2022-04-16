@@ -14,8 +14,8 @@ namespace flutter {
 
 struct PrerollContext;
 class RasterCache;
-class CacheableLayer;
 class DisplayList;
+class Cacheable;
 class CacheableLayerWrapper;
 class CacheableDisplayListWrapper;
 class CacheableSkPictureWrapper;
@@ -25,31 +25,35 @@ class CacheableItemWrapperBase {
   virtual void TryToPrepareRasterCache(PrerollContext* context,
                                        const SkMatrix& matrix) = 0;
 
-  virtual CacheableLayerWrapper* GetCacheableLayer() { return nullptr; }
+  virtual CacheableLayerWrapper* asCacheableLayerWrapper() { return nullptr; }
 
-  virtual CacheableDisplayListWrapper* GetCacheableDisplayList() {
+  virtual CacheableDisplayListWrapper* asCacheableDisplayListWrapper() {
     return nullptr;
   }
 
-  virtual CacheableSkPictureWrapper* GetCacheableSkPicture() { return nullptr; }
+  virtual CacheableSkPictureWrapper* asCacheableSkPictureWrapper() {
+    return nullptr;
+  }
 
   virtual ~CacheableItemWrapperBase() = default;
 };
 // CacheableEntry is a wrapper to erasure the Entry type.
 class CacheableLayerWrapper : public CacheableItemWrapperBase {
  public:
-  explicit CacheableLayerWrapper(CacheableLayer* layer) : layer_(layer) {}
+  explicit CacheableLayerWrapper(Cacheable* layer) : cacheable_item_(layer) {}
 
   void TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
 
   void NeedCacheChildren() { cache_children_ = true; }
 
-  CacheableLayerWrapper* GetCacheableLayer() override { return this; }
+  CacheableLayerWrapper* asCacheableLayerWrapper() override { return this; }
+
+  Cacheable* GetCacheableItem() const { return cacheable_item_; }
 
  private:
   bool cache_children_ = false;
-  CacheableLayer* layer_;
+  Cacheable* cacheable_item_;
 };
 
 // CacheableEntry is a wrapper to erasure the Entry type.
@@ -69,7 +73,7 @@ class CacheableDisplayListWrapper : public SkGPUObjectCacheableWrapper {
   void TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
 
-  CacheableDisplayListWrapper* GetCacheableDisplayList() override {
+  CacheableDisplayListWrapper* asCacheableDisplayListWrapper() override {
     return this;
   }
 
@@ -85,7 +89,9 @@ class CacheableSkPictureWrapper : public SkGPUObjectCacheableWrapper {
   void TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
 
-  CacheableSkPictureWrapper* GetCacheableSkPicture() override { return this; }
+  CacheableSkPictureWrapper* asCacheableSkPictureWrapper() override {
+    return this;
+  }
 
  private:
   SkPicture* sk_picture_;
@@ -102,7 +108,7 @@ class RasterCacheableEntry {
                        bool need_caching = false);
 
   static std::shared_ptr<RasterCacheableEntry> MarkLayerCacheable(
-      CacheableLayer* layer,
+      Cacheable* layer,
       const PrerollContext& context,
       const SkMatrix& matrix,
       unsigned num_child = 0,
@@ -139,17 +145,23 @@ class RasterCacheableEntry {
   CacheableItemWrapperBase* GetCacheableWrapper() const { return item_.get(); }
 
   void MarkLayerChildrenNeedCached() {
-    item_->GetCacheableLayer()->NeedCacheChildren();
+    item_->asCacheableLayerWrapper()->NeedCacheChildren();
   }
 
   void TryToPrepareRasterCache(PrerollContext* context);
 
+  Cacheable* GetCacheableLayer() {
+    return item_->asCacheableLayerWrapper()->GetCacheableItem();
+  }
+
   SkMatrix matrix;
-  MutatorsStack mutators_stack;
   SkRect cull_rect;
 
   unsigned num_child_entries;
   bool need_caching;
+
+  bool has_platform_view = false;
+  bool has_texture_layer = false;
 
  private:
   std::unique_ptr<CacheableItemWrapperBase> item_;

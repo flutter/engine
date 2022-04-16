@@ -9,7 +9,6 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
-#include "include/core/SkMatrix.h"
 
 namespace flutter {
 

@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/layer_tree.h"
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/cacheable_layer.h"
@@ -76,21 +77,26 @@ void LayerTree::RasterCache(CompositorContext::ScopedFrame& frame,
   auto* color_space = GetColorSpace(frame.canvas());
   auto* raster_cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+  auto mutator_stack = MutatorsStack();
   for (unsigned i = 0; i < context->raster_cached_entries.size(); i++) {
     auto& entry = context->raster_cached_entries[i];
     if (entry->need_caching) {
-      PrerollContext context = {raster_cache,
-                                frame.gr_context(),
-                                frame.view_embedder(),
-                                entry->mutators_stack,
-                                color_space,
-                                entry->cull_rect,
-                                false,
-                                frame.context().raster_time(),
-                                frame.context().ui_time(),
-                                frame.context().texture_registry(),
-                                checkerboard_offscreen_layers_,
-                                device_pixel_ratio_};
+      PrerollContext context = {
+          raster_cache,
+          frame.gr_context(),
+          frame.view_embedder(),
+          mutator_stack,
+          color_space,
+          entry->cull_rect,
+          false,
+          frame.context().raster_time(),
+          frame.context().ui_time(),
+          frame.context().texture_registry(),
+          checkerboard_offscreen_layers_,
+          device_pixel_ratio_,
+          entry->has_platform_view,
+          entry->has_texture_layer,
+      };
       entry->TryToPrepareRasterCache(&context);
       i += entry->num_child_entries;
     }
