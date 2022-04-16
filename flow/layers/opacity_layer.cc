@@ -52,7 +52,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
 
-  Cacheable::AutoCache::Create(this, context, matrix);
+  Cacheable::AutoCache cache =
+      Cacheable::AutoCache::Create(this, context, matrix);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 

@@ -34,7 +34,8 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  Cacheable::AutoCache::Create(this, context, matrix);
+  Cacheable::AutoCache cache =
+      Cacheable::AutoCache::Create(this, context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
 }
