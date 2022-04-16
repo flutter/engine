@@ -430,9 +430,7 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   },
   { "SetPathEffect", {
       // sizeof(DlDashPathEffect) + 2 * sizeof(SkScalar)
-      {0, 32, 0, 0, [](DisplayListBuilder& b) {
-        b.setPathEffect(TestPathEffect1.get());
-      }},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1.get());}},
       {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2.get());}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(nullptr);}},
     }
