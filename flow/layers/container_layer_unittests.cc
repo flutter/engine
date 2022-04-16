@@ -9,6 +9,7 @@
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
+#include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
@@ -245,6 +246,32 @@ TEST_F(ContainerLayerTest, OpacityInheritance) {
   context->subtree_can_inherit_opacity = true;
   container2->Preroll(context, SkMatrix::I());
   EXPECT_FALSE(context->subtree_can_inherit_opacity);
+}
+TEST_F(ContainerLayerTest, CollectionCacheableLayer) {
+  SkPath child_path;
+  child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  SkPaint child_paint(SkColors::kGreen);
+  SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
+
+  auto mock_layer1 = std::make_shared<MockLayer>(SkPath(), child_paint);
+  auto mock_cacheable_container_layer1 =
+      std::make_shared<MockCacheableContainerLayer>();
+  auto mock_container_layer = std::make_shared<ContainerLayer>();
+  auto mock_cacheable_layer =
+      std::make_shared<MockCacheableLayer>(child_path, child_paint);
+  mock_cacheable_container_layer1->Add(mock_cacheable_layer);
+
+  // ContainerLayer
+  //   |- MockLayer
+  //   |- MockCacheableContainerLayer
+  //        |- MockCacheableLayer
+  auto layer = std::make_shared<ContainerLayer>();
+  layer->Add(mock_cacheable_container_layer1);
+  layer->Add(mock_layer1);
+
+  layer->Preroll(preroll_context(), initial_transform);
+  ASSERT_EQ(preroll_context()->raster_cached_entries.size(),
+            static_cast<const unsigned long>(2));
 }
 
 using ContainerLayerDiffTest = DiffContextTest;

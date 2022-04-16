@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/shader_mask_layer.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 
 namespace flutter {
 
@@ -12,7 +13,9 @@ ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
     : shader_(shader),
       mask_rect_(mask_rect),
       blend_mode_(blend_mode),
-      render_count_(1) {}
+      render_count_(1) {
+  set_layer_can_inherit_opacity(true);
+}
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -25,6 +28,11 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
+
   DiffChildren(context, prev);
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -33,18 +41,19 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
 void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
+
+  Cacheable::AutoCache::Create(this, context, matrix);
+
   ContainerLayer::Preroll(context, matrix);
+}
 
-  // We always paint with a saveLayer (or a cached rendering),
-  // so we can always apply opacity in any of those cases.
-  context->subtree_can_inherit_opacity = true;
-
-  SkMatrix child_matrix(matrix);
+Cacheable::CacheType ShaderMaskLayer::NeedCaching(PrerollContext* context,
+                                                  const SkMatrix& ctm) {
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, child_matrix,
-                            RasterCacheLayerStrategy::kLayer);
+    return Cacheable::CacheType::kCurrent;
   } else {
     render_count_++;
+    return Cacheable::CacheType::kNone;
   }
 }
 
@@ -52,15 +61,13 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  AutoCachePaint cache_paint(context);
-
   if (context.raster_cache &&
       context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                 RasterCacheLayerStrategy::kLayer,
-                                 cache_paint.paint())) {
+                                 RasterCacheLayerStrategy::kLayer)) {
     return;
   }
 
+  AutoCachePaint cache_paint(context);
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);

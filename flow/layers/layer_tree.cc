@@ -9,7 +9,6 @@
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
 #include "include/core/SkMatrix.h"
@@ -66,38 +65,36 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
 
-  RasterCache(frame, &context);
+  TryToRasterCache(&context);
 
   return context.surface_needs_readback;
 }
 
-void LayerTree::RasterCache(CompositorContext::ScopedFrame& frame,
-                            PrerollContext* context,
-                            bool ignore_raster_cache) {
-  auto* color_space = GetColorSpace(frame.canvas());
-  auto* raster_cache =
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+void LayerTree::TryToRasterCache(PrerollContext* context,
+                                 bool ignore_raster_cache) {
   auto mutator_stack = MutatorsStack();
   for (unsigned i = 0; i < context->raster_cached_entries.size(); i++) {
     auto& entry = context->raster_cached_entries[i];
     if (entry->need_caching) {
-      PrerollContext context = {
-          raster_cache,
-          frame.gr_context(),
-          frame.view_embedder(),
-          mutator_stack,
-          color_space,
-          entry->cull_rect,
-          false,
-          frame.context().raster_time(),
-          frame.context().ui_time(),
-          frame.context().texture_registry(),
-          checkerboard_offscreen_layers_,
-          device_pixel_ratio_,
-          entry->has_platform_view,
-          entry->has_texture_layer,
+      PrerollContext preroll_context = {
+          // clang-format off
+          .raster_cache                  = context->raster_cache,
+          .gr_context                    = context->gr_context,
+          .view_embedder                 = context->view_embedder,
+          .mutators_stack                = mutator_stack,
+          .dst_color_space               = context->dst_color_space,
+          .cull_rect                     = entry->cull_rect,
+          .surface_needs_readback        = false,
+          .raster_time                   = context->raster_time,
+          .ui_time                       = context->ui_time,
+          .texture_registry              = context->texture_registry,
+          .checkerboard_offscreen_layers = context->checkerboard_offscreen_layers,
+          .frame_device_pixel_ratio      = context->frame_device_pixel_ratio,
+          .has_platform_view             = entry->has_platform_view,
+          .has_texture_layer             = entry->has_texture_layer,
+          // clang-format on
       };
-      entry->TryToPrepareRasterCache(&context);
+      entry->TryToPrepareRasterCache(&preroll_context);
       i += entry->num_child_entries;
     }
   }

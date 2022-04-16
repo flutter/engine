@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/testing/mock_layer.h"
+#include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/layer.h"
 
 namespace flutter {
 namespace testing {
@@ -61,6 +63,24 @@ void MockLayer::Paint(PaintContext& context) const {
   if (context.inherited_opacity < SK_Scalar1) {
     context.leaf_nodes_canvas->restore();
   }
+}
+
+void MockCacheableContainerLayer::Preroll(PrerollContext* context,
+                                          const SkMatrix& matrix) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
+  Cacheable::AutoCache::Create(this, context, matrix);
+
+  ContainerLayer::Preroll(context, matrix);
+}
+
+void MockCacheableLayer::Preroll(PrerollContext* context,
+                                 const SkMatrix& matrix) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
+  Cacheable::AutoCache::Create(this, context, matrix);
+
+  MockLayer::Preroll(context, matrix);
 }
 
 }  // namespace testing

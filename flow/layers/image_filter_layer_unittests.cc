@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/image_filter_layer.h"
 
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/flow/testing/layer_test.h"
@@ -306,6 +307,7 @@ TEST_F(ImageFilterLayerTest, CacheChild) {
                                     RasterCacheLayerStrategy::kLayerChildren));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(preroll_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
@@ -357,6 +359,7 @@ TEST_F(ImageFilterLayerTest, CacheChildren) {
                                     RasterCacheLayerStrategy::kLayerChildren));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(preroll_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));

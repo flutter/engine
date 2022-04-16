@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/color_filter_layer.h"
 
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/flow/layers/opacity_layer.h"
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -253,6 +255,7 @@ TEST_F(ColorFilterLayerTest, CacheChild) {
                                     RasterCacheLayerStrategy::kLayerChildren));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(preroll_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
@@ -303,6 +306,7 @@ TEST_F(ColorFilterLayerTest, CacheChildren) {
                                     RasterCacheLayerStrategy::kLayerChildren));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(preroll_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));

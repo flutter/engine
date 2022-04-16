@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <stddef.h>
 #include "flutter/flow/layers/layer_tree.h"
 
 #include "flutter/flow/compositor_context.h"
@@ -14,7 +15,6 @@
 
 namespace flutter {
 namespace testing {
-
 class LayerTreeTest : public CanvasTest {
  public:
   LayerTreeTest()
@@ -198,7 +198,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
   // PrerollContext that this test must be revisited and updated.
   // If any fields get removed or replaced, then the expect_defaults closure
   // will fail to compile, again bringing attention to updating this test.
-  EXPECT_EQ(sizeof(PrerollContext), size_t(104));
+  EXPECT_EQ(sizeof(PrerollContext), size_t(128));
 
   MutatorsStack mock_mutators;
   FixedRefreshRateStopwatch mock_raster_time;
@@ -225,6 +225,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
     EXPECT_EQ(context.has_texture_layer, false);
 
     EXPECT_EQ(context.subtree_can_inherit_opacity, false);
+    EXPECT_EQ(context.raster_cached_entries.size(), static_cast<size_t>(0));
   };
 
   // These 4 initializers are required because they are handled by reference

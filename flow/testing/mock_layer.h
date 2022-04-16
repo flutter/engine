@@ -5,7 +5,10 @@
 #ifndef FLOW_TESTING_MOCK_LAYER_H_
 #define FLOW_TESTING_MOCK_LAYER_H_
 
+#include "flutter/flow/layers/cacheable_layer.h"
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 
 namespace flutter {
 namespace testing {
@@ -55,6 +58,48 @@ class MockLayer : public Layer {
   bool fake_opacity_compatible_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MockLayer);
+};
+
+class MockCacheableContainerLayer : public ContainerLayer, public Cacheable {
+ public:
+  using ContainerLayer::ContainerLayer;
+
+  Layer* asLayer() { return this; }
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
+  Cacheable::CacheType NeedCaching(PrerollContext* context,
+                                   const SkMatrix& ctm) {
+    if (raster_count_ < 3) {
+      raster_count_++;
+      return Cacheable::CacheType::kChildren;
+    }
+    return Cacheable::CacheType::kCurrent;
+  }
+
+ private:
+  int raster_count_ = 0;
+};
+
+class MockCacheableLayer : public MockLayer, public Cacheable {
+ public:
+  using MockLayer::MockLayer;
+
+  Layer* asLayer() { return this; }
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
+  Cacheable::CacheType NeedCaching(PrerollContext* context,
+                                   const SkMatrix& ctm) {
+    if (raster_count_ < 3) {
+      raster_count_++;
+      return Cacheable::CacheType::kNone;
+    }
+    return Cacheable::CacheType::kCurrent;
+  }
+
+ private:
+  int raster_count_ = 0;
 };
 
 }  // namespace testing

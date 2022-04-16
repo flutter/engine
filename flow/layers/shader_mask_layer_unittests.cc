@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/shader_mask_layer.h"
 
 #include "flutter/flow/layers/opacity_layer.h"
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -305,16 +306,20 @@ TEST_F(ShaderMaskLayerTest, LayerCached) {
                                     RasterCacheLayerStrategy::kLayer));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(preroll_context());
+
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
   EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
                                     RasterCacheLayerStrategy::kLayer));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(preroll_context());
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
   EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
                                     RasterCacheLayerStrategy::kLayer));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(preroll_context());
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
                                    RasterCacheLayerStrategy::kLayer));

@@ -347,7 +347,13 @@ bool RasterCache::ShouldBeCached(PrerollContext* context,
                                  DisplayList* display_list,
                                  bool is_complex,
                                  bool will_change,
-                                 const SkMatrix& transformation_matrix) {
+                                 const SkMatrix& matrix) {
+  auto transformation_matrix = matrix;
+
+  if (!transformation_matrix.invert(nullptr)) {
+    // The matrix was singular. No point in going further.
+    return false;
+  }
   if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
