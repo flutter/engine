@@ -150,11 +150,11 @@ std::variant<std::wstring, int> ScopedClipboard::GetString() {
     return ::GetLastError();
   }
   ScopedGlobalLock locked_data(data);
-  std::optional<std::wstring> string = static_cast<wchar_t*>(locked_data.get());
-  if (!string) {
+
+  if (!locked_data.get()) {
     return ::GetLastError();
   }
-  return string.value();
+  return static_cast<wchar_t*>(locked_data.get());
 }
 
 int ScopedClipboard::SetString(const std::wstring string) {
