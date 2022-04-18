@@ -48,8 +48,6 @@ public class SpellCheckChannel {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           if (spellCheckMethodHandler == null) {
-            // If no explicit SpellCheckMethodHandler has been registered then we don't
-            // need to forward this call to an API. Return.
             Log.v(
                 TAG,
                 "No SpellCheckeMethodHandler registered, call not forwarded to spell check API.");
