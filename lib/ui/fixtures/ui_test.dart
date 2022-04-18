@@ -274,20 +274,22 @@ Future<void> pumpImage() async {
   );
   final Image image = await completer.future;
   late Picture picture;
-  late OffsetEngineLayer layer;
+  late OffsetEngineLayer offsetLayer;
+  late PictureEngineLayer pictureLayer;
 
   void renderBlank(Duration duration) {
     image.dispose();
     picture.dispose();
-    layer.dispose();
+    offsetLayer.dispose();
+    pictureLayer.dispose();
 
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawPaint(Paint());
     picture = recorder.endRecording();
     final SceneBuilder builder = SceneBuilder();
-    layer = builder.pushOffset(0, 0);
-    builder.addPicture(Offset.zero, picture);
+    offsetLayer = builder.pushOffset(0, 0);
+    pictureLayer = builder.addPicture(Offset.zero, picture);
 
     final Scene scene = builder.build();
     window.render(scene);
@@ -303,8 +305,8 @@ Future<void> pumpImage() async {
     picture = recorder.endRecording();
 
     final SceneBuilder builder = SceneBuilder();
-    layer = builder.pushOffset(0, 0);
-    builder.addPicture(Offset.zero, picture);
+    offsetLayer = builder.pushOffset(0, 0);
+    pictureLayer = builder.addPicture(Offset.zero, picture);
 
     _captureImageAndPicture(image, picture);
 
