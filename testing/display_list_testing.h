@@ -149,19 +149,15 @@ class DisplayListStreamDispatcher final : public Dispatcher {
   void indent() { cur_indent_ += indent_; }
   void outdent() { cur_indent_ -= indent_; }
 
-  std::ostream& out_points(std::string name, int count, const SkPoint points[]);
-  std::ostream& out_rects(std::string name, int count, const SkRect points[]);
+  template <class T>
+  std::ostream& out_array(std::string name, int count, const T array[]);
+
+  // colors must be handled separately otherwise we just get a list of ints
   std::ostream& out_colors(std::string name, int count, const SkColor colors[]);
-  std::ostream& out_indices(std::string name,
-                            int count,
-                            const uint16_t indices[]);
-  std::ostream& out_floats(std::string name, int count, const float floats[]);
-  std::ostream& out_xforms(std::string name,
-                           int count,
-                           const SkRSXform xforms[]);
 
   std::ostream& startl();
-  std::ostream& endl(std::ostream& os);
+
+  void out(const DlColorFilter* filter);
 };
 
 }  // namespace testing

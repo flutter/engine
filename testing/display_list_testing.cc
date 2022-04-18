@@ -199,6 +199,17 @@ static std::ostream& operator<<(std::ostream& os, const SkPaint::Style& style) {
   }
 }
 
+static std::ostream& operator<<(std::ostream& os, const SkBlurStyle& style) {
+  switch (style) {
+    case kNormal_SkBlurStyle: return os << "BlurStyle::kNormal";
+    case kSolid_SkBlurStyle:  return os << "BlurStyle::kSolid";
+    case kOuter_SkBlurStyle:  return os << "BlurStyle::kOuter";
+    case kInner_SkBlurStyle:  return os << "BlurStyle::kInner";
+
+    default: return os << "Style::????";
+  }
+}
+
 static std::ostream& operator<<(std::ostream& os,
                                 const SkCanvas::PointMode& mode) {
   switch (mode) {
@@ -295,35 +306,18 @@ std::ostream& DisplayListStreamDispatcher::startl() {
   return os_;
 }
 
-std::ostream& DisplayListStreamDispatcher::out_points(std::string name,
+template <class T>
+std::ostream& DisplayListStreamDispatcher::out_array(std::string name,
                                                       int count,
-                                                      const SkPoint points[]) {
-  if (points == nullptr || count < 0) {
+                                                      const T array[]) {
+  if (array == nullptr || count < 0) {
     return os_ << "no " << name;
   }
   os_ << name << "[" << count << "] = [" << std::endl;
   indent();
   indent();
   for (int i = 0; i < count; i++) {
-    startl() << points[i] << "," << std::endl;
-  }
-  outdent();
-  startl() << "]";
-  outdent();
-  return os_;
-}
-
-std::ostream& DisplayListStreamDispatcher::out_rects(std::string name,
-                                                     int count,
-                                                     const SkRect rects[]) {
-  if (rects == nullptr || count < 0) {
-    return os_ << "no " << name;
-  }
-  os_ << name << "[" << count << "] = [" << std::endl;
-  indent();
-  indent();
-  for (int i = 0; i < count; i++) {
-    startl() << rects[i] << "," << std::endl;
+    startl() << array[i] << "," << std::endl;
   }
   outdent();
   startl() << "]";
@@ -342,60 +336,6 @@ std::ostream& DisplayListStreamDispatcher::out_colors(std::string name,
   indent();
   for (int i = 0; i < count; i++) {
     startl() << SK_Color(colors[i]) << "," << std::endl;
-  }
-  outdent();
-  startl() << "]";
-  outdent();
-  return os_;
-}
-
-std::ostream& DisplayListStreamDispatcher::out_indices(std::string name,
-                                                       int count,
-                                                       const uint16_t indices[]) {
-  if (indices == nullptr || count < 0) {
-    return os_ << "no " << name;
-  }
-  os_ << name << "[" << count << "] = [" << std::endl;
-  indent();
-  indent();
-  for (int i = 0; i < count; i++) {
-    startl() << indices[i] << "," << std::endl;
-  }
-  outdent();
-  startl() << "]";
-  outdent();
-  return os_;
-}
-
-std::ostream& DisplayListStreamDispatcher::out_floats(std::string name,
-                                                      int count,
-                                                      const float floats[]) {
-  if (floats == nullptr || count < 0) {
-    return os_ << "no " << name;
-  }
-  os_ << name << "[" << count << "] = [" << std::endl;
-  indent();
-  indent();
-  for (int i = 0; i < count; i++) {
-    startl() << floats[i] << "," << std::endl;
-  }
-  outdent();
-  startl() << "]";
-  outdent();
-  return os_;
-}
-
-std::ostream& DisplayListStreamDispatcher::out_xforms(std::string name,
-                                                      int count,
-                                                      const SkRSXform xforms[]) {
-  if (xforms == nullptr || count < 0) {
-    return os_ << "no " << name;
-  }
-  os_ << name << "[" << count << "] = [" << std::endl;
-  indent();
-  indent();
-  for (int i = 0; i < count; i++) {
-    startl() << xforms[i] << "," << std::endl;
   }
   outdent();
   startl() << "]";
@@ -436,11 +376,13 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
   switch (source->type()) {
     case DlColorSourceType::kColor: {
       const DlColorColorSource* color_src = source->asColor();
+      FML_DCHECK(color_src);
       os_ << "DlColorColorSource(" << color_src->color() << ")";
       break;
     }
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_src = source->asImage();
+      FML_DCHECK(image_src);
       os_ << "DlImageColorSource(" << image_src->image()
                            << ", hMode: " << image_src->horizontal_tile_mode()
                            << ", vMode: " << image_src->vertical_tile_mode()
@@ -451,45 +393,49 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
     }
     case DlColorSourceType::kLinearGradient: {
       const DlLinearGradientColorSource* linear_src = source->asLinearGradient();
+      FML_DCHECK(linear_src);
       os_ << "DlLinearGradientSource("
                                  << "start: " << linear_src->start_point()
                                  << ", end: " << linear_src->end_point() << ", ";
                                  out_colors("colors", linear_src->stop_count(), linear_src->colors()) << ", ";
-                                 out_floats("stops", linear_src->stop_count(), linear_src->stops()) << ", "
+                                 out_array("stops", linear_src->stop_count(), linear_src->stops()) << ", "
                                  << linear_src->tile_mode() << ", " << linear_src->matrix_ptr() << ")";
       break;
     }
     case DlColorSourceType::kRadialGradient: {
       const DlRadialGradientColorSource* radial_src = source->asRadialGradient();
+      FML_DCHECK(radial_src);
       os_ << "DlRadialGradientSource("
                                  << "center: " << radial_src->center()
                                  << ", radius: " << radial_src->radius() << ", ";
                                  out_colors("colors", radial_src->stop_count(), radial_src->colors()) << ", ";
-                                 out_floats("stops", radial_src->stop_count(), radial_src->stops()) << ", "
-                                 << radial_src->tile_mode() << ", " << radial_src->matrix_ptr() << ")";
-      break;
-    }
-    case DlColorSourceType::kSweepGradient: {
-      const DlSweepGradientColorSource* radial_src = source->asSweepGradient();
-      os_ << "DlSweepGradientColorSource("
-                                 << "center: " << radial_src->center()
-                                 << ", start: " << radial_src->start() << ", "
-                                 << ", end: " << radial_src->end() << ", ";
-                                 out_colors("colors", radial_src->stop_count(), radial_src->colors()) << ", ";
-                                 out_floats("stops", radial_src->stop_count(), radial_src->stops()) << ", "
+                                 out_array("stops", radial_src->stop_count(), radial_src->stops()) << ", "
                                  << radial_src->tile_mode() << ", " << radial_src->matrix_ptr() << ")";
       break;
     }
     case DlColorSourceType::kConicalGradient: {
-      const DlConicalGradientColorSource* radial_src = source->asConicalGradient();
+      const DlConicalGradientColorSource* conical_src = source->asConicalGradient();
+      FML_DCHECK(conical_src);
       os_ << "DlConicalGradientColorSource("
-                                 << "start center: " << radial_src->start_center()
-                                 << ", start radius: " << radial_src->start_radius()
-                                 << ", end center: " << radial_src->end_center()
-                                 << ", end radius: " << radial_src->end_radius() << ", ";
-                                 out_colors("colors", radial_src->stop_count(), radial_src->colors()) << ", ";
-                                 out_floats("stops", radial_src->stop_count(), radial_src->stops()) << ", "
-                                 << radial_src->tile_mode() << ", " << radial_src->matrix_ptr() << ")";
+                                 << "start center: " << conical_src->start_center()
+                                 << ", start radius: " << conical_src->start_radius()
+                                 << ", end center: " << conical_src->end_center()
+                                 << ", end radius: " << conical_src->end_radius() << ", ";
+                                 out_colors("colors", conical_src->stop_count(), conical_src->colors()) << ", ";
+                                 out_array("stops", conical_src->stop_count(), conical_src->stops()) << ", "
+                                 << conical_src->tile_mode() << ", " << conical_src->matrix_ptr() << ")";
+      break;
+    }
+    case DlColorSourceType::kSweepGradient: {
+      const DlSweepGradientColorSource* sweep_src = source->asSweepGradient();
+      FML_DCHECK(sweep_src);
+      os_ << "DlSweepGradientColorSource("
+                                 << "center: " << sweep_src->center()
+                                 << ", start: " << sweep_src->start() << ", "
+                                 << ", end: " << sweep_src->end() << ", ";
+                                 out_colors("colors", sweep_src->stop_count(), sweep_src->colors()) << ", ";
+                                 out_array("stops", sweep_src->stop_count(), sweep_src->stops()) << ", "
+                                 << sweep_src->tile_mode() << ", " << sweep_src->matrix_ptr() << ")";
       break;
     }
     default:
@@ -498,21 +444,18 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
   }
   os_ << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::setColorFilter(const DlColorFilter* filter) {
-  if (filter == nullptr) {
-    startl() << "setColorFilter(no ColorFilter);" << std::endl;
-    return;
-  }
-  startl() << "setColorFilter(";
+void DisplayListStreamDispatcher::out(const DlColorFilter* filter) {
   switch (filter->type()) {
     case DlColorFilterType::kBlend: {
       const DlBlendColorFilter* blend = filter->asBlend();
+      FML_DCHECK(blend);
       os_ << "DlBlendColorFilter(" << SK_Color(blend->color()) << ", "
                                    << static_cast<int>(blend->mode()) << ")";
       break;
     }
     case DlColorFilterType::kMatrix: {
       const DlMatrixColorFilter* matrix = filter->asMatrix();
+      FML_DCHECK(matrix);
       float values[20];
       matrix->get_matrix(values);
       os_ << "DlMatrixColorFilter(matrix[20] = [" << std::endl;
@@ -529,18 +472,26 @@ void DisplayListStreamDispatcher::setColorFilter(const DlColorFilter* filter) {
       outdent();
       break;
     }
-    case DlColorFilterType::kLinearToSrgbGamma: {
-      os_ << "DlLinearToSrgbGammaColorFilter()";
-      break;
-    }
     case DlColorFilterType::kSrgbToLinearGamma: {
       os_ << "DlSrgbToLinearGammaColorFilter()";
+      break;
+    }
+    case DlColorFilterType::kLinearToSrgbGamma: {
+      os_ << "DlLinearToSrgbGammaColorFilter()";
       break;
     }
     default:
       os_ << "DlUnknownColorFilter(" << filter->skia_object().get() << ")";
       break;
   }
+}
+void DisplayListStreamDispatcher::setColorFilter(const DlColorFilter* filter) {
+  if (filter == nullptr) {
+    startl() << "setColorFilter(no ColorFilter);" << std::endl;
+    return;
+  }
+  startl() << "setColorFilter(";
+  out(filter);
   os_ << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setInvertColors(bool invert) {
@@ -556,12 +507,80 @@ void DisplayListStreamDispatcher::setPathEffect(sk_sp<SkPathEffect> effect) {
   startl() << "setPathEffect(" << effect << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setMaskFilter(const DlMaskFilter* filter) {
-  startl() << "setMaskFilter(" << filter << ");" << std::endl;
+  if (filter == nullptr) {
+    startl() << "setMaskFilter(no MaskFilter);" << std::endl;
+    return;
+  }
+  startl() << "setMaskFilter(";
+  switch (filter->type()) {
+    case DlMaskFilterType::kBlur: {
+      const DlBlurMaskFilter* blur = filter->asBlur();
+      FML_DCHECK(blur);
+      os_ << "DlMaskFilter(" << blur->style() << ", " << blur->sigma() << ")";
+      break;
+    }
+    default:
+      os_ << "DlUnknownMaskFilter(" << filter->skia_object().get() << ")";
+      break;
+  }
+  os_ << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setImageFilter(const DlImageFilter* filter) {
-  startl() << "setImageFilter(" << filter << ");" << std::endl;
+  if (filter == nullptr) {
+    startl() << "setImageFilter(no ImageFilter);" << std::endl;
+    return;
+  }
+  startl() << "setImageFilter(";
+  switch (filter->type()) {
+    case DlImageFilterType::kBlur: {
+      const DlBlurImageFilter* blur = filter->asBlur();
+      FML_DCHECK(blur);
+      os_ << "DlBlurImageFilter(" << blur->sigma_x() << ", "
+                                  << blur->sigma_y() << ", "
+                                  << blur->tile_mode() << ")";
+      break;
+    }
+    case DlImageFilterType::kDilate: {
+      const DlDilateImageFilter* dilate = filter->asDilate();
+      FML_DCHECK(dilate);
+      os_ << "DlDilateImageFilter(" << dilate->radius_x() << ", " << dilate->radius_y() << ")";
+      break;
+    }
+    case DlImageFilterType::kErode: {
+      const DlErodeImageFilter* erode = filter->asErode();
+      FML_DCHECK(erode);
+      os_ << "DlDilateImageFilter(" << erode->radius_x() << ", " << erode->radius_y() << ")";
+      break;
+    }
+    case DlImageFilterType::kMatrix: {
+      const DlMatrixImageFilter* matrix = filter->asMatrix();
+      FML_DCHECK(matrix);
+      os_ << "DlMatrixImageFilter(" << matrix->matrix() << ", " << matrix->sampling() << ")";
+      break;
+    }
+    case DlImageFilterType::kComposeFilter: {
+      const DlComposeImageFilter* compose = filter->asCompose();
+      FML_DCHECK(compose);
+      os_ << "DlComposeImageFilter(" << std::endl;
+      indent();
+      startl() << "outer: " << compose->outer() << "," << std::endl;
+      startl() << "inner: " << compose->inner() << "," << std::endl;
+      outdent();
+      startl() << ")";
+      break;
+    }
+    case DlImageFilterType::kColorFilter: {
+      const DlColorFilterImageFilter* color_filter = filter->asColorFilter();
+      FML_DCHECK(color_filter);
+      out(color_filter->color_filter().get());
+      break;
+    }
+    default:
+      os_ << "DlUnknownImageFilter(" << filter->skia_object().get() << ")";
+      break;
+  }
+  os_ << ");" << std::endl;
 }
-
 void DisplayListStreamDispatcher::save() {
   startl() << "save();" << std::endl;
   startl() << "{" << std::endl;
@@ -710,7 +729,7 @@ void DisplayListStreamDispatcher::drawPoints(SkCanvas::PointMode mode,
                                              uint32_t count,
                                              const SkPoint points[]) {
   startl() << "drawPoints(" << mode << ", ";
-                          out_points("points", count, points)
+                          out_array("points", count, points)
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
@@ -722,10 +741,10 @@ void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
   startl() << "drawVertices("
                << "DlVertices("
                    << vertices->mode() << ", ";
-                   out_points("vertices", vertices->vertex_count(), vertices->vertices()) << ", ";
-                   out_points("texture_coords", vertices->vertex_count(), vertices->texture_coordinates()) << ", ";
-                   out_colors("colors", vertices->vertex_count(), vertices->colors()) << ", ";
-                   out_indices("indices", vertices->index_count(), vertices->indices())
+                   out_array("vertices", vertices->vertex_count(), vertices->vertices()) << ", ";
+                   out_array("texture_coords", vertices->vertex_count(), vertices->texture_coordinates()) << ", ";
+                   out_array("colors", vertices->vertex_count(), vertices->colors()) << ", ";
+                   out_array("indices", vertices->index_count(), vertices->indices())
                    << "), " << mode << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
@@ -780,9 +799,9 @@ void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             const SkSamplingOptions& sampling,
                                             const SkRect* cull_rect,
                                             bool render_with_attributes) {
-  startl() << "drawImageNine(" << atlas.get() << ", ";
-                   out_xforms("xforms", count, xform) << ", ";
-                   out_rects("tex_coords", count, tex) << ", ";
+  startl() << "drawAtlas(" << atlas.get() << ", ";
+                   out_array("xforms", count, xform) << ", ";
+                   out_array("tex_coords", count, tex) << ", ";
                    out_colors("colors", count, colors) << ", "
                    << mode << ", " << sampling << ", cull: " << cull_rect << ", "
                    << "with attributes: " << render_with_attributes
