@@ -22,7 +22,7 @@ import java.util.Locale;
  * <p>The plugin handles requests for spell check sent by the {@link
  * io.flutter.embedding.engine.systemchannels.SpellCheckChannel} via sending requests to the Android
  * spell checker. It also receive the spell check results from the service and send them back to
- * Flutter through the {@link io.flutter.embedding.engine.systemchannels.SpellCheckChannel}.
+ * the framework through the {@link io.flutter.embedding.engine.systemchannels.SpellCheckChannel}.
  */
 public class SpellCheckPlugin
     implements SpellCheckChannel.SpellCheckMethodHandler,
@@ -68,7 +68,7 @@ public class SpellCheckPlugin
   }
 
   /** Calls on the Android spell check API to spell check specified text. */
-  public void performSpellCheck(String locale, String text) {
+  public void performSpellCheck(@NonNull String locale, @NonNull String text) {
     String[] localeCodes = locale.split("-");
     Locale localeFromString = LocalizationPlugin.localeFromString(locale);
 
@@ -103,7 +103,6 @@ public class SpellCheckPlugin
       SentenceSuggestionsInfo spellCheckResults = results[0];
 
       for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
-
         SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
         int suggestionsCount = suggestionsInfo.getSuggestionsCount();
 

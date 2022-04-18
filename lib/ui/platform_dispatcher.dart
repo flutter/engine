@@ -842,8 +842,7 @@ class PlatformDispatcher {
     _onTextScaleFactorChangedZone = Zone.current;
   }
 
-  /// The setting indicating whether or not Flutter currently supports
-  /// spell checking via the native spell check service.
+  /// Whether the spell check service is supported on the current platform.
   ///
   /// This option is used by [EditableTextState] to define its
   /// [SpellCheckConfiguration] when a default spell check service

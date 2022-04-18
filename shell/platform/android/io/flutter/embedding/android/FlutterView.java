@@ -1133,7 +1133,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       spellCheckPlugin =
           new SpellCheckPlugin(textServicesManager, this.flutterEngine.getSpellCheckChannel());
     } catch (Exception e) {
-      Log.v(TAG, "TextServicesManager not supported by device, spell check disabled.");
+      Log.e(TAG, "TextServicesManager not supported by device, spell check disabled.");
     }
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();

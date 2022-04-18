@@ -425,8 +425,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///    observe when this value changes.
   double get textScaleFactor => platformDispatcher.textScaleFactor;
 
-  /// The setting indicating whether or not Flutter currently supports
-  /// spell checking via the native spell check service.
+  /// Whether the spell check service is supported on the current platform.
   ///
   /// {@macro dart.ui.window.accessorForwardWarning}
   ///
