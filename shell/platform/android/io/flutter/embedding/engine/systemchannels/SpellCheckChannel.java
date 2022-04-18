@@ -26,7 +26,7 @@ import org.json.JSONException;
  * fetch spell check results for the specified text.
  *
  * <p>Once the spell check results are received by the {@link
- * io.flutter.plugin.editing.SpellCheckPlugin}, it will send to Flutter the message {@code
+ * io.flutter.plugin.editing.SpellCheckPlugin}, it will send to the framework the message {@code
  * SpellCheck.updateSpellCheckResults} with the {@code ArrayList<String>} of encoded spell check
  * results (see {@link
  * io.flutter.plugin.editing.SpellCheckPlugin#onGetSentenceSuggestions(SentenceSuggestionsInfo[])}
