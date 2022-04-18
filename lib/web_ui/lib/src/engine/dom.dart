@@ -76,17 +76,54 @@ typedef DomEventListener = void Function(DomEvent event);
 @staticInterop
 class DomEvent {}
 
+extension DomEventExtension on DomEvent {
+  external DomEventTarget? get target;
+  external void preventDefault();
+  external void stopPropagation();
+}
+
 @JS()
 @staticInterop
 class DomNode extends DomEventTarget {}
 
 extension DomNodeExtension on DomNode {
   external DomNode appendChild(DomNode node);
+  external DomElement? get parentElement;
+  external DomNode? get parentNode;
+  external DomNode insertBefore(DomNode newNode, DomNode? referenceNode);
+  void remove() {
+    if (parentNode != null) {
+      final DomNode parent = parentNode!;
+      parent.removeChild(this);
+    }
+  }
+  external DomNode removeChild(DomNode child);
+  external bool? get isConnected;
 }
 
 @JS()
 @staticInterop
 class DomElement extends DomNode {}
+
+DomElement createDomElement(String tag) =>
+  domDocument.createElement(tag);
+
+extension DomElementExtension on DomElement {
+  external /* List<DomElement> */ List<Object?> get children;
+  external DomCSSStyleDeclaration get style;
+  external void append(DomNode node);
+  external void setAttribute(String name, Object value);
+}
+
+@JS()
+@staticInterop
+class DomCSSStyleDeclaration {}
+
+extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
+  external String getPropertyValue(String property);
+  external void setProperty(String propertyName, String value, [String
+      priority]);
+}
 
 @JS()
 @staticInterop

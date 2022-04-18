@@ -13,7 +13,6 @@
 library canvaskit_api;
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:js' as js;
 import 'dart:typed_data';
 
@@ -133,7 +132,7 @@ extension CanvasKitExtension on CanvasKit {
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
   external SkTypefaceFactory get Typeface;
   external int GetWebGLContext(
-      html.CanvasElement canvas, SkWebGLContextOptions options);
+      DomCanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
   external SkSurface? MakeOnScreenGLSurface(
     SkGrContext grContext,
@@ -141,7 +140,7 @@ extension CanvasKitExtension on CanvasKit {
     int height,
     ColorSpace colorSpace,
   );
-  external SkSurface MakeSWCanvasSurface(html.CanvasElement canvas);
+  external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
 
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
