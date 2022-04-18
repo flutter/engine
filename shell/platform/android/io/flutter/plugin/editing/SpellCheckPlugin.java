@@ -118,7 +118,8 @@ public class SpellCheckPlugin
             spellCheckerSuggestionSpan += (suggestionsInfo.getSuggestionAt(j) + "/n");
           }
 
-          spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan);
+          spellCheckerSuggestionSpans.add(
+              spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 2));
         }
       }
     }
