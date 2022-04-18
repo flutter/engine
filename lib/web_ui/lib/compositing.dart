@@ -31,6 +31,8 @@ abstract class ShaderMaskEngineLayer implements EngineLayer {}
 
 abstract class PhysicalShapeEngineLayer implements EngineLayer {}
 
+abstract class PictureEngineLayer implements EngineLayer {}
+
 abstract class SceneBuilder {
   factory SceneBuilder() {
     if (engine.useCanvasKit) {
@@ -99,11 +101,12 @@ abstract class SceneBuilder {
   void addRetained(EngineLayer retainedLayer);
   void pop();
   void addPerformanceOverlay(int enabledOptions, Rect bounds);
-  void addPicture(
+  PictureEngineLayer addPicture(
     Offset offset,
     Picture picture, {
     bool isComplexHint = false,
     bool willChangeHint = false,
+    PictureEngineLayer? oldLayer,
   });
   void addTexture(
     int textureId, {
