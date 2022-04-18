@@ -22,7 +22,7 @@ import java.util.Locale;
  * <p>The plugin handles requests for spell check sent by the {@link
  * io.flutter.embedding.engine.systemchannels.SpellCheckChannel} via sending requests to the Android
  * spell checker. It also receive the spell check results from the service and send them back to
- * Flutter through the {@link io.flutter.embedding.engine.systemchannels.SpellCheckChannel}.
+ * the framework through the {@link io.flutter.embedding.engine.systemchannels.SpellCheckChannel}.
  */
 public class SpellCheckPlugin
     implements SpellCheckChannel.SpellCheckMethodHandler,
