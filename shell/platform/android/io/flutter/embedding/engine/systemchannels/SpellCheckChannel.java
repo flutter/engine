@@ -16,8 +16,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 /**
- * {@link SpellCheckChannel} is a platform channel that is used by Flutter to initiate spell check
- * in the Android engine and for the Android engine to send back the results.
+ * {@link SpellCheckChannel} is a platform channel that is used by the framework to initiate spell check
+ * in the embedding and for the embedding to send back the results.
  *
  * <p>When there is new text to be spell checked, the framework will send to the embedding the
  * message {@code SpellCheck.initiateSpellCheck} with the {@code String} locale to spell check with
