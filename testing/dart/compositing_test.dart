@@ -105,15 +105,17 @@ void main() {
   });
 
   // Attempts to use the same layer first as `oldLayer` then in `addRetained`.
-  void testPushThenIllegalRetain(_TestNoSharingFunction pushFunction) {
+  void testPushOrAddThenIllegalRetain(_TestNoSharingFunction pushOrAddFunction, {bool shouldPop = true}) {
     final SceneBuilder builder1 = SceneBuilder();
-    final EngineLayer layer = pushFunction(builder1, null);
-    builder1.pop();
+    final EngineLayer layer = pushOrAddFunction(builder1, null);
+    if (shouldPop)
+      builder1.pop();
     builder1.build();
 
     final SceneBuilder builder2 = SceneBuilder();
-    pushFunction(builder2, layer);
-    builder2.pop();
+    pushOrAddFunction(builder2, layer);
+    if (shouldPop)
+      builder2.pop();
     assert(() {
       try {
         builder2.addRetained(layer);
@@ -127,17 +129,18 @@ void main() {
   }
 
   // Attempts to use the same layer first in `addRetained` then as `oldLayer`.
-  void testAddRetainedThenIllegalPush(_TestNoSharingFunction pushFunction) {
+  void testAddRetainedThenIllegalPush(_TestNoSharingFunction pushOrAddFunction, {bool shouldPop = true}) {
     final SceneBuilder builder1 = SceneBuilder();
-    final EngineLayer layer = pushFunction(builder1, null);
-    builder1.pop();
+    final EngineLayer layer = pushOrAddFunction(builder1, null);
+    if (shouldPop)
+      builder1.pop();
     builder1.build();
 
     final SceneBuilder builder2 = SceneBuilder();
     builder2.addRetained(layer);
     assert(() {
       try {
-        pushFunction(builder2, layer);
+        pushOrAddFunction(builder2, layer);
         fail('Expected push to throw AssertionError but it returned successully');
       } on AssertionError catch (error) {
         expect(error.toString(), contains('The layer is already being used'));
@@ -148,10 +151,11 @@ void main() {
   }
 
   // Attempts to retain the same layer twice in the same scene.
-  void testDoubleAddRetained(_TestNoSharingFunction pushFunction) {
+  void testDoubleAddRetained(_TestNoSharingFunction pushOrAddFunction, {bool shouldPop = true}) {
     final SceneBuilder builder1 = SceneBuilder();
-    final EngineLayer layer = pushFunction(builder1, null);
-    builder1.pop();
+    final EngineLayer layer = pushOrAddFunction(builder1, null);
+    if (shouldPop)
+      builder1.pop();
     builder1.build();
 
     final SceneBuilder builder2 = SceneBuilder();
@@ -169,17 +173,18 @@ void main() {
   }
 
   // Attempts to use the same layer as `oldLayer` twice in the same scene.
-  void testPushOldLayerTwice(_TestNoSharingFunction pushFunction) {
+  void testPushOrAddOldLayerTwice(_TestNoSharingFunction pushOrAddFunction, {bool shouldPop = true}) {
     final SceneBuilder builder1 = SceneBuilder();
-    final EngineLayer layer = pushFunction(builder1, null);
-    builder1.pop();
+    final EngineLayer layer = pushOrAddFunction(builder1, null);
+    if (shouldPop)
+      builder1.pop();
     builder1.build();
 
     final SceneBuilder builder2 = SceneBuilder();
-    pushFunction(builder2, layer);
+    pushOrAddFunction(builder2, layer);
     assert(() {
       try {
-        pushFunction(builder2, layer);
+        pushOrAddFunction(builder2, layer);
         fail('Expected push to throw AssertionError but it returned successully');
       } on AssertionError catch (error) {
         expect(error.toString(), contains('was previously used as oldLayer'));
@@ -237,15 +242,17 @@ void main() {
   }
 
   // Attempts to retain a layer that has been used as `oldLayer` in a previous frame.
-  void testRetainOldLayer(_TestNoSharingFunction pushFunction) {
+  void testRetainOldLayer(_TestNoSharingFunction pushOrAddFunction, {bool shouldPop = true}) {
     final SceneBuilder builder1 = SceneBuilder();
-    final EngineLayer layer = pushFunction(builder1, null);
-    builder1.pop();
+    final EngineLayer layer = pushOrAddFunction(builder1, null);
+    if (shouldPop)
+      builder1.pop();
     builder1.build();
 
     final SceneBuilder builder2 = SceneBuilder();
-    pushFunction(builder2, layer);
-    builder2.pop();
+    pushOrAddFunction(builder2, layer);
+    if (shouldPop)
+      builder2.pop();
     assert(() {
       try {
         final SceneBuilder builder3 = SceneBuilder();
@@ -260,19 +267,21 @@ void main() {
   }
 
   // Attempts to pass layer as `oldLayer` that has been used as `oldLayer` in a previous frame.
-  void testPushOldLayer(_TestNoSharingFunction pushFunction) {
+  void testPushOrAddOldLayer(_TestNoSharingFunction pushOrAddFunction, {bool shouldPop = true}) {
     final SceneBuilder builder1 = SceneBuilder();
-    final EngineLayer layer = pushFunction(builder1, null);
-    builder1.pop();
+    final EngineLayer layer = pushOrAddFunction(builder1, null);
+    if (shouldPop)
+      builder1.pop();
     builder1.build();
 
     final SceneBuilder builder2 = SceneBuilder();
-    pushFunction(builder2, layer);
-    builder2.pop();
+    pushOrAddFunction(builder2, layer);
+    if (shouldPop)
+      builder2.pop();
     assert(() {
       try {
         final SceneBuilder builder3 = SceneBuilder();
-        pushFunction(builder3, layer);
+        pushOrAddFunction(builder3, layer);
         fail('Expected addRetained to throw AssertionError but it returned successully');
       } on AssertionError catch (error) {
         expect(error.toString(), contains('was previously used as oldLayer'));
@@ -307,41 +316,50 @@ void main() {
     builder2.build();
   }
 
-  void testNoSharing(_TestNoSharingFunction pushFunction) {
-    testPushThenIllegalRetain(pushFunction);
+  void testNoSharingForPushFunction(_TestNoSharingFunction pushFunction) {
+    testPushOrAddThenIllegalRetain(pushFunction);
     testAddRetainedThenIllegalPush(pushFunction);
     testDoubleAddRetained(pushFunction);
-    testPushOldLayerTwice(pushFunction);
+    testPushOrAddOldLayerTwice(pushFunction);
+    testRetainOldLayer(pushFunction);
+    testPushOrAddOldLayer(pushFunction);
     testPushChildLayerOfRetainedLayer(pushFunction);
     testRetainParentLayerOfPushedChild(pushFunction);
-    testRetainOldLayer(pushFunction);
-    testPushOldLayer(pushFunction);
     testRetainsParentOfOldLayer(pushFunction);
   }
 
+  void testNoSharingForAddFunction(_TestNoSharingFunction addFunction) {
+    testPushOrAddThenIllegalRetain(addFunction, shouldPop: false);
+    testAddRetainedThenIllegalPush(addFunction, shouldPop: false);
+    testDoubleAddRetained(addFunction, shouldPop: false);
+    testPushOrAddOldLayerTwice(addFunction, shouldPop: false);
+    testRetainOldLayer(addFunction, shouldPop: false);
+    testPushOrAddOldLayer(addFunction, shouldPop: false);
+  }
+
   test('SceneBuilder does not share a layer between addRetained and push*', () {
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushOffset(0, 0, oldLayer: oldLayer as OffsetEngineLayer?);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushTransform(Float64List(16), oldLayer: oldLayer as TransformEngineLayer?);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushClipRect(Rect.zero, oldLayer: oldLayer as ClipRectEngineLayer?);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushClipRRect(RRect.zero, oldLayer: oldLayer as ClipRRectEngineLayer?);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushClipPath(Path(), oldLayer: oldLayer as ClipPathEngineLayer?);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushOpacity(100, oldLayer: oldLayer as OpacityEngineLayer?);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushBackdropFilter(ImageFilter.blur(), oldLayer: oldLayer as BackdropFilterEngineLayer?);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushShaderMask(
         Gradient.radial(
           const Offset(0, 0),
@@ -353,10 +371,10 @@ void main() {
         oldLayer: oldLayer as ShaderMaskEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushPhysicalShape(path: Path(), color: const Color.fromARGB(0, 0, 0, 0), oldLayer: oldLayer as PhysicalShapeEngineLayer?, elevation: 0.0);
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushColorFilter(
         const ColorFilter.mode(
           Color.fromARGB(0, 0, 0, 0),
@@ -365,7 +383,7 @@ void main() {
         oldLayer: oldLayer as ColorFilterEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushColorFilter(
         const ColorFilter.matrix(<double>[
           1, 0, 0, 0, 0,
@@ -376,37 +394,37 @@ void main() {
         oldLayer: oldLayer as ColorFilterEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushColorFilter(
         const ColorFilter.linearToSrgbGamma(),
         oldLayer: oldLayer as ColorFilterEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushColorFilter(
         const ColorFilter.srgbToLinearGamma(),
         oldLayer: oldLayer as ColorFilterEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushImageFilter(
         ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         oldLayer: oldLayer as ImageFilterEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushImageFilter(
         ImageFilter.dilate(radiusX: 10.0, radiusY: 10.0),
         oldLayer: oldLayer as ImageFilterEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushImageFilter(
         ImageFilter.erode(radiusX: 10.0, radiusY: 10.0),
         oldLayer: oldLayer as ImageFilterEngineLayer?,
       );
     });
-    testNoSharing((SceneBuilder builder, EngineLayer? oldLayer) {
+    testNoSharingForPushFunction((SceneBuilder builder, EngineLayer? oldLayer) {
       return builder.pushImageFilter(
         ImageFilter.matrix(Float64List.fromList(<double>[
           1, 0, 0, 0,
@@ -417,6 +435,17 @@ void main() {
         oldLayer: oldLayer as ImageFilterEngineLayer?,
       );
     });
+    testNoSharingForAddFunction((SceneBuilder builder, EngineLayer? oldLayer) {
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawPaint(Paint());
+      final Picture picture = recorder.endRecording();
+      return builder.addPicture(
+        Offset.zero,
+        picture,
+        oldLayer: oldLayer as PictureEngineLayer?
+      );
+    }, );
   });
 }
 

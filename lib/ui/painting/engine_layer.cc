@@ -20,7 +20,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, EngineLayer);
 
 DART_BIND_ALL(EngineLayer, FOR_EACH_BINDING)
 
-EngineLayer::EngineLayer(std::shared_ptr<flutter::ContainerLayer> layer)
+EngineLayer::EngineLayer(std::shared_ptr<flutter::Layer> layer)
     : layer_(layer) {}
 
 EngineLayer::~EngineLayer() = default;

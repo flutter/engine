@@ -263,29 +263,36 @@ void SceneBuilder::pop() {
   PopLayer();
 }
 
-void SceneBuilder::addPicture(double dx,
+void SceneBuilder::addPicture(Dart_Handle layer_handle,
+                              double dx,
                               double dy,
                               Picture* picture,
-                              int hints) {
+                              int hints,
+                              fml::RefPtr<EngineLayer> oldLayer) {
   if (!picture) {
     // Picture::dispose was called and it has been collected.
     return;
   }
 
+  std::shared_ptr<Layer> layer;
   // Explicitly check for both conditions, since the picture object might have
   // been disposed but not collected yet, but the display list and picture are
   // both null.
   if (picture->picture()) {
-    auto layer = std::make_unique<flutter::PictureLayer>(
+    layer = std::make_shared<flutter::PictureLayer>(
         SkPoint::Make(dx, dy), UIDartState::CreateGPUObject(picture->picture()),
         !!(hints & 1), !!(hints & 2));
-    AddLayer(std::move(layer));
+
   } else if (picture->display_list()) {
-    auto layer = std::make_unique<flutter::DisplayListLayer>(
+    layer = std::make_shared<flutter::DisplayListLayer>(
         SkPoint::Make(dx, dy),
         UIDartState::CreateGPUObject(picture->display_list()), !!(hints & 1),
         !!(hints & 2));
-    AddLayer(std::move(layer));
+  }
+  AddLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
