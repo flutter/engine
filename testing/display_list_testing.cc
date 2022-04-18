@@ -221,7 +221,7 @@ static std::ostream& operator<<(std::ostream& os, const SkFilterMode& mode) {
 
 class SK_Color {
  public:
-  SK_Color(SkColor color) : color(color) {}
+  explicit SK_Color(SkColor color) : color(color) {}
   SkColor color;
 };
 
