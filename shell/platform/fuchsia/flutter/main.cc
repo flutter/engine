@@ -43,7 +43,7 @@ int main(int argc, char const* argv[]) {
   // Set up the process-wide /tmp memfs.
   dart_utils::RunnerTemp runner_temp;
 
-  FML_DLOG(INFO) << "Flutter application services initialized.";
+  FML_LOG(INFO) << "Flutter application services initialized.";
 
   fml::MessageLoop& loop = fml::MessageLoop::GetCurrent();
   flutter_runner::Runner runner(loop.GetTaskRunner(), context.get());
@@ -52,7 +52,7 @@ int main(int argc, char const* argv[]) {
   context->outgoing()->ServeFromStartupInfo();
 
   loop.Run();
-  FML_DLOG(INFO) << "Flutter application services terminated.";
+  FML_LOG(INFO) << "Flutter application services terminated.";
 
   return EXIT_SUCCESS;
 }

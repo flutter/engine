@@ -134,7 +134,7 @@ ComponentV1::ComponentV1(
   ParseProgramMetadata(startup_info.program_metadata, &data_path, &assets_path);
 
   if (data_path.empty()) {
-    FML_DLOG(ERROR) << "Could not find a /pkg/data directory for "
+    FML_LOG(ERROR) << "Could not find a /pkg/data directory for "
                     << package.resolved_url;
     return;
   }
@@ -160,7 +160,7 @@ ComponentV1::ComponentV1(
 
     zx_handle_t dir_handle = dir.release();
     if (fdio_ns_bind(fdio_ns_.get(), path.data(), dir_handle) != ZX_OK) {
-      FML_DLOG(ERROR) << "Could not bind path to namespace: " << path;
+      FML_LOG(ERROR) << "Could not bind path to namespace: " << path;
       zx_handle_close(dir_handle);
     }
   }
@@ -529,7 +529,7 @@ void ComponentV1::CreateViewWithViewRef(
     fuchsia::ui::views::ViewRefControl control_ref,
     fuchsia::ui::views::ViewRef view_ref) {
   if (!svc_) {
-    FML_DLOG(ERROR)
+    FML_LOG(ERROR)
         << "Component incoming services was invalid when attempting to "
            "create a shell for a view provider request.";
     return;
@@ -554,7 +554,7 @@ void ComponentV1::CreateViewWithViewRef(
 
 void ComponentV1::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
   if (!svc_) {
-    FML_DLOG(ERROR)
+    FML_LOG(ERROR)
         << "Component incoming services was invalid when attempting to "
            "create a shell for a view provider request.";
     return;

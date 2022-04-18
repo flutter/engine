@@ -734,13 +734,13 @@ AccessibilityBridge::GetFlutterSemanticsAction(
       return flutter::SemanticsAction::kLongPress;
     // Set (input/non-accessibility) focus on this element.
     case fuchsia::accessibility::semantics::Action::SET_FOCUS:
-      FML_DLOG(WARNING)
+      FML_LOG(WARNING)
           << "Unsupported action SET_FOCUS sent for accessibility node "
           << node_id;
       return {};
     // Set the element's value.
     case fuchsia::accessibility::semantics::Action::SET_VALUE:
-      FML_DLOG(WARNING)
+      FML_LOG(WARNING)
           << "Unsupported action SET_VALUE sent for accessibility node "
           << node_id;
       return {};
@@ -752,7 +752,7 @@ AccessibilityBridge::GetFlutterSemanticsAction(
     case fuchsia::accessibility::semantics::Action::DECREMENT:
       return flutter::SemanticsAction::kDecrease;
     default:
-      FML_DLOG(WARNING) << "Unexpected action "
+      FML_LOG(WARNING) << "Unexpected action "
                         << static_cast<int32_t>(fuchsia_action)
                         << " sent for accessibility node " << node_id;
       return {};
