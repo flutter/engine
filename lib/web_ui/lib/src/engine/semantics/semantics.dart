@@ -972,6 +972,20 @@ class SemanticsObject {
 
     // Both non-empty case.
 
+    // Problem: child nodes have been added, removed, and/or reordered. On the
+    //          web, many assistive technologies cannot track DOM elements
+    //          moving around, losing focus. The best approach is to try to keep
+    //          child elements as stable as possible.
+    // Solution: find all common elements in both lists and record their indices
+    //           in the old list (in the `intersectionIndicesOld` variable). The
+    //           longest increases subsequence provides the longest chain of
+    //           semantics nodes that didn't move relative to each other. Those
+    //           nodes (represented by the `stationaryIds` variable) are kept
+    //           stationary, while all others are moved/inserted/deleted around
+    //           them. This gives the maximum node stability, and covers most
+    //           use-cases, including scrolling in any direction, insertions,
+    //           deletions, drag'n'drop, etc.
+
     // Indices into the old child list pointing at children that also exist in
     // the new child list.
     final List<int> intersectionIndicesOld = <int>[];
@@ -997,9 +1011,7 @@ class SemanticsObject {
     // If child lists are not identical, continue computing the intersection
     // between the two lists.
     while (newIndex < childCount) {
-      for (int oldIndex = 0;
-          oldIndex < previousCount;
-          oldIndex += 1) {
+      for (int oldIndex = 0; oldIndex < previousCount; oldIndex += 1) {
         if (previousChildrenInRenderOrder[oldIndex] ==
             childrenInRenderOrder[newIndex]) {
           intersectionIndicesOld.add(oldIndex);

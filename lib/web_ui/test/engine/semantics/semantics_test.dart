@@ -12,10 +12,7 @@ import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/src/engine.dart' show flutterViewEmbedder;
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/semantics.dart';
-import 'package:ui/src/engine/vector_math.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'semantics_tester.dart';
@@ -25,12 +22,17 @@ DateTime _testTime = DateTime(2018, 12, 17);
 EngineSemanticsOwner semantics() => EngineSemanticsOwner.instance;
 
 void main() {
-  internalBootstrapBrowserTest(() => testMain);
+  internalBootstrapBrowserTest(() {
+    return testMain;
+  });
 }
 
 Future<void> testMain() async {
   await ui.webOnlyInitializePlatform();
+  runSemanticsTests();
+}
 
+void runSemanticsTests() {
   setUp(() {
     EngineSemanticsOwner.debugResetSemantics();
   });
@@ -1711,6 +1713,152 @@ void _testPlatformView() {
 
     semantics().semanticsEnabled = false;
   });
+
+  // This test simulates the scenario of three child semantic nodes contained by
+  // a common parent. The first and the last nodes are plain leaf nodes. The
+  // middle node is a platform view node. Nodes overlap. The test hit tests
+  // various points and verifies that the correct DOM element receives the
+  // event. The test does this using `documentOrShadow.elementFromPoint`, which,
+  // if browsers are to be trusted, should do the same thing as if a pointer
+  // event landed at the given location.
+  //
+  // 0px   -------------
+  //       |           |
+  //       |           | <- plain semantic node
+  //       |     1     |
+  // 15px  | -------------
+  //       | |           |
+  // 25px  --|           |
+  //         |     2     |  <- platform view
+  //         |           |
+  // 35px    | -------------
+  //         | |           |
+  // 45px    --|           |
+  //           |     3     |  <- plain semantic node
+  //           |           |
+  //           |           |
+  // 60px      -------------
+  test('is reachable via a hit test', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    ui.platformViewRegistry.registerViewFactory(
+      'test-platform-view',
+      (int viewId) => html.DivElement()
+        ..id = 'view-0'
+        ..style.width = '100%'
+        ..style.height = '100%',
+    );
+    await createPlatformView(0, 'test-platform-view');
+
+    final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+    sceneBuilder.addPlatformView(
+      0,
+      offset: const ui.Offset(0, 15),
+      width: 20,
+      height: 30,
+    );
+    ui.window.render(sceneBuilder.build());
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      rect: const ui.Rect.fromLTRB(0, 0, 20, 60),
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      rect: const ui.Rect.fromLTRB(0, 0, 20, 25),
+    );
+    updateNode(
+      builder,
+      id: 2,
+      // This has to match the values passed to `addPlatformView` above.
+      rect: const ui.Rect.fromLTRB(0, 15, 20, 45),
+      platformViewId: 0,
+    );
+    updateNode(
+      builder,
+      id: 3,
+      rect: const ui.Rect.fromLTRB(0, 35, 20, 60),
+    );
+
+    semantics().updateSemantics(builder.build());
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final html.Element root = appHostNode.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'none');
+
+    final html.Element child1 = appHostNode.querySelector('#flt-semantic-node-1')!;
+    expect(child1.style.pointerEvents, 'all');
+    final html.Rectangle<num> child1Rect = child1.getBoundingClientRect();
+    expect(child1Rect.left, 0);
+    expect(child1Rect.top, 0);
+    expect(child1Rect.right, 20);
+    expect(child1Rect.bottom, 25);
+
+    final html.Element child2 = appHostNode.querySelector('#flt-semantic-node-2')!;
+    expect(child2.style.pointerEvents, 'none');
+    final html.Rectangle<num> child2Rect = child2.getBoundingClientRect();
+    expect(child2Rect.left, 0);
+    expect(child2Rect.top, 15);
+    expect(child2Rect.right, 20);
+    expect(child2Rect.bottom, 45);
+
+    final html.Element child3 = appHostNode.querySelector('#flt-semantic-node-3')!;
+    expect(child3.style.pointerEvents, 'all');
+    final html.Rectangle<num> child3Rect = child3.getBoundingClientRect();
+    expect(child3Rect.left, 0);
+    expect(child3Rect.top, 35);
+    expect(child3Rect.right, 20);
+    expect(child3Rect.bottom, 60);
+
+    final html.Element platformViewElement = flutterViewEmbedder.glassPaneElement!.querySelector('#view-0')!;
+    final html.Rectangle<num> platformViewRect = platformViewElement.getBoundingClientRect();
+    expect(platformViewRect.left, 0);
+    expect(platformViewRect.top, 15);
+    expect(platformViewRect.right, 20);
+    expect(platformViewRect.bottom, 45);
+
+    // This test is only relevant for shadow DOM because we only really support
+    // proper platform view embedding in browsers that support shadow DOM.
+    final html.ShadowRoot shadowRoot = appHostNode.node as html.ShadowRoot;
+
+    // Hit test child 1
+    expect(shadowRoot.elementFromPoint(10, 10)!, child1);
+
+    // Hit test overlap between child 1 and 2
+    // TODO(yjbanov): this is a known limitation, see https://github.com/flutter/flutter/issues/101439
+    expect(shadowRoot.elementFromPoint(10, 20)!, child1);
+
+    // Hit test child 2
+    // Clicking at the location of the middle semantics node should allow the
+    // event to go through the semantic tree and hit the platform view. Since
+    // platform views are projected into the shadow DOM from outside the shadow
+    // root, it would be reachable both from the shadow root (by hitting the
+    // corresponding <slot> tag) and from the document (by hitting the platform
+    // view element itself).
+    expect(shadowRoot.elementFromPoint(10, 30)!, platformViewElement);
+    expect(html.document.elementFromPoint(10, 30)!, platformViewElement);
+
+    // Hit test overlap between child 2 and 3
+    expect(shadowRoot.elementFromPoint(10, 40)!, child3);
+
+    // Hit test child 3
+    expect(shadowRoot.elementFromPoint(10, 50)!, child3);
+
+    semantics().semanticsEnabled = false;
+  });
 }
 
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that
@@ -1789,4 +1937,34 @@ void updateNode(
     childrenInHitTestOrder: childrenInHitTestOrder,
     additionalActions: additionalActions,
   );
+}
+
+const MethodCodec codec = StandardMethodCodec();
+
+/// Sends a platform message to create a Platform View with the given id and viewType.
+Future<void> createPlatformView(int id, String viewType) {
+  final Completer<void> completer = Completer<void>();
+  ui.window.sendPlatformMessage(
+    'flutter/platform_views',
+    codec.encodeMethodCall(MethodCall(
+      'create',
+      <String, dynamic>{
+        'id': id,
+        'viewType': viewType,
+      },
+    )),
+    (dynamic _) => completer.complete(),
+  );
+  return completer.future;
+}
+
+/// Disposes of the platform view with the given [id].
+Future<void> disposePlatformView(int id) {
+  final Completer<void> completer = Completer<void>();
+  window.sendPlatformMessage(
+    'flutter/platform_views',
+    codec.encodeMethodCall(MethodCall('dispose', id)),
+    (dynamic _) => completer.complete(),
+  );
+  return completer.future;
 }

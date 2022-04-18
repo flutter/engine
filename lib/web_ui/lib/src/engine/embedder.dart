@@ -37,9 +37,13 @@ import 'window.dart';
 /// - [semanticsHostElement], hosts the ARIA-annotated semantics tree.
 class FlutterViewEmbedder {
   FlutterViewEmbedder() {
-    reset();
     assert(() {
       _setupHotRestart();
+      return true;
+    }());
+    reset();
+    assert(() {
+      _registerHotRestartCleanUp();
       return true;
     }());
   }
@@ -104,6 +108,10 @@ class FlutterViewEmbedder {
   static const String _staleHotRestartStore = '__flutter_state';
   List<html.Element?>? _staleHotRestartState;
 
+  /// Creates a container for DOM elements that need to be cleaned up between
+  /// hot restarts.
+  ///
+  /// If a contains already exists, reuses the existing one.
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
     _staleHotRestartState = getJsProperty<List<html.Element?>?>(html.window, _staleHotRestartStore);
@@ -112,7 +120,12 @@ class FlutterViewEmbedder {
       setJsProperty(
           html.window, _staleHotRestartStore, _staleHotRestartState);
     }
+  }
 
+  /// Registers DOM elements that need to be cleaned up before hot restarting.
+  ///
+  /// [_setupHotRestart] must have been called prior to calling this method.
+  void _registerHotRestartCleanUp() {
     registerHotRestartListener(() {
       _resizeSubscription?.cancel();
       _localeSubscription?.cancel();
@@ -137,7 +150,7 @@ class FlutterViewEmbedder {
   /// already in the right place, skip DOM mutation. This is both faster and
   /// more correct, because moving DOM nodes loses internal state, such as
   /// text selection.
-  void renderScene(html.Element? sceneElement) {
+  void addSceneToSceneHost(html.Element? sceneElement) {
     if (sceneElement != _sceneElement) {
       _sceneElement?.remove();
       _sceneElement = sceneElement;
@@ -278,6 +291,14 @@ class FlutterViewEmbedder {
     _sceneHostElement = html.document.createElement('flt-scene-host')
       ..style.pointerEvents = 'none';
 
+    /// CanvasKit uses a static scene element that never gets replaced, so it's
+    /// added eagerly during initialization here and never touched, unless the
+    /// system is reset due to hot restart or in a test.
+    if (useCanvasKit) {
+      skiaSceneHost = html.Element.tag('flt-scene');
+      addSceneToSceneHost(skiaSceneHost);
+    }
+
     final html.Element semanticsHostElement =
         html.document.createElement('flt-semantics-host');
     semanticsHostElement.style
@@ -308,7 +329,7 @@ class FlutterViewEmbedder {
     ]);
 
     // When debugging semantics, make the scene semi-transparent so that the
-    // semantics tree is visible.
+    // semantics tree is more prominent.
     if (configuration.debugShowSemanticsNodes) {
       _sceneHostElement!.style.opacity = '0.3';
     }
