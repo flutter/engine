@@ -33,8 +33,8 @@ import org.json.JSONException;
  * for details) as an argument.
  *
  * <p>{@link io.flutter.plugin.editing.SpellCheckPlugin} implements {@link SpellCheckMethodHandler}
- * to initiate spell check. Implement {@link SpellCheckMethodHandler} to respond to Flutter spell
- * check messages.
+ * to initiate spell check. Implement {@link SpellCheckMethodHandler} to respond to spell
+ * check requests.
  */
 public class SpellCheckChannel {
   private static final String TAG = "SpellCheckChannel";
