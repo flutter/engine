@@ -116,11 +116,10 @@ public class SpellCheckPlugin
           spellCheckerSuggestionSpan += (String.valueOf(start + (length - 1)) + ".");
 
           for (int j = 0; j < suggestionsCount; j++) {
-            spellCheckerSuggestionSpan += (suggestionsInfo.getSuggestionAt(j) + ",");
+            spellCheckerSuggestionSpan += (suggestionsInfo.getSuggestionAt(j) + "/n");
           }
 
-          spellCheckerSuggestionSpans.add(
-              spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
+          spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan);
         }
       }
     }
