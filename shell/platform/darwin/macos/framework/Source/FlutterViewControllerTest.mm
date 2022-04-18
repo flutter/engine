@@ -558,6 +558,7 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   called = false;
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventStart]];
   EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
   EXPECT_EQ(last_event.phase, kPanZoomStart);
   EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
@@ -571,6 +572,7 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   called = false;
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
   EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
   EXPECT_EQ(last_event.phase, kPanZoomUpdate);
   EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
@@ -581,6 +583,7 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   called = false;
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
   EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
   EXPECT_EQ(last_event.phase, kPanZoomUpdate);
   EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
@@ -590,14 +593,55 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   // End gesture.
   CGEventRef cgEventEnd = CGEventCreateCopy(cgEventStart);
   CGEventSetIntegerValueField(cgEventEnd, kCGScrollWheelEventScrollPhase, kCGScrollPhaseEnded);
-  NSEvent* eventEnd = [NSEvent eventWithCGEvent:cgEventEnd];
 
   called = false;
-  [viewController scrollWheel:eventEnd];
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventEnd]];
   EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
   EXPECT_EQ(last_event.phase, kPanZoomEnd);
   EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // May-begin and cancel are used while macOS determines which type of gesture to choose
+  CGEventRef cgEventMayBegin = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventMayBegin, kCGScrollWheelEventScrollPhase,
+                              kCGScrollPhaseMayBegin);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventMayBegin]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomStart);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // Cancel gesture.
+  CGEventRef cgEventCancel = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventCancel, kCGScrollWheelEventScrollPhase,
+                              kCGScrollPhaseCancelled);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventCancel]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomEnd);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // A discrete scroll event should use the PointerSignal system.
+  CGEventRef cgEventDiscrete = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
+  CGEventSetType(cgEventDiscrete, kCGEventScrollWheel);
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventIsContinuous, 0);
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis2, 1);  // scroll_delta_x
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis1, 2);  // scroll_delta_y
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventDiscrete]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindScroll);
+  // pixelsPerLine is 40.0 and direction is reversed.
+  EXPECT_EQ(last_event.scroll_delta_x, -40 * viewController.flutterView.layer.contentsScale);
+  EXPECT_EQ(last_event.scroll_delta_y, -80 * viewController.flutterView.layer.contentsScale);
 
   return true;
 }

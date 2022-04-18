@@ -591,6 +591,10 @@ static void CommonInit(FlutterViewController* controller) {
     [self dispatchMouseEvent:event phase:kPanZoomEnd];
   } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
     [self dispatchMouseEvent:event phase:kHover];
+  } else {
+    // Skip momentum events, the framework will generate scroll momentum
+    NSAssert(event.momentumPhase != NSEventPhaseNone,
+             @"Received gesture event with unexpected phase");
   }
 }
 
