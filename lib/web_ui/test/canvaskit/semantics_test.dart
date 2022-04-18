@@ -20,6 +20,10 @@ void main() {
 // yet share platform view logic with the HTML renderer, which affects
 // semantics.
 Future<void> testMain() async {
-  setUpCanvasKitTest();
-  runSemanticsTests();
+  group('CanvasKit semantics', () {
+    setUpCanvasKitTest();
+
+    runSemanticsTests();
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+  }, skip: isIosSafari);
 }
