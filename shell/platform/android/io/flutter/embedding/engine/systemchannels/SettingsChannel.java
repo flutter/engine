@@ -44,7 +44,8 @@ public class SettingsChannel {
     }
 
     @NonNull
-    public MessageBuilder setNativeSpellCheckServiceDefined(boolean nativeSpellCheckServiceDefined) {
+    public MessageBuilder setNativeSpellCheckServiceDefined(
+        boolean nativeSpellCheckServiceDefined) {
       message.put(NATIVE_SPELL_CHECK_SERVICE_DEFINED, nativeSpellCheckServiceDefined);
       return this;
     }

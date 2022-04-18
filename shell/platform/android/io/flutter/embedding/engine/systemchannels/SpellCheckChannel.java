@@ -16,8 +16,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 /**
- * {@link SpellCheckChannel} is a platform channel that is used by the framework to initiate spell check
- * in the embedding and for the embedding to send back the results.
+ * {@link SpellCheckChannel} is a platform channel that is used by the framework to initiate spell
+ * check in the embedding and for the embedding to send back the results.
  *
  * <p>When there is new text to be spell checked, the framework will send to the embedding the
  * message {@code SpellCheck.initiateSpellCheck} with the {@code String} locale to spell check with
@@ -33,8 +33,8 @@ import org.json.JSONException;
  * for details) as an argument.
  *
  * <p>{@link io.flutter.plugin.editing.SpellCheckPlugin} implements {@link SpellCheckMethodHandler}
- * to initiate spell check. Implement {@link SpellCheckMethodHandler} to respond to spell
- * check requests.
+ * to initiate spell check. Implement {@link SpellCheckMethodHandler} to respond to spell check
+ * requests.
  */
 public class SpellCheckChannel {
   private static final String TAG = "SpellCheckChannel";
