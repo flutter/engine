@@ -103,7 +103,6 @@ public class SpellCheckPlugin
       SentenceSuggestionsInfo spellCheckResults = results[0];
 
       for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
-
         SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
         int suggestionsCount = suggestionsInfo.getSuggestionsCount();
 
