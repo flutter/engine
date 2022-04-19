@@ -749,7 +749,6 @@ TEST(
   latch.Wait();
 }
 
-
 TEST(RasterizerTest,
      drawLayerTreeWithCorrectFrameTimingWhenPipelineIsMoreAvailable) {
   std::string test_name =
