@@ -58,11 +58,9 @@ platform_properties:
       caches: >-
         [
           {"name":"flutter_cocoapods","path":"cocoapods"},
-          {"name":"osx_sdk_13a233_13_15","path":"osx_sdk"},
+          {"name":"osx_sdk_13a233","path":"osx_sdk"},
           {"name":"builder_mac_engine","path":"builder"},
-          {"name":"openjdk","path":"java"},
-          {"name":"xcode_runtime_ios_13_0","path":"xcode_runtime_ios_13_0"},
-          {"name":"xcode_runtime_ios_15_0","path":"xcode_runtime_ios_15_0"}
+          {"name":"openjdk","path":"java"}
         ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
@@ -72,11 +70,6 @@ platform_properties:
       device_type: none
       mac_model: "Macmini8,1"
       os: Mac-12
-      runtime_versions: >-
-        [
-          "ios-13-0",
-          "ios-15-0"
-        ]
       xcode: 13a233 # xcode 13.0
   windows:
     properties:
@@ -163,6 +156,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 90
 
   - name: Linux Fuchsia FEMU
@@ -171,6 +166,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 60
 
   - name: Linux Framework Smoke Tests
@@ -278,11 +275,33 @@ targets:
       jazzy_version: "0.14.1"
     timeout: 75
 
+  - name: Mac mac_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_host_engine
+      environment: Staging
+
   - name: Mac Unopt
     recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
       jazzy_version: "0.14.1"
+      caches: >-
+        [
+          {"name":"flutter_cocoapods","path":"cocoapods"},
+          {"name":"osx_sdk_13a233_13_15","path":"osx_sdk"},
+          {"name":"builder_mac_engine","path":"builder"},
+          {"name":"openjdk","path":"java"},
+          {"name":"xcode_runtime_ios_13_0","path":"xcode_runtime_ios_13_0"},
+          {"name":"xcode_runtime_ios_15_0","path":"xcode_runtime_ios_15_0"}
+        ]
+      runtime_versions: >-
+        [
+          "ios-13-0",
+          "ios-15-0"
+        ]
     timeout: 75
 
   - name: Mac clang-tidy
@@ -317,9 +336,6 @@ targets:
           {"dependency": "goldctl"}
         ]
       os: Mac-10.15
-      runtime_versions: >-
-        [
-        ]
       xcode: 12c33 # xcode 12.3
     timeout: 60
     runIf:

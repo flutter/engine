@@ -2474,16 +2474,21 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         MutatorsStack mutators_stack;
         TextureRegistry texture_registry;
         PrerollContext preroll_context = {
-            nullptr,                 /* raster_cache */
-            nullptr,                 /* gr_context */
-            nullptr,                 /* external_view_embedder */
-            mutators_stack, nullptr, /* color_space */
-            kGiantRect,              /* cull_rect */
-            false,                   /* layer reads from surface */
-            raster_time,    ui_time, texture_registry,
-            false, /* checkerboard_offscreen_layers */
-            1.0f,  /* frame_device_pixel_ratio */
-            false, /* has_platform_view */
+            // clang-format off
+            .raster_cache                  = nullptr,
+            .gr_context                    = nullptr,
+            .view_embedder                 = nullptr,
+            .mutators_stack                = mutators_stack,
+            .dst_color_space               = nullptr,
+            .cull_rect                     = kGiantRect,
+            .surface_needs_readback        = false,
+            .raster_time                   = raster_time,
+            .ui_time                       = ui_time,
+            .texture_registry              = texture_registry,
+            .checkerboard_offscreen_layers = false,
+            .frame_device_pixel_ratio      = 1.0f,
+            .has_platform_view             = false,
+            // clang-format on
         };
 
         // 2.1. Rasterize the picture. Call Draw multiple times to pass the
@@ -2521,6 +2526,49 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 
+  DestroyShell(std::move(shell));
+}
+
+// ktz
+TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("scene_with_red_box");
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  ServiceProtocol::Handler::ServiceProtocolMap empty_params;
+  rapidjson::Document document;
+  OnServiceProtocol(
+      shell.get(), ServiceProtocolEnum::kRenderFrameWithRasterStats,
+      shell->GetTaskRunners().GetRasterTaskRunner(), empty_params, &document);
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+
+  // It would be better to parse out the json and check for the validity of
+  // fields. Below checks approximate what needs to be checked, this can not be
+  // an exact check since duration will not exactly match.
+  std::string expected_json =
+      "\"snapshot\":[137,80,78,71,13,10,26,10,0,"
+      "0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,0,0,0,1,115,"
+      "82,71,66,0,174,206,28,233,0,0,0,4,115,66,73,84,8,8,8,8,124,8,100,136,0,"
+      "0,0,13,73,68,65,84,8,153,99,248,207,192,240,31,0,5,0,1,255,171,206,54,"
+      "137,0,0,0,0,73,69,78,68,174,66,96,130]";
+  std::string actual_json = buffer.GetString();
+
+  EXPECT_THAT(actual_json, ::testing::HasSubstr(expected_json));
+  EXPECT_THAT(actual_json,
+              ::testing::HasSubstr("{\"type\":\"RenderFrameWithRasterStats\""));
+  EXPECT_THAT(actual_json, ::testing::HasSubstr("\"duration_micros\""));
+
+  PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
 
@@ -2913,8 +2961,8 @@ TEST_F(ShellTest, AssetManagerMultiSubdir) {
 
   std::vector<std::string> filenames = {
       "bad0",
-      "notgood",  // this is to make sure the pattern (.*)good(.*) only matches
-                  // things in the subdirectory
+      "notgood",  // this is to make sure the pattern (.*)good(.*) only
+                  // matches things in the subdirectory
   };
 
   std::vector<std::string> subdir_filenames = {
@@ -2989,8 +3037,9 @@ TEST_F(ShellTest, Spawn) {
   // Fulfill native function for the second Shell's entrypoint.
   fml::CountDownLatch second_latch(2);
   AddNativeCallback(
-      // The Dart native function names aren't very consistent but this is just
-      // the native function name of the second vm entrypoint in the fixture.
+      // The Dart native function names aren't very consistent but this is
+      // just the native function name of the second vm entrypoint in the
+      // fixture.
       "NotifyNative",
       CREATE_NATIVE_ENTRY([&](auto args) { second_latch.CountDown(); }));
 
@@ -3719,6 +3768,74 @@ TEST_F(ShellTest, UsesPlatformMessageHandler) {
   shell->GetPlatformMessageHandler()
       ->InvokePlatformMessageEmptyResponseCallback(message_id);
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, SpawnWorksWithOnError) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+  configuration.SetEntrypoint("onErrorA");
+
+  auto second_configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(second_configuration.IsValid());
+  second_configuration.SetEntrypoint("onErrorB");
+
+  fml::CountDownLatch latch(2);
+
+  AddNativeCallback(
+      "NotifyErrorA", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+        auto string_handle = Dart_GetNativeArgument(args, 0);
+        const char* c_str;
+        Dart_StringToCString(string_handle, &c_str);
+        EXPECT_STREQ(c_str, "Exception: I should be coming from A");
+        latch.CountDown();
+      }));
+
+  AddNativeCallback(
+      "NotifyErrorB", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+        auto string_handle = Dart_GetNativeArgument(args, 0);
+        const char* c_str;
+        Dart_StringToCString(string_handle, &c_str);
+        EXPECT_STREQ(c_str, "Exception: I should be coming from B");
+        latch.CountDown();
+      }));
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  PostSync(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [this, &spawner = shell, &second_configuration, &latch]() {
+        ::testing::NiceMock<MockPlatformViewDelegate> platform_view_delegate;
+        auto spawn = spawner->Spawn(
+            std::move(second_configuration), "",
+            [&platform_view_delegate](Shell& shell) {
+              auto result =
+                  std::make_unique<::testing::NiceMock<MockPlatformView>>(
+                      platform_view_delegate, shell.GetTaskRunners());
+              ON_CALL(*result, CreateRenderingSurface())
+                  .WillByDefault(::testing::Invoke([] {
+                    return std::make_unique<::testing::NiceMock<MockSurface>>();
+                  }));
+              return result;
+            },
+            [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+        ASSERT_NE(nullptr, spawn.get());
+        ASSERT_TRUE(ValidateShell(spawn.get()));
+
+        // Before destroying the shell, wait for expectations of the spawned
+        // isolate to be met.
+        latch.Wait();
+
+        DestroyShell(std::move(spawn));
+      });
+
+  DestroyShell(std::move(shell));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
 }  // namespace testing
