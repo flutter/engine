@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 import 'package:ui/src/engine/assets.dart';
 import 'package:ui/src/engine/browser_detection.dart';
