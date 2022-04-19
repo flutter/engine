@@ -116,6 +116,8 @@ FILE: ../../../flutter/flow/gl_context_switch_unittests.cc
 FILE: ../../../flutter/flow/instrumentation.cc
 FILE: ../../../flutter/flow/instrumentation.h
 FILE: ../../../flutter/flow/instrumentation_unittests.cc
+FILE: ../../../flutter/flow/layer_snapshot_store.cc
+FILE: ../../../flutter/flow/layer_snapshot_store.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.cc
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer_unittests.cc
@@ -422,7 +424,7 @@ FILE: ../../../flutter/impeller/archivist/archivist_unittests.cc
 FILE: ../../../flutter/impeller/base/allocation.cc
 FILE: ../../../flutter/impeller/base/allocation.h
 FILE: ../../../flutter/impeller/base/backend_cast.h
-FILE: ../../../flutter/impeller/base/base.h
+FILE: ../../../flutter/impeller/base/base_unittests.cc
 FILE: ../../../flutter/impeller/base/comparable.cc
 FILE: ../../../flutter/impeller/base/comparable.h
 FILE: ../../../flutter/impeller/base/config.h
@@ -430,6 +432,10 @@ FILE: ../../../flutter/impeller/base/promise.cc
 FILE: ../../../flutter/impeller/base/promise.h
 FILE: ../../../flutter/impeller/base/strings.cc
 FILE: ../../../flutter/impeller/base/strings.h
+FILE: ../../../flutter/impeller/base/thread.cc
+FILE: ../../../flutter/impeller/base/thread.h
+FILE: ../../../flutter/impeller/base/thread_safety.cc
+FILE: ../../../flutter/impeller/base/thread_safety.h
 FILE: ../../../flutter/impeller/base/validation.cc
 FILE: ../../../flutter/impeller/base/validation.h
 FILE: ../../../flutter/impeller/compiler/code_gen_template.h
@@ -2039,6 +2045,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_key_responder.h
 FILE: ../../../flutter/shell/platform/linux/fl_keyboard_manager.cc
 FILE: ../../../flutter/shell/platform/linux/fl_keyboard_manager.h
 FILE: ../../../flutter/shell/platform/linux/fl_keyboard_manager_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_keyboard_view_delegate.cc
+FILE: ../../../flutter/shell/platform/linux/fl_keyboard_view_delegate.h
 FILE: ../../../flutter/shell/platform/linux/fl_message_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_message_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_call.cc

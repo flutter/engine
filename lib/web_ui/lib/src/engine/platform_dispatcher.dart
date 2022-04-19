@@ -607,7 +607,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      flutterViewEmbedder.renderScene(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement);
     }
     frameTimingsOnRasterFinish();
   }
@@ -1022,6 +1022,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       int id, ui.SemanticsAction action, ByteData? args) {
     invoke3<int, ui.SemanticsAction, ByteData?>(
         _onSemanticsAction, _onSemanticsActionZone, id, action, args);
+  }
+
+  // TODO(dnfield): make this work on web.
+  // https://github.com/flutter/flutter/issues/100277
+  ui.ErrorCallback? _onError;
+  // ignore: unused_field
+  Zone? _onErrorZone;
+  @override
+  ui.ErrorCallback? get onError => _onError;
+  @override
+  set onError(ui.ErrorCallback? callback) {
+    _onError = callback;
+    _onErrorZone = Zone.current;
   }
 
   /// The route or path that the embedder requested when the application was

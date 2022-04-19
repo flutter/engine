@@ -12,6 +12,7 @@
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
+#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
@@ -53,7 +54,7 @@ struct PrerollContext {
   const Stopwatch& ui_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
-  const float frame_device_pixel_ratio;
+  const float frame_device_pixel_ratio = 1.0f;
 
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a platform view during Preroll.
@@ -82,6 +83,7 @@ struct PrerollContext {
   bool subtree_can_inherit_opacity = false;
 };
 
+class ContainerLayer;
 class PictureLayer;
 class DisplayListLayer;
 class PerformanceOverlayLayer;
@@ -165,7 +167,12 @@ class Layer {
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
-    const float frame_device_pixel_ratio;
+    const float frame_device_pixel_ratio = 1.0f;
+
+    // Snapshot store to collect leaf layer snapshots. The store is non-null
+    // only when leaf layer tracing is enabled.
+    LayerSnapshotStore* layer_snapshot_store = nullptr;
+    bool enable_leaf_layer_tracing = false;
 
     // The following value should be used to modulate the opacity of the
     // layer during |Paint|. If the layer does not set the corresponding
@@ -179,7 +186,7 @@ class Layer {
 
   class AutoCachePaint {
    public:
-    AutoCachePaint(PaintContext& context) : context_(context) {
+    explicit AutoCachePaint(PaintContext& context) : context_(context) {
       needs_paint_ = context.inherited_opacity < SK_Scalar1;
       if (needs_paint_) {
         paint_.setAlphaf(context.inherited_opacity);
@@ -330,6 +337,7 @@ class Layer {
 
   uint64_t unique_id() const { return unique_id_; }
 
+  virtual const ContainerLayer* as_container_layer() const { return nullptr; }
   virtual const PictureLayer* as_picture_layer() const { return nullptr; }
   virtual const DisplayListLayer* as_display_list_layer() const {
     return nullptr;

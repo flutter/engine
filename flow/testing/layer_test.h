@@ -5,6 +5,7 @@
 #ifndef FLOW_TESTING_LAYER_TEST_H_
 #define FLOW_TESTING_LAYER_TEST_H_
 
+#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer.h"
 
 #include <optional>
@@ -39,38 +40,51 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
  public:
   LayerTestBase()
-      : preroll_context_({
-            nullptr, /* raster_cache */
-            nullptr, /* gr_context */
-            nullptr, /* external_view_embedder */
-            mutators_stack_, TestT::mock_canvas().imageInfo().colorSpace(),
-            kGiantRect, /* cull_rect */
-            false,      /* layer reads from surface */
-            raster_time_, ui_time_, texture_registry_,
-            false, /* checkerboard_offscreen_layers */
-            1.0f,  /* frame_device_pixel_ratio */
-            false, /* has_platform_view */
-        }),
-        paint_context_({
-            TestT::mock_canvas().internal_canvas(), /* internal_nodes_canvas */
-            &TestT::mock_canvas(),                  /* leaf_nodes_canvas */
-            nullptr,                                /* gr_context */
-            nullptr,                                /* external_view_embedder */
-            raster_time_, ui_time_, texture_registry_,
-            nullptr, /* raster_cache */
-            false,   /* checkerboard_offscreen_layers */
-            1.0f,    /* frame_device_pixel_ratio */
-        }),
-        check_board_context_({
-            TestT::mock_canvas().internal_canvas(), /* internal_nodes_canvas */
-            &TestT::mock_canvas(),                  /* leaf_nodes_canvas */
-            nullptr,                                /* gr_context */
-            nullptr,                                /* external_view_embedder */
-            raster_time_, ui_time_, texture_registry_,
-            nullptr, /* raster_cache */
-            true,    /* checkerboard_offscreen_layers */
-            1.0f,    /* frame_device_pixel_ratio */
-        }) {
+      : preroll_context_{
+            // clang-format off
+            .raster_cache                  = nullptr,
+            .gr_context                    = nullptr,
+            .view_embedder                 = nullptr,
+            .mutators_stack                = mutators_stack_,
+            .dst_color_space               = TestT::mock_color_space(),
+            .cull_rect                     = kGiantRect,
+            .surface_needs_readback        = false,
+            .raster_time                   = raster_time_,
+            .ui_time                       = ui_time_,
+            .texture_registry              = texture_registry_,
+            .checkerboard_offscreen_layers = false,
+            .frame_device_pixel_ratio      = 1.0f,
+            .has_platform_view             = false,
+            // clang-format on
+        },
+        paint_context_{
+            // clang-format off
+            .internal_nodes_canvas         = TestT::mock_internal_canvas(),
+            .leaf_nodes_canvas             = &TestT::mock_canvas(),
+            .gr_context                    = nullptr,
+            .view_embedder                 = nullptr,
+            .raster_time                   = raster_time_,
+            .ui_time                       = ui_time_,
+            .texture_registry              = texture_registry_,
+            .raster_cache                  = nullptr,
+            .checkerboard_offscreen_layers = false,
+            .frame_device_pixel_ratio      = 1.0f,
+            // clang-format on
+        },
+        check_board_context_{
+            // clang-format off
+            .internal_nodes_canvas         = TestT::mock_internal_canvas(),
+            .leaf_nodes_canvas             = &TestT::mock_canvas(),
+            .gr_context                    = nullptr,
+            .view_embedder                 = nullptr,
+            .raster_time                   = raster_time_,
+            .ui_time                       = ui_time_,
+            .texture_registry              = texture_registry_,
+            .raster_cache                  = nullptr,
+            .checkerboard_offscreen_layers = true,
+            .frame_device_pixel_ratio      = 1.0f,
+            // clang-format on
+        } {
     use_null_raster_cache();
   }
 
@@ -128,6 +142,17 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   PrerollContext* preroll_context() { return &preroll_context_; }
   Layer::PaintContext& paint_context() { return paint_context_; }
   Layer::PaintContext& check_board_context() { return check_board_context_; }
+  LayerSnapshotStore& layer_snapshot_store() { return snapshot_store_; }
+
+  void enable_leaf_layer_tracing() {
+    paint_context_.enable_leaf_layer_tracing = true;
+    paint_context_.layer_snapshot_store = &snapshot_store_;
+  }
+
+  void disable_leaf_layer_tracing() {
+    paint_context_.enable_leaf_layer_tracing = false;
+    paint_context_.layer_snapshot_store = nullptr;
+  }
 
  private:
   void set_raster_cache_(std::unique_ptr<RasterCache> raster_cache) {
@@ -145,6 +170,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   PrerollContext preroll_context_;
   Layer::PaintContext paint_context_;
   Layer::PaintContext check_board_context_;
+  LayerSnapshotStore snapshot_store_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTestBase);
 };
