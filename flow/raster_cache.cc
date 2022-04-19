@@ -323,10 +323,6 @@ bool RasterCache::Prepare(PrerollContext* context,
 
   // Creates an entry, if not present prior.
   Entry& entry = cache_[cache_key];
-  if (entry.access_count < access_threshold_) {
-    // Frame threshold has not yet been reached.
-    return false;
-  }
 
   if (!entry.image) {
     // GetIntegralTransCTM effect for matrix which only contains scale,
@@ -393,10 +389,6 @@ bool RasterCache::Prepare(PrerollContext* context,
 
   // Creates an entry, if not present prior.
   Entry& entry = cache_[cache_key];
-  if (entry.access_count < access_threshold_) {
-    // Frame threshold has not yet been reached.
-    return false;
-  }
 
   if (!entry.image) {
     // GetIntegralTransCTM effect for matrix which only contains scale,

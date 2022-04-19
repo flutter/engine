@@ -10,6 +10,7 @@
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/offscreen_surface.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 
 namespace flutter {
 
@@ -92,19 +93,16 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
-  auto& cacheable_entry = context->raster_cached_entries.emplace_back(
-      RasterCacheableEntry::MarkDisplayListCacheable(
-          this->display_list(), *context, matrix, offset_));
+  Cacheable::AutoCache cache =
+      Cacheable::AutoCache::Create(this, context, matrix, offset_);
 
   DisplayList* disp_list = display_list();
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
-
-  cacheable_entry->need_caching = NeedCaching(context, matrix);
 }
 
-bool DisplayListLayer::NeedCaching(PrerollContext* context,
-                                   const SkMatrix& ctm) {
+Cacheable::CacheType DisplayListLayer::NeedCaching(PrerollContext* context,
+                                                   const SkMatrix& ctm) {
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     // For display_list_layer if the context has raster_cache, we will try to
@@ -121,10 +119,21 @@ bool DisplayListLayer::NeedCaching(PrerollContext* context,
         // subtree_can_inherit_opacity to true
         context->subtree_can_inherit_opacity = true;
       }
+      return Cacheable::CacheType::kCurrent;
     }
-    return true;
+    return Cacheable::CacheType::kTouch;
   }
-  return false;
+  return Cacheable::CacheType::kNone;
+}
+
+void DisplayListLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
+                                       CacheType cache_type) {
+  cacheable_entry->need_caching = true;
+  if (cache_type == Cacheable::CacheType::kTouch) {
+    cacheable_entry->MarkTouchCache();
+  } else if (cache_type == Cacheable::CacheType::kNone) {
+    cacheable_entry->need_caching = false;
+  }
 }
 
 void DisplayListLayer::Paint(PaintContext& context) const {

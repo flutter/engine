@@ -36,6 +36,11 @@ class CacheableItemWrapperBase {
   }
 
   virtual ~CacheableItemWrapperBase() = default;
+
+  void TouchCache() { touch_cache_ = true; }
+
+ protected:
+  bool touch_cache_ = false;
 };
 // CacheableEntry is a wrapper to erasure the Entry type.
 class CacheableLayerWrapper : public CacheableItemWrapperBase {
@@ -147,6 +152,8 @@ class RasterCacheableEntry {
   void MarkLayerChildrenNeedCached() {
     item_->asCacheableLayerWrapper()->NeedCacheChildren();
   }
+
+  void MarkTouchCache() { item_->TouchCache(); }
 
   void TryToPrepareRasterCache(PrerollContext* context);
 

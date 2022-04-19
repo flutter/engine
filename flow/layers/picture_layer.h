@@ -7,13 +7,14 @@
 
 #include <memory>
 
+#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
 
 namespace flutter {
 
-class PictureLayer : public Layer {
+class PictureLayer : public Layer, public Cacheable {
  public:
   PictureLayer(const SkPoint& offset,
                SkiaGPUObject<SkPicture> picture,
@@ -32,7 +33,13 @@ class PictureLayer : public Layer {
 
   void Paint(PaintContext& context) const override;
 
-  bool NeedCaching(PrerollContext* context, const SkMatrix& ctm);
+  Cacheable::CacheType NeedCaching(PrerollContext* context,
+                                   const SkMatrix& ctm) override;
+
+  Layer* asLayer() override { return this; }
+
+  void ConfigCacheType(RasterCacheableEntry* cacheable_entry,
+                       CacheType cache_type) override;
 
  private:
   SkPoint offset_;

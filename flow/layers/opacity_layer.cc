@@ -77,6 +77,9 @@ void OpacityLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
 #endif
     cacheable_entry->matrix = child_matrix;
     cacheable_entry->MarkLayerChildrenNeedCached();
+    if (cache_type == Cacheable::CacheType::kTouch) {
+      cacheable_entry->MarkTouchCache();
+    }
   } else if (cache_type == Cacheable::CacheType::kNone) {
     cacheable_entry->need_caching = false;
   }
@@ -84,10 +87,18 @@ void OpacityLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
 
 Cacheable::CacheType OpacityLayer::NeedCaching(PrerollContext* context,
                                                const SkMatrix& ctm) {
-  if (!children_can_accept_opacity()) {
-    return Cacheable::CacheType::kChildren;
+  if (!context->raster_cache) {
+    return Cacheable::CacheType::kNone;
   }
-  return Cacheable::CacheType::kNone;
+  if (!context->has_platform_view && !context->has_texture_layer &&
+      SkRect::Intersects(context->cull_rect, paint_bounds())) {
+    if (!children_can_accept_opacity()) {
+      return Cacheable::CacheType::kChildren;
+    }
+    return Cacheable::CacheType::kNone;
+  }
+
+  return Cacheable::CacheType::kTouch;
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {

@@ -76,35 +76,39 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
 Cacheable::CacheType ImageFilterLayer::NeedCaching(PrerollContext* context,
                                                    const SkMatrix& ctm) {
-  if (!filter_) {
+  if (!filter_ || !context->raster_cache) {
     return Cacheable::CacheType::kNone;
   }
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    return Cacheable::CacheType::kCurrent;
-  }
-  transformed_filter_ = nullptr;
-  // This ImageFilterLayer is not yet considered stable so we
-  // increment the count to measure how many times it has been
-  // seen from frame to frame.
-  render_count_++;
+  if (!context->has_platform_view && !context->has_texture_layer &&
+      SkRect::Intersects(context->cull_rect, paint_bounds())) {
+    if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+      return Cacheable::CacheType::kCurrent;
+    }
+    transformed_filter_ = nullptr;
+    // This ImageFilterLayer is not yet considered stable so we
+    // increment the count to measure how many times it has been
+    // seen from frame to frame.
+    render_count_++;
 
-  // Now we will try to pre-render the children into the cache.
-  // To apply the filter to pre-rendered children, we must first
-  // modify the filter to be aware of the transform under which
-  // the cached bitmap was produced. Some SkImageFilter
-  // instances can do this operation on some transforms and some
-  // (filters or transforms) cannot. We can only cache the children
-  // and apply the filter on the fly if this operation succeeds.
-  transformed_filter_ = filter_->makeWithLocalMatrix(ctm);
-  if (transformed_filter_) {
-    // With a modified SkImageFilter we can now try to cache the
-    // children to avoid their rendering costs if they remain
-    // stable between frames and also avoiding a rendering surface
-    // switch during the Paint phase even if they are not stable.
-    // This benefit is seen most during animations.
-    return Cacheable::CacheType::kChildren;
+    // Now we will try to pre-render the children into the cache.
+    // To apply the filter to pre-rendered children, we must first
+    // modify the filter to be aware of the transform under which
+    // the cached bitmap was produced. Some SkImageFilter
+    // instances can do this operation on some transforms and some
+    // (filters or transforms) cannot. We can only cache the children
+    // and apply the filter on the fly if this operation succeeds.
+    transformed_filter_ = filter_->makeWithLocalMatrix(ctm);
+    if (transformed_filter_) {
+      // With a modified SkImageFilter we can now try to cache the
+      // children to avoid their rendering costs if they remain
+      // stable between frames and also avoiding a rendering surface
+      // switch during the Paint phase even if they are not stable.
+      // This benefit is seen most during animations.
+      return Cacheable::CacheType::kChildren;
+    }
   }
-  return Cacheable::CacheType::kNone;
+
+  return Cacheable::CacheType::kTouch;
 }
 
 void ImageFilterLayer::Paint(PaintContext& context) const {

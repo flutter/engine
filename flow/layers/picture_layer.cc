@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/picture_layer.h"
 
+#include "flutter/flow/raster_cacheable_entry.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 
@@ -110,17 +111,17 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
-  auto& cacheable_entry = context->raster_cached_entries.emplace_back(
-      RasterCacheableEntry::MarkSkPictureCacheable(this->picture(), *context,
-                                                   matrix, offset_));
+  Cacheable::AutoCache cache =
+      Cacheable::AutoCache::Create(this, context, matrix, offset_);
+
   SkPicture* sk_picture = picture();
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
-  set_paint_bounds(bounds);
 
-  cacheable_entry->need_caching = NeedCaching(context, matrix);
+  set_paint_bounds(bounds);
 }
 
-bool PictureLayer::NeedCaching(PrerollContext* context, const SkMatrix& ctm) {
+Cacheable::CacheType PictureLayer::NeedCaching(PrerollContext* context,
+                                               const SkMatrix& ctm) {
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
     if (context->cull_rect.intersects(paint_bounds())) {
@@ -134,11 +135,22 @@ bool PictureLayer::NeedCaching(PrerollContext* context, const SkMatrix& ctm) {
         // if current Layer can be cached, we change the
         // subtree_can_inherit_opacity to true
         context->subtree_can_inherit_opacity = true;
+        return Cacheable::CacheType::kCurrent;
       }
     }
-    return true;
+    return Cacheable::CacheType::kTouch;
   }
-  return false;
+  return Cacheable::CacheType::kNone;
+}
+
+void PictureLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
+                                   CacheType cache_type) {
+  cacheable_entry->need_caching = true;
+  if (cache_type == Cacheable::CacheType::kTouch) {
+    cacheable_entry->MarkTouchCache();
+  } else if (cache_type == Cacheable::CacheType::kNone) {
+    cacheable_entry->need_caching = false;
+  }
 }
 
 void PictureLayer::Paint(PaintContext& context) const {

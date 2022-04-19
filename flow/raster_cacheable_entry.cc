@@ -17,25 +17,29 @@ namespace flutter {
 
 void CacheableLayerWrapper::TryToPrepareRasterCache(PrerollContext* context,
                                                     const SkMatrix& matrix) {
-  cacheable_item_->TryToPrepareRasterCache(
-      cacheable_item_->asLayer(), context, matrix,
-      cache_children_ ? RasterCacheLayerStrategy::kLayerChildren
-                      : RasterCacheLayerStrategy::kLayer);
+  auto* layer = cacheable_item_->asLayer();
+  auto strategy = cache_children_ ? RasterCacheLayerStrategy::kLayerChildren
+                                  : RasterCacheLayerStrategy::kLayer;
+  if (auto* cache = context->raster_cache) {
+    if (touch_cache_) {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(layer, matrix, strategy);
+      return;
+    }
+    cache->Prepare(context, layer, matrix, strategy);
+  }
 }
 
 void CacheableDisplayListWrapper::TryToPrepareRasterCache(
     PrerollContext* context,
     const SkMatrix& matrix) {
   if (auto* cache = context->raster_cache) {
-    SkRect bounds =
-        display_list_->bounds().makeOffset(offset_.x(), offset_.y());
-    TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache");
-    if (context->cull_rect.intersects(bounds)) {
-      cache->Prepare(context, display_list_, matrix);
-    } else {
+    if (touch_cache_) {
       // Don't evict raster cache entry during partial repaint
       cache->Touch(display_list_, matrix);
+      return;
     }
+    cache->Prepare(context, display_list_, matrix);
   }
 }
 
@@ -43,16 +47,12 @@ void CacheableSkPictureWrapper::TryToPrepareRasterCache(
     PrerollContext* context,
     const SkMatrix& matrix) {
   if (auto* cache = context->raster_cache) {
-    SkRect bounds =
-        sk_picture_->cullRect().makeOffset(offset_.x(), offset_.y());
-
-    TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    if (context->cull_rect.intersects(bounds)) {
-      cache->Prepare(context, sk_picture_, matrix);
-    } else {
+    if (touch_cache_) {
       // Don't evict raster cache entry during partial repaint
       cache->Touch(sk_picture_, matrix);
+      return;
     }
+    cache->Prepare(context, sk_picture_, matrix);
   }
 }
 

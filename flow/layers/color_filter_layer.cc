@@ -42,12 +42,19 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
 
 Cacheable::CacheType ColorFilterLayer::NeedCaching(PrerollContext* context,
                                                    const SkMatrix& ctm) {
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    return Cacheable::CacheType::kCurrent;
-  } else {
-    render_count_++;
-    return Cacheable::CacheType::kChildren;
+  if (!context->raster_cache) {
+    return Cacheable::CacheType::kNone;
   }
+  if (!context->has_platform_view && !context->has_texture_layer &&
+      SkRect::Intersects(context->cull_rect, paint_bounds())) {
+    if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+      return Cacheable::CacheType::kCurrent;
+    } else {
+      render_count_++;
+      return Cacheable::CacheType::kChildren;
+    }
+  }
+  return Cacheable::CacheType::kTouch;
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {

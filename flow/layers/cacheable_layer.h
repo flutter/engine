@@ -11,6 +11,7 @@
 #include "flutter/flow/raster_cache.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkMatrix.h"
+#include "include/core/SkPoint.h"
 
 namespace flutter {
 
@@ -18,15 +19,23 @@ class Cacheable {
  public:
   Cacheable() = default;
 
-  enum class CacheType { kNone, kCurrent, kChildren };
+  enum class CacheType { kNone, kCurrent, kChildren, kTouch };
 
   class AutoCache {
    public:
     static AutoCache Create(Cacheable* cacheable,
                             PrerollContext* context,
-                            const SkMatrix& matrix) {
-      return AutoCache(cacheable, context, matrix);
-    }
+                            const SkMatrix& matrix);
+
+    static AutoCache Create(DisplayListLayer* display_list,
+                            PrerollContext* context,
+                            const SkMatrix& matrix,
+                            SkPoint offset);
+
+    static AutoCache Create(PictureLayer* display_list,
+                            PrerollContext* context,
+                            const SkMatrix& matrix,
+                            SkPoint offset);
 
     ~AutoCache() {
       cacheable_entry_->num_child_entries =
@@ -41,14 +50,11 @@ class Cacheable {
 
    private:
     AutoCache(Cacheable* cacheable,
+              RasterCacheableEntry* cacheable_entry,
               PrerollContext* context,
               const SkMatrix& matrix)
         : layer_(cacheable), context_(context), matrix_(matrix) {
-      cacheable_entry_ =
-          context_->raster_cached_entries
-              .emplace_back(RasterCacheableEntry::MarkLayerCacheable(
-                  layer_, *context_, matrix_))
-              .get();
+      cacheable_entry_ = cacheable_entry;
       current_index_ = context_->raster_cached_entries.size();
     }
 
@@ -58,22 +64,6 @@ class Cacheable {
     PrerollContext* context_ = nullptr;
     const SkMatrix& matrix_;
   };
-
-  void TryToPrepareRasterCache(
-      Layer* layer,
-      PrerollContext* context,
-      const SkMatrix& matrix,
-      RasterCacheLayerStrategy strategy = RasterCacheLayerStrategy::kLayer) {
-    if (context->raster_cache) {
-      if (!context->has_platform_view && !context->has_texture_layer &&
-          SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
-        context->raster_cache->Prepare(context, layer, matrix, strategy);
-      } else {
-        // Don't evict raster cache entry during partial repaint
-        context->raster_cache->Touch(layer, matrix, strategy);
-      }
-    }
-  }
 
   virtual Layer* asLayer() = 0;
 
@@ -91,6 +81,9 @@ class Cacheable {
     } else if (type == Cacheable::CacheType::kChildren) {
       // Replace Cacheable child
       entry->MarkLayerChildrenNeedCached();
+    } else if (type == CacheType::kTouch) {
+      // touch the cache
+      entry->MarkTouchCache();
     }
   }
 

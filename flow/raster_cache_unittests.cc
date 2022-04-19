@@ -35,8 +35,9 @@ TEST(RasterCache, ThresholdIsRespectedForSkPicture) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));
+  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
+                                    picture.get(), true, false, matrix));
+
   // 1st access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
@@ -45,8 +46,6 @@ TEST(RasterCache, ThresholdIsRespectedForSkPicture) {
 
   ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
                                     picture.get(), true, false, matrix));
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));
 
   // 2nd access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
@@ -76,8 +75,8 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));
+  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
+                                    picture.get(), true, false, matrix));
   // 1st access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
@@ -88,8 +87,6 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
 
   ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
                                     picture.get(), true, false, matrix));
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));
 
   // 2nd access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
@@ -126,8 +123,8 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             display_list.get(), matrix));
+  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
+                                    display_list.get(), true, false, matrix));
   // 1st access.
   ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
 
@@ -136,8 +133,6 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
 
   ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
                                     display_list.get(), true, false, matrix));
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             display_list.get(), matrix));
 
   // 2nd access.
   ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
@@ -227,8 +222,8 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             display_list.get(), matrix));
+  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
+                                    display_list.get(), true, false, matrix));
 
   ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
 }
@@ -287,8 +282,7 @@ TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
   ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
                                     display_list.get(), true, false,
                                     matrix));  // 1
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             display_list.get(), matrix));  // 1
+
   ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
 
   cache.CleanupAfterFrame();
@@ -337,8 +331,7 @@ TEST(RasterCache, DeviceRectRoundOutForSkPicture) {
 
   ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
                                     picture.get(), true, false, ctm));
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), ctm));
+
   ASSERT_FALSE(cache.Draw(*picture, canvas));
 
   cache.CleanupAfterFrame();
@@ -391,8 +384,7 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
 
   ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
                                     display_list.get(), true, false, ctm));
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             display_list.get(), ctm));
+
   ASSERT_FALSE(cache.Draw(*display_list, canvas));
 
   cache.CleanupAfterFrame();
@@ -426,8 +418,7 @@ TEST(RasterCache, NestedOpCountMetricUsedForSkPicture) {
 
   ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
                                     picture.get(), false, false, matrix));
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));
+
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.CleanupAfterFrame();
@@ -456,8 +447,8 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             display_list.get(), matrix));
+  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
+                                    display_list.get(), false, false, matrix));
   ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
 
   cache.CleanupAfterFrame();
