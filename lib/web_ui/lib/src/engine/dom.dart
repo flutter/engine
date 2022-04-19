@@ -46,6 +46,8 @@ extension DomDocumentExtension on DomDocument {
   external /* List<Node> */ List<Object?> querySelectorAll(String selectors);
   external DomElement createElement(String name, [dynamic options]);
   external DomHTMLScriptElement? get currentScript;
+  external DomElement createElementNS(
+      String namespaceURI, String qualifiedName);
 }
 
 @JS()
@@ -97,6 +99,7 @@ extension DomNodeExtension on DomNode {
       parent.removeChild(this);
     }
   }
+
   external DomNode removeChild(DomNode child);
   external bool? get isConnected;
 }
@@ -105,14 +108,16 @@ extension DomNodeExtension on DomNode {
 @staticInterop
 class DomElement extends DomNode {}
 
-DomElement createDomElement(String tag) =>
-  domDocument.createElement(tag);
+DomElement createDomElement(String tag) => domDocument.createElement(tag);
 
 extension DomElementExtension on DomElement {
   external /* List<DomElement> */ List<Object?> get children;
+  external String get id;
+  external set id(String id);
   external DomCSSStyleDeclaration get style;
   external void append(DomNode node);
   external void prepend(DomNode node);
+  external DomElement? querySelector(String selectors);
   external void setAttribute(String name, Object value);
 }
 
@@ -139,8 +144,8 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get opacity => getPropertyValue('opacity');
 
   external String getPropertyValue(String property);
-  external void setProperty(String propertyName, String value, [String
-      priority]);
+  external void setProperty(String propertyName, String value,
+      [String priority]);
 }
 
 @JS()
