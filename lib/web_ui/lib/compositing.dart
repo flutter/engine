@@ -43,6 +43,7 @@ abstract class SceneBuilder {
     double dx,
     double dy, {
     OffsetEngineLayer? oldLayer,
+    bool rasterCache = false,
   });
   TransformEngineLayer pushTransform(
     Float64List matrix4, {

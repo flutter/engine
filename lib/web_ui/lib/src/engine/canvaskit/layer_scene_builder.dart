@@ -160,6 +160,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     double dx,
     double dy, {
     ui.EngineLayer? oldLayer,
+    bool rasterCache = false,
   }) {
     return pushLayer<OffsetEngineLayer>(OffsetEngineLayer(dx, dy));
   }

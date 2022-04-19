@@ -87,6 +87,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     double dx,
     double dy, {
     ui.OffsetEngineLayer? oldLayer,
+    bool rasterCache = false,
   }) {
     return _pushSurface<PersistedOffset>(
         PersistedOffset(oldLayer as PersistedOffset?, dx, dy));
