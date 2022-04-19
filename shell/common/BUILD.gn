@@ -72,6 +72,8 @@ source_set("common") {
     "display_manager.h",
     "engine.cc",
     "engine.h",
+    "key_event_regulator.cc",
+    "key_event_regulator.h",
     "pipeline.cc",
     "pipeline.h",
     "platform_message_handler.h",

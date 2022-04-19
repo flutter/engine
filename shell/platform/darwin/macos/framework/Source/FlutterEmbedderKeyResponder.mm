@@ -14,6 +14,8 @@
 
 namespace {
 using flutter::KeyEventRegulator;
+typedef flutter::KeyEventRegulator::DuplicateDownBehavior DuplicateDownBehavior;
+typedef flutter::KeyEventRegulator::AbruptUpBehavior AbruptUpBehavior;
 
 /**
  * Isolate the least significant 1-bit.
@@ -489,8 +491,8 @@ struct FlutterKeyPendingResponse {
     _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
 
     KeyEventRegulator::Config regulator_config{
-      on_duplicate_down: DuplicateDownBehavior::kSynthesizeUp,
-      on_abrupt_up: AbruptUpBehavior::kIgnore,
+      .on_duplicate_down = DuplicateDownBehavior::kSynthesizeUp,
+      .on_abrupt_up = AbruptUpBehavior::kIgnore,
     };
     _regulator = new KeyEventRegulator(regulator_config);
   }
@@ -500,11 +502,6 @@ struct FlutterKeyPendingResponse {
 - (void)dealloc {
   delete _regulator;
   _regulator = nullptr;
-
-  [self shutDownEngine];
-  if (_aotData) {
-    _embedderAPI.CollectAOTData(_aotData);
-  }
 }
 
 - (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {

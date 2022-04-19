@@ -13,8 +13,9 @@ KeyEventRegulator::KeyEventRegulator(Config config) {
 }
 
 std::vector<KeyEventRegulator::OutputEvent> KeyEventRegulator::SettleByEvent(InputEvent event) {
-  std::vector<OutputEvent> synthesized_outputs;
-  std::vector<OutputEvent> main_outputs;
+  // std::vector<OutputEvent> synthesized_outputs;
+  // std::vector<OutputEvent> main_outputs;
+  return {};
 }
 
 
