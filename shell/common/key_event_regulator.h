@@ -88,6 +88,8 @@ class KeyEventRegulator {
   std::map<uint64_t, KeyPhase> key_states;
   std::map<uint64_t, KeyPhase> unsettled_states;
 
+  KeyPhase StateFor(uint64_t key);
+
   FML_DISALLOW_COPY_AND_ASSIGN(KeyEventRegulator);
 };
 
