@@ -242,6 +242,8 @@ public class AndroidTouchProcessor {
       buttons = 0;
     }
 
+    boolean isTrackpadPan = ongoingPans.containsKey(event.getPointerId(pointerIndex));
+
     int signalKind =
         event.getActionMasked() == MotionEvent.ACTION_SCROLL
             ? PointerSignalKind.SCROLL
@@ -251,7 +253,7 @@ public class AndroidTouchProcessor {
 
     packet.putLong(motionEventId); // motionEventId
     packet.putLong(timeStamp); // time_stamp
-    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))) {
+    if (isTrackpadPan) {
       packet.putLong(getPointerChangeForPanZoom(pointerChange)); // change
       packet.putLong(PointerDeviceKind.TRACKPAD); // kind
     } else {
@@ -262,7 +264,7 @@ public class AndroidTouchProcessor {
     packet.putLong(event.getPointerId(pointerIndex)); // device
     packet.putLong(0); // pointer_identifier, will be generated in pointer_data_packet_converter.cc.
 
-    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))) {
+    if (isTrackpadPan) {
       float[] panStart = ongoingPans.get(event.getPointerId(pointerIndex));
       packet.putDouble(panStart[0]);
       packet.putDouble(panStart[1]);
@@ -330,7 +332,7 @@ public class AndroidTouchProcessor {
       packet.putDouble(0.0); // scroll_delta_x
     }
 
-    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))) {
+    if (isTrackpadPan) {
       float[] panStart = ongoingPans.get(event.getPointerId(pointerIndex));
       packet.putDouble(viewToScreenCoords[0] - panStart[0]);
       packet.putDouble(viewToScreenCoords[1] - panStart[1]);
@@ -343,8 +345,7 @@ public class AndroidTouchProcessor {
     packet.putDouble(1.0); // scale
     packet.putDouble(0.0); // rotation
 
-    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))
-        && getPointerChangeForPanZoom(pointerChange) == PointerChange.PAN_ZOOM_END) {
+    if (isTrackpadPan && getPointerChangeForPanZoom(pointerChange) == PointerChange.PAN_ZOOM_END) {
       ongoingPans.remove(event.getPointerId(pointerIndex));
     }
   }
