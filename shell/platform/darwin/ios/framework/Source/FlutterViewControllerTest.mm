@@ -940,7 +940,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                         nibName:nil
                                                                          bundle:nil];
   id flutterViewControllerClassMOCK = OCMClassMock([FlutterViewController class]);
-  OCMStub([flutterViewControllerClassMOCK isUIAccessibilityIsVoiceOverRunning]).andReturn(@YES);
+  [[[flutterViewControllerClassMOCK stub] andReturnValue:@YES] isUIAccessibilityIsVoiceOverRunning];
 
   XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   [[NSNotificationCenter defaultCenter]
@@ -964,13 +964,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                         nibName:nil
                                                                          bundle:nil];
   id flutterViewControllerClassMOCK = OCMClassMock([FlutterViewController class]);
-  OCMStub([flutterViewControllerClassMOCK isUIAccessibilityIsVoiceOverRunning]).andReturn(@NO);
+  [[[flutterViewControllerClassMOCK stub] andReturnValue:@NO] isUIAccessibilityIsVoiceOverRunning];
 
   XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationWillResignActiveNotification
                     object:nil];
-  XCTAssertTrue(realVC.view.accessibilityElementsHidden);
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidBecomeActiveNotification
                     object:nil];
