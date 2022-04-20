@@ -108,7 +108,7 @@ void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* manager,
           event->x * scale_factor, event->y * scale_factor, kPanZoomUpdate,
           manager->pan_x, manager->pan_y, 1, 0);
     }
-  } else if (event->x != 0 || event->y != 0) {
+  } else {
     manager->last_x = event->x * scale_factor;
     manager->last_y = event->y * scale_factor;
     fl_scrolling_view_delegate_send_mouse_pointer_event(

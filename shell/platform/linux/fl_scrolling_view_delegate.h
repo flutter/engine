@@ -22,9 +22,9 @@ G_DECLARE_INTERFACE(FlScrollingViewDelegate,
                     GObject);
 
 /**
- * FlKeyboardViewDelegate:
+ * FlScrollingViewDelegate:
  *
- * An interface for a class that provides `FlKeyboardManager` with
+ * An interface for a class that provides `FlScrollingManager` with
  * platform-related features.
  *
  * This interface is typically implemented by `FlView`.
