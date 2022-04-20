@@ -9,10 +9,36 @@
 namespace flutter {
 
 namespace {
+typedef KeyEventRegulator::KeyPhase KeyPhase;
 
-bool IsPressed(KeyEventRegulator::KeyPhase phase) {
-  FML_CHECK(phase >= 0 && phase < 4);
-  return phase == 1 || phase == 3;
+bool IsValidPhase(KeyPhase phase) {
+  return phase >= KeyEventRegulator::kReleasedDisabled &&
+         phase <= KeyEventRegulator::kPressed;
+}
+
+bool IsPressed(KeyPhase phase) {
+  FML_CHECK(IsValidPhase(phase));
+  return phase & 0x01;
+}
+
+KeyPhase OverridePhase(KeyPhase base, KeyPhase new_value) {
+  FML_CHECK(IsValidPhase(base));
+  FML_CHECK(IsValidPhase(new_value));
+  switch (base) {
+    case KeyEventRegulator::kReleasedDisabled:
+    case KeyEventRegulator::kReleasedEnabled:
+      if (new_value == KeyEventRegulator::kReleased) {
+        return base;
+      }
+      break;
+    case KeyEventRegulator::kPressedDisabled:
+    case KeyEventRegulator::kPressedEnabled:
+      if (new_value == KeyEventRegulator::kPressed) {
+        return base;
+      }
+      break;
+  }
+  return new_value;
 }
 
 } // namespace
@@ -34,7 +60,7 @@ std::vector<KeyEventRegulator::OutputEvent> KeyEventRegulator::SettleByEvent(Inp
 KeyEventRegulator::KeyPhase KeyEventRegulator::StateFor(uint64_t key) {
   auto found = key_states.find(key);
   if (found == key_states.end()) {
-    return 0;
+    return KeyEventRegulator::kReleased;
   }
   return found->second;
 }

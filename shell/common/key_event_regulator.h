@@ -16,11 +16,15 @@ namespace flutter {
 
 class KeyEventRegulator {
  public:
-  // For two-phase keys, 0 is released, 1 is pressed.
-  // For four-phase keys, 0 and 4 are disabled, 1 and 2 are enabled.
   typedef uint8_t KeyPhase;
+  static constexpr KeyPhase kReleasedDisabled = 2;
+  static constexpr KeyPhase kPressedEnabled = 3;
+  static constexpr KeyPhase kReleasedEnabled = 4;
+  static constexpr KeyPhase kPressedDisabled = 5;
+  static constexpr KeyPhase kReleased = 6;
+  static constexpr KeyPhase kPressed = 7;
 
-  enum class Type {
+  enum class Type : uint8_t {
     kUnknown = 0,
     kUp,
     kDown,
