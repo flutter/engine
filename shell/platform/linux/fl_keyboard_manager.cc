@@ -39,7 +39,7 @@ namespace {
 
 // The maxiumum keycode in a derived layout.
 //
-// Although X supports higher keycode, Flutter only cares about standard keys,
+// Although X supports higher keycodes, Flutter only cares about standard keys,
 // which are below this.
 constexpr size_t kLayoutSize = 128;
 // Describes the derived layout of a keyboard group.
