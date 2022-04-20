@@ -33,13 +33,11 @@ class PictureLayer : public Layer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  Cacheable::CacheType NeedCaching(PrerollContext* context,
-                                   const SkMatrix& ctm) override;
+  void TryToCache(PrerollContext* context,
+                  RasterCacheableEntry* entry,
+                  const SkMatrix& ctm) override;
 
   Layer* asLayer() override { return this; }
-
-  void ConfigCacheType(RasterCacheableEntry* cacheable_entry,
-                       CacheType cache_type) override;
 
  private:
   SkPoint offset_;

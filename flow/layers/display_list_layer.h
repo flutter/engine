@@ -35,13 +35,11 @@ class DisplayListLayer : public Layer, public Cacheable {
     return this;
   }
 
-  Cacheable::CacheType NeedCaching(PrerollContext* context,
-                                   const SkMatrix& ctm) override;
+  virtual void TryToCache(PrerollContext* context,
+                          RasterCacheableEntry* entry,
+                          const SkMatrix& ctm) override;
 
   Layer* asLayer() override { return this; }
-
-  void ConfigCacheType(RasterCacheableEntry* cacheable_entry,
-                       CacheType cache_type) override;
 
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
 

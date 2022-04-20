@@ -110,7 +110,7 @@ class RasterCacheableEntry {
                        const PrerollContext& context,
                        const SkMatrix& matrix,
                        unsigned num_child,
-                       bool need_caching = false);
+                       bool need_caching = true);
 
   static std::shared_ptr<RasterCacheableEntry> MarkLayerCacheable(
       Cacheable* layer,
@@ -148,6 +148,8 @@ class RasterCacheableEntry {
   }
 
   CacheableItemWrapperBase* GetCacheableWrapper() const { return item_.get(); }
+
+  void MarkNotCache() { need_caching = false; }
 
   void MarkLayerChildrenNeedCached() {
     item_->asCacheableLayerWrapper()->NeedCacheChildren();

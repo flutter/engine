@@ -48,19 +48,19 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, matrix);
 }
 
-Cacheable::CacheType ShaderMaskLayer::NeedCaching(PrerollContext* context,
-                                                  const SkMatrix& ctm) {
+void ShaderMaskLayer::TryToCache(PrerollContext* context,
+                                 RasterCacheableEntry* entry,
+                                 const SkMatrix& ctm) {
   if (!context->raster_cache) {
-    return Cacheable::CacheType::kNone;
+    entry->MarkNotCache();
+    return;
   }
-  if (!context->has_platform_view && !context->has_texture_layer &&
-      SkRect::Intersects(context->cull_rect, paint_bounds())) {
-    if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-      return Cacheable::CacheType::kCurrent;
-    }
+  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+    ShouldTouchCache(context, entry);
+    return;
   }
   render_count_++;
-  return Cacheable::CacheType::kNone;
+  entry->MarkNotCache();
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {

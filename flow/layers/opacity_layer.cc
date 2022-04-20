@@ -68,37 +68,27 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
 }
 
-void OpacityLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
-                                   CacheType cache_type) {
-  if (cache_type == Cacheable::CacheType::kChildren) {
+void OpacityLayer::TryToCache(PrerollContext* context,
+                              RasterCacheableEntry* entry,
+                              const SkMatrix& ctm) {
+  if (!context->raster_cache) {
+    entry->MarkNotCache();
+    return;
+  }
+  // try to cache the opacity layer's children
+  if (!children_can_accept_opacity()) {
+    // Check the layer if should to touch the cache
+    ShouldTouchCache(context, entry);
+
     auto child_matrix = child_matrix_;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix_);
 #endif
-    cacheable_entry->matrix = child_matrix;
-    cacheable_entry->MarkLayerChildrenNeedCached();
-    if (cache_type == Cacheable::CacheType::kTouch) {
-      cacheable_entry->MarkTouchCache();
-    }
-  } else if (cache_type == Cacheable::CacheType::kNone) {
-    cacheable_entry->need_caching = false;
+    entry->matrix = child_matrix;
+    entry->MarkLayerChildrenNeedCached();
+    return;
   }
-}
-
-Cacheable::CacheType OpacityLayer::NeedCaching(PrerollContext* context,
-                                               const SkMatrix& ctm) {
-  if (!context->raster_cache) {
-    return Cacheable::CacheType::kNone;
-  }
-  if (!context->has_platform_view && !context->has_texture_layer &&
-      SkRect::Intersects(context->cull_rect, paint_bounds())) {
-    if (!children_can_accept_opacity()) {
-      return Cacheable::CacheType::kChildren;
-    }
-    return Cacheable::CacheType::kNone;
-  }
-
-  return Cacheable::CacheType::kTouch;
+  entry->MarkNotCache();
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {

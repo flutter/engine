@@ -68,13 +68,21 @@ class MockCacheableContainerLayer : public ContainerLayer, public Cacheable {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  Cacheable::CacheType NeedCaching(PrerollContext* context,
-                                   const SkMatrix& ctm) {
+  void TryToCache(PrerollContext* context,
+                  RasterCacheableEntry* entry,
+                  const SkMatrix& ctm) override {
+    if (!context->raster_cache) {
+      entry->MarkNotCache();
+      return;
+    }
+    ShouldTouchCache(context, entry);
     if (raster_count_ < 3) {
       raster_count_++;
-      return Cacheable::CacheType::kChildren;
+      entry->MarkLayerChildrenNeedCached();
+      return;
     }
-    return Cacheable::CacheType::kCurrent;
+
+    return;
   }
 
  private:
@@ -89,17 +97,26 @@ class MockCacheableLayer : public MockLayer, public Cacheable {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  Cacheable::CacheType NeedCaching(PrerollContext* context,
-                                   const SkMatrix& ctm) {
-    if (raster_count_ < 3) {
-      raster_count_++;
-      return Cacheable::CacheType::kNone;
+  void TryToCache(PrerollContext* context,
+                  RasterCacheableEntry* entry,
+                  const SkMatrix& ctm) override {
+    if (!context->raster_cache) {
+      entry->MarkNotCache();
+      return;
     }
-    return Cacheable::CacheType::kCurrent;
+    // We should try to cache the layer or layer's children.
+    // First we should to check if we need to touch the cache.
+    ShouldTouchCache(context, entry);
+    if (render_count_ >= 3) {
+      // entry default cache current layer
+      return;
+    }
+    render_count_++;
+    entry->MarkLayerChildrenNeedCached();
   }
 
  private:
-  int raster_count_ = 0;
+  int render_count_ = 0;
 };
 
 }  // namespace testing

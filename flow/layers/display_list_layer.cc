@@ -101,8 +101,9 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   set_paint_bounds(bounds);
 }
 
-Cacheable::CacheType DisplayListLayer::NeedCaching(PrerollContext* context,
-                                                   const SkMatrix& ctm) {
+void DisplayListLayer::TryToCache(PrerollContext* context,
+                                  RasterCacheableEntry* entry,
+                                  const SkMatrix& ctm) {
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     // For display_list_layer if the context has raster_cache, we will try to
@@ -114,26 +115,22 @@ Cacheable::CacheType DisplayListLayer::NeedCaching(PrerollContext* context,
         SkMatrix transformation_matrix = ctm;
         transformation_matrix.preTranslate(offset_.x(), offset_.y());
 
-        context->raster_cached_entries.back()->matrix = transformation_matrix;
+        entry->matrix = transformation_matrix;
         // if current Layer can be cached, we change the
         // subtree_can_inherit_opacity to true
         context->subtree_can_inherit_opacity = true;
+        // default cache current display_list
+        return;
       }
-      return Cacheable::CacheType::kCurrent;
+      entry->MarkNotCache();
+      return;
     }
-    return Cacheable::CacheType::kTouch;
+    // current bound is not intersect with cull_rect, touch the display_list
+    entry->MarkTouchCache();
+    return;
   }
-  return Cacheable::CacheType::kNone;
-}
-
-void DisplayListLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
-                                       CacheType cache_type) {
-  cacheable_entry->need_caching = true;
-  if (cache_type == Cacheable::CacheType::kTouch) {
-    cacheable_entry->MarkTouchCache();
-  } else if (cache_type == Cacheable::CacheType::kNone) {
-    cacheable_entry->need_caching = false;
-  }
+  entry->MarkNotCache();
+  return;
 }
 
 void DisplayListLayer::Paint(PaintContext& context) const {

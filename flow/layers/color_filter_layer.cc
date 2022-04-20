@@ -40,21 +40,22 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   ContainerLayer::Preroll(context, matrix);
 }
 
-Cacheable::CacheType ColorFilterLayer::NeedCaching(PrerollContext* context,
-                                                   const SkMatrix& ctm) {
+void ColorFilterLayer::TryToCache(PrerollContext* context,
+                                  RasterCacheableEntry* entry,
+                                  const SkMatrix& ctm) {
   if (!context->raster_cache) {
-    return Cacheable::CacheType::kNone;
+    entry->MarkNotCache();
+    return;
   }
-  if (!context->has_platform_view && !context->has_texture_layer &&
-      SkRect::Intersects(context->cull_rect, paint_bounds())) {
-    if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-      return Cacheable::CacheType::kCurrent;
-    } else {
-      render_count_++;
-      return Cacheable::CacheType::kChildren;
-    }
+  // We should try to cache the layer or layer's children.
+  // First we should to check if we need to touch the cache.
+  ShouldTouchCache(context, entry);
+  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+    // entry default cache current layer
+    return;
   }
-  return Cacheable::CacheType::kTouch;
+  render_count_++;
+  entry->MarkLayerChildrenNeedCached();
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {

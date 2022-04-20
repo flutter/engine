@@ -120,37 +120,36 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(bounds);
 }
 
-Cacheable::CacheType PictureLayer::NeedCaching(PrerollContext* context,
-                                               const SkMatrix& ctm) {
+void PictureLayer::TryToCache(PrerollContext* context,
+                              RasterCacheableEntry* entry,
+                              const SkMatrix& ctm) {
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    if (context->cull_rect.intersects(paint_bounds())) {
+    // For sk_picture_layer if the context has raster_cache, we will try to
+    // collection it when we raster cache it, we will to decision Prepare or
+    // Touch cache
+    if (context->cull_rect.intersect(paint_bounds())) {
       if (cache->ShouldBeCached(context, picture(), is_complex_, will_change_,
                                 ctm)) {
         SkMatrix transformation_matrix = ctm;
         transformation_matrix.preTranslate(offset_.x(), offset_.y());
 
-        context->raster_cached_entries.back()->matrix = transformation_matrix;
-
+        entry->matrix = transformation_matrix;
         // if current Layer can be cached, we change the
         // subtree_can_inherit_opacity to true
         context->subtree_can_inherit_opacity = true;
-        return Cacheable::CacheType::kCurrent;
+        return;
       }
+      entry->MarkNotCache();
+      return;
+    } else {
+      // current bound is not intersect with cull_rect, touch the sk_picture
+      entry->MarkTouchCache();
+      return;
     }
-    return Cacheable::CacheType::kTouch;
   }
-  return Cacheable::CacheType::kNone;
-}
-
-void PictureLayer::ConfigCacheType(RasterCacheableEntry* cacheable_entry,
-                                   CacheType cache_type) {
-  cacheable_entry->need_caching = true;
-  if (cache_type == Cacheable::CacheType::kTouch) {
-    cacheable_entry->MarkTouchCache();
-  } else if (cache_type == Cacheable::CacheType::kNone) {
-    cacheable_entry->need_caching = false;
-  }
+  entry->MarkNotCache();
+  return;
 }
 
 void PictureLayer::Paint(PaintContext& context) const {

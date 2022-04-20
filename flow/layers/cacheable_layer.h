@@ -19,8 +19,6 @@ class Cacheable {
  public:
   Cacheable() = default;
 
-  enum class CacheType { kNone, kCurrent, kChildren, kTouch };
-
   class AutoCache {
    public:
     static AutoCache Create(Cacheable* cacheable,
@@ -40,10 +38,7 @@ class Cacheable {
     ~AutoCache() {
       cacheable_entry_->num_child_entries =
           context_->raster_cached_entries.size() - current_index_;
-      // Get current layer's cache type
-      auto cache_type = layer_->NeedCaching(context_, matrix_);
-      // we should modify some parmas of the entry, like need_cache or matrix
-      layer_->ConfigCacheType(cacheable_entry_, cache_type);
+      layer_->TryToCache(context_, cacheable_entry_, matrix_);
       cacheable_entry_->has_platform_view = context_->has_platform_view;
       cacheable_entry_->has_texture_layer = context_->has_texture_layer;
     }
@@ -67,22 +62,14 @@ class Cacheable {
 
   virtual Layer* asLayer() = 0;
 
-  virtual CacheType NeedCaching(PrerollContext* context,
-                                const SkMatrix& ctm) = 0;
+  virtual void TryToCache(PrerollContext* context,
+                          RasterCacheableEntry* entry,
+                          const SkMatrix& ctm) = 0;
 
-  // Usually, we have this case to do:
-  // 1. CacheType::kNone, which mean we don't need to cache this layer, so we
-  // set the entry's need_caching to false
-  // 2. CacheType::kChildren, which mean we need to cache the layer's children,
-  // so we mark children need cache
-  virtual void ConfigCacheType(RasterCacheableEntry* entry, CacheType type) {
-    if (type == Cacheable::CacheType::kNone) {
-      entry->need_caching = false;
-    } else if (type == Cacheable::CacheType::kChildren) {
-      // Replace Cacheable child
-      entry->MarkLayerChildrenNeedCached();
-    } else if (type == CacheType::kTouch) {
-      // touch the cache
+  void ShouldTouchCache(PrerollContext* context, RasterCacheableEntry* entry) {
+    // check if should touch the cache
+    if (context->has_platform_view || context->has_texture_layer ||
+        !SkRect::Intersects(context->cull_rect, asLayer()->paint_bounds())) {
       entry->MarkTouchCache();
     }
   }

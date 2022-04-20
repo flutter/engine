@@ -36,10 +36,9 @@ class OpacityLayer : public ContainerLayer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  Cacheable::CacheType NeedCaching(PrerollContext* context,
-                                   const SkMatrix& ctm) override;
-
-  void ConfigCacheType(RasterCacheableEntry* entry, CacheType type) override;
+  void TryToCache(PrerollContext* context,
+                  RasterCacheableEntry* entry,
+                  const SkMatrix& ctm) override;
 
   // Returns whether the children are capable of inheriting an opacity value
   // and modifying their rendering accordingly. This value is only guaranteed
