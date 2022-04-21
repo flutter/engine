@@ -22,6 +22,21 @@ import 'vertex_shaders.dart';
 const double kFltEpsilon = 1.19209290E-07; // == 1 / (2 ^ 23)
 const double kFltEpsilonSquared = 1.19209290E-07 * 1.19209290E-07;
 
+class TempCanvas {
+  OffScreenCanvas? _canvas;
+  int currentWidth = 0;
+  int currentHeight = 0;
+  GlContext checkOutContext(int width, int height) {
+    if(_canvas == null) {
+      _canvas = OffScreenCanvas(width, height);
+    } else {
+      _canvas!.resize(width, height);
+    }
+    return GlContext(_canvas!);
+  }
+}
+TempCanvas _tempCanvas = TempCanvas();
+
 abstract class EngineGradient implements ui.Gradient {
   /// Hidden constructor to prevent subclassing.
   EngineGradient._();
@@ -31,8 +46,7 @@ abstract class EngineGradient implements ui.Gradient {
       ui.Rect? shaderBounds, double density);
 
   /// Creates a CanvasImageSource to paint gradient.
-  Object createImageBitmap(
-      ui.Rect? shaderBounds, double density, bool createDataUrl);
+  Object createImageBitmap(ui.Rect? shaderBounds, double density, bool createDataUrl);
 }
 
 class GradientSweep extends EngineGradient {
@@ -58,9 +72,7 @@ class GradientSweep extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final OffScreenCanvas offScreenCanvas =
-        OffScreenCanvas(widthInPixels, heightInPixels);
-    final GlContext gl = GlContext(offScreenCanvas);
+    final GlContext gl = _tempCanvas.checkOutContext(widthInPixels, heightInPixels);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     final NormalizedGradient normalizedGradient =
@@ -222,9 +234,7 @@ class GradientLinear extends EngineGradient {
     assert(widthInPixels > 0 && heightInPixels > 0);
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final OffScreenCanvas offScreenCanvas =
-        OffScreenCanvas(widthInPixels, heightInPixels);
-    final GlContext gl = GlContext(offScreenCanvas);
+    final GlContext gl = _tempCanvas.checkOutContext(widthInPixels, heightInPixels);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     final NormalizedGradient normalizedGradient =
@@ -490,9 +500,7 @@ class GradientRadial extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final OffScreenCanvas offScreenCanvas =
-        OffScreenCanvas(widthInPixels, heightInPixels);
-    final GlContext gl = GlContext(offScreenCanvas);
+    final GlContext gl = _tempCanvas.checkOutContext(widthInPixels, heightInPixels);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     final NormalizedGradient normalizedGradient =
