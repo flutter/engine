@@ -511,7 +511,13 @@ public class PlatformPlugin {
     ClipboardManager clipboard =
         (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
     ClipData clip = ClipData.newPlainText("text label?", text);
-    clipboard.setPrimaryClip(clip);
+    // Use a try catch block to avoid setPrimaryClip crashes on a few phones.
+    // See details in: https://github.com/flutter/flutter/issues/102300
+    try {
+      clipboard.setPrimaryClip(clip);
+    } catch (SecurityException e) {
+      e.printStackTrace();
+    }
   }
 
   private boolean clipboardHasStrings() {
