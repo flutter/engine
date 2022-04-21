@@ -1,4 +1,4 @@
-Signature: 6e2200f33737c1e90b14e6f6ad59ab1a
+Signature: 3d3e6edc336c0acdd190e2718d73baaf
 
 UNUSED LICENSES:
 
@@ -1694,7 +1694,6 @@ FILE: ../../../third_party/skia/samplecode/Sample2PtRadial.cpp
 FILE: ../../../third_party/skia/samplecode/SampleAARectModes.cpp
 FILE: ../../../third_party/skia/samplecode/SampleAARects.cpp
 FILE: ../../../third_party/skia/samplecode/SampleArc.cpp
-FILE: ../../../third_party/skia/samplecode/SampleCamera.cpp
 FILE: ../../../third_party/skia/samplecode/SampleCircle.cpp
 FILE: ../../../third_party/skia/samplecode/SampleClip.cpp
 FILE: ../../../third_party/skia/samplecode/SampleComplexClip.cpp
@@ -6844,7 +6843,6 @@ FILE: ../../../third_party/skia/include/private/SkNoncopyable.h
 FILE: ../../../third_party/skia/include/private/SkTDArray.h
 FILE: ../../../third_party/skia/include/private/SkTemplates.h
 FILE: ../../../third_party/skia/include/utils/SkBase64.h
-FILE: ../../../third_party/skia/include/utils/SkCamera.h
 FILE: ../../../third_party/skia/include/utils/SkParse.h
 FILE: ../../../third_party/skia/include/utils/SkParsePath.h
 FILE: ../../../third_party/skia/include/utils/SkRandom.h
@@ -6943,7 +6941,6 @@ FILE: ../../../third_party/skia/src/shaders/SkComposeShader.h
 FILE: ../../../third_party/skia/src/shaders/SkShader.cpp
 FILE: ../../../third_party/skia/src/shaders/gradients/SkGradientShader.cpp
 FILE: ../../../third_party/skia/src/utils/SkBase64.cpp
-FILE: ../../../third_party/skia/src/utils/SkCamera.cpp
 FILE: ../../../third_party/skia/src/utils/SkParse.cpp
 FILE: ../../../third_party/skia/src/utils/SkParseColor.cpp
 FILE: ../../../third_party/skia/src/xml/SkDOM.cpp
