@@ -4,9 +4,10 @@
 
 #include "flutter/fml/time/time_point.h"
 
+#include <atomic>
+
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/time/dart_timestamp_provider.h"
 
 #if defined(OS_FUCHSIA)
 #include <zircon/syscalls.h>
@@ -15,7 +16,9 @@
 #endif
 
 namespace fml {
-
+namespace {
+std::atomic<TimePoint::ClockSource> gSteadyClockSource;
+}
 #if defined(OS_FUCHSIA)
 
 // static
@@ -36,8 +39,16 @@ static int64_t NanosSinceEpoch(
   return std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
 }
 
+void TimePoint::SetClockSource(ClockSource source) {
+  gSteadyClockSource = source;
+}
+
 TimePoint TimePoint::Now() {
-  return DartTimelineTicksSinceEpoch();
+  if (gSteadyClockSource) {
+    return gSteadyClockSource.load()();
+  }
+  const int64_t nanos = NanosSinceEpoch(std::chrono::steady_clock::now());
+  return TimePoint(nanos);
 }
 
 TimePoint TimePoint::CurrentWallTime() {

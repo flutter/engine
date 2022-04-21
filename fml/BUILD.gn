@@ -84,8 +84,6 @@ source_set("fml") {
     "thread.h",
     "thread_local.cc",
     "thread_local.h",
-    "time/dart_timestamp_provider.cc",
-    "time/dart_timestamp_provider.h",
     "time/time_delta.h",
     "time/time_point.cc",
     "time/time_point.h",
@@ -110,9 +108,11 @@ source_set("fml") {
     ":string_conversion",
   ]
 
+  # Do not depend on Dart in FML. Otherwise, other libraries using it end up
+  # with a substantial dependency they do not necessarily need. Prefer to use
+  # dependency inversion instead.
   deps = [
     "//third_party/abseil-cpp/absl/debugging:symbolize",
-    "//third_party/dart/runtime:dart_api",
 
     # These need to be in sync with the Fuchsia buildroot.
     "//third_party/icu",
@@ -291,7 +291,6 @@ if (enable_unittests) {
     deps = [
       "//flutter/benchmarking",
       "//flutter/fml",
-      "//flutter/runtime:libdart",
     ]
   }
 
@@ -349,6 +348,7 @@ if (enable_unittests) {
       ":fml_fixtures",
       "//flutter/fml",
       "//flutter/fml/dart",
+      "//flutter/runtime",
       "//flutter/runtime:libdart",
       "//flutter/testing",
     ]
