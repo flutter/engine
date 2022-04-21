@@ -99,29 +99,34 @@ public class SpellCheckPlugin
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
     ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
 
-    if (results.length > 0) {
-      SentenceSuggestionsInfo spellCheckResults = results[0];
+    if (results.length == 0) {
+      mSpellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans);
+      return;
+    }
 
-      for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
-        SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
-        int suggestionsCount = suggestionsInfo.getSuggestionsCount();
+    SentenceSuggestionsInfo spellCheckResults = results[0];
 
-        if (suggestionsCount > 0) {
-          String spellCheckerSuggestionSpan = "";
-          int start = spellCheckResults.getOffsetAt(i);
-          int length = spellCheckResults.getLengthAt(i);
+    for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
+      SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
+      int suggestionsCount = suggestionsInfo.getSuggestionsCount();
 
-          spellCheckerSuggestionSpan += (String.valueOf(start) + ".");
-          spellCheckerSuggestionSpan += (String.valueOf(start + (length - 1)) + ".");
-
-          for (int j = 0; j < suggestionsCount; j++) {
-            spellCheckerSuggestionSpan += (suggestionsInfo.getSuggestionAt(j) + "/n");
-          }
-
-          spellCheckerSuggestionSpans.add(
-              spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 2));
-        }
+      if (suggestionsCount == 0) {
+        continue;
       }
+
+      String spellCheckerSuggestionSpan = "";
+      int start = spellCheckResults.getOffsetAt(i);
+      int end = start + spellCheckResults.getLengthAt(i) - 1;
+
+      spellCheckerSuggestionSpan += String.valueOf(start) + ".";
+      spellCheckerSuggestionSpan += String.valueOf(end) + ".";
+
+      for (int j = 0; j < suggestionsCount; j++) {
+        spellCheckerSuggestionSpan += suggestionsInfo.getSuggestionAt(j) + "\n";
+      }
+
+      spellCheckerSuggestionSpans.add(
+          spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
     }
 
     mSpellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans);

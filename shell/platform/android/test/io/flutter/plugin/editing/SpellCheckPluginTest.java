@@ -152,6 +152,6 @@ public class SpellCheckPluginTest {
         });
 
     verify(fakeSpellCheckChannel)
-        .updateSpellCheckResults(new ArrayList<String>(Arrays.asList("7.11.world/nword/nold")));
+        .updateSpellCheckResults(new ArrayList<String>(Arrays.asList("7.11.world\nword\nold")));
   }
 }
