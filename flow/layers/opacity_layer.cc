@@ -71,15 +71,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void OpacityLayer::TryToCache(PrerollContext* context,
                               RasterCacheableEntry* entry,
                               const SkMatrix& ctm) {
-  if (!context->raster_cache) {
-    entry->MarkNotCache();
-    return;
-  }
   // try to cache the opacity layer's children
   if (!children_can_accept_opacity()) {
-    // Check the layer if should to touch the cache
-    ShouldTouchCache(context, entry);
-
     auto child_matrix = child_matrix_;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix_);

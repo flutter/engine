@@ -223,7 +223,7 @@ class RasterCache {
       const SkMatrix& ctm,
       RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer);
 
-  void Prepare(
+  bool Prepare(
       PrerollContext* context,
       Layer* layer,
       const SkMatrix& ctm,

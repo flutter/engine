@@ -179,14 +179,14 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeDisplayList(
                    [=](SkCanvas* canvas) { display_list->RenderTo(canvas); });
 }
 
-void RasterCache::Prepare(PrerollContext* context,
+bool RasterCache::Prepare(PrerollContext* context,
                           Layer* layer,
                           const SkMatrix& ctm,
                           RasterCacheLayerStrategy strategy) {
   auto cache_key_optional =
       TryToMakeRasterCacheKeyForLayer(layer, strategy, ctm);
   if (!cache_key_optional) {
-    return;
+    return false;
   }
   Entry& entry = cache_[cache_key_optional.value()];
   entry.access_count++;
@@ -195,6 +195,7 @@ void RasterCache::Prepare(PrerollContext* context,
     entry.image =
         RasterizeLayer(context, layer, strategy, ctm, checkerboard_images_);
   }
+  return true;
 }
 
 std::optional<RasterCacheKey> RasterCache::TryToMakeRasterCacheKeyForLayer(

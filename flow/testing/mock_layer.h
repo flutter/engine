@@ -75,7 +75,6 @@ class MockCacheableContainerLayer : public ContainerLayer, public Cacheable {
       entry->MarkNotCache();
       return;
     }
-    ShouldTouchCache(context, entry);
     if (raster_count_ < 3) {
       raster_count_++;
       entry->MarkLayerChildrenNeedCached();
@@ -105,8 +104,6 @@ class MockCacheableLayer : public MockLayer, public Cacheable {
       return;
     }
     // We should try to cache the layer or layer's children.
-    // First we should to check if we need to touch the cache.
-    ShouldTouchCache(context, entry);
     if (render_count_ >= 3) {
       // entry default cache current layer
       return;

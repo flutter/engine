@@ -9,6 +9,7 @@
 
 #include "flutter/flow/embedded_views.h"
 #include "include/core/SkPicture.h"
+#include "include/core/SkRect.h"
 
 namespace flutter {
 
@@ -22,8 +23,11 @@ class CacheableSkPictureWrapper;
 
 class CacheableItemWrapperBase {
  public:
-  virtual void TryToPrepareRasterCache(PrerollContext* context,
+  virtual bool TryToPrepareRasterCache(PrerollContext* context,
                                        const SkMatrix& matrix) = 0;
+
+  virtual void TouchRasterCache(PrerollContext* context,
+                                const SkMatrix& matrix) = 0;
 
   virtual CacheableLayerWrapper* asCacheableLayerWrapper() { return nullptr; }
 
@@ -47,8 +51,11 @@ class CacheableLayerWrapper : public CacheableItemWrapperBase {
  public:
   explicit CacheableLayerWrapper(Cacheable* layer) : cacheable_item_(layer) {}
 
-  void TryToPrepareRasterCache(PrerollContext* context,
+  bool TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
+
+  void TouchRasterCache(PrerollContext* context,
+                        const SkMatrix& matrix) override;
 
   void NeedCacheChildren() { cache_children_ = true; }
 
@@ -64,19 +71,22 @@ class CacheableLayerWrapper : public CacheableItemWrapperBase {
 // CacheableEntry is a wrapper to erasure the Entry type.
 class SkGPUObjectCacheableWrapper : public CacheableItemWrapperBase {
  public:
-  explicit SkGPUObjectCacheableWrapper(SkPoint offset) : offset_(offset) {}
+  explicit SkGPUObjectCacheableWrapper(SkRect offset) : bounds_(offset) {}
 
  protected:
-  SkPoint offset_;
+  SkRect bounds_;
 };
 
 class CacheableDisplayListWrapper : public SkGPUObjectCacheableWrapper {
  public:
-  CacheableDisplayListWrapper(DisplayList* display_list, SkPoint offset)
-      : SkGPUObjectCacheableWrapper(offset), display_list_(display_list) {}
+  CacheableDisplayListWrapper(DisplayList* display_list, SkRect bounds_)
+      : SkGPUObjectCacheableWrapper(bounds_), display_list_(display_list) {}
 
-  void TryToPrepareRasterCache(PrerollContext* context,
+  bool TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
+
+  void TouchRasterCache(PrerollContext* context,
+                        const SkMatrix& matrix) override;
 
   CacheableDisplayListWrapper* asCacheableDisplayListWrapper() override {
     return this;
@@ -88,11 +98,14 @@ class CacheableDisplayListWrapper : public SkGPUObjectCacheableWrapper {
 
 class CacheableSkPictureWrapper : public SkGPUObjectCacheableWrapper {
  public:
-  CacheableSkPictureWrapper(SkPicture* sk_picture, SkPoint offset)
-      : SkGPUObjectCacheableWrapper(offset), sk_picture_(sk_picture) {}
+  CacheableSkPictureWrapper(SkPicture* sk_picture, SkRect bounds)
+      : SkGPUObjectCacheableWrapper(bounds), sk_picture_(sk_picture) {}
 
-  void TryToPrepareRasterCache(PrerollContext* context,
+  bool TryToPrepareRasterCache(PrerollContext* context,
                                const SkMatrix& matrix) override;
+
+  void TouchRasterCache(PrerollContext* context,
+                        const SkMatrix& matrix) override;
 
   CacheableSkPictureWrapper* asCacheableSkPictureWrapper() override {
     return this;
@@ -112,42 +125,38 @@ class RasterCacheableEntry {
                        unsigned num_child,
                        bool need_caching = true);
 
-  static std::shared_ptr<RasterCacheableEntry> MarkLayerCacheable(
+  /// Create a layer entry.
+  /// The entry may be null if the PrerollContext's raster_cache is null
+  static std::shared_ptr<RasterCacheableEntry> MakeLayerCacheable(
       Cacheable* layer,
       const PrerollContext& context,
       const SkMatrix& matrix,
       unsigned num_child = 0,
-      bool need_caching = true) {
-    return std::make_shared<RasterCacheableEntry>(
-        std::make_unique<CacheableLayerWrapper>(layer), context, matrix,
-        num_child, need_caching);
-  }
+      bool need_caching = true);
 
-  static std::shared_ptr<RasterCacheableEntry> MarkDisplayListCacheable(
+  /// Create a display_list entry.
+  /// The entry may be null if the PrerollContext's raster_cache is null
+  static std::shared_ptr<RasterCacheableEntry> MakeDisplayListCacheable(
       DisplayList* display_list,
       const PrerollContext& context,
       const SkMatrix& matrix,
-      SkPoint offset,
+      SkRect bounds,
       unsigned num_child = 0,
-      bool need_caching = true) {
-    return std::make_shared<RasterCacheableEntry>(
-        std::make_unique<CacheableDisplayListWrapper>(display_list, offset),
-        context, matrix, num_child, need_caching);
-  }
+      bool need_caching = true);
 
-  static std::shared_ptr<RasterCacheableEntry> MarkSkPictureCacheable(
+  /// Create a sk_picture entry.
+  /// The entry may be null if the PrerollContext's raster_cache is null
+  static std::shared_ptr<RasterCacheableEntry> MakeSkPictureCacheable(
       SkPicture* picture,
       const PrerollContext& context,
       const SkMatrix& matrix,
-      SkPoint offset,
+      SkRect bounds,
       unsigned num_child = 0,
-      bool need_caching = true) {
-    return std::make_shared<RasterCacheableEntry>(
-        std::make_unique<CacheableSkPictureWrapper>(picture, offset), context,
-        matrix, num_child, need_caching);
-  }
+      bool need_caching = true);
 
   CacheableItemWrapperBase* GetCacheableWrapper() const { return item_.get(); }
+
+  PrerollContext MakeEntryPrerollContext(PrerollContext* context);
 
   void MarkNotCache() { need_caching = false; }
 
@@ -157,7 +166,13 @@ class RasterCacheableEntry {
 
   void MarkTouchCache() { item_->TouchCache(); }
 
-  void TryToPrepareRasterCache(PrerollContext* context);
+  bool TryToPrepareRasterCache(PrerollContext* context) {
+    return item_->TryToPrepareRasterCache(context, matrix);
+  }
+
+  void TouchRasterCache(PrerollContext* context) {
+    item_->TouchRasterCache(context, matrix);
+  }
 
   Cacheable* GetCacheableLayer() {
     return item_->asCacheableLayerWrapper()->GetCacheableItem();

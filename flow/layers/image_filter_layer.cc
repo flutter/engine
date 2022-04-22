@@ -78,13 +78,12 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 void ImageFilterLayer::TryToCache(PrerollContext* context,
                                   RasterCacheableEntry* entry,
                                   const SkMatrix& ctm) {
-  if (!filter_ || !context->raster_cache) {
+  if (!filter_) {
     entry->MarkNotCache();
     return;
   }
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     // entry default cache current layer
-    ShouldTouchCache(context, entry);
     return;
   }
   transformed_filter_ = nullptr;
@@ -107,7 +106,6 @@ void ImageFilterLayer::TryToCache(PrerollContext* context,
     // stable between frames and also avoiding a rendering surface
     // switch during the Paint phase even if they are not stable.
     // This benefit is seen most during animations.
-    ShouldTouchCache(context, entry);
     entry->MarkLayerChildrenNeedCached();
     return;
   }

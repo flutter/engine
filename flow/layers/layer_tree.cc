@@ -9,6 +9,7 @@
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
 #include "include/core/SkMatrix.h"
@@ -72,30 +73,22 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 
 void LayerTree::TryToRasterCache(PrerollContext* context,
                                  bool ignore_raster_cache) {
-  auto mutator_stack = MutatorsStack();
   for (unsigned i = 0; i < context->raster_cached_entries.size(); i++) {
     auto& entry = context->raster_cached_entries[i];
     if (entry->need_caching) {
-      PrerollContext preroll_context = {
-          // clang-format off
-          .raster_cache                  = context->raster_cache,
-          .gr_context                    = context->gr_context,
-          .view_embedder                 = context->view_embedder,
-          .mutators_stack                = mutator_stack,
-          .dst_color_space               = context->dst_color_space,
-          .cull_rect                     = entry->cull_rect,
-          .surface_needs_readback        = false,
-          .raster_time                   = context->raster_time,
-          .ui_time                       = context->ui_time,
-          .texture_registry              = context->texture_registry,
-          .checkerboard_offscreen_layers = context->checkerboard_offscreen_layers,
-          .frame_device_pixel_ratio      = context->frame_device_pixel_ratio,
-          .has_platform_view             = entry->has_platform_view,
-          .has_texture_layer             = entry->has_texture_layer,
-          // clang-format on
-      };
-      entry->TryToPrepareRasterCache(&preroll_context);
-      i += entry->num_child_entries;
+      auto entry_preroll_context = entry->MakeEntryPrerollContext(context);
+
+      // try to cache current layer
+      // If parent failed to cache, just proceed to the next entry
+      if (entry->TryToPrepareRasterCache(&entry_preroll_context)) {
+        // if parent cached, then foreach child layer to touch them.
+        for (unsigned j = 0; j < entry->num_child_entries; j++) {
+          auto& child_entry = context->raster_cached_entries[i + j + 1];
+          auto child_entry_preroll_context =
+              child_entry->MakeEntryPrerollContext(context);
+          child_entry->TouchRasterCache(&child_entry_preroll_context);
+        }
+      }
     }
   }
 }

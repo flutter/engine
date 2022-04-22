@@ -270,6 +270,13 @@ TEST_F(ContainerLayerTest, CollectionCacheableLayer) {
   layer->Add(mock_layer1);
 
   layer->Preroll(preroll_context(), initial_transform);
+  // raster cache is null, so no entry
+  ASSERT_EQ(preroll_context()->raster_cached_entries.size(),
+            static_cast<const unsigned long>(0));
+
+  use_mock_raster_cache();
+  // preroll_context()->raster_cache = raster_cache();
+  layer->Preroll(preroll_context(), initial_transform);
   ASSERT_EQ(preroll_context()->raster_cached_entries.size(),
             static_cast<const unsigned long>(2));
 }

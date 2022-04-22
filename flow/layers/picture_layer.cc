@@ -111,11 +111,11 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix, offset_);
-
   SkPicture* sk_picture = picture();
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
+
+  Cacheable::AutoCache cache =
+      Cacheable::AutoCache::Create(this, context, matrix, bounds);
 
   set_paint_bounds(bounds);
 }
@@ -123,32 +123,27 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void PictureLayer::TryToCache(PrerollContext* context,
                               RasterCacheableEntry* entry,
                               const SkMatrix& ctm) {
-  if (auto* cache = context->raster_cache) {
-    TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    // For sk_picture_layer if the context has raster_cache, we will try to
-    // collection it when we raster cache it, we will to decision Prepare or
-    // Touch cache
-    if (context->cull_rect.intersect(paint_bounds())) {
-      if (cache->ShouldBeCached(context, picture(), is_complex_, will_change_,
-                                ctm)) {
-        SkMatrix transformation_matrix = ctm;
-        transformation_matrix.preTranslate(offset_.x(), offset_.y());
+  auto* cache = context->raster_cache;
+  TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
+  // For sk_picture_layer if the context has raster_cache, we will try to
+  // collection it when we raster cache it, we will to decision Prepare or
+  // Touch cache
+  if (context->cull_rect.intersect(paint_bounds())) {
+    if (cache->ShouldBeCached(context, picture(), is_complex_, will_change_,
+                              ctm)) {
+      SkMatrix transformation_matrix = ctm;
+      transformation_matrix.preTranslate(offset_.x(), offset_.y());
 
-        entry->matrix = transformation_matrix;
-        // if current Layer can be cached, we change the
-        // subtree_can_inherit_opacity to true
-        context->subtree_can_inherit_opacity = true;
-        return;
-      }
-      entry->MarkNotCache();
-      return;
-    } else {
-      // current bound is not intersect with cull_rect, touch the sk_picture
-      entry->MarkTouchCache();
+      entry->matrix = transformation_matrix;
+      // if current Layer can be cached, we change the
+      // subtree_can_inherit_opacity to true
+      context->subtree_can_inherit_opacity = true;
       return;
     }
+    entry->MarkNotCache();
+    return;
   }
-  entry->MarkNotCache();
+
   return;
 }
 

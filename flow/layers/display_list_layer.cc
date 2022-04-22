@@ -93,43 +93,39 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix, offset_);
-
   DisplayList* disp_list = display_list();
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
+
+  Cacheable::AutoCache cache =
+      Cacheable::AutoCache::Create(this, context, matrix, bounds);
+
   set_paint_bounds(bounds);
 }
 
 void DisplayListLayer::TryToCache(PrerollContext* context,
                                   RasterCacheableEntry* entry,
                                   const SkMatrix& ctm) {
-  if (auto* cache = context->raster_cache) {
-    TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-    // For display_list_layer if the context has raster_cache, we will try to
-    // collection it when we raster cache it, we will to decision Prepare or
-    // Touch cache
-    if (context->cull_rect.intersect(paint_bounds())) {
-      if (cache->ShouldBeCached(context, display_list(), is_complex_,
-                                will_change_, ctm)) {
-        SkMatrix transformation_matrix = ctm;
-        transformation_matrix.preTranslate(offset_.x(), offset_.y());
+  auto* cache = context->raster_cache;
+  TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
+  // For display_list_layer if the context has raster_cache, we will try to
+  // collection it when we raster cache it, we will to decision Prepare or
+  // Touch cache
+  if (context->cull_rect.intersect(paint_bounds())) {
+    if (cache->ShouldBeCached(context, display_list(), is_complex_,
+                              will_change_, ctm)) {
+      SkMatrix transformation_matrix = ctm;
+      transformation_matrix.preTranslate(offset_.x(), offset_.y());
 
-        entry->matrix = transformation_matrix;
-        // if current Layer can be cached, we change the
-        // subtree_can_inherit_opacity to true
-        context->subtree_can_inherit_opacity = true;
-        // default cache current display_list
-        return;
-      }
-      entry->MarkNotCache();
+      entry->matrix = transformation_matrix;
+      // if current Layer can be cached, we change the
+      // subtree_can_inherit_opacity to true
+      context->subtree_can_inherit_opacity = true;
+      // default cache current display_list
       return;
     }
-    // current bound is not intersect with cull_rect, touch the display_list
-    entry->MarkTouchCache();
+    entry->MarkNotCache();
     return;
   }
-  entry->MarkNotCache();
   return;
 }
 

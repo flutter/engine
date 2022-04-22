@@ -43,13 +43,8 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
 void ColorFilterLayer::TryToCache(PrerollContext* context,
                                   RasterCacheableEntry* entry,
                                   const SkMatrix& ctm) {
-  if (!context->raster_cache) {
-    entry->MarkNotCache();
-    return;
-  }
   // We should try to cache the layer or layer's children.
   // First we should to check if we need to touch the cache.
-  ShouldTouchCache(context, entry);
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     // entry default cache current layer
     return;

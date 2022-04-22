@@ -12,35 +12,46 @@ namespace flutter {
 Cacheable::AutoCache Cacheable::AutoCache::Create(Cacheable* cacheable,
                                                   PrerollContext* context,
                                                   const SkMatrix& matrix) {
-  auto* entry = context->raster_cached_entries
-                    .emplace_back(RasterCacheableEntry::MarkLayerCacheable(
-                        cacheable, *context, matrix))
-                    .get();
-  return AutoCache(cacheable, entry, context, matrix);
+  auto cache_entry =
+      RasterCacheableEntry::MakeLayerCacheable(cacheable, *context, matrix);
+  if (cache_entry) {
+    auto* entry_ptr =
+        context->raster_cached_entries.emplace_back(std::move(cache_entry))
+            .get();
+    return AutoCache(cacheable, entry_ptr, context, matrix);
+  }
+  return AutoCache(cacheable, nullptr, context, matrix);
 }
 
 Cacheable::AutoCache Cacheable::AutoCache::Create(
     DisplayListLayer* display_list_layer,
     PrerollContext* context,
     const SkMatrix& matrix,
-    SkPoint offset) {
-  auto* entry =
-      context->raster_cached_entries
-          .emplace_back(RasterCacheableEntry::MarkDisplayListCacheable(
-              display_list_layer->display_list(), *context, matrix, offset))
-          .get();
-  return AutoCache(display_list_layer, entry, context, matrix);
+    SkRect bounds) {
+  auto cache_entry = RasterCacheableEntry::MakeDisplayListCacheable(
+      display_list_layer->display_list(), *context, matrix, bounds);
+  if (cache_entry) {
+    auto* entry_ptr =
+        context->raster_cached_entries.emplace_back(std::move(cache_entry))
+            .get();
+    return AutoCache(display_list_layer, entry_ptr, context, matrix);
+  }
+  return AutoCache(display_list_layer, nullptr, context, matrix);
 }
 
 Cacheable::AutoCache Cacheable::AutoCache::Create(PictureLayer* picture_layer,
                                                   PrerollContext* context,
                                                   const SkMatrix& matrix,
-                                                  SkPoint offset) {
-  auto* entry = context->raster_cached_entries
-                    .emplace_back(RasterCacheableEntry::MarkSkPictureCacheable(
-                        picture_layer->picture(), *context, matrix, offset))
-                    .get();
-  return AutoCache(picture_layer, entry, context, matrix);
+                                                  SkRect bounds) {
+  auto cache_entry = RasterCacheableEntry::MakeSkPictureCacheable(
+      picture_layer->picture(), *context, matrix, bounds);
+  if (cache_entry) {
+    auto* entry_ptr =
+        context->raster_cached_entries.emplace_back(std::move(cache_entry))
+            .get();
+    return AutoCache(picture_layer, entry_ptr, context, matrix);
+  }
+  return AutoCache(picture_layer, nullptr, context, matrix);
 }
 
 }  // namespace flutter

@@ -51,12 +51,7 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ShaderMaskLayer::TryToCache(PrerollContext* context,
                                  RasterCacheableEntry* entry,
                                  const SkMatrix& ctm) {
-  if (!context->raster_cache) {
-    entry->MarkNotCache();
-    return;
-  }
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    ShouldTouchCache(context, entry);
     return;
   }
   render_count_++;
