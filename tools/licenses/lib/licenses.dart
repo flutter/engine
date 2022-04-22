@@ -758,16 +758,6 @@ Iterable<_PartialLicenseMatch> _findLicenseBlocks(String body, RegExp pattern, i
             conditions.trim().contains('\n') ||
             resplitCopyright.length < 70 ||
             conditions.length > 15) {
-          print('');
-          print('RESPLIT COPYRIGHT: $resplitCopyright');
-          print('CONDITIONS: $conditions');
-          print('RESPLIT COPYRIGHT CONTAINS NEWLINE? ${resplitCopyright.trim().contains('\n')}');
-          print('CONDITIONS CONTAINS NEWLINE? ${conditions.trim().contains('\n')}');
-          print('RESPLIT COPYRIGHT LENGTH: ${resplitCopyright.length}');
-          print('CONDITIONS LENGTH: ${conditions.length}');
-          print('CURRENT REGEX: $pattern');
-          print('CURRENT STACK TRACE:');
-          print(StackTrace.current);
           throw 'potential license text caught in _findLicenseBlocks copyright dragnet:\n---\n$conditions\n---\nundecorated copyrights was:\n---\n$undecoratedCopyrights\n---\ncopyrights was:\n---\n$copyrights\n---\nblock was:\n---\n${body.substring(start, match.end)}\n---';
         }
       }
