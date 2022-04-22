@@ -111,7 +111,8 @@ Future<void> copySkiaTestImages() async {
     'images',
   ));
 
-  for (final io.File imageFile in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
+  for (final io.File imageFile
+      in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
     final io.File destination = io.File(pathlib.join(
       environment.webUiBuildDir.path,
       'test_images',
@@ -122,10 +123,15 @@ Future<void> copySkiaTestImages() async {
   }
 }
 
+// TODO(hterkelsen): Just copy the canvaskit folder out.
 Future<void> copyCanvasKitFiles() async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
-  final io.File localCanvasKitWasm =
-      io.File(pathlib.join(environment.canvasKitOutDir.path, 'canvaskit.wasm'));
+  final io.File localCanvasKitWasm = io.File(pathlib.join(
+    environment.flutterWebSdkOutDir.path,
+    'flutter_web_sdk',
+    'canvaskit',
+    'canvaskit.wasm',
+  ));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
 
   final io.Directory targetDir = io.Directory(pathlib.join(
@@ -136,7 +142,12 @@ Future<void> copyCanvasKitFiles() async {
   if (builtLocalCanvasKit) {
     final List<io.File> canvasKitFiles = <io.File>[
       localCanvasKitWasm,
-      io.File(pathlib.join(environment.canvasKitOutDir.path, 'canvaskit.js')),
+      io.File(pathlib.join(
+        environment.flutterWebSdkOutDir.path,
+        'flutter_web_sdk',
+        'canvaskit',
+        'canvaskit.js',
+      )),
     ];
     for (final io.File file in canvasKitFiles) {
       final io.File normalTargetFile = io.File(pathlib.join(
@@ -213,7 +224,8 @@ Future<void> compileTests(List<FilePath> testFiles) async {
 }
 
 // Maximum number of concurrent dart2js processes to use.
-int _dart2jsConcurrency = int.parse(io.Platform.environment['FELT_DART2JS_CONCURRENCY'] ?? '8');
+int _dart2jsConcurrency =
+    int.parse(io.Platform.environment['FELT_DART2JS_CONCURRENCY'] ?? '8');
 
 final Pool _dart2jsPool = Pool(_dart2jsConcurrency);
 
@@ -250,15 +262,15 @@ Future<void> _compileTestsInParallel({
 /// directory before test are build. See [_copyFilesFromTestToBuild].
 ///
 /// Later the extra files will be deleted in [_cleanupExtraFilesUnderTestDir].
-Future<bool> compileUnitTest(FilePath input, {required bool forCanvasKit}) async {
+Future<bool> compileUnitTest(FilePath input,
+    {required bool forCanvasKit}) async {
   final String targetFileName = pathlib.join(
     environment.webUiBuildDir.path,
     '${input.relativeToWebUi}.browser_test.dart.js',
   );
 
   final io.Directory directoryToTarget = io.Directory(pathlib.join(
-      environment.webUiBuildDir.path,
-      pathlib.dirname(input.relativeToWebUi)));
+      environment.webUiBuildDir.path, pathlib.dirname(input.relativeToWebUi)));
 
   if (!directoryToTarget.existsSync()) {
     directoryToTarget.createSync(recursive: true);

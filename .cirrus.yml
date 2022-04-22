@@ -33,7 +33,7 @@ task:
     - name: build_and_test_linux_unopt_debug
       compile_host_script: |
         cd $ENGINE_PATH/src
-        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ./flutter/tools/gn --unoptimized
         ninja -C out/host_debug_unopt
       test_host_script: |
         cd $ENGINE_PATH/src

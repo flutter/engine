@@ -45,7 +45,7 @@ IF NOT EXIST %HOST_DEBUG_UNOPT_DIR% (SET orTempValue=0)
 IF %orTempValue%==0 (
   ECHO "Compiling the Dart SDK."
   CALL gclient sync
-  CALL python %GN% --unoptimized --full-dart-sdk
+  CALL python %GN% --unoptimized
   CALL ninja -C %HOST_DEBUG_UNOPT_DIR%)
 
 :: TODO(yjbanov): The batch script does not support snanphot option.

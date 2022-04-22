@@ -25,8 +25,8 @@ class Environment {
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory hostDebugUnoptDir =
         io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
-    final io.Directory canvasKitOutDir =
-        io.Directory(pathlib.join(outDir.path, 'wasm_debug'));
+    final io.Directory flutterWebSdkOutDir =
+        io.Directory(pathlib.join(outDir.path, 'web_debug'));
     final io.Directory dartSdkDir =
         io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(
@@ -51,7 +51,7 @@ class Environment {
       engineToolsDir: engineToolsDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
-      canvasKitOutDir: canvasKitOutDir,
+      flutterWebSdkOutDir: flutterWebSdkOutDir,
       dartSdkDir: dartSdkDir,
     );
   }
@@ -63,7 +63,7 @@ class Environment {
     required this.engineToolsDir,
     required this.outDir,
     required this.hostDebugUnoptDir,
-    required this.canvasKitOutDir,
+    required this.flutterWebSdkOutDir,
     required this.dartSdkDir,
   });
 
@@ -87,8 +87,8 @@ class Environment {
   /// The "host_debug_unopt" build of the Dart SDK.
   final io.Directory hostDebugUnoptDir;
 
-  /// The output directory for the build of CanvasKit.
-  final io.Directory canvasKitOutDir;
+  /// The output directory for the build of the Flutter Web SDK (with CanvasKit bundled).
+  final io.Directory flutterWebSdkOutDir;
 
   /// The root of the Dart SDK.
   final io.Directory dartSdkDir;

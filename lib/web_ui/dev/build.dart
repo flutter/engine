@@ -22,12 +22,6 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       help: 'Run the build in watch mode so it rebuilds whenever a change is '
           'made. Disabled by default.',
     );
-    argParser.addFlag(
-      'build-canvaskit',
-      defaultsTo: false,
-      help: 'Build CanvasKit locally instead of getting it from CIPD. Disabled '
-          'by default.',
-    );
   }
 
   @override
@@ -38,21 +32,13 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get isWatchMode => boolArg('watch');
 
-  bool get buildCanvasKit => boolArg('build-canvaskit');
-
   @override
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
-      GnPipelineStep(target: 'engine'),
-      NinjaPipelineStep(target: environment.hostDebugUnoptDir),
+      GnPipelineStep(),
+      NinjaPipelineStep(target: environment.flutterWebSdkOutDir),
     ];
-    if (buildCanvasKit) {
-      steps.addAll(<PipelineStep>[
-        GnPipelineStep(target: 'canvaskit'),
-        NinjaPipelineStep(target: environment.canvasKitOutDir),
-      ]);
-    }
     final Pipeline buildPipeline = Pipeline(steps: steps);
     await buildPipeline.run();
 
@@ -75,8 +61,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 /// Not safe to interrupt as it may leave the `out/` directory in a corrupted
 /// state. GN is pretty quick though, so it's OK to not support interruption.
 class GnPipelineStep extends ProcessStep {
-  GnPipelineStep({this.target = 'engine'})
-      : assert(target == 'engine' || target == 'sdk');
+  GnPipelineStep();
 
   @override
   String get description => 'gn';
@@ -84,25 +69,12 @@ class GnPipelineStep extends ProcessStep {
   @override
   bool get isSafeToInterrupt => false;
 
-  /// The target to build with gn.
-  ///
-  /// Acceptable values: engine, canvaskit
-  final String target;
-
   @override
   Future<ProcessManager> createProcess() {
     print('Running gn...');
-    final List<String> gnArgs = <String>[];
-    if (target == 'engine') {
-      gnArgs.addAll(<String>[
-        '--unopt',
-        if (Platform.isMacOS) '--xcode-symlinks',
-        '--full-dart-sdk',
-      ]);
-    } else if (target == 'canvaskit') {
-      gnArgs.add('--wasm');
-    } else {
-      throw StateError('Target was not engine or canvaskit: $target');
+    final List<String> gnArgs = <String>['--web'];
+    if (Platform.isMacOS) {
+      gnArgs.add('--xcode-symlinks');
     }
     return startProcess(
       path.join(environment.flutterDirectory.path, 'tools', 'gn'),

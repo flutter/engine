@@ -50,7 +50,7 @@ IF %needsHostDebugUnoptRebuild%==1 (
     del %SNAPSHOT_PATH%
   )
   CALL gclient sync -D
-  CALL python %GN% --unoptimized --full-dart-sdk
+  CALL python %GN% --unoptimized
   CALL ninja -C %HOST_DEBUG_UNOPT_DIR%)
 
 cd %WEB_UI_DIR%

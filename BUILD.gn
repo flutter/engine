@@ -9,12 +9,6 @@ import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
 import("//third_party/dart/build/dart/copy_tree.gni")
 
-# Whether to build the dartdevc sdk, libraries, and source files
-# required for the flutter web sdk.
-declare_args() {
-  full_dart_sdk = false
-}
-
 config("config") {
   include_dirs = [ ".." ]
   if (is_win) {
@@ -58,12 +52,16 @@ group("dart_sdk") {
 group("flutter") {
   testonly = true
 
-  # Compile the engine.
-  public_deps = [
-    ":unittests",
-    "//flutter/shell/platform/embedder:flutter_engine",
-    "//flutter/sky",
-  ]
+  # Compile the engine (not needed for the Web SDK).
+  if (!flutter_web_sdk) {
+    public_deps = [
+      ":unittests",
+      "//flutter/shell/platform/embedder:flutter_engine",
+      "//flutter/sky",
+    ]
+  } else {
+    public_deps = [ "//flutter/web_sdk" ]
+  }
 
   # Ensure the example for a sample embedder compiles.
   if (build_embedder_examples) {
@@ -73,7 +71,7 @@ group("flutter") {
     ]
   }
 
-  # If enbaled, compile the SDK / snapshot.
+  # If enabled, compile the SDK / snapshot.
   if (!is_fuchsia) {
     public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
@@ -91,10 +89,6 @@ group("flutter") {
         "//flutter/impeller/compiler:impellerc",
         "//flutter/impeller/tessellator:tessellator_shared",
       ]
-
-      if (full_dart_sdk) {
-        public_deps += [ "//flutter/web_sdk" ]
-      }
     }
   }
 

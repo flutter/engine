@@ -42,8 +42,8 @@ REVISION="$(cd "$FLUTTER_DIR"; git rev-parse HEAD)"
 if [ ! -f "${DART_PATH}" ]
 then
   echo "Compiling the Dart SDK."
-  gclient sync
-  $GN --unoptimized --full-dart-sdk
+  #gclient sync
+  $GN --unoptimized
   "$NINJA_PATH" -C "$HOST_DEBUG_UNOPT_DIR"
 fi
 

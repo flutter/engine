@@ -32,6 +32,8 @@ web_engine_sources +=
 
 group("web_sdk") {
   deps = [
+    ":copy_canvaskit",
+    ":copy_canvaskit_profiling",
     ":flutter_dartdevc_canvaskit_html_kernel_sdk",
     ":flutter_dartdevc_canvaskit_html_kernel_sdk_sound",
     ":flutter_dartdevc_canvaskit_kernel_sdk",
@@ -97,6 +99,40 @@ copy("web_ui_library") {
   sources = [ "//flutter/web_sdk/libraries.json" ]
 
   outputs = [ "$root_out_dir/flutter_web_sdk/{{source_file_part}}" ]
+}
+
+copy("copy_canvaskit") {
+  canvaskit_target =
+      "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm)"
+
+  deps = [ canvaskit_target ]
+
+  canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
+
+  sources = [
+    "$canvaskit_out_dir/canvaskit.js",
+    "$canvaskit_out_dir/canvaskit.wasm",
+  ]
+
+  outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/{{source_file_part}}" ]
+}
+
+copy("copy_canvaskit_profiling") {
+  canvaskit_target =
+      "//third_party/skia/modules/canvaskit:canvaskit(//build/toolchain/wasm)"
+
+  deps = [ canvaskit_target ]
+
+  canvaskit_out_dir = get_label_info(canvaskit_target, "root_out_dir")
+
+  sources = [
+    "$canvaskit_out_dir/canvaskit.js",
+    "$canvaskit_out_dir/canvaskit.wasm",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_web_sdk/canvaskit/profiling/{{source_file_part}}",
+  ]
 }
 
 # Compiles a Dart program with dartdevc

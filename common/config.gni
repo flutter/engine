@@ -22,6 +22,9 @@ declare_args() {
 
   # Whether to use a prebuilt Dart SDK instead of building one.
   flutter_prebuilt_dart_sdk = false
+
+  # True if we are building the Flutter Web SDK.
+  flutter_web_sdk = false
 }
 
 # feature_defines_list ---------------------------------------------------------
