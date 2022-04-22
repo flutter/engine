@@ -393,7 +393,8 @@ Future<void> testMain() async {
 
   test('Creating lots of gradients doesn\'t create too many webgl contexts',
       () async {
-    final html.OffscreenCanvas sideCanvas = html.OffscreenCanvas(5, 5);
+    final html.CanvasElement sideCanvas =
+        html.CanvasElement(width: 5, height: 5);
     final RenderingContext? context =
         sideCanvas.getContext('webgl') as RenderingContext?;
     expect(context, isNotNull);
