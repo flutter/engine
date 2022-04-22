@@ -208,9 +208,9 @@ class DlPaint {
   std::shared_ptr<DlColorFilter> colorFilter_;
   std::shared_ptr<DlImageFilter> imageFilter_;
   std::shared_ptr<DlMaskFilter> maskFilter_;
-  // missing:
-  // DlPathEffect - waiting for push
-  // DlBlender - not going to be used
+  // missing (as compared to SkPaint):
+  // DlPathEffect - waiting for https://github.com/flutter/engine/pull/32159
+  // DlBlender - not planning on using that object in a pure DisplayList world
 };
 
 }  // namespace flutter
