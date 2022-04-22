@@ -28,6 +28,7 @@ TimePoint TimePoint::CurrentWallTime() {
   return Now();
 }
 
+void TimePoint::SetClockSource(ClockSource source) {}
 #else
 
 namespace {
