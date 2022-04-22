@@ -16,9 +16,7 @@
 #endif
 
 namespace fml {
-namespace {
-std::atomic<TimePoint::ClockSource> gSteadyClockSource;
-}
+
 #if defined(OS_FUCHSIA)
 
 // static
@@ -31,6 +29,10 @@ TimePoint TimePoint::CurrentWallTime() {
 }
 
 #else
+
+namespace {
+std::atomic<TimePoint::ClockSource> gSteadyClockSource;
+}
 
 template <typename Clock, typename Duration>
 static int64_t NanosSinceEpoch(
