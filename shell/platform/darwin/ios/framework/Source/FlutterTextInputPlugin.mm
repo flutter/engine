@@ -776,6 +776,16 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     }
     _selectionRects = [[NSArray alloc] init];
 
+    // This makes sure UITextSelectionView.interactionAssistant is not nil so
+    // UITextSelectionView has access to this view (and its bounds). Otherwise
+    // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
+    if (@available(iOS 13.0, *)) {
+      UITextInteraction* textInteraction =
+          [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
+      textInteraction.textInput = self;
+      [self addInteraction:textInteraction];
+    }
+
     if (@available(iOS 14.0, *)) {
       UIScribbleInteraction* interaction =
           [[[UIScribbleInteraction alloc] initWithDelegate:self] autorelease];
@@ -1327,7 +1337,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (toIndex >= fromIndex) {
     return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
   } else {
-    // toIndex may be less than fromIndex, because
+    // toIndex can be smaller than fromIndex, because
     // UITextInputStringTokenizer does not handle CJK characters
     // well in some cases. See:
     // https://github.com/flutter/flutter/issues/58750#issuecomment-644469521
@@ -1698,14 +1708,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
   // (1, 2, -3, -4) would become (-2, -2, 3, 4).
   _isFloatingCursorActive = true;
-  // This makes sure UITextSelectionView.interactionAssistant is not nil so
-  // UITextSelectionView has access to this view (and its bounds). Otherwise
-  // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
-  if (@available(iOS 13.0, *)) {
-    self.textInteraction = [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
-    self.textInteraction.textInput = self;
-    [self addInteraction:_textInteraction];
-  }
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                     withClient:_textInputClient
