@@ -13,9 +13,7 @@ ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
     : shader_(shader),
       mask_rect_(mask_rect),
       blend_mode_(blend_mode),
-      render_count_(1) {
-  set_layer_can_inherit_opacity(true);
-}
+      render_count_(1) {}
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -46,6 +44,9 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
       Cacheable::AutoCache::Create(this, context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
+  // We always paint with a saveLayer (or a cached rendering),
+  // so we can always apply opacity in any of those cases.
+  context->subtree_can_inherit_opacity = true;
 }
 
 void ShaderMaskLayer::TryToCache(PrerollContext* context,

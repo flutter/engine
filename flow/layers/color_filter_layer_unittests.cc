@@ -6,8 +6,8 @@
 #include "flutter/flow/layers/color_filter_layer.h"
 
 #include "flutter/display_list/display_list_color_filter.h"
-#include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"

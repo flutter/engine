@@ -3,13 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/layer.h"
-#include <algorithm>
-#include <memory>
 
-#include "flutter/flow/diff_context.h"
 #include "flutter/flow/paint_utils.h"
-#include "flutter/flow/raster_cache.h"
-#include "include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 
 namespace flutter {
