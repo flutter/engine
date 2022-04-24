@@ -45,7 +45,7 @@ bool ExternalTextureD3d::PopulateTexture(size_t width,
   // Populate the texture object used by the engine.
   opengl_texture->target = GL_TEXTURE_2D;
   opengl_texture->name = gl_texture_;
-  opengl_texture->format = GL_RGBA8;
+  opengl_texture->format = GL_RGBA;
   opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = nullptr;
   opengl_texture->width = SAFE_ACCESS(descriptor, visible_width, 0);
@@ -75,10 +75,8 @@ bool ExternalTextureD3d::CreateOrUpdateTexture(
     gl_.glGenTextures(1, &gl_texture_);
 
     gl_.glBindTexture(GL_TEXTURE_2D, gl_texture_);
-
-    gl_.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    gl_.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
+    gl_.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    gl_.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     gl_.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     gl_.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   } else {
