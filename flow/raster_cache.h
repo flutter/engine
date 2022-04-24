@@ -14,6 +14,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/trace_event.h"
+#include "include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
@@ -310,6 +311,32 @@ class RasterCache {
    * and it will then be cached on the next frame if it is prepared.
    */
   int access_threshold() const { return access_threshold_; }
+
+  bool HasCache(Layer* layer,
+                const SkMatrix& matrix,
+                RasterCacheLayerStrategy strategy =
+                    RasterCacheLayerStrategy::kLayer) const {
+    auto cache_key = TryToMakeRasterCacheKeyForLayer(layer, strategy, matrix);
+    if (!cache_key.has_value()) {
+      return false;
+    }
+    return cache_.find(cache_key.value()) != cache_.end();
+  }
+
+  bool IsTouchedCache(
+      Layer* layer,
+      const SkMatrix& matrix,
+      RasterCacheLayerStrategy strategy = RasterCacheLayerStrategy::kLayer) {
+    auto cache_key = TryToMakeRasterCacheKeyForLayer(layer, strategy, matrix);
+    if (!cache_key.has_value()) {
+      return true;
+    }
+    if (cache_.find(cache_key.value()) == cache_.end()) {
+      return true;
+    }
+    Entry& entry = cache_[cache_key.value()];
+    return entry.image == nullptr;
+  }
 
  private:
   struct Entry {

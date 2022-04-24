@@ -73,7 +73,9 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 
 void LayerTree::TryToRasterCache(PrerollContext* context,
                                  bool ignore_raster_cache) {
-  for (unsigned i = 0; i < context->raster_cached_entries.size(); i++) {
+  unsigned i = 0;
+  const auto entries_size = context->raster_cached_entries.size();
+  while (i < entries_size) {
     auto& entry = context->raster_cached_entries[i];
     if (entry->need_caching) {
       auto entry_preroll_context = entry->MakeEntryPrerollContext(context);
@@ -86,10 +88,15 @@ void LayerTree::TryToRasterCache(PrerollContext* context,
           auto& child_entry = context->raster_cached_entries[i + j + 1];
           auto child_entry_preroll_context =
               child_entry->MakeEntryPrerollContext(context);
-          child_entry->TouchRasterCache(&child_entry_preroll_context);
+          if (child_entry->need_caching) {
+            child_entry->TouchRasterCache(&child_entry_preroll_context);
+          }
         }
+        i += entry->num_child_entries + 1;
+        continue;
       }
     }
+    i++;
   }
 }
 
