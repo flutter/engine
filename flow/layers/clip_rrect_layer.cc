@@ -8,7 +8,7 @@
 namespace flutter {
 
 ClipRRectLayer::ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior)
-    : clip_rrect_(clip_rrect), clip_behavior_(clip_behavior) {
+    : clip_rrect_(clip_rrect), clip_behavior_(clip_behavior), render_count_(1) {
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
@@ -54,6 +54,12 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // of our children and apply it in the saveLayer.
   if (UsesSaveLayer()) {
     context->subtree_can_inherit_opacity = true;
+    if (render_count_ >= kMinimumRendersBeforeCachingLayer) {
+      TryToPrepareRasterCache(context, this, matrix,
+                              RasterCacheLayerStrategy::kLayer);
+    } else {
+      render_count_++;
+    }
   }
 
   context->mutators_stack.Pop();
@@ -74,15 +80,17 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   }
 
   AutoCachePaint cache_paint(context);
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
-  context.internal_nodes_canvas->saveLayer(paint_bounds(), cache_paint.paint());
 
-  PaintChildren(context);
-
-  context.internal_nodes_canvas->restore();
-  if (context.checkerboard_offscreen_layers) {
-    DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
+  if (context.raster_cache &&
+      context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                 RasterCacheLayerStrategy::kLayer,
+                                 cache_paint.paint())) {
+    return;
   }
+
+  Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
+      context, paint_bounds(), cache_paint.paint());
+  PaintChildren(context);
 }
 
 }  // namespace flutter

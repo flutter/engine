@@ -27,6 +27,9 @@ class ClipRRectLayer : public ContainerLayer {
   SkRRect clip_rrect_;
   Clip clip_behavior_;
 
+  static constexpr int kMinimumRendersBeforeCachingLayer = 3;
+  int render_count_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRRectLayer);
 };
 
