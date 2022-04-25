@@ -195,6 +195,20 @@ static double GetFlutterTimestampFrom(NSTimeInterval timestamp) {
   return timestamp * 1000000.0;
 }
 
+static FlutterKeyEventType fromRegulatorType(KeyEventRegulator::Type type) {
+  switch (type) {
+    case KeyEventRegulator::kDown:
+      return kFlutterKeyEventTypeDown;
+    case KeyEventRegulator::kUp:
+      return kFlutterKeyEventTypeUp;
+    case KeyEventRegulator::kRepeat:
+      return kFlutterKeyEventTypeRepeat;
+    default:
+      NSCAssert(FALSE, @"Unexpected type 0x%d.", type);
+      return kFlutterKeyEventTypeDown;
+  }
+}
+
 /**
  * Compute |modifierFlagOfInterestMask| out of |keyCodeToModifierFlag|.
  *
@@ -669,42 +683,39 @@ struct FlutterKeyPendingResponse {
                    timestamp:event.timestamp
                        guard:callback];
 
-  bool isARepeat = event.isARepeat;
-  NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
-  if (pressedLogicalKey != nil && !isARepeat) {
-    // This might happen in add-to-app scenarios if the focus is changed
-    // from the native view to the Flutter view amid the key tap.
-    //
-    // This might also happen when a key event is forged (such as by an
-    // IME) using the same keyCode as an unreleased key. See
-    // https://github.com/flutter/flutter/issues/82673#issuecomment-988661079
+  KeyEventRegulator::InputEvent regulator_input{
+    .type = KeyEventRegulator::kDown,
+    .physical_key = physicalKey,
+    .logical_key = logicalKey,
+  };
+  bool has_main_event = false;
+  for (auto& output : _regulator->SettleByEvent(regulator_input)) {
+    const char* character = nullptr;
+    FlutterKeyCallbackGuard* this_callback;
+    if (!output.synthesized) {
+      NSAssert(!has_main_event, @"More than one main events.");
+      if (!has_main_event) {
+        has_main_event = true;
+        character = getEventString(event.characters);
+        this_callback = callback;
+      }
+    }
     FlutterKeyEvent flutterEvent = {
         .struct_size = sizeof(FlutterKeyEvent),
         .timestamp = GetFlutterTimestampFrom(event.timestamp),
-        .type = kFlutterKeyEventTypeUp,
-        .physical = physicalKey,
-        .logical = [pressedLogicalKey unsignedLongLongValue],
-        .character = nil,
-        .synthesized = true,
+        .type = fromRegulatorType(output.type),
+        .physical = output.physical_key,
+        .logical = output.logical_key,
+        .character = character,
+        .synthesized = output.synthesized,
     };
-    [self sendSynthesizedFlutterEvent:flutterEvent guard:callback];
-    pressedLogicalKey = nil;
+    if (this_callback) {
+      [self sendPrimaryFlutterEvent:flutterEvent callback:this_callback];
+    } else {
+      [self sendSynthesizedFlutterEvent:flutterEvent
+                              guard:callback];
+    }
   }
-
-  if (pressedLogicalKey == nil) {
-    [self updateKey:physicalKey asPressed:logicalKey];
-  }
-
-  FlutterKeyEvent flutterEvent = {
-      .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = GetFlutterTimestampFrom(event.timestamp),
-      .type = pressedLogicalKey == nil ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeRepeat,
-      .physical = physicalKey,
-      .logical = pressedLogicalKey == nil ? logicalKey : [pressedLogicalKey unsignedLongLongValue],
-      .character = getEventString(event.characters),
-      .synthesized = false,
-  };
-  [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
 }
 
 - (void)handleUpEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
@@ -716,27 +727,37 @@ struct FlutterKeyPendingResponse {
                        guard:callback];
 
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
-  NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
-  if (pressedLogicalKey == nil) {
-    // Normally the key up events won't be missed since macOS always sends the
-    // key up event to the window where the corresponding key down occurred.
-    // However this might happen in add-to-app scenarios if the focus is changed
-    // from the native view to the Flutter view amid the key tap.
-    [callback resolveTo:TRUE];
-    return;
-  }
-  [self updateKey:physicalKey asPressed:0];
-
-  FlutterKeyEvent flutterEvent = {
-      .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = GetFlutterTimestampFrom(event.timestamp),
-      .type = kFlutterKeyEventTypeUp,
-      .physical = physicalKey,
-      .logical = [pressedLogicalKey unsignedLongLongValue],
-      .character = nil,
-      .synthesized = false,
+  KeyEventRegulator::InputEvent regulator_input{
+    .type = KeyEventRegulator::kUp,
+    .physical_key = physical_key,
+    .logical_key = logical_key,
   };
-  [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
+  bool has_main_event = false;
+  for (auto& output : _regulator->SettleByEvent(regulator_input)) {
+    FlutterKeyCallbackGuard* this_callback;
+    if (!output.synthesized) {
+      NSAssert(!has_main_event, @"More than one main events.");
+      if (!has_main_event) {
+        has_main_event = true;
+        this_callback = callback;
+      }
+    }
+    FlutterKeyEvent flutterEvent = {
+        .struct_size = sizeof(FlutterKeyEvent),
+        .timestamp = GetFlutterTimestampFrom(event.timestamp),
+        .type = fromRegulatorType(output.type),
+        .physical = output.physical_key,
+        .logical = output.logical_key,
+        .character = nullptr,
+        .synthesized = output.synthesized,
+    };
+    if (this_callback) {
+      [self sendPrimaryFlutterEvent:flutterEvent callback:this_callback];
+    } else {
+      [self sendSynthesizedFlutterEvent:flutterEvent
+                              guard:callback];
+    }
+  }
 }
 
 - (void)handleCapsLockEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
