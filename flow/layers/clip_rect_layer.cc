@@ -88,7 +88,7 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   }
 
   Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
-      context, paint_bounds(), cache_paint.paint());
+      context, clip_rect_, cache_paint.paint());
   PaintChildren(context);
 }
 
