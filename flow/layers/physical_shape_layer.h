@@ -35,6 +35,9 @@ class PhysicalShapeLayer : public ContainerLayer {
   float elevation_ = 0.0f;
   SkPath path_;
   Clip clip_behavior_;
+
+  static constexpr int kMinimumRendersBeforeCachingLayer = 3;
+  int render_count_;
 };
 
 }  // namespace flutter

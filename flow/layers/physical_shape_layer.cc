@@ -18,7 +18,8 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
       shadow_color_(shadow_color),
       elevation_(elevation),
       path_(path),
-      clip_behavior_(clip_behavior) {}
+      clip_behavior_(clip_behavior),
+      render_count_(1) {}
 
 void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -74,6 +75,15 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   }
 
   set_paint_bounds(paint_bounds);
+
+  if (UsesSaveLayer()) {
+    if (render_count_ >= kMinimumRendersBeforeCachingLayer) {
+      TryToPrepareRasterCache(context, this, matrix,
+                              RasterCacheLayerStrategy::kLayer);
+    } else {
+      render_count_++;
+    }
+  }
 }
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
@@ -90,43 +100,36 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setColor(color_);
   paint.setAntiAlias(true);
-  if (clip_behavior_ != Clip::antiAliasWithSaveLayer) {
+  if (!UsesSaveLayer()) {
     context.leaf_nodes_canvas->drawPath(path_, paint);
-  }
 
-  int saveCount = context.internal_nodes_canvas->save();
-  switch (clip_behavior_) {
-    case Clip::hardEdge:
+    SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
+    if (clip_behavior_ == Clip::hardEdge) {
       context.internal_nodes_canvas->clipPath(path_, false);
-      break;
-    case Clip::antiAlias:
+    } else if (clip_behavior_ == Clip::antiAlias) {
       context.internal_nodes_canvas->clipPath(path_, true);
-      break;
-    case Clip::antiAliasWithSaveLayer: {
-      TRACE_EVENT0("flutter", "Canvas::saveLayer");
-      context.internal_nodes_canvas->clipPath(path_, true);
-      context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
-    } break;
-    case Clip::none:
-      break;
-  }
+    }
 
-  if (UsesSaveLayer()) {
+    PaintChildren(context);
+  } else {
+    SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
+    context.internal_nodes_canvas->clipPath(path_, true);
+
+    if (context.raster_cache &&
+        context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                   RasterCacheLayerStrategy::kLayer, &paint)) {
+      return;
+    }
+
+    Layer::AutoSaveLayer save_layer =
+        Layer::AutoSaveLayer::Create(context, paint_bounds(), nullptr);
     // If we want to avoid the bleeding edge artifact
     // (https://github.com/flutter/flutter/issues/18057#issue-328003931)
     // using saveLayer, we have to call drawPaint instead of drawPath as
     // anti-aliased drawPath will always have such artifacts.
     context.leaf_nodes_canvas->drawPaint(paint);
-  }
 
-  PaintChildren(context);
-
-  context.internal_nodes_canvas->restoreToCount(saveCount);
-
-  if (UsesSaveLayer()) {
-    if (context.checkerboard_offscreen_layers) {
-      DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
-    }
+    PaintChildren(context);
   }
 }
 

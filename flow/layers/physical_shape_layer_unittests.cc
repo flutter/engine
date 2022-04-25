@@ -430,6 +430,45 @@ TEST_F(PhysicalShapeLayerTest, OpacityInheritance) {
   EXPECT_FALSE(context->subtree_can_inherit_opacity);
 }
 
+TEST_F(PhysicalShapeLayerTest, LayerCached) {
+  SkPath child_path;
+  child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  SkPath layer_path;
+  layer_path.addRect(5.0f, 5.0f, 20.5f, 20.5f);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, SkPaint());
+  auto layer = std::make_shared<PhysicalShapeLayer>(
+      SK_ColorBLACK, SK_ColorBLACK,
+      0.0f,  // elevation
+      layer_path, Clip::antiAliasWithSaveLayer);
+  layer->Add(mock_layer);
+
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayer));
+}
+
 using PhysicalShapeLayerDiffTest = DiffContextTest;
 
 TEST_F(PhysicalShapeLayerDiffTest, NoClipPaintRegion) {
