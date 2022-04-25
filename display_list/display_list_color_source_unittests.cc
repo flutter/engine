@@ -40,14 +40,14 @@ static const SkMatrix TestMatrix2 =
 // clang-format on
 static constexpr int kTestStopCount = 3;
 static constexpr DlColor TestColors[kTestStopCount] = {
-    DlColors::kRed,
-    DlColors::kGreen,
-    DlColors::kBlue,
+    DlColor::kRed(),
+    DlColor::kGreen(),
+    DlColor::kBlue(),
 };
 static const DlColor TestAlphaColors[kTestStopCount] = {
-    DlColors::kBlue.withAlpha(0x7F),
-    DlColors::kRed.withAlpha(0x2F),
-    DlColors::kGreen.withAlpha(0xCF),
+    DlColor::kBlue().withAlpha(0x7F),
+    DlColor::kRed().withAlpha(0x2F),
+    DlColor::kGreen().withAlpha(0xCF),
 };
 static constexpr float TestStops[kTestStopCount] = {
     0.0f,

@@ -50,9 +50,9 @@ TEST(DisplayListVertices, MakeWithTexAndColorAndIndices) {
       SkPoint::Make(115, 120),
   };
   DlColor colors[3] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -94,9 +94,9 @@ TEST(DisplayListVertices, MakeWithTexAndColor) {
       SkPoint::Make(115, 120),
   };
   DlColor colors[3] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
 
   std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
@@ -164,9 +164,9 @@ TEST(DisplayListVertices, MakeWithColorAndIndices) {
       SkPoint::Make(15, 20),
   };
   DlColor colors[3] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -233,9 +233,9 @@ TEST(DisplayListVertices, MakeWithColor) {
       SkPoint::Make(15, 20),
   };
   DlColor colors[3] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
 
   std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
@@ -454,9 +454,9 @@ TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
       SkPoint::Make(115, 120),
   };
   DlColor colors[3] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -518,9 +518,9 @@ TEST(DisplayListVertices, BuildWithTexAndColor) {
       SkPoint::Make(115, 120),
   };
   DlColor colors[3] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
 
   Builder builder(DlVertexMode::kTriangles, 3,  //
@@ -871,9 +871,9 @@ TEST(DisplayListVertices, TestEquals) {
       SkPoint::Make(115, 120),
   };
   DlColor colors[3] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -913,16 +913,16 @@ TEST(DisplayListVertices, TestNotEquals) {
       SkPoint::Make(153, 162),
   };
   DlColor colors[4] = {
-      DlColors::kRed,
-      DlColors::kCyan,
-      DlColors::kGreen,
-      DlColors::kMagenta,
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
+      DlColor::kMagenta(),
   };
   DlColor wrong_colors[4] = {
-      DlColors::kRed,
-      DlColors::kBlue,
-      DlColors::kGreen,
-      DlColors::kMagenta,
+      DlColor::kRed(),
+      DlColor::kBlue(),
+      DlColor::kGreen(),
+      DlColor::kMagenta(),
   };
   uint16_t indices[9] = {
       2, 1, 0,  //

@@ -67,7 +67,7 @@ inline SkPaint::Join ToSk(DlStrokeJoin join) {
 
 class DlPaint {
  public:
-  static constexpr DlColor kDefaultColor = DlColors::kBlack;
+  static constexpr DlColor kDefaultColor = DlColor::kBlack();
   static constexpr float kDefaultWidth = 0.0;
   static constexpr float kDefaultMiter = 4.0;
 

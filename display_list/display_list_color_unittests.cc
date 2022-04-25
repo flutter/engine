@@ -28,10 +28,10 @@ TEST(DisplayListColor, ArrayInterchangeableWithUint32) {
       0xF1F2F3F4,
   };
   DlColor colors[5] = {
-      DlColors::kBlack,  //
-      DlColors::kRed,    //
-      DlColors::kGreen,  //
-      DlColors::kBlue,   //
+      DlColor::kBlack(),  //
+      DlColor::kRed(),    //
+      DlColor::kGreen(),  //
+      DlColor::kBlue(),   //
       DlColor(0xF1F2F3F4),
   };
   arraysEqual(ints, colors, 5);
@@ -40,10 +40,10 @@ TEST(DisplayListColor, ArrayInterchangeableWithUint32) {
 }
 
 TEST(DisplayListColor, DlColorDirectlyComparesToSkColor) {
-  EXPECT_EQ(DlColors::kBlack, SK_ColorBLACK);
-  EXPECT_EQ(DlColors::kRed, SK_ColorRED);
-  EXPECT_EQ(DlColors::kGreen, SK_ColorGREEN);
-  EXPECT_EQ(DlColors::kBlue, SK_ColorBLUE);
+  EXPECT_EQ(DlColor::kBlack(), SK_ColorBLACK);
+  EXPECT_EQ(DlColor::kRed(), SK_ColorRED);
+  EXPECT_EQ(DlColor::kGreen(), SK_ColorGREEN);
+  EXPECT_EQ(DlColor::kBlue(), SK_ColorBLUE);
 }
 
 }  // namespace testing

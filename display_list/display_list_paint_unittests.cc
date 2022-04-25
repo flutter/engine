@@ -33,7 +33,7 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   EXPECT_EQ(DlStrokeCap::kDefaultCap, DlStrokeCap::kButt);
   EXPECT_EQ(DlStrokeJoin::kDefaultJoin, DlStrokeJoin::kMiter);
 
-  EXPECT_EQ(DlPaint::kDefaultColor, DlColors::kBlack);
+  EXPECT_EQ(DlPaint::kDefaultColor, DlColor::kBlack());
   EXPECT_EQ(DlPaint::kDefaultWidth, 0.0);
   EXPECT_EQ(DlPaint::kDefaultMiter, 4.0);
 
@@ -42,7 +42,7 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   EXPECT_NE(paint, DlPaint().setAntiAlias(true));
   EXPECT_NE(paint, DlPaint().setDither(true));
   EXPECT_NE(paint, DlPaint().setInvertColors(true));
-  EXPECT_NE(paint, DlPaint().setColor(DlColors::kGreen));
+  EXPECT_NE(paint, DlPaint().setColor(DlColor::kGreen()));
   EXPECT_NE(paint, DlPaint().setAlpha(0x7f));
   EXPECT_NE(paint, DlPaint().setBlendMode(DlBlendMode::kDstIn));
   EXPECT_NE(paint, DlPaint().setDrawStyle(DlDrawStyle::kStrokeAndFill));
@@ -51,10 +51,10 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   EXPECT_NE(paint, DlPaint().setStrokeWidth(6));
   EXPECT_NE(paint, DlPaint().setStrokeMiter(7));
 
-  DlColorColorSource colorSource(DlColors::kMagenta);
+  DlColorColorSource colorSource(DlColor::kMagenta());
   EXPECT_NE(paint, DlPaint().setColorSource(colorSource.shared()));
 
-  DlBlendColorFilter colorFilter(DlColors::kYellow, DlBlendMode::kDstIn);
+  DlBlendColorFilter colorFilter(DlColor::kYellow(), DlBlendMode::kDstIn);
   EXPECT_NE(paint, DlPaint().setColorFilter(colorFilter.shared()));
 
   DlBlurImageFilter imageFilter(1.3, 4.7, DlTileMode::kClamp);
@@ -90,21 +90,21 @@ TEST(DisplayListPaint, NullSharedPointerSetGet) {
 
 TEST(DisplayListPaint, ChainingConstructor) {
   DlPaint paint =
-      DlPaint()                                                             //
-          .setAntiAlias(true)                                               //
-          .setDither(true)                                                  //
-          .setInvertColors(true)                                            //
-          .setColor(DlColors::kGreen)                                       //
-          .setAlpha(0x7F)                                                   //
-          .setBlendMode(DlBlendMode::kLuminosity)                           //
-          .setDrawStyle(DlDrawStyle::kStrokeAndFill)                        //
-          .setStrokeCap(DlStrokeCap::kSquare)                               //
-          .setStrokeJoin(DlStrokeJoin::kBevel)                              //
-          .setStrokeWidth(42)                                               //
-          .setStrokeMiter(1.5)                                              //
-          .setColorSource(DlColorColorSource(DlColors::kMagenta).shared())  //
+      DlPaint()                                                              //
+          .setAntiAlias(true)                                                //
+          .setDither(true)                                                   //
+          .setInvertColors(true)                                             //
+          .setColor(DlColor::kGreen())                                       //
+          .setAlpha(0x7F)                                                    //
+          .setBlendMode(DlBlendMode::kLuminosity)                            //
+          .setDrawStyle(DlDrawStyle::kStrokeAndFill)                         //
+          .setStrokeCap(DlStrokeCap::kSquare)                                //
+          .setStrokeJoin(DlStrokeJoin::kBevel)                               //
+          .setStrokeWidth(42)                                                //
+          .setStrokeMiter(1.5)                                               //
+          .setColorSource(DlColorColorSource(DlColor::kMagenta()).shared())  //
           .setColorFilter(
-              DlBlendColorFilter(DlColors::kYellow, DlBlendMode::kDstIn)
+              DlBlendColorFilter(DlColor::kYellow(), DlBlendMode::kDstIn)
                   .shared())
           .setImageFilter(
               DlBlurImageFilter(1.3, 4.7, DlTileMode::kClamp).shared())
@@ -113,7 +113,7 @@ TEST(DisplayListPaint, ChainingConstructor) {
   EXPECT_TRUE(paint.isAntiAlias());
   EXPECT_TRUE(paint.isDither());
   EXPECT_TRUE(paint.isInvertColors());
-  EXPECT_EQ(paint.getColor(), DlColors::kGreen.withAlpha(0x7F));
+  EXPECT_EQ(paint.getColor(), DlColor::kGreen().withAlpha(0x7F));
   EXPECT_EQ(paint.getAlpha(), 0x7F);
   EXPECT_EQ(paint.getBlendMode(), DlBlendMode::kLuminosity);
   EXPECT_EQ(paint.getDrawStyle(), DlDrawStyle::kStrokeAndFill);
@@ -121,9 +121,9 @@ TEST(DisplayListPaint, ChainingConstructor) {
   EXPECT_EQ(paint.getStrokeJoin(), DlStrokeJoin::kBevel);
   EXPECT_EQ(paint.getStrokeWidth(), 42);
   EXPECT_EQ(paint.getStrokeMiter(), 1.5);
-  EXPECT_EQ(*paint.getColorSource(), DlColorColorSource(DlColors::kMagenta));
+  EXPECT_EQ(*paint.getColorSource(), DlColorColorSource(DlColor::kMagenta()));
   EXPECT_EQ(*paint.getColorFilter(),
-            DlBlendColorFilter(DlColors::kYellow, DlBlendMode::kDstIn));
+            DlBlendColorFilter(DlColor::kYellow(), DlBlendMode::kDstIn));
   EXPECT_EQ(*paint.getImageFilter(),
             DlBlurImageFilter(1.3, 4.7, DlTileMode::kClamp));
   EXPECT_EQ(*paint.getMaskFilter(),

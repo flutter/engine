@@ -277,7 +277,7 @@ class RenderEnvironment {
   }
 
   std::unique_ptr<RenderSurface> MakeSurface(
-      const DlColor bg = DlColors::kTransparent,
+      const DlColor bg = DlColor::kTransparent(),
       int width = TestWidth,
       int height = TestHeight) const {
     sk_sp<SkSurface> surface =
@@ -286,7 +286,7 @@ class RenderEnvironment {
     return std::make_unique<RenderSurface>(surface);
   }
 
-  void init_ref(CvRenderer& cv_renderer, DlColor bg = DlColors::kTransparent) {
+  void init_ref(CvRenderer& cv_renderer, DlColor bg = DlColor::kTransparent()) {
     init_ref([=](SkCanvas*, SkPaint&) {}, cv_renderer,
              [=](DisplayListBuilder&) {}, bg);
   }
@@ -294,7 +294,7 @@ class RenderEnvironment {
   void init_ref(CvSetup& cv_setup,
                 CvRenderer& cv_renderer,
                 DlRenderer& dl_setup,
-                DlColor bg = DlColors::kTransparent) {
+                DlColor bg = DlColor::kTransparent()) {
     ref_canvas()->clear(bg);
     dl_setup(ref_attr_);
     SkPaint paint;
@@ -724,7 +724,7 @@ class CanvasCompareTester {
                                     const BoundsTolerance& tolerance) {
     SkRect clip = SkRect::MakeXYWH(RenderCenterX - 1, RenderCenterY - 1, 2, 2);
     SkRect rect = SkRect::MakeXYWH(RenderCenterX, RenderCenterY, 10, 10);
-    DlColor alpha_layer_color = DlColors::kCyan.withAlpha(0x7f);
+    DlColor alpha_layer_color = DlColor::kCyan().withAlpha(0x7f);
     DlColor default_color = DlPaint::kDefaultColor;
     CvRenderer cv_safe_restore = [=](SkCanvas* cv, const SkPaint& p) {
       // Draw another primitive to disable peephole optimizations
@@ -971,7 +971,7 @@ class CanvasCompareTester {
       // primitives (mainly drawLine and drawPoints) do not show much
       // dithering so we use a non-trivial stroke width as well.
       RenderEnvironment dither_env = RenderEnvironment::Make565();
-      DlColor dither_bg = DlColors::kBlack;
+      DlColor dither_bg = DlColor::kBlack();
       CvSetup cv_dither_setup = [=](SkCanvas*, SkPaint& p) {
         p.setShader(testImageColorSource.skia_object());
         p.setAlpha(0xf0);
@@ -1025,8 +1025,8 @@ class CanvasCompareTester {
 
     {
       // half opaque cyan
-      DlColor blendableColor = DlColors::kCyan.withAlpha(0x7f);
-      DlColor bg = DlColors::kWhite;
+      DlColor blendableColor = DlColor::kCyan().withAlpha(0x7f);
+      DlColor bg = DlColor::kWhite();
 
       RenderWith(testP, env, tolerance,
                  CaseParameters(
@@ -1197,32 +1197,32 @@ class CanvasCompareTester {
       // clang-format on
       DlMatrixColorFilter filter(rotate_color_matrix);
       {
-        DlColor bg = DlColors::kWhite;
+        DlColor bg = DlColor::kWhite();
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "ColorFilter == RotateRGB",
                        [=](SkCanvas*, SkPaint& p) {
-                         p.setColor(DlColors::kYellow);
+                         p.setColor(DlColor::kYellow());
                          p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColor(DlColors::kYellow);
+                         b.setColor(DlColor::kYellow());
                          b.setColorFilter(&filter);
                        })
                        .with_bg(bg));
       }
       filter = DlMatrixColorFilter(invert_color_matrix);
       {
-        DlColor bg = DlColors::kWhite;
+        DlColor bg = DlColor::kWhite();
         RenderWith(testP, env, tolerance,
                    CaseParameters(
                        "ColorFilter == Invert",
                        [=](SkCanvas*, SkPaint& p) {
-                         p.setColor(DlColors::kYellow);
+                         p.setColor(DlColor::kYellow());
                          p.setColorFilter(filter.skia_object());
                        },
                        [=](DisplayListBuilder& b) {
-                         b.setColor(DlColors::kYellow);
+                         b.setColor(DlColor::kYellow());
                          b.setInvertColors(true);
                        })
                        .with_bg(bg));
@@ -1315,9 +1315,9 @@ class CanvasCompareTester {
           SkPoint::Make(RenderBounds.fRight, RenderBounds.fBottom),
       };
       DlColor colors[] = {
-          DlColors::kGreen,
-          DlColors::kYellow.withAlpha(0x7f),
-          DlColors::kBlue,
+          DlColor::kGreen(),
+          DlColor::kYellow().withAlpha(0x7f),
+          DlColor::kBlue(),
       };
       float stops[] = {
           0.0,
@@ -3105,7 +3105,7 @@ TEST_F(DisplayListCanvas, DrawShadow) {
           RenderBottom - 20,
       },
       RenderCornerRadius, RenderCornerRadius);
-  const DlColor color = DlColors::kDarkGrey;
+  const DlColor color = DlColor::kDarkGrey();
   const SkScalar elevation = 5;
 
   CanvasCompareTester::RenderAll(  //
@@ -3132,7 +3132,7 @@ TEST_F(DisplayListCanvas, DrawShadowTransparentOccluder) {
           RenderBottom - 20,
       },
       RenderCornerRadius, RenderCornerRadius);
-  const DlColor color = DlColors::kDarkGrey;
+  const DlColor color = DlColor::kDarkGrey();
   const SkScalar elevation = 5;
 
   CanvasCompareTester::RenderAll(  //
@@ -3159,7 +3159,7 @@ TEST_F(DisplayListCanvas, DrawShadowDpr) {
           RenderBottom - 20,
       },
       RenderCornerRadius, RenderCornerRadius);
-  const DlColor color = DlColors::kDarkGrey;
+  const DlColor color = DlColor::kDarkGrey();
   const SkScalar elevation = 5;
 
   CanvasCompareTester::RenderAll(  //

@@ -24,9 +24,9 @@ constexpr SkPoint end_points[] = {
     {100, 100},
 };
 const DlColor colors[] = {
-    DlColors::kGreen,
-    DlColors::kYellow,
-    DlColors::kBlue,
+    DlColor::kGreen(),
+    DlColor::kYellow(),
+    DlColor::kBlue(),
 };
 constexpr float stops[] = {
     0.0,
@@ -130,11 +130,11 @@ static const std::shared_ptr<DlColorSource> TestSource5 =
                              colors,
                              stops,
                              DlTileMode::kDecal);
-static const DlBlendColorFilter TestBlendColorFilter1(DlColors::kRed,
+static const DlBlendColorFilter TestBlendColorFilter1(DlColor::kRed(),
                                                       DlBlendMode::kDstATop);
-static const DlBlendColorFilter TestBlendColorFilter2(DlColors::kBlue,
+static const DlBlendColorFilter TestBlendColorFilter2(DlColor::kBlue(),
                                                       DlBlendMode::kDstATop);
-static const DlBlendColorFilter TestBlendColorFilter3(DlColors::kRed,
+static const DlBlendColorFilter TestBlendColorFilter3(DlColor::kRed(),
                                                       DlBlendMode::kDstIn);
 static const DlMatrixColorFilter TestMatrixColorFilter1(rotate_color_matrix);
 static const DlMatrixColorFilter TestMatrixColorFilter2(invert_color_matrix);
@@ -789,13 +789,13 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 40 + 32 + 32 + 8, -1, 40 + 32 + 32 + 8, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        static DlColor colors[] = { DlColors::kBlue, DlColors::kGreen };
+        static DlColor colors[] = { DlColor::kBlue(), DlColor::kGreen() };
         b.drawAtlas(TestImage1, xforms, texs, colors, 2, DlBlendMode::kSrcIn,
                     NearestSampling, nullptr, false);}},
       {1, 56 + 32 + 32 + 8, -1, 56 + 32 + 32 + 8, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        static DlColor colors[] = { DlColors::kBlue, DlColors::kGreen };
+        static DlColor colors[] = { DlColor::kBlue(), DlColor::kGreen() };
         static SkRect cullRect = { 0, 0, 200, 200 };
         b.drawAtlas(TestImage1, xforms, texs, colors, 2, DlBlendMode::kSrcIn,
                     NearestSampling, &cullRect, false);}},

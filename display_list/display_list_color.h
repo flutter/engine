@@ -14,6 +14,21 @@ struct DlColor {
   constexpr DlColor() : argb(0xFF000000) {}
   constexpr DlColor(uint32_t argb) : argb(argb) {}
 
+  // clang-format off
+  static constexpr DlColor kTransparent()        {return 0x00000000;};
+  static constexpr DlColor kBlack()              {return 0xFF000000;};
+  static constexpr DlColor kWhite()              {return 0xFFFFFFFF;};
+  static constexpr DlColor kRed()                {return 0xFFFF0000;};
+  static constexpr DlColor kGreen()              {return 0xFF00FF00;};
+  static constexpr DlColor kBlue()               {return 0xFF0000FF;};
+  static constexpr DlColor kCyan()               {return 0xFF00FFFF;};
+  static constexpr DlColor kMagenta()            {return 0xFFFF00FF;};
+  static constexpr DlColor kYellow()             {return 0xFFFFFF00;};
+  static constexpr DlColor kDarkGrey()           {return 0xFF3F3F3F;};
+  static constexpr DlColor kMidGrey()            {return 0xFF808080;};
+  static constexpr DlColor kLightGrey()          {return 0xFFC0C0C0;};
+  // clang-format on
+
   uint32_t argb;
 
   bool isOpaque() const { return getAlpha() == 0xFF; }
@@ -67,23 +82,6 @@ struct DlColor {
  private:
   static float toF(uint8_t comp) { return comp * (1.0 / 255); }
   static uint8_t toC(float fComp) { return round(fComp * 255); }
-};
-
-struct DlColors {
-  // clang-format off
-  static constexpr DlColor kTransparent           {0x00000000};
-  static constexpr DlColor kBlack                 {0xFF000000};
-  static constexpr DlColor kWhite                 {0xFFFFFFFF};
-  static constexpr DlColor kRed                   {0xFFFF0000};
-  static constexpr DlColor kGreen                 {0xFF00FF00};
-  static constexpr DlColor kBlue                  {0xFF0000FF};
-  static constexpr DlColor kCyan                  {0xFF00FFFF};
-  static constexpr DlColor kMagenta               {0xFFFF00FF};
-  static constexpr DlColor kYellow                {0xFFFFFF00};
-  static constexpr DlColor kDarkGrey              {0xFF3F3F3F};
-  static constexpr DlColor kMidGrey               {0xFF808080};
-  static constexpr DlColor kLightGrey             {0xFFC0C0C0};
-  // clang-format on
 };
 
 }  // namespace flutter

@@ -18,7 +18,7 @@ static const float matrix[20] = {
 };
 
 TEST(DisplayListColorFilter, BuilderSetGet) {
-  DlBlendColorFilter filter(DlColors::kRed, DlBlendMode::kDstATop);
+  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
   DisplayListBuilder builder;
   ASSERT_EQ(builder.getColorFilter(), nullptr);
   builder.setColorFilter(&filter);
@@ -39,10 +39,10 @@ TEST(DisplayListColorFilter, FromSkiaBlendFilter) {
   sk_sp<SkColorFilter> sk_filter =
       SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kDstATop);
   std::shared_ptr<DlColorFilter> filter = DlColorFilter::From(sk_filter);
-  DlBlendColorFilter dl_filter(DlColors::kRed, DlBlendMode::kDstATop);
+  DlBlendColorFilter dl_filter(DlColor::kRed(), DlBlendMode::kDstATop);
   ASSERT_EQ(filter->type(), DlColorFilterType::kBlend);
   ASSERT_EQ(*filter->asBlend(), dl_filter);
-  ASSERT_EQ(filter->asBlend()->color(), DlColors::kRed);
+  ASSERT_EQ(filter->asBlend()->color(), DlColor::kRed());
   ASSERT_EQ(filter->asBlend()->mode(), DlBlendMode::kDstATop);
 
   ASSERT_EQ(filter->asMatrix(), nullptr);
@@ -96,43 +96,43 @@ TEST(DisplayListColorFilter, FromSkiaUnrecognizedFilter) {
 }
 
 TEST(DisplayListColorFilter, BlendConstructor) {
-  DlBlendColorFilter filter(DlColors::kRed, DlBlendMode::kDstATop);
+  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
 }
 
 TEST(DisplayListColorFilter, BlendShared) {
-  DlBlendColorFilter filter(DlColors::kRed, DlBlendMode::kDstATop);
+  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
   ASSERT_NE(filter.shared().get(), &filter);
   ASSERT_EQ(*filter.shared(), filter);
 }
 
 TEST(DisplayListColorFilter, BlendAsBlend) {
-  DlBlendColorFilter filter(DlColors::kRed, DlBlendMode::kDstATop);
+  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
   ASSERT_NE(filter.asBlend(), nullptr);
   ASSERT_EQ(filter.asBlend(), &filter);
 }
 
 TEST(DisplayListColorFilter, BlendContents) {
-  DlBlendColorFilter filter(DlColors::kRed, DlBlendMode::kDstATop);
-  ASSERT_EQ(filter.color(), DlColors::kRed);
+  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
+  ASSERT_EQ(filter.color(), DlColor::kRed());
   ASSERT_EQ(filter.mode(), DlBlendMode::kDstATop);
 }
 
 TEST(DisplayListColorFilter, BlendEquals) {
-  DlBlendColorFilter filter1(DlColors::kRed, DlBlendMode::kDstATop);
-  DlBlendColorFilter filter2(DlColors::kRed, DlBlendMode::kDstATop);
+  DlBlendColorFilter filter1(DlColor::kRed(), DlBlendMode::kDstATop);
+  DlBlendColorFilter filter2(DlColor::kRed(), DlBlendMode::kDstATop);
   TestEquals(filter1, filter2);
 }
 
 TEST(DisplayListColorFilter, BlendNotEquals) {
-  DlBlendColorFilter filter1(DlColors::kRed, DlBlendMode::kDstATop);
-  DlBlendColorFilter filter2(DlColors::kBlue, DlBlendMode::kDstATop);
-  DlBlendColorFilter filter3(DlColors::kRed, DlBlendMode::kDstIn);
+  DlBlendColorFilter filter1(DlColor::kRed(), DlBlendMode::kDstATop);
+  DlBlendColorFilter filter2(DlColor::kBlue(), DlBlendMode::kDstATop);
+  DlBlendColorFilter filter3(DlColor::kRed(), DlBlendMode::kDstIn);
   TestNotEquals(filter1, filter2, "Color differs");
   TestNotEquals(filter1, filter3, "Blend mode differs");
 }
 
 TEST(DisplayListColorFilter, NopBlendShouldNotCrash) {
-  DlBlendColorFilter filter(DlColors::kTransparent, DlBlendMode::kSrcOver);
+  DlBlendColorFilter filter(DlColor::kTransparent(), DlBlendMode::kSrcOver);
   ASSERT_FALSE(filter.modifies_transparent_black());
 }
 

@@ -304,7 +304,7 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   expected_layer_bounds.makeOffset(-layer_offset.fX, -layer_offset.fY)
       .roundOut(&opacity_bounds);
   DlPaint save_paint = DlPaint().setAlpha(alpha_half);
-  DlPaint child_dl_paint = DlPaint().setColor(DlColors::kGreen);
+  DlPaint child_dl_paint = DlPaint().setColor(DlColor::kGreen());
 
   auto expected_builder = DisplayListBuilder();
   expected_builder.save();
