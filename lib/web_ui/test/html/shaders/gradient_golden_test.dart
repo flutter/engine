@@ -421,7 +421,7 @@ Future<void> testMain() async {
     }
 
     expect(context!.isContextLost(), isFalse);
-  });
+  }, skip: isFirefox);
 
   test('Paints clamped, rotated and shifted linear gradient', () async {
     final RecordingCanvas canvas =
