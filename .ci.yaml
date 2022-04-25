@@ -156,6 +156,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 90
 
   - name: Linux Fuchsia FEMU
@@ -164,6 +166,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 60
 
   - name: Linux Framework Smoke Tests
@@ -270,6 +274,14 @@ targets:
       build_host: "true"
       jazzy_version: "0.14.1"
     timeout: 75
+
+  - name: Mac mac_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_host_engine
+      environment: Staging
 
   - name: Mac Unopt
     recipe: engine/engine_unopt

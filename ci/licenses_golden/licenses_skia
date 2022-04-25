@@ -1,4 +1,4 @@
-Signature: 94da14ca48b29b2efd3685efa2449e76
+Signature: 98fab27dfcb3b4411a2b1d0d4aee22c8
 
 UNUSED LICENSES:
 
@@ -537,7 +537,9 @@ LIBRARY: vulkan
 ORIGIN: ../../../third_party/skia/include/third_party/skcms/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/third_party/skcms/BUILD.bazel
+FILE: ../../../third_party/skia/include/third_party/vulkan/BUILD.bazel
 FILE: ../../../third_party/skia/include/third_party/vulkan/vulkan/BUILD.bazel
+FILE: ../../../third_party/skia/third_party/skcms/BUILD.bazel
 FILE: ../../../third_party/skia/third_party/skcms/version.sha1
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2018 Google Inc. All rights reserved.
@@ -582,6 +584,58 @@ FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/GrVulkanMemory
 FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/GrVulkanMemoryAllocator.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 Google Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
+LIBRARY: vulkanmemoryallocator
+ORIGIN: ../../../third_party/skia/modules/canvaskit/npm_build/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/example.html
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/extra.html
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/multicanvas.html
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/node.example.js
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package-lock.json
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package.json
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/shaping.html
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/textapi_utils.js
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/canvaskit-wasm-tests.ts
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/index.d.ts
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/tsconfig.json
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/tslint.json
+FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/example.html
+FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/package.json
+FILE: ../../../third_party/skia/modules/pathkit/npm-wasm/example.html
+FILE: ../../../third_party/skia/modules/pathkit/npm-wasm/package.json
+FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/BUILD.bazel
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2011 Google Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -789,7 +843,6 @@ FILE: ../../../third_party/skia/include/private/gpu/ganesh/BUILD.bazel
 FILE: ../../../third_party/skia/include/private/gpu/graphite/BUILD.bazel
 FILE: ../../../third_party/skia/include/sksl/BUILD.bazel
 FILE: ../../../third_party/skia/include/svg/BUILD.bazel
-FILE: ../../../third_party/skia/include/third_party/BUILD.bazel
 FILE: ../../../third_party/skia/include/utils/BUILD.bazel
 FILE: ../../../third_party/skia/include/utils/mac/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/BUILD.bazel
@@ -1289,6 +1342,8 @@ FILE: ../../../third_party/skia/src/sksl/dsl/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_frag.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.dehydrated.sksl
@@ -1299,6 +1354,8 @@ FILE: ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl_frag.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_graphite_frag.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_graphite_vert.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_public.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_shader.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
@@ -1992,6 +2049,8 @@ FILE: ../../../third_party/skia/src/core/SkVertState.cpp
 FILE: ../../../third_party/skia/src/core/SkVertState.h
 FILE: ../../../third_party/skia/src/fonts/SkFontMgr_indirect.cpp
 FILE: ../../../third_party/skia/src/fonts/SkRemotableFontMgr.cpp
+FILE: ../../../third_party/skia/src/gpu/RectanizerPow2.h
+FILE: ../../../third_party/skia/src/gpu/RectanizerSkyline.h
 FILE: ../../../third_party/skia/src/gpu/ResourceKey.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrDefaultGeoProcFactory.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrDefaultGeoProcFactory.h
@@ -2002,8 +2061,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/GrGpuResourceCacheAccess.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrProcessorAnalysis.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrProcessorAnalysis.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrProgramDesc.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrRectanizerPow2.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrRectanizerSkyline.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrResourceCache.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrResourceCache.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrTracing.h
@@ -3172,6 +3229,7 @@ FILE: ../../../third_party/skia/src/core/SkYUVPlanesCache.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVPlanesCache.h
 FILE: ../../../third_party/skia/src/effects/SkTableColorFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkImageImageFilter.cpp
+FILE: ../../../third_party/skia/src/gpu/Blend.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrAutoLocaleSetter.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrBlurUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrBlurUtils.h
@@ -3476,10 +3534,10 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkDisplacementMapImageF
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDropShadowImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkTileImageFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/Blend.h
+FILE: ../../../third_party/skia/src/gpu/RectanizerSkyline.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrCaps.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrGeometryProcessor.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrPaint.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrRectanizerSkyline.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrBezierEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrBezierEffect.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrBicubicEffect.h
@@ -6106,6 +6164,7 @@ ORIGIN: ../../../third_party/skia/example/VulkanBasic.cpp + ../../../third_party
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/example/VulkanBasic.cpp
 FILE: ../../../third_party/skia/gm/bug12866.cpp
+FILE: ../../../third_party/skia/gm/crbug_1313579.cpp
 FILE: ../../../third_party/skia/include/core/SkAlphaType.h
 FILE: ../../../third_party/skia/include/core/SkColorType.h
 FILE: ../../../third_party/skia/include/gpu/GpuTypes.h
@@ -6125,6 +6184,7 @@ FILE: ../../../third_party/skia/src/core/SkPipelineData.h
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.h
+FILE: ../../../third_party/skia/src/gpu/AtlasTypes.h
 FILE: ../../../third_party/skia/src/gpu/RefCntedCallback.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrImageInfo.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/PathTessellator.cpp
@@ -7214,6 +7274,8 @@ FILE: ../../../third_party/skia/src/core/SkStrikeCache.h
 FILE: ../../../third_party/skia/src/core/SkTBlockList.h
 FILE: ../../../third_party/skia/src/gpu/BufferWriter.h
 FILE: ../../../third_party/skia/src/gpu/GrRectanizer.h
+FILE: ../../../third_party/skia/src/gpu/Rectanizer.h
+FILE: ../../../third_party/skia/src/gpu/RectanizerPow2.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrBufferAllocPool.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrBufferAllocPool.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrClip.h
@@ -7221,8 +7283,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/GrColor.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFixedClip.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrGlyph.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrGpu.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrRectanizerPow2.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrRectanizer_impl.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/SkGr.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/geometry/GrRect.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/v1/Device_v1.h
@@ -7429,56 +7489,6 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/resources/win_run_and_check_log.ps1
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: skia
-ORIGIN: ../../../third_party/skia/modules/canvaskit/npm_build/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/example.html
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/extra.html
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/multicanvas.html
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/node.example.js
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package-lock.json
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package.json
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/shaping.html
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/textapi_utils.js
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/canvaskit-wasm-tests.ts
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/index.d.ts
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/tsconfig.json
-FILE: ../../../third_party/skia/modules/canvaskit/npm_build/types/tslint.json
-FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/example.html
-FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/package.json
-FILE: ../../../third_party/skia/modules/pathkit/npm-wasm/example.html
-FILE: ../../../third_party/skia/modules/pathkit/npm-wasm/package.json
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2011 Google Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -8197,7 +8207,7 @@ ORIGIN: ../../../third_party/skia/third_party/vulkanmemoryallocator/include/vk_m
 TYPE: LicenseType.mit
 FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/include/vk_mem_alloc.h
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2017-2020 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2017-2022 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
