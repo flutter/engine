@@ -5,10 +5,11 @@
 package io.flutter.embedding.android;
 
 import android.view.KeyEvent;
-import android.view.View;
 import androidx.annotation.NonNull;
 import io.flutter.Log;
-import io.flutter.embedding.android.KeyboardManager.Responder.OnKeyEventHandledCallback;
+import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.editing.InputConnectionAdaptor;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.HashSet;
 
@@ -37,9 +38,9 @@ import java.util.HashSet;
  *       <p>When a new {@link KeyEvent} is received, {@link KeyboardManager} calls the {@link
  *       KeyboardManager.Responder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its
  *       {@link KeyboardManager.Responder}s. Each {@link KeyboardManager.Responder} must call the
- *       supplied {@link OnKeyEventHandledCallback} exactly once, when it has decided whether to
- *       handle the key event callback. More than one {@link KeyboardManager.Responder} is allowed
- *       to reply true and handle the same {@link KeyEvent}.
+ *       supplied {@link KeyboardManager.Responder.OnKeyEventHandledCallback} exactly once, when it
+ *       has decided whether to handle the key event callback. More than one {@link
+ *       KeyboardManager.Responder} is allowed to reply true and handle the same {@link KeyEvent}.
  *       <p>Typically a {@link KeyboardManager} uses a {@link KeyChannelResponder} as its only
  *       {@link KeyboardManager.Responder}.
  *   <li>{@link TextInputPlugin}: if every {@link KeyboardManager.Responder} has replied false to a
@@ -53,7 +54,7 @@ import java.util.HashSet;
  *       KeyEvent}.
  * </ul>
  */
-public class KeyboardManager {
+public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate {
   private static final String TAG = "KeyboardManager";
 
   /**
@@ -70,21 +71,15 @@ public class KeyboardManager {
    * shouldn't be a huge problem, as this is an unlikely occurrence to happen without user input,
    * and it may actually be desired behavior, but it is possible.
    *
-   * @param view takes the activity to use for re-dispatching of events that were not handled by the
-   *     framework.
-   * @param textInputPlugin a plugin, which, if set, is given key events before the framework is,
-   *     and if it has a valid input connection and is accepting text, then it will handle the event
-   *     and the framework will not receive it.
-   * @param responders the {@link KeyboardManager.Responder}s new {@link KeyEvent}s will be first
-   *     dispatched to.
+   * @param viewDelegate provides a set of interfaces that the keyboard manager needs to interact
+   *     with other components and the platform, and is typically implements by {@link FlutterView}.
    */
-  public KeyboardManager(
-      @NonNull View view,
-      @NonNull TextInputPlugin textInputPlugin,
-      @NonNull Responder[] responders) {
-    this.view = view;
-    this.textInputPlugin = textInputPlugin;
-    this.responders = responders;
+  public KeyboardManager(@NonNull ViewDelegate viewDelegate) {
+    this.viewDelegate = viewDelegate;
+    this.responders =
+        new KeyChannelResponder[] {
+          new KeyChannelResponder(new KeyEventChannel(viewDelegate.getBinaryMessenger())),
+        };
   }
 
   /**
@@ -103,7 +98,7 @@ public class KeyboardManager {
    * {@link KeyEvent} will never be sent to the {@link TextInputPlugin}, and the {@link
    * KeyboardManager} class can't detect such errors as there is no timeout.
    */
-  interface Responder {
+  public interface Responder {
     interface OnKeyEventHandledCallback {
       void onKeyEventHandled(boolean canHandleEvent);
     }
@@ -119,8 +114,16 @@ public class KeyboardManager {
         @NonNull KeyEvent keyEvent, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback);
   }
 
+  public interface ViewDelegate {
+    public BinaryMessenger getBinaryMessenger();
+
+    public boolean onTextInputKeyEvent(@NonNull KeyEvent keyEvent);
+
+    public void redispatch(@NonNull KeyEvent keyEvent);
+  }
+
   private class PerEventCallbackBuilder {
-    private class Callback implements OnKeyEventHandledCallback {
+    private class Callback implements Responder.OnKeyEventHandledCallback {
       boolean isCalled = false;
 
       @Override
@@ -146,16 +149,16 @@ public class KeyboardManager {
     int unrepliedCount = responders.length;
     boolean isEventHandled = false;
 
-    public OnKeyEventHandledCallback buildCallback() {
+    public Responder.OnKeyEventHandledCallback buildCallback() {
       return new Callback();
     }
   }
 
   protected final Responder[] responders;
   private final HashSet<KeyEvent> redispatchedEvents = new HashSet<>();
-  private final TextInputPlugin textInputPlugin;
-  private final View view;
+  private final ViewDelegate viewDelegate;
 
+  @Override
   public boolean handleEvent(@NonNull KeyEvent keyEvent) {
     final boolean isRedispatchedEvent = redispatchedEvents.remove(keyEvent);
     if (isRedispatchedEvent) {
@@ -186,12 +189,12 @@ public class KeyboardManager {
   }
 
   private void onUnhandled(@NonNull KeyEvent keyEvent) {
-    if (textInputPlugin.handleKeyEvent(keyEvent) || view == null) {
+    if (viewDelegate == null || viewDelegate.onTextInputKeyEvent(keyEvent)) {
       return;
     }
 
     redispatchedEvents.add(keyEvent);
-    view.getRootView().dispatchKeyEvent(keyEvent);
+    viewDelegate.redispatch(keyEvent);
     if (redispatchedEvents.remove(keyEvent)) {
       Log.w(TAG, "A redispatched key event was consumed before reaching KeyboardManager");
     }
