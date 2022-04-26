@@ -441,7 +441,7 @@ inline std::ostream& operator<<(std::ostream& out,
     case kFlutterBackingStoreTypeVulkan:
       out << backing_store.vulkan;
       break;
-      
+
     case kFlutterBackingStoreTypeSoftware2:
       out << backing_store.software2;
       break;
