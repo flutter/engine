@@ -37,7 +37,7 @@ void CacheableLayerWrapper::TouchRasterCache(PrerollContext* context,
   auto strategy = cache_children_ ? RasterCacheLayerStrategy::kLayerChildren
                                   : RasterCacheLayerStrategy::kLayer;
   auto* cache = context->raster_cache;
-  cache->Touch(layer, matrix, strategy);
+  cache->Touch(layer, matrix, strategy, true);
 }
 
 bool CacheableDisplayListWrapper::TryToPrepareRasterCache(
@@ -55,7 +55,7 @@ bool CacheableDisplayListWrapper::TryToPrepareRasterCache(
 
 void CacheableDisplayListWrapper::TouchRasterCache(PrerollContext* context,
                                                    const SkMatrix& matrix) {
-  context->raster_cache->Touch(display_list_, matrix);
+  context->raster_cache->Touch(display_list_, matrix, true);
 }
 
 bool CacheableSkPictureWrapper::TryToPrepareRasterCache(
@@ -67,7 +67,7 @@ bool CacheableSkPictureWrapper::TryToPrepareRasterCache(
     return true;
   }
   // current bound is not intersect with cull_rect, touch the sk_picture
-  cache->Touch(sk_picture_, matrix);
+  cache->Touch(sk_picture_, matrix, true);
   return false;
 }
 

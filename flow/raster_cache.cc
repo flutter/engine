@@ -408,33 +408,44 @@ bool RasterCache::Prepare(PrerollContext* context,
 
 void RasterCache::Touch(Layer* layer,
                         const SkMatrix& ctm,
-                        RasterCacheLayerStrategy strategey) {
+                        RasterCacheLayerStrategy strategey,
+                        bool parent_had_cached) {
   auto cache_key_optional =
       TryToMakeRasterCacheKeyForLayer(layer, strategey, ctm);
   if (!cache_key_optional) {
     return;
   }
-  Touch(cache_key_optional.value());
+  Touch(cache_key_optional.value(), parent_had_cached);
 }
 
 void RasterCache::Touch(SkPicture* picture,
-                        const SkMatrix& transformation_matrix) {
+                        const SkMatrix& transformation_matrix,
+                        bool parent_had_cached) {
   RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyType::kPicture,
                            transformation_matrix);
-  Touch(cache_key);
+  Touch(cache_key, parent_had_cached);
 }
 
 void RasterCache::Touch(DisplayList* display_list,
-                        const SkMatrix& transformation_matrix) {
+                        const SkMatrix& transformation_matrix,
+                        bool parent_had_cached) {
   RasterCacheKey cache_key(display_list->unique_id(),
                            RasterCacheKeyType::kDisplayList,
                            transformation_matrix);
-  Touch(cache_key);
+  Touch(cache_key, parent_had_cached);
 }
 
-void RasterCache::Touch(const RasterCacheKey& cache_key) {
+void RasterCache::Touch(const RasterCacheKey& cache_key,
+                        bool parent_had_cached) {
   auto it = cache_.find(cache_key);
   if (it != cache_.end()) {
+    if (parent_had_cached) {
+      // current entry has beyond can live frame, try to remove it
+      if (--it->second.survive_frame_count <= 0) {
+        it->second.used_this_frame = false;
+      }
+      return;
+    }
     it->second.used_this_frame = true;
     it->second.access_count++;
   }

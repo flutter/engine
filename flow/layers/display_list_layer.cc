@@ -93,7 +93,9 @@ void DisplayListLayer::Preroll(PrerollContext* context,
 
   Cacheable::AutoCache cache =
       Cacheable::AutoCache::Create(this, context, matrix, bounds);
-
+  if (disp_list->can_apply_group_opacity()) {
+    context->subtree_can_inherit_opacity = true;
+  }
   set_paint_bounds(bounds);
 }
 
@@ -110,14 +112,8 @@ void DisplayListLayer::TryToCache(PrerollContext* context,
                               will_change_, ctm)) {
       SkMatrix transformation_matrix = ctm;
       transformation_matrix.preTranslate(offset_.x(), offset_.y());
-
+      context->subtree_can_inherit_opacity = true;
       entry->matrix = transformation_matrix;
-      // if current Layer can be cached, we change the
-      // subtree_can_inherit_opacity to true
-      if (display_list()->can_apply_group_opacity()) {
-        context->subtree_can_inherit_opacity = true;
-      }
-      // default cache current display_list
       return;
     }
     entry->MarkNotCache();

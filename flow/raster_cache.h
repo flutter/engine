@@ -217,12 +217,17 @@ class RasterCache {
   // used for this frame in order to not get evicted. This is needed during
   // partial repaint for layers that are outside of current clip and are culled
   // away.
-  void Touch(SkPicture* picture, const SkMatrix& transformation_matrix);
-  void Touch(DisplayList* display_list, const SkMatrix& transformation_matrix);
+  void Touch(SkPicture* picture,
+             const SkMatrix& transformation_matrix,
+             bool parent_cached = false);
+  void Touch(DisplayList* display_list,
+             const SkMatrix& transformation_matrix,
+             bool parent_cached = false);
   void Touch(
       Layer* layer,
       const SkMatrix& ctm,
-      RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer);
+      RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer,
+      bool parent_cached = false);
 
   bool Prepare(
       PrerollContext* context,
@@ -342,10 +347,13 @@ class RasterCache {
   struct Entry {
     bool used_this_frame = false;
     size_t access_count = 0;
+    // if this entry's parent has cached, we will remove this entry after the
+    // survive_frame_count.
+    unsigned survive_frame_count = 3;
     std::unique_ptr<RasterCacheResult> image;
   };
 
-  void Touch(const RasterCacheKey& cache_key);
+  void Touch(const RasterCacheKey& cache_key, bool parent_cached = false);
 
   bool Draw(const RasterCacheKey& cache_key,
             SkCanvas& canvas,
