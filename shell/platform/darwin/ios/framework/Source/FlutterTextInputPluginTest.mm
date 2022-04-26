@@ -1244,7 +1244,7 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Floating Cursor - Tests
 
-- (void)testInputViewsHaveUITextInteractions {
+- (void)testInputViewsDoNotHaveUITextInteractions {
   if (@available(iOS 13.0, *)) {
     FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
     BOOL hasTextInteraction = NO;
@@ -1254,7 +1254,7 @@ FLUTTER_ASSERT_ARC
         break;
       }
     }
-    XCTAssertTrue(hasTextInteraction);
+    XCTAssertFalse(hasTextInteraction);
   }
 }
 
