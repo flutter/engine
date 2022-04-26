@@ -1,4 +1,4 @@
-Signature: e06f47cf3959bf07037eb44f5410c5e0
+Signature: 705841987285e6ecba59858860089af4
 
 UNUSED LICENSES:
 
@@ -9990,6 +9990,7 @@ FILE: ../../../third_party/dart/benchmarks/Iterators/dart/data.dart
 FILE: ../../../third_party/dart/benchmarks/Iterators/dart2/Iterators.dart
 FILE: ../../../third_party/dart/benchmarks/Startup/dart/Startup.dart
 FILE: ../../../third_party/dart/benchmarks/Startup/dart2/Startup.dart
+FILE: ../../../third_party/dart/benchmarks/TypeLiteral/dart/TypeLiteral.dart
 FILE: ../../../third_party/dart/runtime/bin/snapshot_utils_test.cc
 FILE: ../../../third_party/dart/runtime/bin/test_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/test_utils.h
