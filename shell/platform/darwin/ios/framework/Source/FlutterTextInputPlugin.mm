@@ -711,7 +711,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
-@property(nonatomic, retain) UITextInteraction* textInteraction API_AVAILABLE(ios(13.0));
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -775,16 +774,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
       _smartDashesType = UITextSmartDashesTypeYes;
     }
     _selectionRects = [[NSArray alloc] init];
-
-    // This makes sure UITextSelectionView.interactionAssistant is not nil so
-    // UITextSelectionView has access to this view (and its bounds). Otherwise
-    // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
-    if (@available(iOS 13.0, *)) {
-      UITextInteraction* textInteraction =
-          [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
-      textInteraction.textInput = self;
-      [self addInteraction:textInteraction];
-    }
 
     if (@available(iOS 14.0, *)) {
       UIScribbleInteraction* interaction =
@@ -906,7 +895,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_selectionRects release];
   [_markedTextStyle release];
   [_textContentType release];
-  [_textInteraction release];
   [super dealloc];
 }
 
@@ -1724,12 +1712,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (void)endFloatingCursor {
   _isFloatingCursorActive = false;
-  if (@available(iOS 13.0, *)) {
-    if (_textInteraction != NULL) {
-      [self removeInteraction:_textInteraction];
-      self.textInteraction = NULL;
-    }
-  }
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                     withClient:_textInputClient

@@ -1243,21 +1243,6 @@ FLUTTER_ASSERT_ARC
 }
 
 #pragma mark - Floating Cursor - Tests
-
-- (void)testInputViewsHaveUITextInteractions {
-  if (@available(iOS 13.0, *)) {
-    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
-    BOOL hasTextInteraction = NO;
-    for (id interaction in inputView.interactions) {
-      hasTextInteraction = [interaction isKindOfClass:[UITextInteraction class]];
-      if (hasTextInteraction) {
-        break;
-      }
-    }
-    XCTAssertTrue(hasTextInteraction);
-  }
-}
-
 - (void)testFloatingCursorDoesNotThrow {
   // The keyboard implementation may send unbalanced calls to the input view.
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
