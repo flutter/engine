@@ -775,6 +775,17 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     }
     _selectionRects = [[NSArray alloc] init];
 
+    // The `UITextInteraction` is no longer needed for floating cursor
+    // (https://github.com/flutter/flutter/issues/70267).
+    // But it's still needed for certain keyboards:
+    // https://github.com/flutter/flutter/issues/99652
+    if (@available(iOS 13.0, *)) {
+      UITextInteraction* textInteraction =
+          [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
+      textInteraction.textInput = self;
+      [self addInteraction:textInteraction];
+    }
+
     if (@available(iOS 14.0, *)) {
       UIScribbleInteraction* interaction =
           [[[UIScribbleInteraction alloc] initWithDelegate:self] autorelease];
