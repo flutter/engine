@@ -20,7 +20,6 @@ namespace tracing {
 namespace {
 
 int64_t DefaultMicrosSource() {
-  // This value is used when doing systracing.
   return -1;
 }
 
