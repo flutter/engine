@@ -86,7 +86,6 @@ public class KeyboardManagerTest {
     public KeyboardTester() {
       respondToChannelCallsWith(false);
       respondToTextInputWith(false);
-      redispatchedCount = 0;
 
       BinaryMessenger mockMessenger = mock(BinaryMessenger.class);
       doAnswer(invocation -> onChannelMessage(invocation))
@@ -103,9 +102,9 @@ public class KeyboardManagerTest {
           .onTextInputKeyEvent(any(KeyEvent.class));
       doAnswer(
               invocation -> {
-                boolean handled = keyboardManager.handleEvent((KeyEvent) invocation.getArguments()[1]);
+                KeyEvent event = invocation.getArgument(0);
+                boolean handled = keyboardManager.handleEvent(event);
                 assertEquals(handled, false);
-                redispatchedCount += 1;
                 return null;
               })
           .when(mockView)
@@ -116,7 +115,6 @@ public class KeyboardManagerTest {
 
     public @Mock KeyboardManager.ViewDelegate mockView;
     public KeyboardManager keyboardManager;
-    public int redispatchedCount;
 
     public void respondToChannelCallsWith(boolean handled) {
       channelHandler =
@@ -253,67 +251,62 @@ public class KeyboardManagerTest {
 
     verify(tester.mockView, times(1)).onTextInputKeyEvent(keyEvent);
     verify(tester.mockView, times(0)).redispatch(any(KeyEvent.class));
-
-    // It's not redispatched to the keyboard manager.
-    assertEquals(0, tester.redispatchedCount);
   }
 
-  // @Test
-  // public void RedispatchKeyEventIfTextInputPluginFailsToHandle() {
-  //   final FakeResponder fakeResponder = new FakeResponder();
-  //   keyboardManager =
-  //       spy(
-  //           new KeyboardManager(
-  //               mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {fakeResponder}));
-  //   final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-  //   final boolean result = keyboardManager.handleEvent(keyEvent);
+  @Test
+  public void RedispatchKeyEventIfTextInputPluginFailsToHandle() {
+    final KeyboardTester tester = new KeyboardTester();
+    final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
+    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
 
-  //   assertEquals(true, result);
-  //   assertEquals(keyEvent, fakeResponder.mLastKeyEvent);
+    tester.recordChannelCallsTo(calls);
 
-  //   // Don't send the key event to the text plugin if the only primary responder
-  //   // hasn't responded.
-  //   verify(mockTextInputPlugin, times(0)).handleKeyEvent(any(KeyEvent.class));
-  //   verify(mockRootView, times(0)).dispatchKeyEvent(any(KeyEvent.class));
+    final boolean result = tester.keyboardManager.handleEvent(keyEvent);
 
-  //   // Neither the primary responders nor text input plugin handles the event.
-  //   when(mockTextInputPlugin.handleKeyEvent(any())).thenAnswer(invocation -> false);
-  //   fakeResponder.mLastKeyEvent = null;
-  //   fakeResponder.eventHandled(false);
+    assertEquals(true, result);
+    assertEquals(calls.size(), 1);
+    assertChannelEventEquals(calls.get(0).channelData, "keydown", 65);
 
-  //   verify(mockTextInputPlugin, times(1)).handleKeyEvent(keyEvent);
-  //   verify(mockRootView, times(1)).dispatchKeyEvent(keyEvent);
-  // }
+    // Don't send the key event to the text plugin if the only primary responder
+    // hasn't responded.
+    verify(tester.mockView, times(0)).onTextInputKeyEvent(any(KeyEvent.class));
+    verify(tester.mockView, times(0)).redispatch(any(KeyEvent.class));
 
-  // @Test
-  // public void respondsFalseWhenHandlingRedispatchedEvents() {
-  //   final FakeResponder fakeResponder = new FakeResponder();
-  //   keyboardManager =
-  //       spy(
-  //           new KeyboardManager(
-  //               mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {fakeResponder}));
-  //   final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-  //   final boolean result = keyboardManager.handleEvent(keyEvent);
+    // Neither the primary responders nor text input plugin handles the event.
+    tester.respondToTextInputWith(false);
+    calls.get(0).reply.accept(false);
 
-  //   assertEquals(true, result);
-  //   assertEquals(keyEvent, fakeResponder.mLastKeyEvent);
+    verify(tester.mockView, times(1)).onTextInputKeyEvent(keyEvent);
+    verify(tester.mockView, times(1)).redispatch(keyEvent);
+  }
 
-  //   // Don't send the key event to the text plugin if the only primary responder
-  //   // hasn't responded.
-  //   verify(mockTextInputPlugin, times(0)).handleKeyEvent(any(KeyEvent.class));
-  //   verify(mockRootView, times(0)).dispatchKeyEvent(any(KeyEvent.class));
+  @Test
+  public void respondsFalseWhenHandlingRedispatchedEvents() {
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
 
-  //   // Neither the primary responders nor text input plugin handles the event.
-  //   when(mockTextInputPlugin.handleKeyEvent(any())).thenAnswer(invocation -> false);
-  //   fakeResponder.mLastKeyEvent = null;
-  //   fakeResponder.eventHandled(false);
+    tester.recordChannelCallsTo(calls);
 
-  //   verify(mockTextInputPlugin, times(1)).handleKeyEvent(keyEvent);
-  //   verify(mockRootView, times(1)).dispatchKeyEvent(keyEvent);
+    final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
+    final boolean result = tester.keyboardManager.handleEvent(keyEvent);
 
-  //   // It's redispatched to the keyboard manager, but not the primary
-  //   // responders.
-  //   verify(keyboardManager, times(2)).handleEvent(any(KeyEvent.class));
-  //   assertNull(fakeResponder.mLastKeyEvent);
-  // }
+    assertEquals(true, result);
+    assertEquals(calls.size(), 1);
+    assertChannelEventEquals(calls.get(0).channelData, "keydown", 65);
+
+    // Don't send the key event to the text plugin if the only primary responder
+    // hasn't responded.
+    verify(tester.mockView, times(0)).onTextInputKeyEvent(any(KeyEvent.class));
+    verify(tester.mockView, times(0)).redispatch(any(KeyEvent.class));
+
+    // Neither the primary responders nor text input plugin handles the event.
+    tester.respondToTextInputWith(false);
+    calls.get(0).reply.accept(false);
+
+    verify(tester.mockView, times(1)).onTextInputKeyEvent(keyEvent);
+    verify(tester.mockView, times(1)).redispatch(keyEvent);
+
+    // It's redispatched to the keyboard manager, but no eventual key calls.
+    assertEquals(calls.size(), 1);
+  }
 }
