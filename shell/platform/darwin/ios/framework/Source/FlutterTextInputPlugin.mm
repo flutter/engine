@@ -733,10 +733,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // allowed to access its textInputDelegate.
   BOOL _decommissioned;
   bool _enableInteractiveSelection;
-  // The is only set to YES in setTextInputState, when the input state in the engine
-  // needs updating but the current inputDelegate is nil. See setTextInputState for
-  // more information.
-  BOOL _restartingInputDelegate;
+  UITextInteraction* _textInteraction API_AVAILABLE(ios(13.0));
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -773,7 +770,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     _enableInteractiveSelection = YES;
     _accessibilityEnabled = NO;
     _decommissioned = NO;
-    _restartingInputDelegate = NO;
     if (@available(iOS 11.0, *)) {
       _smartQuotesType = UITextSmartQuotesTypeYes;
       _smartDashesType = UITextSmartDashesTypeYes;
@@ -900,6 +896,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_selectionRects release];
   [_markedTextStyle release];
   [_textContentType release];
+  [_textInteraction release];
   [super dealloc];
 }
 
@@ -908,18 +905,24 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _hasPlaceholder = NO;
 }
 
+- (UITextInteraction*)textInteraction API_AVAILABLE(ios(13.0)) {
+  if (!_textInteraction) {
+    _textInteraction = [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
+    _textInteraction.textInput = self;
+  }
+  return _textInteraction;
+}
+
 - (void)setTextInputState:(NSDictionary*)state {
-  // When a UITextInteraction is deleted from the input field, it may set the input
-  // field's inputDelegate to nil (likely a bug).
-  // This workaround manually triggers a keyboard restart to let the keyboard reset
-  // the inputDelegate.
-  // See https://github.com/flutter/engine/pull/32881.
-  if (!self.inputDelegate && self.isFirstResponder) {
-    NSAssert(!_restartingInputDelegate, @"setTextInputState is not re-entrant.");
-    _restartingInputDelegate = YES;
-    [self resignFirstResponder];
-    [self becomeFirstResponder];
-    _restartingInputDelegate = NO;
+  if (@available(iOS 13.0, *)) {
+    // [UITextInteraction willMoveToView:] sometimes sets the textInput's inputDelegate
+    // to nil. This is likely a bug in UIKit. In order to inform the keyboard of text
+    // and selection changes when that happens, add a dummy UITextInteraction to this
+    // view so it sets a valid inputDelegate that we can call textWillChange et al. on.
+    // See https://github.com/flutter/engine/pull/32881.
+    if (!self.inputDelegate) {
+      [self addInteraction:self.textInteraction];
+    }
   }
 
   NSString* newText = state[@"text"];
@@ -956,6 +959,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
+  }
+
+  if (@available(iOS 13.0, *)) {
+    if (_textInteraction) {
+      [self removeInteraction:_textInteraction];
+    }
   }
 }
 
@@ -1739,10 +1748,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 #pragma mark - UIKeyInput Overrides
 
 - (void)updateEditingState {
-  if (_restartingInputDelegate) {
-    // The current keyboard is restarting, DO NOT send the input state to the framework.
-    return;
-  }
   NSUInteger selectionBase = ((FlutterTextPosition*)_selectedTextRange.start).index;
   NSUInteger selectionExtent = ((FlutterTextPosition*)_selectedTextRange.end).index;
 
