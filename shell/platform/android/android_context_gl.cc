@@ -252,7 +252,34 @@ bool AndroidEGLSurface::IsValid() const {
   return surface_ != EGL_NO_SURFACE;
 }
 
+bool AndroidEGLSurface::IsContextCurrent() const {
+  EGLContext current_egl_context = eglGetCurrentContext();
+  if (context_ != current_egl_context) {
+    return false;
+  }
+
+  EGLDisplay current_egl_display = eglGetCurrentDisplay();
+  if (display_ != current_egl_display) {
+    return false;
+  }
+
+  EGLSurface draw_surface = eglGetCurrentSurface(EGL_DRAW);
+  if (draw_surface != surface_) {
+    return false;
+  }
+
+  EGLSurface read_surface = eglGetCurrentSurface(EGL_READ);
+  if (read_surface != surface_) {
+    return false;
+  }
+
+  return true;
+}
+
 bool AndroidEGLSurface::MakeCurrent() const {
+  if (IsContextCurrent()) {
+    return true;
+  }
   if (eglMakeCurrent(display_, surface_, surface_, context_) != EGL_TRUE) {
     FML_LOG(ERROR) << "Could not make the context current";
     LogLastEGLError();
