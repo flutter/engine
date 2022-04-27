@@ -1,6 +1,7 @@
 package io.flutter.embedding.android;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
@@ -83,6 +84,8 @@ public class KeyboardManagerTest {
 
   static class KeyboardTester {
     public KeyboardTester() {
+      respondToTextInputWith(false);
+
       BinaryMessenger mockMessenger = mock(BinaryMessenger.class);
       doAnswer(invocation -> onChannelMessage(invocation))
           .when(mockMessenger)
@@ -93,6 +96,9 @@ public class KeyboardManagerTest {
 
       mockView = mock(KeyboardManager.ViewDelegate.class);
       doAnswer(invocation -> mockMessenger).when(mockView).getBinaryMessenger();
+      doAnswer(invocation -> textInputResult)
+          .when(mockView)
+          .onTextInputKeyEvent(any(KeyEvent.class));
       doAnswer(
               invocation -> {
                 keyboardManager.handleEvent((KeyEvent) invocation.getArguments()[1]);
@@ -107,14 +113,19 @@ public class KeyboardManagerTest {
     public @Mock KeyboardManager.ViewDelegate mockView;
     public KeyboardManager keyboardManager;
 
-    private ChannelCallHandler channelHandler;
-
     public void recordChannelCallsTo(@NonNull ArrayList<CallRecord> storage) {
       channelHandler =
           (ChannelCallData data, Consumer<Boolean> reply) -> {
             storage.add(CallRecord.channelCall(data, reply));
           };
     }
+
+    public void respondToTextInputWith(boolean response) {
+      textInputResult = response;
+    }
+
+    private ChannelCallHandler channelHandler;
+    private Boolean textInputResult;
 
     private Object onChannelMessage(@NonNull InvocationOnMock invocation) {
       final String channel = invocation.getArgument(0);
@@ -174,26 +185,31 @@ public class KeyboardManagerTest {
     verify(tester.mockView, times(0)).redispatch(any(KeyEvent.class));
   }
 
-  // @Test
-  // public void primaryRespondersHaveTheHighestPrecedence() {
-  //   final KeyboardTester tester = new KeyboardTester();
-  //   final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-  //   final boolean result = keyboardManager.handleEvent(keyEvent);
+  @Test
+  public void primaryRespondersHaveTheHighestPrecedence() {
+    final KeyboardTester tester = new KeyboardTester();
+    final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
+    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
 
-  //   assertEquals(true, result);
-  //   // assertEquals(keyEvent, fakeResponder.mLastKeyEvent);
+    tester.recordChannelCallsTo(calls);
 
-  //   // Don't send the key event to the text plugin if the only primary responder
-  //   // hasn't responded.
-  //   verify(tester.mockView, times(0)).onTextInputKeyEvent(any(KeyEvent.class));
-  //   verify(tester.mockView, times(0)).redispatch(any(KeyEvent.class));
+    final boolean result = tester.keyboardManager.handleEvent(keyEvent);
 
-  //   // If a primary responder handles the key event the propagation stops.
-  //   assertNotNull(fakeResponder.mLastKeyEventHandledCallback);
-  //   fakeResponder.eventHandled(true);
-  //   verify(mockTextInputPlugin, times(0)).handleKeyEvent(any(KeyEvent.class));
-  //   verify(mockRootView, times(0)).dispatchKeyEvent(any(KeyEvent.class));
-  // }
+    assertEquals(true, result);
+    assertEquals(calls.size(), 1);
+    assertChannelEventEquals(calls.get(0).channelData, "keydown", 65);
+
+    // Don't send the key event to the text plugin if the only primary responder
+    // hasn't responded.
+    verify(tester.mockView, times(0)).onTextInputKeyEvent(any(KeyEvent.class));
+    verify(tester.mockView, times(0)).redispatch(any(KeyEvent.class));
+
+    // If a primary responder handles the key event the propagation stops.
+    assertNotNull(calls.get(0).reply);
+    calls.get(0).reply.accept(true);
+    verify(tester.mockView, times(0)).onTextInputKeyEvent(any(KeyEvent.class));
+    verify(tester.mockView, times(0)).redispatch(any(KeyEvent.class));
+  }
 
   // @Test
   // public void zeroRespondersTest() {
