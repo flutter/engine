@@ -114,9 +114,7 @@ if (enable_unittests) {
   executable("display_list_rendertests") {
     testonly = true
 
-    sources = [
-      "display_list_canvas_unittests.cc",
-    ]
+    sources = [ "display_list_canvas_unittests.cc" ]
 
     deps = [
       ":display_list",
