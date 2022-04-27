@@ -40,7 +40,7 @@ if (flutter_prebuilt_dart_sdk) {
 }
 
 group("dart_sdk") {
-  if (build_engine_artifacts) {
+  if (build_dart_sdk) {
     if (flutter_prebuilt_dart_sdk) {
       public_deps = [ ":copy_dart_sdk" ]
     } else {
@@ -60,7 +60,10 @@ group("flutter") {
       "//flutter/sky",
     ]
   } else {
-    public_deps = [ "//flutter/web_sdk" ]
+    public_deps = [
+      "//flutter/web_sdk",
+      ":dart_sdk",
+    ]
   }
 
   # Ensure the example for a sample embedder compiles.
@@ -72,7 +75,7 @@ group("flutter") {
   }
 
   # If enabled, compile the SDK / snapshot.
-  if (!is_fuchsia) {
+  if (!is_fuchsia && !flutter_web_sdk) {
     public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
     if (build_engine_artifacts) {

@@ -137,5 +137,11 @@ if (flutter_prebuilt_dart_sdk) {
 # TODO: We can't build the engine artifacts for arm (32-bit) right now;
 # see https://github.com/flutter/flutter/issues/74322
 build_engine_artifacts =
-    current_toolchain == host_toolchain ||
-    (is_linux && !is_chromeos && current_cpu != "arm") || is_mac
+    !flutter_web_sdk &&
+    (current_toolchain == host_toolchain ||
+    (is_linux && !is_chromeos && current_cpu != "arm") || is_mac)
+
+declare_args() {
+  # True if we should build (or copy) the Dart SDK.
+  build_dart_sdk = flutter_web_sdk || build_engine_artifacts
+}
