@@ -1208,7 +1208,6 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
       caseSensitive: false,
     )
   ),
-
 ];
 
 
