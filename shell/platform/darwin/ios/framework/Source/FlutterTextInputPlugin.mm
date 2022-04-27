@@ -907,7 +907,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (UITextInteraction*)textInteraction API_AVAILABLE(ios(13.0)) {
   if (!_textInteraction) {
-    _textInteraction = [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
+    _textInteraction =
+        [[UITextInteraction textInteractionForMode:UITextInteractionModeEditable] retain];
     _textInteraction.textInput = self;
   }
   return _textInteraction;
@@ -920,7 +921,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     // and selection changes when that happens, add a dummy UITextInteraction to this
     // view so it sets a valid inputDelegate that we can call textWillChange et al. on.
     // See https://github.com/flutter/engine/pull/32881.
-    if (!self.inputDelegate) {
+    if (!self.inputDelegate && self.isFirstResponder) {
       [self addInteraction:self.textInteraction];
     }
   }
