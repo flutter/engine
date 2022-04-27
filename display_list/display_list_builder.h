@@ -11,6 +11,7 @@
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
 
@@ -158,8 +159,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
                           ? SaveLayerOptions::kWithAttributes
                           : SaveLayerOptions::kNoAttributes);
   }
+  void saveLayer(const SkRect* bounds, const DlPaint* paint);
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
+  void restoreToCount(int restore_count);
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
@@ -182,27 +185,50 @@ class DisplayListBuilder final : public virtual Dispatcher,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
   // clang-format on
   void transformReset() override;
+  void transform(const SkMatrix* matrix);
+  void transform(const SkM44* matrix44);
+  void transform(const SkMatrix& matrix) { transform(&matrix); }
+  void transform(const SkM44& matrix44) { transform(&matrix44); }
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
 
   void drawPaint() override;
+  void drawPaint(const DlPaint& paint);
   void drawColor(SkColor color, DlBlendMode mode) override;
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
+  void drawLine(const SkPoint& p0, const SkPoint& p1, const DlPaint& paint);
   void drawRect(const SkRect& rect) override;
+  void drawRect(const SkRect& rect, const DlPaint& paint);
   void drawOval(const SkRect& bounds) override;
+  void drawOval(const SkRect& bounds, const DlPaint& paint);
   void drawCircle(const SkPoint& center, SkScalar radius) override;
+  void drawCircle(const SkPoint& center, SkScalar radius, const DlPaint& paint);
   void drawRRect(const SkRRect& rrect) override;
+  void drawRRect(const SkRRect& rrect, const DlPaint& paint);
   void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
+  void drawDRRect(const SkRRect& outer,
+                  const SkRRect& inner,
+                  const DlPaint& paint);
   void drawPath(const SkPath& path) override;
+  void drawPath(const SkPath& path, const DlPaint& paint);
   void drawArc(const SkRect& bounds,
                SkScalar start,
                SkScalar sweep,
                bool useCenter) override;
+  void drawArc(const SkRect& bounds,
+               SkScalar start,
+               SkScalar sweep,
+               bool useCenter,
+               const DlPaint& paint);
   void drawPoints(SkCanvas::PointMode mode,
                   uint32_t count,
                   const SkPoint pts[]) override;
+  void drawPoints(SkCanvas::PointMode mode,
+                  uint32_t count,
+                  const SkPoint pts[],
+                  const DlPaint& paint);
   void drawSkVertices(const sk_sp<SkVertices> vertices,
                       SkBlendMode mode) override;
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
@@ -210,10 +236,22 @@ class DisplayListBuilder final : public virtual Dispatcher,
                     DlBlendMode mode) {
     drawVertices(vertices.get(), mode);
   }
+  void drawVertices(const DlVertices* vertices,
+                    DlBlendMode mode,
+                    const DlPaint& paint);
+  void drawVertices(const std::shared_ptr<const DlVertices> vertices,
+                    DlBlendMode mode,
+                    const DlPaint& paint) {
+    drawVertices(vertices.get(), mode, paint);
+  }
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  const SkSamplingOptions& sampling,
                  bool render_with_attributes) override;
+  void drawImage(const sk_sp<DlImage> image,
+                 const SkPoint point,
+                 const SkSamplingOptions& sampling,
+                 const DlPaint* paint = nullptr);
   void drawImageRect(
       const sk_sp<DlImage> image,
       const SkRect& src,
@@ -222,11 +260,23 @@ class DisplayListBuilder final : public virtual Dispatcher,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
+  void drawImageRect(const sk_sp<DlImage> image,
+                     const SkRect& src,
+                     const SkRect& dst,
+                     const SkSamplingOptions& sampling,
+                     const DlPaint* paint = nullptr,
+                     SkCanvas::SrcRectConstraint constraint =
+                         SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint);
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      SkFilterMode filter,
                      bool render_with_attributes) override;
+  void drawImageNine(const sk_sp<DlImage> image,
+                     const SkIRect& center,
+                     const SkRect& dst,
+                     SkFilterMode filter,
+                     const DlPaint* paint = nullptr);
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
@@ -241,6 +291,15 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const SkSamplingOptions& sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
+  void drawAtlas(const sk_sp<DlImage> atlas,
+                 const SkRSXform xform[],
+                 const SkRect tex[],
+                 const SkColor colors[],
+                 int count,
+                 DlBlendMode mode,
+                 const SkSamplingOptions& sampling,
+                 const SkRect* cullRect,
+                 const DlPaint* paint = nullptr);
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
                    bool render_with_attributes) override;
@@ -272,6 +331,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   template <typename T, typename... Args>
   void* Push(size_t extra, int op_inc, Args&&... args);
+
+  void setAttributesFromDlPaint(const DlPaint& paint,
+                                const DisplayListAttributeFlags flags);
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;

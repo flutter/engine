@@ -242,7 +242,7 @@ class HtmlViewEmbedder {
     }
 
     // Apply mutators to the slot
-    _applyMutators(params.mutators, slot, viewId);
+    _applyMutators(params, slot, viewId);
   }
 
   int _countClips(MutatorsStack mutators) {
@@ -309,9 +309,12 @@ class HtmlViewEmbedder {
   }
 
   void _applyMutators(
-      MutatorsStack mutators, html.Element embeddedView, int viewId) {
+      EmbeddedViewParams params, html.Element embeddedView, int viewId) {
+    final MutatorsStack mutators = params.mutators;
     html.Element head = embeddedView;
-    Matrix4 headTransform = Matrix4.identity();
+    Matrix4 headTransform = params.offset == ui.Offset.zero
+      ? Matrix4.identity()
+      : Matrix4.translationValues(params.offset.dx, params.offset.dy, 0);
     double embeddedOpacity = 1.0;
     _resetAnchor(head);
     _cleanUpClipDefs(viewId);
@@ -994,9 +997,14 @@ ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
         }
       }
     }
+    // Remove all ids from viewsToRemove that also exist in viewsToAdd.
+    final List<int> viewsToAdd = next.sublist(active.length - index);
+    final Set<int> viewsToAddSet = viewsToAdd.toSet();
+    final List<int> viewsToRemove = active.sublist(0, index).where((int e) => !viewsToAddSet.contains(e)).toList();
+
     return ViewListDiffResult(
-      active.sublist(0, index),
-      next.sublist(active.length - index),
+      viewsToRemove,
+      viewsToAdd,
       false,
     );
   }
@@ -1008,9 +1016,15 @@ ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
         return null;
       }
     }
+
+    // Remove all ids from viewsToRemove that also exist in viewsToAdd.
+    final List<int> viewsToAdd = active.sublist(index + 1);
+    final Set<int> viewsToAddSet = viewsToAdd.toSet();
+    final List<int> viewsToRemove = next.sublist(0, next.length - index - 1).where((int e) => !viewsToAddSet.contains(e)).toList();
+
     return ViewListDiffResult(
-      active.sublist(index + 1),
-      next.sublist(0, next.length - index - 1),
+      viewsToAdd,
+      viewsToRemove,
       true,
       viewToInsertBefore: active.first,
     );

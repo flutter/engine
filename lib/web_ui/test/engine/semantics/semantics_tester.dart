@@ -7,8 +7,8 @@ import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show flutterViewEmbedder, toMatrix32;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/host_node.dart';
 import 'package:ui/src/engine/semantics.dart';
 import 'package:ui/src/engine/util.dart';
@@ -360,8 +360,9 @@ class SemanticsTester {
 
 /// Verifies the HTML structure of the current semantics tree.
 void expectSemanticsTree(String semanticsHtml) {
+  const List<String> ignoredAttributes = <String>['pointer-events'];
   expect(
-    canonicalizeHtml(appHostNode.querySelector('flt-semantics')!.outerHtml!),
+    canonicalizeHtml(appHostNode.querySelector('flt-semantics')!.outerHtml!, ignoredAttributes: ignoredAttributes),
     canonicalizeHtml(semanticsHtml),
   );
 }
