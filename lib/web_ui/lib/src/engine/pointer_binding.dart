@@ -62,6 +62,15 @@ int convertButtonToButtons(int button) {
   }
 }
 
+/// Wrapping the Safari iOS workaround that adds a dummy event listener
+class SafariPointerEventWorkaround {
+  static SafariPointerEventWorkaround instance = SafariPointerEventWorkaround();
+
+  void workAroundMissingPointerEvents() {
+    html.document.addEventListener('touchstart', (html.Event event) {});
+  }
+}
+
 class PointerBinding {
   /// The singleton instance of this object.
   static PointerBinding? get instance => _instance;
@@ -69,7 +78,7 @@ class PointerBinding {
 
   static void initInstance(html.Element glassPaneElement) {
     if (_instance == null) {
-      _instance = PointerBinding._(glassPaneElement);
+      _instance = PointerBinding(glassPaneElement);
       assert(() {
         registerHotRestartListener(() {
           _instance!._adapter.clearListeners();
@@ -80,9 +89,12 @@ class PointerBinding {
     }
   }
 
-  PointerBinding._(this.glassPaneElement)
+  PointerBinding(this.glassPaneElement)
     : _pointerDataConverter = PointerDataConverter(),
       _detector = const PointerSupportDetector() {
+    if (isIosSafari) {
+      SafariPointerEventWorkaround.instance.workAroundMissingPointerEvents();
+    }
     _adapter = _createAdapter();
   }
 

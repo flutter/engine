@@ -38,7 +38,8 @@ void _testEach<T extends _BasicEventContext>(
 
 /// Some methods in this class are skipped for iOS-Safari.
 // TODO(mdebbar): https://github.com/flutter/flutter/issues/60033
-bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
+bool get isIosSafari =>
+    browserEngine == BrowserEngine.webkit &&
     operatingSystem == OperatingSystem.iOs;
 
 void main() {
@@ -53,6 +54,13 @@ void testMain() {
   setUp(() {
     ui.window.onPointerDataPacket = null;
     dpi = window.devicePixelRatio;
+  });
+
+  test('ios workaround', () {
+    final MockSafariPointerEventWorkaround mockSafariPointer = MockSafariPointerEventWorkaround();
+    SafariPointerEventWorkaround.instance = mockSafariPointer;
+    PointerBinding(html.DivElement());
+    expect(mockSafariPointer.workAroundInvoked, isIosSafari);
   });
 
   test('_PointerEventContext generates expected events', () {
@@ -1226,7 +1234,7 @@ void testMain() {
       _PointerEventContext(),
     ],
     'correctly handles missing right mouse button up when followed by move',
-        (_ButtonedEventMixin context) {
+    (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
@@ -1787,8 +1795,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].physicalX,
-          equals(900.0  * dpi));
+      expect(packets[0].data[0].physicalX, equals(900.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(1900.0 * dpi));
       packets.clear();
 
@@ -2241,6 +2248,15 @@ void testMain() {
   );
 }
 
+class MockSafariPointerEventWorkaround implements SafariPointerEventWorkaround {
+  bool workAroundInvoked = false;
+
+  @override
+  void workAroundMissingPointerEvents() {
+    workAroundInvoked = true;
+  }
+}
+
 abstract class _BasicEventContext implements PointerSupportDetector {
   String get name;
 
@@ -2275,10 +2291,14 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   //
   // If there is no button change, assign `button` with _kNoButtonChange.
   html.Event mouseMove(
-      {double? clientX, double? clientY, required int button, required int buttons});
+      {double? clientX,
+      double? clientY,
+      required int button,
+      required int buttons});
 
   // Generate an event that releases all mouse buttons.
-  html.Event mouseUp({double? clientX, double? clientY, int? button, int? buttons});
+  html.Event mouseUp(
+      {double? clientX, double? clientY, int? button, int? buttons});
 
   html.Event hover({double? clientX, double? clientY}) {
     return mouseMove(
@@ -2325,7 +2345,8 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? deltaX,
     required double? deltaY,
   }) {
-    final Function jsWheelEvent = js_util.getProperty<Function>(html.window, 'WheelEvent');
+    final Function jsWheelEvent =
+        js_util.getProperty<Function>(html.window, 'WheelEvent');
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
       <String, dynamic>{
@@ -2396,8 +2417,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
 class _TouchEventContext extends _BasicEventContext
     with _MultiPointerEventMixin
     implements PointerSupportDetector {
-  _TouchEventContext() :
-    _target = html.document.createElement('div');
+  _TouchEventContext() : _target = html.document.createElement('div');
 
   @override
   String get name => 'TouchAdapter';
@@ -2518,7 +2538,9 @@ class _MouseEventContext extends _BasicEventContext
         hasButtonChange && (buttons & convertButtonToButtons(button)) != 0;
     final String adjustedType = !hasButtonChange
         ? 'mousemove'
-        : changeIsButtonDown ? 'mousedown' : 'mouseup';
+        : changeIsButtonDown
+            ? 'mousedown'
+            : 'mouseup';
     final int adjustedButton = hasButtonChange ? button : 0;
     return _createMouseEvent(
       adjustedType,
