@@ -20,6 +20,7 @@ namespace tracing {
 namespace {
 
 int64_t DefaultMicrosSource() {
+  // This value is used when doing systracing.
   return -1;
 }
 
@@ -54,6 +55,10 @@ void TraceSetTimelineEventHandler(TimelineEventHandler handler) {
 bool TraceHasTimelineEventHandler() {
   return static_cast<bool>(
       gTimelineEventHandler.load(std::memory_order_relaxed));
+}
+
+int64_t TraceGetTimelineMicros() {
+  return gTimelineMicrosSource.load()();
 }
 
 void TraceSetTimelineMicrosSource(TimelineMicrosSource source) {
