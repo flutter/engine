@@ -321,6 +321,10 @@ bool TraceHasTimelineEventHandler() {
   return false;
 }
 
+int64_t TraceGetTimelineMicros() {
+  return -1;
+}
+
 void TraceSetTimelineMicrosSource(TimelineMicrosSource source) {}
 
 size_t TraceNonce() {
