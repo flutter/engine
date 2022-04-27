@@ -1,6 +1,7 @@
 package io.flutter.embedding.android;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -13,8 +14,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.util.FakeKeyEvent;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,21 +34,56 @@ import org.robolectric.annotation.Config;
 @RunWith(AndroidJUnit4.class)
 @TargetApi(28)
 public class KeyboardManagerTest {
-  static class KeyCall {
-    public KeyCall(@NonNull String channel, @NonNull ByteBuffer message, @Nullable Object reply) {
+  static class CallRecord {
+    static enum Type {
+      kChannel,
+    }
+
+    public CallRecord() {}
+
+    Type type;
+
+    public Consumer<Boolean> reply;
+    public ChannelCallData channelData;
+
+    static CallRecord channelCall(
+        @NonNull ChannelCallData channelData, @Nullable Consumer<Boolean> reply) {
+      final CallRecord record = new CallRecord();
+      record.type = Type.kChannel;
+      record.channelData = channelData;
+      record.reply = reply;
+      return record;
+    }
+  }
+
+  static class ChannelCallData {
+    ChannelCallData(@NonNull String channel, @NonNull JSONObject message) {
       this.channel = channel;
       this.message = message;
-      this.reply = reply;
     }
 
     public String channel;
-    public ByteBuffer message;
-    public Object reply;
+    public JSONObject message;
   }
+
+  static ByteBuffer buildResponseMessage(boolean handled) {
+    JSONObject body = new JSONObject();
+    try {
+      body.put("handled", handled);
+    } catch (JSONException e) {
+      assertNull(e);
+    }
+    ByteBuffer binaryReply = JSONMessageCodec.INSTANCE.encodeMessage(body);
+    binaryReply.rewind();
+    return binaryReply;
+  }
+
+  @FunctionalInterface
+  static interface ChannelCallHandler extends BiConsumer<ChannelCallData, Consumer<Boolean>> {}
 
   static class KeyboardTester {
     public KeyboardTester() {
-      mockMessenger = mock(BinaryMessenger.class);
+      BinaryMessenger mockMessenger = mock(BinaryMessenger.class);
       doAnswer(invocation -> onChannelMessage(invocation))
           .when(mockMessenger)
           .send(any(String.class), any(ByteBuffer.class));
@@ -62,20 +104,46 @@ public class KeyboardManagerTest {
       keyboardManager = new KeyboardManager(mockView);
     }
 
-    public @Mock BinaryMessenger mockMessenger;
     public @Mock KeyboardManager.ViewDelegate mockView;
     public KeyboardManager keyboardManager;
 
-    public KeyCall lastChannelCall;
+    private ChannelCallHandler channelHandler;
 
-    private Object onChannelMessage(InvocationOnMock invocation) {
+    public void recordChannelCallsTo(@NonNull ArrayList<CallRecord> storage) {
+      channelHandler =
+          (ChannelCallData data, Consumer<Boolean> reply) -> {
+            storage.add(CallRecord.channelCall(data, reply));
+          };
+    }
+
+    private Object onChannelMessage(@NonNull InvocationOnMock invocation) {
       final String channel = invocation.getArgument(0);
-      final ByteBuffer message = invocation.getArgument(1);
+      final ByteBuffer buffer = invocation.getArgument(1);
+      buffer.rewind();
+      final JSONObject jsonObject = (JSONObject) JSONMessageCodec.INSTANCE.decodeMessage(buffer);
       final BinaryMessenger.BinaryReply reply = invocation.getArgument(2);
-      lastChannelCall = new KeyCall(channel, message, reply);
-      System.out.println(channel);
-      System.out.println(message);
+      final Consumer<Boolean> jsonReply =
+          reply == null
+              ? null
+              : handled -> {
+                reply.reply(buildResponseMessage(handled));
+              };
+      channelHandler.accept(new ChannelCallData(channel, jsonObject), jsonReply);
       return null;
+    }
+  }
+
+  // TODO: Add more test items.
+  static void assertChannelEventEquals(
+      @NonNull ChannelCallData data, @NonNull String type, @NonNull Integer keyCode) {
+    final JSONObject message = data.message;
+    assertEquals(data.channel, "flutter/keyevent");
+    try {
+      assertEquals(type, message.get("type"));
+      assertEquals("android", message.get("keymap"));
+      assertEquals(keyCode, message.get("keyCode"));
+    } catch (JSONException e) {
+      assertNull(e);
     }
   }
 
@@ -90,10 +158,15 @@ public class KeyboardManagerTest {
   public void respondsTrueWhenHandlingNewEvents() {
     final KeyboardTester tester = new KeyboardTester();
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
+    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
+
+    tester.recordChannelCallsTo(calls);
+
     final boolean result = tester.keyboardManager.handleEvent(keyEvent);
 
     assertEquals(true, result);
-    // assertEquals(keyEvent, fakeResponder.mLastKeyEvent);
+    assertEquals(calls.size(), 1);
+    assertChannelEventEquals(calls.get(0).channelData, "keydown", 65);
 
     // Don't send the key event to the text plugin if the only primary responder
     // hasn't responded.

@@ -4,8 +4,6 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
-import android.os.Build;
-import android.view.InputDevice;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
