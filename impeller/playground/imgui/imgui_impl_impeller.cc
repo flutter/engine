@@ -155,31 +155,18 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
     // Convert ImGui's per-vertex data (`ImDrawVert`) into the per-vertex data
     // required by the shader (`VS::PerVectexData`). The only difference is that
     // `ImDrawVert` uses an `int` for the color and the impeller shader uses 4
-    // floats (since GLSL ES 1 doesn't support integer vertex attributes).
-    //
-    // Once the GLES 2 renderer lands, impellerc could be extended to map the 4
-    // color bytes to vec4s in the shader, i.e.:
-    //     glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, false, 4, nullptr);
-    // ...as opposed to:
-    //     glVertexAttribPointer(2, 4, GL_FLOAT, false, 16, nullptr);
-    //
-    // impellerc could e.g. detect some kind of special naming convention hint
-    // from the attribute name to support this case:
-    //     in vec4 vertex_color__byte;
-    //
-    // Such a feature would remove the need to double-copy/convert this data.
+    // floats.
 
+    // TODO(102778): Remove the need for this by adding support for attribute
+    //               mapping of uint32s host-side to vec4s shader-side in
+    //               impellerc.
     std::vector<VS::PerVertexData> vtx_data;
     vtx_data.reserve(cmd_list->VtxBuffer.size());
     for (const auto& v : cmd_list->VtxBuffer) {
-      const impeller::Scalar kScale = 1.0f / 255.0f;
-      impeller::Vector4 color(((v.col >> 0) & 0xFF) * kScale,   //
-                              ((v.col >> 8) & 0xFF) * kScale,   //
-                              ((v.col >> 16) & 0xFF) * kScale,  //
-                              ((v.col >> 24) & 0xFF) * kScale);
-      vtx_data.push_back({impeller::Point(v.pos.x, v.pos.y),  //
-                          impeller::Point(v.uv.x, v.uv.y),    //
-                          color});
+      ImVec4 color = ImGui::ColorConvertU32ToFloat4(v.col);
+      vtx_data.push_back({{v.pos.x, v.pos.y},  //
+                          {v.uv.x, v.uv.y},    //
+                          {color.x, color.y, color.z, color.w}});
     }
 
     auto draw_list_vtx_bytes =
