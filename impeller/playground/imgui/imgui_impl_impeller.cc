@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+#include "impeller/geometry/scalar.h"
+#include "impeller/geometry/vector.h"
 #include "impeller/playground/imgui/mtl/imgui_raster.frag.h"
 #include "impeller/playground/imgui/mtl/imgui_raster.vert.h"
 #include "third_party/imgui/imgui.h"
@@ -126,7 +128,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
   auto* bd = ImGui_ImplImpeller_GetBackendData();
   IM_ASSERT(bd != nullptr && "Did you call ImGui_ImplImpeller_Init()?");
 
-  size_t total_vtx_bytes = draw_data->TotalVtxCount * sizeof(ImDrawVert);
+  size_t total_vtx_bytes = draw_data->TotalVtxCount * sizeof(VS::PerVertexData);
   size_t total_idx_bytes = draw_data->TotalIdxCount * sizeof(ImDrawIdx);
   if (!total_vtx_bytes || !total_idx_bytes) {
     return;  // Nothing to render.
@@ -150,14 +152,36 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
        draw_list_i++) {
     const ImDrawList* cmd_list = draw_data->CmdLists[draw_list_i];
 
+    // Convert ImGui's per-vertex data (`ImDrawVert`) into the per-vertex data
+    // required by the shader (`VS::PerVectexData`). The only difference is that
+    // `ImDrawVert` uses an `int` for the color and the impeller shader uses 4
+    // floats (since GLSL ES 1 doesn't support integer vertex attributes).
+    //
+    // Once the GLES 2 renderer lands, impellerc could be extended to map
+    // attribute ints on the host side to vec4s in the shader (possibly by way
+    // of a naming convention hint on the attribute itself). Such a feature
+    // would remove the need to double-copy/convert this data.
+
+    std::vector<VS::PerVertexData> vtx_data;
+    vtx_data.reserve(cmd_list->VtxBuffer.size());
+    for (const auto& v : cmd_list->VtxBuffer) {
+      const impeller::Scalar kScale = 1.0f / 255.0f;
+      impeller::Vector4 color(((v.col >> 0) & 0xFF) * kScale,   //
+                              ((v.col >> 8) & 0xFF) * kScale,   //
+                              ((v.col >> 16) & 0xFF) * kScale,  //
+                              ((v.col >> 24) & 0xFF) * kScale);
+      vtx_data.push_back({impeller::Point(v.pos.x, v.pos.y),  //
+                          impeller::Point(v.uv.x, v.uv.y),    //
+                          color});
+    }
+
     auto draw_list_vtx_bytes =
-        static_cast<size_t>(cmd_list->VtxBuffer.size_in_bytes());
+        static_cast<size_t>(vtx_data.size() * sizeof(VS::PerVertexData));
     auto draw_list_idx_bytes =
         static_cast<size_t>(cmd_list->IdxBuffer.size_in_bytes());
-
-    if (!buffer->CopyHostBuffer(
-            reinterpret_cast<uint8_t*>(cmd_list->VtxBuffer.Data),
-            impeller::Range{0, draw_list_vtx_bytes}, vertex_buffer_offset)) {
+    if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vtx_data.data()),
+                                impeller::Range{0, draw_list_vtx_bytes},
+                                vertex_buffer_offset)) {
       IM_ASSERT(false && "Could not copy vertices to buffer.");
     }
     if (!buffer->CopyHostBuffer(
