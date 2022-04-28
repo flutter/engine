@@ -29,8 +29,10 @@ import org.json.JSONException;
  * io.flutter.plugin.editing.SpellCheckPlugin}, it will send to the framework the message {@code
  * SpellCheck.updateSpellCheckResults} with the {@code ArrayList<String>} of encoded spell check
  * results (see {@link
- * io.flutter.plugin.editing.SpellCheckPlugin#onGetSentenceSuggestions(SentenceSuggestionsInfo[])}
- * for details) as an argument.
+ * io.flutter.plugin.editing.SpellCheckPlugin.SpellCheckPluginSessionListener#onGetSentenceSuggestions(SentenceSuggestionsInfo[])}
+ * for details) with the text that these results correspond to appeneded to the front as an
+ * argument. For example, the argument may look like: {@code {"Hello, wrold!",
+ * "7.11.world\nword\nold"}}.
  *
  * <p>{@link io.flutter.plugin.editing.SpellCheckPlugin} implements {@link SpellCheckMethodHandler}
  * to initiate spell check. Implement {@link SpellCheckMethodHandler} to respond to spell check
@@ -80,8 +82,9 @@ public class SpellCheckChannel {
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
-  /** Responsible for sending spell check results through this channel. */
-  public void updateSpellCheckResults(ArrayList<String> spellCheckResults) {
+  /** Responsible for sending spell check results and corresponding text through this channel. */
+  public void updateSpellCheckResults(ArrayList<String> spellCheckResults, String text) {
+    spellCheckResults.add(0, text);
     channel.invokeMethod("SpellCheck.updateSpellCheckResults", spellCheckResults);
   }
 

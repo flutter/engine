@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -72,10 +73,15 @@ public class SpellCheckPluginTest {
     when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
         .thenReturn(fakeTextServicesManager);
     SpellCheckPlugin spellCheckPlugin =
-        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+    SpellCheckPlugin.SpellCheckPluginSessionListener fakeSpellCheckPluginSessionListener =
+        mock(SpellCheckPlugin.SpellCheckPluginSessionListener.class);
+
+    when(spellCheckPlugin.createSpellCheckerSessionListener("Hello, wrold!"))
+        .thenReturn(fakeSpellCheckPluginSessionListener);
     when(fakeTextServicesManager.newSpellCheckerSession(
-            null, new Locale("en", "US"), spellCheckPlugin, true))
+            null, new Locale("en", "US"), fakeSpellCheckPluginSessionListener, true))
         .thenReturn(fakeSpellCheckerSession);
 
     spellCheckPlugin.performSpellCheck("en-US", "Hello, wrold!");
@@ -93,13 +99,19 @@ public class SpellCheckPluginTest {
     when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
         .thenReturn(fakeTextServicesManager);
     SpellCheckPlugin spellCheckPlugin =
-        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+    SpellCheckPlugin.SpellCheckPluginSessionListener fakeSpellCheckPluginSessionListener =
+        mock(SpellCheckPlugin.SpellCheckPluginSessionListener.class);
     Locale english_US = new Locale("en", "US");
-    when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
-        .thenReturn(fakeSpellCheckerSession);
-    int maxSuggestions = 5;
 
+    when(spellCheckPlugin.createSpellCheckerSessionListener("Hello, wrold!"))
+        .thenReturn(fakeSpellCheckPluginSessionListener);
+    when(fakeTextServicesManager.newSpellCheckerSession(
+            null, english_US, fakeSpellCheckPluginSessionListener, true))
+        .thenReturn(fakeSpellCheckerSession);
+
+    int maxSuggestions = 5;
     ArgumentCaptor<TextInfo[]> textInfosCaptor = ArgumentCaptor.forClass(TextInfo[].class);
     ArgumentCaptor<Integer> maxSuggestionsCaptor = ArgumentCaptor.forClass(Integer.class);
 
@@ -119,17 +131,25 @@ public class SpellCheckPluginTest {
     when(fakeContext.getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE))
         .thenReturn(fakeTextServicesManager);
     SpellCheckPlugin spellCheckPlugin =
-        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
+    SpellCheckPlugin.SpellCheckPluginSessionListener fakeSpellCheckPluginSessionListener =
+        mock(SpellCheckPlugin.SpellCheckPluginSessionListener.class);
     Locale english_US = new Locale("en", "US");
-    when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
+
+    when(spellCheckPlugin.createSpellCheckerSessionListener("Hello, worl!"))
+        .thenReturn(fakeSpellCheckPluginSessionListener);
+    when(spellCheckPlugin.createSpellCheckerSessionListener("Hello, world!"))
+        .thenReturn(fakeSpellCheckPluginSessionListener);
+    when(fakeTextServicesManager.newSpellCheckerSession(
+            null, english_US, fakeSpellCheckPluginSessionListener, true))
         .thenReturn(fakeSpellCheckerSession);
 
     spellCheckPlugin.performSpellCheck("en-US", "Hello, worl!");
     spellCheckPlugin.performSpellCheck("en-US", "Hello, world!");
 
     verify(fakeTextServicesManager, times(2))
-        .newSpellCheckerSession(null, english_US, spellCheckPlugin, true);
+        .newSpellCheckerSession(null, english_US, fakeSpellCheckPluginSessionListener, true);
   }
 
   @Test
@@ -137,9 +157,15 @@ public class SpellCheckPluginTest {
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
     SpellCheckPlugin spellCheckPlugin =
-        new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel);
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
+    SpellCheckPlugin.SpellCheckPluginSessionListener fakeSpellCheckPluginSessionListener =
+        spy(spellCheckPlugin.createSpellCheckerSessionListener("Hello, wrold!"));
 
-    spellCheckPlugin.onGetSentenceSuggestions(
+    when(fakeSpellCheckPluginSessionListener.getSpellCheckChannel())
+        .thenReturn(fakeSpellCheckChannel);
+    when(fakeSpellCheckPluginSessionListener.getText()).thenReturn("Hello, wrold!");
+
+    fakeSpellCheckPluginSessionListener.onGetSentenceSuggestions(
         new SentenceSuggestionsInfo[] {
           new SentenceSuggestionsInfo(
               (new SuggestionsInfo[] {
@@ -152,6 +178,7 @@ public class SpellCheckPluginTest {
         });
 
     verify(fakeSpellCheckChannel)
-        .updateSpellCheckResults(new ArrayList<String>(Arrays.asList("7.11.world\nword\nold")));
+        .updateSpellCheckResults(
+            new ArrayList<String>(Arrays.asList("7.11.world\nword\nold")), "Hello, wrold!");
   }
 }
