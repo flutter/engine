@@ -68,6 +68,15 @@ PlaygroundImplMTL::PlaygroundImplMTL()
   }
   data_->metal_layer = [CAMetalLayer layer];
   data_->metal_layer.device = ContextMTL::Cast(*context).GetMTLDevice();
+
+  // Allow shaders to bind the on-screen textures.
+  data_->metal_layer.framebufferOnly = NO;
+  if (@available(macOS 10.13, *)) {
+    // When calling nextDrawable, wait for the texture to become available
+    // indefinitely.
+    data_->metal_layer.allowsNextDrawableTimeout = NO;
+  }
+
   // This pixel format is one of the documented supported formats.
   data_->metal_layer.pixelFormat = ToMTLPixelFormat(PixelFormat::kDefaultColor);
   cocoa_window.contentView.layer = data_->metal_layer;

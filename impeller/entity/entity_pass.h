@@ -44,8 +44,9 @@ class EntityPass {
   EntityPass* GetSuperpass() const;
 
   bool Render(ContentContext& renderer,
-              RenderPass& parent_pass,
-              Point position = Point()) const;
+              RenderTarget& render_target,
+              Point position = Point(),
+              uint32_t depth = 0) const;
 
   void IterateAllEntities(std::function<bool(Entity&)> iterator);
 

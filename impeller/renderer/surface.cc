@@ -30,7 +30,7 @@ bool Surface::IsValid() const {
   return is_valid_;
 }
 
-const RenderTarget& Surface::GetTargetRenderPassDescriptor() const {
+RenderTarget& Surface::GetTargetRenderPassDescriptor() {
   return desc_;
 }
 
