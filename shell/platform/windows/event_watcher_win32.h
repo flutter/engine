@@ -11,13 +11,13 @@
 
 namespace flutter {
 
-// A win32 `HANDLE` wrapper to use it as one-time callback.
+// A win32 `HANDLE` wrapper for use as a one-time callback.
 class EventWatcherWin32 {
  public:
   explicit EventWatcherWin32(std::function<void()> callback);
   ~EventWatcherWin32();
 
-  // Returns `HANDLE` that can be used to register.
+  // Returns `HANDLE`, which can be used to register an event listener.
   HANDLE GetHandle();
 
  private:

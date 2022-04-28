@@ -15,6 +15,9 @@
 namespace flutter {
 
 // Abstract settings plugin.
+//
+// Used to look up and notify Flutter of user-configured system settings.
+// These are typically set in the control panel.
 class SettingsPlugin {
  public:
   explicit SettingsPlugin(BinaryMessenger* messenger, TaskRunner* task_runner);
@@ -27,7 +30,7 @@ class SettingsPlugin {
   // Sends settings (e.g., platform brightness) to the engine.
   void SendSettings();
 
-  // Start watching settings change and notify the engine ot the update.
+  // Start watching settings changes and notify the engine of the update.
   virtual void StartWatching() = 0;
 
   // Stop watching settings change. The `SettingsPlugin` destructor will call
