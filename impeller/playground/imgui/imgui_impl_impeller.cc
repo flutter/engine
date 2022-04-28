@@ -157,10 +157,17 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
     // `ImDrawVert` uses an `int` for the color and the impeller shader uses 4
     // floats (since GLSL ES 1 doesn't support integer vertex attributes).
     //
-    // Once the GLES 2 renderer lands, impellerc could be extended to map
-    // attribute ints on the host side to vec4s in the shader (possibly by way
-    // of a naming convention hint on the attribute itself). Such a feature
-    // would remove the need to double-copy/convert this data.
+    // Once the GLES 2 renderer lands, impellerc could be extended to map the 4
+    // color bytes to vec4s in the shader, i.e.:
+    //     glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, false, 4, nullptr);
+    // ...as opposed to:
+    //     glVertexAttribPointer(2, 4, GL_FLOAT, false, 16, nullptr);
+    //
+    // impellerc could e.g. detect some kind of special naming convention hint
+    // from the attribute name to support this case:
+    //     in vec4 vertex_color__byte;
+    //
+    // Such a feature would remove the need to double-copy/convert this data.
 
     std::vector<VS::PerVertexData> vtx_data;
     vtx_data.reserve(cmd_list->VtxBuffer.size());
