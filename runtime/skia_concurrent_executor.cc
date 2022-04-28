@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+#include <utility>
 
 #include "flutter/runtime/skia_concurrent_executor.h"
 
@@ -17,9 +18,9 @@ void SkiaConcurrentExecutor::add(fml::closure work) {
   if (!work) {
     return;
   }
-  on_work_([work]() {
+  on_work_([work_ = std::move(work)]() {
     TRACE_EVENT0("flutter", "SkiaExecutor");
-    work();
+    work_();
   });
 }
 
