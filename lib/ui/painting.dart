@@ -2053,19 +2053,11 @@ Future<Codec> instantiateImageCodec(
   bool allowUpscaling = true,
 }) async {
   final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(list);
-  final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
-  if (!allowUpscaling) {
-    if (targetWidth != null && targetWidth > descriptor.width) {
-      targetWidth = descriptor.width;
-    }
-    if (targetHeight != null && targetHeight > descriptor.height) {
-      targetHeight = descriptor.height;
-    }
-  }
-  buffer.dispose();
-  return descriptor.instantiateCodec(
+  return instantiateImageCodecFromBuffer(
+    buffer,
     targetWidth: targetWidth,
     targetHeight: targetHeight,
+    allowUpscaling: allowUpscaling,
   );
 }
 
