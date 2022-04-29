@@ -1866,6 +1866,24 @@ class _RepositoryVulkanDirectory extends _RepositoryDirectory {
   }
 }
 
+class _RepositoryVulkanMemoryAllocatorDirectory extends _RepositoryDirectory {
+  _RepositoryVulkanMemoryAllocatorDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    // Flutter only uses the headers in the include directory.
+    return entry.name == 'include'
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'src')
+      return _RepositoryExcludeSubpathDirectory(this, entry, const <String>['spec']);
+    return super.createSubdirectory(entry);
+  }
+}
+
 class _RepositoryWuffsDirectory extends _RepositoryDirectory {
   _RepositoryWuffsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1964,6 +1982,8 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
       return _RepositoryPkgDirectory(this, entry);
     if (entry.name == 'vulkan')
       return _RepositoryVulkanDirectory(this, entry);
+    if (!entry.fullName.endsWith('externals/vulkanmemoryallocator'))
+      return _RepositoryVulkanMemoryAllocatorDirectory(this, entry);
     if (entry.name == 'wuffs')
       return _RepositoryWuffsDirectory(this, entry);
     if (entry.name == 'web_dependencies')
