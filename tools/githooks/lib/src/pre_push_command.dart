@@ -53,6 +53,7 @@ class PrePushCommand extends Command<bool> {
         'compile_commands.json',
       ));
       if (!compileCommands.existsSync()) {
+        io.stderr.writeln('clang-tidy requires a fully built host_debug or host_debug_unopt build directory');
         return false;
       }
     }
