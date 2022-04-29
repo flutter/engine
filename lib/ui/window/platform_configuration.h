@@ -99,7 +99,6 @@ class PlatformConfigurationClient {
   ///             creation.
   virtual FontCollection& GetFontCollection() = 0;
 
-
   //--------------------------------------------------------------------------
   /// @brief      Returns the current collection of assets available on the
   ///             platform.
