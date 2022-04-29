@@ -5566,17 +5566,12 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
 
   /// Create a buffer from the asset with key [assetKey].
   ///
-  /// Returns `null` if the asset does not exist.
-  static ImmutableBuffer? fromAsset(String assetKey) {
-    final ImmutableBuffer buffer = ImmutableBuffer._(0);
-    bool success = false;
-    buffer._initFromAsset(assetKey, (void result) {
-      success = true;
-    });
-    if (!success) {
-      return null;
-    }
-    return buffer;
+  /// Throws an [Exception] if the asset does not exist.
+  static Future<ImmutableBuffer> fromAsset(String assetKey) {
+    final ImmutableBuffer instance = ImmutableBuffer._(0);
+    return _futurize((_Callback<void> callback) {
+      return instance._initFromAsset(assetKey, callback);
+    }).then((_) => instance);
   }
 
   void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
