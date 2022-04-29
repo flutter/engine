@@ -79,8 +79,8 @@ struct MouseState {
   /**
    * The accumulated gesture pan.
    */
-  CGFloat deltaX = 0;
-  CGFloat deltaY = 0;
+  CGFloat delta_x = 0;
+  CGFloat delta_y = 0;
 
   /**
    * Scale gesture is currently sending us events.
@@ -106,8 +106,8 @@ struct MouseState {
    * Resets all gesture state to default values.
    */
   void GestureReset() {
-    deltaX = 0;
-    deltaY = 0;
+    delta_x = 0;
+    delta_y = 0;
     scale = 0;
     rotation = 0;
   }
@@ -675,15 +675,15 @@ static void CommonInit(FlutterViewController* controller) {
 
   if (phase == kPanZoomUpdate) {
     if (event.type == NSEventTypeScrollWheel) {
-      _mouseState.deltaX += event.scrollingDeltaX * self.flutterView.layer.contentsScale;
-      _mouseState.deltaY += event.scrollingDeltaY * self.flutterView.layer.contentsScale;
+      _mouseState.delta_x += event.scrollingDeltaX * self.flutterView.layer.contentsScale;
+      _mouseState.delta_y += event.scrollingDeltaY * self.flutterView.layer.contentsScale;
     } else if (event.type == NSEventTypeMagnify) {
       _mouseState.scale += event.magnification;
     } else if (event.type == NSEventTypeRotate) {
       _mouseState.rotation += event.rotation * (M_PI / 180.0);
     }
-    flutterEvent.pan_x = _mouseState.deltaX;
-    flutterEvent.pan_y = _mouseState.deltaY;
+    flutterEvent.pan_x = _mouseState.delta_x;
+    flutterEvent.pan_y = _mouseState.delta_y;
     // Scale value needs to be normalized to range 0->infinity.
     flutterEvent.scale = pow(2.0, _mouseState.scale);
     flutterEvent.rotation = _mouseState.rotation;
