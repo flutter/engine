@@ -12,6 +12,6 @@ void main() {
   });
 
   test('returns the bytes of a bundled asset', () {
-    expect(ui.ImmutableBuffer.fromAsset('FontManifest.json'), isNotNull);
+    expect(ui.ImmutableBuffer.fromAsset('assets/DashInNooglerHat.jpg'), isNotNull);
   });
 }
