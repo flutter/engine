@@ -422,6 +422,10 @@ deps = {
    'src/third_party/vulkan-headers':
    Var('github_git') + '/KhronosGroup/Vulkan-Headers.git' + '@' + '0e57fc1cfa56a203efe43e4dfb9b3c9e9b105593',
 
+   # Skia VMA dependency.
+  'src/third_party/externals/vulkanmemoryallocator':
+   Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',
+
    # Downstream Fuchsia Vulkan Headers (v1.2.198)
   'src/third_party/fuchsia-vulkan':
    Var('fuchsia_git') + '/third_party/Vulkan-Headers.git' + '@' + '32640ad82ef648768c706c9bf828b77123a09bc2',
