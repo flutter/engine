@@ -77,7 +77,7 @@ struct MouseState {
   bool pan_gesture_active = false;
 
   /**
-   * The accumulated gesture pan
+   * The accumulated gesture pan.
    */
   CGFloat deltaX = 0;
   CGFloat deltaY = 0;
@@ -88,7 +88,7 @@ struct MouseState {
   bool scale_gesture_active = false;
 
   /**
-   * The accumulated gesture zoom scale
+   * The accumulated gesture zoom scale.
    */
   CGFloat scale = 0;
 
@@ -98,7 +98,7 @@ struct MouseState {
   bool rotate_gesture_active = false;
 
   /**
-   * The accumulated gesture rotation
+   * The accumulated gesture rotation.
    */
   CGFloat rotation = 0;
 
@@ -592,7 +592,7 @@ static void CommonInit(FlutterViewController* controller) {
   } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
     [self dispatchMouseEvent:event phase:kHover];
   } else {
-    // Skip momentum events, the framework will generate scroll momentum
+    // Skip momentum events, the framework will generate scroll momentum.
     NSAssert(event.momentumPhase != NSEventPhaseNone,
              @"Received gesture event with unexpected phase");
   }
@@ -607,8 +607,8 @@ static void CommonInit(FlutterViewController* controller) {
     return;
   }
 
-  // Multiple gesture recognizers could be active at once, we can't send multiple kPanZoomStart
-  // For example, rotation and magnification
+  // Multiple gesture recognizers could be active at once, we can't send multiple kPanZoomStart.
+  // For example: rotation and magnification.
   if (phase == kPanZoomStart) {
     bool gestureAlreadyDown = _mouseState.pan_gesture_active || _mouseState.scale_gesture_active ||
                               _mouseState.rotate_gesture_active;

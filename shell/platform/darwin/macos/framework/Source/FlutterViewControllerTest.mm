@@ -602,7 +602,7 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
 
-  // May-begin and cancel are used while macOS determines which type of gesture to choose
+  // May-begin and cancel are used while macOS determines which type of gesture to choose.
   CGEventRef cgEventMayBegin = CGEventCreateCopy(cgEventStart);
   CGEventSetIntegerValueField(cgEventMayBegin, kCGScrollWheelEventScrollPhase,
                               kCGScrollPhaseMayBegin);
