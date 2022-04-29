@@ -484,6 +484,20 @@ Future<Codec> instantiateImageCodec(
   }
 }
 
+Future<Codec> instantiateImageCodecFromBuffer(
+  ImmutableBuffer buffer, {
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
+}) async {
+  if (engine.useCanvasKit) {
+    return engine.skiaInstantiateImageCodec(buffer._list!, targetWidth, targetHeight);
+  } else {
+    final html.Blob blob = html.Blob(<dynamic>[buffer._list!.buffer]);
+    return engine.HtmlBlobCodec(blob);
+  }
+}
+
 Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
   {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
   if (engine.useCanvasKit) {
@@ -740,6 +754,11 @@ class ImmutableBuffer {
     final ImmutableBuffer instance = ImmutableBuffer._(list.length);
     instance._list = list;
     return instance;
+  }
+
+  static ImmutableBuffer? fromAsset(String assetKey) {
+    assert(false, 'ImmutableBuffer.fromAsset is not supported on the web.');
+    return null;
   }
 
   Uint8List? _list;

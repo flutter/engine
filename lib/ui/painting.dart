@@ -2069,6 +2069,56 @@ Future<Codec> instantiateImageCodec(
   );
 }
 
+/// Instantiates an image [Codec].
+///
+/// This method is a convenience wrapper around the [ImageDescriptor] API, and
+/// using [ImageDescriptor] directly is preferred since it allows the caller to
+/// make better determinations about how and whether to use the `targetWidth`
+/// and `targetHeight` parameters.
+///
+/// The [buffer] parameter is the binary image data (e.g a PNG or GIF binary data).
+/// The data can be for either static or animated images. The following image
+/// formats are supported: {@macro dart.ui.imageFormats}
+///
+/// The [targetWidth] and [targetHeight] arguments specify the size of the
+/// output image, in image pixels. If they are not equal to the intrinsic
+/// dimensions of the image, then the image will be scaled after being decoded.
+/// If the `allowUpscaling` parameter is not set to true, both dimensions will
+/// be capped at the intrinsic dimensions of the image, even if only one of
+/// them would have exceeded those intrinsic dimensions. If exactly one of these
+/// two arguments is specified, then the aspect ratio will be maintained while
+/// forcing the image to match the other given dimension. If neither is
+/// specified, then the image maintains its intrinsic size.
+///
+/// Scaling the image to larger than its intrinsic size should usually be
+/// avoided, since it causes the image to use more memory than necessary.
+/// Instead, prefer scaling the [Canvas] transform. If the image must be scaled
+/// up, the `allowUpscaling` parameter must be set to true.
+///
+/// The returned future can complete with an error if the image decoding has
+/// failed.
+Future<Codec> instantiateImageCodecFromBuffer(
+  ImmutableBuffer buffer, {
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
+}) async {
+  final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+  if (!allowUpscaling) {
+    if (targetWidth != null && targetWidth > descriptor.width) {
+      targetWidth = descriptor.width;
+    }
+    if (targetHeight != null && targetHeight > descriptor.height) {
+      targetHeight = descriptor.height;
+    }
+  }
+  buffer.dispose();
+  return descriptor.instantiateCodec(
+    targetWidth: targetWidth,
+    targetHeight: targetHeight,
+  );
+}
+
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
 /// This is a convenience wrapper around [instantiateImageCodec]. Prefer using
@@ -5521,7 +5571,25 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
       instance._init(list, callback);
     }).then((_) => instance);
   }
+
+  /// Create a buffer from the asset with key [assetKey].
+  ///
+  /// Returns `null` if the asset does not exist.
+  static ImmutableBuffer? fromAsset(String assetKey) {
+    final ImmutableBuffer buffer = ImmutableBuffer._(0);
+    bool success = false;
+    buffer._initFromAsset(assetKey, (void result) {
+      success = true;
+    });
+    if (!success) {
+      return null;
+    }
+    return buffer;
+  }
+
   void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
+
+  String? _initFromAsset(String assetKey, _Callback<void> callback) native 'ImmutableBuffer_initFromAsset';
 
   /// The length, in bytes, of the underlying data.
   final int length;
