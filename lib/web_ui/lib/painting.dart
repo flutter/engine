@@ -756,9 +756,8 @@ class ImmutableBuffer {
     return instance;
   }
 
-  static ImmutableBuffer? fromAsset(String assetKey) {
-    assert(false, 'ImmutableBuffer.fromAsset is not supported on the web.');
-    return null;
+  static Future<ImmutableBuffer> fromAsset(String assetKey) async {
+    throw UnsupportedError('ImmutableBuffer.fromAsset is not supported on the web.');
   }
 
   Uint8List? _list;
