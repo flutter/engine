@@ -375,6 +375,7 @@ bool FileExists(const fml::UniqueFD& base_directory, const char* path) {
          INVALID_FILE_ATTRIBUTES;
 }
 
+// TODO(jonahwilliams): https://github.com/flutter/flutter/issues/102838 this is not atomic on Windows.
 bool WriteAtomically(const fml::UniqueFD& base_directory,
                      const char* file_name,
                      const Mapping& mapping) {
