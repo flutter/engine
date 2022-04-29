@@ -18,7 +18,8 @@ struct _FlScrollingManager {
   gdouble pan_x;
   gdouble pan_y;
 
-  gboolean zoom_rotate_started;
+  gboolean zoom_started;
+  gboolean rotate_started;
   gdouble scale;
   gdouble rotation;
 };
@@ -46,7 +47,8 @@ FlScrollingManager* fl_scrolling_manager_new(
 
   self->view_delegate = view_delegate;
   self->pan_started = false;
-  self->zoom_rotate_started = false;
+  self->zoom_started = false;
+  self->rotate_started = false;
 
   return self;
 }
@@ -120,8 +122,8 @@ void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* manager,
 }
 
 void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* manager) {
-  if (!manager->zoom_rotate_started) {
-    manager->zoom_rotate_started = true;
+  manager->rotate_started = true;
+  if (!manager->zoom_started) {
     manager->scale = 1;
     manager->rotation = 0;
     fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
@@ -138,8 +140,8 @@ void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* manager,
       manager->last_y, kPanZoomUpdate, 0, 0, manager->scale, manager->rotation);
 }
 void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* manager) {
-  if (manager->zoom_rotate_started) {
-    manager->zoom_rotate_started = false;
+  manager->rotate_started = false;
+  if (!manager->zoom_started) {
     fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
         manager->view_delegate, g_get_real_time(), manager->last_x,
         manager->last_y, kPanZoomEnd, 0, 0, 0, 0);
@@ -147,8 +149,8 @@ void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* manager) {
 }
 
 void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* manager) {
-  if (!manager->zoom_rotate_started) {
-    manager->zoom_rotate_started = true;
+  manager->zoom_started = true;
+  if (!manager->rotate_started) {
     manager->scale = 1;
     manager->rotation = 0;
     fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
@@ -164,8 +166,8 @@ void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* manager,
       manager->last_y, kPanZoomUpdate, 0, 0, manager->scale, manager->rotation);
 }
 void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* manager) {
-  if (manager->zoom_rotate_started) {
-    manager->zoom_rotate_started = false;
+  manager->zoom_started = false;
+  if (!manager->rotate_started) {
     fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
         manager->view_delegate, g_get_real_time(), manager->last_x,
         manager->last_y, kPanZoomEnd, 0, 0, 0, 0);

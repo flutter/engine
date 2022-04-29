@@ -8,17 +8,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-
-// Define compound `expect` in macros. If they were defined in functions, the
-// stacktrace wouldn't print where the function is called in the unit tests.
-
-#define EXPECT_KEY_EVENT(EVENT, TYPE, PHYSICAL, LOGICAL, CHAR, SYNTHESIZED) \
-  EXPECT_EQ((EVENT)->type, (TYPE));                                         \
-  EXPECT_EQ((EVENT)->physical, (PHYSICAL));                                 \
-  EXPECT_EQ((EVENT)->logical, (LOGICAL));                                   \
-  EXPECT_STREQ((EVENT)->character, (CHAR));                                 \
-  EXPECT_EQ((EVENT)->synthesized, (SYNTHESIZED));
-
 namespace {
 typedef std::function<void(FlutterPointerPhase phase,
                            size_t timestamp,
@@ -445,7 +434,7 @@ TEST(FlScrollingManagerTest, Rotating) {
   EXPECT_GE(pan_zoom_records[2].timestamp, pan_zoom_records[1].timestamp);
 }
 
-TEST(FlScrollingManagerTest, SimultaneousZoomingAndRotating) {
+TEST(FlScrollingManagerTest, SynchronizedZoomingAndRotating) {
   ScrollingTester tester;
   std::vector<MousePointerEventRecord> mouse_records;
   std::vector<PointerPanZoomEventRecord> pan_zoom_records;
@@ -484,17 +473,77 @@ TEST(FlScrollingManagerTest, SimultaneousZoomingAndRotating) {
   EXPECT_EQ(pan_zoom_records[2].scale, 1.1);
   EXPECT_EQ(pan_zoom_records[2].rotation, 0.5);
   fl_scrolling_manager_handle_zoom_end(tester.manager());
-  // TODO(moffatman): Both gestures always end at the same time. If that wasn't
-  // the case it would cause problems.
+  // End event should only be sent after both zoom and rotate complete.
+  EXPECT_EQ(pan_zoom_records.size(), 3u);
+  fl_scrolling_manager_handle_rotation_end(tester.manager());
   EXPECT_EQ(pan_zoom_records.size(), 4u);
   EXPECT_EQ(mouse_records.size(), 0u);
   EXPECT_EQ(pan_zoom_records[3].x, 0);
   EXPECT_EQ(pan_zoom_records[3].y, 0);
   EXPECT_EQ(pan_zoom_records[3].phase, kPanZoomEnd);
   EXPECT_GE(pan_zoom_records[3].timestamp, pan_zoom_records[2].timestamp);
-  fl_scrolling_manager_handle_rotation_end(tester.manager());
+}
+
+// Make sure that zoom and rotate sequences which don't end at the same time
+// don't cause any problems.
+TEST(FlScrollingManagerTest, UnsynchronizedZoomingAndRotating) {
+  ScrollingTester tester;
+  std::vector<MousePointerEventRecord> mouse_records;
+  std::vector<PointerPanZoomEventRecord> pan_zoom_records;
+  tester.recordMousePointerCallsTo(mouse_records);
+  tester.recordPointerPanZoomCallsTo(pan_zoom_records);
+  size_t time_start = g_get_real_time();
+  fl_scrolling_manager_handle_zoom_begin(tester.manager());
+  EXPECT_EQ(pan_zoom_records.size(), 1u);
+  EXPECT_EQ(mouse_records.size(), 0u);
+  EXPECT_EQ(pan_zoom_records[0].x, 0);
+  EXPECT_EQ(pan_zoom_records[0].y, 0);
+  EXPECT_EQ(pan_zoom_records[0].phase, kPanZoomStart);
+  EXPECT_GE(pan_zoom_records[0].timestamp, time_start);
+  fl_scrolling_manager_handle_zoom_update(tester.manager(), 1.1);
+  EXPECT_EQ(pan_zoom_records.size(), 2u);
+  EXPECT_EQ(mouse_records.size(), 0u);
+  EXPECT_EQ(pan_zoom_records[1].x, 0);
+  EXPECT_EQ(pan_zoom_records[1].y, 0);
+  EXPECT_EQ(pan_zoom_records[1].phase, kPanZoomUpdate);
+  EXPECT_GE(pan_zoom_records[1].timestamp, pan_zoom_records[0].timestamp);
+  EXPECT_EQ(pan_zoom_records[1].pan_x, 0);
+  EXPECT_EQ(pan_zoom_records[1].pan_y, 0);
+  EXPECT_EQ(pan_zoom_records[1].scale, 1.1);
+  EXPECT_EQ(pan_zoom_records[1].rotation, 0);
+  fl_scrolling_manager_handle_rotation_begin(tester.manager());
+  EXPECT_EQ(pan_zoom_records.size(), 2u);
+  EXPECT_EQ(mouse_records.size(), 0u);
+  fl_scrolling_manager_handle_rotation_update(tester.manager(), 0.5);
+  EXPECT_EQ(pan_zoom_records.size(), 3u);
+  EXPECT_EQ(pan_zoom_records[2].x, 0);
+  EXPECT_EQ(pan_zoom_records[2].y, 0);
+  EXPECT_EQ(pan_zoom_records[2].phase, kPanZoomUpdate);
+  EXPECT_GE(pan_zoom_records[2].timestamp, pan_zoom_records[1].timestamp);
+  EXPECT_EQ(pan_zoom_records[2].pan_x, 0);
+  EXPECT_EQ(pan_zoom_records[2].pan_y, 0);
+  EXPECT_EQ(pan_zoom_records[2].scale, 1.1);
+  EXPECT_EQ(pan_zoom_records[2].rotation, 0.5);
+  fl_scrolling_manager_handle_zoom_end(tester.manager());
+  EXPECT_EQ(pan_zoom_records.size(), 3u);
+  fl_scrolling_manager_handle_rotation_update(tester.manager(), 1.0);
   EXPECT_EQ(pan_zoom_records.size(), 4u);
   EXPECT_EQ(mouse_records.size(), 0u);
+  EXPECT_EQ(pan_zoom_records[3].x, 0);
+  EXPECT_EQ(pan_zoom_records[3].y, 0);
+  EXPECT_EQ(pan_zoom_records[3].phase, kPanZoomUpdate);
+  EXPECT_GE(pan_zoom_records[3].timestamp, pan_zoom_records[2].timestamp);
+  EXPECT_EQ(pan_zoom_records[3].pan_x, 0);
+  EXPECT_EQ(pan_zoom_records[3].pan_y, 0);
+  EXPECT_EQ(pan_zoom_records[3].scale, 1.1);
+  EXPECT_EQ(pan_zoom_records[3].rotation, 1.0);
+  fl_scrolling_manager_handle_rotation_end(tester.manager());
+  EXPECT_EQ(pan_zoom_records.size(), 5u);
+  EXPECT_EQ(mouse_records.size(), 0u);
+  EXPECT_EQ(pan_zoom_records[4].x, 0);
+  EXPECT_EQ(pan_zoom_records[4].y, 0);
+  EXPECT_EQ(pan_zoom_records[4].phase, kPanZoomEnd);
+  EXPECT_GE(pan_zoom_records[4].timestamp, pan_zoom_records[3].timestamp);
 }
 
 }  // namespace
