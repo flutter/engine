@@ -56,12 +56,14 @@ FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.h
 FILE: ../../../flutter/display_list/display_list_canvas_recorder.cc
 FILE: ../../../flutter/display_list/display_list_canvas_recorder.h
 FILE: ../../../flutter/display_list/display_list_canvas_unittests.cc
+FILE: ../../../flutter/display_list/display_list_color.h
 FILE: ../../../flutter/display_list/display_list_color_filter.cc
 FILE: ../../../flutter/display_list/display_list_color_filter.h
 FILE: ../../../flutter/display_list/display_list_color_filter_unittests.cc
 FILE: ../../../flutter/display_list/display_list_color_source.cc
 FILE: ../../../flutter/display_list/display_list_color_source.h
 FILE: ../../../flutter/display_list/display_list_color_source_unittests.cc
+FILE: ../../../flutter/display_list/display_list_color_unittests.cc
 FILE: ../../../flutter/display_list/display_list_comparable.h
 FILE: ../../../flutter/display_list/display_list_complexity.cc
 FILE: ../../../flutter/display_list/display_list_complexity.h
@@ -197,6 +199,7 @@ FILE: ../../../flutter/flow/surface.cc
 FILE: ../../../flutter/flow/surface.h
 FILE: ../../../flutter/flow/surface_frame.cc
 FILE: ../../../flutter/flow/surface_frame.h
+FILE: ../../../flutter/flow/surface_frame_unittests.cc
 FILE: ../../../flutter/flow/texture_unittests.cc
 FILE: ../../../flutter/fml/ascii_trie.cc
 FILE: ../../../flutter/fml/ascii_trie.h
@@ -983,6 +986,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/viewport_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/configuration.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/embedder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
@@ -1889,6 +1893,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_control
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.h
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_test_component_controller_v2.cc
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_test_component_controller_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/builtin.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/script_runner_snapshot.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/shim.dart
@@ -2223,6 +2229,8 @@ FILE: ../../../flutter/shell/platform/windows/display_helper_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32.cc
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32.h
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/event_watcher_win32.cc
+FILE: ../../../flutter/shell/platform/windows/event_watcher_win32.h
 FILE: ../../../flutter/shell/platform/windows/external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/windows/external_texture_gl.h
 FILE: ../../../flutter/shell/platform/windows/flutter_key_map.cc
@@ -2279,6 +2287,13 @@ FILE: ../../../flutter/shell/platform/windows/public/flutter_windows.h
 FILE: ../../../flutter/shell/platform/windows/sequential_id_generator.cc
 FILE: ../../../flutter/shell/platform/windows/sequential_id_generator.h
 FILE: ../../../flutter/shell/platform/windows/sequential_id_generator_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/settings_plugin.cc
+FILE: ../../../flutter/shell/platform/windows/settings_plugin.h
+FILE: ../../../flutter/shell/platform/windows/settings_plugin_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/settings_plugin_win32.cc
+FILE: ../../../flutter/shell/platform/windows/settings_plugin_win32.h
+FILE: ../../../flutter/shell/platform/windows/settings_plugin_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/settings_plugin_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/system_utils.h
 FILE: ../../../flutter/shell/platform/windows/system_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/system_utils_win32.cc

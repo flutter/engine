@@ -1,4 +1,4 @@
-Signature: d59bb61a454b30cdba52b57c8df75305
+Signature: 3952b6c9fcdd1ab07126d537827915fa
 
 UNUSED LICENSES:
 
@@ -3637,6 +3637,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.element/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/connector.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/dynamics.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/equalizer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/gain.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/overview.fidl

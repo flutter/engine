@@ -1,4 +1,4 @@
-Signature: 2bae9fd90eb1bec8eb2cc667d7f38168
+Signature: d2572ace40e6a61beb0e7b4e61c4d225
 
 UNUSED LICENSES:
 
@@ -2813,6 +2813,7 @@ FILE: ../../../third_party/skia/src/core/SkBlenderBase.h
 FILE: ../../../third_party/skia/src/core/SkCustomMesh.cpp
 FILE: ../../../third_party/skia/src/core/SkCustomMeshPriv.cpp
 FILE: ../../../third_party/skia/src/core/SkCustomMeshPriv.h
+FILE: ../../../third_party/skia/src/core/SkEnumBitMask.h
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.h
 FILE: ../../../third_party/skia/src/core/SkUniform.h
@@ -2880,7 +2881,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/DrawPass.h
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawTypes.h
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawWriter.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawWriter.h
-FILE: ../../../third_party/skia/src/gpu/graphite/EnumBitMask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Gpu.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Gpu.h
 FILE: ../../../third_party/skia/src/gpu/graphite/GpuWorkSubmission.h
@@ -2948,7 +2948,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSharedCompiler.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLSharedCompiler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLThreadContext.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCanExitWithoutReturningValue.cpp
-FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCheckProgramUnrolledSize.cpp
+FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCheckProgramStructure.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLGetLoopUnrollInfo.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsConstantExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.cpp
@@ -6184,6 +6184,7 @@ FILE: ../../../third_party/skia/src/core/SkPipelineData.h
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.h
+FILE: ../../../third_party/skia/src/gpu/AtlasTypes.cpp
 FILE: ../../../third_party/skia/src/gpu/AtlasTypes.h
 FILE: ../../../third_party/skia/src/gpu/RefCntedCallback.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrImageInfo.cpp
@@ -6215,6 +6216,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/Sampler.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureProxyView.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureUtils.h
+FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.h
