@@ -1982,7 +1982,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
       return _RepositoryPkgDirectory(this, entry);
     if (entry.name == 'vulkan')
       return _RepositoryVulkanDirectory(this, entry);
-    if (!entry.fullName.endsWith('externals/vulkanmemoryallocator'))
+    if (entry.fullName.endsWith('externals/vulkanmemoryallocator'))
       return _RepositoryVulkanMemoryAllocatorDirectory(this, entry);
     if (entry.name == 'wuffs')
       return _RepositoryWuffsDirectory(this, entry);
