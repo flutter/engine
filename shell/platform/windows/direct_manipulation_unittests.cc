@@ -145,8 +145,7 @@ TEST(DirectManipulationTest, TestGesture) {
   MockIDirectManipulationContent content;
   MockWindowBindingHandlerDelegate delegate;
   MockIDirectManipulationViewport viewport;
-  const float scale = 1.1;
-  const float scale_rounded = 1.0999999046325684;
+  const float scale = 1.5;
   const float pan_x = 32.0;
   const float pan_y = 16.0;
   const int DISPLAY_WIDTH = 800;
@@ -154,7 +153,7 @@ TEST(DirectManipulationTest, TestGesture) {
   auto owner = std::make_unique<DirectManipulationOwner>(nullptr);
   owner->SetBindingHandlerDelegate(&delegate);
   auto handler =
-      fml::MakeRefCounted<DirectManipulationEventHandler>(nullptr, owner.get());
+      fml::MakeRefCounted<DirectManipulationEventHandler>(owner.get());
   int32_t device_id = (int32_t) reinterpret_cast<int64_t>(handler.get());
   EXPECT_CALL(delegate, OnPointerPanZoomStart(device_id));
   handler->OnViewportStatusChanged((IDirectManipulationViewport*)&viewport,
@@ -168,8 +167,8 @@ TEST(DirectManipulationTest, TestGesture) {
             transform[5] = pan_y;
             return S_OK;
           }));
-  EXPECT_CALL(delegate, OnPointerPanZoomUpdate(device_id, pan_x, pan_y,
-                                               scale_rounded, 0));
+  EXPECT_CALL(delegate,
+              OnPointerPanZoomUpdate(device_id, pan_x, pan_y, scale, 0));
   handler->OnContentUpdated((IDirectManipulationViewport*)&viewport,
                             (IDirectManipulationContent*)&content);
   EXPECT_CALL(delegate, OnPointerPanZoomEnd(device_id));

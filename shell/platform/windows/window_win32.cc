@@ -99,11 +99,16 @@ void WindowWin32::InitializeChild(const char* title,
   ZeroMemory(&dmi, sizeof(dmi));
   dmi.dmSize = sizeof(dmi);
   if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmi)) {
-    framerate_ = dmi.dmDisplayFrequency;
-    SetTimer(result, kVsyncTimer, 1000 / framerate_, nullptr);
+    directManipulationPollingRate_ = dmi.dmDisplayFrequency;
   } else {
-    OutputDebugString(L"Failed to get framerate");
+    OutputDebugString(
+        L"Failed to get framerate, will use default of 60 Hz for gesture "
+        L"polling.");
   }
+  SetUserObjectInformationA(GetCurrentProcess(),
+                            UOI_TIMERPROC_EXCEPTION_SUPPRESSION, FALSE, 1);
+  SetTimer(result, kDirectManipulationTimer,
+           1000 / directManipulationPollingRate_, nullptr);
   direct_manipulation_owner_ = std::make_unique<DirectManipulationOwner>(this);
   direct_manipulation_owner_->Init(width, height);
 }
@@ -454,9 +459,10 @@ WindowWin32::HandleMessage(UINT const message,
       break;
     }
     case WM_TIMER:
-      if (wparam == kVsyncTimer) {
+      if (wparam == kDirectManipulationTimer) {
         direct_manipulation_owner_->Update();
-        SetTimer(window_handle_, kVsyncTimer, 1000 / framerate_, nullptr);
+        SetTimer(window_handle_, kDirectManipulationTimer,
+                 1000 / directManipulationPollingRate_, nullptr);
         return 0;
       }
       break;

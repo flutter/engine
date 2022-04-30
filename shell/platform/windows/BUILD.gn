@@ -123,10 +123,7 @@ source_set("flutter_windows_source") {
 
   public_configs = [ ":relative_angle_headers" ]
 
-  defines = [
-    "_SILENCE_CLANG_COROUTINE_MESSAGE",
-    "FLUTTER_ENGINE_NO_PROTOTYPES",
-  ]
+  defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
   public_deps = [
     "//flutter/fml:string_conversion",
@@ -216,8 +213,6 @@ executable("flutter_windows_unittests") {
   ]
 
   public_configs = [ "//flutter:config" ]
-
-  defines = [ "_SILENCE_CLANG_COROUTINE_MESSAGE" ]
 
   deps = [
     ":flutter_windows_fixtures",

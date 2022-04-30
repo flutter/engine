@@ -24,7 +24,8 @@ struct PhysicalWindowBounds {
   size_t height;
 };
 
-// Structure containing the position of a mouse pointer
+// Structure containing the position of a mouse pointer in the coordinate system
+// specified by the function where it's used.
 struct PointerLocation {
   size_t x;
   size_t y;
@@ -85,7 +86,8 @@ class WindowBindingHandler {
   // client is cleared.
   virtual void OnResetImeComposing() = 0;
 
-  // Returns the last known position of the primary pointer
+  // Returns the last known position of the primary pointer in window
+  // coordinates.
   virtual PointerLocation GetPrimaryPointerLocation() = 0;
 };
 

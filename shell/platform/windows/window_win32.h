@@ -210,6 +210,8 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
+  // Handles running DirectManipulation on the window to receive trackpad
+  // gestures.
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
 
  private:
@@ -258,8 +260,11 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   // Generates touch point IDs for touch events.
   SequentialIdGenerator touch_id_generator_;
 
-  const static int kVsyncTimer = 1;
-  int framerate_ = 1;
+  // Timer identifier for DirectManipulation gesture polling.
+  const static int kDirectManipulationTimer = 1;
+
+  // Frequency (Hz) to poll for DirectManipulation updates.
+  int directManipulationPollingRate_ = 60;
 };
 
 }  // namespace flutter

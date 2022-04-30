@@ -8,7 +8,7 @@
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_win32.h"
 
-#define VERIFY_HR(operation)                   \
+#define RETURN_IF_FAILED(operation)            \
   if (FAILED(operation)) {                     \
     FML_LOG(ERROR) << #operation << " failed"; \
     manager_ = nullptr;                        \
@@ -17,7 +17,7 @@
     return -1;                                 \
   }
 
-#define WARN_HR(operation)                     \
+#define WARN_IF_FAILED(operation)              \
   if (FAILED(operation)) {                     \
     FML_LOG(ERROR) << #operation << " failed"; \
   }
@@ -43,39 +43,37 @@ HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
     IDirectManipulationViewport* viewport,
     DIRECTMANIPULATION_STATUS current,
     DIRECTMANIPULATION_STATUS previous) {
-  if (current == DIRECTMANIPULATION_RUNNING) {
-    if (!resetting_) {
-      // Not a false event
+  if (during_synthesized_reset_ && previous == DIRECTMANIPULATION_RUNNING) {
+    during_synthesized_reset_ = false;
+  } else if (current == DIRECTMANIPULATION_RUNNING) {
+    if (!during_synthesized_reset_) {
+      // Not a false event.
       if (owner_->binding_handler_delegate) {
         owner_->binding_handler_delegate->OnPointerPanZoomStart(
             (int32_t) reinterpret_cast<int64_t>(this));
       }
     }
   } else if (previous == DIRECTMANIPULATION_RUNNING) {
-    if (resetting_) {
-      // The resetting transition has concluded
-      resetting_ = false;
-    } else {
-      if (owner_->binding_handler_delegate) {
-        owner_->binding_handler_delegate->OnPointerPanZoomEnd(
-            (int32_t) reinterpret_cast<int64_t>(this));
-      }
-      // Need to reset the content transform to its original position
-      // so that we are ready for the next gesture
-      // Use resetting_ flag to prevent sending reset also to the framework
-      resetting_ = true;
-      RECT rect;
-      HRESULT hr = viewport->GetViewportRect(&rect);
-      if (FAILED(hr)) {
-        FML_LOG(ERROR) << "Failed to get the current viewport rect";
-        return E_FAIL;
-      }
-      hr = viewport->ZoomToRect(rect.left, rect.top, rect.right, rect.bottom,
-                                false);
-      if (FAILED(hr)) {
-        FML_LOG(ERROR) << "Failed to reset the gesture using ZoomToRect";
-        return E_FAIL;
-      }
+    if (owner_->binding_handler_delegate) {
+      owner_->binding_handler_delegate->OnPointerPanZoomEnd(
+          (int32_t) reinterpret_cast<int64_t>(this));
+    }
+    // Need to reset the content transform to its original position
+    // so that we are ready for the next gesture.
+    // Use during_synthesized_reset_ flag to prevent sending reset also to the
+    // framework.
+    during_synthesized_reset_ = true;
+    RECT rect;
+    HRESULT hr = viewport->GetViewportRect(&rect);
+    if (FAILED(hr)) {
+      FML_LOG(ERROR) << "Failed to get the current viewport rect";
+      return E_FAIL;
+    }
+    hr = viewport->ZoomToRect(rect.left, rect.top, rect.right, rect.bottom,
+                              false);
+    if (FAILED(hr)) {
+      FML_LOG(ERROR) << "Failed to reset the gesture using ZoomToRect";
+      return E_FAIL;
     }
   }
   return S_OK;
@@ -95,11 +93,11 @@ HRESULT DirectManipulationEventHandler::OnContentUpdated(
     FML_LOG(ERROR) << "GetContentTransform failed";
     return S_OK;
   }
-  if (!resetting_) {
+  if (!during_synthesized_reset_) {
     // DirectManipulation provides updates with very high precision. If the user
     // holds their fingers steady on a trackpad, DirectManipulation sends
     // jittery updates. This calculation will reduce the precision of the scale
-    // value of the event to avoid jitter
+    // value of the event to avoid jitter.
     const int mantissa_bits_chop = 2;
     const float factor = (1 << mantissa_bits_chop) + 1;
     float c = factor * transform[0];
@@ -134,30 +132,30 @@ DirectManipulationOwner::DirectManipulationOwner(WindowWin32* window)
     : window_(window) {}
 
 int DirectManipulationOwner::Init(unsigned int width, unsigned int height) {
-  VERIFY_HR(CoCreateInstance(CLSID_DirectManipulationManager, nullptr,
-                             CLSCTX_INPROC_SERVER,
-                             IID_IDirectManipulationManager, &manager_));
-  VERIFY_HR(manager_->GetUpdateManager(IID_IDirectManipulationUpdateManager,
-                                       &updateManager_));
-  VERIFY_HR(manager_->CreateViewport(nullptr, window_->GetWindowHandle(),
-                                     IID_IDirectManipulationViewport,
-                                     &viewport_));
+  RETURN_IF_FAILED(CoCreateInstance(CLSID_DirectManipulationManager, nullptr,
+                                    CLSCTX_INPROC_SERVER,
+                                    IID_IDirectManipulationManager, &manager_));
+  RETURN_IF_FAILED(manager_->GetUpdateManager(
+      IID_IDirectManipulationUpdateManager, &updateManager_));
+  RETURN_IF_FAILED(manager_->CreateViewport(nullptr, window_->GetWindowHandle(),
+                                            IID_IDirectManipulationViewport,
+                                            &viewport_));
   DIRECTMANIPULATION_CONFIGURATION configuration =
       DIRECTMANIPULATION_CONFIGURATION_INTERACTION |
       DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_X |
       DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_Y |
       DIRECTMANIPULATION_CONFIGURATION_SCALING;
-  VERIFY_HR(viewport_->ActivateConfiguration(configuration));
-  VERIFY_HR(viewport_->SetViewportOptions(
+  RETURN_IF_FAILED(viewport_->ActivateConfiguration(configuration));
+  RETURN_IF_FAILED(viewport_->SetViewportOptions(
       DIRECTMANIPULATION_VIEWPORT_OPTIONS_MANUALUPDATE));
-  handler_ = fml::MakeRefCounted<DirectManipulationEventHandler>(window_, this);
-  VERIFY_HR(viewport_->AddEventHandler(
+  handler_ = fml::MakeRefCounted<DirectManipulationEventHandler>(this);
+  RETURN_IF_FAILED(viewport_->AddEventHandler(
       window_->GetWindowHandle(), handler_.get(), &viewportHandlerCookie_));
   RECT rect = {0, 0, (LONG)width, (LONG)height};
-  VERIFY_HR(viewport_->SetViewportRect(&rect));
-  VERIFY_HR(manager_->Activate(window_->GetWindowHandle()));
-  VERIFY_HR(viewport_->Enable());
-  VERIFY_HR(updateManager_->Update(nullptr));
+  RETURN_IF_FAILED(viewport_->SetViewportRect(&rect));
+  RETURN_IF_FAILED(manager_->Activate(window_->GetWindowHandle()));
+  RETURN_IF_FAILED(viewport_->Enable());
+  RETURN_IF_FAILED(updateManager_->Update(nullptr));
   return 0;
 }
 
@@ -165,25 +163,24 @@ void DirectManipulationOwner::ResizeViewport(unsigned int width,
                                              unsigned int height) {
   if (viewport_) {
     RECT rect = {0, 0, (LONG)width, (LONG)height};
-    WARN_HR(viewport_->SetViewportRect(&rect));
+    WARN_IF_FAILED(viewport_->SetViewportRect(&rect));
   }
 }
 
 void DirectManipulationOwner::Destroy() {
   if (handler_) {
-    handler_->window_ = nullptr;
     handler_->owner_ = nullptr;
   }
 
   if (viewport_) {
-    WARN_HR(viewport_->Disable());
-    WARN_HR(viewport_->Disable());
-    WARN_HR(viewport_->RemoveEventHandler(viewportHandlerCookie_));
-    WARN_HR(viewport_->Abandon());
+    WARN_IF_FAILED(viewport_->Disable());
+    WARN_IF_FAILED(viewport_->Disable());
+    WARN_IF_FAILED(viewport_->RemoveEventHandler(viewportHandlerCookie_));
+    WARN_IF_FAILED(viewport_->Abandon());
   }
 
   if (window_ && manager_) {
-    WARN_HR(manager_->Deactivate(window_->GetWindowHandle()));
+    WARN_IF_FAILED(manager_->Deactivate(window_->GetWindowHandle()));
   }
 
   handler_ = nullptr;

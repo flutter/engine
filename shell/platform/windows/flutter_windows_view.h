@@ -219,10 +219,10 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
     // The currently pressed buttons, as represented in FlutterPointerEvent.
     uint64_t buttons = 0;
 
-    // The x position where the last pan/zoom started
+    // The x position where the last pan/zoom started.
     double pan_zoom_start_x = 0;
 
-    // The y position where the last pan/zoom started
+    // The y position where the last pan/zoom started.
     double pan_zoom_start_y = 0;
   };
 
