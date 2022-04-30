@@ -5553,7 +5553,7 @@ class Shadow {
 /// The creator of this object is responsible for calling [dispose] when it is
 /// no longer needed.
 class ImmutableBuffer extends NativeFieldWrapperClass1 {
-  ImmutableBuffer._(this.length);
+  ImmutableBuffer._(this._length);
 
   /// Creates a copy of the data from a [Uint8List] suitable for internal use
   /// in the engine.
@@ -5569,17 +5569,18 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
   /// Throws an [Exception] if the asset does not exist.
   static Future<ImmutableBuffer> fromAsset(String assetKey) {
     final ImmutableBuffer instance = ImmutableBuffer._(0);
-    return _futurize((_Callback<void> callback) {
+    return _futurize((_Callback<int> callback) {
       return instance._initFromAsset(assetKey, callback);
-    }).then((_) => instance);
+    }).then((int length) => instance.._length = length);
   }
 
   void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
 
-  String? _initFromAsset(String assetKey, _Callback<void> callback) native 'ImmutableBuffer_initFromAsset';
+  String? _initFromAsset(String assetKey, _Callback<int> callback) native 'ImmutableBuffer_initFromAsset';
 
   /// The length, in bytes, of the underlying data.
-  final int length;
+  int get length => _length;
+  int _length;
 
   bool _debugDisposed = false;
 

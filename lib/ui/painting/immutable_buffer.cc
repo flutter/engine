@@ -92,7 +92,7 @@ void ImmutableBuffer::initFromAsset(Dart_NativeArguments args) {
   auto sk_data = SkData::MakeWithProc(bytes, size, proc, peer);
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
   buffer->AssociateWithDartWrapper(immutable_buffer);
-  tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
+  tonic::DartInvoke(callback_handle, {tonic::ToDart(size)});
 }
 
 size_t ImmutableBuffer::GetAllocationSize() const {

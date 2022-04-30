@@ -21,6 +21,7 @@ void main() {
   test('returns the bytes of a bundled asset', () async {
     final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromAsset('assets/DashInNooglerHat.jpg');
 
+    print(buffer.length);
     expect(buffer.length != 0, true);
   });
 }
