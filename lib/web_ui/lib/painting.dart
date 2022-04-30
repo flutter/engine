@@ -749,7 +749,7 @@ class ImageShader extends Shader {
 }
 
 class ImmutableBuffer {
-  ImmutableBuffer._(this.length);
+  ImmutableBuffer._(this._length);
   static Future<ImmutableBuffer> fromUint8List(Uint8List list) async {
     final ImmutableBuffer instance = ImmutableBuffer._(list.length);
     instance._list = list;
@@ -761,7 +761,9 @@ class ImmutableBuffer {
   }
 
   Uint8List? _list;
-  final int length;
+
+  int get length => _length;
+  int _length;
 
   bool get debugDisposed {
     late bool disposed;
