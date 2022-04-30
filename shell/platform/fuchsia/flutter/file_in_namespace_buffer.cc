@@ -64,6 +64,14 @@ bool FileInNamespaceBuffer::IsDontNeedSafe() const {
   return true;
 }
 
+MappingReleaseProc FileInNamespaceBuffer::GetReleaseProc() {
+  MappingReleaseProc proc = [](const void* ptr, void* context) {
+    auto* mapping = static_cast<FileInNamespaceBuffer*>(context);
+    mapping->~FileInNamespaceBuffer();
+  };
+  return proc;
+}
+
 std::unique_ptr<fml::Mapping> LoadFile(int namespace_fd,
                                        const char* path,
                                        bool executable) {

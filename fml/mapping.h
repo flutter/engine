@@ -18,6 +18,8 @@
 
 namespace fml {
 
+using MappingReleaseProc = void(*)(const void* ptr, void* context);
+
 class Mapping {
  public:
   Mapping();
@@ -31,6 +33,8 @@ class Mapping {
   // Whether calling madvise(DONTNEED) on the mapping is non-destructive.
   // Generally true for file-mapped memory and false for anonymous memory.
   virtual bool IsDontNeedSafe() const = 0;
+
+  virtual MappingReleaseProc GetReleaseProc() = 0;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Mapping);
@@ -72,6 +76,9 @@ class FileMapping final : public Mapping {
   // |Mapping|
   bool IsDontNeedSafe() const override;
 
+  // |Mapping|
+  MappingReleaseProc GetReleaseProc() override;
+
   uint8_t* GetMutableMapping();
 
   bool IsValid() const;
@@ -106,6 +113,9 @@ class DataMapping final : public Mapping {
   // |Mapping|
   bool IsDontNeedSafe() const override;
 
+  // |Mapping|
+  MappingReleaseProc GetReleaseProc() override;
+
  private:
   std::vector<uint8_t> data_;
 
@@ -130,6 +140,9 @@ class NonOwnedMapping final : public Mapping {
 
   // |Mapping|
   bool IsDontNeedSafe() const override;
+
+  // |Mapping|
+  MappingReleaseProc GetReleaseProc() override;
 
  private:
   const uint8_t* const data_;
@@ -180,6 +193,9 @@ class MallocMapping final : public Mapping {
   // |Mapping|
   bool IsDontNeedSafe() const override;
 
+  // |Mapping|
+  MappingReleaseProc GetReleaseProc() override;
+
   /// Removes ownership of the data buffer.
   /// After this is called; the mapping will point to nullptr.
   [[nodiscard]] uint8_t* Release();
@@ -206,6 +222,9 @@ class SymbolMapping final : public Mapping {
 
   // |Mapping|
   bool IsDontNeedSafe() const override;
+
+  // |Mapping|
+  MappingReleaseProc GetReleaseProc() override;
 
  private:
   fml::RefPtr<fml::NativeLibrary> native_library_;

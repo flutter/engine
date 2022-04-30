@@ -84,12 +84,10 @@ void ImmutableBuffer::initFromAsset(Dart_NativeArguments args) {
     return;
   }
 
+  SkData::ReleaseProc proc = data->GetReleaseProc();
   const void* bytes = static_cast<const void*>(data->GetMapping());
   auto size = data->GetSize();
   void* peer = reinterpret_cast<void*>(data.release());
-  SkData::ReleaseProc proc = [](const void* ptr, void* context) {
-    auto* mapping = static_cast<fml::Mapping*>(const_cast<void*>(ptr));
-  };
 
   auto sk_data = SkData::MakeWithProc(bytes, size, proc, peer);
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
