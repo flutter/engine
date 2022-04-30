@@ -20,8 +20,8 @@ class NSDataMapping : public fml::Mapping {
 
   bool IsDontNeedSafe() const override { return false; }
 
-  MappingReleaseProc GetReleaseProc() override {
-    MappingReleaseProc proc = [](const void* ptr, void* context) {
+  fml::MappingReleaseProc GetReleaseProc() override {
+   fml:: MappingReleaseProc proc = [](const void* ptr, void* context) {
       auto* mapping = static_cast<NSDataMapping*>(context);
       [mapping->data_ release];
     };

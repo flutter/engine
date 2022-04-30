@@ -64,8 +64,8 @@ bool FileInNamespaceBuffer::IsDontNeedSafe() const {
   return true;
 }
 
-MappingReleaseProc FileInNamespaceBuffer::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) {
+fml::MappingReleaseProc FileInNamespaceBuffer::GetReleaseProc() {
+  fml::MappingReleaseProc proc = [](const void* ptr, void* context) {
     auto* mapping = static_cast<FileInNamespaceBuffer*>(context);
     mapping->~FileInNamespaceBuffer();
   };
