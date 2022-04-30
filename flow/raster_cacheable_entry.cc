@@ -69,7 +69,7 @@ std::unique_ptr<RasterCacheResult> LayerCacheableItem::CreateRasterCache(
         PaintContext context = {
             // clang-format off
           .internal_nodes_canvas         = static_cast<SkCanvas*>(&internal_nodes_canvas),
-          .leaf_nodes_canvas             = paint_context->leaf_nodes_canvas,
+          .leaf_nodes_canvas             = canvas,
           .gr_context                    = paint_context->gr_context,
           .dst_color_space               = paint_context->dst_color_space,
           .view_embedder                 = paint_context->view_embedder,
