@@ -761,7 +761,7 @@ class ImmutableBuffer {
   }
 
   Uint8List? _list;
-  
+
   int get length => _length;
   int _length;
 
