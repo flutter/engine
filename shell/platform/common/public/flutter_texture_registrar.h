@@ -94,7 +94,7 @@ typedef struct {
   // The visible height.
   // It might be less or equal to the physical |height|.
   size_t visible_height;
-  // The pixel format which might by optional depending on the surface type.
+  // The pixel format which might be optional depending on the surface type.
   FlutterDesktopPixelFormat format;
   // An optional callback that gets invoked when the |handle| has been opened.
   void (*release_callback)(void* release_context);
