@@ -13,10 +13,10 @@ import 'surface.dart';
 /// A surface that makes its children transparent.
 class PersistedOpacity extends PersistedContainerSurface
     implements ui.OpacityEngineLayer {
-  PersistedOpacity(PersistedOpacity? oldLayer, this.alpha, this.offset)
+  PersistedOpacity(PersistedOpacity? oldLayer, this.opacity, this.offset)
       : super(oldLayer);
 
-  final int alpha;
+  final double opacity;
   final ui.Offset offset;
 
   @override
@@ -52,14 +52,14 @@ class PersistedOpacity extends PersistedContainerSurface
   @override
   void apply() {
     final html.Element element = rootElement!;
-    setElementStyle(element, 'opacity', '${alpha / 255}');
+    setElementStyle(element, 'opacity', '$opacity');
     element.style.transform = 'translate(${offset.dx}px, ${offset.dy}px)';
   }
 
   @override
   void update(PersistedOpacity oldSurface) {
     super.update(oldSurface);
-    if (alpha != oldSurface.alpha || offset != oldSurface.offset) {
+    if (opacity != oldSurface.opacity || offset != oldSurface.offset) {
       apply();
     }
   }

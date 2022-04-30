@@ -25,7 +25,7 @@ class OpacityLayer : public ContainerLayer {
   // the retained rendering inefficient as a small offset change could propagate
   // to many leaf layers. Therefore we try to capture that offset here to stop
   // the propagation as repainting the OpacityLayer is expensive.
-  OpacityLayer(SkAlpha alpha, const SkPoint& offset);
+  OpacityLayer(SkScalar opacity, const SkPoint& offset);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -43,10 +43,10 @@ class OpacityLayer : public ContainerLayer {
     children_can_accept_opacity_ = value;
   }
 
-  SkScalar opacity() const { return alpha_ * 1.0 / SK_AlphaOPAQUE; }
+  SkScalar opacity() const { return opacity_; }
 
  private:
-  SkAlpha alpha_;
+  SkScalar opacity_;
   SkPoint offset_;
   bool children_can_accept_opacity_;
 

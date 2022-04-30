@@ -47,6 +47,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pushClipRRect)                    \
   V(SceneBuilder, pushClipPath)                     \
   V(SceneBuilder, pushOpacity)                      \
+  V(SceneBuilder, pushOpacityValue)                 \
   V(SceneBuilder, pushColorFilter)                  \
   V(SceneBuilder, pushImageFilter)                  \
   V(SceneBuilder, pushBackdropFilter)               \
@@ -163,8 +164,17 @@ void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
                                double dx,
                                double dy,
                                fml::RefPtr<EngineLayer> oldLayer) {
+  float opacity = alpha * 1.0 / SK_AlphaOPAQUE;
+  pushOpacity(layer_handle, opacity, dx, dy, oldLayer);
+}
+
+void SceneBuilder::pushOpacityValue(Dart_Handle layer_handle,
+                                    float opacity,
+                                    double dx,
+                                    double dy,
+                                    fml::RefPtr<EngineLayer> oldLayer) {
   auto layer =
-      std::make_shared<flutter::OpacityLayer>(alpha, SkPoint::Make(dx, dy));
+      std::make_shared<flutter::OpacityLayer>(opacity, SkPoint::Make(dx, dy));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 

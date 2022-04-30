@@ -47,7 +47,7 @@ class Mutator {
         matrix_ = other.matrix_;
         break;
       case opacity:
-        alpha_ = other.alpha_;
+        opacity_ = other.opacity_;
         break;
       default:
         break;
@@ -60,15 +60,14 @@ class Mutator {
       : type_(clip_path), path_(new SkPath(path)) {}
   explicit Mutator(const SkMatrix& matrix)
       : type_(transform), matrix_(matrix) {}
-  explicit Mutator(const int& alpha) : type_(opacity), alpha_(alpha) {}
+  explicit Mutator(const SkScalar& opacityValue) : type_(opacity), opacity_(opacityValue) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
-  const int& GetAlpha() const { return alpha_; }
-  float GetAlphaFloat() const { return (alpha_ / 255.0); }
+  float GetAlphaFloat() const { return opacity_; }
 
   bool operator==(const Mutator& other) const {
     if (type_ != other.type_) {
@@ -84,7 +83,7 @@ class Mutator {
       case transform:
         return matrix_ == other.matrix_;
       case opacity:
-        return alpha_ == other.alpha_;
+        return opacity_ == other.opacity_;
     }
 
     return false;
@@ -110,7 +109,7 @@ class Mutator {
     SkRRect rrect_;
     SkMatrix matrix_;
     SkPath* path_;
-    int alpha_;
+    SkScalar opacity_;
   };
 
 };  // Mutator
@@ -132,7 +131,7 @@ class MutatorsStack {
   void PushClipRRect(const SkRRect& rrect);
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
-  void PushOpacity(const int& alpha);
+  void PushOpacity(const SkScalar& opacity);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.

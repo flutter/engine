@@ -186,8 +186,19 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     ui.OpacityEngineLayer? oldLayer,
   }) {
+    final double opacity = alpha * 1.0 / 255.0;
     return _pushSurface<PersistedOpacity>(
-        PersistedOpacity(oldLayer as PersistedOpacity?, alpha, offset));
+        PersistedOpacity(oldLayer as PersistedOpacity?, opacity, offset));
+  }
+
+  @override
+  ui.OpacityEngineLayer pushOpacityValue(
+    double opacity, {
+    ui.Offset offset = ui.Offset.zero,
+    ui.OpacityEngineLayer? oldLayer,
+  }) {
+    return _pushSurface<PersistedOpacity>(
+        PersistedOpacity(oldLayer as PersistedOpacity?, opacity, offset));
   }
 
   /// Pushes a color filter operation onto the operation stack.

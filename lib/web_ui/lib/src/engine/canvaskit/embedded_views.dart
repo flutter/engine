@@ -825,7 +825,7 @@ class Mutator {
     this.rrect,
     this.path,
     this.matrix,
-    this.alpha,
+    this.opacity,
   );
 
   final MutatorType type;
@@ -833,7 +833,7 @@ class Mutator {
   final ui.RRect? rrect;
   final ui.Path? path;
   final Matrix4? matrix;
-  final int? alpha;
+  final double? opacity;
 
   const Mutator.clipRect(ui.Rect rect)
       : this._(MutatorType.clipRect, rect, null, null, null, null);
@@ -843,15 +843,15 @@ class Mutator {
       : this._(MutatorType.clipPath, null, null, path, null, null);
   const Mutator.transform(Matrix4 matrix)
       : this._(MutatorType.transform, null, null, null, matrix, null);
-  const Mutator.opacity(int alpha)
-      : this._(MutatorType.opacity, null, null, null, null, alpha);
+  const Mutator.opacity(double opacity)
+      : this._(MutatorType.opacity, null, null, null, null, opacity);
 
   bool get isClipType =>
       type == MutatorType.clipRect ||
       type == MutatorType.clipRRect ||
       type == MutatorType.clipPath;
 
-  double get alphaFloat => alpha! / 255.0;
+  double get alphaFloat => opacity!;
 
   @override
   bool operator ==(Object other) {
@@ -877,14 +877,14 @@ class Mutator {
       case MutatorType.transform:
         return matrix == typedOther.matrix;
       case MutatorType.opacity:
-        return alpha == typedOther.alpha;
+        return opacity == typedOther.opacity;
       default:
         return false;
     }
   }
 
   @override
-  int get hashCode => ui.hashValues(type, rect, rrect, path, matrix, alpha);
+  int get hashCode => ui.hashValues(type, rect, rrect, path, matrix, opacity);
 }
 
 /// A stack of mutators that can be applied to an embedded view.
@@ -912,7 +912,7 @@ class MutatorsStack extends Iterable<Mutator> {
     _mutators.add(Mutator.transform(matrix));
   }
 
-  void pushOpacity(int alpha) {
+  void pushOpacity(double alpha) {
     _mutators.add(Mutator.opacity(alpha));
   }
 

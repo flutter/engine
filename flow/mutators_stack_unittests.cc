@@ -82,11 +82,11 @@ TEST(MutatorsStack, PushTransform) {
 
 TEST(MutatorsStack, PushOpacity) {
   MutatorsStack stack;
-  int alpha = 240;
-  stack.PushOpacity(alpha);
+  float opacity = 0.5;
+  stack.PushOpacity(opacity);
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::opacity);
-  ASSERT_TRUE(iter->get()->GetAlpha() == 240);
+  ASSERT_TRUE(iter->get()->GetAlphaFloat() == 0.5);
 }
 
 TEST(MutatorsStack, Pop) {

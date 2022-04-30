@@ -445,8 +445,36 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
     return layer;
   }
 
+  /// Pushes an opacity operation onto the operation stack.
+  ///
+  /// The given opacity value is blended into the opacity value of the objects'
+  /// rasterization. An opacity value of 0.0 makes the objects entirely invisible.
+  /// An opacity value of 1.0 has no effect (i.e., the objects retain the current
+  /// opacity).
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
+  ///
+  /// See [pop] for details about the operation stack.
+  OpacityEngineLayer pushOpacityValue(
+    double opacity, {
+    Offset offset = Offset.zero,
+    OpacityEngineLayer? oldLayer,
+  }) {
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOpacity'));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushOpacityValue(engineLayer, opacity, offset.dx, offset.dy, oldLayer?._nativeLayer);
+    final OpacityEngineLayer layer = OpacityEngineLayer._(engineLayer);
+    assert(_debugPushLayer(layer));
+    return layer;
+  }
+
   void _pushOpacity(EngineLayer layer, int alpha, double dx, double dy, EngineLayer? oldLayer)
       native 'SceneBuilder_pushOpacity';
+
+  void _pushOpacityValue(EngineLayer layer, double opacity, double dx, double dy, EngineLayer? oldLayer)
+      native 'SceneBuilder_pushOpacityValue';
 
   /// Pushes a color filter operation onto the operation stack.
   ///

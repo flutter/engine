@@ -68,6 +68,11 @@ abstract class SceneBuilder {
     Offset offset = Offset.zero,
     OpacityEngineLayer? oldLayer,
   });
+  OpacityEngineLayer pushOpacityValue(
+    double opacity, {
+    Offset offset = Offset.zero,
+    OpacityEngineLayer? oldLayer,
+  });
   ColorFilterEngineLayer pushColorFilter(
     ColorFilter filter, {
     ColorFilterEngineLayer? oldLayer,

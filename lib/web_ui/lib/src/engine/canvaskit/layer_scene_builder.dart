@@ -169,7 +169,17 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.EngineLayer? oldLayer,
     ui.Offset offset = ui.Offset.zero,
   }) {
-    return pushLayer<OpacityEngineLayer>(OpacityEngineLayer(alpha, offset));
+    final double opacity = alpha * 1.0 / 255.0;
+    return pushLayer<OpacityEngineLayer>(OpacityEngineLayer(opacity, offset));
+  }
+
+  @override
+  OpacityEngineLayer pushOpacityValue(
+    double opacity, {
+    ui.OpacityEngineLayer? oldLayer,
+    ui.Offset offset = ui.Offset.zero,
+  }) {
+    return pushLayer<OpacityEngineLayer>(OpacityEngineLayer(opacity, offset));
   }
 
   @override

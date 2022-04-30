@@ -313,10 +313,10 @@ class ClipRRectEngineLayer extends ContainerLayer
 /// A layer that paints its children with the given opacity.
 class OpacityEngineLayer extends ContainerLayer
     implements ui.OpacityEngineLayer {
-  final int _alpha;
+  final double _opacity;
   final ui.Offset _offset;
 
-  OpacityEngineLayer(this._alpha, this._offset);
+  OpacityEngineLayer(this._opacity, this._offset);
 
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
@@ -324,7 +324,7 @@ class OpacityEngineLayer extends ContainerLayer
     childMatrix.translate(_offset.dx, _offset.dy);
     prerollContext.mutatorsStack
         .pushTransform(Matrix4.translationValues(_offset.dx, _offset.dy, 0.0));
-    prerollContext.mutatorsStack.pushOpacity(_alpha);
+    prerollContext.mutatorsStack.pushOpacity(_opacity);
     super.preroll(prerollContext, childMatrix);
     prerollContext.mutatorsStack.pop();
     prerollContext.mutatorsStack.pop();
@@ -336,7 +336,7 @@ class OpacityEngineLayer extends ContainerLayer
     assert(needsPainting);
 
     final CkPaint paint = CkPaint();
-    paint.color = ui.Color.fromARGB(_alpha, 0, 0, 0);
+    paint.color = ui.Color.fromRGBO(0, 0, 0, _opacity);
 
     paintContext.internalNodesCanvas.save();
     paintContext.internalNodesCanvas.translate(_offset.dx, _offset.dy);

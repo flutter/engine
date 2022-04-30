@@ -9,15 +9,15 @@
 
 namespace flutter {
 
-OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset), children_can_accept_opacity_(false) {}
+OpacityLayer::OpacityLayer(SkScalar opacity, const SkPoint& offset)
+    : opacity_(opacity), offset_(offset), children_can_accept_opacity_(false) {}
 
 void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const OpacityLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     FML_DCHECK(prev);
-    if (alpha_ != prev->alpha_ || offset_ != prev->offset_) {
+    if (opacity_ != prev->opacity_ || offset_ != prev->offset_) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
@@ -43,7 +43,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   context->mutators_stack.PushTransform(
       SkMatrix::Translate(offset_.fX, offset_.fY));
-  context->mutators_stack.PushOpacity(alpha_);
+  context->mutators_stack.PushOpacity(opacity_);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
