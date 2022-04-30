@@ -6,9 +6,12 @@
 #define FLOW_TESTING_MOCK_LAYER_H_
 
 #include <functional>
+#include <memory>
+#include "flutter/flow/diff_context.h"
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cacheable_entry.h"
 
 namespace flutter {
@@ -61,25 +64,32 @@ class MockLayer : public Layer {
   FML_DISALLOW_COPY_AND_ASSIGN(MockLayer);
 };
 
+class MockLayerCacheableItem : public LayerCacheableItem {
+ public:
+  using LayerCacheableItem::LayerCacheableItem;
+  std::unique_ptr<RasterCacheResult> CreateRasterCache(
+      PaintContext* paint_context,
+      bool checkerboard = false) const override;
+};
+
 class MockCacheableContainerLayer : public ContainerLayer, public Cacheable {
  public:
   static void FirstTryToCacheChildren(int render_count,
-                                      RasterCacheableEntry* entry) {
+                                      LayerCacheableItem* entry) {
     if (render_count < 3) {
       render_count++;
-      entry->MarkLayerChildrenNeedCached();
+      entry->set_need_cached(false);
       return;
     }
 
     return;
   }
 
-  static void FirstNotTryToCache(int render_count,
-                                 RasterCacheableEntry* entry) {
+  static void FirstNotTryToCache(int render_count, CacheableItem* entry) {
     // if render count < 3 not cache anything
     if (render_count < 3) {
       render_count++;
-      entry->MarkNotCache();
+      entry->set_need_cached(false);
       return;
     }
     // if render count >= 3 try cache itself
@@ -87,23 +97,23 @@ class MockCacheableContainerLayer : public ContainerLayer, public Cacheable {
   }
 
   explicit MockCacheableContainerLayer(
-      std::function<void(int, RasterCacheableEntry*)> strategy =
+      std::function<void(int, LayerCacheableItem*)> strategy =
           FirstTryToCacheChildren)
-      : ContainerLayer(), cache_strategy_(strategy) {}
+      : ContainerLayer(), cache_strategy_(strategy) {
+    cacheable_item_ = std::make_unique<MockLayerCacheableItem>(this);
+  }
 
   Layer* asLayer() { return this; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void TryToCache(PrerollContext* context,
-                  RasterCacheableEntry* entry,
-                  const SkMatrix& ctm) override {
-    cache_strategy_(raster_count_, entry);
+  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override {
+    cache_strategy_(raster_count_, this->GetCacheableLayer());
     raster_count_++;
   }
 
  private:
-  std::function<void(int, RasterCacheableEntry*)> cache_strategy_;
+  std::function<void(int, LayerCacheableItem*)> cache_strategy_;
   int raster_count_ = 1;
 };
 
@@ -120,22 +130,23 @@ class MockCacheableLayer : public MockLayer, public Cacheable {
                   fake_has_platform_view,
                   fake_reads_surface,
                   fake_opacity_compatible),
-        render_limit_(render_limit) {}
+        render_limit_(render_limit) {
+    cacheable_item_ = std::make_unique<MockLayerCacheableItem>(this);
+  }
 
   Layer* asLayer() { return this; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void TryToCache(PrerollContext* context,
-                  RasterCacheableEntry* entry,
-                  const SkMatrix& ctm) override {
+  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override {
+    auto* layer = GetCacheableLayer();
     // We should try to cache the layer or layer's children.
     if (render_count_ >= render_limit_) {
       // entry default cache current layer
       return;
     }
     render_count_++;
-    entry->MarkNotCache();
+    layer->set_need_cached(false);
   }
 
  private:

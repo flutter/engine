@@ -21,9 +21,7 @@ class ColorFilterLayer : public ContainerLayer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  void TryToCache(PrerollContext* context,
-                  RasterCacheableEntry* entry,
-                  const SkMatrix& ctm) override;
+  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override;
 
   Layer* asLayer() override { return this; }
 

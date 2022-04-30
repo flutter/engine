@@ -11,6 +11,7 @@
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
+#include "gtest/gtest.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
@@ -293,33 +294,25 @@ TEST_F(ImageFilterLayerTest, CacheChild) {
   other_canvas.setMatrix(other_transform);
 
   use_mock_raster_cache();
+  const auto* cachebale_image_filter_item = layer->GetCacheableLayer();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(), other_canvas));
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
-  LayerTree::TryToRasterCache(preroll_context());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren));
+  // The layer_cache_item's strategy is Children, mean we will must cache his
+  // children
+  EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayerChildren);
+  EXPECT_TRUE(cachebale_image_filter_item->Draw(raster_cache(), cache_canvas));
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(), other_canvas));
 }
 
 TEST_F(ImageFilterLayerTest, CacheChildren) {
@@ -344,36 +337,26 @@ TEST_F(ImageFilterLayerTest, CacheChildren) {
 
   use_mock_raster_cache();
 
+  const auto* cachebale_image_filter_item = layer->GetCacheableLayer();
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
+
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(), other_canvas));
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
-  LayerTree::TryToRasterCache(preroll_context());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren));
+
+  // The layer_cache_item's strategy is Children, mean we will must cache his
+  // children
+  EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayerChildren);
+  EXPECT_TRUE(cachebale_image_filter_item->Draw(raster_cache(), cache_canvas));
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(), other_canvas));
 }
 
 TEST_F(ImageFilterLayerTest, OpacityInheritance) {

@@ -10,6 +10,7 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -62,9 +63,9 @@ static bool CanRasterizeRect(const SkRect& cull_rect) {
   return true;
 }
 
-static bool IsPictureWorthRasterizing(SkPicture* picture,
-                                      bool will_change,
-                                      bool is_complex) {
+bool RasterCache::IsPictureWorthRasterizing(SkPicture* picture,
+                                            bool will_change,
+                                            bool is_complex) {
   if (will_change) {
     // If the picture is going to change in the future, there is no point in
     // doing to extra work to rasterize.
@@ -88,7 +89,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
   return picture->approximateOpCount(true) > 5;
 }
 
-static bool IsDisplayListWorthRasterizing(
+bool RasterCache::IsDisplayListWorthRasterizing(
     DisplayList* display_list,
     bool will_change,
     bool is_complex,
@@ -116,7 +117,7 @@ static bool IsDisplayListWorthRasterizing(
 }
 
 /// @note Procedure doesn't copy all closures.
-static std::unique_ptr<RasterCacheResult> Rasterize(
+std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     GrDirectContext* context,
     const SkMatrix& ctm,
     SkColorSpace* dst_color_space,
@@ -157,286 +158,43 @@ static std::unique_ptr<RasterCacheResult> Rasterize(
                                              logical_rect, type);
 }
 
-std::unique_ptr<RasterCacheResult> RasterCache::RasterizePicture(
-    SkPicture* picture,
-    GrDirectContext* context,
-    const SkMatrix& ctm,
-    SkColorSpace* dst_color_space,
-    bool checkerboard) const {
-  return Rasterize(context, ctm, dst_color_space, checkerboard,
-                   picture->cullRect(), "RasterCacheFlow::SkPicture",
-                   [=](SkCanvas* canvas) { canvas->drawPicture(picture); });
-}
-
-std::unique_ptr<RasterCacheResult> RasterCache::RasterizeDisplayList(
-    DisplayList* display_list,
-    GrDirectContext* context,
-    const SkMatrix& ctm,
-    SkColorSpace* dst_color_space,
-    bool checkerboard) const {
-  return Rasterize(context, ctm, dst_color_space, checkerboard,
-                   display_list->bounds(), "RasterCacheFlow::DisplayList",
-                   [=](SkCanvas* canvas) { display_list->RenderTo(canvas); });
-}
-
-bool RasterCache::Prepare(PrerollContext* context,
-                          Layer* layer,
-                          const SkMatrix& ctm,
-                          RasterCacheLayerStrategy strategy) {
-  auto cache_key_optional =
-      TryToMakeRasterCacheKeyForLayer(layer, strategy, ctm);
-  if (!cache_key_optional) {
+bool RasterCache::Prepare(const CacheableItem* cacheable_item,
+                          PaintContext* paint_context) const {
+  auto key = cacheable_item->GetKey();
+  if (!key.has_value()) {
     return false;
   }
-  Entry& entry = cache_[cache_key_optional.value()];
+  Entry& entry = cache_[key.value()];
   entry.access_count++;
   entry.used_this_frame = true;
   if (!entry.image) {
     entry.image =
-        RasterizeLayer(context, layer, strategy, ctm, checkerboard_images_);
+        cacheable_item->CreateRasterCache(paint_context, checkerboard_images_);
   }
   return true;
 }
 
-std::optional<RasterCacheKey> RasterCache::TryToMakeRasterCacheKeyForLayer(
-    const Layer* layer,
-    RasterCacheLayerStrategy strategy,
-    const SkMatrix& ctm) const {
-  switch (strategy) {
-    case RasterCacheLayerStrategy::kLayer:
-      return RasterCacheKey(layer->unique_id(), RasterCacheKeyType::kLayer,
-                            ctm);
-    case RasterCacheLayerStrategy::kLayerChildren:
-      FML_DCHECK(layer->as_container_layer());
-      auto& children_layers = layer->as_container_layer()->layers();
-      auto children_count = children_layers.size();
-      if (children_count == 0) {
-        return std::nullopt;
-      }
-      std::vector<uint64_t> ids;
-      std::transform(children_layers.begin(), children_layers.end(),
-                     std::back_inserter(ids), [](auto& layer) -> uint64_t {
-                       return layer->unique_id();
-                     });
-      return RasterCacheKey(RasterCacheKeyID(std::move(ids)),
-                            RasterCacheKeyType::kLayerChildren, ctm);
-  }
-}
-
-std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
-    PrerollContext* context,
-    Layer* layer,
-    RasterCacheLayerStrategy strategy,
-    const SkMatrix& ctm,
-    bool checkerboard) const {
-  const SkRect& paint_bounds = GetPaintBoundsFromLayer(layer, strategy);
-
-  return Rasterize(
-      context->gr_context, ctm, context->dst_color_space, checkerboard,
-      paint_bounds, "RasterCacheFlow::Layer",
-      [layer, context, strategy](SkCanvas* canvas) {
-        SkISize canvas_size = canvas->getBaseLayerSize();
-        SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
-                                           canvas_size.height());
-        internal_nodes_canvas.setMatrix(canvas->getTotalMatrix());
-        internal_nodes_canvas.addCanvas(canvas);
-        Layer::PaintContext paintContext = {
-            /* internal_nodes_canvas= */ static_cast<SkCanvas*>(
-                &internal_nodes_canvas),
-            /* leaf_nodes_canvas= */ canvas,
-            /* gr_context= */ context->gr_context,
-            /* view_embedder= */ nullptr,
-            context->raster_time,
-            context->ui_time,
-            context->texture_registry,
-            context->has_platform_view ? nullptr : context->raster_cache,
-            context->checkerboard_offscreen_layers,
-            context->frame_device_pixel_ratio};
-        switch (strategy) {
-          case RasterCacheLayerStrategy::kLayer:
-            if (layer->needs_painting(paintContext)) {
-              layer->Paint(paintContext);
-            }
-            break;
-          case RasterCacheLayerStrategy::kLayerChildren:
-            FML_DCHECK(layer->as_container_layer());
-            layer->as_container_layer()->PaintChildren(paintContext);
-            break;
-        }
-      });
-}
-
-const SkRect& RasterCache::GetPaintBoundsFromLayer(
-    Layer* layer,
-    RasterCacheLayerStrategy strategy) const {
-  switch (strategy) {
-    case RasterCacheLayerStrategy::kLayer:
-      return layer->paint_bounds();
-    case RasterCacheLayerStrategy::kLayerChildren:
-      FML_DCHECK(layer->as_container_layer());
-      return layer->as_container_layer()->child_paint_bounds();
-  }
-}
-
-bool RasterCache::ShouldBeCached(PrerollContext* context,
-                                 SkPicture* picture,
-                                 bool is_complex,
-                                 bool will_change,
-                                 const SkMatrix& transformation_matrix) {
-  if (!GenerateNewCacheInThisFrame()) {
+bool RasterCache::Touch(const CacheableItem* cacheable_item,
+                        bool parent_cached) const {
+  auto key = cacheable_item->GetKey();
+  if (!key.has_value()) {
     return false;
   }
-
-  if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
-    // We only deal with pictures that are worthy of rasterization.
-    return false;
-  }
-
-  if (!transformation_matrix.invert(nullptr)) {
-    // The matrix was singular. No point in going further.
-    return false;
-  }
-
-  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyType::kPicture,
-                           transformation_matrix);
-
-  // Creates an entry, if not present prior.
-  Entry& entry = cache_[cache_key];
-  if (entry.access_count < access_threshold_) {
-    // Frame threshold has not yet been reached.
-    return false;
-  }
-  return true;
+  return Touch(key.value(), parent_cached);
 }
 
-bool RasterCache::Prepare(PrerollContext* context,
-                          SkPicture* picture,
-                          const SkMatrix& matrix) {
-  auto transformation_matrix = matrix;
-
-  if (!transformation_matrix.invert(nullptr)) {
-    // The matrix was singular. No point in going further.
+bool RasterCache::Draw(const CacheableItem* cacheable_item,
+                       SkCanvas& canvas,
+                       const SkPaint* paint) const {
+  auto key = cacheable_item->GetKey(&canvas);
+  if (!key.has_value()) {
     return false;
   }
-
-  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyType::kPicture,
-                           transformation_matrix);
-
-  // Creates an entry, if not present prior.
-  Entry& entry = cache_[cache_key];
-
-  if (!entry.image) {
-    // GetIntegralTransCTM effect for matrix which only contains scale,
-    // translate, so it won't affect result of matrix decomposition and cache
-    // key.
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    transformation_matrix = GetIntegralTransCTM(transformation_matrix);
-#endif
-    entry.image =
-        RasterizePicture(picture, context->gr_context, transformation_matrix,
-                         context->dst_color_space, checkerboard_images_);
-    picture_cached_this_frame_++;
-  }
-  return true;
+  return Draw(key.value(), canvas, paint);
 }
 
-bool RasterCache::ShouldBeCached(PrerollContext* context,
-                                 DisplayList* display_list,
-                                 bool is_complex,
-                                 bool will_change,
-                                 const SkMatrix& matrix) {
-  auto transformation_matrix = matrix;
-
-  if (!transformation_matrix.invert(nullptr)) {
-    // The matrix was singular. No point in going further.
-    return false;
-  }
-  if (!GenerateNewCacheInThisFrame()) {
-    return false;
-  }
-
-  DisplayListComplexityCalculator* complexity_calculator =
-      context->gr_context ? DisplayListComplexityCalculator::GetForBackend(
-                                context->gr_context->backend())
-                          : DisplayListComplexityCalculator::GetForSoftware();
-
-  if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex,
-                                     complexity_calculator)) {
-    // We only deal with display lists that are worthy of rasterization.
-    return false;
-  }
-
-  RasterCacheKey cache_key(display_list->unique_id(),
-                           RasterCacheKeyType::kDisplayList,
-                           transformation_matrix);
-
-  // Creates an entry, if not present prior.
-  Entry& entry = cache_[cache_key];
-  if (entry.access_count < access_threshold_) {
-    // Frame threshold has not yet been reached.
-    return false;
-  }
-
-  return true;
-}
-
-bool RasterCache::Prepare(PrerollContext* context,
-                          DisplayList* display_list,
-                          const SkMatrix& matrix) {
-  auto transformation_matrix = matrix;
-  RasterCacheKey cache_key(display_list->unique_id(),
-                           RasterCacheKeyType::kDisplayList,
-                           transformation_matrix);
-
-  // Creates an entry, if not present prior.
-  Entry& entry = cache_[cache_key];
-
-  if (!entry.image) {
-    // GetIntegralTransCTM effect for matrix which only contains scale,
-    // translate, so it won't affect result of matrix decomposition and cache
-    // key.
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    transformation_matrix = GetIntegralTransCTM(transformation_matrix);
-#endif
-    entry.image = RasterizeDisplayList(
-        display_list, context->gr_context, transformation_matrix,
-        context->dst_color_space, checkerboard_images_);
-    display_list_cached_this_frame_++;
-  }
-  return true;
-}
-
-void RasterCache::Touch(Layer* layer,
-                        const SkMatrix& ctm,
-                        RasterCacheLayerStrategy strategey,
-                        bool parent_had_cached) {
-  auto cache_key_optional =
-      TryToMakeRasterCacheKeyForLayer(layer, strategey, ctm);
-  if (!cache_key_optional) {
-    return;
-  }
-  Touch(cache_key_optional.value(), parent_had_cached);
-}
-
-void RasterCache::Touch(SkPicture* picture,
-                        const SkMatrix& transformation_matrix,
-                        bool parent_had_cached) {
-  RasterCacheKey cache_key(picture->uniqueID(), RasterCacheKeyType::kPicture,
-                           transformation_matrix);
-  Touch(cache_key, parent_had_cached);
-}
-
-void RasterCache::Touch(DisplayList* display_list,
-                        const SkMatrix& transformation_matrix,
-                        bool parent_had_cached) {
-  RasterCacheKey cache_key(display_list->unique_id(),
-                           RasterCacheKeyType::kDisplayList,
-                           transformation_matrix);
-  Touch(cache_key, parent_had_cached);
-}
-
-void RasterCache::Touch(const RasterCacheKey& cache_key,
-                        bool parent_had_cached) {
+bool RasterCache::Touch(const RasterCacheKey& cache_key,
+                        bool parent_had_cached) const {
   auto it = cache_.find(cache_key);
   if (it != cache_.end()) {
     if (parent_had_cached) {
@@ -444,40 +202,17 @@ void RasterCache::Touch(const RasterCacheKey& cache_key,
       if (--it->second.survive_frame_count <= 0) {
         it->second.used_this_frame = false;
       }
-      return;
     }
     it->second.used_this_frame = true;
     it->second.access_count++;
+    return true;
   }
+  return false;
 }
 
-bool RasterCache::Draw(const SkPicture& picture,
-                       SkCanvas& canvas,
-                       const SkPaint* paint) const {
-  RasterCacheKey cache_key(picture.uniqueID(), RasterCacheKeyType::kPicture,
-                           canvas.getTotalMatrix());
-  return Draw(cache_key, canvas, paint);
-}
-
-bool RasterCache::Draw(const DisplayList& display_list,
-                       SkCanvas& canvas,
-                       const SkPaint* paint) const {
-  RasterCacheKey cache_key(display_list.unique_id(),
-                           RasterCacheKeyType::kDisplayList,
-                           canvas.getTotalMatrix());
-  return Draw(cache_key, canvas, paint);
-}
-
-bool RasterCache::Draw(const Layer* layer,
-                       SkCanvas& canvas,
-                       RasterCacheLayerStrategy strategy,
-                       const SkPaint* paint) const {
-  auto cache_key_optional =
-      TryToMakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
-  if (!cache_key_optional) {
-    return false;
-  }
-  return Draw(cache_key_optional.value(), canvas, paint);
+RasterCache::Entry& RasterCache::EntryForKey(RasterCacheKey key) const {
+  Entry& entry = cache_[key];
+  return entry;
 }
 
 bool RasterCache::Draw(const RasterCacheKey& cache_key,

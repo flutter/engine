@@ -7,188 +7,191 @@
 
 #include <memory>
 
+#include "flutter/display_list/display_list_utils.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/raster_cache.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkMatrix.h"
 #include "include/core/SkPicture.h"
+#include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
-
 namespace flutter {
 
-struct PrerollContext;
-class RasterCache;
 class DisplayList;
-class Cacheable;
-class CacheableLayerWrapper;
-class CacheableDisplayListWrapper;
-class CacheableSkPictureWrapper;
+class LayerCacheableItem;
+class DisplayListCacheableItem;
+class SkPictureCacheableItem;
 
-class CacheableItemWrapperBase {
+class CacheableItem {
  public:
-  virtual bool TryToPrepareRasterCache(PrerollContext* context,
-                                       const SkMatrix& matrix) = 0;
+  explicit CacheableItem(const SkMatrix& matrix = SkMatrix::I(),
+                         unsigned child_entries = 0,
+                         bool need_cached = true)
+      : matrix_(matrix),
+        child_entries_(child_entries),
+        need_cached_(need_cached) {}
 
-  virtual void TouchRasterCache(PrerollContext* context,
-                                const SkMatrix& matrix) = 0;
+  virtual bool Prepare(PaintContext* paint_context) const;
 
-  virtual CacheableLayerWrapper* asCacheableLayerWrapper() { return nullptr; }
+  virtual bool Touch(const RasterCache* raster_cache,
+                     bool parent_cached = false) const;
 
-  virtual CacheableDisplayListWrapper* asCacheableDisplayListWrapper() {
-    return nullptr;
+  virtual bool Draw(const RasterCache* raster_cache,
+                    SkCanvas& canvas,
+                    const SkPaint* paint = nullptr) const;
+
+  virtual std::optional<RasterCacheKey> GetKey(
+      SkCanvas* canvas = nullptr) const = 0;
+
+  virtual std::unique_ptr<RasterCacheResult> CreateRasterCache(
+      PaintContext* paint_context,
+      bool checkerboard = false) const = 0;
+
+  virtual LayerCacheableItem* asLayerCacheableItem() { return nullptr; }
+
+  virtual DisplayListCacheableItem* asDisplayCacheableItem() { return nullptr; }
+
+  virtual SkPictureCacheableItem* asSkPictureCacheableItem() { return nullptr; }
+
+  virtual bool TryToPrepareRasterCache(PaintContext* context) const = 0;
+
+  void Reset();
+
+  bool need_cached() const { return need_cached_; }
+
+  unsigned chld_entries() const { return child_entries_; }
+
+  void set_cull_rect(const SkRect& cull_rect) { cull_rect_ = cull_rect; }
+
+  void set_matrix(const SkMatrix& matrix) { matrix_ = matrix; }
+
+  void set_child_entries(unsigned child_entries) {
+    child_entries_ = child_entries;
   }
 
-  virtual CacheableSkPictureWrapper* asCacheableSkPictureWrapper() {
-    return nullptr;
-  }
+  void set_need_cached(bool need_cached) { need_cached_ = need_cached; }
 
-  virtual ~CacheableItemWrapperBase() = default;
-
-  void TouchCache() { touch_cache_ = true; }
+  virtual ~CacheableItem() = default;
 
  protected:
-  bool touch_cache_ = false;
-};
-// CacheableEntry is a wrapper to erasure the Entry type.
-class CacheableLayerWrapper : public CacheableItemWrapperBase {
- public:
-  explicit CacheableLayerWrapper(Cacheable* layer) : cacheable_item_(layer) {}
-
-  bool TryToPrepareRasterCache(PrerollContext* context,
-                               const SkMatrix& matrix) override;
-
-  void TouchRasterCache(PrerollContext* context,
-                        const SkMatrix& matrix) override;
-
-  void NeedCacheChildren() { cache_children_ = true; }
-
-  CacheableLayerWrapper* asCacheableLayerWrapper() override { return this; }
-
-  Cacheable* GetCacheableItem() const { return cacheable_item_; }
-
- private:
-  bool cache_children_ = false;
-  Cacheable* cacheable_item_;
+  mutable SkMatrix matrix_;
+  mutable SkRect cull_rect_;
+  unsigned child_entries_;
+  bool need_cached_;
 };
 
-// CacheableEntry is a wrapper to erasure the Entry type.
-class SkGPUObjectCacheableWrapper : public CacheableItemWrapperBase {
+class LayerCacheableItem : public CacheableItem {
  public:
-  explicit SkGPUObjectCacheableWrapper(SkRect offset) : bounds_(offset) {}
+  explicit LayerCacheableItem(Layer* layer,
+                              const SkMatrix& matrix = SkMatrix::I());
 
- protected:
-  SkRect bounds_;
-};
+  void set_cache_layer() const { strategy_ = RasterCacheLayerStrategy::kLayer; }
 
-class CacheableDisplayListWrapper : public SkGPUObjectCacheableWrapper {
- public:
-  CacheableDisplayListWrapper(DisplayList* display_list, SkRect bounds_)
-      : SkGPUObjectCacheableWrapper(bounds_), display_list_(display_list) {}
-
-  bool TryToPrepareRasterCache(PrerollContext* context,
-                               const SkMatrix& matrix) override;
-
-  void TouchRasterCache(PrerollContext* context,
-                        const SkMatrix& matrix) override;
-
-  CacheableDisplayListWrapper* asCacheableDisplayListWrapper() override {
-    return this;
+  void set_cache_children_layer() const {
+    strategy_ = RasterCacheLayerStrategy::kLayerChildren;
   }
 
- private:
+  RasterCacheLayerStrategy GetStrategy() const { return strategy_; }
+
+  LayerCacheableItem* asLayerCacheableItem() override { return this; }
+
+  std::optional<RasterCacheKey> GetKey(
+      SkCanvas* canvas = nullptr) const override;
+
+  std::unique_ptr<RasterCacheResult> CreateRasterCache(
+      PaintContext* paint_context,
+      bool checkerboard = false) const override;
+
+  bool TryToPrepareRasterCache(PaintContext* context) const override;
+
+  void SetHasPlatformView(bool has_platform_view) {
+    has_platform_view_ = has_platform_view;
+  }
+
+  void SetHasTextureLayer(bool has_texture_layer) {
+    has_texture_layer_ = has_texture_layer;
+  }
+
+ protected:
+  std::optional<RasterCacheKey> TryToMakeRasterCacheKeyForLayer(
+      RasterCacheLayerStrategy strategy,
+      const SkMatrix& ctm) const;
+
+  const SkRect& GetPaintBoundsFromLayer() const;
+
+  bool has_platform_view_;
+  bool has_texture_layer_;
+
+  Layer* layer_;
+
+  mutable RasterCacheLayerStrategy strategy_ = RasterCacheLayerStrategy::kLayer;
+};
+
+class DisplayListCacheableItem : public CacheableItem {
+ public:
+  DisplayListCacheableItem(DisplayList* display_list,
+                           const SkRect& bounds,
+                           const SkMatrix& matrix = SkMatrix::I(),
+                           bool is_complex = true,
+                           bool will_change = false);
+
+  DisplayListCacheableItem* asDisplayCacheableItem() override { return this; }
+
+  bool Prepare(PaintContext* paint_context) const override;
+
+  bool ShouldBeCached(const RasterCache* raster_cache,
+                      const GrDirectContext* gr_context) const;
+
+  bool TryToPrepareRasterCache(PaintContext* context) const override;
+
+  std::optional<RasterCacheKey> GetKey(
+      SkCanvas* canvas = nullptr) const override;
+
+  std::unique_ptr<RasterCacheResult> CreateRasterCache(
+      PaintContext* paint_context,
+      bool checkerboard = false) const override;
+
+  void ModifyMatrix(SkPoint offset) const {
+    matrix_ = matrix_.preTranslate(offset.x(), offset.y());
+  }
+
   DisplayList* display_list_;
+  SkRect bounds_;
+  bool is_complex_;
+  bool will_change_;
 };
 
-class CacheableSkPictureWrapper : public SkGPUObjectCacheableWrapper {
+class SkPictureCacheableItem : public CacheableItem {
  public:
-  CacheableSkPictureWrapper(SkPicture* sk_picture, SkRect bounds)
-      : SkGPUObjectCacheableWrapper(bounds), sk_picture_(sk_picture) {}
+  SkPictureCacheableItem(SkPicture* sk_picture,
+                         const SkRect& bounds,
+                         const SkMatrix& matrix = SkMatrix::I(),
+                         bool is_complex = true,
+                         bool will_change = false);
 
-  bool TryToPrepareRasterCache(PrerollContext* context,
-                               const SkMatrix& matrix) override;
+  SkPictureCacheableItem* asSkPictureCacheableItem() override { return this; }
 
-  void TouchRasterCache(PrerollContext* context,
-                        const SkMatrix& matrix) override;
+  bool Prepare(PaintContext* paint_context) const override;
 
-  CacheableSkPictureWrapper* asCacheableSkPictureWrapper() override {
-    return this;
+  bool ShouldBeCached(const RasterCache* raster_cache) const;
+
+  bool TryToPrepareRasterCache(PaintContext* context) const override;
+
+  std::optional<RasterCacheKey> GetKey(
+      SkCanvas* canvas = nullptr) const override;
+
+  std::unique_ptr<RasterCacheResult> CreateRasterCache(
+      PaintContext* paint_context,
+      bool checkerboard = false) const override;
+
+  void ModifyMatrix(SkPoint offset) const {
+    matrix_ = matrix_.preTranslate(offset.x(), offset.y());
   }
 
- private:
   SkPicture* sk_picture_;
-};
-
-// A class used for collection the entry which can be raster cached.
-// The entry may be a Layer, DisplayList, or SkPicture
-class RasterCacheableEntry {
- public:
-  RasterCacheableEntry(std::unique_ptr<CacheableItemWrapperBase> item,
-                       const PrerollContext& context,
-                       const SkMatrix& matrix,
-                       unsigned num_child,
-                       bool need_caching = true);
-
-  /// Create a layer entry.
-  /// The entry may be null if the PrerollContext's raster_cache is null
-  static std::shared_ptr<RasterCacheableEntry> MakeLayerCacheable(
-      Cacheable* layer,
-      const PrerollContext& context,
-      const SkMatrix& matrix,
-      unsigned num_child = 0,
-      bool need_caching = true);
-
-  /// Create a display_list entry.
-  /// The entry may be null if the PrerollContext's raster_cache is null
-  static std::shared_ptr<RasterCacheableEntry> MakeDisplayListCacheable(
-      DisplayList* display_list,
-      const PrerollContext& context,
-      const SkMatrix& matrix,
-      SkRect bounds,
-      unsigned num_child = 0,
-      bool need_caching = true);
-
-  /// Create a sk_picture entry.
-  /// The entry may be null if the PrerollContext's raster_cache is null
-  static std::shared_ptr<RasterCacheableEntry> MakeSkPictureCacheable(
-      SkPicture* picture,
-      const PrerollContext& context,
-      const SkMatrix& matrix,
-      SkRect bounds,
-      unsigned num_child = 0,
-      bool need_caching = true);
-
-  CacheableItemWrapperBase* GetCacheableWrapper() const { return item_.get(); }
-
-  PrerollContext MakeEntryPrerollContext(PrerollContext* context);
-
-  void MarkNotCache() { need_caching = false; }
-
-  void MarkLayerChildrenNeedCached() {
-    item_->asCacheableLayerWrapper()->NeedCacheChildren();
-  }
-
-  void MarkTouchCache() { item_->TouchCache(); }
-
-  bool TryToPrepareRasterCache(PrerollContext* context) {
-    return item_->TryToPrepareRasterCache(context, matrix);
-  }
-
-  void TouchRasterCache(PrerollContext* context) {
-    item_->TouchRasterCache(context, matrix);
-  }
-
-  Cacheable* GetCacheableLayer() {
-    return item_->asCacheableLayerWrapper()->GetCacheableItem();
-  }
-
-  SkMatrix matrix;
-  SkRect cull_rect;
-
-  unsigned num_child_entries;
-  bool need_caching;
-
-  bool has_platform_view = false;
-  bool has_texture_layer = false;
-
- private:
-  std::unique_ptr<CacheableItemWrapperBase> item_;
+  SkRect bounds_;
+  bool is_complex_;
+  bool will_change_;
 };
 
 }  // namespace flutter

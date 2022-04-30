@@ -13,7 +13,9 @@ ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
     : shader_(shader),
       mask_rect_(mask_rect),
       blend_mode_(blend_mode),
-      render_count_(1) {}
+      render_count_(1) {
+  InitialCacheableLayerItem(this);
+}
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -49,23 +51,21 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->subtree_can_inherit_opacity = true;
 }
 
-void ShaderMaskLayer::TryToCache(PrerollContext* context,
-                                 RasterCacheableEntry* entry,
-                                 const SkMatrix& ctm) {
+void ShaderMaskLayer::TryToCache(PrerollContext* context, const SkMatrix& ctm) {
+  auto* cacheable_item = GetCacheableLayer();
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     return;
   }
   render_count_++;
-  entry->MarkNotCache();
+  cacheable_item->set_need_cached(false);
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
-
+  const auto* cacheable_item = GetCacheableLayer();
   if (context.raster_cache &&
-      context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                 RasterCacheLayerStrategy::kLayer)) {
+      cacheable_item->Draw(context.raster_cache, *context.leaf_nodes_canvas)) {
     return;
   }
 

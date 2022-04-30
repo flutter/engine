@@ -37,25 +37,13 @@ std::unique_ptr<RasterCacheResult> MockRasterCache::RasterizeDisplayList(
   return std::make_unique<MockRasterCacheResult>(cache_rect);
 }
 
-std::unique_ptr<RasterCacheResult> MockRasterCache::RasterizeLayer(
-    PrerollContext* context,
-    Layer* layer,
-    RasterCacheLayerStrategy strategy,
-    const SkMatrix& ctm,
-    bool checkerboard) const {
-  SkRect logical_rect = layer->paint_bounds();
-  SkRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
-
-  return std::make_unique<MockRasterCacheResult>(cache_rect);
-}
-
 void MockRasterCache::AddMockLayer(int width, int height) {
   SkMatrix ctm = SkMatrix::I();
   SkPath path;
   path.addRect(100, 100, 100 + width, 100 + height);
-  MockLayer layer = MockLayer(path);
+  MockCacheableLayer layer = MockCacheableLayer(path);
   layer.Preroll(&preroll_context_, ctm);
-  Prepare(&preroll_context_, &layer, ctm);
+  Prepare(layer.GetCacheableLayer(), &paint_context_);
 }
 
 void MockRasterCache::AddMockPicture(int width, int height) {
@@ -69,16 +57,20 @@ void MockRasterCache::AddMockPicture(int width, int height) {
       SkRect::MakeLTRB(0, 0, 200 + width, 200 + height), &rtree_factory);
   recorder_canvas->drawPath(path, SkPaint());
   sk_sp<SkPicture> picture = skp_recorder.finishRecordingAsPicture();
-  PrerollContextHolder holder = GetSamplePrerollContextHolder();
-  holder.preroll_context.dst_color_space = color_space_;
-  for (int i = 0; i < access_threshold(); i++) {
-    Prepare(&holder.preroll_context, picture.get(), ctm);
-    Draw(*picture, mock_canvas_);
+
+  PaintContextHolder holder = GetSamplePaintContextHolder(this);
+  holder.paint_context.dst_color_space = color_space_;
+
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(), ctm,
+                                      true, false);
+  for (size_t i = 0; i < access_threshold(); i++) {
+    Prepare(&picture_item, &holder.paint_context);
+    Draw(&picture_item, mock_canvas_);
   }
-  Prepare(&holder.preroll_context, picture.get(), ctm);
+  Prepare(&picture_item, &holder.paint_context);
 }
 
-PrerollContextHolder GetSamplePrerollContextHolder() {
+PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   MutatorsStack mutators_stack;
@@ -86,7 +78,7 @@ PrerollContextHolder GetSamplePrerollContextHolder() {
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
   PrerollContextHolder holder = {
       {
-          nullptr,                    /* raster_cache */
+          raster_cache,               /* raster_cache */
           nullptr,                    /* gr_context */
           nullptr,                    /* external_view_embedder */
           mutators_stack, srgb.get(), /* color_space */
@@ -98,6 +90,33 @@ PrerollContextHolder GetSamplePrerollContextHolder() {
           false, /* has_platform_view */
       },
       srgb};
+
+  return holder;
+}
+
+PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
+  FixedRefreshRateStopwatch raster_time;
+  FixedRefreshRateStopwatch ui_time;
+  MutatorsStack mutators_stack;
+  TextureRegistry texture_registry;
+  sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
+  PaintContextHolder holder = {{
+                                   // clang-format off
+          .internal_nodes_canvas         = nullptr,
+          .leaf_nodes_canvas             = nullptr,
+          .gr_context                    = nullptr,
+          .dst_color_space               = srgb.get(),
+          .view_embedder                 = nullptr,
+          .raster_time                   = raster_time,
+          .ui_time                       = ui_time,
+          .texture_registry              = texture_registry,
+          .raster_cache                  = raster_cache,
+          .checkerboard_offscreen_layers = false,
+          .frame_device_pixel_ratio      = 1.0f,
+          .inherited_opacity             = SK_Scalar1,
+                                   // clang-format on
+                               },
+                               srgb};
 
   return holder;
 }

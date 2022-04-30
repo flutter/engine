@@ -11,6 +11,7 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
+#include "include/core/SkRect.h"
 
 namespace flutter {
 
@@ -33,19 +34,16 @@ class PictureLayer : public Layer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  void TryToCache(PrerollContext* context,
-                  RasterCacheableEntry* entry,
-                  const SkMatrix& ctm) override;
+  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override;
 
   Layer* asLayer() override { return this; }
 
  private:
   SkPoint offset_;
+  SkRect bounds_;
   // Even though pictures themselves are not GPU resources, they may reference
   // images that have a reference to a GPU resource.
   SkiaGPUObject<SkPicture> picture_;
-  bool is_complex_ = false;
-  bool will_change_ = false;
 
   sk_sp<SkData> SerializedPicture() const;
   mutable sk_sp<SkData> cached_serialized_picture_;

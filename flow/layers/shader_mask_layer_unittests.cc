@@ -300,29 +300,40 @@ TEST_F(ShaderMaskLayerTest, LayerCached) {
   cache_canvas.setMatrix(cache_ctm);
 
   use_mock_raster_cache();
+  const auto* cachebale_shader_masker_item = layer->GetCacheableLayer();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+  EXPECT_FALSE(
+      cachebale_shader_masker_item->Draw(raster_cache(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
-  LayerTree::TryToRasterCache(preroll_context());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+
+  EXPECT_FALSE(
+      cachebale_shader_masker_item->Draw(raster_cache(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
-  LayerTree::TryToRasterCache(preroll_context());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+
+  EXPECT_FALSE(
+      cachebale_shader_masker_item->Draw(raster_cache(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
-  LayerTree::TryToRasterCache(preroll_context());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                   RasterCacheLayerStrategy::kLayer));
+  EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+
+  EXPECT_TRUE(cachebale_shader_masker_item->Draw(raster_cache(), cache_canvas));
 }
 
 TEST_F(ShaderMaskLayerTest, OpacityInheritance) {

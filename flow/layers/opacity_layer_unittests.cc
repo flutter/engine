@@ -95,31 +95,24 @@ TEST_F(OpacityLayerTest, CacheChild) {
   use_mock_raster_cache();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
+
+  const auto* cachebale_opacity_item = layer->GetCacheableLayer();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(cachebale_opacity_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+  EXPECT_FALSE(cachebale_opacity_item->Draw(raster_cache(), other_canvas));
+  EXPECT_FALSE(cachebale_opacity_item->Draw(raster_cache(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
-  LayerTree::TryToRasterCache(preroll_context());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren));
+
+  EXPECT_EQ(cachebale_opacity_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayerChildren);
+  EXPECT_FALSE(cachebale_opacity_item->Draw(raster_cache(), other_canvas));
+  EXPECT_TRUE(cachebale_opacity_item->Draw(raster_cache(), cache_canvas));
 }
 
 TEST_F(OpacityLayerTest, CacheChildren) {
@@ -144,35 +137,24 @@ TEST_F(OpacityLayerTest, CacheChildren) {
   use_mock_raster_cache();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
+
+  const auto* cachebale_opacity_item = layer->GetCacheableLayer();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(cachebale_opacity_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayer);
+  EXPECT_FALSE(cachebale_opacity_item->Draw(raster_cache(), other_canvas));
+  EXPECT_FALSE(cachebale_opacity_item->Draw(raster_cache(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
-  LayerTree::TryToRasterCache(preroll_context());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren));
+
+  EXPECT_EQ(cachebale_opacity_item->GetStrategy(),
+            RasterCacheLayerStrategy::kLayerChildren);
+  EXPECT_FALSE(cachebale_opacity_item->Draw(raster_cache(), other_canvas));
+  EXPECT_TRUE(cachebale_opacity_item->Draw(raster_cache(), cache_canvas));
 }
 
 TEST_F(OpacityLayerTest, FullyOpaque) {

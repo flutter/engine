@@ -14,10 +14,14 @@ PictureLayer::PictureLayer(const SkPoint& offset,
                            SkiaGPUObject<SkPicture> picture,
                            bool is_complex,
                            bool will_change)
-    : offset_(offset),
-      picture_(std::move(picture)),
-      is_complex_(is_complex),
-      will_change_(will_change) {}
+    : offset_(offset), picture_(std::move(picture)) {
+  if (picture_.skia_object()) {
+    bounds_ =
+        picture_.skia_object()->cullRect().makeOffset(offset_.x(), offset_.y());
+    InitialCacheableSkPictureItem(picture_.skia_object().get(), bounds_,
+                                  is_complex, will_change);
+  }
+}
 
 bool PictureLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Only return true for identical pictures; This way
@@ -120,27 +124,21 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(bounds);
 }
 
-void PictureLayer::TryToCache(PrerollContext* context,
-                              RasterCacheableEntry* entry,
-                              const SkMatrix& ctm) {
-  auto* cache = context->raster_cache;
+void PictureLayer::TryToCache(PrerollContext* context, const SkMatrix& ctm) {
+  auto* cacheable_sk_picture_item = GetCacheableSkPictureItem();
   TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
   // For sk_picture_layer if the context has raster_cache, we will try to
   // collection it when we raster cache it, we will to decision Prepare or
   // Touch cache
   if (context->cull_rect.intersect(paint_bounds())) {
-    if (cache->ShouldBeCached(context, picture(), is_complex_, will_change_,
-                              ctm)) {
-      SkMatrix transformation_matrix = ctm;
-      transformation_matrix.preTranslate(offset_.x(), offset_.y());
-
-      entry->matrix = transformation_matrix;
+    if (cacheable_sk_picture_item->ShouldBeCached(context->raster_cache)) {
+      cacheable_sk_picture_item->ModifyMatrix(offset_);
       // if current Layer can be cached, we change the
       // subtree_can_inherit_opacity to true
       context->subtree_can_inherit_opacity = true;
       return;
     }
-    entry->MarkNotCache();
+    cacheable_sk_picture_item->set_need_cached(false);
     return;
   }
 
@@ -161,8 +159,10 @@ void PictureLayer::Paint(PaintContext& context) const {
 
   if (context.raster_cache) {
     AutoCachePaint cache_paint(context);
-    if (context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas,
-                                   cache_paint.paint())) {
+    const auto* cacheable_picture_item = GetCacheableSkPictureItem();
+    if (cacheable_picture_item->Draw(context.raster_cache,
+                                     *context.leaf_nodes_canvas,
+                                     cache_paint.paint())) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
       return;
     }

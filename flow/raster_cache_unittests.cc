@@ -8,6 +8,7 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "gtest/gtest.h"
+#include "include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -32,33 +33,34 @@ TEST(RasterCache, ThresholdIsRespectedForSkPicture) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, matrix));
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+                                      matrix, true, false);
+
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
   // 1st access.
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, matrix));
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
   // 2nd access.
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
   // Now Prepare should cache it.
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   picture.get(), true, false, matrix));
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), matrix));
-  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_TRUE(picture_item.ShouldBeCached(&cache));
+
+  ASSERT_TRUE(picture_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(picture_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
@@ -72,24 +74,26 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
 
   cache.PrepareNewFrame();
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+                                      matrix, true, false);
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, matrix));
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
+
   // 1st access.
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
   ASSERT_EQ(cache.picture_metrics().total_bytes(), 0u);
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, matrix));
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
   // 2nd access.
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
@@ -97,11 +101,9 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   cache.PrepareNewFrame();
 
   // Now Prepare should cache it.
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   picture.get(), true, false, matrix));
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), matrix));
-  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_TRUE(picture_item.ShouldBeCached(&cache));
+  ASSERT_TRUE(picture_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   ASSERT_EQ(cache.picture_metrics().total_count(), 1u);
@@ -120,32 +122,33 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
 
+  auto* gr_context = preroll_context_holder.preroll_context.gr_context;
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), true, false, matrix));
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), matrix, true, false);
+
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
   // 1st access.
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), true, false, matrix));
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
 
   // 2nd access.
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
   // Now Prepare should cache it.
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   display_list.get(), true, false, matrix));
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            display_list.get(), matrix));
-  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_TRUE(display_list_item.ShouldBeCached(&cache, gr_context));
+  ASSERT_TRUE(display_list_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(display_list_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
@@ -161,11 +164,11 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
   cache.PrepareNewFrame();
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+                                      matrix, true, false);
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, matrix));
-
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
@@ -182,10 +185,12 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), true, false, matrix));
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), matrix, true, false);
+  ASSERT_FALSE(display_list_item.ShouldBeCached(
+      &cache, preroll_context_holder.preroll_context.gr_context));
 
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
@@ -202,10 +207,11 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, matrix));
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+                                      matrix, true, false);
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
@@ -222,10 +228,12 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), true, false, matrix));
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), matrix, true, false);
+  ASSERT_FALSE(display_list_item.ShouldBeCached(
+      &cache, preroll_context_holder.preroll_context.gr_context));
 
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, SweepsRemoveUnusedSkPictures) {
@@ -239,21 +247,21 @@ TEST(RasterCache, SweepsRemoveUnusedSkPictures) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
-
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, matrix));  // 1
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+                                      matrix, true, false);
+
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));  // 1
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   picture.get(), true, false, matrix));  // 2
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), matrix));  // 2
-  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_TRUE(picture_item.ShouldBeCached(&cache));                        // 2
+  ASSERT_TRUE(picture_item.Prepare(&paint_context_holder.paint_context));  // 2
+  ASSERT_TRUE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
 
@@ -262,7 +270,7 @@ TEST(RasterCache, SweepsRemoveUnusedSkPictures) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
@@ -276,24 +284,25 @@ TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  auto* gr_context = preroll_context_holder.preroll_context.gr_context;
 
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), true, false,
-                                    matrix));  // 1
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), matrix, true, false);
 
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));  // 1
+
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   display_list.get(), true, false,
-                                   matrix));  // 2
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            display_list.get(), matrix));  // 2
-  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_TRUE(display_list_item.ShouldBeCached(&cache, gr_context));  // 2
+  ASSERT_TRUE(
+      display_list_item.Prepare(&paint_context_holder.paint_context));  // 2
+  ASSERT_TRUE(display_list_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
 
@@ -302,7 +311,7 @@ TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 }
 
 // Construct a cache result whose device target rectangle rounds out to be one
@@ -326,25 +335,26 @@ TEST(RasterCache, DeviceRectRoundOutForSkPicture) {
   canvas.setMatrix(ctm);
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), true, false, ctm));
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(), ctm,
+                                      true, false);
 
-  ASSERT_FALSE(cache.Draw(*picture, canvas));
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
+
+  ASSERT_FALSE(picture_item.Draw(&cache, canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   picture.get(), true, false, ctm));
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), ctm));
-  ASSERT_TRUE(cache.Draw(*picture, canvas));
+  ASSERT_TRUE(picture_item.ShouldBeCached(&cache));
+  ASSERT_TRUE(picture_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(picture_item.Draw(&cache, canvas));
 
   canvas.translate(248, 0);
-  ASSERT_TRUE(cache.Draw(*picture, canvas));
+  ASSERT_TRUE(picture_item.Draw(&cache, canvas));
 }
 
 // The device rect is pixel snapped if SUPPORT_FRACTIONAL_TRANSLATION
@@ -379,25 +389,26 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
   canvas.setMatrix(ctm);
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  auto* gr_context = preroll_context_holder.preroll_context.gr_context;
 
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
   cache.PrepareNewFrame();
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), ctm, true, false);
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), true, false, ctm));
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
 
-  ASSERT_FALSE(cache.Draw(*display_list, canvas));
+  ASSERT_FALSE(display_list_item.Draw(&cache, canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   display_list.get(), true, false, ctm));
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            display_list.get(), ctm));
-  ASSERT_TRUE(cache.Draw(*display_list, canvas));
+  ASSERT_TRUE(display_list_item.ShouldBeCached(&cache, gr_context));
+  ASSERT_TRUE(display_list_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(display_list_item.Draw(&cache, canvas));
 
   canvas.translate(248, 0);
-  ASSERT_TRUE(cache.Draw(*display_list, canvas));
+  ASSERT_TRUE(display_list_item.Draw(&cache, canvas));
 }
 
 TEST(RasterCache, NestedOpCountMetricUsedForSkPicture) {
@@ -413,22 +424,22 @@ TEST(RasterCache, NestedOpCountMetricUsedForSkPicture) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
 
   cache.PrepareNewFrame();
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+                                      matrix, false, false);
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    picture.get(), false, false, matrix));
+  ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   picture.get(), false, false, matrix));
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), matrix));
-  ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_TRUE(picture_item.ShouldBeCached(&cache));
+  ASSERT_TRUE(picture_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(picture_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
@@ -444,19 +455,23 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
+
+  auto* gr_context = preroll_context_holder.preroll_context.gr_context;
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), false, false, matrix));
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), matrix, false, false);
+
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            display_list.get(), matrix));
-  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_TRUE(display_list_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(display_list_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, NaiveComplexityScoringDisplayList) {
@@ -482,16 +497,21 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
 
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), false, false, matrix));
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
+
+  auto* gr_context = preroll_context_holder.preroll_context.gr_context;
+
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), matrix, false, false);
+
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), false, false, matrix));
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 
   // Six raster ops should be cached
   display_list = GetSampleDisplayList(6);
@@ -501,20 +521,19 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
   ASSERT_EQ(display_list->op_count(), 6u);
   ASSERT_TRUE(calculator->ShouldBeCached(complexity_score));
 
+  display_list_item = DisplayListCacheableItem(
+      display_list.get(), display_list->bounds(), matrix, false, false);
   cache.PrepareNewFrame();
 
-  ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                    display_list.get(), false, false, matrix));
-  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
+  ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
 
   cache.CleanupAfterFrame();
   cache.PrepareNewFrame();
 
-  ASSERT_TRUE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                   display_list.get(), false, false, matrix));
-  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            display_list.get(), matrix));
-  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+  ASSERT_TRUE(display_list_item.ShouldBeCached(&cache, gr_context));
+  ASSERT_TRUE(display_list_item.Prepare(&paint_context_holder.paint_context));
+  ASSERT_TRUE(display_list_item.Draw(&cache, dummy_canvas));
 }
 
 TEST(RasterCache, SkPictureWithSingularMatrixIsNotCached) {
@@ -533,19 +552,19 @@ TEST(RasterCache, SkPictureWithSingularMatrixIsNotCached) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
-
+  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+                                      SkMatrix::I(), true, false);
   for (int i = 0; i < 10; i++) {
     cache.PrepareNewFrame();
 
     for (int j = 0; j < matrixCount; j++) {
-      ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                        picture.get(), true, false,
-                                        matrices[j]));
+      picture_item.set_matrix(matrices[j]);
+      ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
     }
 
     for (int j = 0; j < matrixCount; j++) {
       dummy_canvas.setMatrix(matrices[j]);
-      ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+      ASSERT_FALSE(picture_item.Draw(&cache, dummy_canvas));
     }
 
     cache.CleanupAfterFrame();
@@ -568,19 +587,21 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+  auto* gr_context = preroll_context_holder.preroll_context.gr_context;
+  DisplayListCacheableItem display_list_item(
+      display_list.get(), display_list->bounds(), SkMatrix::I(), true, false);
 
   for (int i = 0; i < 10; i++) {
     cache.PrepareNewFrame();
 
     for (int j = 0; j < matrixCount; j++) {
-      ASSERT_FALSE(cache.ShouldBeCached(&preroll_context_holder.preroll_context,
-                                        display_list.get(), true, false,
-                                        matrices[j]));
+      display_list_item.set_matrix(matrices[j]);
+      ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
     }
 
     for (int j = 0; j < matrixCount; j++) {
       dummy_canvas.setMatrix(matrices[j]);
-      ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+      ASSERT_FALSE(display_list_item.Draw(&cache, dummy_canvas));
     }
 
     cache.CleanupAfterFrame();

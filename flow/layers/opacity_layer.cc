@@ -12,7 +12,9 @@
 namespace flutter {
 
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset), children_can_accept_opacity_(false) {}
+    : alpha_(alpha), offset_(offset), children_can_accept_opacity_(false) {
+  InitialCacheableLayerItem(this);
+}
 
 void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -73,20 +75,19 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
 }
 
-void OpacityLayer::TryToCache(PrerollContext* context,
-                              RasterCacheableEntry* entry,
-                              const SkMatrix& ctm) {
+void OpacityLayer::TryToCache(PrerollContext* context, const SkMatrix& ctm) {
+  auto* cacheable_layer = GetCacheableLayer();
   // try to cache the opacity layer's children
   if (!children_can_accept_opacity()) {
     auto child_matrix = child_matrix_;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix_);
 #endif
-    entry->matrix = child_matrix;
-    entry->MarkLayerChildrenNeedCached();
+    cacheable_layer->set_matrix(child_matrix);
+    cacheable_layer->set_cache_children_layer();
     return;
   }
-  entry->MarkNotCache();
+  cacheable_layer->set_need_cached(false);
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {
@@ -114,11 +115,12 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setAlphaf(subtree_opacity);
 
-  if (context.raster_cache &&
-      context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                 RasterCacheLayerStrategy::kLayerChildren,
-                                 &paint)) {
-    return;
+  if (context.raster_cache) {
+    const auto* cacheable_layer = GetCacheableLayer();
+    if (cacheable_layer->Draw(context.raster_cache, *context.leaf_nodes_canvas,
+                              &paint)) {
+      return;
+    }
   }
 
   // Skia may clip the content with saveLayerBounds (although it's not a

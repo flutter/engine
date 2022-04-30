@@ -4,7 +4,6 @@
 
 #include "flutter/flow/layers/image_filter_layer.h"
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/raster_cacheable_entry.h"
 
 namespace flutter {
@@ -12,7 +11,9 @@ namespace flutter {
 ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
     : filter_(std::move(filter)),
       transformed_filter_(nullptr),
-      render_count_(1) {}
+      render_count_(1) {
+  InitialCacheableLayerItem(this);
+}
 
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -76,14 +77,16 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 }
 
 void ImageFilterLayer::TryToCache(PrerollContext* context,
-                                  RasterCacheableEntry* entry,
                                   const SkMatrix& ctm) {
+  auto* cacheable_item = GetCacheableLayer();
   if (!filter_) {
-    entry->MarkNotCache();
+    cacheable_item->set_need_cached(false);
     return;
   }
+
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     // entry default cache current layer
+    cacheable_item->set_cache_layer();
     return;
   }
   transformed_filter_ = nullptr;
@@ -106,11 +109,11 @@ void ImageFilterLayer::TryToCache(PrerollContext* context,
     // stable between frames and also avoiding a rendering surface
     // switch during the Paint phase even if they are not stable.
     // This benefit is seen most during animations.
-    entry->MarkLayerChildrenNeedCached();
+    cacheable_item->set_cache_children_layer();
     return;
   }
 
-  entry->MarkNotCache();
+  cacheable_item->set_need_cached(false);
   return;
 }
 
@@ -126,18 +129,15 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
 #endif
 
   if (context.raster_cache) {
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayer,
-                                   cache_paint.paint())) {
-      return;
-    }
-    if (transformed_filter_) {
+    const auto* cacheable_layer = GetCacheableLayer();
+    if (cacheable_layer->GetStrategy() ==
+            RasterCacheLayerStrategy::kLayerChildren &&
+        transformed_filter_) {
       cache_paint.setImageFilter(transformed_filter_);
-      if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                     RasterCacheLayerStrategy::kLayerChildren,
-                                     cache_paint.paint())) {
-        return;
-      }
+    }
+    if (cacheable_layer->Draw(context.raster_cache, *context.leaf_nodes_canvas,
+                              cache_paint.paint())) {
+      return;
     }
   }
 

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/flow/raster_cacheable_entry.h"
 #include "gtest/gtest.h"
 #define FML_USED_ON_EMBEDDER
 
@@ -123,10 +124,11 @@ TEST_F(PictureLayerTest, OpacityInheritanceCacheablePicture) {
   context->subtree_can_inherit_opacity = false;
   layer->Preroll(preroll_context(), SkMatrix());
   // This picture_layer can be cached
-  ASSERT_TRUE(raster_cache()->ShouldBeCached(
-      preroll_context(), layer->picture(), true, false, SkMatrix()));
+  SkPictureCacheableItem picture_cacheable_item(
+      layer->picture(), layer->picture()->cullRect(), SkMatrix(), true, false);
+  ASSERT_TRUE(picture_cacheable_item.ShouldBeCached(raster_cache()));
   // Cache this picture layer
-  raster_cache()->Prepare(preroll_context(), layer->picture(), SkMatrix());
+  picture_cacheable_item.Prepare(&paint_context());
 
   EXPECT_EQ(raster_cache()->GetPictureCachedEntriesCount(), size_t(1));
   EXPECT_NE(raster_cache()->EstimatePictureCacheByteSize(), size_t(0));

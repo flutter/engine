@@ -5,7 +5,7 @@
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
-
+#include "flutter/flow/testing/mock_raster_cache.h"
 namespace flutter {
 namespace testing {
 
@@ -63,6 +63,15 @@ void MockLayer::Paint(PaintContext& context) const {
   if (context.inherited_opacity < SK_Scalar1) {
     context.leaf_nodes_canvas->restore();
   }
+}
+
+std::unique_ptr<RasterCacheResult> MockLayerCacheableItem::CreateRasterCache(
+    PaintContext* paint_context,
+    bool checkerboard) const {
+  SkRect logical_rect = layer_->paint_bounds();
+  SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, matrix_);
+
+  return std::make_unique<MockRasterCacheResult>(cache_rect);
 }
 
 void MockCacheableContainerLayer::Preroll(PrerollContext* context,

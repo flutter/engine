@@ -25,9 +25,7 @@ class ShaderMaskLayer : public ContainerLayer, public Cacheable {
 
   Layer* asLayer() override { return this; };
 
-  void TryToCache(PrerollContext* context,
-                  RasterCacheableEntry* entry,
-                  const SkMatrix& ctm) override;
+  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override;
 
  private:
   sk_sp<SkShader> shader_;

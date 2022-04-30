@@ -18,10 +18,14 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    SkiaGPUObject<DisplayList> display_list,
                                    bool is_complex,
                                    bool will_change)
-    : offset_(offset),
-      display_list_(std::move(display_list)),
-      is_complex_(is_complex),
-      will_change_(will_change) {}
+    : offset_(offset), display_list_(std::move(display_list)) {
+  if (display_list_.skia_object() != nullptr) {
+    bounds_ = display_list_.skia_object()->bounds().makeOffset(offset_.x(),
+                                                               offset_.y());
+    InitialCacheableDisplayListItem(display_list_.skia_object().get(), bounds_,
+                                    is_complex, will_change);
+  }
+}
 
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
@@ -89,34 +93,30 @@ void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
   DisplayList* disp_list = display_list();
-  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
 
   Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix, bounds);
+      Cacheable::AutoCache::Create(this, context, matrix, bounds_);
   if (disp_list->can_apply_group_opacity()) {
     context->subtree_can_inherit_opacity = true;
   }
-  set_paint_bounds(bounds);
+  set_paint_bounds(bounds_);
 }
 
 void DisplayListLayer::TryToCache(PrerollContext* context,
-                                  RasterCacheableEntry* entry,
                                   const SkMatrix& ctm) {
-  auto* cache = context->raster_cache;
+  auto* cacheable_display_list_item = GetCacheableDisplayListItem();
   TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
   // For display_list_layer if the context has raster_cache, we will try to
   // collection it when we raster cache it, we will to decision Prepare or
   // Touch cache
   if (context->cull_rect.intersect(paint_bounds())) {
-    if (cache->ShouldBeCached(context, display_list(), is_complex_,
-                              will_change_, ctm)) {
-      SkMatrix transformation_matrix = ctm;
-      transformation_matrix.preTranslate(offset_.x(), offset_.y());
+    if (cacheable_display_list_item->ShouldBeCached(context->raster_cache,
+                                                    context->gr_context)) {
+      cacheable_display_list_item->ModifyMatrix(offset_);
       context->subtree_can_inherit_opacity = true;
-      entry->matrix = transformation_matrix;
       return;
     }
-    entry->MarkNotCache();
+    cacheable_display_list_item->set_need_cached(false);
     return;
   }
   return;
@@ -132,8 +132,10 @@ void DisplayListLayer::Paint(PaintContext& context) const {
 
   if (context.raster_cache) {
     AutoCachePaint cache_paint(context);
-    if (context.raster_cache->Draw(*display_list(), *context.leaf_nodes_canvas,
-                                   cache_paint.paint())) {
+    const auto* display_list_item = GetCacheableDisplayListItem();
+    if (display_list_item->Draw(context.raster_cache,
+                                *context.leaf_nodes_canvas,
+                                cache_paint.paint())) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
       return;
     }

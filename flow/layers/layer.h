@@ -41,7 +41,6 @@ class PictureLayer;
 class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
-class CacheableLayer;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
@@ -108,7 +107,45 @@ struct PrerollContext {
   //    saveLayer when rendering anyway can apply the opacity there)
   bool subtree_can_inherit_opacity = false;
 
-  std::vector<std::shared_ptr<RasterCacheableEntry>> raster_cached_entries;
+  std::vector<CacheableItem*>* raster_cached_entries;
+};
+
+struct PaintContext {
+  // When splitting the scene into multiple canvases (e.g when embedding
+  // a platform view on iOS) during the paint traversal we apply the non leaf
+  // flow layers to all canvases, and leaf layers just to the "current"
+  // canvas. Applying the non leaf layers to all canvases ensures that when
+  // we switch a canvas (when painting a PlatformViewLayer) the next canvas
+  // has the exact same state as the current canvas.
+  // The internal_nodes_canvas is a SkNWayCanvas which is used by non leaf
+  // and applies the operations to all canvases.
+  // The leaf_nodes_canvas is the "current" canvas and is used by leaf
+  // layers.
+  SkCanvas* internal_nodes_canvas;
+  SkCanvas* leaf_nodes_canvas;
+  GrDirectContext* gr_context;
+  SkColorSpace* dst_color_space;
+  ExternalViewEmbedder* view_embedder;
+  const Stopwatch& raster_time;
+  const Stopwatch& ui_time;
+  TextureRegistry& texture_registry;
+  const RasterCache* raster_cache;
+  const bool checkerboard_offscreen_layers;
+  const float frame_device_pixel_ratio = 1.0f;
+
+  // Snapshot store to collect leaf layer snapshots. The store is non-null
+  // only when leaf layer tracing is enabled.
+  LayerSnapshotStore* layer_snapshot_store = nullptr;
+  bool enable_leaf_layer_tracing = false;
+
+  // The following value should be used to modulate the opacity of the
+  // layer during |Paint|. If the layer does not set the corresponding
+  // |layer_can_inherit_opacity()| flag, then this value should always
+  // be |SK_Scalar1|. The value is to be applied as if by using a
+  // |saveLayer| with an |SkPaint| initialized to this alphaf value and
+  // a |kSrcOver| blend mode.
+  SkScalar inherited_opacity = SK_Scalar1;
+  DisplayListBuilder* leaf_nodes_builder = nullptr;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -167,43 +204,6 @@ class Layer {
     bool layer_itself_performs_readback_;
 
     bool prev_surface_needs_readback_;
-  };
-
-  struct PaintContext {
-    // When splitting the scene into multiple canvases (e.g when embedding
-    // a platform view on iOS) during the paint traversal we apply the non leaf
-    // flow layers to all canvases, and leaf layers just to the "current"
-    // canvas. Applying the non leaf layers to all canvases ensures that when
-    // we switch a canvas (when painting a PlatformViewLayer) the next canvas
-    // has the exact same state as the current canvas.
-    // The internal_nodes_canvas is a SkNWayCanvas which is used by non leaf
-    // and applies the operations to all canvases.
-    // The leaf_nodes_canvas is the "current" canvas and is used by leaf
-    // layers.
-    SkCanvas* internal_nodes_canvas;
-    SkCanvas* leaf_nodes_canvas;
-    GrDirectContext* gr_context;
-    ExternalViewEmbedder* view_embedder;
-    const Stopwatch& raster_time;
-    const Stopwatch& ui_time;
-    TextureRegistry& texture_registry;
-    const RasterCache* raster_cache;
-    const bool checkerboard_offscreen_layers;
-    const float frame_device_pixel_ratio = 1.0f;
-
-    // Snapshot store to collect leaf layer snapshots. The store is non-null
-    // only when leaf layer tracing is enabled.
-    LayerSnapshotStore* layer_snapshot_store = nullptr;
-    bool enable_leaf_layer_tracing = false;
-
-    // The following value should be used to modulate the opacity of the
-    // layer during |Paint|. If the layer does not set the corresponding
-    // |layer_can_inherit_opacity()| flag, then this value should always
-    // be |SK_Scalar1|. The value is to be applied as if by using a
-    // |saveLayer| with an |SkPaint| initialized to this alphaf value and
-    // a |kSrcOver| blend mode.
-    SkScalar inherited_opacity = SK_Scalar1;
-    DisplayListBuilder* leaf_nodes_builder = nullptr;
   };
 
   class AutoCachePaint {

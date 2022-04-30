@@ -47,6 +47,8 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   MutatorsStack stack;
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+  raster_cached_entries_.clear();
+
   PrerollContext context = {
       // clang-format off
       .raster_cache                  = cache,
@@ -61,38 +63,36 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .texture_registry              = frame.context().texture_registry(),
       .checkerboard_offscreen_layers = checkerboard_offscreen_layers_,
       .frame_device_pixel_ratio      = device_pixel_ratio_,
+      .raster_cached_entries         = &raster_cached_entries_,
       // clang-format on
   };
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
 
-  TryToRasterCache(&context);
-
   return context.surface_needs_readback;
 }
 
-void LayerTree::TryToRasterCache(PrerollContext* context,
-                                 bool ignore_raster_cache) {
+void LayerTree::TryToRasterCache(
+    const std::vector<CacheableItem*>& raster_cached_entries,
+    PaintContext* paint_context,
+    bool ignore_raster_cache) {
   unsigned i = 0;
-  const auto entries_size = context->raster_cached_entries.size();
+  const auto entries_size = raster_cached_entries.size();
   while (i < entries_size) {
-    auto& entry = context->raster_cached_entries[i];
-    if (entry->need_caching) {
-      auto entry_preroll_context = entry->MakeEntryPrerollContext(context);
-
+    auto* item = raster_cached_entries[i];
+    if (item->need_cached()) {
       // try to cache current layer
       // If parent failed to cache, just proceed to the next entry
-      if (entry->TryToPrepareRasterCache(&entry_preroll_context)) {
+      if (item->TryToPrepareRasterCache(paint_context)) {
         // if parent cached, then foreach child layer to touch them.
-        for (unsigned j = 0; j < entry->num_child_entries; j++) {
-          auto& child_entry = context->raster_cached_entries[i + j + 1];
-          auto child_entry_preroll_context =
-              child_entry->MakeEntryPrerollContext(context);
-          if (child_entry->need_caching) {
-            child_entry->TouchRasterCache(&child_entry_preroll_context);
+        for (unsigned j = 0; j < item->chld_entries(); j++) {
+          auto* child_entry = raster_cached_entries[i + j + 1];
+
+          if (child_entry->need_cached()) {
+            child_entry->Touch(paint_context->raster_cache, true);
           }
         }
-        i += entry->num_child_entries + 1;
+        i += item->chld_entries() + 1;
         continue;
       }
     }
@@ -126,13 +126,15 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     snapshot_store = &frame.context().snapshot_store();
   }
 
+  SkColorSpace* color_space = GetColorSpace(frame.canvas());
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
-  Layer::PaintContext context = {
+  PaintContext context = {
       // clang-format off
       .internal_nodes_canvas         = &internal_nodes_canvas,
       .leaf_nodes_canvas             = frame.canvas(),
       .gr_context                    = frame.gr_context(),
+      .dst_color_space               = color_space,
       .view_embedder                 = frame.view_embedder(),
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
@@ -148,6 +150,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   };
 
   if (root_layer_->needs_painting(context)) {
+    TryToRasterCache(raster_cached_entries_, &context, ignore_raster_cache);
+
     root_layer_->Paint(context);
   }
 }
@@ -185,11 +189,12 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
   SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
   internal_nodes_canvas.addCanvas(&builder);
 
-  Layer::PaintContext paint_context = {
+  PaintContext paint_context = {
       // clang-format off
       .internal_nodes_canvas         = &internal_nodes_canvas,
       .leaf_nodes_canvas             = &builder,
       .gr_context                    = nullptr,
+      .dst_color_space               = nullptr,
       .view_embedder                 = nullptr,
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,

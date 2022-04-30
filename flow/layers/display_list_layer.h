@@ -36,7 +36,6 @@ class DisplayListLayer : public Layer, public Cacheable {
   }
 
   virtual void TryToCache(PrerollContext* context,
-                          RasterCacheableEntry* entry,
                           const SkMatrix& ctm) override;
 
   Layer* asLayer() override { return this; }
@@ -47,9 +46,9 @@ class DisplayListLayer : public Layer, public Cacheable {
 
  private:
   SkPoint offset_;
+  SkRect bounds_;
+
   flutter::SkiaGPUObject<DisplayList> display_list_;
-  bool is_complex_ = false;
-  bool will_change_ = false;
 
   static bool Compare(DiffContext::Statistics& statistics,
                       const DisplayListLayer* l1,

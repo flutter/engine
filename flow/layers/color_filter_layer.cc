@@ -8,7 +8,9 @@
 namespace flutter {
 
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
-    : filter_(std::move(filter)), render_count_(1) {}
+    : filter_(std::move(filter)), render_count_(1) {
+  InitialCacheableLayerItem(this);
+}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -44,16 +46,16 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
 }
 
 void ColorFilterLayer::TryToCache(PrerollContext* context,
-                                  RasterCacheableEntry* entry,
                                   const SkMatrix& ctm) {
   // We should try to cache the layer or layer's children.
   // First we should to check if we need to touch the cache.
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     // entry default cache current layer
+    GetCacheableLayer()->set_cache_layer();
     return;
   }
   render_count_++;
-  entry->MarkLayerChildrenNeedCached();
+  GetCacheableLayer()->set_cache_children_layer();
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
@@ -63,15 +65,14 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   AutoCachePaint cache_paint(context);
 
   if (context.raster_cache) {
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayer,
-                                   cache_paint.paint())) {
-      return;
+    const auto* layer_cacheable_item = GetCacheableLayer();
+    layer_cacheable_item->set_cache_layer();
+    if (layer_cacheable_item->GetStrategy() ==
+        RasterCacheLayerStrategy::kLayerChildren) {
+      cache_paint.setColorFilter(filter_);
     }
-
-    cache_paint.setColorFilter(filter_);
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren,
+    if (layer_cacheable_item->Draw(context.raster_cache,
+                                   *context.leaf_nodes_canvas,
                                    cache_paint.paint())) {
       return;
     }
