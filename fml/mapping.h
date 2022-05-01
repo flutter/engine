@@ -18,7 +18,7 @@
 
 namespace fml {
 
-using MappingReleaseProc = void(*)(const void* ptr, void* context);
+using MappingReleaseProc = void (*)(const void* ptr, void* context);
 
 class Mapping {
  public:

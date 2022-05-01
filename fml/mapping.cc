@@ -94,7 +94,7 @@ bool DataMapping::IsDontNeedSafe() const {
 }
 
 MappingReleaseProc DataMapping::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) { };
+  MappingReleaseProc proc = [](const void* ptr, void* context) {};
   return proc;
 }
 
@@ -224,7 +224,7 @@ bool SymbolMapping::IsDontNeedSafe() const {
 }
 
 MappingReleaseProc SymbolMapping::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) { };
+  MappingReleaseProc proc = [](const void* ptr, void* context) {};
   return proc;
 }
 
