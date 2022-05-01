@@ -11,13 +11,13 @@ namespace flutter {
 
 struct DlColor {
  public:
-  constexpr DlColor() : o(1.0f), r(0.0f), g(0.0f), b(0.0f) {}
+  constexpr DlColor() : r(0.0f), g(0.0f), b(0.0f), o(1.0f) {}
   // clang-format off
   constexpr DlColor(uint32_t argb)
-      : o((argb >> 24 & 0xFF) * 1.0f / 255.0f),
-        r((argb >> 16 & 0xFF) * 1.0f / 255.0f),
+      : r((argb >> 16 & 0xFF) * 1.0f / 255.0f),
         g((argb >> 8  & 0xFF) * 1.0f / 255.0f),
-        b((argb       & 0xFF) * 1.0f / 255.0f) {}
+        b((argb       & 0xFF) * 1.0f / 255.0f),
+        o((argb >> 24 & 0xFF) * 1.0f / 255.0f) {}
   // clang-format on
   constexpr DlColor(float_t red, float_t green, float_t blue, float_t opacity)
       : o(opacity), r(red), g(green), b(blue) {}
@@ -37,10 +37,10 @@ struct DlColor {
   static constexpr DlColor kLightGrey()          {return 0xFFC0C0C0;};
   // clang-format on
 
-  float_t o;
   float_t r;
   float_t g;
   float_t b;
+  float_t o;
 
   bool isOpaque() const { return getAlpha() == 0xFF; }
 

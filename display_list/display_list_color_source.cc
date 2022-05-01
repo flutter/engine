@@ -102,8 +102,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const float* stops,
     DlTileMode tile_mode,
     const SkMatrix* matrix) {
-  size_t needed = sizeof(DlLinearGradientColorSource) +
-                  (stop_count * (sizeof(uint32_t) + sizeof(float)));
+  size_t needed =
+      sizeof(DlLinearGradientColorSource) + (stop_count * (5 * sizeof(float)));
 
   void* storage = ::operator new(needed);
 

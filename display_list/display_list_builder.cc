@@ -311,7 +311,8 @@ void DisplayListBuilder::setAttributesFromDlPaint(
     setDither(paint.isDither());
   }
   if (flags.applies_alpha_or_color()) {
-    setColor(paint.getColor());
+    auto color = paint.getColor();
+    setColor(DlColor(color.r, color.g, color.b, color.o));
   }
   if (flags.applies_blend()) {
     setBlendMode(paint.getBlendMode());
