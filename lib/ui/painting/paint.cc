@@ -48,9 +48,6 @@ constexpr int kImageFilterIndex = 2;
 constexpr int kObjectCount = 3;  // One larger than largest object index.
 
 // Must be kept in sync with the default in painting.dart.
-constexpr uint32_t kColorDefault = 0xFF000000;
-
-// Must be kept in sync with the default in painting.dart.
 constexpr uint32_t kBlendModeDefault =
     static_cast<uint32_t>(SkBlendMode::kSrcOver);
 
