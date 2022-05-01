@@ -11,7 +11,7 @@ namespace flutter {
 
 struct DlColor {
  public:
-  constexpr DlColor() : r(0.0f), g(0.0f), b(0.0f), o(1.0f) {}
+  constexpr DlColor() : o(1.0f), r(0.0f), g(0.0f), b(0.0f) {}
   // clang-format off
   constexpr DlColor(uint32_t argb)
       : o((argb >> 24 & 0xFF) * 1.0f / 255.0f),
