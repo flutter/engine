@@ -20,7 +20,7 @@ struct DlColor {
         o((argb >> 24 & 0xFF) * 1.0f / 255.0f) {}
   // clang-format on
   constexpr DlColor(float_t red, float_t green, float_t blue, float_t opacity)
-      : o(opacity), r(red), g(green), b(blue) {}
+      : r(red), g(green), b(blue), o(opacity) {}
 
   // clang-format off
   static constexpr DlColor kTransparent()        {return 0x00000000;};
