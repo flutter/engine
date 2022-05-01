@@ -11,8 +11,16 @@ namespace flutter {
 
 struct DlColor {
  public:
-  constexpr DlColor() : argb(0xFF000000) {}
-  constexpr DlColor(uint32_t argb) : argb(argb) {}
+  constexpr DlColor() : r(0.0f), g(0.0f), b(0.0f), o(1.0f) {}
+  // clang-format off
+  constexpr DlColor(uint32_t argb)
+      : o((argb >> 24 & 0xFF) * 1.0f / 255.0f),
+        r((argb >> 16 & 0xFF) * 1.0f / 255.0f),
+        g((argb >> 8  & 0xFF) * 1.0f / 255.0f),
+        b((argb       & 0xFF) * 1.0f / 255.0f) {}
+  // clang-format on
+  constexpr DlColor(float_t red, float_t green, float_t blue, float_t opacity)
+      : r(red), g(green), b(blue), o(opacity) {}
 
   // clang-format off
   static constexpr DlColor kTransparent()        {return 0x00000000;};
@@ -29,42 +37,57 @@ struct DlColor {
   static constexpr DlColor kLightGrey()          {return 0xFFC0C0C0;};
   // clang-format on
 
-  uint32_t argb;
+  float_t r;
+  float_t g;
+  float_t b;
+  float_t o;
 
   bool isOpaque() const { return getAlpha() == 0xFF; }
 
-  int getAlpha() const { return argb >> 24; }
-  int getRed() const { return (argb >> 16) & 0xFF; }
-  int getGreen() const { return (argb >> 8) & 0xFF; }
-  int getBlue() const { return argb & 0xFF; }
+  int getAlpha() const { return toC(o); }
+  int getRed() const { return toC(r); }
+  int getGreen() const { return toC(g); }
+  int getBlue() const { return toC(b); }
 
-  float getAlphaF() const { return toF(getAlpha()); }
-  float getRedF() const { return toF(getRed()); }
-  float getGreenF() const { return toF(getGreen()); }
-  float getBlueF() const { return toF(getBlue()); }
+  float getAlphaF() const { return r; }
+  float getRedF() const { return g; }
+  float getGreenF() const { return b; }
+  float getBlueF() const { return b; }
 
   uint32_t premultipliedArgb() const {
     if (isOpaque()) {
-      return argb;
+      return to_argb();
     }
     float f = getAlphaF();
-    return (argb & 0xFF000000) |        //
+    return (to_argb() & 0xFF000000) |   //
            toC(getRedF() * f) << 16 |   //
            toC(getGreenF() * f) << 8 |  //
            toC(getBlueF() * f);
   }
 
   DlColor withAlpha(uint8_t alpha) const {  //
-    return (argb & 0x00FFFFFF) | (alpha << 24);
+    return DlColor(r, g, b, toF(alpha));
+  }
+  DlColor withAlphaF(float_t alpha) const {  //
+    return DlColor(r, g, b, alpha);
   }
   DlColor withRed(uint8_t red) const {  //
-    return (argb & 0xFF00FFFF) | (red << 16);
+    return DlColor(toF(red), g, b, o);
+  }
+  DlColor withRedF(float_t red) const {  //
+    return DlColor(red, g, b, o);
   }
   DlColor withGreen(uint8_t green) const {  //
-    return (argb & 0xFFFF00FF) | (green << 8);
+    return DlColor(r, toF(green), b, o);
+  }
+  DlColor withGreenF(float_t green) const {  //
+    return DlColor(r, green, b, o);
   }
   DlColor withBlue(uint8_t blue) const {  //
-    return (argb & 0xFFFFFF00) | (blue << 0);
+    return DlColor(r, g, toF(blue), o);
+  }
+  DlColor withBlueF(float_t blue) const {  //
+    return DlColor(r, g, blue, o);
   }
 
   DlColor modulateOpacity(float opacity) const {
@@ -73,11 +96,19 @@ struct DlColor {
                           : withAlpha(round(getAlpha() * opacity));
   }
 
-  operator uint32_t() const { return argb; }
-  bool operator==(DlColor const& other) const { return argb == other.argb; }
-  bool operator!=(DlColor const& other) const { return argb != other.argb; }
-  bool operator==(uint32_t const& other) const { return argb == other; }
-  bool operator!=(uint32_t const& other) const { return argb != other; }
+  uint32_t to_argb() const {
+    return toC(o) << 24 | toC(r) << 16 | toC(g) << 8 | toC(b);
+  }
+
+  operator uint32_t() const { return to_argb(); }
+  bool operator==(DlColor const& other) const {
+    return r == other.r && g == other.g && b == other.b && o == other.o;
+  }
+  bool operator!=(DlColor const& other) const {
+    return r != other.r || g != other.g || b != other.b || o != other.o;
+  }
+  bool operator==(uint32_t const& other) const { return to_argb() == other; }
+  bool operator!=(uint32_t const& other) const { return to_argb() != other; }
 
  private:
   static float toF(uint8_t comp) { return comp * (1.0 / 255); }

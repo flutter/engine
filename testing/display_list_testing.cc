@@ -231,7 +231,7 @@ static std::ostream& operator<<(std::ostream& os, const SkFilterMode& mode) {
 }
 
 static std::ostream& operator<<(std::ostream& os, const DlColor& color) {
-  return os << "DlColor(" << std::hex << color.argb << std::dec << ")";
+  return os << "DlColor(" << std::hex << color.to_argb() << std::dec << ")";
 }
 
 static std::ostream& operator<<(std::ostream& os,

@@ -1925,11 +1925,11 @@ class CanvasCompareTester {
       for (int x = 0; x < TestWidth; x++) {
         uint32_t ref_pixel = ref_row[x];
         uint32_t test_pixel = test_row[x];
-        if (ref_pixel != bg.argb || test_pixel != bg.argb) {
+        if (ref_pixel != bg.to_argb() || test_pixel != bg.to_argb()) {
           pixels_touched++;
           for (int i = 0; i < 32; i += 8) {
             int ref_comp = (ref_pixel >> i) & 0xff;
-            int bg_comp = (bg.argb >> i) & 0xff;
+            int bg_comp = (bg.to_argb() >> i) & 0xff;
             SkScalar faded_comp = bg_comp + (ref_comp - bg_comp) * opacity;
             int test_comp = (test_pixel >> i) & 0xff;
             if (std::abs(faded_comp - test_comp) > fudge) {

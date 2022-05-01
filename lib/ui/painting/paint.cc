@@ -19,22 +19,27 @@
 
 namespace flutter {
 
+using SkColor4f = SkRGBA4f<kUnpremul_SkAlphaType>;
+
 // Indices for 32bit values.
 constexpr int kIsAntiAliasIndex = 0;
-constexpr int kColorIndex = 1;
-constexpr int kBlendModeIndex = 2;
-constexpr int kStyleIndex = 3;
-constexpr int kStrokeWidthIndex = 4;
-constexpr int kStrokeCapIndex = 5;
-constexpr int kStrokeJoinIndex = 6;
-constexpr int kStrokeMiterLimitIndex = 7;
-constexpr int kFilterQualityIndex = 8;
-constexpr int kMaskFilterIndex = 9;
-constexpr int kMaskFilterBlurStyleIndex = 10;
-constexpr int kMaskFilterSigmaIndex = 11;
-constexpr int kInvertColorIndex = 12;
-constexpr int kDitherIndex = 13;
-constexpr size_t kDataByteCount = 56;  // 4 * (last index + 1)
+constexpr int kColorRedIndex = 1;
+constexpr int kColorGreenIndex = 2;
+constexpr int kColorBlueIndex = 3;
+constexpr int kColorOpacityIndex = 4;
+constexpr int kBlendModeIndex = 5;
+constexpr int kStyleIndex = 6;
+constexpr int kStrokeWidthIndex = 7;
+constexpr int kStrokeCapIndex = 8;
+constexpr int kStrokeJoinIndex = 9;
+constexpr int kStrokeMiterLimitIndex = 10;
+constexpr int kFilterQualityIndex = 11;
+constexpr int kMaskFilterIndex = 12;
+constexpr int kMaskFilterBlurStyleIndex = 13;
+constexpr int kMaskFilterSigmaIndex = 14;
+constexpr int kInvertColorIndex = 15;
+constexpr int kDitherIndex = 16;
+constexpr size_t kDataByteCount = 68;  // 4 * (last index + 1)
 
 // Indices for objects.
 constexpr int kShaderIndex = 0;
@@ -118,10 +123,12 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
 
   paint.setAntiAlias(uint_data[kIsAntiAliasIndex] == 0);
 
-  uint32_t encoded_color = uint_data[kColorIndex];
-  if (encoded_color) {
-    SkColor color = encoded_color ^ kColorDefault;
-    paint.setColor(color);
+  float_t encoded_r = uint_data[kColorRedIndex];
+  float_t encoded_g = uint_data[kColorGreenIndex];
+  float_t encoded_b = uint_data[kColorBlueIndex];
+  float_t encoded_o = uint_data[kColorOpacityIndex];
+  if (encoded_r || encoded_g || encoded_b || encoded_o) {
+    paint.setColor4f(SkColor4f{encoded_r, encoded_g, encoded_b, encoded_o});
   }
 
   uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
@@ -255,8 +262,11 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   }
 
   if (flags.applies_alpha_or_color()) {
-    uint32_t encoded_color = uint_data[kColorIndex];
-    builder->setColor(encoded_color ^ kColorDefault);
+    float_t encoded_r = uint_data[kColorRedIndex];
+    float_t encoded_g = uint_data[kColorGreenIndex];
+    float_t encoded_b = uint_data[kColorBlueIndex];
+    float_t encoded_o = uint_data[kColorOpacityIndex];
+    builder->setColor(DlColor(encoded_r, encoded_g, encoded_b, encoded_o));
   }
 
   if (flags.applies_blend()) {

@@ -97,9 +97,15 @@ class DlPaint {
     return *this;
   }
 
-  uint8_t getAlpha() const { return color_.argb >> 24; }
+  uint8_t getAlpha() const { return color_.getAlpha(); }
   DlPaint& setAlpha(uint8_t alpha) {
-    color_.argb = alpha << 24 | (color_.argb & 0x00FFFFFF);
+    color_.o = alpha * 1.0 / 255.0f;
+    return *this;
+  }
+
+  float_t getAlphaF() const { return color_.getAlphaF(); }
+  DlPaint& setAlphaF(float_t alpha) {
+    color_.o = alpha;
     return *this;
   }
 

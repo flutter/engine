@@ -17,6 +17,7 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   EXPECT_FALSE(paint.isInvertColors());
   EXPECT_EQ(paint.getColor(), DlPaint::kDefaultColor);
   EXPECT_EQ(paint.getAlpha(), 0xFF);
+  EXPECT_EQ(paint.getAlphaF(), 1.0f);
   EXPECT_EQ(paint.getBlendMode(), DlBlendMode::kDefaultMode);
   EXPECT_EQ(paint.getDrawStyle(), DlDrawStyle::kDefaultStyle);
   EXPECT_EQ(paint.getStrokeCap(), DlStrokeCap::kDefaultCap);

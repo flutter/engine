@@ -57,11 +57,11 @@ bool _radiusIsValid(Radius radius) {
   return true;
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
+Color _scaleOpacity(Color a, double factor) {
+  return Color.fromRGBOF(a.redF, a.greenF, a.blueF, (a.opacity * factor).clamp(0.0, 1.0));
 }
 
-/// An immutable 32 bit color value in ARGB format.
+/// An immutable color value in RGBO format.
 ///
 /// Consider the light teal of the Flutter logo. It is fully opaque, with a red
 /// channel value of 0x42 (66), a green channel value of 0xA5 (165), and a blue
@@ -109,7 +109,33 @@ class Color {
   /// Color(0xFFFF9000)` (`FF` for the alpha, `FF` for the red, `90` for the
   /// green, and `00` for the blue).
   @pragma('vm:entry-point')
-  const Color(int value) : value = value & 0xFFFFFFFF;
+  const Color(int value)
+    : _opacityValue = (value >> 24 & 0xFF) * 1.0 / 255.0,
+      _redValue   = (value >> 16 & 0xFF) * 1.0 / 255.0,
+      _greenValue = (value >> 8 & 0xFF)  * 1.0 / 255.0,
+      _blueValue  = (value & 0xFF)       * 1.0 / 255.0;
+
+  /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
+  ///
+  /// * `r` is [red], from 0.0 to 1.0.
+  /// * `g` is [green], from 0.0 to 1.0.
+  /// * `b` is [blue], from 0.0 to 1.0.
+  /// * `opacity` is [opacity], from 0.0 being transparent and 1.0 being fully opaque.
+  ///
+  /// This use of this constructor allows more color values to be expressed compared
+  /// to the int based constructors.
+  ///
+  /// Out of range values will have unexpected effects.
+  @pragma('vm:entry-point')
+  const Color.fromRGBOF(double r, double g, double b, double opacity)
+    : assert(r >= 0.0 && r <= 1.0),
+      assert(g >= 0.0 && g <= 1.0),
+      assert(b >= 0.0 && b <= 1.0),
+      assert(opacity >= 0.0 && opacity <= 1.0),
+      _redValue = r,
+      _greenValue = g,
+      _blueValue = b,
+      _opacityValue = opacity;
 
   /// Construct a color from the lower 8 bits of four integers.
   ///
@@ -124,10 +150,10 @@ class Color {
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
   const Color.fromARGB(int a, int r, int g, int b) :
-    value = (((a & 0xff) << 24) |
-             ((r & 0xff) << 16) |
-             ((g & 0xff) << 8)  |
-             ((b & 0xff) << 0)) & 0xFFFFFFFF;
+    _opacityValue  = a * 1.0 / 255.0,
+    _redValue    = r * 1.0 / 255.0,
+    _greenValue  = g * 1.0 / 255.0,
+    _blueValue   = b * 1.0 / 255.0;
 
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
@@ -141,10 +167,10 @@ class Color {
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
   const Color.fromRGBO(int r, int g, int b, double opacity) :
-    value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-              ((r                    & 0xff) << 16) |
-              ((g                    & 0xff) << 8)  |
-              ((b                    & 0xff) << 0)) & 0xFFFFFFFF;
+    _opacityValue  = opacity,
+    _redValue    = r * 1.0 / 255.0,
+    _greenValue  = g * 1.0 / 255.0,
+    _blueValue   = b * 1.0 / 255.0;
 
   /// A 32 bit value representing this color.
   ///
@@ -154,7 +180,18 @@ class Color {
   /// * Bits 16-23 are the red value.
   /// * Bits 8-15 are the green value.
   /// * Bits 0-7 are the blue value.
-  final int value;
+  int get value {
+    final int redI = _redValue * 0xff ~/ 1;
+    final int greenI = _greenValue * 0xff ~/ 1;
+    final int blueI = _blueValue * 0xff ~/ 1;
+    final int alphaI = _opacityValue * 0xff ~/ 1;
+    return alphaI << 24 | redI << 16 | greenI << 8 | blueI ;
+  }
+
+  final double _redValue;
+  final double _greenValue;
+  final double _blueValue;
+  final double _opacityValue;
 
   /// The alpha channel of this color in an 8 bit value.
   ///
@@ -166,16 +203,25 @@ class Color {
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
-  double get opacity => alpha / 0xFF;
+  double get opacity => _opacityValue;
 
   /// The red channel of this color in an 8 bit value.
   int get red => (0x00ff0000 & value) >> 16;
 
+  /// The red channel of this color as a double between 0.0 and 1.0.
+  double get redF => _redValue;
+
   /// The green channel of this color in an 8 bit value.
   int get green => (0x0000ff00 & value) >> 8;
 
+  /// The green channel of this color as a double between 0.0 and 1.0.
+  double get greenF => _greenValue;
+
   /// The blue channel of this color in an 8 bit value.
   int get blue => (0x000000ff & value) >> 0;
+
+  /// The blue channel of this color as a double between 0.0 and 1.0.
+  double get blueF => _blueValue;
 
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
@@ -191,7 +237,7 @@ class Color {
   /// Out of range values will have unexpected effects.
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
-    return withAlpha((255.0 * opacity).round());
+    return Color.fromRGBOF(redF, greenF, blueF, opacity);
   }
 
   /// Returns a new color that matches this color with the red channel replaced
@@ -199,7 +245,16 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withRed(int r) {
-    return Color.fromARGB(alpha, r, green, blue);
+    return Color.fromRGBOF(r * 1.0 / 255.0, greenF, blueF, opacity);
+  }
+
+  /// Returns a new color that matches this color with the red channel replaced
+  /// with `r` (which ranges from 0.0 to 1.0).
+  ///
+  /// Out of range values will have unexpected effects.
+  Color withRedF(double r) {
+    assert(r >= 0.0 && r <= 1.0);
+    return Color.fromRGBOF(r, greenF, blueF, opacity);
   }
 
   /// Returns a new color that matches this color with the green channel
@@ -207,7 +262,16 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
-    return Color.fromARGB(alpha, red, g, blue);
+    return Color.fromRGBOF(redF, g * 1.0 / 255.0, blueF, opacity);
+  }
+
+  /// Returns a new color that matches this color with the green channel
+  /// replaced with `g` (which ranges from 0.0 to 1.0).
+  ///
+  /// Out of range values will have unexpected effects.
+  Color withGreenF(double g) {
+    assert(g >= 0.0 && g <= 1.0);
+    return Color.fromRGBOF(redF, g, blueF, opacity);
   }
 
   /// Returns a new color that matches this color with the blue channel replaced
@@ -215,7 +279,16 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
-    return Color.fromARGB(alpha, red, green, b);
+    return Color.fromRGBOF(redF, greenF, b * 1.0 / 255.0, opacity);
+  }
+
+  /// Returns a new color that matches this color with the blue channel replaced
+  /// with `b` (which ranges from 0 to 255).
+  ///
+  /// Out of range values will have unexpected effects.
+  Color withBlueF(double b) {
+    assert(b >= 0.0 && b <= 1.0);
+    return Color.fromRGBOF(redF, greenF, b, opacity);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
@@ -233,9 +306,9 @@ class Color {
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(redF);
+    final double G = _linearizeColorComponent(greenF);
+    final double B = _linearizeColorComponent(blueF);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
@@ -267,17 +340,17 @@ class Color {
       if (a == null) {
         return null;
       } else {
-        return _scaleAlpha(a, 1.0 - t);
+        return _scaleOpacity(a, 1.0 - t);
       }
     } else {
       if (a == null) {
-        return _scaleAlpha(b, t);
+        return _scaleOpacity(b, t);
       } else {
-        return Color.fromARGB(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        return Color.fromRGBOF(
+          _lerpDouble(a.redF, b.redF, t).clamp(0.0, 1.0),
+          _lerpDouble(a.greenF, b.greenF, t).clamp(0.0, 1.0),
+          _lerpDouble(a.blueF, b.blueF, t).clamp(0.0, 1.0),
+          _lerpDouble(a.opacity, b.opacity, t).clamp(0.0, 1.0),
         );
       }
     }
@@ -333,7 +406,10 @@ class Color {
     if (other.runtimeType != runtimeType)
       return false;
     return other is Color
-        && other.value == value;
+        && other.redF == redF
+        && other.greenF == greenF
+        && other.blueF == blueF
+        && other.opacity == opacity;
   }
 
   @override
@@ -1109,22 +1185,28 @@ class Paint {
   final ByteData _data = ByteData(_kDataByteCount);
 
   static const int _kIsAntiAliasIndex = 0;
-  static const int _kColorIndex = 1;
-  static const int _kBlendModeIndex = 2;
-  static const int _kStyleIndex = 3;
-  static const int _kStrokeWidthIndex = 4;
-  static const int _kStrokeCapIndex = 5;
-  static const int _kStrokeJoinIndex = 6;
-  static const int _kStrokeMiterLimitIndex = 7;
-  static const int _kFilterQualityIndex = 8;
-  static const int _kMaskFilterIndex = 9;
-  static const int _kMaskFilterBlurStyleIndex = 10;
-  static const int _kMaskFilterSigmaIndex = 11;
-  static const int _kInvertColorIndex = 12;
-  static const int _kDitherIndex = 13;
+  static const int _kColorRedIndex = 1;
+  static const int _kColorGreenIndex = 2;
+  static const int _kColorBlueIndex = 3;
+  static const int _kColorOpacityIndex = 4;
+  static const int _kBlendModeIndex = 5;
+  static const int _kStyleIndex = 6;
+  static const int _kStrokeWidthIndex = 7;
+  static const int _kStrokeCapIndex = 8;
+  static const int _kStrokeJoinIndex = 9;
+  static const int _kStrokeMiterLimitIndex = 10;
+  static const int _kFilterQualityIndex = 11;
+  static const int _kMaskFilterIndex = 12;
+  static const int _kMaskFilterBlurStyleIndex = 13;
+  static const int _kMaskFilterSigmaIndex = 14;
+  static const int _kInvertColorIndex = 15;
+  static const int _kDitherIndex = 16;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
-  static const int _kColorOffset = _kColorIndex << 2;
+  static const int _kColorRedOffset = _kColorRedIndex << 2;
+  static const int _kColorGreenOffset = _kColorGreenIndex << 2;
+  static const int _kColorBlueOffset = _kColorBlueIndex << 2;
+  static const int _kColorOpacityOffset = _kColorOpacityIndex << 2;
   static const int _kBlendModeOffset = _kBlendModeIndex << 2;
   static const int _kStyleOffset = _kStyleIndex << 2;
   static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
@@ -1138,7 +1220,7 @@ class Paint {
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
   static const int _kDitherOffset = _kDitherIndex << 2;
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 56;
+  static const int _kDataByteCount = 68;
 
   // Binary format must match the deserialization code in paint.cc.
   List<Object?>? _objects;
@@ -1190,13 +1272,18 @@ class Paint {
   /// This color is not used when compositing. To colorize a layer, use
   /// [colorFilter].
   Color get color {
-    final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
-    return Color(encoded ^ _kColorDefault);
+    final double r = _data.getFloat32(_kColorRedOffset, _kFakeHostEndian);
+    final double g = _data.getFloat32(_kColorGreenOffset, _kFakeHostEndian);
+    final double b = _data.getFloat32(_kColorBlueOffset, _kFakeHostEndian);
+    final double o = _data.getFloat32(_kColorOpacityOffset, _kFakeHostEndian);
+    return Color.fromRGBOF(r, g, b, o);
   }
   set color(Color value) {
     assert(value != null);
-    final int encoded = value.value ^ _kColorDefault;
-    _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
+    _data.setFloat32(_kColorRedOffset, value.redF, _kFakeHostEndian);
+    _data.setFloat32(_kColorGreenOffset, value.greenF, _kFakeHostEndian);
+    _data.setFloat32(_kColorBlueOffset, value.blueF, _kFakeHostEndian);
+    _data.setFloat32(_kColorOpacityOffset, value.opacity, _kFakeHostEndian);
   }
 
   // Must be kept in sync with the default in paint.cc.
