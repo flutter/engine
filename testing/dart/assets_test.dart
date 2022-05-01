@@ -23,4 +23,10 @@ void main() {
 
     expect(buffer.length == 354679, true);
   });
+
+  test('can dispose immutable buffer', () async {
+    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromAsset('assets/DashInNooglerHat.jpg');
+
+    buffer.dispose();
+  });
 }
