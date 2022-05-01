@@ -52,7 +52,7 @@ class APKAssetMapping : public fml::Mapping {
 
   fml::MappingReleaseProc GetReleaseProc() override {
     fml::MappingReleaseProc proc = [](const void* ptr, void* context) {
-      auto* mapping = static_cast<fml::APKAssetMapping*>(context);
+      auto* mapping = static_cast<APKAssetMapping*>(context);
       mapping->~APKAssetMapping();
     };
     return proc;
