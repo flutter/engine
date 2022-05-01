@@ -93,6 +93,14 @@ void testMain() {
       });
     });
 
+    test('pushOpacity implements surface lifecycle', () {
+      testLayerLifeCycle((ui.SceneBuilder sceneBuilder, ui.EngineLayer? oldLayer) {
+        return sceneBuilder.pushOpacityValue(0.1, oldLayer: oldLayer as ui.OpacityEngineLayer?);
+      }, () {
+        return '''<s><o></o></s>''';
+      });
+    });
+
     test('pushPhysicalShape implements surface lifecycle', () {
       testLayerLifeCycle((ui.SceneBuilder sceneBuilder, ui.EngineLayer? oldLayer) {
         final ui.Path path = ui.Path()..addRect(const ui.Rect.fromLTRB(10, 20, 30, 40));
