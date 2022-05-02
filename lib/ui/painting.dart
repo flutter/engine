@@ -61,8 +61,6 @@ Color _scaleAlpha(Color a, double factor) {
   return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
 }
 
-abstract class _ColorMarker {}
-
 /// An immutable 32 bit color value in ARGB format.
 ///
 /// Consider the light teal of the Flutter logo. It is fully opaque, with a red
@@ -93,7 +91,7 @@ abstract class _ColorMarker {}
 ///
 ///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html), which
 ///    defines the colors found in the Material Design specification.
-class Color implements _ColorMarker {
+class Color {
   /// Construct a color from the lower 32 bits of an [int].
   ///
   /// The bits are interpreted as follows:
@@ -343,113 +341,6 @@ class Color implements _ColorMarker {
 
   @override
   String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
-}
-
-class WideColor implements _ColorMarker {
-  const WideColor(this.red, this.green, this.blue, this.opacity)
-    : assert(red >= 0.0 && red <= 1.0),
-      assert(green >= 0.0 && green <= 1.0),
-      assert(blue >= 0.0 && blue <= 1.0),
-      assert(opacity >= 0.0 && opacity <= 1.0);
-
-  /// The alpha channel of this color as a double.
-  ///
-  /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
-  /// this color is fully opaque.
-  final double opacity;
-
-  final double red;
-
-  final double green;
-
-  final double blue;
-
-  /// Returns a new color that matches this color with the alpha channel
-  /// replaced with the given `opacity` (which ranges from 0.0 to 1.0).
-  ///
-  /// Out of range values will have unexpected effects.
-  WideColor withOpacity(double opacity) {
-    assert(opacity >= 0.0 && opacity <= 1.0);
-    return WideColor(red, green, blue, opacity);
-  }
-
-  /// Returns a new color that matches this color with the red channel replaced
-  /// with `r` (which ranges from 0 to 255).
-  ///
-  /// Out of range values will have unexpected effects.
-  WideColor withRed(double r) {
-    return WideColor(r, green, blue, opacity);
-  }
-
-  /// Returns a new color that matches this color with the green channel
-  /// replaced with `g` (which ranges from 0 to 255).
-  ///
-  /// Out of range values will have unexpected effects.
-  WideColor withGreen(double g) {
-    return WideColor(red, g, blue, opacity);
-  }
-
-  /// Returns a new color that matches this color with the blue channel replaced
-  /// with `b` (which ranges from 0 to 255).
-  ///
-  /// Out of range values will have unexpected effects.
-  WideColor withBlue(double b) {
-    return WideColor(red, green, b, opacity);
-  }
-
-  // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-  static double _linearizeColorComponent(double component) {
-    if (component <= 0.03928)
-      return component / 12.92;
-    return math.pow((component + 0.055) / 1.055, 2.4) as double;
-  }
-
-  /// Returns a brightness value between 0 for darkest and 1 for lightest.
-  ///
-  /// Represents the relative luminance of the color. This value is computationally
-  /// expensive to calculate.
-  ///
-  /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
-  double computeLuminance() {
-    // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red);
-    final double G = _linearizeColorComponent(green);
-    final double B = _linearizeColorComponent(blue);
-    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
-  }
-
-  /// Linearly interpolate between two colors.
-  ///
-  /// Values for `t` are usually obtained from an [Animation<double>], such as
-  /// an [AnimationController].
-  static WideColor lerp(WideColor a, WideColor b, double t) {
-    return WideColor(
-      _lerpDouble(a.red, b.red, t).clamp(0.0, 1.0),
-      _lerpDouble(a.green, b.green, t).clamp(0.0, 1.0),
-      _lerpDouble(a.blue, b.blue, t).clamp(0.0, 1.0),
-      _lerpDouble(a.opacity, b.opacity, t).clamp(0.0, 1.0),
-    );
-  }
-
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other))
-      return true;
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is WideColor
-        && other.red == red
-        && other.green == green
-        && other.blue  == blue
-        && other.opacity == opacity;
-  }
-
-  @override
-  int get hashCode => Object.hash(red, green, blue, opacity);
-
-  @override
-  String toString() => 'WideColor($red, $green, $blue, $opacity)';
 }
 
 /// Algorithms to use when painting on the canvas.
