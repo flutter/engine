@@ -30,84 +30,137 @@ void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   }
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha(engine.clampInt((a.alpha * factor).round(), 0, 255));
+Color _scaleOpacity(Color a, double factor) {
+  return Color.fromRGBOF(a.redF, a.greenF, a.blueF, (a.opacity * factor).clamp(0.0, 1.0));
 }
 
 class Color {
-  const Color(int value) : this.value = value & 0xFFFFFFFF;// ignore: unnecessary_this
-  const Color.fromARGB(int a, int r, int g, int b)
-      : value = (((a & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF;
-  const Color.fromRGBO(int r, int g, int b, double opacity)
-      : value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF;
-  final int value;
+  @pragma('vm:entry-point')
+  const Color(int value)
+    : _opacityValue = (value >> 24 & 0xFF) * 1.0 / 255.0,
+      _redValue   = (value >> 16 & 0xFF) * 1.0 / 255.0,
+      _greenValue = (value >> 8 & 0xFF)  * 1.0 / 255.0,
+      _blueValue  = (value & 0xFF)       * 1.0 / 255.0;
+
+  @pragma('vm:entry-point')
+  const Color.fromRGBOF(double r, double g, double b, double opacity)
+    : assert(r >= 0.0 && r <= 1.0),
+      assert(g >= 0.0 && g <= 1.0),
+      assert(b >= 0.0 && b <= 1.0),
+      assert(opacity >= 0.0 && opacity <= 1.0),
+      _redValue = r,
+      _greenValue = g,
+      _blueValue = b,
+      _opacityValue = opacity;
+
+  const Color.fromARGB(int a, int r, int g, int b) :
+    _opacityValue  = a * 1.0 / 255.0,
+    _redValue    = r * 1.0 / 255.0,
+    _greenValue  = g * 1.0 / 255.0,
+    _blueValue   = b * 1.0 / 255.0;
+
+  const Color.fromRGBO(int r, int g, int b, double opacity) :
+    _opacityValue  = opacity,
+    _redValue    = r * 1.0 / 255.0,
+    _greenValue  = g * 1.0 / 255.0,
+    _blueValue   = b * 1.0 / 255.0;
+
+  int get value {
+    final int redI = _redValue * 0xff ~/ 1;
+    final int greenI = _greenValue * 0xff ~/ 1;
+    final int blueI = _blueValue * 0xff ~/ 1;
+    final int alphaI = _opacityValue * 0xff ~/ 1;
+    return alphaI << 24 | redI << 16 | greenI << 8 | blueI ;
+  }
+
+  final double _redValue;
+  final double _greenValue;
+  final double _blueValue;
+  final double _opacityValue;
+
   int get alpha => (0xff000000 & value) >> 24;
-  double get opacity => alpha / 0xFF;
+
+  double get opacity => _opacityValue;
+
   int get red => (0x00ff0000 & value) >> 16;
+
+  double get redF => _redValue;
+
   int get green => (0x0000ff00 & value) >> 8;
+
+  double get greenF => _greenValue;
+
   int get blue => (0x000000ff & value) >> 0;
+
+  double get blueF => _blueValue;
+
   Color withAlpha(int a) {
     return Color.fromARGB(a, red, green, blue);
   }
 
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
-    return withAlpha((255.0 * opacity).round());
+    return Color.fromRGBOF(redF, greenF, blueF, opacity);
   }
 
   Color withRed(int r) {
-    return Color.fromARGB(alpha, r, green, blue);
+    return Color.fromRGBOF(r * 1.0 / 255.0, greenF, blueF, opacity);
+  }
+
+  Color withRedF(double r) {
+    assert(r >= 0.0 && r <= 1.0);
+    return Color.fromRGBOF(r, greenF, blueF, opacity);
   }
 
   Color withGreen(int g) {
-    return Color.fromARGB(alpha, red, g, blue);
+    return Color.fromRGBOF(redF, g * 1.0 / 255.0, blueF, opacity);
+  }
+
+  Color withGreenF(double g) {
+    assert(g >= 0.0 && g <= 1.0);
+    return Color.fromRGBOF(redF, g, blueF, opacity);
   }
 
   Color withBlue(int b) {
-    return Color.fromARGB(alpha, red, green, b);
+    return Color.fromRGBOF(redF, greenF, b * 1.0 / 255.0, opacity);
   }
 
-  // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
+  Color withBlueF(double b) {
+    assert(b >= 0.0 && b <= 1.0);
+    return Color.fromRGBOF(redF, greenF, b, opacity);
+  }
+
   static double _linearizeColorComponent(double component) {
-    if (component <= 0.03928) {
+    if (component <= 0.03928)
       return component / 12.92;
-    }
     return math.pow((component + 0.055) / 1.055, 2.4) as double;
   }
 
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(redF);
+    final double G = _linearizeColorComponent(greenF);
+    final double B = _linearizeColorComponent(blueF);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
   static Color? lerp(Color? a, Color? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
       } else {
-        return _scaleAlpha(a, 1.0 - t);
+        return _scaleOpacity(a, 1.0 - t);
       }
     } else {
       if (a == null) {
-        return _scaleAlpha(b, t);
+        return _scaleOpacity(b, t);
       } else {
-        return Color.fromARGB(
-          engine.clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        return Color.fromRGBOF(
+          _lerpDouble(a.redF, b.redF, t).clamp(0.0, 1.0),
+          _lerpDouble(a.greenF, b.greenF, t).clamp(0.0, 1.0),
+          _lerpDouble(a.blueF, b.blueF, t).clamp(0.0, 1.0),
+          _lerpDouble(a.opacity, b.opacity, t).clamp(0.0, 1.0),
         );
       }
     }
@@ -116,13 +169,11 @@ class Color {
   static Color alphaBlend(Color foreground, Color background) {
     final int alpha = foreground.alpha;
     if (alpha == 0x00) {
-      // Foreground completely transparent.
       return background;
     }
     final int invAlpha = 0xff - alpha;
     int backAlpha = background.alpha;
     if (backAlpha == 0xff) {
-      // Opaque background case
       return Color.fromARGB(
         0xff,
         (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
@@ -130,7 +181,6 @@ class Color {
         (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
       );
     } else {
-      // General case
       backAlpha = (backAlpha * invAlpha) ~/ 0xff;
       final int outAlpha = alpha + backAlpha;
       assert(outAlpha != 0x00);
@@ -144,28 +194,28 @@ class Color {
   }
 
   static int getAlphaFromOpacity(double opacity) {
-    assert(opacity != null); // ignore: unnecessary_null_comparison
+    assert(opacity != null);
     return (opacity.clamp(0.0, 1.0) * 255).round();
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
-    return other is Color && other.value == value;
+    return other is Color
+        && other.redF == redF
+        && other.greenF == greenF
+        && other.blueF == blueF
+        && other.opacity == opacity;
   }
 
   @override
   int get hashCode => value.hashCode;
 
   @override
-  String toString() {
-    return 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
-  }
+  String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
 }
 
 enum StrokeCap {
