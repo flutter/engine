@@ -394,8 +394,9 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   EXPECT_TRUE(context->subtree_can_inherit_opacity);
 
   int opacity_alpha = 0x7F;
+  SkScalar opacity = opacity_alpha * 1.0 / 255.0;
   SkPoint offset = SkPoint::Make(10, 10);
-  auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
+  auto opacity_layer = std::make_shared<OpacityLayer>(opacity, offset);
   opacity_layer->Add(image_filter_layer);
   context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());

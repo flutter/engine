@@ -200,7 +200,7 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
   EXPECT_EQ(mock_layer->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_mutators(),
-            std::vector({Mutator(layer_transform), Mutator(SK_AlphaOPAQUE)}));
+            std::vector({Mutator(layer_transform), Mutator(OPACITY_OPAQUE)}));
 
   const SkPaint opacity_paint = SkPaint(SkColors::kBlack);  // A = 1.0f
   SkRect opacity_bounds;
@@ -286,9 +286,10 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   const SkPaint child_paint = SkPaint(SkColors::kGreen);
   const SkRect expected_layer_bounds =
       layer_transform.mapRect(child_path.getBounds());
-  const SkScalar alpha_half = 0.5;
+  const SkAlpha alpha_half = 255 / 2;
+  const SkScalar opacity_half = alpha_half * 1.0 / 255.0;
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<OpacityLayer>(alpha_half, layer_offset);
+  auto layer = std::make_shared<OpacityLayer>(opacity_half, layer_offset);
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
@@ -300,7 +301,7 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   EXPECT_EQ(mock_layer->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_mutators(),
-            std::vector({Mutator(layer_transform), Mutator(alpha_half)}));
+            std::vector({Mutator(layer_transform), Mutator(opacity_half)}));
 
   SkRect opacity_bounds;
   expected_layer_bounds.makeOffset(-layer_offset.fX, -layer_offset.fY)
@@ -394,9 +395,9 @@ TEST_F(OpacityLayerTest, Nested) {
   //             std::vector({Mutator(layer1_transform), Mutator(alpha1)}));
 
   SkPaint opacity1_paint;
-  opacity1_paint.setAlphaf(alpha1 * (1.0 / SK_AlphaOPAQUE));
+  opacity1_paint.setAlphaf(alpha1);
   SkPaint opacity2_paint;
-  opacity2_paint.setAlphaf(alpha2 * (1.0 / SK_AlphaOPAQUE));
+  opacity2_paint.setAlphaf(alpha2);
   SkRect opacity1_bounds, opacity2_bounds;
   expected_layer1_bounds.makeOffset(-layer1_offset.fX, -layer1_offset.fY)
       .roundOut(&opacity1_bounds);
@@ -549,8 +550,8 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNested) {
   SkPoint offset1 = SkPoint::Make(10, 20);
   SkPoint offset2 = SkPoint::Make(20, 10);
   SkPath mockPath = SkPath::Rect({10, 10, 20, 20});
-  auto opacityLayer1 = std::make_shared<OpacityLayer>(128, offset1);
-  auto opacityLayer2 = std::make_shared<OpacityLayer>(64, offset2);
+  auto opacityLayer1 = std::make_shared<OpacityLayer>(128 * 1.0 / SK_AlphaOPAQUE, offset1);
+  auto opacityLayer2 = std::make_shared<OpacityLayer>(64 * 1.0 / SK_AlphaOPAQUE, offset2);
   auto mockLayer = MockLayer::MakeOpacityCompatible(mockPath);
   opacityLayer2->Add(mockLayer);
   opacityLayer1->Add(opacityLayer2);
