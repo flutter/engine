@@ -112,9 +112,9 @@ class Color {
   @pragma('vm:entry-point')
   const Color(int value)
     : _opacityValue = (value >> 24 & 0xFF) * 1.0 / 255.0,
-      _redValue   = (value >> 16 & 0xFF) * 1.0 / 255.0,
-      _greenValue = (value >> 8 & 0xFF)  * 1.0 / 255.0,
-      _blueValue  = (value & 0xFF)       * 1.0 / 255.0;
+      _redValue     = (value >> 16 & 0xFF) * 1.0 / 255.0,
+      _greenValue   = (value >> 8  & 0xFF) * 1.0 / 255.0,
+      _blueValue    = (value       & 0xFF) * 1.0 / 255.0;
 
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
@@ -151,10 +151,10 @@ class Color {
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
   const Color.fromARGB(int a, int r, int g, int b) :
-    _opacityValue  = a * 1.0 / 255.0,
-    _redValue    = r * 1.0 / 255.0,
-    _greenValue  = g * 1.0 / 255.0,
-    _blueValue   = b * 1.0 / 255.0;
+    _opacityValue = a * 1.0 / 255.0,
+    _redValue     = r * 1.0 / 255.0,
+    _greenValue   = g * 1.0 / 255.0,
+    _blueValue    = b * 1.0 / 255.0;
 
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
@@ -168,10 +168,10 @@ class Color {
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
   const Color.fromRGBO(int r, int g, int b, double opacity) :
-    _opacityValue  = opacity,
-    _redValue    = r * 1.0 / 255.0,
-    _greenValue  = g * 1.0 / 255.0,
-    _blueValue   = b * 1.0 / 255.0;
+    _opacityValue = opacity,
+    _redValue     = r * 1.0 / 255.0,
+    _greenValue   = g * 1.0 / 255.0,
+    _blueValue    = b * 1.0 / 255.0;
 
   /// A 32 bit value representing this color.
   ///

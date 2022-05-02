@@ -19,6 +19,14 @@ void main() {
     expect(foo.blue, equals(0x78));
   });
 
+  test('float color accessors should work', () {
+    const Color foo = Color.fromRGBOF(0.5, 0.3, 0.2, 1.0);
+    expect(foo.opacity, equals(1.0));
+    expect(foo.redF, equals(0.5));
+    expect(foo.greenF, equals(0.3));
+    expect(foo.blueF, equals(0.2));
+  });
+
   test('paint set to black', () {
     const Color c = Color(0x00000000);
     final Paint p = Paint();
