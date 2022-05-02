@@ -60,7 +60,8 @@ class Mutator {
       : type_(clip_path), path_(new SkPath(path)) {}
   explicit Mutator(const SkMatrix& matrix)
       : type_(transform), matrix_(matrix) {}
-  explicit Mutator(const SkScalar& opacityValue) : type_(opacity), opacity_(opacityValue) {}
+  explicit Mutator(const SkScalar& opacityValue)
+      : type_(opacity), opacity_(opacityValue) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
