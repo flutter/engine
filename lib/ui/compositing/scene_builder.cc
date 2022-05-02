@@ -165,7 +165,7 @@ void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
                                double dy,
                                fml::RefPtr<EngineLayer> oldLayer) {
   float opacity = alpha * 1.0 / SK_AlphaOPAQUE;
-  pushOpacity(layer_handle, opacity, dx, dy, oldLayer);
+  pushOpacityValue(layer_handle, opacity, dx, dy, oldLayer);
 }
 
 void SceneBuilder::pushOpacityValue(Dart_Handle layer_handle,
