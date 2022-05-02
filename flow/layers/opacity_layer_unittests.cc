@@ -550,8 +550,10 @@ TEST_F(OpacityLayerTest, OpacityInheritanceNested) {
   SkPoint offset1 = SkPoint::Make(10, 20);
   SkPoint offset2 = SkPoint::Make(20, 10);
   SkPath mockPath = SkPath::Rect({10, 10, 20, 20});
-  auto opacityLayer1 = std::make_shared<OpacityLayer>(128 * 1.0 / SK_AlphaOPAQUE, offset1);
-  auto opacityLayer2 = std::make_shared<OpacityLayer>(64 * 1.0 / SK_AlphaOPAQUE, offset2);
+  auto opacityLayer1 =
+      std::make_shared<OpacityLayer>(128 * 1.0 / SK_AlphaOPAQUE, offset1);
+  auto opacityLayer2 =
+      std::make_shared<OpacityLayer>(64 * 1.0 / SK_AlphaOPAQUE, offset2);
   auto mockLayer = MockLayer::MakeOpacityCompatible(mockPath);
   opacityLayer2->Add(mockLayer);
   opacityLayer1->Add(opacityLayer2);
