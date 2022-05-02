@@ -70,9 +70,9 @@ std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(
 
 std::shared_ptr<OpacityLayer> DiffContextTest::CreateOpacityLater(
     std::initializer_list<std::shared_ptr<Layer>> layers,
-    SkAlpha alpha,
+    SkScalar opacity,
     const SkPoint& offset) {
-  auto res = std::make_shared<OpacityLayer>(alpha, offset);
+  auto res = std::make_shared<OpacityLayer>(opacity, offset);
   for (const auto& l : layers) {
     res->Add(l);
   }
