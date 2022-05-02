@@ -19,10 +19,12 @@ namespace testing {
 
 using OpacityLayerTest = LayerTest;
 
+constexpr SkScalar OPACITY_OPAQUE = 1.0;
+
 #ifndef NDEBUG
 TEST_F(OpacityLayerTest, LeafLayer) {
   auto layer =
-      std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, SkPoint::Make(0.0f, 0.0f));
+      std::make_shared<OpacityLayer>(OPACITY_OPAQUE, SkPoint::Make(0.0f, 0.0f));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()),
                             "\\!layers\\(\\)\\.empty\\(\\)");
@@ -31,7 +33,7 @@ TEST_F(OpacityLayerTest, LeafLayer) {
 TEST_F(OpacityLayerTest, PaintingEmptyLayerDies) {
   auto mock_layer = std::make_shared<MockLayer>(SkPath());
   auto layer =
-      std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, SkPoint::Make(0.0f, 0.0f));
+      std::make_shared<OpacityLayer>(OPACITY_OPAQUE, SkPoint::Make(0.0f, 0.0f));
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), SkMatrix());
@@ -50,7 +52,7 @@ TEST_F(OpacityLayerTest, PaintBeforePrerollDies) {
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
   auto layer =
-      std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, SkPoint::Make(0.0f, 0.0f));
+      std::make_shared<OpacityLayer>(OPACITY_OPAQUE, SkPoint::Make(0.0f, 0.0f));
   layer->Add(mock_layer);
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -186,7 +188,7 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
   const SkRect expected_layer_bounds =
       layer_transform.mapRect(child_path.getBounds());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, layer_offset);
+  auto layer = std::make_shared<OpacityLayer>(OPACITY_OPAQUE, layer_offset);
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
@@ -437,7 +439,7 @@ TEST_F(OpacityLayerTest, Nested) {
 
 TEST_F(OpacityLayerTest, Readback) {
   auto initial_transform = SkMatrix();
-  auto layer = std::make_shared<OpacityLayer>(kOpaque_SkAlphaType, SkPoint());
+  auto layer = std::make_shared<OpacityLayer>(OPACITY_OPAQUE, SkPoint());
   layer->Add(std::make_shared<MockLayer>(SkPath()));
 
   // OpacityLayer does not read from surface
