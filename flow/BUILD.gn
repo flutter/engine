@@ -124,7 +124,6 @@ if (enable_unittests) {
     deps = [
       ":flow",
       "//flutter/common/graphics",
-      "//flutter/display_list:unittests",
     ]
   }
 
@@ -163,6 +162,7 @@ if (enable_unittests) {
       "raster_cache_unittests.cc",
       "rtree_unittests.cc",
       "skia_gpu_object_unittests.cc",
+      "surface_frame_unittests.cc",
       "testing/auto_save_layer_unittests.cc",
       "testing/mock_layer_unittests.cc",
       "testing/mock_texture_unittests.cc",
@@ -174,7 +174,7 @@ if (enable_unittests) {
       ":flow_fixtures",
       ":flow_testing",
       "//flutter/common/graphics",
-      "//flutter/display_list:unittests",
+      "//flutter/display_list:display_list_testing",
       "//flutter/fml",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",

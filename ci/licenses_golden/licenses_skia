@@ -1,4 +1,4 @@
-Signature: 5237eea1e3cc3e4e601d59b781676311
+Signature: 4f28008ecda267db63b4a3a1a1072e6b
 
 UNUSED LICENSES:
 
@@ -167,31 +167,6 @@ liability incurred by, or claims asserted against, such Contributor by
 reason of your accepting any such warranty or additional liability.
 
 END OF TERMS AND CONDITIONS
-====================================================================================================
-
-====================================================================================================
-ORIGIN: ../../../third_party/skia/third_party/vulkanmemoryallocator/include/LICENSE.txt
-TYPE: LicenseType.mit
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2017-2018 Advanced Micro Devices, Inc. All rights reserved.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
 ====================================================================================================
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 USED LICENSES:
@@ -810,7 +785,7 @@ FILE: ../../../third_party/skia/experimental/tskit/tsconfig.json
 FILE: ../../../third_party/skia/experimental/wasm-hello-world/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/wasm-hello-world/hello_world.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/example/index.html
-FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD
+FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD.bazel
 FILE: ../../../third_party/skia/gm/BUILD.bazel
 FILE: ../../../third_party/skia/gm/verifiers/BUILD.bazel
 FILE: ../../../third_party/skia/go.mod
@@ -1362,6 +1337,7 @@ FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
 FILE: ../../../third_party/skia/src/sksl/tracing/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/transform/BUILD.bazel
 FILE: ../../../third_party/skia/src/svg/BUILD.bazel
+FILE: ../../../third_party/skia/src/text/gpu/BUILD.bazel
 FILE: ../../../third_party/skia/src/utils/BUILD.bazel
 FILE: ../../../third_party/skia/src/utils/mac/BUILD.bazel
 FILE: ../../../third_party/skia/src/utils/win/BUILD.bazel
@@ -2813,6 +2789,7 @@ FILE: ../../../third_party/skia/src/core/SkBlenderBase.h
 FILE: ../../../third_party/skia/src/core/SkCustomMesh.cpp
 FILE: ../../../third_party/skia/src/core/SkCustomMeshPriv.cpp
 FILE: ../../../third_party/skia/src/core/SkCustomMeshPriv.h
+FILE: ../../../third_party/skia/src/core/SkEnumBitMask.h
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.h
 FILE: ../../../third_party/skia/src/core/SkUniform.h
@@ -2880,7 +2857,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/DrawPass.h
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawTypes.h
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawWriter.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawWriter.h
-FILE: ../../../third_party/skia/src/gpu/graphite/EnumBitMask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Gpu.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Gpu.h
 FILE: ../../../third_party/skia/src/gpu/graphite/GpuWorkSubmission.h
@@ -2948,7 +2924,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSharedCompiler.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLSharedCompiler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLThreadContext.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCanExitWithoutReturningValue.cpp
-FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCheckProgramUnrolledSize.cpp
+FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCheckProgramStructure.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLGetLoopUnrollInfo.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsConstantExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.cpp
@@ -4425,7 +4401,6 @@ FILE: ../../../third_party/skia/src/sksl/dsl/DSLVar.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
-FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLStructDefinition.h
 FILE: ../../../third_party/skia/src/utils/SkCustomTypeface.cpp
@@ -5767,8 +5742,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/ops/TessellationPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/TessellationPathRenderer.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/shaders/GrPathTessellationShader.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/shaders/GrPathTessellationShader.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/shaders/GrPathTessellationShader_Hardware.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/shaders/GrPathTessellationShader_MiddleOut.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFGraphicStackState.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFGraphicStackState.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFType1Font.cpp
@@ -6184,6 +6157,7 @@ FILE: ../../../third_party/skia/src/core/SkPipelineData.h
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.h
+FILE: ../../../third_party/skia/src/gpu/AtlasTypes.cpp
 FILE: ../../../third_party/skia/src/gpu/AtlasTypes.h
 FILE: ../../../third_party/skia/src/gpu/RefCntedCallback.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrImageInfo.cpp
@@ -6215,6 +6189,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/Sampler.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureProxyView.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureUtils.h
+FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.h
@@ -6818,6 +6794,9 @@ ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
+FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
+FILE: ../../../third_party/skia/modules/svg/include/SkSVGOpenTypeSVGDecoder.h
+FILE: ../../../third_party/skia/modules/svg/src/SkSVGOpenTypeSVGDecoder.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSBIX.cpp
 FILE: ../../../third_party/skia/src/sfnt/SkOTTable_hmtx.h
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.cpp
@@ -7281,12 +7260,12 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/GrBufferAllocPool.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrClip.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrColor.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFixedClip.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrGlyph.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/SkGr.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/geometry/GrRect.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/v1/Device_v1.h
 FILE: ../../../third_party/skia/src/ports/SkDebug_win.cpp
+FILE: ../../../third_party/skia/src/text/gpu/Glyph.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2010 Google Inc.
 
@@ -7991,12 +7970,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathRenderer.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathRenderer.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/dawn/GrDawnAsyncWait.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/MidpointContourParser.h
+FILE: ../../../third_party/skia/src/sksl/SkSLPosition.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2014 Google Inc.
-Copyright 2017 ARM Ltd.
+Copyright 2022 Google LLC.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -8029,12 +8010,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/src/gpu/tessellate/MidpointContourParser.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathRenderer.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/src/gpu/tessellate/MidpointContourParser.h
-FILE: ../../../third_party/skia/src/sksl/SkSLPosition.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathRenderer.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2022 Google LLC.
+Copyright 2014 Google Inc.
+Copyright 2017 ARM Ltd.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -8200,31 +8181,4 @@ Materials are furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Materials.
 ====================================================================================================
-
-====================================================================================================
-LIBRARY: vulkanmemoryallocator
-ORIGIN: ../../../third_party/skia/third_party/vulkanmemoryallocator/include/vk_mem_alloc.h
-TYPE: LicenseType.mit
-FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/include/vk_mem_alloc.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2017-2022 Advanced Micro Devices, Inc. All rights reserved.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-====================================================================================================
-Total license count: 70
+Total license count: 68

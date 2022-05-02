@@ -784,7 +784,7 @@ public class PlatformViewsControllerTest {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
-    int platformViewId = 0;
+    int platformViewId = 100;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
