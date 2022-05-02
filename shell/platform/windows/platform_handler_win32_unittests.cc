@@ -28,6 +28,7 @@ static constexpr char kTextPlainFormat[] = "text/plain";
 static constexpr char kValueKey[] = "value";
 static constexpr int kAccessDeniedErrorCode = 5;
 static constexpr int kErrorSuccess = 0;
+static constexpr int kArbitraryErrorCode = 1;
 
 }  // namespace
 
@@ -208,7 +209,8 @@ TEST(PlatformHandlerWin32, HasStringsError) {
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
   // HasStrings will fail.
   PlatformHandlerWin32 platform_handler(
-      &messenger, &view, std::make_unique<TestScopedClipboard>(1, true));
+      &messenger, &view,
+      std::make_unique<TestScopedClipboard>(kArbitraryErrorCode, true));
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
