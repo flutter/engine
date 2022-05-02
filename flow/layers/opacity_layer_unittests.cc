@@ -76,7 +76,7 @@ TEST_F(OpacityLayerTest, TranslateChildren) {
 }
 
 TEST_F(OpacityLayerTest, CacheChild) {
-  const SkAlpha alpha_half = 255 / 2;
+  const SkScalar alpha_half = 0.5;
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -121,7 +121,7 @@ TEST_F(OpacityLayerTest, CacheChild) {
 }
 
 TEST_F(OpacityLayerTest, CacheChildren) {
-  const SkAlpha alpha_half = 255 / 2;
+  const SkScalar alpha_half = 0.5;
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -284,7 +284,7 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   const SkPaint child_paint = SkPaint(SkColors::kGreen);
   const SkRect expected_layer_bounds =
       layer_transform.mapRect(child_path.getBounds());
-  const SkAlpha alpha_half = 255 / 2;
+  const SkScalar alpha_half = 0.5;
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<OpacityLayer>(alpha_half, layer_offset);
   layer->Add(mock_layer);
@@ -344,8 +344,8 @@ TEST_F(OpacityLayerTest, Nested) {
   const SkPaint child1_paint = SkPaint(SkColors::kRed);
   const SkPaint child2_paint = SkPaint(SkColors::kBlue);
   const SkPaint child3_paint = SkPaint(SkColors::kGreen);
-  const SkAlpha alpha1 = 155;
-  const SkAlpha alpha2 = 224;
+  const SkScalar alpha1 = 155 * 1.0 / 255.0;
+  const SkScalar alpha2 = 224 * 1.0 / 255.0;
   auto mock_layer1 = std::make_shared<MockLayer>(child1_path, child1_paint);
   auto mock_layer2 = std::make_shared<MockLayer>(child2_path, child2_paint);
   auto mock_layer3 = std::make_shared<MockLayer>(child3_path, child3_paint);
@@ -608,7 +608,7 @@ using OpacityLayerDiffTest = DiffContextTest;
 TEST_F(OpacityLayerDiffTest, FractionalTranslation) {
   auto picture =
       CreatePictureLayer(CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1));
-  auto layer = CreateOpacityLater({picture}, 128, SkPoint::Make(0.5, 0.5));
+  auto layer = CreateOpacityLater({picture}, 0.5, SkPoint::Make(0.5, 0.5));
 
   MockLayerTree tree1;
   tree1.root()->Add(layer);

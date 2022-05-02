@@ -68,7 +68,7 @@ class DiffContextTest : public ThreadTest {
 
   std::shared_ptr<OpacityLayer> CreateOpacityLater(
       std::initializer_list<std::shared_ptr<Layer>> layers,
-      SkAlpha alpha,
+      SkScalar opacity,
       const SkPoint& offset = SkPoint::Make(0, 0));
 
   fml::RefPtr<SkiaUnrefQueue> unref_queue() { return unref_queue_; }
