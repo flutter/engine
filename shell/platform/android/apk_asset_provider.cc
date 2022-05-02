@@ -50,14 +50,6 @@ class APKAssetMapping : public fml::Mapping {
 
   bool IsDontNeedSafe() const override { return !AAsset_isAllocated(asset_); }
 
-  fml::MappingReleaseProc GetReleaseProc() override {
-    fml::MappingReleaseProc proc = [](const void* ptr, void* context) {
-      auto* mapping = static_cast<APKAssetMapping*>(context);
-      mapping->~APKAssetMapping();
-    };
-    return proc;
-  }
-
  private:
   AAsset* const asset_;
 

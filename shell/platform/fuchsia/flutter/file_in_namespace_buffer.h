@@ -28,9 +28,6 @@ class FileInNamespaceBuffer final : public fml::Mapping {
   // |fml::Mapping|
   bool IsDontNeedSafe() const override;
 
-  // |fml::Mapping|
-  fml::MappingReleaseProc GetReleaseProc() override;
-
  private:
   /// The address that was mapped to the buffer.
   void* address_;

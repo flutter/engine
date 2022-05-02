@@ -20,14 +20,6 @@ class NSDataMapping : public fml::Mapping {
 
   bool IsDontNeedSafe() const override { return false; }
 
-  fml::MappingReleaseProc GetReleaseProc() override {
-    fml::MappingReleaseProc proc = [](const void* ptr, void* context) {
-      auto* mapping = static_cast<NSDataMapping*>(context);
-      [mapping->data_ release];
-    };
-    return proc;
-  }
-
  private:
   fml::scoped_nsobject<NSData> data_;
   FML_DISALLOW_COPY_AND_ASSIGN(NSDataMapping);

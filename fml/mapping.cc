@@ -64,14 +64,6 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
   return mapping;
 }
 
-MappingReleaseProc FileMapping::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) {
-    auto* mapping = static_cast<fml::FileMapping*>(context);
-    mapping->~FileMapping();
-  };
-  return proc;
-}
-
 // Data Mapping
 
 DataMapping::DataMapping(std::vector<uint8_t> data) : data_(std::move(data)) {}
@@ -91,11 +83,6 @@ const uint8_t* DataMapping::GetMapping() const {
 
 bool DataMapping::IsDontNeedSafe() const {
   return false;
-}
-
-MappingReleaseProc DataMapping::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) {};
-  return proc;
 }
 
 // NonOwnedMapping
@@ -124,14 +111,6 @@ const uint8_t* NonOwnedMapping::GetMapping() const {
 
 bool NonOwnedMapping::IsDontNeedSafe() const {
   return dontneed_safe_;
-}
-
-MappingReleaseProc NonOwnedMapping::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) {
-    auto* mapping = static_cast<fml::NonOwnedMapping*>(context);
-    mapping->~NonOwnedMapping();
-  };
-  return proc;
 }
 
 // MallocMapping
@@ -178,14 +157,6 @@ uint8_t* MallocMapping::Release() {
   return result;
 }
 
-MappingReleaseProc MallocMapping::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) {
-    auto* mapping = static_cast<fml::MallocMapping*>(context);
-    mapping->~MallocMapping();
-  };
-  return proc;
-}
-
 // Symbol Mapping
 
 SymbolMapping::SymbolMapping(fml::RefPtr<fml::NativeLibrary> native_library,
@@ -221,11 +192,6 @@ const uint8_t* SymbolMapping::GetMapping() const {
 
 bool SymbolMapping::IsDontNeedSafe() const {
   return true;
-}
-
-MappingReleaseProc SymbolMapping::GetReleaseProc() {
-  MappingReleaseProc proc = [](const void* ptr, void* context) {};
-  return proc;
 }
 
 }  // namespace fml
