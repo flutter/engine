@@ -41,13 +41,13 @@ class TestScopedClipboard : public ScopedClipboardInterface {
   TestScopedClipboard(TestScopedClipboard const&) = delete;
   TestScopedClipboard& operator=(TestScopedClipboard const&) = delete;
 
-  int Open(HWND window);
+  int Open(HWND window) override;
 
-  bool HasString();
+  bool HasString() override;
 
-  std::variant<std::wstring, int> GetString();
+  std::variant<std::wstring, int> GetString() override;
 
-  int SetString(const std::wstring string);
+  int SetString(const std::wstring string) override;
 
  private:
   bool opened_ = false;
