@@ -181,7 +181,7 @@ typedef CanvasPath Path;
   V(ParagraphBuilder, addText, 2)                      \
   V(ParagraphBuilder, build, 2)                        \
   V(ParagraphBuilder, pop, 1)                          \
-  V(ParagraphBuilder, pushStyle, 15)                   \
+  V(ParagraphBuilder, pushStyle, 16)                   \
   V(Paragraph, alphabeticBaseline, 1)                  \
   V(Paragraph, computeLineMetrics, 1)                  \
   V(Paragraph, didExceedMaxLines, 1)                   \
