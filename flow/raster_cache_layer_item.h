@@ -36,7 +36,7 @@ class RasterCacheLayerItem : public RasterCacheItem {
   void PrerollFinalize(PrerollContext* context, const SkMatrix& matrix) override;
 
   int itemChildren() override { return num_children_cached_; };
-  
+
   bool PrepareForFrame(const Layer::PaintContext& p_context,
                        RasterCache* cache,
                        const RasterCache::Context& r_context,
