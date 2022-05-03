@@ -78,7 +78,7 @@ class FrameDamage {
 
   // Calculates clip rect for current rasterization. This is diff of layer tree
   // and previous layer tree + any additional provided damage.
-  // If previous layer tree is not specified, clip rect will be null,
+  // If previous layer tree is not specified, clip rect will be nullopt,
   // but the paint region of layer_tree will be calculated so that it can be
   // used for diffing of subsequent frames.
   std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree);
