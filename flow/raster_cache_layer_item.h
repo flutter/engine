@@ -21,14 +21,17 @@ class CacheableContainerLayer : public ContainerLayer {
 
 enum class RasterCacheLayerStrategy { kLayer, kLayerChildren };
 
+/// This class implements the RasterCacheItem flow for layers
+/// that filter their children in some way and may want to
+/// cache their children to apply a filter to them as a bitmap
+/// operation, or to cache the filtered result of the final
+/// rendering of the layer.
+///
+/// Layers that plan to use this cache helper class should
+/// implement the |CacheableContainerLayer| class and override
+/// those methods to produce appropriate responses.
 class RasterCacheLayerItem : public RasterCacheItem {
  public:
-  // The default max number of picture and display list raster caches to be
-  // generated per frame. Generating too many caches in one frame may cause jank
-  // on that frame. This limit allows us to throttle the cache and distribute
-  // the work across multiple frames.
-  // static constexpr int kDefaultPictureAndDispLayListCacheLimitPerFrame = 3;
-
   explicit RasterCacheLayerItem(CacheableContainerLayer* layer,
                                 int layer_cache_thresholds);
 

@@ -12,14 +12,42 @@ class SkColorSpace;
 
 namespace flutter {
 
+/// A RasterCacheItem is the base class for an object that will handle
+/// all of the actions necessary for a layer to participate in the
+/// caching of itself, a rendering object it holds, or all of its
+/// children.
+///
+/// Implementations of this class (that may impose their own
+/// additional constraints) exist for:
+///   RasterCacheLayerItem -
+///       helps a filtering layer that wants to cache either itself
+///       or its children.
+///   RasterCacheDisplayListItem -
+///       implements this flow for DisplayList object
+///   RasterCachePictureItem - (tbd, similar for SkPicture)
+///
+/// The basic flow of operations is as follows:
+///
+/// |PrerollSetup| should be called near the start of the Preroll
+/// method any time until the children are Prerolled recursively.
+///
+/// |PrerollFinalize| should be called near the end of the Preroll
+/// method any time after the children are Prerolled recursively.
+/// This method should touch the cache entry that it is planning
+/// to utilize in its Paint method
+///
+/// TODO(flar or jsouliang) PrerollSetup/Finalize could be called
+/// automatically from some form of "Auto" object.
+///
+/// |PrepareForFrame| will be called from the code that resolves
+/// the list of RasterCacheItems just before |Paint| is called
+/// from the layer tree.
+///
+/// sub classes will typically provide a |Draw| method that
+/// navigates the RasterCache methods to draw the indicated
+/// cache entry into the destination.
 class RasterCacheItem {
  public:
-  // The default max number of picture and display list raster caches to be
-  // generated per frame. Generating too many caches in one frame may cause jank
-  // on that frame. This limit allows us to throttle the cache and distribute
-  // the work across multiple frames.
-  // static constexpr int kDefaultPictureAndDispLayListCacheLimitPerFrame = 3;
-
   RasterCacheItem() = default;
 
   virtual ~RasterCacheItem() = default;

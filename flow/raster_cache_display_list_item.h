@@ -10,6 +10,12 @@
 
 namespace flutter {
 
+/// This class implements the RasterCacheItem flow for layers
+/// that display A DisplayList.
+///
+/// TODO(flar or jsouliang) implement a Picture version for
+/// SkPicture objects, or use this as a base class that can
+/// serve either a DisplayList or an SkPicture.
 class RasterCacheDisplayListItem : public RasterCacheItem {
  public:
   // The default max number of picture and display list raster caches to be
