@@ -12,85 +12,56 @@
 
 namespace flutter {
 
-void Cacheable::InitialCacheableLayerItem(Layer* layer) {
-  cacheable_item_ = std::make_unique<LayerCacheableItem>(layer);
+void Cacheable::InitialCacheableLayerItem(Layer* layer,
+                                          int layer_cache_threshold) {
+  cacheable_item_ =
+      std::make_unique<LayerCacheableItem>(layer, layer_cache_threshold);
 }
 
 void Cacheable::InitialCacheableDisplayListItem(DisplayList* display_list,
-                                                SkRect bounds,
+                                                const SkPoint& offset,
                                                 bool is_complex,
                                                 bool will_change) {
   cacheable_item_ = std::make_unique<DisplayListCacheableItem>(
-      display_list, bounds, SkMatrix::I(), is_complex, will_change);
+      display_list, offset, is_complex, will_change);
 }
 
 void Cacheable::InitialCacheableSkPictureItem(SkPicture* sk_picture,
-                                              SkRect bounds,
+                                              const SkPoint& offset,
                                               bool is_complex,
                                               bool will_change) {
   cacheable_item_ = std::make_unique<SkPictureCacheableItem>(
-      sk_picture, bounds, SkMatrix::I(), is_complex, will_change);
+      sk_picture, offset, is_complex, will_change);
 }
 
 Cacheable::AutoCache::~AutoCache() {
-  if (skip_) {
-    return;
-  }
-  cacheable_->cacheable_item_->set_child_entries(
-      context_->raster_cached_entries->size() - current_index_);
-  cacheable_->TryToCache(context_, matrix_);
-  if (auto* cacheable_layer = cacheable_->GetCacheableLayer()) {
-    cacheable_layer->SetHasPlatformView(context_->has_platform_view);
-    cacheable_layer->SetHasTextureLayer(context_->has_texture_layer);
-  }
+  cacheable_->cacheable_item_->PrerollFinalize(context_, matrix_);
 }
 
 Cacheable::AutoCache Cacheable::AutoCache::Create(Cacheable* cacheable,
                                                   PrerollContext* context,
                                                   const SkMatrix& matrix) {
-  bool skip = true;
-  if (context->raster_cache) {
-    cacheable->cacheable_item_->Reset();
-    cacheable->cacheable_item_->set_matrix(matrix);
-    cacheable->cacheable_item_->set_cull_rect(context->cull_rect);
-    context->raster_cached_entries->emplace_back(
-        cacheable->cacheable_item_.get());
-    skip = false;
-  }
-  return AutoCache(cacheable, context, matrix, skip);
+  cacheable->cacheable_item_->PrerollSetup(context, matrix);
+  return AutoCache(cacheable, context, matrix);
 }
 
 Cacheable::AutoCache Cacheable::AutoCache::Create(
     DisplayListLayer* display_list_layer,
     PrerollContext* context,
-    const SkMatrix& matrix,
-    SkRect bounds) {
-  bool skip = true;
+    const SkMatrix& matrix) {
   if (context->raster_cache && display_list_layer->display_list()) {
-    display_list_layer->cacheable_item_->Reset();
-    display_list_layer->cacheable_item_->set_matrix(matrix);
-    display_list_layer->cacheable_item_->set_cull_rect(context->cull_rect);
-    context->raster_cached_entries->emplace_back(
-        display_list_layer->cacheable_item_.get());
-    skip = false;
+    display_list_layer->cacheable_item_->PrerollSetup(context, matrix);
   }
-  return AutoCache(display_list_layer, context, matrix, skip);
+  return AutoCache(display_list_layer, context, matrix);
 }
 
 Cacheable::AutoCache Cacheable::AutoCache::Create(PictureLayer* picture_layer,
                                                   PrerollContext* context,
-                                                  const SkMatrix& matrix,
-                                                  SkRect bounds) {
-  bool skip = true;
+                                                  const SkMatrix& matrix) {
   if (context->raster_cache && picture_layer->picture()) {
-    picture_layer->cacheable_item_->Reset();
-    picture_layer->cacheable_item_->set_matrix(matrix);
-    picture_layer->cacheable_item_->set_cull_rect(context->cull_rect);
-    context->raster_cached_entries->emplace_back(
-        picture_layer->cacheable_item_.get());
-    skip = false;
+    picture_layer->cacheable_item_->PrerollSetup(context, matrix);
   }
-  return AutoCache(picture_layer, context, matrix, skip);
+  return AutoCache(picture_layer, context, matrix);
 }
 
 }  // namespace flutter

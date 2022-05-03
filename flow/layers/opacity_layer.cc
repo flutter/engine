@@ -13,7 +13,9 @@ namespace flutter {
 
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
     : alpha_(alpha), offset_(offset), children_can_accept_opacity_(false) {
-  InitialCacheableLayerItem(this);
+  // the opacity_layer couldn't cache itself, so the cache_threshold is the
+  // max_int
+  InitialCacheableLayerItem(this, std::numeric_limits<int>::max());
 }
 
 void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
@@ -71,23 +73,16 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 
-  // Restore cull_rect
-  context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
-}
-
-void OpacityLayer::TryToCache(PrerollContext* context, const SkMatrix& ctm) {
-  auto* cacheable_layer = GetCacheableLayer();
-  // try to cache the opacity layer's children
   if (!children_can_accept_opacity()) {
     auto child_matrix = child_matrix_;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix_);
 #endif
-    cacheable_layer->set_matrix(child_matrix);
-    cacheable_layer->set_cache_children_layer();
-    return;
+    cacheable_item_->asLayerCacheableItem()->CacheChildren(child_matrix);
   }
-  cacheable_layer->set_need_cached(false);
+
+  // Restore cull_rect
+  context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {
@@ -115,12 +110,8 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setAlphaf(subtree_opacity);
 
-  if (context.raster_cache) {
-    const auto* cacheable_layer = GetCacheableLayer();
-    if (cacheable_layer->Draw(context.raster_cache, *context.leaf_nodes_canvas,
-                              &paint)) {
-      return;
-    }
+  if (cacheable_item_->Draw(context, &paint)) {
+    return;
   }
 
   // Skia may clip the content with saveLayerBounds (although it's not a

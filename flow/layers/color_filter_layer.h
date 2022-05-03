@@ -7,6 +7,7 @@
 
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cacheable_entry.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 namespace flutter {
@@ -21,15 +22,12 @@ class ColorFilterLayer : public ContainerLayer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override;
-
   Layer* asLayer() override { return this; }
 
  private:
   sk_sp<SkColorFilter> filter_;
 
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
-  int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };

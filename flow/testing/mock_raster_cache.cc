@@ -43,12 +43,12 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   path.addRect(100, 100, 100 + width, 100 + height);
   MockCacheableLayer layer = MockCacheableLayer(path);
   layer.Preroll(&preroll_context_, ctm);
-  Prepare(layer.GetCacheableLayer(), &paint_context_);
+  // Prepare(layer.GetCacheableLayer(), &paint_context_);
 }
 
 void MockRasterCache::AddMockPicture(int width, int height) {
   FML_DCHECK(access_threshold() > 0);
-  SkMatrix ctm = SkMatrix::I();
+  // SkMatrix ctm = SkMatrix::I();
   SkPictureRecorder skp_recorder;
   SkRTreeFactory rtree_factory;
   SkPath path;
@@ -61,13 +61,14 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   PaintContextHolder holder = GetSamplePaintContextHolder(this);
   holder.paint_context.dst_color_space = color_space_;
 
-  SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(), ctm,
-                                      true, false);
-  for (size_t i = 0; i < access_threshold(); i++) {
-    Prepare(&picture_item, &holder.paint_context);
-    Draw(&picture_item, mock_canvas_);
-  }
-  Prepare(&picture_item, &holder.paint_context);
+  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // ctm,
+  //                                     true, false);
+  // for (size_t i = 0; i < access_threshold(); i++) {
+  //   Prepare(&picture_item, &holder.paint_context);
+  //   Draw(&picture_item, mock_canvas_);
+  // }
+  // Prepare(&picture_item, &holder.paint_context);
 }
 
 PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {

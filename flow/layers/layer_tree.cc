@@ -74,7 +74,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 
 void LayerTree::TryToRasterCache(
     const std::vector<CacheableItem*>& raster_cached_entries,
-    PaintContext* paint_context,
+    const PaintContext* paint_context,
     bool ignore_raster_cache) {
   unsigned i = 0;
   const auto entries_size = raster_cached_entries.size();
@@ -83,13 +83,13 @@ void LayerTree::TryToRasterCache(
     if (item->need_cached()) {
       // try to cache current layer
       // If parent failed to cache, just proceed to the next entry
-      if (item->TryToPrepareRasterCache(paint_context)) {
+      if (item->TryToPrepareRasterCache(*paint_context)) {
         // if parent cached, then foreach child layer to touch them.
         for (unsigned j = 0; j < item->chld_entries(); j++) {
           auto* child_entry = raster_cached_entries[i + j + 1];
 
           if (child_entry->need_cached()) {
-            child_entry->Touch(paint_context->raster_cache, true);
+            child_entry->Touch(paint_context->raster_cache);
           }
         }
         i += item->chld_entries() + 1;
@@ -149,9 +149,11 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       // clang-format on
   };
 
-  if (root_layer_->needs_painting(context)) {
+  if (cache) {
     TryToRasterCache(raster_cached_entries_, &context, ignore_raster_cache);
+  }
 
+  if (root_layer_->needs_painting(context)) {
     root_layer_->Paint(context);
   }
 }

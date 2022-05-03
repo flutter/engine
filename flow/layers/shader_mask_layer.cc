@@ -10,11 +10,8 @@ namespace flutter {
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader),
-      mask_rect_(mask_rect),
-      blend_mode_(blend_mode),
-      render_count_(1) {
-  InitialCacheableLayerItem(this);
+    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {
+  InitialCacheableLayerItem(this, kMinimumRendersBeforeCachingFilterLayer);
 }
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
@@ -51,25 +48,18 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->subtree_can_inherit_opacity = true;
 }
 
-void ShaderMaskLayer::TryToCache(PrerollContext* context, const SkMatrix& ctm) {
-  auto* cacheable_item = GetCacheableLayer();
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    return;
-  }
-  render_count_++;
-  cacheable_item->set_need_cached(false);
-}
-
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
-  const auto* cacheable_item = GetCacheableLayer();
-  if (context.raster_cache &&
-      cacheable_item->Draw(context.raster_cache, *context.leaf_nodes_canvas)) {
-    return;
-  }
 
   AutoCachePaint cache_paint(context);
+
+  if (auto* cacheable_item = GetCacheableLayer()) {
+    if (cacheable_item->Draw(context, cache_paint.paint())) {
+      return;
+    }
+  }
+
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);

@@ -18,7 +18,7 @@ PictureLayer::PictureLayer(const SkPoint& offset,
   if (picture_.skia_object()) {
     bounds_ =
         picture_.skia_object()->cullRect().makeOffset(offset_.x(), offset_.y());
-    InitialCacheableSkPictureItem(picture_.skia_object().get(), bounds_,
+    InitialCacheableSkPictureItem(picture_.skia_object().get(), offset_,
                                   is_complex, will_change);
   }
 }
@@ -115,34 +115,10 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
-  SkPicture* sk_picture = picture();
-  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
-
   Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix, bounds);
+      Cacheable::AutoCache::Create(this, context, matrix);
 
-  set_paint_bounds(bounds);
-}
-
-void PictureLayer::TryToCache(PrerollContext* context, const SkMatrix& ctm) {
-  auto* cacheable_sk_picture_item = GetCacheableSkPictureItem();
-  TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-  // For sk_picture_layer if the context has raster_cache, we will try to
-  // collection it when we raster cache it, we will to decision Prepare or
-  // Touch cache
-  if (context->cull_rect.intersect(paint_bounds())) {
-    if (cacheable_sk_picture_item->ShouldBeCached(context->raster_cache)) {
-      cacheable_sk_picture_item->ModifyMatrix(offset_);
-      // if current Layer can be cached, we change the
-      // subtree_can_inherit_opacity to true
-      context->subtree_can_inherit_opacity = true;
-      return;
-    }
-    cacheable_sk_picture_item->set_need_cached(false);
-    return;
-  }
-
-  return;
+  set_paint_bounds(bounds_);
 }
 
 void PictureLayer::Paint(PaintContext& context) const {
@@ -156,14 +132,9 @@ void PictureLayer::Paint(PaintContext& context) const {
   context.leaf_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
-
-  if (context.raster_cache) {
+  if (auto* picture_item = GetCacheableSkPictureItem()) {
     AutoCachePaint cache_paint(context);
-    const auto* cacheable_picture_item = GetCacheableSkPictureItem();
-    if (cacheable_picture_item->Draw(context.raster_cache,
-                                     *context.leaf_nodes_canvas,
-                                     cache_paint.paint())) {
-      TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+    if (picture_item->Draw(context, cache_paint.paint())) {
       return;
     }
   }

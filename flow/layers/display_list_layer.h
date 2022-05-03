@@ -35,9 +35,6 @@ class DisplayListLayer : public Layer, public Cacheable {
     return this;
   }
 
-  virtual void TryToCache(PrerollContext* context,
-                          const SkMatrix& ctm) override;
-
   Layer* asLayer() override { return this; }
 
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;

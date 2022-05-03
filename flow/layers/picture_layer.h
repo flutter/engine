@@ -34,8 +34,6 @@ class PictureLayer : public Layer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override;
-
   Layer* asLayer() override { return this; }
 
  private:

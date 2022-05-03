@@ -67,31 +67,28 @@ class MockLayer : public Layer {
 class MockLayerCacheableItem : public LayerCacheableItem {
  public:
   using LayerCacheableItem::LayerCacheableItem;
-  std::unique_ptr<RasterCacheResult> CreateRasterCache(
-      PaintContext* paint_context,
-      bool checkerboard = false) const override;
 };
 
 class MockCacheableContainerLayer : public ContainerLayer, public Cacheable {
  public:
   static void FirstTryToCacheChildren(int render_count,
                                       LayerCacheableItem* entry) {
-    if (render_count < 3) {
-      render_count++;
-      entry->set_need_cached(false);
-      return;
-    }
+    // if (render_count < 3) {
+    //   render_count++;
+    //   entry->set_need_cached(false);
+    //   return;
+    // }
 
     return;
   }
 
   static void FirstNotTryToCache(int render_count, CacheableItem* entry) {
     // if render count < 3 not cache anything
-    if (render_count < 3) {
-      render_count++;
-      entry->set_need_cached(false);
-      return;
-    }
+    // if (render_count < 3) {
+    //   render_count++;
+    //   entry->set_need_cached(false);
+    //   return;
+    // }
     // if render count >= 3 try cache itself
     return;
   }
@@ -107,14 +104,8 @@ class MockCacheableContainerLayer : public ContainerLayer, public Cacheable {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override {
-    cache_strategy_(raster_count_, this->GetCacheableLayer());
-    raster_count_++;
-  }
-
  private:
   std::function<void(int, LayerCacheableItem*)> cache_strategy_;
-  int raster_count_ = 1;
 };
 
 class MockCacheableLayer : public MockLayer, public Cacheable {
@@ -129,29 +120,17 @@ class MockCacheableLayer : public MockLayer, public Cacheable {
                   paint,
                   fake_has_platform_view,
                   fake_reads_surface,
-                  fake_opacity_compatible),
-        render_limit_(render_limit) {
-    cacheable_item_ = std::make_unique<MockLayerCacheableItem>(this);
+                  fake_opacity_compatible) {
+    cacheable_item_ = std::make_unique<MockLayerCacheableItem>(this, 3);
   }
 
   Layer* asLayer() { return this; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override {
-    auto* layer = GetCacheableLayer();
-    // We should try to cache the layer or layer's children.
-    if (render_count_ >= render_limit_) {
-      // entry default cache current layer
-      return;
-    }
-    render_count_++;
-    layer->set_need_cached(false);
-  }
-
  private:
-  int render_limit_ = 3;
-  int render_count_ = 1;
+  // int render_limit_ = 3;
+  // int render_count_ = 1;
 };
 
 }  // namespace testing

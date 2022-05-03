@@ -16,7 +16,6 @@
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/raster_cacheable_entry.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
@@ -41,6 +40,7 @@ class PictureLayer;
 class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
+class CacheableItem;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 

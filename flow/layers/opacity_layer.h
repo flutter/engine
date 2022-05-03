@@ -36,8 +36,6 @@ class OpacityLayer : public ContainerLayer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  void TryToCache(PrerollContext* context, const SkMatrix& ctm) override;
-
   // Returns whether the children are capable of inheriting an opacity value
   // and modifying their rendering accordingly. This value is only guaranteed
   // to be valid after the local |Preroll| method is called.

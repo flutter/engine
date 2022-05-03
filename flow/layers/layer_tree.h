@@ -35,7 +35,7 @@ class LayerTree {
 
   static void TryToRasterCache(
       const std::vector<CacheableItem*>& raster_cached_entries,
-      PaintContext* paint_context,
+      const PaintContext* paint_context,
       bool ignore_raster_cache = false);
 
   void Paint(CompositorContext::ScopedFrame& frame,

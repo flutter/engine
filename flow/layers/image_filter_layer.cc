@@ -9,10 +9,8 @@
 namespace flutter {
 
 ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
-    : filter_(std::move(filter)),
-      transformed_filter_(nullptr),
-      render_count_(1) {
-  InitialCacheableLayerItem(this);
+    : filter_(std::move(filter)), transformed_filter_(nullptr) {
+  InitialCacheableLayerItem(this, kMinimumRendersBeforeCachingFilterLayer);
 }
 
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
@@ -74,47 +72,12 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   child_bounds = SkRect::Make(filter_output_bounds);
 
   set_paint_bounds(child_bounds);
-}
 
-void ImageFilterLayer::TryToCache(PrerollContext* context,
-                                  const SkMatrix& ctm) {
-  auto* cacheable_item = GetCacheableLayer();
-  if (!filter_) {
-    cacheable_item->set_need_cached(false);
-    return;
-  }
-
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    // entry default cache current layer
-    cacheable_item->set_cache_layer();
-    return;
-  }
   transformed_filter_ = nullptr;
-  // This ImageFilterLayer is not yet considered stable so we
-  // increment the count to measure how many times it has been
-  // seen from frame to frame.
-  render_count_++;
-
-  // Now we will try to pre-render the children into the cache.
-  // To apply the filter to pre-rendered children, we must first
-  // modify the filter to be aware of the transform under which
-  // the cached bitmap was produced. Some SkImageFilter
-  // instances can do this operation on some transforms and some
-  // (filters or transforms) cannot. We can only cache the children
-  // and apply the filter on the fly if this operation succeeds.
-  transformed_filter_ = filter_->makeWithLocalMatrix(ctm);
+  transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
   if (transformed_filter_) {
-    // With a modified SkImageFilter we can now try to cache the
-    // children to avoid their rendering costs if they remain
-    // stable between frames and also avoiding a rendering surface
-    // switch during the Paint phase even if they are not stable.
-    // This benefit is seen most during animations.
-    cacheable_item->set_cache_children_layer();
-    return;
+    cacheable_item_->asLayerCacheableItem()->CacheChildren(matrix);
   }
-
-  cacheable_item->set_need_cached(false);
-  return;
 }
 
 void ImageFilterLayer::Paint(PaintContext& context) const {
@@ -122,21 +85,11 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
-
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-      context.leaf_nodes_canvas->getTotalMatrix()));
-#endif
-
-  if (context.raster_cache) {
-    const auto* cacheable_layer = GetCacheableLayer();
-    if (cacheable_layer->GetStrategy() ==
-            RasterCacheLayerStrategy::kLayerChildren &&
-        transformed_filter_) {
+  if (auto* layer_item = cacheable_item_->asLayerCacheableItem()) {
+    if (layer_item->IsCacheChildren()) {
       cache_paint.setImageFilter(transformed_filter_);
     }
-    if (cacheable_layer->Draw(context.raster_cache, *context.leaf_nodes_canvas,
-                              cache_paint.paint())) {
+    if (cacheable_item_->Draw(context, cache_paint.paint())) {
       return;
     }
   }

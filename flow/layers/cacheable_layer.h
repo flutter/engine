@@ -7,8 +7,9 @@
 
 #include <memory>
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/layers/layer.h"
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cacheable_entry.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
@@ -20,15 +21,15 @@ class Cacheable {
  public:
   Cacheable() = default;
 
-  void InitialCacheableLayerItem(Layer*);
+  void InitialCacheableLayerItem(Layer*, int);
 
   void InitialCacheableDisplayListItem(DisplayList*,
-                                       SkRect bounds,
+                                       const SkPoint& offset,
                                        bool is_complex,
                                        bool will_change);
 
   void InitialCacheableSkPictureItem(SkPicture*,
-                                     SkRect bounds,
+                                     const SkPoint& offset,
                                      bool is_complex,
                                      bool will_change);
 
@@ -40,25 +41,19 @@ class Cacheable {
 
     static AutoCache Create(DisplayListLayer* display_list,
                             PrerollContext* context,
-                            const SkMatrix& matrix,
-                            SkRect bounds);
+                            const SkMatrix& matrix);
 
     static AutoCache Create(PictureLayer* display_list,
                             PrerollContext* context,
-                            const SkMatrix& matrix,
-                            SkRect bounds);
+                            const SkMatrix& matrix);
 
     ~AutoCache();
 
    private:
     AutoCache(Cacheable* cacheable,
               PrerollContext* context,
-              const SkMatrix& matrix,
-              bool skip = false)
-        : cacheable_(cacheable),
-          context_(context),
-          matrix_(matrix),
-          skip_(skip) {
+              const SkMatrix& matrix)
+        : cacheable_(cacheable), context_(context), matrix_(matrix) {
       if (context_ && context_->raster_cache) {
         current_index_ = context_->raster_cached_entries->size();
       }
@@ -68,12 +63,9 @@ class Cacheable {
     Cacheable* cacheable_ = nullptr;
     PrerollContext* context_ = nullptr;
     const SkMatrix& matrix_;
-    bool skip_ = false;
   };
 
   virtual Layer* asLayer() = 0;
-
-  virtual void TryToCache(PrerollContext* context, const SkMatrix& ctm) = 0;
 
   virtual ~Cacheable() = default;
 

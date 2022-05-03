@@ -65,15 +65,6 @@ void MockLayer::Paint(PaintContext& context) const {
   }
 }
 
-std::unique_ptr<RasterCacheResult> MockLayerCacheableItem::CreateRasterCache(
-    PaintContext* paint_context,
-    bool checkerboard) const {
-  SkRect logical_rect = layer_->paint_bounds();
-  SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, matrix_);
-
-  return std::make_unique<MockRasterCacheResult>(cache_rect);
-}
-
 void MockCacheableContainerLayer::Preroll(PrerollContext* context,
                                           const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =

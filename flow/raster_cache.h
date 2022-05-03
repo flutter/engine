@@ -93,22 +93,17 @@ struct RasterCacheMetrics {
 
 class RasterCache {
  public:
-  struct Entry {
-    bool used_this_frame = false;
-    size_t access_count = 0;
-    // if this entry's parent has cached, we will remove this entry after the
-    // survive_frame_count.
-    unsigned survive_frame_count = 3;
-    std::unique_ptr<RasterCacheResult> image;
+  struct Context {
+    GrDirectContext* gr_context;
+    SkColorSpace* dst_color_space;
+    const SkMatrix& matrix;
+    const SkRect& logical_rect;
+    const char* flow_type;
+    bool checkerboard;
   };
 
   static std::unique_ptr<RasterCacheResult> Rasterize(
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard,
-      const SkRect& logical_rect,
-      const char* type,
+      const RasterCache::Context& context,
       const std::function<void(SkCanvas*)>& draw_function);
 
   static bool IsDisplayListWorthRasterizing(
@@ -116,6 +111,8 @@ class RasterCache {
       bool will_change,
       bool is_complex,
       DisplayListComplexityCalculator* complexity_calculator);
+
+  static bool CanRasterizeRect(const SkRect& cull_rect);
 
   static bool IsPictureWorthRasterizing(SkPicture* picture,
                                         bool will_change,
@@ -163,14 +160,16 @@ class RasterCache {
     return result;
   }
 
-  bool Prepare(const CacheableItem* cacheable_item,
-               PaintContext* paint_context) const;
-
-  bool Touch(const CacheableItem* cacheable_item, bool parent_cached) const;
-
-  bool Draw(const CacheableItem* cacheable_item,
+  // Draws this item if it should be rendered from the cache and returns
+  // true iff it was successfully drawn. Typically this should only fail
+  // if the item was disabled due to conditions discovered during |Preroll|
+  // or if the attempt to populate the entry failed due to bounds overflow
+  // conditions.
+  bool Draw(const RasterCacheKeyID& id,
             SkCanvas& canvas,
-            const SkPaint* paint = nullptr) const;
+            const SkPaint* paint) const;
+
+  bool Touch(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
 
   void PrepareNewFrame();
   void CleanupAfterFrame();
@@ -228,8 +227,6 @@ class RasterCache {
    */
   size_t access_threshold() const { return access_threshold_; }
 
-  auto& GetCacheForKey(RasterCacheKey key) const { return cache_[key]; }
-
   bool GenerateNewCacheInThisFrame() const {
     // Disabling caching when access_threshold is zero is historic behavior.
     return access_threshold_ != 0 &&
@@ -237,14 +234,29 @@ class RasterCache {
                picture_and_display_list_cache_limit_per_frame_;
   }
 
-  Entry& EntryForKey(RasterCacheKey key) const;
+  /**
+   * @brief if the item has been cached return true.
+   * We mean the item will show in the screen, and will create a cache entry if
+   * the item doesn't create cache.
+   * @param id item id
+   * @param matrix
+   */
+  bool MarkSeen(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
+
+  bool UpdateCacheEntry(
+      const RasterCacheKeyID& id,
+      const Context& raster_cache_context,
+      const std::function<void(SkCanvas*)>& render_function) const;
 
  private:
-  bool Touch(const RasterCacheKey& cache_key, bool parent_cached = false) const;
-
-  bool Draw(const RasterCacheKey& cache_key,
-            SkCanvas& canvas,
-            const SkPaint* paint) const;
+  struct Entry {
+    bool used_this_frame = false;
+    size_t access_count = 0;
+    // if this entry's parent has cached, we will remove this entry after the
+    // survive_frame_count.
+    unsigned survive_frame_count = 3;
+    std::unique_ptr<RasterCacheResult> image;
+  };
 
   void SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
                                RasterCacheMetrics& picture_metrics,

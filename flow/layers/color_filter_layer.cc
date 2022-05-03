@@ -8,8 +8,8 @@
 namespace flutter {
 
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
-    : filter_(std::move(filter)), render_count_(1) {
-  InitialCacheableLayerItem(this);
+    : filter_(std::move(filter)) {
+  InitialCacheableLayerItem(this, kMinimumRendersBeforeCachingFilterLayer);
 }
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
@@ -45,38 +45,20 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   context->subtree_can_inherit_opacity = true;
 }
 
-void ColorFilterLayer::TryToCache(PrerollContext* context,
-                                  const SkMatrix& ctm) {
-  // We should try to cache the layer or layer's children.
-  // First we should to check if we need to touch the cache.
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    // entry default cache current layer
-    GetCacheableLayer()->set_cache_layer();
-    return;
-  }
-  render_count_++;
-  GetCacheableLayer()->set_cache_children_layer();
-}
-
 void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
-
-  if (context.raster_cache) {
-    const auto* layer_cacheable_item = GetCacheableLayer();
-    layer_cacheable_item->set_cache_layer();
-    if (layer_cacheable_item->GetStrategy() ==
-        RasterCacheLayerStrategy::kLayerChildren) {
+  if (auto* layer_item = cacheable_item_->asLayerCacheableItem()) {
+    if (layer_item->IsCacheChildren()) {
       cache_paint.setColorFilter(filter_);
     }
-    if (layer_cacheable_item->Draw(context.raster_cache,
-                                   *context.leaf_nodes_canvas,
-                                   cache_paint.paint())) {
+    if (layer_item->Draw(context, cache_paint.paint())) {
       return;
     }
   }
+
   cache_paint.setColorFilter(filter_);
 
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(

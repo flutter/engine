@@ -4,6 +4,7 @@
 
 #include "flutter/flow/raster_cache.h"
 
+#include <cstddef>
 #include <vector>
 
 #include "flutter/common/constants.h"
@@ -48,7 +49,7 @@ RasterCache::RasterCache(size_t access_threshold,
           picture_and_display_list_cache_limit_per_frame),
       checkerboard_images_(false) {}
 
-static bool CanRasterizeRect(const SkRect& cull_rect) {
+bool RasterCache::CanRasterizeRect(const SkRect& cull_rect) {
   if (cull_rect.isEmpty()) {
     // No point in ever rasterizing an empty display list.
     return false;
@@ -118,12 +119,7 @@ bool RasterCache::IsDisplayListWorthRasterizing(
 
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
-    GrDirectContext* context,
-    const SkMatrix& ctm,
-    SkColorSpace* dst_color_space,
-    bool checkerboard,
-    const SkRect& logical_rect,
-    const char* type,
+    const RasterCache::Context& context,
     const std::function<void(SkCanvas*)>& draw_function) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
@@ -136,9 +132,9 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
       SkImageInfo::MakeN32Premul(width, height, sk_ref_sp(dst_color_space));
 
   sk_sp<SkSurface> surface =
-      context
-          ? SkSurface::MakeRenderTarget(context, SkBudgeted::kYes, image_info)
-          : SkSurface::MakeRaster(image_info);
+      context.gr_context ? SkSurface::MakeRenderTarget(
+                               context.gr_context, SkBudgeted::kYes, image_info)
+                         : SkSurface::MakeRaster(image_info);
 
   if (!surface) {
     return nullptr;
@@ -150,58 +146,36 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   canvas->concat(ctm);
   draw_function(canvas);
 
-  if (checkerboard) {
-    DrawCheckerboard(canvas, logical_rect);
+  if (context.checkerboard) {
+    DrawCheckerboard(canvas, context.logical_rect);
   }
 
-  return std::make_unique<RasterCacheResult>(surface->makeImageSnapshot(),
-                                             logical_rect, type);
+  return std::make_unique<RasterCacheResult>(
+      surface->makeImageSnapshot(), context.logical_rect, context.flow_type);
 }
 
-bool RasterCache::Prepare(const CacheableItem* cacheable_item,
-                          PaintContext* paint_context) const {
-  auto key = cacheable_item->GetKey();
-  if (!key.has_value()) {
-    return false;
-  }
-  Entry& entry = cache_[key.value()];
+bool RasterCache::UpdateCacheEntry(
+    const RasterCacheKeyID& id,
+    const Context& raster_cache_context,
+    const std::function<void(SkCanvas*)>& render_function) const {
+  RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
+  Entry& entry = cache_[key];
   entry.access_count++;
   entry.used_this_frame = true;
   if (!entry.image) {
-    entry.image =
-        cacheable_item->CreateRasterCache(paint_context, checkerboard_images_);
+    entry.image = Rasterize(raster_cache_context, render_function);
   }
-  return true;
+  return entry.image != nullptr;
 }
 
-bool RasterCache::Touch(const CacheableItem* cacheable_item,
-                        bool parent_cached) const {
-  auto key = cacheable_item->GetKey();
-  if (!key.has_value()) {
-    return false;
-  }
-  return Touch(key.value(), parent_cached);
-}
-
-bool RasterCache::Draw(const CacheableItem* cacheable_item,
-                       SkCanvas& canvas,
-                       const SkPaint* paint) const {
-  auto key = cacheable_item->GetKey(&canvas);
-  if (!key.has_value()) {
-    return false;
-  }
-  return Draw(key.value(), canvas, paint);
-}
-
-bool RasterCache::Touch(const RasterCacheKey& cache_key,
-                        bool parent_had_cached) const {
+bool RasterCache::Touch(const RasterCacheKeyID& id,
+                        const SkMatrix& matrix) const {
+  RasterCacheKey cache_key = RasterCacheKey(id, matrix);
   auto it = cache_.find(cache_key);
   if (it != cache_.end()) {
-    if (parent_had_cached) {
-      // current entry has beyond can live frame, try to remove it
-      if (--it->second.survive_frame_count <= 0) {
-        it->second.used_this_frame = false;
-      }
+    // current entry has beyond can live frame, try to remove it
+    if (--it->second.survive_frame_count <= 0) {
+      it->second.used_this_frame = false;
     }
     it->second.used_this_frame = true;
     it->second.access_count++;
@@ -210,15 +184,19 @@ bool RasterCache::Touch(const RasterCacheKey& cache_key,
   return false;
 }
 
-RasterCache::Entry& RasterCache::EntryForKey(RasterCacheKey key) const {
+bool RasterCache::MarkSeen(const RasterCacheKeyID& id,
+                           const SkMatrix& matrix) const {
+  RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
-  return entry;
+  entry.access_count++;
+  entry.used_this_frame = true;
+  return entry.image != nullptr;
 }
 
-bool RasterCache::Draw(const RasterCacheKey& cache_key,
+bool RasterCache::Draw(const RasterCacheKeyID& id,
                        SkCanvas& canvas,
                        const SkPaint* paint) const {
-  auto it = cache_.find(cache_key);
+  auto it = cache_.find(RasterCacheKey(id, canvas.getTotalMatrix()));
   if (it == cache_.end()) {
     return false;
   }

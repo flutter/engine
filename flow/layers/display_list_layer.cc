@@ -22,7 +22,7 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
   if (display_list_.skia_object() != nullptr) {
     bounds_ = display_list_.skia_object()->bounds().makeOffset(offset_.x(),
                                                                offset_.y());
-    InitialCacheableDisplayListItem(display_list_.skia_object().get(), bounds_,
+    InitialCacheableDisplayListItem(display_list_.skia_object().get(), offset,
                                     is_complex, will_change);
   }
 }
@@ -95,31 +95,11 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   DisplayList* disp_list = display_list();
 
   Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix, bounds_);
+      Cacheable::AutoCache::Create(this, context, matrix);
   if (disp_list->can_apply_group_opacity()) {
     context->subtree_can_inherit_opacity = true;
   }
   set_paint_bounds(bounds_);
-}
-
-void DisplayListLayer::TryToCache(PrerollContext* context,
-                                  const SkMatrix& ctm) {
-  auto* cacheable_display_list_item = GetCacheableDisplayListItem();
-  TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-  // For display_list_layer if the context has raster_cache, we will try to
-  // collection it when we raster cache it, we will to decision Prepare or
-  // Touch cache
-  if (context->cull_rect.intersect(paint_bounds())) {
-    if (cacheable_display_list_item->ShouldBeCached(context->raster_cache,
-                                                    context->gr_context)) {
-      cacheable_display_list_item->ModifyMatrix(offset_);
-      context->subtree_can_inherit_opacity = true;
-      return;
-    }
-    cacheable_display_list_item->set_need_cached(false);
-    return;
-  }
-  return;
 }
 
 void DisplayListLayer::Paint(PaintContext& context) const {
@@ -130,12 +110,9 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
   context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
 
-  if (context.raster_cache) {
+  if (auto* display_list_item = GetCacheableDisplayListItem()) {
     AutoCachePaint cache_paint(context);
-    const auto* display_list_item = GetCacheableDisplayListItem();
-    if (display_list_item->Draw(context.raster_cache,
-                                *context.leaf_nodes_canvas,
-                                cache_paint.paint())) {
+    if (display_list_item->Draw(context, cache_paint.paint())) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
       return;
     }
