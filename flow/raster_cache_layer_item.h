@@ -12,7 +12,8 @@ namespace flutter {
 
 class CacheableContainerLayer : public ContainerLayer {
  public:
-  virtual bool canCacheChildren(PrerollContext* context, const SkMatrix& matrix) = 0;
+  virtual bool canCacheChildren(PrerollContext* context,
+                                const SkMatrix& matrix) = 0;
 
   virtual void updatePaintForLayer(AutoCachePaint& paint) {}
   virtual void updatePaintForChildren(AutoCachePaint& paint) {}
@@ -28,12 +29,14 @@ class RasterCacheLayerItem : public RasterCacheItem {
   // the work across multiple frames.
   // static constexpr int kDefaultPictureAndDispLayListCacheLimitPerFrame = 3;
 
-  explicit RasterCacheLayerItem(CacheableContainerLayer* layer, int layer_cache_thresholds);
+  explicit RasterCacheLayerItem(CacheableContainerLayer* layer,
+                                int layer_cache_thresholds);
 
   virtual ~RasterCacheLayerItem() = default;
 
   void PrerollSetup(PrerollContext* context, const SkMatrix& matrix) override;
-  void PrerollFinalize(PrerollContext* context, const SkMatrix& matrix) override;
+  void PrerollFinalize(PrerollContext* context,
+                       const SkMatrix& matrix) override;
 
   int itemChildren() override { return num_children_cached_; };
 
@@ -41,9 +44,11 @@ class RasterCacheLayerItem : public RasterCacheItem {
                        RasterCache* cache,
                        const RasterCache::Context& r_context,
                        bool parent_cached) const override;
-  bool RasterizeLayer(const Layer::PaintContext& context, SkCanvas* canvas) const;
+  bool RasterizeLayer(const Layer::PaintContext& context,
+                      SkCanvas* canvas) const;
 
-  bool Draw(const Layer::PaintContext& context, ContainerLayer::AutoCachePaint& paint) const;
+  bool Draw(const Layer::PaintContext& context,
+            ContainerLayer::AutoCachePaint& paint) const;
 
  private:
   CacheableContainerLayer* layer_;

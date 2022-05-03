@@ -16,8 +16,10 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    bool will_change)
     : offset_(offset),
       display_list_(std::move(display_list)),
-      cache_item_(display_list.skia_object(), offset, is_complex, will_change) {
-}
+      cache_item_(display_list_.skia_object(),
+                  offset,
+                  is_complex,
+                  will_change) {}
 
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {

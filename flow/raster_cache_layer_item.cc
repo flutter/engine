@@ -7,26 +7,30 @@
 
 namespace flutter {
 
-RasterCacheLayerItem::RasterCacheLayerItem(CacheableContainerLayer* layer, int layer_cache_threshold)
+RasterCacheLayerItem::RasterCacheLayerItem(CacheableContainerLayer* layer,
+                                           int layer_cache_threshold)
     : layer_(layer),
       layer_cache_threshold_(layer_cache_threshold),
-      layer_key_id_(RasterCacheKeyID(layer->unique_id(),
-                                     RasterCacheKeyType::kLayer)),
+      layer_key_id_(
+          RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer)),
       children_cacheable_function_(default_children_cacheable_) {}
 
-void RasterCacheLayerItem::PrerollSetup(PrerollContext* context, const SkMatrix& matrix) {
+void RasterCacheLayerItem::PrerollSetup(PrerollContext* context,
+                                        const SkMatrix& matrix) {
   if (context->cacheable_item_list && context->raster_cache) {
     num_children_cached_ = context->cacheable_item_list->size();
     context->cacheable_item_list->push_back(this);
   }
 }
 
-void RasterCacheLayerItem::PrerollFinalize(PrerollContext* context, const SkMatrix& matrix) {
+void RasterCacheLayerItem::PrerollFinalize(PrerollContext* context,
+                                           const SkMatrix& matrix) {
   cache_state_ = CacheState::kDoNotCache;
   if (!context->raster_cache || !context->cacheable_item_list) {
     return;
   }
-  num_children_cached_ = context->cacheable_item_list->size() - num_children_cached_;
+  num_children_cached_ =
+      context->cacheable_item_list->size() - num_children_cached_;
   if (context->raster_cache) {
     if (num_cache_attempts_ > layer_cache_threshold_) {
       context->raster_cache->MarkSeen(layer_key_id_, matrix);
@@ -41,7 +45,8 @@ void RasterCacheLayerItem::PrerollFinalize(PrerollContext* context, const SkMatr
                          std::back_inserter(ids), [](auto& layer) -> uint64_t {
                            return layer->unique_id();
                          });
-          layer_children_id_.emplace(std::move(ids), RasterCacheKeyType::kLayerChildren);
+          layer_children_id_.emplace(std::move(ids),
+                                     RasterCacheKeyType::kLayerChildren);
         }
         context->raster_cache->MarkSeen(layer_children_id_.value(), matrix);
         cache_state_ = CacheState::kCacheChildren;
@@ -69,34 +74,32 @@ const std::optional<RasterCacheKeyID> RasterCacheLayerItem::id_() const {
   }
 }
 
-bool RasterCacheLayerItem::PrepareForFrame(const Layer::PaintContext& p_context,
-                                           RasterCache* cache,
-                                           const RasterCache::Context& r_context,
-                                           bool parent_cached) const {
+bool RasterCacheLayerItem::PrepareForFrame(
+    const Layer::PaintContext& p_context,
+    RasterCache* cache,
+    const RasterCache::Context& r_context,
+    bool parent_cached) const {
   if (cache_state_ != CacheState::kDoNotCache) {
-    return cache->UpdateCacheEntry(id_().value(),
-                                   cache_matrix_,
-                                   r_context,
-                                   layer_->paint_bounds(),
-                                   "RasterCacheFlow::Layer",
-                                   [=](SkCanvas* canvas) {
-      RasterizeLayer(p_context, canvas);
-    });
+    return cache->UpdateCacheEntry(
+        id_().value(), cache_matrix_, r_context, layer_->paint_bounds(),
+        "RasterCacheFlow::Layer",
+        [=](SkCanvas* canvas) { RasterizeLayer(p_context, canvas); });
   }
   return false;
 }
 
-bool RasterCacheLayerItem::RasterizeLayer(const Layer::PaintContext& context, SkCanvas* canvas) const {
+bool RasterCacheLayerItem::RasterizeLayer(const Layer::PaintContext& context,
+                                          SkCanvas* canvas) const {
   if (cache_state_ == CacheState::kDoNotCache) {
     return false;
   }
   SkISize canvas_size = canvas->getBaseLayerSize();
-  SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
-                                     canvas_size.height());
+  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
   internal_nodes_canvas.setMatrix(canvas->getTotalMatrix());
   internal_nodes_canvas.addCanvas(canvas);
   SkCanvas* nodes_canvas = static_cast<SkCanvas*>(&internal_nodes_canvas);
   Layer::PaintContext paintContext = {
+      // clang-format off
       .internal_nodes_canvas         = nodes_canvas,
       .leaf_nodes_canvas             = canvas,
       .gr_context                    = context.gr_context,
@@ -107,6 +110,7 @@ bool RasterCacheLayerItem::RasterizeLayer(const Layer::PaintContext& context, Sk
       .raster_cache                  = context.raster_cache,
       .checkerboard_offscreen_layers = context.checkerboard_offscreen_layers,
       .frame_device_pixel_ratio      = context.frame_device_pixel_ratio
+      // clang-format on
   };
   switch (cache_state_) {
     case CacheState::kDoNotCache:
@@ -131,9 +135,8 @@ bool RasterCacheLayerItem::Draw(const Layer::PaintContext& context,
       return false;
     case CacheState::kCacheAsLayer:
       layer_->updatePaintForLayer(paint);
-      return context.raster_cache->Draw(layer_key_id_,
-                                        *context.leaf_nodes_canvas,
-                                        paint.paint());
+      return context.raster_cache->Draw(
+          layer_key_id_, *context.leaf_nodes_canvas, paint.paint());
     case CacheState::kCacheChildren:
       layer_->updatePaintForChildren(paint);
       return context.raster_cache->Draw(layer_children_id_.value(),

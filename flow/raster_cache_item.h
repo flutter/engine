@@ -24,8 +24,10 @@ class RasterCacheItem {
 
   virtual ~RasterCacheItem() = default;
 
-  virtual void PrerollSetup(PrerollContext* context, const SkMatrix& matrix) = 0;
-  virtual void PrerollFinalize(PrerollContext* context, const SkMatrix& matrix) = 0;
+  virtual void PrerollSetup(PrerollContext* context,
+                            const SkMatrix& matrix) = 0;
+  virtual void PrerollFinalize(PrerollContext* context,
+                               const SkMatrix& matrix) = 0;
 
   virtual int itemChildren() = 0;
 

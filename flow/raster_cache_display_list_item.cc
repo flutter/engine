@@ -9,20 +9,23 @@
 
 namespace flutter {
 
-RasterCacheDisplayListItem::RasterCacheDisplayListItem(sk_sp<DisplayList> display_list,
-                                      const SkPoint offset,
-                                      bool is_complex,
-                                      bool will_change,
-                                      int picture_cache_threshold)
+RasterCacheDisplayListItem::RasterCacheDisplayListItem(
+    sk_sp<DisplayList> display_list,
+    const SkPoint offset,
+    bool is_complex,
+    bool will_change,
+    int picture_cache_threshold)
     : display_list_(display_list),
       offset_(offset),
       is_complex_(is_complex),
       will_change_(will_change),
       picture_cache_threshold_(picture_cache_threshold),
       display_list_key_id_(RasterCacheKeyID(display_list->unique_id(),
-                                            RasterCacheKeyType::kDisplayList)) {}
+                                            RasterCacheKeyType::kDisplayList)) {
+}
 
-void RasterCacheDisplayListItem::PrerollSetup(PrerollContext* context, const SkMatrix& matrix) {
+void RasterCacheDisplayListItem::PrerollSetup(PrerollContext* context,
+                                              const SkMatrix& matrix) {
   cacheable_ = false;
   if (will_change_) {
     return;
@@ -35,7 +38,8 @@ void RasterCacheDisplayListItem::PrerollSetup(PrerollContext* context, const SkM
         context->gr_context ? DisplayListComplexityCalculator::GetForBackend(
                                   context->gr_context->backend())
                             : DisplayListComplexityCalculator::GetForSoftware();
-    unsigned int complexity_score = complexity_calculator->Compute(display_list_.get());
+    unsigned int complexity_score =
+        complexity_calculator->Compute(display_list_.get());
     if (!complexity_calculator->ShouldBeCached(complexity_score)) {
       return;
     }
@@ -46,7 +50,8 @@ void RasterCacheDisplayListItem::PrerollSetup(PrerollContext* context, const SkM
   }
 }
 
-void RasterCacheDisplayListItem::PrerollFinalize(PrerollContext* context, const SkMatrix& matrix) {
+void RasterCacheDisplayListItem::PrerollFinalize(PrerollContext* context,
+                                                 const SkMatrix& matrix) {
   if (!cacheable_ || !context->raster_cache || !context->cacheable_item_list) {
     return;
   }
@@ -66,30 +71,28 @@ void RasterCacheDisplayListItem::PrerollFinalize(PrerollContext* context, const 
   }
 }
 
-bool RasterCacheDisplayListItem::PrepareForFrame(const Layer::PaintContext& p_context,
-                                                 RasterCache* cache,
-                                                 const RasterCache::Context& r_context,
-                                                 bool parent_cached) const {
+bool RasterCacheDisplayListItem::PrepareForFrame(
+    const Layer::PaintContext& p_context,
+    RasterCache* cache,
+    const RasterCache::Context& r_context,
+    bool parent_cached) const {
   if (cacheable_) {
-    SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
-    return cache->UpdateCacheEntry(display_list_key_id_,
-                                   cache_matrix_,
-                                   r_context,
-                                   bounds,
-                                   "RasterCacheFlow::DisplayList",
-                                   [=](SkCanvas* canvas) {
-      display_list_->RenderTo(canvas);
-    });
+    SkRect bounds =
+        display_list_->bounds().makeOffset(offset_.x(), offset_.y());
+    return cache->UpdateCacheEntry(
+        display_list_key_id_, cache_matrix_, r_context, bounds,
+        "RasterCacheFlow::DisplayList",
+        [=](SkCanvas* canvas) { display_list_->RenderTo(canvas); });
   }
   return false;
 }
 
-bool RasterCacheDisplayListItem::Draw(const Layer::PaintContext& context,
-                                      ContainerLayer::AutoCachePaint& paint) const {
+bool RasterCacheDisplayListItem::Draw(
+    const Layer::PaintContext& context,
+    ContainerLayer::AutoCachePaint& paint) const {
   if (cacheable_) {
-    return context.raster_cache->Draw(display_list_key_id_,
-                                      *context.leaf_nodes_canvas,
-                                      paint.paint());
+    return context.raster_cache->Draw(
+        display_list_key_id_, *context.leaf_nodes_canvas, paint.paint());
   }
   return false;
 }
