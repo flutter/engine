@@ -15,7 +15,8 @@ namespace flutter {
 SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
                            FramebufferInfo framebuffer_info,
                            const SubmitCallback& submit_callback,
-                           std::unique_ptr<GLContextResult> context_result)
+                           std::unique_ptr<GLContextResult> context_result,
+                           bool display_list_fallback)
     : submitted_(false),
       surface_(surface),
       framebuffer_info_(std::move(framebuffer_info)),
@@ -24,18 +25,11 @@ SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
   FML_DCHECK(submit_callback_);
   if (surface_) {
     canvas_ = surface_->getCanvas();
-  } else {
+  } else if (display_list_fallback) {
     dl_recorder_ = sk_make_sp<DisplayListCanvasRecorder>(
         SkRect::MakeWH(std::numeric_limits<SkScalar>::max(),
                        std::numeric_limits<SkScalar>::max()));
     canvas_ = dl_recorder_.get();
-  }
-}
-
-SurfaceFrame::~SurfaceFrame() {
-  if (submit_callback_ && !submitted_) {
-    // Dropping without a Submit.
-    submit_callback_(*this, nullptr);
   }
 }
 
@@ -71,6 +65,10 @@ bool SurfaceFrame::PerformSubmit() {
   }
 
   return false;
+}
+
+sk_sp<DisplayListBuilder> SurfaceFrame::GetDisplayListBuilder() {
+  return dl_recorder_ ? dl_recorder_->builder() : nullptr;
 }
 
 sk_sp<DisplayList> SurfaceFrame::BuildDisplayList() {

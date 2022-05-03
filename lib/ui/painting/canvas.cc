@@ -250,7 +250,7 @@ void Canvas::drawPaint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   FML_DCHECK(paint.isNotNull());
   if (display_list_recorder_) {
     paint.sync_to(builder(), kDrawPaintFlags);
-    std::shared_ptr<DlImageFilter> filter = builder()->getImageFilter();
+    std::shared_ptr<const DlImageFilter> filter = builder()->getImageFilter();
     if (filter && !filter->asColorFilter()) {
       // drawPaint does an implicit saveLayer if an SkImageFilter is
       // present that cannot be replaced by an SkColorFilter.
@@ -424,8 +424,16 @@ void Canvas::drawImage(const CanvasImage* image,
     builder()->drawImage(image->image(), SkPoint::Make(x, y), sampling,
                          with_attributes);
   } else if (canvas_) {
+    auto dl_image = image->image();
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawImage(image->image(), x, y, sampling, paint.paint(sk_paint));
+    canvas_->drawImage(sk_image, x, y, sampling, paint.paint(sk_paint));
   }
 }
 
@@ -459,9 +467,16 @@ void Canvas::drawImageRect(const CanvasImage* image,
                              with_attributes,
                              SkCanvas::kFast_SrcRectConstraint);
   } else if (canvas_) {
+    auto dl_image = image->image();
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawImageRect(image->image(), src, dst, sampling,
-                           paint.paint(sk_paint),
+    canvas_->drawImageRect(sk_image, src, dst, sampling, paint.paint(sk_paint),
                            SkCanvas::kFast_SrcRectConstraint);
   }
 }
@@ -498,8 +513,16 @@ void Canvas::drawImageNine(const CanvasImage* image,
     builder()->drawImageNine(image->image(), icenter, dst, filter,
                              with_attributes);
   } else if (canvas_) {
+    auto dl_image = image->image();
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawImageNine(image->image().get(), icenter, dst, filter,
+    canvas_->drawImageNine(sk_image.get(), icenter, dst, filter,
                            paint.paint(sk_paint));
   }
 }
@@ -578,7 +601,7 @@ void Canvas::drawVertices(const Vertices* vertices,
     builder()->drawVertices(vertices->vertices(), blend_mode);
   } else if (canvas_) {
     SkPaint sk_paint;
-    canvas_->drawVertices(vertices->vertices(), ToSk(blend_mode),
+    canvas_->drawVertices(vertices->vertices()->skia_object(), ToSk(blend_mode),
                           *paint.paint(sk_paint));
   }
 }
@@ -601,7 +624,7 @@ void Canvas::drawAtlas(Dart_Handle paint_objects,
     return;
   }
 
-  sk_sp<SkImage> skImage = atlas->image();
+  auto dl_image = atlas->image();
 
   static_assert(sizeof(SkRSXform) == sizeof(float) * 4,
                 "SkRSXform doesn't use floats.");
@@ -614,15 +637,22 @@ void Canvas::drawAtlas(Dart_Handle paint_objects,
   if (display_list_recorder_) {
     bool with_attributes = paint.sync_to(builder(), kDrawAtlasWithPaintFlags);
     builder()->drawAtlas(
-        skImage, reinterpret_cast<const SkRSXform*>(transforms.data()),
+        dl_image, reinterpret_cast<const SkRSXform*>(transforms.data()),
         reinterpret_cast<const SkRect*>(rects.data()),
-        reinterpret_cast<const SkColor*>(colors.data()),
+        reinterpret_cast<const DlColor*>(colors.data()),
         rects.num_elements() / 4,  // SkRect have four floats.
         blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
         with_attributes);
   } else if (canvas_) {
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawAtlas(skImage.get(),
+    canvas_->drawAtlas(sk_image.get(),
                        reinterpret_cast<const SkRSXform*>(transforms.data()),
                        reinterpret_cast<const SkRect*>(rects.data()),
                        reinterpret_cast<const SkColor*>(colors.data()),

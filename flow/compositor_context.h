@@ -12,6 +12,7 @@
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
+#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/raster_thread_merger.h"
@@ -23,7 +24,7 @@ namespace flutter {
 class LayerTree;
 
 enum class RasterStatus {
-  // Frame has successfully rasterized.
+  // Frame has been successfully rasterized.
   kSuccess,
   // Frame is submitted twice. This is only used on Android when
   // switching the background surface to FlutterImageView.
@@ -69,9 +70,15 @@ class FrameDamage {
     additional_damage_.join(damage);
   }
 
+  // Specifies clip rect alignment.
+  void SetClipAlignment(int horizontal, int vertical) {
+    horizontal_clip_alignment_ = horizontal;
+    vertical_clip_alignment_ = vertical;
+  }
+
   // Calculates clip rect for current rasterization. This is diff of layer tree
-  // and previous layer tree + any additional provideddamage.
-  // If previous layer tree is not specified, clip rect will be nulloptional,
+  // and previous layer tree + any additional provided damage.
+  // If previous layer tree is not specified, clip rect will be nullopt,
   // but the paint region of layer_tree will be calculated so that it can be
   // used for diffing of subsequent frames.
   std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree);
@@ -90,6 +97,8 @@ class FrameDamage {
   SkIRect additional_damage_ = SkIRect::MakeEmpty();
   std::optional<Damage> damage_;
   const LayerTree* prev_layer_tree_ = nullptr;
+  int vertical_clip_alignment_ = 1;
+  int horizontal_clip_alignment_ = 1;
 };
 
 class CompositorContext {
@@ -103,11 +112,16 @@ class CompositorContext {
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled,
                 bool surface_supports_readback,
-                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
+                DisplayListBuilder* display_list_builder);
 
     virtual ~ScopedFrame();
 
     SkCanvas* canvas() { return canvas_; }
+
+    DisplayListBuilder* display_list_builder() const {
+      return display_list_builder_;
+    }
 
     ExternalViewEmbedder* view_embedder() { return view_embedder_; }
 
@@ -129,6 +143,7 @@ class CompositorContext {
     CompositorContext& context_;
     GrDirectContext* gr_context_;
     SkCanvas* canvas_;
+    DisplayListBuilder* display_list_builder_;
     ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
@@ -151,7 +166,8 @@ class CompositorContext {
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled,
       bool surface_supports_readback,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
+      DisplayListBuilder* display_list_builder);
 
   void OnGrContextCreated();
 
@@ -165,11 +181,14 @@ class CompositorContext {
 
   Stopwatch& ui_time() { return ui_time_; }
 
+  LayerSnapshotStore& snapshot_store() { return layer_snapshot_store_; }
+
  private:
   RasterCache raster_cache_;
   TextureRegistry texture_registry_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;
+  LayerSnapshotStore layer_snapshot_store_;
 
   /// Only used by default constructor of `CompositorContext`.
   FixedRefreshRateUpdater fixed_refresh_rate_updater_;

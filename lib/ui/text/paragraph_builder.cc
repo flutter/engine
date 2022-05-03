@@ -51,6 +51,7 @@ const int tsBackgroundIndex = 15;
 const int tsForegroundIndex = 16;
 const int tsTextShadowsIndex = 17;
 const int tsFontFeaturesIndex = 18;
+const int tsFontVariationsIndex = 19;
 
 const int tsLeadingDistributionMask = 1 << tsLeadingDistributionIndex;
 const int tsColorMask = 1 << tsColorIndex;
@@ -71,6 +72,7 @@ const int tsBackgroundMask = 1 << tsBackgroundIndex;
 const int tsForegroundMask = 1 << tsForegroundIndex;
 const int tsTextShadowsMask = 1 << tsTextShadowsIndex;
 const int tsFontFeaturesMask = 1 << tsFontFeaturesIndex;
+const int tsFontVariationsMask = 1 << tsFontVariationsIndex;
 
 // ParagraphStyle
 
@@ -114,6 +116,10 @@ constexpr uint32_t kBlurOffset = 3;
 constexpr uint32_t kBytesPerFontFeature = 8;
 constexpr uint32_t kFontFeatureTagLength = 4;
 
+// FontVariation decoding
+constexpr uint32_t kBytesPerFontVariation = 8;
+constexpr uint32_t kFontVariationTagLength = 4;
+
 // Strut decoding
 const int sFontWeightIndex = 0;
 const int sFontStyleIndex = 1;
@@ -138,7 +144,7 @@ const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
 
 void ParagraphBuilder::Create(Dart_Handle wrapper,
-                              const tonic::Int32List& encoded,
+                              Dart_Handle encoded_handle,
                               Dart_Handle strutData,
                               const std::string& fontFamily,
                               const std::vector<std::string>& strutFontFamilies,
@@ -148,8 +154,8 @@ void ParagraphBuilder::Create(Dart_Handle wrapper,
                               const std::string& locale) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = fml::MakeRefCounted<ParagraphBuilder>(
-      encoded, strutData, fontFamily, strutFontFamilies, fontSize, height,
-      ellipsis, locale);
+      encoded_handle, strutData, fontFamily, strutFontFamilies, fontSize,
+      height, ellipsis, locale);
   res->AssociateWithDartWrapper(wrapper);
 }
 
@@ -217,7 +223,7 @@ void decodeStrut(Dart_Handle strut_data,
 }
 
 ParagraphBuilder::ParagraphBuilder(
-    const tonic::Int32List& encoded,
+    Dart_Handle encoded_data,
     Dart_Handle strutData,
     const std::string& fontFamily,
     const std::vector<std::string>& strutFontFamilies,
@@ -225,49 +231,54 @@ ParagraphBuilder::ParagraphBuilder(
     double height,
     const std::u16string& ellipsis,
     const std::string& locale) {
-  int32_t mask = encoded[0];
+  int32_t mask = 0;
   txt::ParagraphStyle style;
+  {
+    tonic::Int32List encoded(encoded_data);
 
-  if (mask & psTextAlignMask) {
-    style.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
-  }
+    mask = encoded[0];
 
-  if (mask & psTextDirectionMask) {
-    style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
-  }
+    if (mask & psTextAlignMask) {
+      style.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
+    }
 
-  if (mask & psFontWeightMask) {
-    style.font_weight =
-        static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
-  }
+    if (mask & psTextDirectionMask) {
+      style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
+    }
 
-  if (mask & psFontStyleMask) {
-    style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
-  }
+    if (mask & psFontWeightMask) {
+      style.font_weight =
+          static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
+    }
 
-  if (mask & psFontFamilyMask) {
-    style.font_family = fontFamily;
-  }
+    if (mask & psFontStyleMask) {
+      style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
+    }
 
-  if (mask & psFontSizeMask) {
-    style.font_size = fontSize;
-  }
+    if (mask & psFontFamilyMask) {
+      style.font_family = fontFamily;
+    }
 
-  if (mask & psHeightMask) {
-    style.height = height;
-    style.has_height_override = true;
-  }
+    if (mask & psFontSizeMask) {
+      style.font_size = fontSize;
+    }
 
-  if (mask & psTextHeightBehaviorMask) {
-    style.text_height_behavior = encoded[psTextHeightBehaviorIndex];
+    if (mask & psHeightMask) {
+      style.height = height;
+      style.has_height_override = true;
+    }
+
+    if (mask & psTextHeightBehaviorMask) {
+      style.text_height_behavior = encoded[psTextHeightBehaviorIndex];
+    }
+
+    if (mask & psMaxLinesMask) {
+      style.max_lines = encoded[psMaxLinesIndex];
+    }
   }
 
   if (mask & psStrutStyleMask) {
     decodeStrut(strutData, strutFontFamilies, style);
-  }
-
-  if (mask & psMaxLinesMask) {
-    style.max_lines = encoded[psMaxLinesIndex];
   }
 
   if (mask & psEllipsisMask) {
@@ -347,6 +358,24 @@ void decodeFontFeatures(Dart_Handle font_features_data,
   }
 }
 
+void decodeFontVariations(Dart_Handle font_variations_data,
+                          txt::FontVariations& font_variations) {  // NOLINT
+  tonic::DartByteData byte_data(font_variations_data);
+  FML_CHECK(byte_data.length_in_bytes() % kBytesPerFontVariation == 0);
+
+  size_t variation_count = byte_data.length_in_bytes() / kBytesPerFontVariation;
+  for (size_t variation_index = 0; variation_index < variation_count;
+       ++variation_index) {
+    size_t variation_offset = variation_index * kBytesPerFontVariation;
+    const char* variation_bytes =
+        static_cast<const char*>(byte_data.data()) + variation_offset;
+    std::string tag(variation_bytes, kFontVariationTagLength);
+    float value = *(reinterpret_cast<const float*>(variation_bytes +
+                                                   kFontVariationTagLength));
+    font_variations.SetAxisValue(tag, value);
+  }
+}
+
 void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
                                  const std::vector<std::string>& fontFamilies,
                                  double fontSize,
@@ -360,7 +389,8 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
                                  Dart_Handle foreground_objects,
                                  Dart_Handle foreground_data,
                                  Dart_Handle shadows_data,
-                                 Dart_Handle font_features_data) {
+                                 Dart_Handle font_features_data,
+                                 Dart_Handle font_variations_data) {
   FML_DCHECK(encoded.num_elements() == 9);
 
   int32_t mask = encoded[0];
@@ -463,6 +493,10 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
 
   if (mask & tsFontFeaturesMask) {
     decodeFontFeatures(font_features_data, style.font_features);
+  }
+
+  if (mask & tsFontVariationsMask) {
+    decodeFontVariations(font_variations_data, style.font_variations);
   }
 
   m_paragraphBuilder->PushStyle(style);

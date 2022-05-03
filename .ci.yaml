@@ -18,19 +18,12 @@ platform_properties:
       build_android_aot: "false"
       build_android_vulkan: "false"
       build_ios: "false"
-      build_windows_uwp: "false"
       build_android_jit_release: "false"
       gcs_goldens_bucket: ""
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
       no_bitcode: "false"
-      caches: >-
-        [
-          {"name":"builder_linux_engine","path":"builder"},
-          {"name":"gradle","path":"gradle"},
-          {"name":"openjdk","path":"java"}
-        ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -48,20 +41,12 @@ platform_properties:
       build_android_aot: "false"
       build_android_vulkan: "false"
       build_ios: "false"
-      build_windows_uwp: "false"
       build_android_jit_release: "false"
       gcs_goldens_bucket: ""
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
       no_bitcode: "false"
-      caches: >-
-        [
-          {"name":"flutter_cocoapods","path":"cocoapods"},
-          {"name":"old_osx_sdk","path":"osx_sdk"},
-          {"name":"builder_mac_engine","path":"builder"},
-          {"name":"openjdk","path":"java"}
-        ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -69,8 +54,8 @@ platform_properties:
         ]
       device_type: none
       mac_model: "Macmini8,1"
-      os: Mac-10.15
-      xcode: 12c33 # xcode 12.3
+      os: Mac-12
+      xcode: 13a233 # xcode 13.0
   windows:
     properties:
       build_host: "false"
@@ -79,18 +64,12 @@ platform_properties:
       build_android_aot: "false"
       build_android_vulkan: "false"
       build_ios: "false"
-      build_windows_uwp: "false"
       build_android_jit_release: "false"
       gcs_goldens_bucket: ""
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
       no_bitcode: "false"
-      caches: >-
-        [
-          {"name":"builder_win_engine","path":"builder"},
-          {"name":"openjdk","path":"java"}
-        ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -156,6 +135,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 90
 
   - name: Linux Fuchsia FEMU
@@ -164,6 +145,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 60
 
   - name: Linux Framework Smoke Tests
@@ -221,6 +204,7 @@ targets:
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -246,6 +230,7 @@ targets:
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -269,11 +254,24 @@ targets:
       jazzy_version: "0.14.1"
     timeout: 75
 
+  - name: Mac mac_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_host_engine
+      environment: Staging
+
   - name: Mac Unopt
     recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
       jazzy_version: "0.14.1"
+      runtime_versions: >-
+        [
+          "ios-13-0",
+          "ios-15-0"
+        ]
     timeout: 75
 
   - name: Mac clang-tidy
@@ -300,9 +298,12 @@ targets:
         [
           {"dependency": "goldctl"}
         ]
+      os: Mac-10.15
+      xcode: 12c33 # xcode 12.3
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
       - tools/**
@@ -374,12 +375,6 @@ targets:
       add_recipes_cq: "true"
     timeout: 75
 
-  - name: Windows UWP Engine
-    recipe: engine/engine
-    properties:
-      build_windows_uwp: "true"
-    timeout: 60
-
   - name: Windows Web Engine
     recipe: engine/web_engine
     properties:
@@ -387,6 +382,7 @@ targets:
     timeout: 60
     runIf:
       - DEPS
+      - .ci.yaml
       - lib/web_ui/**
       - web_sdk/**
 

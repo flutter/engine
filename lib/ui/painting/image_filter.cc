@@ -57,6 +57,14 @@ void ImageFilter::initBlur(double sigma_x,
       std::make_shared<DlBlurImageFilter>(sigma_x, sigma_y, ToDl(tile_mode));
 }
 
+void ImageFilter::initDilate(double radius_x, double radius_y) {
+  filter_ = std::make_shared<DlDilateImageFilter>(radius_x, radius_y);
+}
+
+void ImageFilter::initErode(double radius_x, double radius_y) {
+  filter_ = std::make_shared<DlErodeImageFilter>(radius_x, radius_y);
+}
+
 void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
                              int filterQualityIndex) {
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);

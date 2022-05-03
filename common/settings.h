@@ -136,6 +136,7 @@ struct Settings {
   std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
+  bool enable_timeline_event_handler = true;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
   bool purge_persistent_cache = false;
@@ -293,6 +294,9 @@ struct Settings {
   /// See also:
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t old_gen_heap_size = -1;
+
+  // Max bytes threshold of resource cache, or 0 for unlimited.
+  size_t resource_cache_max_bytes_threshold = 0;
 
   /// A timestamp representing when the engine started. The value is based
   /// on the clock used by the Dart timeline APIs. This timestamp is used

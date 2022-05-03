@@ -29,6 +29,8 @@
 
 @implementation FlutterChannelKeyResponder
 
+@synthesize layoutMap;
+
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel {
   self = [super init];
   if (self != nil) {
@@ -57,11 +59,14 @@
       } else {
         // ignore duplicate modifiers; This can happen in situations like switching
         // between application windows when MacOS only sends the up event to new window.
+        callback(true);
         return;
       }
       break;
-    default:
+    default: {
       NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
+      callback(false);
+    }
   }
   _previouslyPressedFlags = modifierFlags;
   NSMutableDictionary* keyMessage = [@{
@@ -75,6 +80,10 @@
   if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
     keyMessage[@"characters"] = event.characters;
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
+  }
+  NSNumber* specifiedLogicalKey = layoutMap[@(event.keyCode)];
+  if (specifiedLogicalKey != nil) {
+    keyMessage[@"specifiedLogicalKey"] = specifiedLogicalKey;
   }
   [self.channel sendMessage:keyMessage
                       reply:^(id reply) {

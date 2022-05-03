@@ -21,17 +21,12 @@ sk_sp<DisplayList> DisplayListCanvasRecorder::Build() {
 
 // clang-format off
 void DisplayListCanvasRecorder::didConcat44(const SkM44& m44) {
-  // transform4x4 takes a full 4x4 transform in row major order
-  builder_->transformFullPerspective(
-      m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),
-      m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),
-      m44.rc(2, 0), m44.rc(2, 1), m44.rc(2, 2), m44.rc(2, 3),
-      m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3));
+  builder_->transform(m44);
 }
 // clang-format on
 void DisplayListCanvasRecorder::didSetM44(const SkM44& matrix) {
   builder_->transformReset();
-  didConcat44(matrix);
+  builder_->transform(matrix);
 }
 void DisplayListCanvasRecorder::didTranslate(SkScalar tx, SkScalar ty) {
   builder_->translate(tx, ty);
@@ -148,7 +143,7 @@ void DisplayListCanvasRecorder::onDrawVerticesObject(const SkVertices* vertices,
                                                      SkBlendMode mode,
                                                      const SkPaint& paint) {
   builder_->setAttributesFromPaint(paint, kDrawVerticesFlags);
-  builder_->drawVertices(sk_ref_sp(vertices), ToDl(mode));
+  builder_->drawSkVertices(sk_ref_sp(vertices), mode);
 }
 
 void DisplayListCanvasRecorder::onDrawImage2(const SkImage* image,
@@ -159,7 +154,7 @@ void DisplayListCanvasRecorder::onDrawImage2(const SkImage* image,
   if (paint != nullptr) {
     builder_->setAttributesFromPaint(*paint, kDrawImageWithPaintFlags);
   }
-  builder_->drawImage(sk_ref_sp(image), SkPoint::Make(dx, dy), sampling,
+  builder_->drawImage(DlImage::Make(image), SkPoint::Make(dx, dy), sampling,
                       paint != nullptr);
 }
 void DisplayListCanvasRecorder::onDrawImageRect2(
@@ -172,7 +167,7 @@ void DisplayListCanvasRecorder::onDrawImageRect2(
   if (paint != nullptr) {
     builder_->setAttributesFromPaint(*paint, kDrawImageRectWithPaintFlags);
   }
-  builder_->drawImageRect(sk_ref_sp(image), src, dst, sampling,
+  builder_->drawImageRect(DlImage::Make(image), src, dst, sampling,
                           paint != nullptr, constraint);
 }
 void DisplayListCanvasRecorder::onDrawImageLattice2(const SkImage* image,
@@ -190,7 +185,7 @@ void DisplayListCanvasRecorder::onDrawImageLattice2(const SkImage* image,
       builder_->setAttributesFromPaint(*paint, kDrawImageLatticeWithPaintFlags);
     }
   }
-  builder_->drawImageLattice(sk_ref_sp(image), lattice, dst, filter,
+  builder_->drawImageLattice(DlImage::Make(image), lattice, dst, filter,
                              paint != nullptr);
 }
 void DisplayListCanvasRecorder::onDrawAtlas2(const SkImage* image,
@@ -205,8 +200,9 @@ void DisplayListCanvasRecorder::onDrawAtlas2(const SkImage* image,
   if (paint != nullptr) {
     builder_->setAttributesFromPaint(*paint, kDrawAtlasWithPaintFlags);
   }
-  builder_->drawAtlas(sk_ref_sp(image), xform, src, colors, count, ToDl(mode),
-                      sampling, cull, paint != nullptr);
+  const DlColor* dl_colors = reinterpret_cast<const DlColor*>(colors);
+  builder_->drawAtlas(DlImage::Make(image), xform, src, dl_colors, count,
+                      ToDl(mode), sampling, cull, paint != nullptr);
 }
 
 void DisplayListCanvasRecorder::onDrawTextBlob(const SkTextBlob* blob,

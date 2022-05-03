@@ -28,10 +28,11 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
     path->tracked_path_->path = src;
   }
 
-  static void Create(Dart_Handle wrapper) {
+  static fml::RefPtr<CanvasPath> Create(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
     auto res = fml::MakeRefCounted<CanvasPath>();
     res->AssociateWithDartWrapper(wrapper);
+    return res;
   }
 
   int getFillType();

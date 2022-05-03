@@ -23,7 +23,7 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
 
  public:
   static void Create(Dart_Handle wrapper,
-                     const tonic::Int32List& encoded,
+                     Dart_Handle encoded_handle,
                      Dart_Handle strutData,
                      const std::string& fontFamily,
                      const std::vector<std::string>& strutFontFamilies,
@@ -47,7 +47,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                  Dart_Handle foreground_objects,
                  Dart_Handle foreground_data,
                  Dart_Handle shadows_data,
-                 Dart_Handle font_features_data);
+                 Dart_Handle font_features_data,
+                 Dart_Handle font_variations_data);
 
   void pop();
 
@@ -68,7 +69,7 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   void build(Dart_Handle paragraph_handle);
 
  private:
-  explicit ParagraphBuilder(const tonic::Int32List& encoded,
+  explicit ParagraphBuilder(Dart_Handle encoded,
                             Dart_Handle strutData,
                             const std::string& fontFamily,
                             const std::vector<std::string>& strutFontFamilies,

@@ -267,7 +267,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
 
   if (flags.applies_style()) {
     uint32_t style = uint_data[kStyleIndex];
-    builder->setStyle(static_cast<SkPaint::Style>(style));
+    builder->setStyle(static_cast<DlDrawStyle>(style));
   }
 
   if (flags.is_stroked(builder->getStyle())) {
@@ -278,10 +278,10 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     builder->setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
 
     uint32_t stroke_cap = uint_data[kStrokeCapIndex];
-    builder->setStrokeCap(static_cast<SkPaint::Cap>(stroke_cap));
+    builder->setStrokeCap(static_cast<DlStrokeCap>(stroke_cap));
 
     uint32_t stroke_join = uint_data[kStrokeJoinIndex];
-    builder->setStrokeJoin(static_cast<SkPaint::Join>(stroke_join));
+    builder->setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
   }
 
   if (flags.applies_color_filter()) {
@@ -290,6 +290,12 @@ bool Paint::sync_to(DisplayListBuilder* builder,
 
   if (flags.applies_dither()) {
     builder->setDither(uint_data[kDitherIndex] != 0);
+  }
+
+  if (flags.applies_path_effect()) {
+    // The paint API exposed to Dart does not support path effects.  But other
+    // operations such as text may set a path effect, which must be cleared.
+    builder->setPathEffect(nullptr);
   }
 
   if (flags.applies_mask_filter()) {
@@ -323,10 +329,10 @@ flutter::Paint DartConverter<flutter::Paint>::FromArguments(
     int index,
     Dart_Handle& exception) {
   Dart_Handle paint_objects = Dart_GetNativeArgument(args, index);
-  FML_DCHECK(!LogIfError(paint_objects));
+  FML_DCHECK(!CheckAndHandleError(paint_objects));
 
   Dart_Handle paint_data = Dart_GetNativeArgument(args, index + 1);
-  FML_DCHECK(!LogIfError(paint_data));
+  FML_DCHECK(!CheckAndHandleError(paint_data));
 
   return flutter::Paint(paint_objects, paint_data);
 }

@@ -412,8 +412,11 @@ class PlatformConfiguration final {
   ///
   void CompletePlatformMessageEmptyResponse(int response_id);
 
+  Dart_Handle on_error() { return on_error_.Get(); }
+
  private:
   PlatformConfigurationClient* client_;
+  tonic::DartPersistentValue on_error_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_lifecycle_state_;
@@ -461,9 +464,6 @@ class PlatformConfigurationNativeApi {
       Dart_Handle supportedLocalesHandle);
 
   static void SetIsolateDebugName(const std::string name);
-
-  static void ReportUnhandledException(std::string error_name,
-                                       std::string stack_trace);
 
   static Dart_Handle SendPlatformMessage(const std::string& name,
                                          Dart_Handle callback,

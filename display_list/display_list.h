@@ -131,6 +131,7 @@ namespace flutter {
   V(DrawLines)                      \
   V(DrawPolygon)                    \
   V(DrawVertices)                   \
+  V(DrawSkVertices)                 \
                                     \
   V(DrawImage)                      \
   V(DrawImageWithAttr)              \
@@ -225,6 +226,9 @@ class DisplayList : public SkRefCnt {
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
 
+  void RenderTo(DisplayListBuilder* builder,
+                SkScalar opacity = SK_Scalar1) const;
+
   void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
 
   // SkPicture always includes nested bytes, but nested ops are
@@ -250,7 +254,11 @@ class DisplayList : public SkRefCnt {
     return bounds_;
   }
 
-  bool Equals(const DisplayList& other) const;
+  bool Equals(const DisplayList* other) const;
+  bool Equals(const DisplayList& other) const { return Equals(&other); }
+  bool Equals(sk_sp<const DisplayList> other) const {
+    return Equals(other.get());
+  }
 
   bool can_apply_group_opacity() { return can_apply_group_opacity_; }
 

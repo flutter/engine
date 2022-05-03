@@ -236,10 +236,6 @@ void FlutterWindowsView::OnScroll(double x,
              device_id);
 }
 
-void FlutterWindowsView::OnPlatformBrightnessChanged() {
-  SendPlatformBrightnessChanged();
-}
-
 void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
   engine_->UpdateSemanticsEnabled(enabled);
 }
@@ -258,17 +254,14 @@ void FlutterWindowsView::OnResetImeComposing() {
 
 void FlutterWindowsView::InitializeKeyboard() {
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-#ifdef WINUWP
-  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = nullptr;
-  KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan = nullptr;
-#else
+  // TODO(cbracken): This can be inlined into KeyboardKeyEmedderHandler once
+  // UWP code is removed. https://github.com/flutter/flutter/issues/102172.
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
   KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan =
       [](UINT virtual_key, bool extended) {
         return MapVirtualKey(virtual_key,
                              extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
       };
-#endif
   keyboard_key_handler_ = std::move(CreateKeyboardKeyHandler(
       internal_plugin_messenger, get_key_state, map_vk_to_scan));
   text_input_plugin_ =
@@ -478,11 +471,6 @@ void FlutterWindowsView::SendPointerEventWithData(
     }
   }
 }
-
-void FlutterWindowsView::SendPlatformBrightnessChanged() {
-  engine_->task_runner()->RunNowOrPostTask(
-      [this]() { engine_->ReloadPlatformBrightness(); });
-};
 
 bool FlutterWindowsView::MakeCurrent() {
   return engine_->surface_manager()->MakeCurrent();

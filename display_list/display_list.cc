@@ -8,6 +8,7 @@
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_ops.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/fml/trace_event.h"
 
 namespace flutter {
 
@@ -69,6 +70,7 @@ void DisplayList::ComputeBounds() {
 void DisplayList::Dispatch(Dispatcher& dispatcher,
                            uint8_t* ptr,
                            uint8_t* end) const {
+  TRACE_EVENT0("flutter", "DisplayList::Dispatch");
   while (ptr < end) {
     auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
@@ -180,21 +182,33 @@ static bool CompareOps(uint8_t* ptrA,
   return true;
 }
 
+void DisplayList::RenderTo(DisplayListBuilder* builder,
+                           SkScalar opacity) const {
+  // TODO(100983): Opacity is not respected and attributes are not reset.
+  if (!builder) {
+    return;
+  }
+  Dispatch(*builder);
+}
+
 void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {
   DisplayListCanvasDispatcher dispatcher(canvas, opacity);
   Dispatch(dispatcher);
 }
 
-bool DisplayList::Equals(const DisplayList& other) const {
-  if (byte_count_ != other.byte_count_ || op_count_ != other.op_count_) {
+bool DisplayList::Equals(const DisplayList* other) const {
+  if (this == other) {
+    return true;
+  }
+  if (byte_count_ != other->byte_count_ || op_count_ != other->op_count_) {
     return false;
   }
   uint8_t* ptr = storage_.get();
-  uint8_t* o_ptr = other.storage_.get();
+  uint8_t* o_ptr = other->storage_.get();
   if (ptr == o_ptr) {
     return true;
   }
-  return CompareOps(ptr, ptr + byte_count_, o_ptr, o_ptr + other.byte_count_);
+  return CompareOps(ptr, ptr + byte_count_, o_ptr, o_ptr + other->byte_count_);
 }
 
 }  // namespace flutter

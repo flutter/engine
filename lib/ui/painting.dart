@@ -3311,6 +3311,22 @@ abstract class ImageFilter {
     return _GaussianBlurImageFilter(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
+  /// Creates an image filter that dilates each input pixel's channel values
+  /// to the max value within the given radii along the x and y axes.
+  factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) {
+    assert(radiusX != null);
+    assert(radiusY != null);
+    return _DilateImageFilter(radiusX: radiusX, radiusY: radiusY);
+  }
+
+  /// Create a filter that erodes each input pixel's channel values
+  /// to the minimum channel value within the given radii along the x and y axes.
+  factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) {
+    assert(radiusX != null);
+    assert(radiusY != null);
+    return _ErodeImageFilter(radiusX: radiusX, radiusY: radiusY);
+  }
+
   /// Creates an image filter that applies a matrix transformation.
   ///
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
@@ -3414,6 +3430,64 @@ class _GaussianBlurImageFilter implements ImageFilter {
   int get hashCode => hashValues(sigmaX, sigmaY);
 }
 
+class _DilateImageFilter implements ImageFilter {
+  _DilateImageFilter({ required this.radiusX, required this.radiusY });
+
+  final double radiusX;
+  final double radiusY;
+
+  late final _ImageFilter nativeFilter = _ImageFilter.dilate(this);
+  @override
+  _ImageFilter _toNativeImageFilter() => nativeFilter;
+
+  @override
+  String get _shortDescription => 'dilate($radiusX, $radiusY)';
+
+  @override
+  String toString() => 'ImageFilter.dilate($radiusX, $radiusY)';
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _DilateImageFilter
+        && other.radiusX == radiusX
+        && other.radiusY == radiusY;
+  }
+
+  @override
+  int get hashCode => hashValues(radiusX, radiusY);
+}
+
+class _ErodeImageFilter implements ImageFilter {
+  _ErodeImageFilter({ required this.radiusX, required this.radiusY });
+
+  final double radiusX;
+  final double radiusY;
+
+  late final _ImageFilter nativeFilter = _ImageFilter.erode(this);
+  @override
+  _ImageFilter _toNativeImageFilter() => nativeFilter;
+
+  @override
+  String get _shortDescription => 'erode($radiusX, $radiusY)';
+
+  @override
+  String toString() => 'ImageFilter.erode($radiusX, $radiusY)';
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _ErodeImageFilter
+        && other.radiusX == radiusX
+        && other.radiusY == radiusY;
+  }
+
+  @override
+  int get hashCode => hashValues(radiusX, radiusY);
+}
+
 class _ComposeImageFilter implements ImageFilter {
   _ComposeImageFilter({ required this.innerFilter, required this.outerFilter });
 
@@ -3463,6 +3537,26 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
 
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Int32)>('ImageFilter::initBlur', isLeaf: true)
   external void _initBlur(double sigmaX, double sigmaY, int tileMode);
+
+  /// Creates an image filter that dilates each input pixel's channel values
+  /// to the max value within the given radii along the x and y axes.
+  _ImageFilter.dilate(_DilateImageFilter filter)
+    : assert(filter != null),
+      creator = filter {    // ignore: prefer_initializing_formals
+    _constructor();
+    _initDilate(filter.radiusX, filter.radiusY);
+  }
+  void _initDilate(double radiusX, double radiusY) native 'ImageFilter_initDilate';
+
+  /// Create a filter that erodes each input pixel's channel values
+  /// to the minimum channel value within the given radii along the x and y axes.
+  _ImageFilter.erode(_ErodeImageFilter filter)
+    : assert(filter != null),
+      creator = filter {    // ignore: prefer_initializing_formals
+    _constructor();
+    _initErode(filter.radiusX, filter.radiusY);
+  }
+  void _initErode(double radiusX, double radiusY) native 'ImageFilter_initErode';
 
   /// Creates an image filter that applies a matrix transformation.
   ///
@@ -4307,10 +4401,10 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// void paint(Canvas canvas, Size size) {
   ///   Rect rect = Offset.zero & size;
   ///   canvas.save();
-  ///   canvas.clipRRect(new RRect.fromRectXY(rect, 100.0, 100.0));
+  ///   canvas.clipRRect(RRect.fromRectXY(rect, 100.0, 100.0));
   ///   canvas.saveLayer(rect, Paint());
-  ///   canvas.drawPaint(new Paint()..color = Colors.red);
-  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.drawPaint(Paint()..color = Colors.red);
+  ///   canvas.drawPaint(Paint()..color = Colors.white);
   ///   canvas.restore();
   ///   canvas.restore();
   /// }
@@ -4326,9 +4420,9 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///   // (this example renders poorly, prefer the example above)
   ///   Rect rect = Offset.zero & size;
   ///   canvas.save();
-  ///   canvas.clipRRect(new RRect.fromRectXY(rect, 100.0, 100.0));
-  ///   canvas.drawPaint(new Paint()..color = Colors.red);
-  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.clipRRect(RRect.fromRectXY(rect, 100.0, 100.0));
+  ///   canvas.drawPaint(Paint()..color = Colors.red);
+  ///   canvas.drawPaint(Paint()..color = Colors.white);
   ///   canvas.restore();
   /// }
   /// ```
@@ -4340,12 +4434,12 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// ```dart
   /// void paint(Canvas canvas, Size size) {
   ///   canvas.save();
-  ///   canvas.clipRRect(new RRect.fromRectXY(Offset.zero & (size / 2.0), 50.0, 50.0));
-  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.clipRRect(RRect.fromRectXY(Offset.zero & (size / 2.0), 50.0, 50.0));
+  ///   canvas.drawPaint(Paint()..color = Colors.white);
   ///   canvas.restore();
   ///   canvas.save();
-  ///   canvas.clipRRect(new RRect.fromRectXY(size.center(Offset.zero) & (size / 2.0), 50.0, 50.0));
-  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.clipRRect(RRect.fromRectXY(size.center(Offset.zero) & (size / 2.0), 50.0, 50.0));
+  ///   canvas.drawPaint(Paint()..color = Colors.white);
   ///   canvas.restore();
   /// }
   /// ```
@@ -5789,7 +5883,7 @@ typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
 /// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
-///   Timer(new Duration(seconds: 1), () { callback(1); });
+///   Timer(Duration(seconds: 1), () { callback(1); });
 /// }
 ///
 /// Future<int> doSomething() {

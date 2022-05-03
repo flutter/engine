@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_VERTICES_H_
 #define FLUTTER_LIB_UI_PAINTING_VERTICES_H_
 
+#include "flutter/display_list/display_list_vertices.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/tonic/typed_data/typed_list.h"
@@ -19,20 +20,20 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
   ~Vertices() override;
 
   static bool init(Dart_Handle vertices_handle,
-                   SkVertices::VertexMode vertex_mode,
+                   DlVertexMode vertex_mode,
                    Dart_Handle positions_handle,
                    Dart_Handle texture_coordinates_handle,
                    Dart_Handle colors_handle,
                    Dart_Handle indices_handle);
 
-  const sk_sp<SkVertices>& vertices() const { return vertices_; }
+  const DlVertices* vertices() const { return vertices_.get(); }
 
   size_t GetAllocationSize() const override;
 
  private:
   Vertices();
 
-  sk_sp<SkVertices> vertices_;
+  std::shared_ptr<DlVertices> vertices_;
 };
 
 }  // namespace flutter

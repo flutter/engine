@@ -77,17 +77,17 @@ DEFINE_SET_BOOL_OP(InvertColors)
 #undef DEFINE_SET_BOOL_OP
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
-#define DEFINE_SET_ENUM_OP(name)                                        \
-  struct SetStroke##name##Op final : DLOp {                             \
-    static const auto kType = DisplayListOpType::kSetStroke##name;      \
-                                                                        \
-    explicit SetStroke##name##Op(SkPaint::name value) : value(value) {} \
-                                                                        \
-    const SkPaint::name value;                                          \
-                                                                        \
-    void dispatch(Dispatcher& dispatcher) const {                       \
-      dispatcher.setStroke##name(value);                                \
-    }                                                                   \
+#define DEFINE_SET_ENUM_OP(name)                                         \
+  struct SetStroke##name##Op final : DLOp {                              \
+    static const auto kType = DisplayListOpType::kSetStroke##name;       \
+                                                                         \
+    explicit SetStroke##name##Op(DlStroke##name value) : value(value) {} \
+                                                                         \
+    const DlStroke##name value;                                          \
+                                                                         \
+    void dispatch(Dispatcher& dispatcher) const {                        \
+      dispatcher.setStroke##name(value);                                 \
+    }                                                                    \
   };
 DEFINE_SET_ENUM_OP(Cap)
 DEFINE_SET_ENUM_OP(Join)
@@ -97,9 +97,9 @@ DEFINE_SET_ENUM_OP(Join)
 struct SetStyleOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetStyle;
 
-  explicit SetStyleOp(SkPaint::Style style) : style(style) {}
+  explicit SetStyleOp(DlDrawStyle style) : style(style) {}
 
-  const SkPaint::Style style;
+  const DlDrawStyle style;
 
   void dispatch(Dispatcher& dispatcher) const { dispatcher.setStyle(style); }
 };
@@ -107,9 +107,9 @@ struct SetStyleOp final : DLOp {
 struct SetStrokeWidthOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetStrokeWidth;
 
-  explicit SetStrokeWidthOp(SkScalar width) : width(width) {}
+  explicit SetStrokeWidthOp(float width) : width(width) {}
 
-  const SkScalar width;
+  const float width;
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.setStrokeWidth(width);
@@ -119,9 +119,9 @@ struct SetStrokeWidthOp final : DLOp {
 struct SetStrokeMiterOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetStrokeMiter;
 
-  explicit SetStrokeMiterOp(SkScalar limit) : limit(limit) {}
+  explicit SetStrokeMiterOp(float limit) : limit(limit) {}
 
-  const SkScalar limit;
+  const float limit;
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.setStrokeMiter(limit);
@@ -132,9 +132,9 @@ struct SetStrokeMiterOp final : DLOp {
 struct SetColorOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetColor;
 
-  explicit SetColorOp(SkColor color) : color(color) {}
+  explicit SetColorOp(DlColor color) : color(color) {}
 
-  const SkColor color;
+  const DlColor color;
 
   void dispatch(Dispatcher& dispatcher) const { dispatcher.setColor(color); }
 };
@@ -479,9 +479,9 @@ struct DrawPaintOp final : DLOp {
 struct DrawColorOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawColor;
 
-  DrawColorOp(SkColor color, DlBlendMode mode) : color(color), mode(mode) {}
+  DrawColorOp(DlColor color, DlBlendMode mode) : color(color), mode(mode) {}
 
-  const SkColor color;
+  const DlColor color;
   const DlBlendMode mode;
 
   void dispatch(Dispatcher& dispatcher) const {
@@ -594,34 +594,55 @@ DEFINE_DRAW_POINTS_OP(Lines, kLines_PointMode);
 DEFINE_DRAW_POINTS_OP(Polygon, kPolygon_PointMode);
 #undef DEFINE_DRAW_POINTS_OP
 
-// 4 byte header + 12 byte payload packs efficiently into 16 bytes
+// 4 byte header + 4 byte payload packs efficiently into 8 bytes
+// The DlVertices object will be pod-allocated after this structure
+// and can take any number of bytes so the final efficiency will
+// depend on the size of the DlVertices.
+// Note that the DlVertices object ends with an array of 16-bit
+// indices so the alignment can be up to 6 bytes off leading to
+// up to 6 bytes of overhead
 struct DrawVerticesOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawVertices;
 
-  DrawVerticesOp(sk_sp<SkVertices> vertices, DlBlendMode mode)
-      : mode(mode), vertices(std::move(vertices)) {}
+  DrawVerticesOp(DlBlendMode mode) : mode(mode) {}
 
   const DlBlendMode mode;
-  const sk_sp<SkVertices> vertices;
 
   void dispatch(Dispatcher& dispatcher) const {
+    const DlVertices* vertices = reinterpret_cast<const DlVertices*>(this + 1);
     dispatcher.drawVertices(vertices, mode);
   }
 };
 
-// 4 byte header + 36 byte payload packs efficiently into 40 bytes
+// 4 byte header + 12 byte payload packs efficiently into 16 bytes
+struct DrawSkVerticesOp final : DLOp {
+  static const auto kType = DisplayListOpType::kDrawSkVertices;
+
+  DrawSkVerticesOp(sk_sp<SkVertices> vertices, SkBlendMode mode)
+      : mode(mode), vertices(std::move(vertices)) {}
+
+  const SkBlendMode mode;
+  const sk_sp<SkVertices> vertices;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.drawSkVertices(vertices, mode);
+  }
+};
+
+// 4 byte header + 40 byte payload uses 44 bytes but is rounded up to 48 bytes
+// (4 bytes unused)
 #define DEFINE_DRAW_IMAGE_OP(name, with_attributes)                    \
   struct name##Op final : DLOp {                                       \
     static const auto kType = DisplayListOpType::k##name;              \
                                                                        \
-    name##Op(const sk_sp<SkImage> image,                               \
+    name##Op(const sk_sp<DlImage> image,                               \
              const SkPoint& point,                                     \
              const SkSamplingOptions& sampling)                        \
         : point(point), sampling(sampling), image(std::move(image)) {} \
                                                                        \
     const SkPoint point;                                               \
     const SkSamplingOptions sampling;                                  \
-    const sk_sp<SkImage> image;                                        \
+    const sk_sp<DlImage> image;                                        \
                                                                        \
     void dispatch(Dispatcher& dispatcher) const {                      \
       dispatcher.drawImage(image, point, sampling, with_attributes);   \
@@ -631,11 +652,12 @@ DEFINE_DRAW_IMAGE_OP(DrawImage, false)
 DEFINE_DRAW_IMAGE_OP(DrawImageWithAttr, true)
 #undef DEFINE_DRAW_IMAGE_OP
 
-// 4 byte header + 68 byte payload packs efficiently into 72 bytes
+// 4 byte header + 72 byte payload uses 76 bytes but is rounded up to 80 bytes
+// (4 bytes unused)
 struct DrawImageRectOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawImageRect;
 
-  DrawImageRectOp(const sk_sp<SkImage> image,
+  DrawImageRectOp(const sk_sp<DlImage> image,
                   const SkRect& src,
                   const SkRect& dst,
                   const SkSamplingOptions& sampling,
@@ -653,7 +675,7 @@ struct DrawImageRectOp final : DLOp {
   const SkSamplingOptions sampling;
   const bool render_with_attributes;
   const SkCanvas::SrcRectConstraint constraint;
-  const sk_sp<SkImage> image;
+  const sk_sp<DlImage> image;
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.drawImageRect(image, src, dst, sampling, render_with_attributes,
@@ -666,7 +688,7 @@ struct DrawImageRectOp final : DLOp {
   struct name##Op final : DLOp {                                               \
     static const auto kType = DisplayListOpType::k##name;                      \
                                                                                \
-    name##Op(const sk_sp<SkImage> image,                                       \
+    name##Op(const sk_sp<DlImage> image,                                       \
              const SkIRect& center,                                            \
              const SkRect& dst,                                                \
              SkFilterMode filter)                                              \
@@ -675,7 +697,7 @@ struct DrawImageRectOp final : DLOp {
     const SkIRect center;                                                      \
     const SkRect dst;                                                          \
     const SkFilterMode filter;                                                 \
-    const sk_sp<SkImage> image;                                                \
+    const sk_sp<DlImage> image;                                                \
                                                                                \
     void dispatch(Dispatcher& dispatcher) const {                              \
       dispatcher.drawImageNine(image, center, dst, filter,                     \
@@ -690,7 +712,7 @@ DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNineWithAttr, true)
 struct DrawImageLatticeOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawImageLattice;
 
-  DrawImageLatticeOp(const sk_sp<SkImage> image,
+  DrawImageLatticeOp(const sk_sp<DlImage> image,
                      int x_count,
                      int y_count,
                      int cell_count,
@@ -714,7 +736,7 @@ struct DrawImageLatticeOp final : DLOp {
   const SkFilterMode filter;
   const SkIRect src;
   const SkRect dst;
-  const sk_sp<SkImage> image;
+  const sk_sp<DlImage> image;
 
   void dispatch(Dispatcher& dispatcher) const {
     const int* xDivs = reinterpret_cast<const int*>(this + 1);
@@ -733,14 +755,15 @@ struct DrawImageLatticeOp final : DLOp {
   }
 };
 
-// 4 byte header + 36 byte common payload packs efficiently into 40 bytes
+// 4 byte header + 40 byte payload uses 44 bytes but is rounded up to 48 bytes
+// (4 bytes unused)
 // Each of these is then followed by a number of lists.
 // SkRSXform list is a multiple of 16 bytes so it is always packed well
 // SkRect list is also a multiple of 16 bytes so it also packs well
-// SkColor list only packs well if the count is even, otherwise there
+// DlColor list only packs well if the count is even, otherwise there
 // can be 4 unusued bytes at the end.
 struct DrawAtlasBaseOp : DLOp {
-  DrawAtlasBaseOp(const sk_sp<SkImage> atlas,
+  DrawAtlasBaseOp(const sk_sp<DlImage> atlas,
                   int count,
                   DlBlendMode mode,
                   const SkSamplingOptions& sampling,
@@ -758,15 +781,15 @@ struct DrawAtlasBaseOp : DLOp {
   const uint8_t has_colors;
   const uint8_t render_with_attributes;
   const SkSamplingOptions sampling;
-  const sk_sp<SkImage> atlas;
+  const sk_sp<DlImage> atlas;
 };
 
-// Packs as efficiently into 40 bytes as per DrawAtlasBaseOp
+// Packs into 48 bytes as per DrawAtlasBaseOp
 // with array data following the struct also as per DrawAtlasBaseOp
 struct DrawAtlasOp final : DrawAtlasBaseOp {
   static const auto kType = DisplayListOpType::kDrawAtlas;
 
-  DrawAtlasOp(const sk_sp<SkImage> atlas,
+  DrawAtlasOp(const sk_sp<DlImage> atlas,
               int count,
               DlBlendMode mode,
               const SkSamplingOptions& sampling,
@@ -782,22 +805,22 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
   void dispatch(Dispatcher& dispatcher) const {
     const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1);
     const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
-    const SkColor* colors =
-        has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
+    const DlColor* colors =
+        has_colors ? reinterpret_cast<const DlColor*>(tex + count) : nullptr;
     const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
                          nullptr, render_with_attributes);
   }
 };
 
-// Packs efficiently into the same 40 bytes as DrawAtlasBaseOp plus
+// Packs into 48 bytes as per DrawAtlasBaseOp plus
 // an additional 16 bytes for the cull rect resulting in a total
 // of 56 bytes for the Culled drawAtlas.
 // Also with array data following the struct as per DrawAtlasBaseOp
 struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
   static const auto kType = DisplayListOpType::kDrawAtlasCulled;
 
-  DrawAtlasCulledOp(const sk_sp<SkImage> atlas,
+  DrawAtlasCulledOp(const sk_sp<DlImage> atlas,
                     int count,
                     DlBlendMode mode,
                     const SkSamplingOptions& sampling,
@@ -817,8 +840,8 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
   void dispatch(Dispatcher& dispatcher) const {
     const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1);
     const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
-    const SkColor* colors =
-        has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
+    const DlColor* colors =
+        has_colors ? reinterpret_cast<const DlColor*>(tex + count) : nullptr;
     const DlBlendMode mode = static_cast<DlBlendMode>(mode_index);
     dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
                          &cull_rect, render_with_attributes);
@@ -861,7 +884,7 @@ struct DrawSkPictureMatrixOp final : DLOp {
   }
 };
 
-// 4 byte header + ptr aligned payload uses 12 bytes rounde up to 16
+// 4 byte header + ptr aligned payload uses 12 bytes round up to 16
 // (4 bytes unused)
 struct DrawDisplayListOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawDisplayList;
@@ -873,6 +896,12 @@ struct DrawDisplayListOp final : DLOp {
 
   void dispatch(Dispatcher& dispatcher) const {
     dispatcher.drawDisplayList(display_list);
+  }
+
+  DisplayListCompare equals(const DrawDisplayListOp* other) const {
+    return display_list->Equals(other->display_list)
+               ? DisplayListCompare::kEqual
+               : DisplayListCompare::kNotEqual;
   }
 };
 
@@ -899,12 +928,12 @@ struct DrawTextBlobOp final : DLOp {
     static const auto kType = DisplayListOpType::kDraw##name;             \
                                                                           \
     Draw##name##Op(const SkPath& path,                                    \
-                   SkColor color,                                         \
+                   DlColor color,                                         \
                    SkScalar elevation,                                    \
                    SkScalar dpr)                                          \
         : color(color), elevation(elevation), dpr(dpr), path(path) {}     \
                                                                           \
-    const SkColor color;                                                  \
+    const DlColor color;                                                  \
     const SkScalar elevation;                                             \
     const SkScalar dpr;                                                   \
     const SkPath path;                                                    \

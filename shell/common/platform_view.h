@@ -27,6 +27,12 @@
 #include "flutter/shell/common/vsync_waiter.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
+namespace impeller {
+
+class Context;
+
+}  // namespace impeller
+
 namespace flutter {
 
 //------------------------------------------------------------------------------
@@ -524,12 +530,14 @@ class PlatformView {
   ///
   virtual sk_sp<GrDirectContext> CreateResourceContext() const;
 
+  virtual std::shared_ptr<impeller::Context> GetImpellerContext() const;
+
   //----------------------------------------------------------------------------
   /// @brief      Used by the shell to notify the embedder that the resource
   ///             context previously obtained via a call to
-  ///             `CreateResourceContext()` is being collected. The embedder is
-  ///             free to collect an platform specific resources associated with
-  ///             this context.
+  ///             `CreateResourceContext()` is being collected. The embedder
+  ///             is free to collect an platform specific resources
+  ///             associated with this context.
   ///
   /// @attention  Unlike all other methods on the platform view, this will be
   ///             called on IO task runner.
@@ -621,8 +629,7 @@ class PlatformView {
 
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to notify the rasterizer that it will
-  /// no
-  ///             longer attempt to composite the specified texture within
+  ///             no longer attempt to composite the specified texture within
   ///             the layer tree. This allows the rasterizer to collect
   ///             associated resources.
   ///
@@ -813,7 +820,7 @@ class PlatformView {
   /// @details If this returns `null` that means PlatformMessages should be sent
   /// to the PlatformView.  That is to protect legacy behavior, any embedder
   /// that wants to support executing Platform Channel handlers on background
-  /// threads should be returing a thread-safe PlatformMessageHandler instead.
+  /// threads should be returning a thread-safe PlatformMessageHandler instead.
   virtual std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const;
 

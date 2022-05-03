@@ -24,7 +24,7 @@ void testMain() {
       ')';
 
   setUpAll(() async {
-    webOnlyInitializeEngine();
+    await webOnlyInitializePlatform();
   });
 
   group('Shader Declarations', () {

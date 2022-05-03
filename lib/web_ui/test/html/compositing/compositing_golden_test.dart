@@ -20,6 +20,12 @@ void main() {
 }
 
 Future<void> testMain() async {
+  setUpAll(() async {
+    await ui.webOnlyInitializePlatform();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
+  });
+
   setUp(() async {
     // To debug test failures uncomment the following to visualize clipping
     // layers:
@@ -28,10 +34,6 @@ Future<void> testMain() async {
     for (final html.Node scene in html.document.querySelectorAll('flt-scene')) {
       scene.remove();
     }
-
-    await ui.webOnlyInitializePlatform();
-    ui.webOnlyFontCollection.debugRegisterTestFonts();
-    await ui.webOnlyFontCollection.ensureFontsLoaded();
   });
 
   test('pushClipRect', () async {
@@ -845,7 +847,7 @@ void _testCullRectComputation() {
         final RecordingCanvas canvas = recorder.beginRecording(outerClip);
         canvas.drawParagraph(paragraph, const ui.Offset(8.5, 8.5));
         final ui.Picture picture = recorder.endRecording();
-        expect(paragraph.drawOnCanvas, isFalse);
+        expect(paragraph.canDrawOnCanvas, isFalse);
 
         builder.addPicture(
           ui.Offset.zero,
@@ -859,7 +861,7 @@ void _testCullRectComputation() {
         final RecordingCanvas canvas = recorder.beginRecording(innerClip);
         canvas.drawParagraph(paragraph, ui.Offset(8.5, 8.5 + innerClip.top));
         final ui.Picture picture = recorder.endRecording();
-        expect(paragraph.drawOnCanvas, isFalse);
+        expect(paragraph.canDrawOnCanvas, isFalse);
 
         builder.addPicture(
           ui.Offset.zero,
@@ -872,7 +874,7 @@ void _testCullRectComputation() {
       final html.Element sceneElement = builder.build().webOnlyRootElement!;
       expect(
         sceneElement
-            .querySelectorAll('p')
+            .querySelectorAll('flt-paragraph')
             .map<String>((html.Element e) => e.innerText)
             .toList(),
         <String>['Am I blurry?', 'Am I blurry?'],

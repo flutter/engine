@@ -37,6 +37,9 @@ PlatformConfiguration::~PlatformConfiguration() {}
 
 void PlatformConfiguration::DidCreateIsolate() {
   Dart_Handle library = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
+
+  on_error_.Set(tonic::DartState::Current(),
+                Dart_GetField(library, tonic::ToDart("_onError")));
   update_locales_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_updateLocales")));
   update_user_settings_data_.Set(
@@ -63,9 +66,8 @@ void PlatformConfiguration::DidCreateIsolate() {
                   Dart_GetField(library, tonic::ToDart("_drawFrame")));
   report_timings_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
-  windows_.insert(
-      std::make_pair(0, std::unique_ptr<Window>(new Window{
-                            0, ViewportMetrics{1.0, 0.0, 0.0, -1}})));
+  windows_.insert(std::make_pair(
+      0, std::make_unique<Window>(0, ViewportMetrics{1.0, 0.0, 0.0, -1})));
 }
 
 void PlatformConfiguration::UpdateLocales(
@@ -77,7 +79,7 @@ void PlatformConfiguration::UpdateLocales(
   }
 
   tonic::DartState::Scope scope(dart_state);
-  tonic::LogIfError(
+  tonic::CheckAndHandleError(
       tonic::DartInvoke(update_locales_.Get(),
                         {
                             tonic::ToDart<std::vector<std::string>>(locales),
@@ -92,10 +94,10 @@ void PlatformConfiguration::UpdateUserSettingsData(const std::string& data) {
   }
   tonic::DartState::Scope scope(dart_state);
 
-  tonic::LogIfError(tonic::DartInvoke(update_user_settings_data_.Get(),
-                                      {
-                                          tonic::StdStringToDart(data),
-                                      }));
+  tonic::CheckAndHandleError(tonic::DartInvoke(update_user_settings_data_.Get(),
+                                               {
+                                                   tonic::StdStringToDart(data),
+                                               }));
 }
 
 void PlatformConfiguration::UpdateLifecycleState(const std::string& data) {
@@ -105,10 +107,10 @@ void PlatformConfiguration::UpdateLifecycleState(const std::string& data) {
     return;
   }
   tonic::DartState::Scope scope(dart_state);
-  tonic::LogIfError(tonic::DartInvoke(update_lifecycle_state_.Get(),
-                                      {
-                                          tonic::StdStringToDart(data),
-                                      }));
+  tonic::CheckAndHandleError(tonic::DartInvoke(update_lifecycle_state_.Get(),
+                                               {
+                                                   tonic::StdStringToDart(data),
+                                               }));
 }
 
 void PlatformConfiguration::UpdateSemanticsEnabled(bool enabled) {
@@ -120,8 +122,8 @@ void PlatformConfiguration::UpdateSemanticsEnabled(bool enabled) {
   tonic::DartState::Scope scope(dart_state);
   UIDartState::ThrowIfUIOperationsProhibited();
 
-  tonic::LogIfError(tonic::DartInvoke(update_semantics_enabled_.Get(),
-                                      {tonic::ToDart(enabled)}));
+  tonic::CheckAndHandleError(tonic::DartInvoke(update_semantics_enabled_.Get(),
+                                               {tonic::ToDart(enabled)}));
 }
 
 void PlatformConfiguration::UpdateAccessibilityFeatures(int32_t values) {
@@ -132,8 +134,8 @@ void PlatformConfiguration::UpdateAccessibilityFeatures(int32_t values) {
   }
   tonic::DartState::Scope scope(dart_state);
 
-  tonic::LogIfError(tonic::DartInvoke(update_accessibility_features_.Get(),
-                                      {tonic::ToDart(values)}));
+  tonic::CheckAndHandleError(tonic::DartInvoke(
+      update_accessibility_features_.Get(), {tonic::ToDart(values)}));
 }
 
 void PlatformConfiguration::DispatchPlatformMessage(
@@ -162,7 +164,7 @@ void PlatformConfiguration::DispatchPlatformMessage(
     pending_responses_[response_id] = response;
   }
 
-  tonic::LogIfError(
+  tonic::CheckAndHandleError(
       tonic::DartInvoke(dispatch_platform_message_.Get(),
                         {tonic::ToDart(message->channel()), data_handle,
                          tonic::ToDart(response_id)}));
@@ -185,7 +187,7 @@ void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
     return;
   }
 
-  tonic::LogIfError(tonic::DartInvoke(
+  tonic::CheckAndHandleError(tonic::DartInvoke(
       dispatch_semantics_action_.Get(),
       {tonic::ToDart(id), tonic::ToDart(static_cast<int32_t>(action)),
        args_handle}));
@@ -202,7 +204,7 @@ void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime,
 
   int64_t microseconds = (frameTime - fml::TimePoint()).ToMicroseconds();
 
-  tonic::LogIfError(
+  tonic::CheckAndHandleError(
       tonic::DartInvoke(begin_frame_.Get(), {
                                                 Dart_NewInteger(microseconds),
                                                 Dart_NewInteger(frame_number),
@@ -210,7 +212,7 @@ void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime,
 
   UIDartState::Current()->FlushMicrotasksNow();
 
-  tonic::LogIfError(tonic::DartInvokeVoid(draw_frame_.Get()));
+  tonic::CheckAndHandleError(tonic::DartInvokeVoid(draw_frame_.Get()));
 }
 
 void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
@@ -234,9 +236,10 @@ void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
   memcpy(data, timings.data(), sizeof(int64_t) * timings.size());
   FML_CHECK(Dart_TypedDataReleaseData(data_handle));
 
-  tonic::LogIfError(tonic::DartInvoke(report_timings_.Get(), {
-                                                                 data_handle,
-                                                             }));
+  tonic::CheckAndHandleError(
+      tonic::DartInvoke(report_timings_.Get(), {
+                                                   data_handle,
+                                               }));
 }
 
 void PlatformConfiguration::CompletePlatformMessageEmptyResponse(
@@ -271,14 +274,6 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
 void PlatformConfigurationNativeApi::Render(Scene* scene) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->Render(scene);
-}
-
-void PlatformConfigurationNativeApi::ReportUnhandledException(
-    std::string error_name,
-    std::string stack_trace) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  UIDartState::Current()->ReportUnhandledException(std::move(error_name),
-                                                   std::move(stack_trace));
 }
 
 void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {

@@ -17,12 +17,6 @@ using tonic::ToDart;
 
 namespace flutter {
 
-fml::RefPtr<CanvasPath> CreateNew(Dart_Handle path_handle) {
-  auto path = fml::MakeRefCounted<CanvasPath>();
-  path->AssociateWithDartWrapper(path_handle);
-  return path;
-}
-
 typedef CanvasPath Path;
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
@@ -275,7 +269,7 @@ bool CanvasPath::contains(double x, double y) {
 }
 
 void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
-  fml::RefPtr<CanvasPath> path = CreateNew(path_handle);
+  fml::RefPtr<CanvasPath> path = Create(path_handle);
   auto& other_mutable_path = path->mutable_path();
   mutable_path().offset(dx, dy, &other_mutable_path);
   resetVolatility();
@@ -286,7 +280,7 @@ void CanvasPath::transform(Dart_Handle path_handle,
   tonic::Float64List matrix4(matrix4_handle);
   auto sk_matrix = ToSkMatrix(matrix4);
   matrix4.Release();
-  fml::RefPtr<CanvasPath> path = CreateNew(path_handle);
+  fml::RefPtr<CanvasPath> path = Create(path_handle);
   auto& other_mutable_path = path->mutable_path();
   mutable_path().transform(sk_matrix, &other_mutable_path);
 }
@@ -308,7 +302,7 @@ bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
 }
 
 void CanvasPath::clone(Dart_Handle path_handle) {
-  fml::RefPtr<CanvasPath> path = CreateNew(path_handle);
+  fml::RefPtr<CanvasPath> path = Create(path_handle);
   // per Skia docs, this will create a fast copy
   // data is shared until the source path or dest path are mutated
   path->mutable_path() = this->path();
