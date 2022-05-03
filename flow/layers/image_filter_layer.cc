@@ -89,21 +89,6 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   AutoCachePaint cache_paint(context);
 
   cache_item_.Draw(context, cache_paint);
-  // if (context.raster_cache) {
-  //   if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-  //                                  RasterCacheLayerStrategy::kLayer,
-  //                                  cache_paint.paint())) {
-  //     return;
-  //   }
-  //   if (transformed_filter_) {
-  //     cache_paint.setImageFilter(transformed_filter_);
-  //     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-  //                                    RasterCacheLayerStrategy::kLayerChildren,
-  //                                    cache_paint.paint())) {
-  //       return;
-  //     }
-  //   }
-  // }
 
   cache_paint.setImageFilter(filter_);
 

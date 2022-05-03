@@ -37,21 +37,6 @@ class ContainerLayer : public Layer {
                        const SkMatrix& child_matrix,
                        SkRect* child_paint_bounds);
 
-  // Try to prepare the raster cache for a given layer.
-  //
-  // The raster cache would fail if either of the followings is true:
-  // 1. The context has a platform view.
-  // 2. The context does not have a valid raster cache.
-  // 3. The layer's paint bounds does not intersect with the cull rect.
-  //
-  // We make this a static function instead of a member function that directly
-  // uses the "this" pointer as the layer because we sometimes need to raster
-  // cache a child layer and one can't access its child's protected method.
-  // static void TryToPrepareRasterCache(PrerollContext* context,
-  //                                     Layer* layer,
-  //                                     const SkMatrix& matrix,
-  //                                     RasterCacheLayerStrategy strategy);
-
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
   SkRect child_paint_bounds_;
