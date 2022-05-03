@@ -67,13 +67,13 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 
-  if (!children_can_accept_opacity()) {
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
-#endif
-    TryToPrepareRasterCache(context, this, child_matrix,
-                            RasterCacheLayerStrategy::kLayerChildren);
-  }
+  //   if (!children_can_accept_opacity()) {
+  // #ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  //     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
+  // #endif
+  //     TryToPrepareRasterCache(context, this, child_matrix,
+  //                             RasterCacheLayerStrategy::kLayerChildren);
+  //   }
 
   // Restore cull_rect
   context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
@@ -104,12 +104,12 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setAlphaf(subtree_opacity);
 
-  if (context.raster_cache &&
-      context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                 RasterCacheLayerStrategy::kLayerChildren,
-                                 &paint)) {
-    return;
-  }
+  // if (context.raster_cache &&
+  //     context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+  //                                RasterCacheLayerStrategy::kLayerChildren,
+  //                                &paint)) {
+  //   return;
+  // }
 
   // Skia may clip the content with saveLayerBounds (although it's not a
   // guaranteed clip). So we have to provide a big enough saveLayerBounds. To do

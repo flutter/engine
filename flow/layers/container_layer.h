@@ -47,10 +47,10 @@ class ContainerLayer : public Layer {
   // We make this a static function instead of a member function that directly
   // uses the "this" pointer as the layer because we sometimes need to raster
   // cache a child layer and one can't access its child's protected method.
-  static void TryToPrepareRasterCache(PrerollContext* context,
-                                      Layer* layer,
-                                      const SkMatrix& matrix,
-                                      RasterCacheLayerStrategy strategy);
+  // static void TryToPrepareRasterCache(PrerollContext* context,
+  //                                     Layer* layer,
+  //                                     const SkMatrix& matrix,
+  //                                     RasterCacheLayerStrategy strategy);
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;

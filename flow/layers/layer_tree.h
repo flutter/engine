@@ -10,6 +10,7 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -82,6 +83,7 @@ class LayerTree {
 
  private:
   std::shared_ptr<Layer> root_layer_;
+  std::vector<RasterCacheItem*> cacheable_item_list_;
   SkISize frame_size_ = SkISize::MakeEmpty();  // Physical pixels.
   const float device_pixel_ratio_;  // Logical / Physical pixels ratio.
   uint32_t rasterizer_tracing_threshold_;

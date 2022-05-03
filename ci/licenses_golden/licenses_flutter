@@ -187,8 +187,13 @@ FILE: ../../../flutter/flow/paint_utils.cc
 FILE: ../../../flutter/flow/paint_utils.h
 FILE: ../../../flutter/flow/raster_cache.cc
 FILE: ../../../flutter/flow/raster_cache.h
+FILE: ../../../flutter/flow/raster_cache_display_list_item.cc
+FILE: ../../../flutter/flow/raster_cache_display_list_item.h
+FILE: ../../../flutter/flow/raster_cache_item.h
 FILE: ../../../flutter/flow/raster_cache_key.cc
 FILE: ../../../flutter/flow/raster_cache_key.h
+FILE: ../../../flutter/flow/raster_cache_layer_item.cc
+FILE: ../../../flutter/flow/raster_cache_layer_item.h
 FILE: ../../../flutter/flow/raster_cache_unittests.cc
 FILE: ../../../flutter/flow/rtree.cc
 FILE: ../../../flutter/flow/rtree.h

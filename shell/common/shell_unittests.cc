@@ -2338,95 +2338,99 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-static sk_sp<SkPicture> MakeSizedPicture(int width, int height) {
-  SkPictureRecorder recorder;
-  SkCanvas* recording_canvas =
-      recorder.beginRecording(SkRect::MakeXYWH(0, 0, width, height));
-  recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, width, height),
-                             SkPaint(SkColor4f::FromColor(SK_ColorRED)));
-  return recorder.finishRecordingAsPicture();
-}
+// clang-format off
 
-TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
-  Settings settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings);
+// static sk_sp<SkPicture> MakeSizedPicture(int width, int height) {
+//   SkPictureRecorder recorder;
+//   SkCanvas* recording_canvas =
+//       recorder.beginRecording(SkRect::MakeXYWH(0, 0, width, height));
+//   recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, width, height),
+//                              SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+//   return recorder.finishRecordingAsPicture();
+// }
 
-  // 1. Construct a picture and a picture layer to be raster cached.
-  sk_sp<SkPicture> picture = MakeSizedPicture(10, 10);
-  fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-      GetCurrentTaskRunner(), fml::TimeDelta::Zero());
-  auto picture_layer = std::make_shared<PictureLayer>(
-      SkPoint::Make(0, 0),
-      flutter::SkiaGPUObject<SkPicture>({MakeSizedPicture(100, 100), queue}),
-      false, false);
-  picture_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
+// TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
+//   Settings settings = CreateSettingsForFixture();
+//   std::unique_ptr<Shell> shell = CreateShell(settings);
 
-  // 2. Rasterize the picture and the picture layer in the raster cache.
-  std::promise<bool> rasterized;
-  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [&shell, &rasterized, &picture, &picture_layer] {
-        auto* compositor_context = shell->GetRasterizer()->compositor_context();
-        auto& raster_cache = compositor_context->raster_cache();
+//   // 1. Construct a picture and a picture layer to be raster cached.
+//   sk_sp<SkPicture> picture = MakeSizedPicture(10, 10);
+//   fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+//       GetCurrentTaskRunner(), fml::TimeDelta::Zero());
+//   auto picture_layer = std::make_shared<PictureLayer>(
+//       SkPoint::Make(0, 0),
+//       flutter::SkiaGPUObject<SkPicture>({MakeSizedPicture(100, 100), queue}),
+//       false, false);
+//   picture_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
 
-        FixedRefreshRateStopwatch raster_time;
-        FixedRefreshRateStopwatch ui_time;
-        MutatorsStack mutators_stack;
-        TextureRegistry texture_registry;
-        PrerollContext preroll_context = {
-            // clang-format off
-            .raster_cache                  = nullptr,
-            .gr_context                    = nullptr,
-            .view_embedder                 = nullptr,
-            .mutators_stack                = mutators_stack,
-            .dst_color_space               = nullptr,
-            .cull_rect                     = kGiantRect,
-            .surface_needs_readback        = false,
-            .raster_time                   = raster_time,
-            .ui_time                       = ui_time,
-            .texture_registry              = texture_registry,
-            .checkerboard_offscreen_layers = false,
-            .frame_device_pixel_ratio      = 1.0f,
-            .has_platform_view             = false,
-            // clang-format on
-        };
+//   // 2. Rasterize the picture and the picture layer in the raster cache.
+//   std::promise<bool> rasterized;
+//   shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+//       [&shell, &rasterized, &picture, &picture_layer] {
+//         auto* compositor_context = shell->GetRasterizer()->compositor_context();
+//         auto& raster_cache = compositor_context->raster_cache();
 
-        // 2.1. Rasterize the picture. Call Draw multiple times to pass the
-        // access threshold (default to 3) so a cache can be generated.
-        SkCanvas dummy_canvas;
-        bool picture_cache_generated;
-        for (int i = 0; i < 4; i += 1) {
-          SkMatrix matrix = SkMatrix::I();
+//         FixedRefreshRateStopwatch raster_time;
+//         FixedRefreshRateStopwatch ui_time;
+//         MutatorsStack mutators_stack;
+//         TextureRegistry texture_registry;
+//         PrerollContext preroll_context = {
+//             // clang-format off
+//             .raster_cache                  = nullptr,
+//             .gr_context                    = nullptr,
+//             .view_embedder                 = nullptr,
+//             .mutators_stack                = mutators_stack,
+//             .dst_color_space               = nullptr,
+//             .cull_rect                     = kGiantRect,
+//             .surface_needs_readback        = false,
+//             .raster_time                   = raster_time,
+//             .ui_time                       = ui_time,
+//             .texture_registry              = texture_registry,
+//             .checkerboard_offscreen_layers = false,
+//             .frame_device_pixel_ratio      = 1.0f,
+//             .has_platform_view             = false,
+//             // clang-format on
+//         };
 
-          picture_cache_generated = raster_cache.Prepare(
-              &preroll_context, picture.get(), true, false, matrix);
-          raster_cache.Draw(*picture, dummy_canvas);
-        }
-        ASSERT_TRUE(picture_cache_generated);
+//         // 2.1. Rasterize the picture. Call Draw multiple times to pass the
+//         // access threshold (default to 3) so a cache can be generated.
+//         SkCanvas dummy_canvas;
+//         bool picture_cache_generated;
+//         for (int i = 0; i < 4; i += 1) {
+//           SkMatrix matrix = SkMatrix::I();
 
-        // 2.2. Rasterize the picture layer.
-        raster_cache.Prepare(&preroll_context, picture_layer.get(),
-                             SkMatrix::I());
-        rasterized.set_value(true);
-      });
-  rasterized.get_future().wait();
+//           picture_cache_generated = raster_cache.Prepare(
+//               &preroll_context, picture.get(), true, false, matrix);
+//           raster_cache.Draw(*picture, dummy_canvas);
+//         }
+//         ASSERT_TRUE(picture_cache_generated);
 
-  // 3. Call the service protocol and check its output.
-  ServiceProtocol::Handler::ServiceProtocolMap empty_params;
-  rapidjson::Document document;
-  OnServiceProtocol(
-      shell.get(), ServiceProtocolEnum::kEstimateRasterCacheMemory,
-      shell->GetTaskRunners().GetRasterTaskRunner(), empty_params, &document);
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  document.Accept(writer);
-  std::string expected_json =
-      "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
-      "Bytes\":400}";
-  std::string actual_json = buffer.GetString();
-  ASSERT_EQ(actual_json, expected_json);
+//         // 2.2. Rasterize the picture layer.
+//         raster_cache.Prepare(&preroll_context, picture_layer.get(),
+//                              SkMatrix::I());
+//         rasterized.set_value(true);
+//       });
+//   rasterized.get_future().wait();
 
-  DestroyShell(std::move(shell));
-}
+//   // 3. Call the service protocol and check its output.
+//   ServiceProtocol::Handler::ServiceProtocolMap empty_params;
+//   rapidjson::Document document;
+//   OnServiceProtocol(
+//       shell.get(), ServiceProtocolEnum::kEstimateRasterCacheMemory,
+//       shell->GetTaskRunners().GetRasterTaskRunner(), empty_params, &document);
+//   rapidjson::StringBuffer buffer;
+//   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+//   document.Accept(writer);
+//   std::string expected_json =
+//       "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
+//       "Bytes\":400}";
+//   std::string actual_json = buffer.GetString();
+//   ASSERT_EQ(actual_json, expected_json);
+
+//   DestroyShell(std::move(shell));
+// }
+
+// clang-format on
 
 // ktz
 TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {

@@ -16,8 +16,8 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    bool will_change)
     : offset_(offset),
       display_list_(std::move(display_list)),
-      is_complex_(is_complex),
-      will_change_(will_change) {}
+      cache_item_(display_list.skia_object(), offset, is_complex, will_change) {
+}
 
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
@@ -97,18 +97,9 @@ void DisplayListLayer::Preroll(PrerollContext* context,
     context->subtree_can_inherit_opacity = true;
   }
 
-  if (auto* cache = context->raster_cache) {
-    TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-    if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
-                         offset_)) {
-        context->subtree_can_inherit_opacity = true;
-      }
-    } else {
-      // Don't evict raster cache entry during partial repaint
-      cache->Touch(disp_list, matrix);
-    }
-  }
+  cache_item_.PrerollSetup(context, matrix);
+  cache_item_.PrerollFinalize(context, matrix);
+
   set_paint_bounds(bounds);
 }
 
@@ -124,13 +115,11 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache) {
-    AutoCachePaint cache_paint(context);
-    if (context.raster_cache->Draw(*display_list(), *context.leaf_nodes_canvas,
-                                   cache_paint.paint())) {
-      TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-      return;
-    }
+  AutoCachePaint cache_paint(context);
+
+  if (cache_item_.Draw(context, cache_paint)) {
+    TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+    return;
   }
 
   if (context.enable_leaf_layer_tracing) {

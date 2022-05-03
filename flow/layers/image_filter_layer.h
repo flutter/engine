@@ -6,17 +6,23 @@
 #define FLUTTER_FLOW_LAYERS_IMAGE_FILTER_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/raster_cache_layer_item.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
 
 namespace flutter {
 
-class ImageFilterLayer : public ContainerLayer {
+class ImageFilterLayer : public CacheableContainerLayer {
  public:
   explicit ImageFilterLayer(sk_sp<SkImageFilter> filter);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
+  bool canCacheChildren(PrerollContext* context,
+                        const SkMatrix& matrix) override;
+  void updatePaintForLayer(AutoCachePaint& paint) override;
+  void updatePaintForChildren(AutoCachePaint& paint) override;
 
   void Paint(PaintContext& context) const override;
 
@@ -39,7 +45,8 @@ class ImageFilterLayer : public ContainerLayer {
 
   sk_sp<SkImageFilter> filter_;
   sk_sp<SkImageFilter> transformed_filter_;
-  int render_count_;
+
+  RasterCacheLayerItem cache_item_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageFilterLayer);
 };

@@ -24,7 +24,7 @@ class ColorFilterLayer : public ContainerLayer {
   sk_sp<SkColorFilter> filter_;
 
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
-  int render_count_;
+  // int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };

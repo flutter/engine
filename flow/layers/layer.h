@@ -40,8 +40,11 @@ static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
+class RasterCacheItem;
+
 struct PrerollContext {
   RasterCache* raster_cache;
+  std::vector<RasterCacheItem*>* cacheable_item_list;
   GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   MutatorsStack& mutators_stack;

@@ -40,9 +40,12 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   MutatorsStack stack;
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+  std::vector<RasterCacheItem*>* cacheable_item_list =
+      (ignore_raster_cache || !cache) ? nullptr : &cacheable_item_list_;
   PrerollContext context = {
       // clang-format off
       .raster_cache                  = cache,
+      .cacheable_item_list           = cacheable_item_list,
       .gr_context                    = frame.gr_context(),
       .view_embedder                 = frame.view_embedder(),
       .mutators_stack                = stack,
@@ -107,6 +110,24 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .leaf_nodes_builder            = frame.display_list_builder(),
       // clang-format on
   };
+  if (cache) {
+    SkColorSpace* color_space =
+        frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
+    RasterCache::Context r_context = {
+        // clang-format off
+        .gr_context      = frame.gr_context(),
+        .dst_color_space = color_space,
+        .checkerboard    = checkerboard_offscreen_layers_,
+        // clang-format on
+    };
+    int entries_already_cached = 0;
+    for (auto item : cacheable_item_list_) {
+      if (item->PrepareForFrame(context, cache, r_context,
+                                entries_already_cached > 0)) {
+        entries_already_cached += item->itemChildren();
+      }
+    }
+  }
 
   if (root_layer_->needs_painting(context)) {
     root_layer_->Paint(context);

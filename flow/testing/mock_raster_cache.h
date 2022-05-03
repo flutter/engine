@@ -56,29 +56,29 @@ class MockRasterCache : public RasterCache {
       : RasterCache(access_threshold,
                     picture_and_display_list_cache_limit_per_frame) {}
 
-  std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const override;
+  // std::unique_ptr<RasterCacheResult> RasterizePicture(
+  //     SkPicture* picture,
+  //     GrDirectContext* context,
+  //     const SkMatrix& ctm,
+  //     SkColorSpace* dst_color_space,
+  //     bool checkerboard) const override;
 
-  std::unique_ptr<RasterCacheResult> RasterizeDisplayList(
-      DisplayList* display_list,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const override;
+  // std::unique_ptr<RasterCacheResult> RasterizeDisplayList(
+  //     DisplayList* display_list,
+  //     GrDirectContext* context,
+  //     const SkMatrix& ctm,
+  //     SkColorSpace* dst_color_space,
+  //     bool checkerboard) const override;
 
-  std::unique_ptr<RasterCacheResult> RasterizeLayer(
-      PrerollContext* context,
-      Layer* layer,
-      RasterCacheLayerStrategy stategy,
-      const SkMatrix& ctm,
-      bool checkerboard) const override;
+  // std::unique_ptr<RasterCacheResult> RasterizeLayer(
+  //     PrerollContext* context,
+  //     Layer* layer,
+  //     RasterCacheLayerStrategy stategy,
+  //     const SkMatrix& ctm,
+  //     bool checkerboard) const override;
 
-  void AddMockLayer(int width, int height);
-  void AddMockPicture(int width, int height);
+  // void AddMockLayer(int width, int height);
+  // void AddMockPicture(int width, int height);
 
  private:
   MockCanvas mock_canvas_;
@@ -112,7 +112,7 @@ struct PrerollContextHolder {
   sk_sp<SkColorSpace> srgb;
 };
 
-PrerollContextHolder GetSamplePrerollContextHolder();
+// PrerollContextHolder GetSamplePrerollContextHolder();
 
 }  // namespace testing
 }  // namespace flutter

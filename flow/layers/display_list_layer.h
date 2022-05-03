@@ -7,6 +7,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache_display_list_item.h"
 #include "flutter/flow/skia_gpu_object.h"
 
 namespace flutter {
@@ -39,8 +40,7 @@ class DisplayListLayer : public Layer {
  private:
   SkPoint offset_;
   flutter::SkiaGPUObject<DisplayList> display_list_;
-  bool is_complex_ = false;
-  bool will_change_ = false;
+  RasterCacheDisplayListItem cache_item_;
 
   static bool Compare(DiffContext::Statistics& statistics,
                       const DisplayListLayer* l1,

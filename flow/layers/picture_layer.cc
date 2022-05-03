@@ -13,10 +13,7 @@ PictureLayer::PictureLayer(const SkPoint& offset,
                            SkiaGPUObject<SkPicture> picture,
                            bool is_complex,
                            bool will_change)
-    : offset_(offset),
-      picture_(std::move(picture)),
-      is_complex_(is_complex),
-      will_change_(will_change) {}
+    : offset_(offset), picture_(std::move(picture)) {}
 
 bool PictureLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Only return true for identical pictures; This way
@@ -114,18 +111,19 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
 
-  if (auto* cache = context->raster_cache) {
-    TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
-                         offset_)) {
-        context->subtree_can_inherit_opacity = true;
-      }
-    } else {
-      // Don't evict raster cache entry during partial repaint
-      cache->Touch(sk_picture, matrix);
-    }
-  }
+  // if (auto* cache = context->raster_cache) {
+  //   TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
+  //   if (context->cull_rect.intersects(bounds)) {
+  //     if (cache->Prepare(context, sk_picture, is_complex_, will_change_,
+  //     matrix,
+  //                        offset_)) {
+  //       context->subtree_can_inherit_opacity = true;
+  //     }
+  //   } else {
+  //     // Don't evict raster cache entry during partial repaint
+  //     cache->Touch(sk_picture, matrix);
+  //   }
+  // }
 
   set_paint_bounds(bounds);
 }
@@ -142,14 +140,14 @@ void PictureLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache) {
-    AutoCachePaint cache_paint(context);
-    if (context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas,
-                                   cache_paint.paint())) {
-      TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-      return;
-    }
-  }
+  // if (context.raster_cache) {
+  //   AutoCachePaint cache_paint(context);
+  //   if (context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas,
+  //                                  cache_paint.paint())) {
+  //     TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+  //     return;
+  //   }
+  // }
 
   FML_DCHECK(context.inherited_opacity == SK_Scalar1);
   picture()->playback(context.leaf_nodes_canvas);

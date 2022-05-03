@@ -7,7 +7,7 @@
 namespace flutter {
 
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
-    : filter_(std::move(filter)), render_count_(1) {}
+    : filter_(std::move(filter)) /*, render_count_(1) */ {}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -34,14 +34,14 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   // can always apply opacity in those cases.
   context->subtree_can_inherit_opacity = true;
 
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, matrix,
-                            RasterCacheLayerStrategy::kLayer);
-  } else {
-    render_count_++;
-    TryToPrepareRasterCache(context, this, matrix,
-                            RasterCacheLayerStrategy::kLayerChildren);
-  }
+  // if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+  //   TryToPrepareRasterCache(context, this, matrix,
+  //                           RasterCacheLayerStrategy::kLayer);
+  // } else {
+  //   render_count_++;
+  //   TryToPrepareRasterCache(context, this, matrix,
+  //                           RasterCacheLayerStrategy::kLayerChildren);
+  // }
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
@@ -50,20 +50,20 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
 
   AutoCachePaint cache_paint(context);
 
-  if (context.raster_cache) {
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayer,
-                                   cache_paint.paint())) {
-      return;
-    }
+  // if (context.raster_cache) {
+  //   if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+  //                                  RasterCacheLayerStrategy::kLayer,
+  //                                  cache_paint.paint())) {
+  //     return;
+  //   }
 
-    cache_paint.setColorFilter(filter_);
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren,
-                                   cache_paint.paint())) {
-      return;
-    }
-  }
+  //   cache_paint.setColorFilter(filter_);
+  //   if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+  //                                  RasterCacheLayerStrategy::kLayerChildren,
+  //                                  cache_paint.paint())) {
+  //     return;
+  //   }
+  // }
 
   cache_paint.setColorFilter(filter_);
 

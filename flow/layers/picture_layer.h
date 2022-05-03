@@ -37,8 +37,8 @@ class PictureLayer : public Layer {
   // Even though pictures themselves are not GPU resources, they may reference
   // images that have a reference to a GPU resource.
   SkiaGPUObject<SkPicture> picture_;
-  bool is_complex_ = false;
-  bool will_change_ = false;
+  // bool is_complex_ = false;
+  // bool will_change_ = false;
 
   sk_sp<SkData> SerializedPicture() const;
   mutable sk_sp<SkData> cached_serialized_picture_;
