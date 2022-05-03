@@ -1,15 +1,14 @@
 package io.flutter.embedding.android;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import android.annotation.TargetApi;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,20 +32,45 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(28)
 public class KeyboardManagerTest {
+  /**
+   * Records a message that {@link KeyboardManager} sends to outside.
+   *
+   * <p>A call record can originate from many sources, indicated by its {@link type}. Different
+   * types will have different fields filled, leaving others empty.
+   */
   static class CallRecord {
     static enum Type {
+      /**
+       * The channel responder sent a message through the key event channel.
+       *
+       * <p>This call record will have a non-null {@link channelData}, with an optional {@link
+       * reply}.
+       */
       kChannel,
     }
 
-    public CallRecord() {}
+    /**
+     * Construct an empty call record.
+     *
+     * <p>Use the static functions to constuct specific types instead.
+     */
+    private CallRecord() {}
 
     Type type;
 
+    /**
+     * The callback given by the keyboard manager.
+     *
+     * <p>It might be null, which probably means it is a synthesized event and requires no reply.
+     * Otherwise, invoke this callback with whether the event is handled for the keyboard manager to
+     * continue processing the key event.
+     */
     public Consumer<Boolean> reply;
+    /** The data for a call record of type {@link Type.kChannel}. */
     public ChannelCallData channelData;
 
+    /** Construct a call record of type {@link Type.kChannel}. */
     static CallRecord channelCall(
         @NonNull ChannelCallData channelData, @Nullable Consumer<Boolean> reply) {
       final CallRecord record = new CallRecord();
@@ -57,16 +81,27 @@ public class KeyboardManagerTest {
     }
   }
 
+  /**
+   * The data for a {@link CallRecord} of a channel message sent by the channel responder to the
+   * framework.
+   */
   static class ChannelCallData {
     ChannelCallData(@NonNull String channel, @NonNull JSONObject message) {
       this.channel = channel;
       this.message = message;
     }
 
+    /** The channel that the message is sent on. */
     public String channel;
+    /** The parsed JSON message object. */
     public JSONObject message;
   }
 
+  /**
+   * Build a response to a channel message sent by the channel responder.
+   *
+   * @param handled whether the event is handled.
+   */
   static ByteBuffer buildResponseMessage(boolean handled) {
     JSONObject body = new JSONObject();
     try {
@@ -79,6 +114,13 @@ public class KeyboardManagerTest {
     return binaryReply;
   }
 
+  /**
+   * Used to configure how to process a channel message.
+   *
+   * <p>When the channel responder sends a channel message, this functional interface will be
+   * invoked. Its first argument will be the detailed data. The second argument will be a nullable
+   * reply callback, which should be called to mock the reply from the framework.
+   */
   @FunctionalInterface
   static interface ChannelCallHandler extends BiConsumer<ChannelCallData, Consumer<Boolean>> {}
 
@@ -116,6 +158,7 @@ public class KeyboardManagerTest {
     public @Mock KeyboardManager.ViewDelegate mockView;
     public KeyboardManager keyboardManager;
 
+    /** Set channel calls to respond immediately with the given response. */
     public void respondToChannelCallsWith(boolean handled) {
       channelHandler =
           (ChannelCallData data, Consumer<Boolean> reply) -> {
@@ -125,6 +168,11 @@ public class KeyboardManagerTest {
           };
     }
 
+    /**
+     * Record embedder calls to the given storage.
+     *
+     * <p>They are not responded to until the stored callbacks are manually called.
+     */
     public void recordChannelCallsTo(@NonNull ArrayList<CallRecord> storage) {
       channelHandler =
           (ChannelCallData data, Consumer<Boolean> reply) -> {
@@ -132,6 +180,7 @@ public class KeyboardManagerTest {
           };
     }
 
+    /** Set text calls to respond with the given response. */
     public void respondToTextInputWith(boolean response) {
       textInputResult = response;
     }
@@ -156,7 +205,15 @@ public class KeyboardManagerTest {
     }
   }
 
-  // TODO: Add more test items.
+  /**
+   * Assert that the channel call is an event that matches the given data.
+   *
+   * <p>For now this function only validates key code, but not scancode or characters.
+   *
+   * @param data the target data to be tested.
+   * @param type the type of the data, usually "keydown" or "keyup".
+   * @param keyCode the key code.
+   */
   static void assertChannelEventEquals(
       @NonNull ChannelCallData data, @NonNull String type, @NonNull Integer keyCode) {
     final JSONObject message = data.message;

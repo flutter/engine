@@ -14,62 +14,36 @@ import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.HashSet;
 
 /**
- * A class to process {@link KeyEvent}s dispatched to a {@link FlutterView}, either from a hardware
- * keyboard or an IME event.
- *
- * <p>A class that sends Android {@link KeyEvent} to the a list of {@link
- * KeyboardManager.Responder}s, and re-dispatches those not handled by the primary responders.
+ * Processes keyboard events and cooperate with {@link TextInputPlugin}.
  *
  * <p>Flutter uses asynchronous event handling to avoid blocking the UI thread, but Android requires
- * that events are handled synchronously. So, when the Android system sends new @{link KeyEvent} to
+ * that events are handled synchronously. So when the Android system sends new @{link KeyEvent} to
  * Flutter, Flutter responds synchronously that the key has been handled so that it won't propagate
  * to other components. It then uses "delayed event synthesis", where it sends the event to the
  * framework, and if the framework responds that it has not handled the event, then this class
  * synthesizes a new event to send to Android, without handling it this time.
  *
- * <p>A new {@link KeyEvent} sent to a {@link KeyboardManager} can be propagated to 3 different
- * types of responders (in the listed order):
+ * <p>Flutter processes an Android {@link KeyEvent} with several components, each can choose whether
+ * to handled the event, and only unhandled events can move to the next section.
  *
  * <ul>
- *   <li>{@link KeyboardManager.Responder}s: An immutable list of key responders in a {@link
- *       KeyboardManager} that each implements the {@link KeyboardManager.Responder} interface. A
- *       {@link KeyboardManager.Responder} is a key responder that's capable of handling {@link
- *       KeyEvent}s asynchronously.
- *       <p>When a new {@link KeyEvent} is received, {@link KeyboardManager} calls the {@link
- *       KeyboardManager.Responder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its
- *       {@link KeyboardManager.Responder}s. Each {@link KeyboardManager.Responder} must call the
- *       supplied {@link KeyboardManager.Responder.OnKeyEventHandledCallback} exactly once, when it
- *       has decided whether to handle the key event callback. More than one {@link
- *       KeyboardManager.Responder} is allowed to reply true and handle the same {@link KeyEvent}.
- *       <p>Typically a {@link KeyboardManager} uses a {@link KeyChannelResponder} as its only
- *       {@link KeyboardManager.Responder}.
- *   <li>{@link TextInputPlugin}: if every {@link KeyboardManager.Responder} has replied false to a
- *       {@link KeyEvent}, or if the {@link KeyboardManager} has zero {@link
- *       KeyboardManager.Responder}s, the {@link KeyEvent} will be sent to the currently focused
- *       editable text field in {@link TextInputPlugin}, if any.
- *   <li><b>"Redispatch"</b>: if there's no currently focused text field in {@link TextInputPlugin},
+ *   <li><b>Keyboard</b>: Dispatch to the {@link KeyboardManager.Responder}s simultaneously. After
+ *       all responders have responded (asynchronously), the event is considered handled if any
+ *       responders decide to handle.
+ *   <li><b>Text input</b>: Events are sent to {@link TextInputPlugin}, processed synchronously with
+ *       a result of whether it is handled.
+ *   <li><b>"Redispatch"</b>: If there's no currently focused text field in {@link TextInputPlugin},
  *       or the text field does not handle the {@link KeyEvent} either, the {@link KeyEvent} will be
- *       sent back to the top of the activity's view hierachy, allowing it to be "redispatched",
- *       only this time the {@link KeyboardManager} will not try to handle the redispatched {@link
- *       KeyEvent}.
+ *       sent back to the top of the activity's view hierachy, allowing it to be "redispatched". The
+ *       {@link KeyboardManager} will remember this event and skip the identical event at the next
+ *       encounter.
  * </ul>
  */
 public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate {
   private static final String TAG = "KeyboardManager";
 
   /**
-   * Constructor for {@link KeyboardManager} that takes a list of {@link
-   * KeyboardManager.Responder}s.
-   *
-   * <p>The view is used as the destination to send the synthesized key to. This means that the next
-   * thing in the focus chain will get the event when the {@link KeyboardManager.Responder}s return
-   * false from onKeyDown/onKeyUp.
-   *
-   * <p>It is possible that that in the middle of the async round trip, the focus chain could
-   * change, and instead of the native widget that was "next" when the event was fired getting the
-   * event, it may be the next widget when the event is synthesized that gets it. In practice, this
-   * shouldn't be a huge problem, as this is an unlikely occurrence to happen without user input,
-   * and it may actually be desired behavior, but it is possible.
+   * Construct a {@link KeyboardManager}.
    *
    * @param viewDelegate provides a set of interfaces that the keyboard manager needs to interact
    *     with other components and the platform, and is typically implements by {@link FlutterView}.
@@ -114,11 +88,25 @@ public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate 
         @NonNull KeyEvent keyEvent, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback);
   }
 
+  /**
+   * A set of interfaces that the {@link KeyboardManager} needs to interact with other components
+   * and the platform, and is typically implements by {@link FlutterView}.
+   */
   public interface ViewDelegate {
+    /** Returns a {@link BinaryMessenger} to send platform messages with. */
     public BinaryMessenger getBinaryMessenger();
 
+    /**
+     * Send a {@link KeyEvent} that is not handled by the keyboard responders to the text input
+     * system.
+     *
+     * @param keyEvent the {@link KeyEvent} that should be processed by the text input system. It
+     *     must not be null.
+     * @return Whether the text input handles the key event.
+     */
     public boolean onTextInputKeyEvent(@NonNull KeyEvent keyEvent);
 
+    /** Send a {@link KeyEvent} that is not handled by Flutter back to the platform. */
     public void redispatch(@NonNull KeyEvent keyEvent);
   }
 

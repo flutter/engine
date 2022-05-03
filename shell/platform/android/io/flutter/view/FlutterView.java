@@ -802,14 +802,14 @@ public class FlutterView extends SurfaceView
     }
   }
 
-  // -------- Start: Mouse -------
-
   private void releaseAccessibilityNodeProvider() {
     if (mAccessibilityNodeProvider != null) {
       mAccessibilityNodeProvider.release();
       mAccessibilityNodeProvider = null;
     }
   }
+
+  // -------- Start: Mouse -------
 
   @Override
   @TargetApi(Build.VERSION_CODES.N)
