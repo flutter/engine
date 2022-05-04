@@ -6,12 +6,10 @@
 
 """Copies and renames android artifacts."""
 
-
-
-import sys
-import shutil
-import os
 import argparse
+import os
+import shutil
+import sys
 
 
 def cp_files(args):
@@ -29,8 +27,8 @@ def main():
   parser.add_argument('-i', dest='input_pairs', nargs=2, action='append',
       help='The input file and its destination.')
   cp_files(parser.parse_args())
-
   return 0
+
 
 if __name__ == '__main__':
   sys.exit(main())
