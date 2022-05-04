@@ -35,7 +35,6 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   auto gl_compiler = std::make_shared<spirv_cross::CompilerGLSL>(ir);
   spirv_cross::CompilerGLSL::Options sl_options;
   sl_options.force_zero_initialized_variables = true;
-  sl_options.vertex.flip_vert_y = true;
   sl_options.vertex.fixup_clipspace = true;
   if (source_options.target_platform == TargetPlatform::kOpenGLES) {
     sl_options.version = 100;

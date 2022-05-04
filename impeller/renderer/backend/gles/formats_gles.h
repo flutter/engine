@@ -35,7 +35,7 @@ constexpr GLenum ToIndexType(IndexType type) {
     case IndexType::k16bit:
       return GL_UNSIGNED_SHORT;
     case IndexType::k32bit:
-      return GL_UNSIGNED_BYTE;
+      return GL_UNSIGNED_INT;
   }
   FML_UNREACHABLE();
 }
