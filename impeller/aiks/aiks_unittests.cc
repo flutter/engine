@@ -652,28 +652,25 @@ TEST_P(AiksTest, SaveLayerDrawsBehindSubsequentEntities) {
 TEST_P(AiksTest, SiblingSaveLayerBoundsAreRespected) {
   Canvas canvas;
   Paint paint;
-  Rect layer_rect(25, 25, 25, 25);
   Rect rect(0, 0, 1000, 1000);
 
   // Black, green, and red squares offset by [10, 10].
   {
-    canvas.SaveLayer({}, layer_rect);
+    canvas.SaveLayer({}, Rect::MakeXYWH(25, 25, 25, 25));
     paint.color = Color::Black();
     canvas.DrawRect(rect, paint);
     canvas.Restore();
   }
 
-  canvas.Translate({10, 10});
   {
-    canvas.SaveLayer({}, layer_rect);
+    canvas.SaveLayer({}, Rect::MakeXYWH(35, 35, 25, 25));
     paint.color = Color::Green();
     canvas.DrawRect(rect, paint);
     canvas.Restore();
   }
 
-  canvas.Translate({10, 10});
   {
-    canvas.SaveLayer({}, layer_rect);
+    canvas.SaveLayer({}, Rect::MakeXYWH(45, 45, 25, 25));
     paint.color = Color::Red();
     canvas.DrawRect(rect, paint);
     canvas.Restore();
