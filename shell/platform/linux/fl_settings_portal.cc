@@ -30,6 +30,11 @@ static const FlSetting kClockFormat = {
     "clock-format",
     G_VARIANT_TYPE_STRING,
 };
+static const FlSetting kGtkTheme = {
+    kGnomeDesktopInterface,
+    "gtk-theme",
+    G_VARIANT_TYPE_STRING,
+};
 static const FlSetting kTextScalingFactor = {
     kGnomeDesktopInterface,
     "text-scaling-factor",
@@ -39,10 +44,12 @@ static const FlSetting kTextScalingFactor = {
 static const FlSetting all_settings[] = {
     kClockFormat,
     kColorScheme,
+    kGtkTheme,
     kTextScalingFactor,
 };
 
 static constexpr char kClockFormat12Hour[] = "12h";
+static constexpr char kGtkThemeDarkSuffix[] = "-dark";
 
 typedef enum { DEFAULT, PREFER_DARK, PREFER_LIGHT } ColorScheme;
 
@@ -117,6 +124,11 @@ static FlColorScheme fl_settings_portal_get_color_scheme(FlSettings* settings) {
   g_autoptr(GVariant) value = nullptr;
   if (fl_settings_portal_get_value(self, &kColorScheme, &value)) {
     if (g_variant_get_uint32(value) == PREFER_DARK) {
+      color_scheme = FL_COLOR_SCHEME_DARK;
+    }
+  } else if (fl_settings_portal_get_value(self, &kGtkTheme, &value)) {
+    const gchar* gtk_theme_str = g_variant_get_string(value, nullptr);
+    if (g_str_has_suffix(gtk_theme_str, kGtkThemeDarkSuffix)) {
       color_scheme = FL_COLOR_SCHEME_DARK;
     }
   }

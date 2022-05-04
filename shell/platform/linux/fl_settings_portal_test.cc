@@ -53,6 +53,45 @@ TEST(FlSettingsPortalTest, ColorScheme) {
                               "org.freedesktop.appearance::color-scheme",
                               g_variant_new_uint32(123));
   EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
+
+  // color-scheme takes precedence over gtk-theme
+  g_variant_dict_insert_value(settings,
+                              "org.gnome.desktop.interface::gtk-theme",
+                              g_variant_new_string("Yaru-dark"));
+  EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
+}
+
+TEST(FlSettingsPortalTest, GtkTheme) {
+  g_autoptr(GVariantDict) settings = g_variant_dict_new(nullptr);
+
+  g_autoptr(FlSettings) portal = FL_SETTINGS(fl_settings_portal_new(settings));
+  EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
+
+  g_variant_dict_insert_value(settings,
+                              "org.gnome.desktop.interface::gtk-theme",
+                              g_variant_new_string("Yaru-dark"));
+  EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_DARK);
+
+  g_variant_dict_insert_value(settings,
+                              "org.gnome.desktop.interface::gtk-theme",
+                              g_variant_new_string("Yaru"));
+  EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
+
+  g_variant_dict_insert_value(settings,
+                              "org.gnome.desktop.interface::gtk-theme",
+                              g_variant_new_string("Adwaita"));
+  EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
+
+  g_variant_dict_insert_value(settings,
+                              "org.gnome.desktop.interface::gtk-theme",
+                              g_variant_new_string("Adwaita-dark"));
+  EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_DARK);
+
+  // color-scheme takes precedence over gtk-theme
+  g_variant_dict_insert_value(settings,
+                              "org.freedesktop.appearance::color-scheme",
+                              g_variant_new_uint32(2));
+  EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
 }
 
 TEST(FlSettingsPortalTest, TextScalingFactor) {
