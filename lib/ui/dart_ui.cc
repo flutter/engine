@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/dart_ui.h"
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/compositing/scene_builder.h"
@@ -287,12 +288,24 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
   return nullptr;
 }
 
-void DartUI::InitForIsolate() {
-  auto lib = Dart_LookupLibrary(ToDart("dart:ui"));
+void DartUI::InitForIsolate(const Settings& settings) {
+  auto dart_ui = Dart_LookupLibrary(ToDart("dart:ui"));
+  if (Dart_IsError(dart_ui)) {
+    Dart_PropagateError(dart_ui);
+  }
+
   // Set up FFI Native resolver for dart:ui.
-  Dart_Handle result = Dart_SetFfiNativeResolver(lib, ResolveFfiNativeFunction);
+  Dart_Handle result =
+      Dart_SetFfiNativeResolver(dart_ui, ResolveFfiNativeFunction);
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
+  }
+
+  if (settings.enable_impeller) {
+    result = Dart_SetField(dart_ui, ToDart("_impellerEnabled"), Dart_True());
+    if (Dart_IsError(result)) {
+      Dart_PropagateError(result);
+    }
   }
 }
 
