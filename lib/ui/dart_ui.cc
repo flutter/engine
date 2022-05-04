@@ -172,6 +172,8 @@ typedef CanvasPath Path;
   V(ImageDescriptor, instantiateCodec, 4)              \
   V(ImageDescriptor, width, 1)                         \
   V(ImageFilter, initBlur, 4)                          \
+  V(ImageFilter, initDilate, 3)                        \
+  V(ImageFilter, initErode, 3)                         \
   V(ImageFilter, initColorFilter, 2)                   \
   V(ImageFilter, initComposeFilter, 3)                 \
   V(ImageFilter, initMatrix, 3)                        \

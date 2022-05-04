@@ -3546,7 +3546,8 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     _constructor();
     _initDilate(filter.radiusX, filter.radiusY);
   }
-  void _initDilate(double radiusX, double radiusY) native 'ImageFilter_initDilate';
+  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initDilate', isLeaf: true)
+  external void _initDilate(double radiusX, double radiusY);
 
   /// Create a filter that erodes each input pixel's channel values
   /// to the minimum channel value within the given radii along the x and y axes.
@@ -3556,7 +3557,8 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     _constructor();
     _initErode(filter.radiusX, filter.radiusY);
   }
-  void _initErode(double radiusX, double radiusY) native 'ImageFilter_initErode';
+  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initErode', isLeaf: true)
+  external void _initErode(double radiusX, double radiusY);
 
   /// Creates an image filter that applies a matrix transformation.
   ///
