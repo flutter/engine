@@ -29,7 +29,7 @@ import org.json.JSONException;
  * io.flutter.plugin.editing.SpellCheckPlugin}, it will send to the framework the message {@code
  * SpellCheck.updateSpellCheckResults} with the {@code ArrayList<String>} of encoded spell check
  * results (see {@link
- * io.flutter.plugin.editing.SpellCheckPlugin.SpellCheckPluginSessionListener#onGetSentenceSuggestions(SentenceSuggestionsInfo[])}
+ * io.flutter.plugin.editing.SpellCheckPlugin#onGetSentenceSuggestions(SentenceSuggestionsInfo[])}
  * for details) with the text that these results correspond to appeneded to the front as an
  * argument. For example, the argument may look like: {@code {"Hello, wrold!",
  * "7.11.world\nword\nold"}}.
@@ -43,6 +43,9 @@ public class SpellCheckChannel {
 
   public final MethodChannel channel;
   private SpellCheckMethodHandler spellCheckMethodHandler;
+
+  private String textAwaitingResponse;
+  private MethodChannel.Result resultAwaitingResponse;
 
   @NonNull
   final MethodChannel.MethodCallHandler parsingMethodHandler =
@@ -64,8 +67,10 @@ public class SpellCheckChannel {
                 final JSONArray argumentList = (JSONArray) args;
                 String locale = argumentList.getString(0);
                 String text = argumentList.getString(1);
+                textAwaitingResponse = text;
+                resultAwaitingResponse = result;
+
                 spellCheckMethodHandler.initiateSpellCheck(locale, text);
-                result.success(null);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
               }
@@ -83,9 +88,15 @@ public class SpellCheckChannel {
   }
 
   /** Responsible for sending spell check results and corresponding text through this channel. */
-  public void updateSpellCheckResults(ArrayList<String> spellCheckResults, String text) {
-    spellCheckResults.add(0, text);
-    channel.invokeMethod("SpellCheck.updateSpellCheckResults", spellCheckResults);
+  public void updateSpellCheckResults(ArrayList<String> spellCheckResults) {
+    spellCheckResults.add(0, textAwaitingResponse);
+
+    if (resultAwaitingResponse != null && textAwaitingResponse != null) {
+      resultAwaitingResponse.success(spellCheckResults);
+    }
+
+    resultAwaitingResponse = null;
+    textAwaitingResponse = null;
   }
 
   /**

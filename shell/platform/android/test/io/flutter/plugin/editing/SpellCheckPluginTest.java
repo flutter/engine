@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+// TODO(camillesimon): Fix theses tests
 @RunWith(AndroidJUnit4.class)
 public class SpellCheckPluginTest {
 

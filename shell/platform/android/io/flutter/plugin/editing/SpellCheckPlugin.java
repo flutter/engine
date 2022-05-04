@@ -10,7 +10,6 @@ import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextInfo;
 import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import java.util.ArrayList;
@@ -25,7 +24,9 @@ import java.util.Locale;
  * spell checker. It also receives the spell check results from the service and sends them back to
  * the framework through the {@link io.flutter.embedding.engine.systemchannels.SpellCheckChannel}.
  */
-public class SpellCheckPlugin implements SpellCheckChannel.SpellCheckMethodHandler {
+public class SpellCheckPlugin
+    implements SpellCheckChannel.SpellCheckMethodHandler,
+        SpellCheckerSession.SpellCheckerSessionListener {
 
   private final SpellCheckChannel mSpellCheckChannel;
   private final TextServicesManager mTextServicesManager;
@@ -61,11 +62,6 @@ public class SpellCheckPlugin implements SpellCheckChannel.SpellCheckMethodHandl
     }
   }
 
-  @VisibleForTesting
-  public SpellCheckPluginSessionListener createSpellCheckerSessionListener(String text) {
-    return new SpellCheckPluginSessionListener(text);
-  }
-
   @Override
   public void initiateSpellCheck(@NonNull String locale, @NonNull String text) {
     performSpellCheck(locale, text);
@@ -76,88 +72,67 @@ public class SpellCheckPlugin implements SpellCheckChannel.SpellCheckMethodHandl
     String[] localeCodes = locale.split("-");
     Locale localeFromString = LocalizationPlugin.localeFromString(locale);
 
-    if (mSpellCheckerSession != null) {
-      mSpellCheckerSession.close();
+    if (mSpellCheckerSession == null) {
+      mSpellCheckerSession =
+          mTextServicesManager.newSpellCheckerSession(
+              null,
+              localeFromString,
+              this,
+              /** referToSpellCheckerLanguageSettings= */
+              true);
     }
-
-    mSpellCheckerSession =
-        mTextServicesManager.newSpellCheckerSession(
-            null,
-            localeFromString,
-            createSpellCheckerSessionListener(text),
-            /** referToSpellCheckerLanguageSettings= */
-            true);
 
     TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
     mSpellCheckerSession.getSentenceSuggestions(textInfos, MAX_SPELL_CHECK_SUGGESTIONS);
   }
 
-  class SpellCheckPluginSessionListener implements SpellCheckerSession.SpellCheckerSessionListener {
-    private final String text;
+  /**
+   * Callback for Android spell check API that decomposes results and send results through the
+   * {@link SpellCheckChannel}.
+   *
+   * <p>Spell check results will be encoded as a string representing the span of that result, with
+   * the format "start_index.end_index.suggestion_1/nsuggestion_2/nsuggestion_3", where there may be
+   * up to 5 suggestions.
+   */
+  @Override
+  public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
+    ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
 
-    public SpellCheckPluginSessionListener(String text) {
-      this.text = text;
+    if (results.length == 0) {
+      mSpellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans);
+      return;
     }
 
-    @VisibleForTesting
-    public SpellCheckChannel getSpellCheckChannel() {
-      return mSpellCheckChannel;
-    }
+    SentenceSuggestionsInfo spellCheckResults = results[0];
 
-    @VisibleForTesting
-    public String getText() {
-      return text;
-    }
+    for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
+      SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
+      int suggestionsCount = suggestionsInfo.getSuggestionsCount();
 
-    /**
-     * Callback for Android spell check API that decomposes results and send results through the
-     * {@link SpellCheckChannel}.
-     *
-     * <p>Spell check results will be encoded as a string representing the span of that result, with
-     * the format "start_index.end_index.suggestion_1/nsuggestion_2/nsuggestion_3", where there may
-     * be up to 5 suggestions.
-     */
-    @Override
-    public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
-      ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
-      SpellCheckChannel spellCheckChannel = getSpellCheckChannel();
-
-      if (results.length == 0) {
-        spellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans, getText());
-        return;
+      if (suggestionsCount == 0) {
+        continue;
       }
 
-      SentenceSuggestionsInfo spellCheckResults = results[0];
+      String spellCheckerSuggestionSpan = "";
+      int start = spellCheckResults.getOffsetAt(i);
+      int end = start + spellCheckResults.getLengthAt(i) - 1;
 
-      for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
-        SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
-        int suggestionsCount = suggestionsInfo.getSuggestionsCount();
+      spellCheckerSuggestionSpan += String.valueOf(start) + ".";
+      spellCheckerSuggestionSpan += String.valueOf(end) + ".";
 
-        if (suggestionsCount == 0) {
-          continue;
-        }
-
-        String spellCheckerSuggestionSpan = "";
-        int start = spellCheckResults.getOffsetAt(i);
-        int end = start + spellCheckResults.getLengthAt(i) - 1;
-
-        spellCheckerSuggestionSpan += String.valueOf(start) + ".";
-        spellCheckerSuggestionSpan += String.valueOf(end) + ".";
-
-        for (int j = 0; j < suggestionsCount; j++) {
-          spellCheckerSuggestionSpan += suggestionsInfo.getSuggestionAt(j) + "\n";
-        }
-
-        spellCheckerSuggestionSpans.add(
-            spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
+      for (int j = 0; j < suggestionsCount; j++) {
+        spellCheckerSuggestionSpan += suggestionsInfo.getSuggestionAt(j) + "\n";
       }
 
-      spellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans, getText());
+      spellCheckerSuggestionSpans.add(
+          spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
     }
 
-    @Override
-    public void onGetSuggestions(SuggestionsInfo[] results) {
-      // Deprecated callback for Android spell check API; will not use.
-    }
+    mSpellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans);
+  }
+
+  @Override
+  public void onGetSuggestions(SuggestionsInfo[] results) {
+    // Deprecated callback for Android spell check API; will not use.
   }
 }
