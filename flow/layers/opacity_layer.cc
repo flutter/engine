@@ -5,18 +5,17 @@
 #include "flutter/flow/layers/opacity_layer.h"
 
 #include "flutter/flow/layers/cacheable_layer.h"
-#include "flutter/flow/raster_cacheable_entry.h"
-#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPaint.h"
 
 namespace flutter {
 
+// the opacity_layer couldn't cache itself, so the cache_threshold is the
+// max_int
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset), children_can_accept_opacity_(false) {
-  // the opacity_layer couldn't cache itself, so the cache_threshold is the
-  // max_int
-  InitialCacheableLayerItem(this, std::numeric_limits<int>::max());
-}
+    : CacheableContainerLayer(std::numeric_limits<int>::max(), true),
+      alpha_(alpha),
+      offset_(offset),
+      children_can_accept_opacity_(false) {}
 
 void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -51,8 +50,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
 
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix);
+  AutoCache cache =
+      AutoCache::Create(layer_raster_cache_item_.get(), context, matrix);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
@@ -78,7 +77,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix_);
 #endif
-    cacheable_item_->asLayerCacheableItem()->CacheChildren(child_matrix);
+    layer_raster_cache_item_->CacheChildren(child_matrix);
   }
 
   // Restore cull_rect
@@ -110,7 +109,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setAlphaf(subtree_opacity);
 
-  if (cacheable_item_->Draw(context, &paint)) {
+  if (layer_raster_cache_item_->Draw(context, &paint)) {
     return;
   }
 

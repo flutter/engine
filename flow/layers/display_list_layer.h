@@ -5,16 +5,18 @@
 #ifndef FLUTTER_FLOW_LAYERS_DISPLAY_LIST_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_DISPLAY_LIST_LAYER_H_
 
+#include <memory>
 #include "flutter/display_list/display_list.h"
+#include "flutter/flow/display_list_raster_cache_item.h"
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/raster_cacheable_entry.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/skia_gpu_object.h"
 
 namespace flutter {
 
-class DisplayListLayer : public Layer, public Cacheable {
+class DisplayListLayer : public Layer {
  public:
   static constexpr size_t kMaxBytesToCompare = 10000;
 
@@ -35,13 +37,17 @@ class DisplayListLayer : public Layer, public Cacheable {
     return this;
   }
 
-  Layer* asLayer() override { return this; }
-
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 
+  const DisplayListRasterCacheItem* raster_cache_item() const {
+    return display_list_raster_cache_item_.get();
+  }
+
  private:
+  std::unique_ptr<DisplayListRasterCacheItem> display_list_raster_cache_item_;
+
   SkPoint offset_;
   SkRect bounds_;
 

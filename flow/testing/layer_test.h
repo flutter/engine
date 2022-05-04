@@ -160,7 +160,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     set_raster_cache_(std::make_unique<RasterCache>());
   }
 
-  std::vector<CacheableItem*>& cacheable_items() { return cacheable_items_; }
+  std::vector<RasterCacheItem*>& cacheable_items() { return cacheable_items_; }
 
   TextureRegistry& texture_regitry() { return texture_registry_; }
   RasterCache* raster_cache() { return raster_cache_.get(); }
@@ -217,7 +217,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   PaintContext check_board_context_;
   LayerSnapshotStore snapshot_store_;
 
-  std::vector<CacheableItem*> cacheable_items_;
+  std::vector<RasterCacheItem*> cacheable_items_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTestBase);
 };

@@ -3,16 +3,16 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/shader_mask_layer.h"
-#include "flutter/flow/raster_cacheable_entry.h"
 
 namespace flutter {
 
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {
-  InitialCacheableLayerItem(this, kMinimumRendersBeforeCachingFilterLayer);
-}
+    : CacheableContainerLayer(kMinimumRendersBeforeCachingFilterLayer),
+      shader_(shader),
+      mask_rect_(mask_rect),
+      blend_mode_(blend_mode) {}
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -39,8 +39,8 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix);
+  AutoCache cache =
+      AutoCache::Create(layer_raster_cache_item_.get(), context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
   // We always paint with a saveLayer (or a cached rendering),
@@ -54,8 +54,8 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
 
   AutoCachePaint cache_paint(context);
 
-  if (auto* cacheable_item = GetCacheableLayer()) {
-    if (cacheable_item->Draw(context, cache_paint.paint())) {
+  if (context.raster_cache) {
+    if (layer_raster_cache_item_->Draw(context, cache_paint.paint())) {
       return;
     }
   }

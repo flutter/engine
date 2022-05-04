@@ -5,7 +5,7 @@
 #ifndef FLUTTER_FLOW_RASTER_CACHE_KEY_H_
 #define FLUTTER_FLOW_RASTER_CACHE_KEY_H_
 
-#include <cstdint>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -15,6 +15,8 @@
 #include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {
+
+class Layer;
 
 enum class RasterCacheKeyType {
   kLayer,
@@ -34,6 +36,8 @@ class RasterCacheKeyID {
   const std::vector<uint64_t>& ids() const { return ids_; }
 
   RasterCacheKeyType type() const { return type_; }
+
+  static std::optional<std::vector<uint64_t>> LayerChildrenIds(Layer* layer);
 
   std::size_t GetHash() const {
     std::size_t seed = fml::HashCombine();

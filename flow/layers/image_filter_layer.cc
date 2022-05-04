@@ -4,14 +4,13 @@
 
 #include "flutter/flow/layers/image_filter_layer.h"
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/raster_cacheable_entry.h"
 
 namespace flutter {
 
 ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
-    : filter_(std::move(filter)), transformed_filter_(nullptr) {
-  InitialCacheableLayerItem(this, kMinimumRendersBeforeCachingFilterLayer);
-}
+    : CacheableContainerLayer(kMinimumRendersBeforeCachingFilterLayer),
+      filter_(std::move(filter)),
+      transformed_filter_(nullptr) {}
 
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -50,8 +49,8 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix);
+  AutoCache cache =
+      AutoCache::Create(layer_raster_cache_item_.get(), context, matrix);
 
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);
@@ -76,7 +75,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   transformed_filter_ = nullptr;
   transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
   if (transformed_filter_) {
-    cacheable_item_->asLayerCacheableItem()->CacheChildren(matrix);
+    layer_raster_cache_item_->CacheChildren(matrix);
   }
 }
 
@@ -85,13 +84,12 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
-  if (auto* layer_item = cacheable_item_->asLayerCacheableItem()) {
-    if (layer_item->IsCacheChildren()) {
-      cache_paint.setImageFilter(transformed_filter_);
-    }
-    if (cacheable_item_->Draw(context, cache_paint.paint())) {
-      return;
-    }
+
+  if (layer_raster_cache_item_->IsCacheChildren()) {
+    cache_paint.setImageFilter(transformed_filter_);
+  }
+  if (layer_raster_cache_item_->Draw(context, cache_paint.paint())) {
+    return;
   }
 
   cache_paint.setImageFilter(filter_);

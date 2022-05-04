@@ -73,7 +73,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 }
 
 void LayerTree::TryToRasterCache(
-    const std::vector<CacheableItem*>& raster_cached_entries,
+    const std::vector<RasterCacheItem*>& raster_cached_entries,
     const PaintContext* paint_context,
     bool ignore_raster_cache) {
   unsigned i = 0;

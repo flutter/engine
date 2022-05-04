@@ -34,7 +34,7 @@ class LayerTree {
                SkRect cull_rect = kGiantRect);
 
   static void TryToRasterCache(
-      const std::vector<CacheableItem*>& raster_cached_entries,
+      const std::vector<RasterCacheItem*>& raster_cached_entries,
       const PaintContext* paint_context,
       bool ignore_raster_cache = false);
 
@@ -97,7 +97,7 @@ class LayerTree {
 
   PaintRegionMap paint_region_map_;
 
-  std::vector<CacheableItem*> raster_cached_entries_;
+  std::vector<RasterCacheItem*> raster_cached_entries_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };

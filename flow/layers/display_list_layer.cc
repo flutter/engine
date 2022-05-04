@@ -10,7 +10,7 @@
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/offscreen_surface.h"
-#include "flutter/flow/raster_cacheable_entry.h"
+#include "flutter/flow/raster_cache.h"
 
 namespace flutter {
 
@@ -22,8 +22,10 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
   if (display_list_.skia_object() != nullptr) {
     bounds_ = display_list_.skia_object()->bounds().makeOffset(offset_.x(),
                                                                offset_.y());
-    InitialCacheableDisplayListItem(display_list_.skia_object().get(), offset,
-                                    is_complex, will_change);
+    display_list_raster_cache_item_ =
+        RasterCacheItem::MakeDisplayListRasterCacheItem(
+            display_list_.skia_object().get(), offset_, is_complex,
+            will_change);
   }
 }
 
@@ -94,8 +96,8 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
   DisplayList* disp_list = display_list();
 
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix);
+  AutoCache cache =
+      AutoCache::Create(display_list_raster_cache_item_.get(), context, matrix);
   if (disp_list->can_apply_group_opacity()) {
     context->subtree_can_inherit_opacity = true;
   }
@@ -110,9 +112,9 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
   context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
 
-  if (auto* display_list_item = GetCacheableDisplayListItem()) {
+  if (context.raster_cache) {
     AutoCachePaint cache_paint(context);
-    if (display_list_item->Draw(context, cache_paint.paint())) {
+    if (display_list_raster_cache_item_->Draw(context, cache_paint.paint())) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
       return;
     }

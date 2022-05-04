@@ -40,7 +40,7 @@ class PictureLayer;
 class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
-class CacheableItem;
+class RasterCacheItem;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
@@ -107,7 +107,7 @@ struct PrerollContext {
   //    saveLayer when rendering anyway can apply the opacity there)
   bool subtree_can_inherit_opacity = false;
 
-  std::vector<CacheableItem*>* raster_cached_entries;
+  std::vector<RasterCacheItem*>* raster_cached_entries;
 };
 
 struct PaintContext {

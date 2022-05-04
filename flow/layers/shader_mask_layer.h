@@ -6,12 +6,11 @@
 #define FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_
 
 #include "flutter/flow/layers/cacheable_layer.h"
-#include "flutter/flow/layers/container_layer.h"
 #include "third_party/skia/include/core/SkShader.h"
 
 namespace flutter {
 
-class ShaderMaskLayer : public ContainerLayer, public Cacheable {
+class ShaderMaskLayer : public CacheableContainerLayer {
  public:
   ShaderMaskLayer(sk_sp<SkShader> shader,
                   const SkRect& mask_rect,
@@ -22,8 +21,6 @@ class ShaderMaskLayer : public ContainerLayer, public Cacheable {
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
-
-  Layer* asLayer() override { return this; };
 
  private:
   sk_sp<SkShader> shader_;

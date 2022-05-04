@@ -38,7 +38,7 @@ TEST(RasterCache, ThresholdIsRespectedForSkPicture) {
 
   // cache.PrepareNewFrame();
 
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // SkPictureRasterCacheItem picture_item(picture.get(), picture->cullRect(),
   //                                     matrix, true, false);
 
   // ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
@@ -79,7 +79,7 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   // GetSamplePaintContextHolder(&cache);
 
   // cache.PrepareNewFrame();
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // SkPictureRasterCacheItem picture_item(picture.get(), picture->cullRect(),
   //                                     matrix, true, false);
 
   // ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
@@ -130,7 +130,7 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
   // auto* gr_context = preroll_context_holder.preroll_context.gr_context;
   // cache.PrepareNewFrame();
 
-  // DisplayListCacheableItem display_list_item(
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), matrix, true, false);
 
   // ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
@@ -168,7 +168,7 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
   // GetSamplePrerollContextHolder();
 
   // cache.PrepareNewFrame();
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // SkPictureRasterCacheItem picture_item(picture.get(), picture->cullRect(),
   //                                     matrix, true, false);
   // ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
@@ -190,7 +190,7 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
 
   // cache.PrepareNewFrame();
 
-  // DisplayListCacheableItem display_list_item(
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), matrix, true, false);
   // ASSERT_FALSE(display_list_item.ShouldBeCached(
   //     &cache, preroll_context_holder.preroll_context.gr_context));
@@ -213,7 +213,7 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
 
   // cache.PrepareNewFrame();
 
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // SkPictureRasterCacheItem picture_item(picture.get(), picture->cullRect(),
   //                                     matrix, true, false);
   // ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
 
@@ -235,7 +235,7 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
 
   // cache.PrepareNewFrame();
 
-  // DisplayListCacheableItem display_list_item(
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), matrix, true, false);
   // ASSERT_FALSE(display_list_item.ShouldBeCached(
   //     &cache, preroll_context_holder.preroll_context.gr_context));
@@ -257,7 +257,7 @@ TEST(RasterCache, SweepsRemoveUnusedSkPictures) {
   // GetSamplePrerollContextHolder(); PaintContextHolder paint_context_holder =
   // GetSamplePaintContextHolder(&cache); cache.PrepareNewFrame();
 
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // SkPictureRasterCacheItem picture_item(picture.get(), picture->cullRect(),
   //                                     matrix, true, false);
 
   // ASSERT_FALSE(picture_item.ShouldBeCached(&cache));  // 1
@@ -297,7 +297,7 @@ TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
   // PaintContextHolder paint_context_holder =
   // GetSamplePaintContextHolder(&cache); cache.PrepareNewFrame();
 
-  // DisplayListCacheableItem display_list_item(
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), matrix, true, false);
 
   // ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));  // 1
@@ -348,7 +348,7 @@ TEST(RasterCache, DeviceRectRoundOutForSkPicture) {
 
   // cache.PrepareNewFrame();
 
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // SkPictureRasterCacheItem picture_item(picture.get(), picture->cullRect(),
   // ctm,
   //                                     true, false);
 
@@ -404,7 +404,7 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
 
   // PaintContextHolder paint_context_holder =
   // GetSamplePaintContextHolder(&cache); cache.PrepareNewFrame();
-  // DisplayListCacheableItem display_list_item(
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), ctm, true, false);
 
   // ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
@@ -439,7 +439,7 @@ TEST(RasterCache, NestedOpCountMetricUsedForSkPicture) {
   // GetSamplePaintContextHolder(&cache);
 
   // cache.PrepareNewFrame();
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
+  // SkPictureRasterCacheItem picture_item(picture.get(), picture->cullRect(),
   //                                     matrix, false, false);
 
   // ASSERT_FALSE(picture_item.ShouldBeCached(&cache));
@@ -474,7 +474,7 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
 
   // cache.PrepareNewFrame();
 
-  // DisplayListCacheableItem display_list_item(
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), matrix, false, false);
 
   // ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
@@ -516,7 +516,7 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
 
   // auto* gr_context = preroll_context_holder.preroll_context.gr_context;
 
-  // DisplayListCacheableItem display_list_item(
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), matrix, false, false);
 
   // ASSERT_FALSE(display_list_item.ShouldBeCached(&cache, gr_context));
@@ -536,7 +536,7 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
   // ASSERT_EQ(display_list->op_count(), 6u);
   // ASSERT_TRUE(calculator->ShouldBeCached(complexity_score));
 
-  // display_list_item = DisplayListCacheableItem(
+  // display_list_item = DisplayListRasterCacheItem(
   //     display_list.get(), display_list->bounds(), matrix, false, false);
   // cache.PrepareNewFrame();
 
@@ -567,7 +567,7 @@ TEST(RasterCache, SkPictureWithSingularMatrixIsNotCached) {
   // SkCanvas dummy_canvas;
 
   // PrerollContextHolder preroll_context_holder =
-  // GetSamplePrerollContextHolder(); SkPictureCacheableItem
+  // GetSamplePrerollContextHolder(); SkPictureRasterCacheItem
   // picture_item(picture.get(), picture->cullRect(),
   //                                     SkMatrix::I(), true, false);
   // for (int i = 0; i < 10; i++) {
@@ -604,8 +604,8 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
 
   // PrerollContextHolder preroll_context_holder =
   // GetSamplePrerollContextHolder(); auto* gr_context =
-  // preroll_context_holder.preroll_context.gr_context; DisplayListCacheableItem
-  // display_list_item(
+  // preroll_context_holder.preroll_context.gr_context;
+  // DisplayListRasterCacheItem display_list_item(
   //     display_list.get(), display_list->bounds(), SkMatrix::I(), true,
   //     false);
 

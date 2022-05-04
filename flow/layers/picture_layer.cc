@@ -4,7 +4,7 @@
 
 #include "flutter/flow/layers/picture_layer.h"
 
-#include "flutter/flow/raster_cacheable_entry.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 
@@ -18,8 +18,9 @@ PictureLayer::PictureLayer(const SkPoint& offset,
   if (picture_.skia_object()) {
     bounds_ =
         picture_.skia_object()->cullRect().makeOffset(offset_.x(), offset_.y());
-    InitialCacheableSkPictureItem(picture_.skia_object().get(), offset_,
-                                  is_complex, will_change);
+
+    raster_cache_item_ = RasterCacheItem::MakeSkPictureRasterCacheItem(
+        picture_.skia_object().get(), offset_, is_complex, will_change);
   }
 }
 
@@ -115,8 +116,8 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix);
+  AutoCache cache =
+      AutoCache::Create(raster_cache_item_.get(), context, matrix);
 
   set_paint_bounds(bounds_);
 }
@@ -132,9 +133,9 @@ void PictureLayer::Paint(PaintContext& context) const {
   context.leaf_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
-  if (auto* picture_item = GetCacheableSkPictureItem()) {
+  if (context.raster_cache) {
     AutoCachePaint cache_paint(context);
-    if (picture_item->Draw(context, cache_paint.paint())) {
+    if (raster_cache_item_->Draw(context, cache_paint.paint())) {
       return;
     }
   }

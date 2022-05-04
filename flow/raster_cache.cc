@@ -11,7 +11,6 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
-#include "flutter/flow/raster_cacheable_entry.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -160,10 +159,24 @@ bool RasterCache::UpdateCacheEntry(
     const std::function<void(SkCanvas*)>& render_function) const {
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
-  entry.access_count++;
   entry.used_this_frame = true;
   if (!entry.image) {
     entry.image = Rasterize(raster_cache_context, render_function);
+    if (entry.image != nullptr) {
+      switch (id.type()) {
+        case RasterCacheKeyType::kDisplayList: {
+          display_list_cached_this_frame_++;
+          break;
+        }
+        case RasterCacheKeyType::kPicture: {
+          picture_cached_this_frame_++;
+          break;
+        }
+        default:
+          break;
+      }
+      return true;
+    }
   }
   return entry.image != nullptr;
 }
@@ -188,7 +201,6 @@ bool RasterCache::MarkSeen(const RasterCacheKeyID& id,
                            const SkMatrix& matrix) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
-  entry.access_count++;
   entry.used_this_frame = true;
   return entry.image != nullptr;
 }

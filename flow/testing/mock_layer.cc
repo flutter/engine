@@ -69,7 +69,7 @@ void MockCacheableContainerLayer::Preroll(PrerollContext* context,
                                           const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  auto cache = Cacheable::AutoCache::Create(this, context, matrix);
+  auto cache = AutoCache::Create(raster_cache_item_.get(), context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
 }
@@ -78,7 +78,7 @@ void MockCacheableLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  auto cache = Cacheable::AutoCache::Create(this, context, matrix);
+  auto cache = AutoCache::Create(raster_cache_item_.get(), context, matrix);
 
   MockLayer::Preroll(context, matrix);
 }

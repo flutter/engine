@@ -51,7 +51,7 @@ class RasterCacheResult {
 };
 
 class Layer;
-class CacheableItem;
+class RasterCacheItem;
 struct PrerollContext;
 struct PaintContext;
 
@@ -95,7 +95,7 @@ class RasterCache {
  public:
   struct Context {
     GrDirectContext* gr_context;
-    SkColorSpace* dst_color_space;
+    const SkColorSpace* dst_color_space;
     const SkMatrix& matrix;
     const SkRect& logical_rect;
     const char* flow_type;
@@ -264,8 +264,8 @@ class RasterCache {
 
   const size_t access_threshold_;
   const size_t picture_and_display_list_cache_limit_per_frame_;
-  size_t picture_cached_this_frame_ = 0;
-  size_t display_list_cached_this_frame_ = 0;
+  mutable size_t picture_cached_this_frame_ = 0;
+  mutable size_t display_list_cached_this_frame_ = 0;
   RasterCacheMetrics layer_metrics_;
   RasterCacheMetrics picture_metrics_;
   mutable RasterCacheKey::Map<Entry> cache_;
@@ -273,8 +273,8 @@ class RasterCache {
 
   void TraceStatsToTimeline() const;
 
-  friend class CacheableItem;
-  friend class LayerCacheableItem;
+  friend class RasterCacheItem;
+  friend class LayerRasterCacheItem;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RasterCache);
 };

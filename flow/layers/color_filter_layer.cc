@@ -3,14 +3,13 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/color_filter_layer.h"
-#include "flutter/flow/raster_cacheable_entry.h"
+#include "flutter/flow/raster_cache_item.h"
 
 namespace flutter {
 
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
-    : filter_(std::move(filter)) {
-  InitialCacheableLayerItem(this, kMinimumRendersBeforeCachingFilterLayer);
-}
+    : CacheableContainerLayer(kMinimumRendersBeforeCachingFilterLayer, true),
+      filter_(std::move(filter)) {}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -36,8 +35,8 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  Cacheable::AutoCache cache =
-      Cacheable::AutoCache::Create(this, context, matrix);
+  AutoCache cache =
+      AutoCache::Create(layer_raster_cache_item_.get(), context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
   // We always use a saveLayer (or a cached rendering), so we
@@ -50,11 +49,11 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
-  if (auto* layer_item = cacheable_item_->asLayerCacheableItem()) {
-    if (layer_item->IsCacheChildren()) {
+  if (context.raster_cache) {
+    if (layer_raster_cache_item_->IsCacheChildren()) {
       cache_paint.setColorFilter(filter_);
     }
-    if (layer_item->Draw(context, cache_paint.paint())) {
+    if (layer_raster_cache_item_->Draw(context, cache_paint.paint())) {
       return;
     }
   }

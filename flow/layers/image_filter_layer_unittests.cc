@@ -12,6 +12,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
 #include "gtest/gtest.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPath.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
@@ -277,98 +279,136 @@ TEST_F(ImageFilterLayerTest, Readback) {
 }
 
 TEST_F(ImageFilterLayerTest, CacheChild) {
-  //   auto layer_filter = SkImageFilters::MatrixTransform(
-  //       SkMatrix(),
-  //       SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear),
-  //       nullptr);
-  //   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
-  //   auto other_transform = SkMatrix::Scale(1.0, 2.0);
-  //   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
-  //   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  //   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
-  //   layer->Add(mock_layer);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  layer->Add(mock_layer);
 
-  //   SkMatrix cache_ctm = initial_transform;
-  //   SkCanvas cache_canvas;
-  //   cache_canvas.setMatrix(cache_ctm);
-  //   SkCanvas other_canvas;
-  //   other_canvas.setMatrix(other_transform);
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+  SkPaint paint = SkPaint();
 
-  //   use_mock_raster_cache();
-  //   const auto* cachebale_image_filter_item = layer->GetCacheableLayer();
+  use_mock_raster_cache();
+  const auto* cachebale_image_filter_item = layer->raster_cache_item();
 
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  //   // ImageFilterLayer default cache itself.
-  //   EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayer);
-  //   EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   other_canvas));
-  //   EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   cache_canvas));
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cachebale_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kCurrent);
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(paint_context(), &paint));
 
-  //   layer->Preroll(preroll_context(), initial_transform);
-  //   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  //   // The layer_cache_item's strategy is Children, mean we will must cache
-  //   his
-  //   // children
-  //   EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayerChildren);
-  //   EXPECT_TRUE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   cache_canvas));
-  //   EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   other_canvas));
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  // The layer_cache_item's strategy is Children, mean we will must cache
+  // his children
+  EXPECT_EQ(cachebale_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kChildren);
+  EXPECT_TRUE(raster_cache()->Draw(cachebale_image_filter_item->GetId().value(),
+                                   cache_canvas, &paint));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cachebale_image_filter_item->GetId().value(), other_canvas, &paint));
 }
 
 TEST_F(ImageFilterLayerTest, CacheChildren) {
-  //   auto layer_filter = SkImageFilters::MatrixTransform(
-  //       SkMatrix(),
-  //       SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear),
-  //       nullptr);
-  //   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
-  //   auto other_transform = SkMatrix::Scale(1.0, 2.0);
-  //   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
-  //   const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
-  //   auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
-  //   auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
-  //   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
-  //   layer->Add(mock_layer1);
-  //   layer->Add(mock_layer2);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  SkPaint paint = SkPaint();
+  const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  layer->Add(mock_layer1);
+  layer->Add(mock_layer2);
 
-  //   SkMatrix cache_ctm = initial_transform;
-  //   SkCanvas cache_canvas;
-  //   cache_canvas.setMatrix(cache_ctm);
-  //   SkCanvas other_canvas;
-  //   other_canvas.setMatrix(other_transform);
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
 
-  //   use_mock_raster_cache();
+  use_mock_raster_cache();
 
-  //   const auto* cachebale_image_filter_item = layer->GetCacheableLayer();
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  const auto* cachebale_image_filter_item = layer->raster_cache_item();
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
 
-  //   // ImageFilterLayer default cache itself.
-  //   EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayer);
-  //   EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   other_canvas));
-  //   EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   cache_canvas));
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cachebale_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kCurrent);
+  EXPECT_FALSE(cachebale_image_filter_item->Draw(paint_context(), &paint));
 
-  //   layer->Preroll(preroll_context(), initial_transform);
-  //   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
 
-  //   // The layer_cache_item's strategy is Children, mean we will must cache
-  //   his
-  //   // children
-  //   EXPECT_EQ(cachebale_image_filter_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayerChildren);
-  //   EXPECT_TRUE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   cache_canvas));
-  //   EXPECT_FALSE(cachebale_image_filter_item->Draw(raster_cache(),
-  //   other_canvas));
+  // The layer_cache_item's strategy is Children, mean we will must cache his
+  // children
+  EXPECT_EQ(cachebale_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kChildren);
+  EXPECT_TRUE(raster_cache()->Draw(cachebale_image_filter_item->GetId().value(),
+                                   cache_canvas, &paint));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cachebale_image_filter_item->GetId().value(), other_canvas, &paint));
+}
+
+TEST_F(ImageFilterLayerTest, CacheImageFilterLayerSelf) {
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+  SkPaint paint = SkPaint();
+
+  use_mock_raster_cache();
+  const auto* cachebale_image_filter_item = layer->raster_cache_item();
+  // frame 1.
+  layer->Preroll(preroll_context(), initial_transform);
+  layer->Paint(paint_context());
+  // frame 2.
+  layer->Preroll(preroll_context(), initial_transform);
+  layer->Paint(paint_context());
+  // frame 3.
+  layer->Preroll(preroll_context(), initial_transform);
+  layer->Paint(paint_context());
+
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  // frame1,2 cache the ImageFilter's children layer, frame3 cache the
+  // ImageFilterLayer
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)2);
+
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cachebale_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kCurrent);
+  EXPECT_EQ(cachebale_image_filter_item->GetId(),
+            RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer));
+  EXPECT_TRUE(raster_cache()->Draw(cachebale_image_filter_item->GetId().value(),
+                                   cache_canvas, &paint));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cachebale_image_filter_item->GetId().value(), other_canvas, &paint));
 }
 
 TEST_F(ImageFilterLayerTest, OpacityInheritance) {

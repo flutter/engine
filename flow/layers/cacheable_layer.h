@@ -6,99 +6,51 @@
 #define FLUTTER_FLOW_LAYERS_CACHEABLE_LAYER_H_
 
 #include <memory>
-#include "flutter/flow/embedded_views.h"
-#include "flutter/flow/layers/container_layer.h"
-#include "flutter/flow/raster_cache.h"
-#include "flutter/flow/raster_cacheable_entry.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPoint.h"
-#include "include/core/SkRect.h"
 
+#include "flutter/flow/display_list_raster_cache_item.h"
+#include "flutter/flow/layer_raster_cache_item.h"
+#include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/picture_raster_cache_item.h"
 namespace flutter {
 
-class Cacheable {
+class AutoCache {
  public:
-  Cacheable() = default;
+  static AutoCache Create(LayerRasterCacheItem* raster_cache_item,
+                          PrerollContext* context,
+                          const SkMatrix& matrix);
 
-  void InitialCacheableLayerItem(Layer*, int);
+  static AutoCache Create(DisplayListRasterCacheItem* raster_cache_item,
+                          PrerollContext* context,
+                          const SkMatrix& matrix);
 
-  void InitialCacheableDisplayListItem(DisplayList*,
-                                       const SkPoint& offset,
-                                       bool is_complex,
-                                       bool will_change);
+  static AutoCache Create(SkPictureRasterCacheItem* raster_cache_item,
+                          PrerollContext* context,
+                          const SkMatrix& matrix);
 
-  void InitialCacheableSkPictureItem(SkPicture*,
-                                     const SkPoint& offset,
-                                     bool is_complex,
-                                     bool will_change);
+  ~AutoCache();
 
-  class AutoCache {
-   public:
-    static AutoCache Create(Cacheable* cacheable,
-                            PrerollContext* context,
-                            const SkMatrix& matrix);
+ private:
+  AutoCache(RasterCacheItem* raster_cache_item,
+            PrerollContext* context,
+            const SkMatrix& matrix);
 
-    static AutoCache Create(DisplayListLayer* display_list,
-                            PrerollContext* context,
-                            const SkMatrix& matrix);
+  int current_index_;
+  RasterCacheItem* raster_cache_item_ = nullptr;
+  PrerollContext* context_ = nullptr;
+  const SkMatrix& matrix_;
+};
 
-    static AutoCache Create(PictureLayer* display_list,
-                            PrerollContext* context,
-                            const SkMatrix& matrix);
+class CacheableContainerLayer : public ContainerLayer {
+ public:
+  explicit CacheableContainerLayer(int layer_cached_threshold = 1,
+                                   bool can_cache_children = false);
 
-    ~AutoCache();
-
-   private:
-    AutoCache(Cacheable* cacheable,
-              PrerollContext* context,
-              const SkMatrix& matrix)
-        : cacheable_(cacheable), context_(context), matrix_(matrix) {
-      if (context_ && context_->raster_cache) {
-        current_index_ = context_->raster_cached_entries->size();
-      }
-    }
-
-    int current_index_;
-    Cacheable* cacheable_ = nullptr;
-    PrerollContext* context_ = nullptr;
-    const SkMatrix& matrix_;
-  };
-
-  virtual Layer* asLayer() = 0;
-
-  virtual ~Cacheable() = default;
-
-  LayerCacheableItem* GetCacheableLayer() {
-    return cacheable_item_.get()->asLayerCacheableItem();
-  }
-
-  const LayerCacheableItem* GetCacheableLayer() const {
-    return cacheable_item_.get()->asLayerCacheableItem();
-  }
-
-  DisplayListCacheableItem* GetCacheableDisplayListItem() {
-    return cacheable_item_.get()->asDisplayCacheableItem();
-  }
-
-  const DisplayListCacheableItem* GetCacheableDisplayListItem() const {
-    return cacheable_item_.get()->asDisplayCacheableItem();
-  }
-
-  SkPictureCacheableItem* GetCacheableSkPictureItem() {
-    return cacheable_item_.get()->asSkPictureCacheableItem();
-  }
-
-  const SkPictureCacheableItem* GetCacheableSkPictureItem() const {
-    return cacheable_item_.get()->asSkPictureCacheableItem();
+  const LayerRasterCacheItem* raster_cache_item() const {
+    return layer_raster_cache_item_.get();
   }
 
  protected:
-  const CacheableItem* GetCacheableItem() const {
-    return cacheable_item_.get();
-  }
-
-  std::unique_ptr<CacheableItem> cacheable_item_;
+  std::unique_ptr<LayerRasterCacheItem> layer_raster_cache_item_;
 };
 
 }  // namespace flutter

@@ -2443,7 +2443,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   //       // access threshold (default to 3) so a cache can be generated.
   //       SkCanvas dummy_canvas;
   //       bool picture_cache_generated;
-  //       // SkPictureCacheableItem cacheable_picture(picture.get(),
+  //       // SkPictureRasterCacheItem cacheable_picture(picture.get(),
   //       // picture.get()->cullRect(),
   //       //                                          SkMatrix::I(), true,
   //       false);
@@ -2457,7 +2457,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   //       ASSERT_TRUE(picture_cache_generated);
 
   //       // 2.2. Rasterize the picture layer.
-  //       LayerCacheableItem layer_item(picture_layer.get());
+  //       LayerRasterCacheItem layer_item(picture_layer.get());
   //       // layer_item.Prepare(&paint_context);
   //       rasterized.set_value(true);
   //     });

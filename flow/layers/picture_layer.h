@@ -9,13 +9,15 @@
 
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/picture_raster_cache_item.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "include/core/SkRect.h"
 
 namespace flutter {
 
-class PictureLayer : public Layer, public Cacheable {
+class PictureLayer : public Layer {
  public:
   PictureLayer(const SkPoint& offset,
                SkiaGPUObject<SkPicture> picture,
@@ -34,11 +36,16 @@ class PictureLayer : public Layer, public Cacheable {
 
   void Paint(PaintContext& context) const override;
 
-  Layer* asLayer() override { return this; }
+  const SkPictureRasterCacheItem* raster_cache_item() const {
+    return raster_cache_item_.get();
+  }
 
  private:
   SkPoint offset_;
   SkRect bounds_;
+
+  std::unique_ptr<SkPictureRasterCacheItem> raster_cache_item_;
+
   // Even though pictures themselves are not GPU resources, they may reference
   // images that have a reference to a GPU resource.
   SkiaGPUObject<SkPicture> picture_;

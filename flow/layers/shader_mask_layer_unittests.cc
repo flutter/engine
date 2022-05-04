@@ -6,10 +6,12 @@
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
+#include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/effects/SkPerlinNoiseShader.h"
 
@@ -285,57 +287,58 @@ TEST_F(ShaderMaskLayerTest, Readback) {
 }
 
 TEST_F(ShaderMaskLayerTest, LayerCached) {
-  //   auto layer_filter =
-  //       SkPerlinNoiseShader::MakeFractalNoise(1.0f, 1.0f, 1, 1.0f);
-  //   const SkRect layer_bounds = SkRect::MakeLTRB(2.0f, 4.0f, 20.5f, 20.5f);
-  //   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
-  //   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
-  //   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  //   auto layer = std::make_shared<ShaderMaskLayer>(layer_filter,
-  //   layer_bounds,
-  //                                                  SkBlendMode::kSrc);
-  //   layer->Add(mock_layer);
+  auto layer_filter =
+      SkPerlinNoiseShader::MakeFractalNoise(1.0f, 1.0f, 1, 1.0f);
+  SkPaint paint;
+  const SkRect layer_bounds = SkRect::MakeLTRB(2.0f, 4.0f, 20.5f, 20.5f);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<ShaderMaskLayer>(layer_filter, layer_bounds,
+                                                 SkBlendMode::kSrc);
+  layer->Add(mock_layer);
 
-  //   SkMatrix cache_ctm = initial_transform;
-  //   SkCanvas cache_canvas;
-  //   cache_canvas.setMatrix(cache_ctm);
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
 
-  //   use_mock_raster_cache();
-  //   const auto* cachebale_shader_masker_item = layer->GetCacheableLayer();
+  use_mock_raster_cache();
+  const auto* cachebale_shader_masker_item = layer->raster_cache_item();
 
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  //   EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayer);
-  //   EXPECT_FALSE(
-  //       cachebale_shader_masker_item->Draw(raster_cache(), cache_canvas));
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(cachebale_shader_masker_item->cache_state(),
+            RasterCacheItem::CacheState::kCurrent);
+  EXPECT_EQ(cachebale_shader_masker_item->GetId(),
+            RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cachebale_shader_masker_item->GetId().value(), cache_canvas, &paint));
 
-  //   layer->Preroll(preroll_context(), initial_transform);
-  //   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  // frame 1.
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  //   EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayer);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(cachebale_shader_masker_item->cache_state(),
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_shader_masker_item->GetId().has_value());
 
-  //   EXPECT_FALSE(
-  //       cachebale_shader_masker_item->Draw(raster_cache(), cache_canvas));
+  // frame 2.
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(cachebale_shader_masker_item->cache_state(),
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_shader_masker_item->GetId().has_value());
 
-  //   layer->Preroll(preroll_context(), initial_transform);
-  //   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  //   EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayer);
+  // frame 3.
+  layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_EQ(cachebale_shader_masker_item->cache_state(),
+            RasterCacheItem::CacheState::kCurrent);
 
-  //   EXPECT_FALSE(
-  //       cachebale_shader_masker_item->Draw(raster_cache(), cache_canvas));
-
-  //   layer->Preroll(preroll_context(), initial_transform);
-  //   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
-  //   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  //   EXPECT_EQ(cachebale_shader_masker_item->GetStrategy(),
-  //             RasterCacheLayerStrategy::kLayer);
-
-  //   EXPECT_TRUE(cachebale_shader_masker_item->Draw(raster_cache(),
-  //   cache_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(
+      cachebale_shader_masker_item->GetId().value(), cache_canvas, &paint));
 }
 
 TEST_F(ShaderMaskLayerTest, OpacityInheritance) {

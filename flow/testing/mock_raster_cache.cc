@@ -4,6 +4,9 @@
 
 #include "flutter/flow/testing/mock_raster_cache.h"
 
+#include "flutter/flow/picture_raster_cache_item.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
@@ -43,12 +46,29 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   path.addRect(100, 100, 100 + width, 100 + height);
   MockCacheableLayer layer = MockCacheableLayer(path);
   layer.Preroll(&preroll_context_, ctm);
-  // Prepare(layer.GetCacheableLayer(), &paint_context_);
+  MarkSeen(RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer),
+           ctm);
+  RasterCache::Context r_context = {
+      // clang-format off
+      .gr_context         = preroll_context_.gr_context,
+      .dst_color_space    = preroll_context_.dst_color_space,
+      .matrix             = ctm,
+      .logical_rect       = layer.paint_bounds(),
+      .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
+      // clang-format on
+  };
+  UpdateCacheEntry(
+      RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer),
+      r_context, [&](SkCanvas* canvas) {
+        SkIRect cache_rect = RasterCache::GetDeviceBounds(
+            r_context.logical_rect, r_context.matrix);
+        return std::make_unique<MockRasterCacheResult>(cache_rect);
+      });
 }
 
 void MockRasterCache::AddMockPicture(int width, int height) {
   FML_DCHECK(access_threshold() > 0);
-  // SkMatrix ctm = SkMatrix::I();
+  SkMatrix ctm = SkMatrix::I();
   SkPictureRecorder skp_recorder;
   SkRTreeFactory rtree_factory;
   SkPath path;
@@ -61,14 +81,28 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   PaintContextHolder holder = GetSamplePaintContextHolder(this);
   holder.paint_context.dst_color_space = color_space_;
 
-  // SkPictureCacheableItem picture_item(picture.get(), picture->cullRect(),
-  // ctm,
-  //                                     true, false);
-  // for (size_t i = 0; i < access_threshold(); i++) {
-  //   Prepare(&picture_item, &holder.paint_context);
-  //   Draw(&picture_item, mock_canvas_);
-  // }
-  // Prepare(&picture_item, &holder.paint_context);
+  SkPictureRasterCacheItem picture_item(picture.get(), SkPoint(), true, false);
+  for (size_t i = 0; i < access_threshold(); i++) {
+    MarkSeen(picture_item.GetId().value(), ctm);
+    Draw(picture_item.GetId().value(), mock_canvas_, nullptr);
+  }
+  MarkSeen(picture_item.GetId().value(), ctm);
+  RasterCache::Context r_context = {
+      // clang-format off
+      .gr_context         = preroll_context_.gr_context,
+      .dst_color_space    = preroll_context_.dst_color_space,
+      .matrix             = ctm,
+      .logical_rect       = picture->cullRect(),
+      .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
+      // clang-format on
+  };
+  UpdateCacheEntry(
+      RasterCacheKeyID(picture->uniqueID(), RasterCacheKeyType::kPicture),
+      r_context, [&](SkCanvas* canvas) {
+        SkIRect cache_rect = RasterCache::GetDeviceBounds(
+            r_context.logical_rect, r_context.matrix);
+        return std::make_unique<MockRasterCacheResult>(cache_rect);
+      });
 }
 
 PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
