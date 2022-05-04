@@ -51,7 +51,8 @@ public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate 
   public KeyboardManager(@NonNull ViewDelegate viewDelegate) {
     this.viewDelegate = viewDelegate;
     this.responders =
-        new KeyChannelResponder[] {
+        new Responder[] {
+          new KeyEmbedderResponder(viewDelegate.getBinaryMessenger()),
           new KeyChannelResponder(new KeyEventChannel(viewDelegate.getBinaryMessenger())),
         };
   }
