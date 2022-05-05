@@ -57,7 +57,6 @@ static NSString* const kCanRedo = @"canRedo";
 }
 
 - (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction API_AVAILABLE(ios(9.0)) {
-  [self undoManager].groupsByEvent = NO;
   [[self undoManager] beginUndoGrouping];
   [[self undoManager] registerUndoWithTarget:self
                                      handler:^(id target) {
@@ -72,11 +71,9 @@ static NSString* const kCanRedo = @"canRedo";
                                                               handleUndoWithDirection:direction];
                                      }];
   [[self undoManager] endUndoGrouping];
-  [self undoManager].groupsByEvent = YES;
 }
 
 - (void)registerRedo API_AVAILABLE(ios(9.0)) {
-  [self undoManager].groupsByEvent = NO;
   [[self undoManager] beginUndoGrouping];
   [[self undoManager]
       registerUndoWithTarget:self
@@ -85,11 +82,12 @@ static NSString* const kCanRedo = @"canRedo";
                        [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
                      }];
   [[self undoManager] endUndoGrouping];
-  [self undoManager].groupsByEvent = YES;
   [[self undoManager] undo];
 }
 
 - (void)setUndoState:(NSDictionary*)dictionary API_AVAILABLE(ios(9.0)) {
+  BOOL groupsByEvent = [self undoManager].groupsByEvent;
+  [self undoManager].groupsByEvent = NO;
   BOOL canUndo = [dictionary[kCanUndo] boolValue];
   BOOL canRedo = [dictionary[kCanRedo] boolValue];
 
@@ -106,13 +104,11 @@ static NSString* const kCanRedo = @"canRedo";
     // This is needed to notify the iPadOS keyboard that it needs to update the
     // state of the UIBarButtons. Otherwise, the state changes to NSUndoManager
     // will not show up until the next keystroke (or other trigger).
-    UITextInputAssistantItem* item =
-        [_viewController.engine.textInputPlugin.textInputView inputAssistantItem];
-
-    NSArray<UIBarButtonItemGroup*>* leadingBarButtonGroups = item.leadingBarButtonGroups;
-    item.leadingBarButtonGroups = @[];
-    item.leadingBarButtonGroups = leadingBarButtonGroups;
+    id<UITextInputDelegate> inputDelegate =
+        _viewController.engine.textInputPlugin.textInputView.inputDelegate;
+    [inputDelegate selectionDidChange:_viewController.engine.textInputPlugin.textInputView];
   }
+  [self undoManager].groupsByEvent = groupsByEvent;
 }
 
 @end
