@@ -22,13 +22,22 @@ G_DECLARE_FINAL_TYPE(FlSettingsPortal,
 
 /**
  * fl_settings_portal_new:
- * @values: (nullable): a #GVariantDict with values for testing.
  *
  * Creates a new settings portal instance.
  *
  * Returns: a new #FlSettingsPortal.
  */
-FlSettingsPortal* fl_settings_portal_new(GVariantDict* values);
+FlSettingsPortal* fl_settings_portal_new();
+
+/**
+ * fl_settings_portal_new_with_values:
+ * @values: (nullable): a #GVariantDict.
+ *
+ * Creates a new settings portal instance with initial values for testing.
+ *
+ * Returns: a new #FlSettingsPortal.
+ */
+FlSettingsPortal* fl_settings_portal_new_with_values(GVariantDict* values);
 
 /**
  * fl_settings_portal_start:

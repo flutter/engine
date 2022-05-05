@@ -221,11 +221,16 @@ static void fl_settings_portal_iface_init(FlSettingsInterface* iface) {
 
 static void fl_settings_portal_init(FlSettingsPortal* self) {}
 
-FlSettingsPortal* fl_settings_portal_new(GVariantDict* values) {
+FlSettingsPortal* fl_settings_portal_new() {
+  g_autoptr(GVariantDict) values = g_variant_dict_new(nullptr);
+  return fl_settings_portal_new_with_values(values);
+}
+
+FlSettingsPortal* fl_settings_portal_new_with_values(GVariantDict* values) {
+  g_return_val_if_fail(values != nullptr, nullptr);
   FlSettingsPortal* portal =
       FL_SETTINGS_PORTAL(g_object_new(fl_settings_portal_get_type(), nullptr));
-  portal->values =
-      values ? g_variant_dict_ref(values) : g_variant_dict_new(nullptr);
+  portal->values = g_variant_dict_ref(values);
   return portal;
 }
 

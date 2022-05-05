@@ -45,7 +45,7 @@ void fl_settings_emit_changed(FlSettings* self) {
 }
 
 FlSettings* fl_settings_new() {
-  g_autoptr(FlSettingsPortal) portal = fl_settings_portal_new(nullptr);
+  g_autoptr(FlSettingsPortal) portal = fl_settings_portal_new();
 
   g_autoptr(GError) error = nullptr;
   if (!fl_settings_portal_start(portal, &error)) {

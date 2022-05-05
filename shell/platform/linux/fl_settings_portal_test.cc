@@ -14,7 +14,8 @@
 TEST(FlSettingsPortalTest, ClockFormat) {
   g_autoptr(GVariantDict) settings = g_variant_dict_new(nullptr);
 
-  g_autoptr(FlSettings) portal = FL_SETTINGS(fl_settings_portal_new(settings));
+  g_autoptr(FlSettings) portal =
+      FL_SETTINGS(fl_settings_portal_new_with_values(settings));
   EXPECT_EQ(fl_settings_get_clock_format(portal), FL_CLOCK_FORMAT_24H);
 
   g_variant_dict_insert_value(settings,
@@ -36,7 +37,8 @@ TEST(FlSettingsPortalTest, ClockFormat) {
 TEST(FlSettingsPortalTest, ColorScheme) {
   g_autoptr(GVariantDict) settings = g_variant_dict_new(nullptr);
 
-  g_autoptr(FlSettings) portal = FL_SETTINGS(fl_settings_portal_new(settings));
+  g_autoptr(FlSettings) portal =
+      FL_SETTINGS(fl_settings_portal_new_with_values(settings));
   EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
 
   g_variant_dict_insert_value(settings,
@@ -64,7 +66,8 @@ TEST(FlSettingsPortalTest, ColorScheme) {
 TEST(FlSettingsPortalTest, GtkTheme) {
   g_autoptr(GVariantDict) settings = g_variant_dict_new(nullptr);
 
-  g_autoptr(FlSettings) portal = FL_SETTINGS(fl_settings_portal_new(settings));
+  g_autoptr(FlSettings) portal =
+      FL_SETTINGS(fl_settings_portal_new_with_values(settings));
   EXPECT_EQ(fl_settings_get_color_scheme(portal), FL_COLOR_SCHEME_LIGHT);
 
   g_variant_dict_insert_value(settings,
@@ -97,7 +100,8 @@ TEST(FlSettingsPortalTest, GtkTheme) {
 TEST(FlSettingsPortalTest, TextScalingFactor) {
   g_autoptr(GVariantDict) settings = g_variant_dict_new(nullptr);
 
-  g_autoptr(FlSettings) portal = FL_SETTINGS(fl_settings_portal_new(settings));
+  g_autoptr(FlSettings) portal =
+      FL_SETTINGS(fl_settings_portal_new_with_values(settings));
   EXPECT_EQ(fl_settings_get_text_scaling_factor(portal), 1.0);
 
   g_variant_dict_insert_value(
