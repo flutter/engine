@@ -22,6 +22,8 @@ extension DomWindowExtension on DomWindow {
   external DomDocument get document;
   external DomNavigator get navigator;
   external DomPerformance get performance;
+  Future<Object?> fetch(String url) =>
+    js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
 }
 
 @JS('window')
@@ -34,6 +36,7 @@ class DomNavigator {}
 extension DomNavigatorExtension on DomNavigator {
   external int? get maxTouchPoints;
   external String get vendor;
+  external String get language;
   external String? get platform;
   external String get userAgent;
 }
@@ -56,6 +59,7 @@ class DomHTMLDocument extends DomDocument {}
 
 extension DomHTMLDocumentExtension on DomHTMLDocument {
   external DomHTMLHeadElement? get head;
+  external DomHTMLBodyElement? get body;
 }
 
 @JS('document')
@@ -116,6 +120,7 @@ extension DomElementExtension on DomElement {
   external set id(String id);
   external DomCSSStyleDeclaration get style;
   external void append(DomNode node);
+  external String? getAttribute(String attributeName);
   external void prepend(DomNode node);
   external DomElement? querySelector(String selectors);
   external void setAttribute(String name, Object value);
@@ -165,6 +170,10 @@ extension DomHTMLMetaElementExtension on DomHTMLMetaElement {
 @JS()
 @staticInterop
 class DomHTMLHeadElement extends DomHTMLElement {}
+
+@JS()
+@staticInterop
+class DomHTMLBodyElement extends DomHTMLElement {}
 
 @JS()
 @staticInterop
@@ -223,6 +232,21 @@ extension DomCanvasElementExtension on DomCanvasElement {
       if (attributes != null) js_util.jsify(attributes)
     ]);
   }
+}
+
+@JS()
+@staticInterop
+class DomResponse {}
+
+extension DomResponseExtension on DomResponse {
+  Future<dynamic> arrayBuffer() =>
+    js_util.promiseToFuture(js_util.callMethod(this, 'arrayBuffer', <Object>[]));
+
+  Future<dynamic> json() =>
+    js_util.promiseToFuture(js_util.callMethod(this, 'json', <Object>[]));
+
+  Future<String> text() =>
+    js_util.promiseToFuture(js_util.callMethod(this, 'text', <Object>[]));
 }
 
 Object? domGetConstructor(String constructorName) =>
