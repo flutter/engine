@@ -97,6 +97,58 @@ static void set_value(FlSettingsPortal* portal,
   fl_settings_emit_changed(FL_SETTINGS(portal));
 }
 
+// Based on
+// https://gitlab.gnome.org/GNOME/Initiatives/-/wikis/Dark-Style-Preference#other
+static gboolean settings_portal_read(GDBusProxy* proxy,
+                                     const gchar* ns,
+                                     const gchar* key,
+                                     GVariant** out) {
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GVariant) value =
+      g_dbus_proxy_call_sync(proxy, "Read", g_variant_new("(ss)", ns, key),
+                             G_DBUS_CALL_FLAGS_NONE, G_MAXINT, nullptr, &error);
+
+  if (error) {
+    if (error->domain == G_DBUS_ERROR &&
+        error->code == G_DBUS_ERROR_SERVICE_UNKNOWN) {
+      g_debug("XDG desktop portal unavailable: %s", error->message);
+      return false;
+    }
+
+    if (error->domain == G_DBUS_ERROR &&
+        error->code == G_DBUS_ERROR_UNKNOWN_METHOD) {
+      g_debug("XDG desktop portal settings unavailable: %s", error->message);
+      return false;
+    }
+
+    g_critical("Failed to read XDG desktop portal settings: %s",
+               error->message);
+    return false;
+  }
+
+  g_autoptr(GVariant) child = nullptr;
+  g_variant_get(value, "(v)", &child);
+  g_variant_get(child, "v", out);
+
+  return true;
+}
+
+static void settings_portal_changed_cb(GDBusProxy* proxy,
+                                       const char* sender_name,
+                                       const char* signal_name,
+                                       GVariant* parameters,
+                                       gpointer user_data) {
+  FlSettingsPortal* portal = FL_SETTINGS_PORTAL(user_data);
+  if (g_strcmp0(signal_name, "SettingChanged")) {
+    return;
+  }
+
+  FlSetting setting;
+  g_autoptr(GVariant) value = nullptr;
+  g_variant_get(parameters, "(&s&sv)", &setting.ns, &setting.key, &value);
+  set_value(portal, &setting, value);
+}
+
 static FlClockFormat fl_settings_portal_get_clock_format(FlSettings* settings) {
   FlSettingsPortal* self = FL_SETTINGS_PORTAL(settings);
 
@@ -175,58 +227,6 @@ FlSettingsPortal* fl_settings_portal_new(GVariantDict* values) {
   portal->values =
       values ? g_variant_dict_ref(values) : g_variant_dict_new(nullptr);
   return portal;
-}
-
-// Based on
-// https://gitlab.gnome.org/GNOME/Initiatives/-/wikis/Dark-Style-Preference#other
-static gboolean settings_portal_read(GDBusProxy* proxy,
-                                     const gchar* ns,
-                                     const gchar* key,
-                                     GVariant** out) {
-  g_autoptr(GError) error = nullptr;
-  g_autoptr(GVariant) value =
-      g_dbus_proxy_call_sync(proxy, "Read", g_variant_new("(ss)", ns, key),
-                             G_DBUS_CALL_FLAGS_NONE, G_MAXINT, nullptr, &error);
-
-  if (error) {
-    if (error->domain == G_DBUS_ERROR &&
-        error->code == G_DBUS_ERROR_SERVICE_UNKNOWN) {
-      g_debug("XDG desktop portal unavailable: %s", error->message);
-      return false;
-    }
-
-    if (error->domain == G_DBUS_ERROR &&
-        error->code == G_DBUS_ERROR_UNKNOWN_METHOD) {
-      g_debug("XDG desktop portal settings unavailable: %s", error->message);
-      return false;
-    }
-
-    g_critical("Failed to read XDG desktop portal settings: %s",
-               error->message);
-    return false;
-  }
-
-  g_autoptr(GVariant) child = nullptr;
-  g_variant_get(value, "(v)", &child);
-  g_variant_get(child, "v", out);
-
-  return true;
-}
-
-static void settings_portal_changed_cb(GDBusProxy* proxy,
-                                       const char* sender_name,
-                                       const char* signal_name,
-                                       GVariant* parameters,
-                                       gpointer user_data) {
-  FlSettingsPortal* portal = FL_SETTINGS_PORTAL(user_data);
-  if (g_strcmp0(signal_name, "SettingChanged")) {
-    return;
-  }
-
-  FlSetting setting;
-  g_autoptr(GVariant) value = nullptr;
-  g_variant_get(parameters, "(&s&sv)", &setting.ns, &setting.key, &value);
-  set_value(portal, &setting, value);
 }
 
 gboolean fl_settings_portal_start(FlSettingsPortal* self) {
