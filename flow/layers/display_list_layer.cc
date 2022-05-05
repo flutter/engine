@@ -52,6 +52,10 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
 #endif
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+#endif
   context->AddLayerBounds(display_list()->bounds());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
@@ -111,6 +115,10 @@ void DisplayListLayer::Paint(PaintContext& context) const {
 
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
   context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.leaf_nodes_canvas->setMatrix(RasterCacheUtil::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
 
   if (context.raster_cache) {
     AutoCachePaint cache_paint(context);

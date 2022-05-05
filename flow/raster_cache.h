@@ -11,6 +11,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_complexity.h"
 #include "flutter/flow/raster_cache_key.h"
+#include "flutter/flow/raster_cache_util.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/trace_event.h"
@@ -106,27 +107,10 @@ class RasterCache {
       const RasterCache::Context& context,
       const std::function<void(SkCanvas*)>& draw_function);
 
-  static bool IsDisplayListWorthRasterizing(
-      DisplayList* display_list,
-      bool will_change,
-      bool is_complex,
-      DisplayListComplexityCalculator* complexity_calculator);
-
-  static bool CanRasterizeRect(const SkRect& cull_rect);
-
-  static bool IsPictureWorthRasterizing(SkPicture* picture,
-                                        bool will_change,
-                                        bool is_complex);
-
-  // The default max number of picture and display list raster caches to be
-  // generated per frame. Generating too many caches in one frame may cause jank
-  // on that frame. This limit allows us to throttle the cache and distribute
-  // the work across multiple frames.
-  static constexpr int kDefaultPictureAndDispLayListCacheLimitPerFrame = 3;
-
-  explicit RasterCache(size_t access_threshold = 3,
-                       size_t picture_and_display_list_cache_limit_per_frame =
-                           kDefaultPictureAndDispLayListCacheLimitPerFrame);
+  explicit RasterCache(
+      size_t access_threshold = 3,
+      size_t picture_and_display_list_cache_limit_per_frame =
+          RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame);
 
   virtual ~RasterCache() = default;
 
@@ -170,6 +154,8 @@ class RasterCache {
             const SkPaint* paint) const;
 
   bool Touch(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
+
+  bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 
   void PrepareNewFrame();
   void CleanupAfterFrame();
@@ -225,7 +211,7 @@ class RasterCache {
    * If the number is one, then it must be prepared and drawn on 1 frame
    * and it will then be cached on the next frame if it is prepared.
    */
-  size_t access_threshold() const { return access_threshold_; }
+  int access_threshold() const { return access_threshold_; }
 
   bool GenerateNewCacheInThisFrame() const {
     // Disabling caching when access_threshold is zero is historic behavior.
@@ -254,7 +240,7 @@ class RasterCache {
     size_t access_count = 0;
     // if this entry's parent has cached, we will remove this entry after the
     // survive_frame_count.
-    unsigned survive_frame_count = 3;
+    int survive_frame_count = 3;
     std::unique_ptr<RasterCacheResult> image;
   };
 

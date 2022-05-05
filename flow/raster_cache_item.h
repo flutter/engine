@@ -7,10 +7,19 @@
 
 #include <memory>
 #include <optional>
-#include "flutter/flow/raster_cache.h"
+
+#include "flutter/flow/raster_cache_key.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPicture.h"
+#include "include/core/SkPoint.h"
 
 namespace flutter {
 
+struct PrerollContext;
+struct PaintContext;
+class DisplayList;
+class RasterCache;
 class LayerRasterCacheItem;
 class DisplayListRasterCacheItem;
 class SkPictureRasterCacheItem;
@@ -25,11 +34,9 @@ class RasterCacheItem {
 
   explicit RasterCacheItem(RasterCacheKeyID key_id,
                            CacheState cache_state = CacheState::kCurrent,
-                           int item_cache_threshold = 1,
                            unsigned child_entries = 0)
       : key_id_(key_id),
         cache_state_(cache_state),
-        item_cache_threshold_(item_cache_threshold),
         child_entries_(child_entries) {}
 
   virtual void PrerollSetup(PrerollContext* context,
@@ -39,6 +46,10 @@ class RasterCacheItem {
                                const SkMatrix& matrix) = 0;
 
   virtual bool Draw(const PaintContext& context,
+                    const SkPaint* paint) const = 0;
+
+  virtual bool Draw(const PaintContext& context,
+                    SkCanvas* canvas,
                     const SkPaint* paint) const = 0;
 
   /**
@@ -86,13 +97,10 @@ class RasterCacheItem {
 
   virtual ~RasterCacheItem() = default;
 
-  static constexpr int kDefaultPictureAndDispLayListCacheLimitPerFrame = 3;
-
  protected:
   // The id for cache the layer self.
   RasterCacheKeyID key_id_;
   CacheState cache_state_ = CacheState::kCurrent;
-  int item_cache_threshold_ = 1;
   mutable int num_cache_attempts_ = 1;
   mutable SkMatrix matrix_;
   unsigned child_entries_;

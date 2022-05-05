@@ -92,7 +92,7 @@ TEST_F(PictureLayerTest, SimplePicture) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
            1, MockCanvas::SetMatrixData{SkM44(
-                  RasterCache::GetIntegralTransCTM(layer_offset_matrix))}},
+                  RasterCacheUtil::GetIntegralTransCTM(layer_offset_matrix))}},
 #endif
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);

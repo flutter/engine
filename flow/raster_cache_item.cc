@@ -6,6 +6,7 @@
 #include "flutter/flow/display_list_raster_cache_item.h"
 #include "flutter/flow/layer_raster_cache_item.h"
 #include "flutter/flow/picture_raster_cache_item.h"
+#include "flutter/flow/raster_cache.h"
 
 namespace flutter {
 

@@ -11,6 +11,7 @@
 #include "flutter/display_list/display_list_utils.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/raster_cache_item.h"
+#include "flutter/flow/raster_cache_util.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkMatrix.h"
@@ -35,6 +36,10 @@ class SkPictureRasterCacheItem : public RasterCacheItem {
                        const SkMatrix& matrix) override;
 
   bool Draw(const PaintContext& context, const SkPaint* paint) const override;
+
+  bool Draw(const PaintContext& context,
+            SkCanvas* canvas,
+            const SkPaint* paint) const override;
 
   bool TryToPrepareRasterCache(const PaintContext& context) const override;
 

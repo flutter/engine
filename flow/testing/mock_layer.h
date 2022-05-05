@@ -13,6 +13,7 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 
 namespace flutter {
 namespace testing {
@@ -64,39 +65,20 @@ class MockLayer : public Layer {
   FML_DISALLOW_COPY_AND_ASSIGN(MockLayer);
 };
 
-class MockLayerCacheableItem : public LayerRasterCacheItem {
- public:
-  using LayerRasterCacheItem::LayerRasterCacheItem;
-};
-
 class MockCacheableContainerLayer : public CacheableContainerLayer {
  public:
-  static void FirstTryToCacheChildren(int render_count,
-                                      LayerRasterCacheItem* entry) {
-    // if (render_count < 3) {
-    //   render_count++;
-    //   entry->set_need_cached(false);
-    //   return;
-    // }
+  // if render more than 3 frames, try to cache itself.
+  // if less 3 frames, cache his children
+  explicit MockCacheableContainerLayer() : CacheableContainerLayer(3, true) {}
 
-    return;
-  }
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+};
 
-  static void FirstNotTryToCache(int render_count, RasterCacheItem* entry) {
-    // if render count < 3 not cache anything
-    // if (render_count < 3) {
-    //   render_count++;
-    //   entry->set_need_cached(false);
-    //   return;
-    // }
-    // if render count >= 3 try cache itself
-    return;
-  }
-
-  explicit MockCacheableContainerLayer(
-      std::function<void(int, LayerRasterCacheItem*)> strategy =
-          FirstTryToCacheChildren)
-      : CacheableContainerLayer(), cache_strategy_(strategy) {}
+class MockCacheableContainerLayer2 : public CacheableContainerLayer {
+ public:
+  // if render more than 3 frames, try to cache itself.
+  // if less 3 frames, cache nothing
+  explicit MockCacheableContainerLayer2() : CacheableContainerLayer(3) {}
 
   Layer* asLayer() { return this; }
 
@@ -104,9 +86,12 @@ class MockCacheableContainerLayer : public CacheableContainerLayer {
 
  private:
   std::function<void(int, LayerRasterCacheItem*)> cache_strategy_;
-  std::unique_ptr<LayerRasterCacheItem> raster_cache_item_;
 };
 
+class MockLayerCacheableItem : public LayerRasterCacheItem {
+ public:
+  using LayerRasterCacheItem::LayerRasterCacheItem;
+};
 class MockCacheableLayer : public MockLayer {
  public:
   explicit MockCacheableLayer(SkPath path,
@@ -120,17 +105,18 @@ class MockCacheableLayer : public MockLayer {
                   fake_has_platform_view,
                   fake_reads_surface,
                   fake_opacity_compatible) {
-    raster_cache_item_ = std::make_unique<MockLayerCacheableItem>(this, 3);
+    raster_cache_item_ =
+        std::make_unique<MockLayerCacheableItem>(this, render_limit);
   }
 
-  Layer* asLayer() { return this; }
+  const LayerRasterCacheItem* raster_cache_item() const {
+    return raster_cache_item_.get();
+  }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
  private:
   std::unique_ptr<LayerRasterCacheItem> raster_cache_item_;
-  // int render_limit_ = 3;
-  // int render_count_ = 1;
 };
 
 }  // namespace testing

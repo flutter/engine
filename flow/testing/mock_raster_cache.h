@@ -5,10 +5,13 @@
 #ifndef FLOW_TESTING_MOCK_RASTER_CACHE_H_
 #define FLOW_TESTING_MOCK_RASTER_CACHE_H_
 
+#include <vector>
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/testing/mock_canvas.h"
+#include "include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -54,23 +57,9 @@ class MockRasterCache : public RasterCache {
   explicit MockRasterCache(
       size_t access_threshold = 3,
       size_t picture_and_display_list_cache_limit_per_frame =
-          kDefaultPictureAndDispLayListCacheLimitPerFrame)
+          RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame)
       : RasterCache(access_threshold,
                     picture_and_display_list_cache_limit_per_frame) {}
-
-  std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const;
-
-  std::unique_ptr<RasterCacheResult> RasterizeDisplayList(
-      DisplayList* display_list,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const;
 
   void AddMockLayer(int width, int height);
   void AddMockPicture(int width, int height);
@@ -134,6 +123,18 @@ PrerollContextHolder GetSamplePrerollContextHolder(
 
 PaintContextHolder GetSamplePaintContextHolder(
     RasterCache* raster_cache = nullptr);
+
+bool PictureRasterCacheItemTryToRasterCache(
+    SkPictureRasterCacheItem& picture_raster_cache_item,
+    PrerollContext& context,
+    PaintContext& paint_context,
+    const SkMatrix& matrix);
+
+bool DisplayListRasterCacheItemTryToRasterCache(
+    DisplayListRasterCacheItem& display_list_item,
+    PrerollContext& context,
+    PaintContext& paint_context,
+    const SkMatrix& matrix);
 
 }  // namespace testing
 }  // namespace flutter

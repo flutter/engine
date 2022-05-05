@@ -35,6 +35,10 @@ class DisplayListRasterCacheItem : public RasterCacheItem {
 
   bool Draw(const PaintContext& context, const SkPaint* paint) const override;
 
+  bool Draw(const PaintContext& context,
+            SkCanvas* canvas,
+            const SkPaint* paint) const override;
+
   bool TryToPrepareRasterCache(const PaintContext& context) const override;
 
   void ModifyMatrix(SkPoint offset) const {

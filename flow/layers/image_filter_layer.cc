@@ -8,7 +8,8 @@
 namespace flutter {
 
 ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
-    : CacheableContainerLayer(kMinimumRendersBeforeCachingFilterLayer),
+    : CacheableContainerLayer(
+          RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
       filter_(std::move(filter)),
       transformed_filter_(nullptr) {}
 

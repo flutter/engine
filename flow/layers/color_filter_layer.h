@@ -22,9 +22,6 @@ class ColorFilterLayer : public CacheableContainerLayer {
 
  private:
   sk_sp<SkColorFilter> filter_;
-
-  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
-
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };
 

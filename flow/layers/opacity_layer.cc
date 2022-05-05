@@ -29,7 +29,7 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context->SetTransform(
-      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+      RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
 #endif
   DiffChildren(context, prev);
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -75,7 +75,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (!children_can_accept_opacity()) {
     auto child_matrix = child_matrix_;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    child_matrix = RasterCache::GetIntegralTransCTM(child_matrix_);
+    child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix_);
 #endif
     layer_raster_cache_item_->CacheChildren(child_matrix);
   }
@@ -92,7 +92,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+  context.internal_nodes_canvas->setMatrix(RasterCacheUtil::GetIntegralTransCTM(
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 

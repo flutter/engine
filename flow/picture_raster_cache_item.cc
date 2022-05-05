@@ -12,18 +12,36 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_key.h"
 
+#include "flutter/flow/raster_cache_util.h"
+#include "include/core/SkCanvas.h"
+
 namespace flutter {
 
-static SkMatrix transform_matrix(const SkMatrix& matrix) {
-  auto transformation_matrix = matrix;
-// GetIntegralTransCTM effect for matrix which only contains scale,
-// translate, so it won't affect result of matrix decomposition and cache
-// key.
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  transformation_matrix =
-      RasterCache::GetIntegralTransCTM(transformation_matrix);
-#endif
-  return transformation_matrix;
+bool IsPictureWorthRasterizing(SkPicture* picture,
+                               bool will_change,
+                               bool is_complex) {
+  if (will_change) {
+    // If the picture is going to change in the future, there is no point in
+    // doing to extra work to rasterize.
+    return false;
+  }
+
+  if (picture == nullptr ||
+      !RasterCacheUtil::CanRasterizeRect(picture->cullRect())) {
+    // No point in deciding whether the picture is worth rasterizing if it
+    // cannot be rasterized at all.
+    return false;
+  }
+
+  if (is_complex) {
+    // The caller seems to have extra information about the picture and thinks
+    // the picture is always worth rasterizing.
+    return true;
+  }
+
+  // TODO(abarth): We should find a better heuristic here that lets us avoid
+  // wasting memory on trivial layers that are easy to re-rasterize every frame.
+  return picture->approximateOpCount(true) > 5;
 }
 
 SkPictureRasterCacheItem::SkPictureRasterCacheItem(SkPicture* sk_picture,
@@ -32,8 +50,7 @@ SkPictureRasterCacheItem::SkPictureRasterCacheItem(SkPicture* sk_picture,
                                                    bool will_change)
     : RasterCacheItem(RasterCacheKeyID(sk_picture->uniqueID(),
                                        RasterCacheKeyType::kPicture),
-                      CacheState::kCurrent,
-                      kDefaultPictureAndDispLayListCacheLimitPerFrame),
+                      CacheState::kCurrent),
       sk_picture_(sk_picture),
       offset_(offset),
       is_complex_(is_complex),
@@ -45,38 +62,21 @@ void SkPictureRasterCacheItem::PrerollSetup(PrerollContext* context,
   if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
     return;
   }
+  if (!IsPictureWorthRasterizing(sk_picture_, will_change_, is_complex_)) {
+    // We only deal with pictures that are worthy of rasterization.
+    return;
+  }
   transformation_matrix_ = matrix;
   transformation_matrix_.preTranslate(offset_.x(), offset_.y());
   if (!transformation_matrix_.invert(nullptr)) {
     // The matrix was singular. No point in going further.
     return;
   }
-
-  if (will_change_) {
-    // If the picture is going to change in the future, there is no point in
-    // doing to extra work to rasterize.
-    return;
-  }
-
-  if (sk_picture_ == nullptr ||
-      !RasterCache::CanRasterizeRect(sk_picture_->cullRect())) {
-    // No point in deciding whether the picture is worth rasterizing if it
-    // cannot be rasterized at all.
-    return;
-  }
-
-  if (is_complex_) {
-    // The caller seems to have extra information about the picture and thinks
-    // the picture is always worth rasterizing.
+  if (context->raster_cached_entries && context->raster_cache) {
+    context->raster_cached_entries->push_back(this);
     cache_state_ = CacheState::kCurrent;
-    return;
   }
 
-  // TODO(abarth): We should find a better heuristic here that lets us avoid
-  // wasting memory on trivial layers that are easy to re-rasterize every frame.
-  cache_state_ = sk_picture_->approximateOpCount(true) > 5
-                     ? CacheState::kCurrent
-                     : CacheState::kNone;
   return;
 }
 
@@ -96,38 +96,64 @@ void SkPictureRasterCacheItem::PrerollFinalize(PrerollContext* context,
   }
   if (context->raster_cache) {
     // Frame threshold has not yet been reached.
-    if (num_cache_attempts_ < item_cache_threshold_) {
-      // Creates an entry, if not present prior.
-      context->raster_cache->MarkSeen(key_id_,
-                                      transform_matrix(transformation_matrix_));
+    if (num_cache_attempts_ <= context->raster_cache->access_threshold()) {
+      if (!context->raster_cache->HasEntry(key_id_, transformation_matrix_)) {
+        context->raster_cache->MarkSeen(key_id_, transformation_matrix_);
+      }
+      cache_state_ = CacheState::kNone;
     } else {
       context->subtree_can_inherit_opacity = true;
+      cache_state_ = CacheState::kCurrent;
     }
-    cache_state_ = CacheState::kCurrent;
     return;
   }
 }
 
 bool SkPictureRasterCacheItem::Draw(const PaintContext& context,
                                     const SkPaint* paint) const {
-  if (cache_state_ == CacheState::kCurrent && context.raster_cache) {
+  return Draw(context, context.leaf_nodes_canvas, paint);
+}
+
+bool SkPictureRasterCacheItem::Draw(const PaintContext& context,
+                                    SkCanvas* canvas,
+                                    const SkPaint* paint) const {
+  if (!context.raster_cache || !canvas) {
+    return false;
+  }
+  if (context.raster_cache->HasEntry(key_id_, canvas->getTotalMatrix())) {
     num_cache_attempts_++;
-    return context.raster_cache->Draw(key_id_, *context.leaf_nodes_canvas,
-                                      paint);
+  }
+  if (cache_state_ == CacheState::kCurrent) {
+    return context.raster_cache->Draw(key_id_, *canvas, paint);
   }
   return false;
 }
 
+static const auto* flow_type = "RasterCacheFlow::Picture";
+
 bool SkPictureRasterCacheItem::TryToPrepareRasterCache(
     const PaintContext& context) const {
-  if (cache_state_ != kNone) {
+  if (!context.raster_cache) {
+    return false;
+  }
+  if (cache_state_ != kNone &&
+      num_cache_attempts_ >= context.raster_cache->access_threshold()) {
+    auto transformation_matrix = transformation_matrix_;
+// GetIntegralTransCTM effect for matrix which only contains scale,
+// translate, so it won't affect result of matrix decomposition and cache
+// key.
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    transformation_matrix =
+        RasterCacheUtil::GetIntegralTransCTM(transformation_matrix);
+#endif
     SkRect bounds = sk_picture_->cullRect().makeInset(offset_.fX, offset_.fY);
     RasterCache::Context r_context = {
         // clang-format off
       .gr_context         = context.gr_context,
       .dst_color_space    = context.dst_color_space,
-      .matrix             = transform_matrix(transformation_matrix_),
+      .matrix             = transformation_matrix,
       .logical_rect       = bounds,
+      .flow_type          = flow_type,
       .checkerboard       = context.checkerboard_offscreen_layers,
         // clang-format on
     };

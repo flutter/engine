@@ -11,6 +11,7 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
+#include "flutter/flow/raster_cache_util.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -47,74 +48,6 @@ RasterCache::RasterCache(size_t access_threshold,
       picture_and_display_list_cache_limit_per_frame_(
           picture_and_display_list_cache_limit_per_frame),
       checkerboard_images_(false) {}
-
-bool RasterCache::CanRasterizeRect(const SkRect& cull_rect) {
-  if (cull_rect.isEmpty()) {
-    // No point in ever rasterizing an empty display list.
-    return false;
-  }
-
-  if (!cull_rect.isFinite()) {
-    // Cannot attempt to rasterize into an infinitely large surface.
-    FML_LOG(INFO) << "Attempted to raster cache non-finite display list";
-    return false;
-  }
-
-  return true;
-}
-
-bool RasterCache::IsPictureWorthRasterizing(SkPicture* picture,
-                                            bool will_change,
-                                            bool is_complex) {
-  if (will_change) {
-    // If the picture is going to change in the future, there is no point in
-    // doing to extra work to rasterize.
-    return false;
-  }
-
-  if (picture == nullptr || !CanRasterizeRect(picture->cullRect())) {
-    // No point in deciding whether the picture is worth rasterizing if it
-    // cannot be rasterized at all.
-    return false;
-  }
-
-  if (is_complex) {
-    // The caller seems to have extra information about the picture and thinks
-    // the picture is always worth rasterizing.
-    return true;
-  }
-
-  // TODO(abarth): We should find a better heuristic here that lets us avoid
-  // wasting memory on trivial layers that are easy to re-rasterize every frame.
-  return picture->approximateOpCount(true) > 5;
-}
-
-bool RasterCache::IsDisplayListWorthRasterizing(
-    DisplayList* display_list,
-    bool will_change,
-    bool is_complex,
-    DisplayListComplexityCalculator* complexity_calculator) {
-  if (will_change) {
-    // If the display list is going to change in the future, there is no point
-    // in doing to extra work to rasterize.
-    return false;
-  }
-
-  if (display_list == nullptr || !CanRasterizeRect(display_list->bounds())) {
-    // No point in deciding whether the display list is worth rasterizing if it
-    // cannot be rasterized at all.
-    return false;
-  }
-
-  if (is_complex) {
-    // The caller seems to have extra information about the display list and
-    // thinks the display list is always worth rasterizing.
-    return true;
-  }
-
-  unsigned int complexity_score = complexity_calculator->Compute(display_list);
-  return complexity_calculator->ShouldBeCached(complexity_score);
-}
 
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
@@ -186,12 +119,14 @@ bool RasterCache::Touch(const RasterCacheKeyID& id,
   RasterCacheKey cache_key = RasterCacheKey(id, matrix);
   auto it = cache_.find(cache_key);
   if (it != cache_.end()) {
+    it->second.access_count++;
+    it->second.survive_frame_count--;
     // current entry has beyond can live frame, try to remove it
-    if (--it->second.survive_frame_count <= 0) {
+    if (it->second.survive_frame_count <= 0) {
       it->second.used_this_frame = false;
+      return true;
     }
     it->second.used_this_frame = true;
-    it->second.access_count++;
     return true;
   }
   return false;
@@ -203,6 +138,15 @@ bool RasterCache::MarkSeen(const RasterCacheKeyID& id,
   Entry& entry = cache_[key];
   entry.used_this_frame = true;
   return entry.image != nullptr;
+}
+
+bool RasterCache::HasEntry(const RasterCacheKeyID& id,
+                           const SkMatrix& matrix) const {
+  RasterCacheKey key = RasterCacheKey(id, matrix);
+  if (cache_.find(key) != cache_.cend()) {
+    return true;
+  }
+  return false;
 }
 
 bool RasterCache::Draw(const RasterCacheKeyID& id,

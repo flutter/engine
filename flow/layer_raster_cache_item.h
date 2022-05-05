@@ -27,6 +27,10 @@ class LayerRasterCacheItem : public RasterCacheItem {
 
   bool Draw(const PaintContext& context, const SkPaint* paint) const override;
 
+  bool Draw(const PaintContext& context,
+            SkCanvas* canvas,
+            const SkPaint* paint) const override;
+
   bool Rasterize(const PaintContext& paint_context, SkCanvas* canvas) const;
 
   bool TryToPrepareRasterCache(const PaintContext& context) const override;
@@ -39,16 +43,15 @@ class LayerRasterCacheItem : public RasterCacheItem {
   bool IsCacheChildren() const { return cache_state_ == CacheState::kChildren; }
 
  protected:
+  const SkRect& GetPaintBoundsFromLayer() const;
+
   Layer* layer_;
 
   // The id for cache the layer's children.
   std::optional<RasterCacheKeyID> layer_children_id_;
 
-  std::optional<RasterCacheKey> TryToMakeRasterCacheKeyForLayer(
-      RasterCacheLayerStrategy strategy,
-      const SkMatrix& ctm) const;
+  int layer_cached_threshold_ = 1;
 
-  const SkRect& GetPaintBoundsFromLayer() const;
   // if the layer's children can be directly cache, set the param is true;
   bool can_cache_children_ = false;
 };

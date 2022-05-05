@@ -12,16 +12,16 @@ LayerRasterCacheItem::LayerRasterCacheItem(Layer* layer,
                                            bool can_cache_children)
     : RasterCacheItem(
           RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer),
-          CacheState::kCurrent,
-          layer_cached_threshold),
+          CacheState::kCurrent),
       layer_(layer),
+      layer_cached_threshold_(layer_cached_threshold),
       can_cache_children_(can_cache_children) {}
 
 void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
                                         const SkMatrix& matrix) {
   if (context->raster_cache && context->raster_cached_entries) {
-    child_entries_ = context->raster_cached_entries->size();
     context->raster_cached_entries->push_back(this);
+    child_entries_ = context->raster_cached_entries->size();
     matrix_ = matrix;
   }
 }
@@ -40,7 +40,7 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
     return;
   }
   child_entries_ = context->raster_cached_entries->size() - child_entries_;
-  if (num_cache_attempts_ >= item_cache_threshold_) {
+  if (num_cache_attempts_ >= layer_cached_threshold_) {
     // the layer can be cached
     cache_state_ = CacheState::kCurrent;
     context->raster_cache->MarkSeen(key_id_, matrix);
@@ -71,7 +71,7 @@ std::optional<RasterCacheKeyID> LayerRasterCacheItem::GetId() const {
       return layer_children_id_;
     }
     default:
-      return std::nullopt;
+      return {};
   }
 }
 
@@ -115,6 +115,8 @@ bool LayerRasterCacheItem::Rasterize(const PaintContext& paint_context,
   return true;
 }
 
+static const auto* flow_type = "RasterCacheFlow::Layer";
+
 bool LayerRasterCacheItem::TryToPrepareRasterCache(
     const PaintContext& context) const {
   if (cache_state_ != kNone) {
@@ -124,13 +126,14 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(
       .dst_color_space    = context.dst_color_space,
       .matrix             = matrix_,
       .logical_rect       = layer_->paint_bounds(),
+      .flow_type          = flow_type,
       .checkerboard       = context.checkerboard_offscreen_layers,
         // clang-format on
     };
     if (!GetId().has_value()) {
       return false;
     }
-    context.raster_cache->UpdateCacheEntry(
+    return context.raster_cache->UpdateCacheEntry(
         GetId().value(), r_context,
         [=](SkCanvas* canvas) { Rasterize(context, canvas); });
   }
@@ -139,19 +142,24 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(
 
 bool LayerRasterCacheItem::Draw(const PaintContext& context,
                                 const SkPaint* paint) const {
-  if (!context.raster_cache) {
+  return Draw(context, context.leaf_nodes_canvas, paint);
+}
+
+bool LayerRasterCacheItem::Draw(const PaintContext& context,
+                                SkCanvas* canvas,
+                                const SkPaint* paint) const {
+  if (!context.raster_cache || !canvas) {
     return false;
   }
   switch (cache_state_) {
     case RasterCacheItem::kNone:
       return false;
     case RasterCacheItem::kCurrent: {
-      return context.raster_cache->Draw(key_id_, *context.leaf_nodes_canvas,
-                                        paint);
+      return context.raster_cache->Draw(key_id_, *canvas, paint);
     }
     case RasterCacheItem::kChildren: {
-      return context.raster_cache->Draw(layer_children_id_.value(),
-                                        *context.leaf_nodes_canvas, paint);
+      return context.raster_cache->Draw(layer_children_id_.value(), *canvas,
+                                        paint);
     }
   }
 }

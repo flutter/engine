@@ -196,197 +196,216 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
                                                child_path2, child_paint2}}}));
 }
 
-// TEST_F(ContainerLayerTest, RasterCacheTest) {
-//   // LTRB
-//   const SkPath child_path1 = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
-//   const SkPath child_path2 = SkPath().addRect(21.0f, 6.0f, 25.5f, 21.5f);
-//   const SkPath child_path3 = SkPath().addRect(26.0f, 6.0f, 30.5f, 21.5f);
-//   const SkPaint child_paint1(SkColors::kGray);
-//   const SkPaint child_paint2(SkColors::kGreen);
-//   auto cacheable_container_layer1 =
-//       std::make_shared<MockCacheableContainerLayer>();
-//   auto cacheable_container_layer2 =
-//       std::make_shared<MockCacheableContainerLayer>(
-//           MockCacheableContainerLayer::FirstNotTryToCache);
-//   auto cacheable_container_layer11 =
-//       std::make_shared<MockCacheableContainerLayer>();
+TEST_F(ContainerLayerTest, RasterCacheTest) {
+  // LTRB
+  const SkPath child_path1 = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path2 = SkPath().addRect(21.0f, 6.0f, 25.5f, 21.5f);
+  const SkPath child_path3 = SkPath().addRect(26.0f, 6.0f, 30.5f, 21.5f);
+  const SkPaint child_paint1(SkColors::kGray);
+  const SkPaint child_paint2(SkColors::kGreen);
+  auto cacheable_container_layer1 =
+      std::make_shared<MockCacheableContainerLayer>();
+  auto cacheable_container_layer2 =
+      std::make_shared<MockCacheableContainerLayer2>();
+  auto cacheable_container_layer11 =
+      std::make_shared<MockCacheableContainerLayer>();
 
-//   auto cacheable_layer111 =
-//       std::make_shared<MockCacheableLayer>(child_path3, SkPaint());
-//   // if the frame had rendered 2 frames, we will cache the cacheable_layer21
-//   // layer
-//   auto cacheable_layer21 =
-//       std::make_shared<MockCacheableLayer>(child_path1, SkPaint(), 2);
+  auto cacheable_layer111 =
+      std::make_shared<MockCacheableLayer>(child_path3, SkPaint());
+  // if the frame had rendered 2 frames, we will cache the cacheable_layer21
+  // layer
+  auto cacheable_layer21 =
+      std::make_shared<MockCacheableLayer>(child_path1, SkPaint(), 2);
 
-//   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
-//   auto mock_layer2 = std::make_shared<MockLayer>(SkPath(), child_paint2);
-//   auto mock_layer3 = std::make_shared<MockLayer>(child_path2, SkPaint());
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
+  auto mock_layer2 = std::make_shared<MockLayer>(SkPath(), child_paint2);
+  auto mock_layer3 = std::make_shared<MockLayer>(child_path2, SkPaint());
 
-//   cacheable_container_layer1->Add(mock_layer1);
-//   cacheable_container_layer1->Add(mock_layer3);
+  cacheable_container_layer1->Add(mock_layer1);
+  cacheable_container_layer1->Add(mock_layer3);
 
-//   cacheable_container_layer1->Add(cacheable_container_layer11);
-//   cacheable_container_layer11->Add(cacheable_layer111);
+  cacheable_container_layer1->Add(cacheable_container_layer11);
+  cacheable_container_layer11->Add(cacheable_layer111);
 
-//   cacheable_container_layer2->Add(cacheable_layer21);
-//   auto layer = std::make_shared<ContainerLayer>();
-//   layer->Add(cacheable_container_layer1);
-//   layer->Add(mock_layer2);
-//   layer->Add(cacheable_container_layer2);
-//   // frame1
-//   layer->Preroll(preroll_context(), SkMatrix::I());
+  cacheable_container_layer2->Add(cacheable_layer21);
+  auto layer = std::make_shared<ContainerLayer>();
+  layer->Add(cacheable_container_layer1);
+  layer->Add(mock_layer2);
+  layer->Add(cacheable_container_layer2);
+  // frame1
+  layer->Preroll(preroll_context(), SkMatrix::I());
 
-//   EXPECT_EQ(mock_layer1->paint_bounds(),
-//             SkRect::MakeLTRB(5.f, 6.f, 20.5f, 21.5f));
-//   EXPECT_EQ(mock_layer3->paint_bounds(),
-//             SkRect::MakeLTRB(21.0f, 6.0f, 25.5f, 21.5f));
-//   EXPECT_EQ(cacheable_layer111->paint_bounds(),
-//             SkRect::MakeLTRB(26.0f, 6.0f, 30.5f, 21.5f));
-//   EXPECT_EQ(cacheable_container_layer1->paint_bounds(),
-//             SkRect::MakeLTRB(5.f, 6.f, 30.5f, 21.5f));
+  EXPECT_EQ(mock_layer1->paint_bounds(),
+            SkRect::MakeLTRB(5.f, 6.f, 20.5f, 21.5f));
+  EXPECT_EQ(mock_layer3->paint_bounds(),
+            SkRect::MakeLTRB(21.0f, 6.0f, 25.5f, 21.5f));
+  EXPECT_EQ(cacheable_layer111->paint_bounds(),
+            SkRect::MakeLTRB(26.0f, 6.0f, 30.5f, 21.5f));
+  EXPECT_EQ(cacheable_container_layer1->paint_bounds(),
+            SkRect::MakeLTRB(5.f, 6.f, 30.5f, 21.5f));
 
-//   // the preroll context's raster cache is nullptr
-//   EXPECT_EQ(preroll_context()->raster_cached_entries.size(),
-//             static_cast<unsigned long>(0));
-//   {
-//     // frame2
-//     use_mock_raster_cache();
-//     preroll_context()->raster_cache->PrepareNewFrame();
-//     layer->Preroll(preroll_context(), SkMatrix::I());
-//     // Cache the cacheable entries
-//     LayerTree::TryToRasterCache(preroll_context());
+  // the preroll context's raster cache is nullptr
+  EXPECT_EQ(preroll_context()->raster_cached_entries->size(),
+            static_cast<unsigned long>(0));
+  {
+    // frame2
+    use_mock_raster_cache();
+    preroll_context()->raster_cache->PrepareNewFrame();
+    layer->Preroll(preroll_context(), SkMatrix::I());
+    // Cache the cacheable entries
+    LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
+                                &paint_context());
 
-//     EXPECT_EQ(preroll_context()->raster_cached_entries.size(),
-//               static_cast<unsigned long>(5));
+    EXPECT_EQ(preroll_context()->raster_cached_entries->size(),
+              static_cast<unsigned long>(5));
 
-//     // cacheable_container_layer1 will cache his children
-//     EXPECT_TRUE(raster_cache()->HasCache(
-//         cacheable_container_layer1->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
-//     EXPECT_FALSE(raster_cache()->HasCache(
-//         cacheable_container_layer11->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
-//     // Cause the cacheable_container_layer11 is a child of
-//     // cacheable_container_layer1, and the cacheable_container_layer1 can be
-//     // cached so we only need to touch the cacheable_container_layer11
-//     EXPECT_TRUE(raster_cache()->IsTouchedCache(
-//         cacheable_container_layer11->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
+    // cacheable_container_layer1 will cache his children
+    EXPECT_EQ(cacheable_container_layer1->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kChildren);
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_container_layer1->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
 
-//     EXPECT_FALSE(raster_cache()->HasCache(cacheable_layer111->asLayer(),
-//                                           SkMatrix::I(),
-//                                           RasterCacheLayerStrategy::kLayer));
+    EXPECT_EQ(cacheable_container_layer11->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kChildren);
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_container_layer11->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    EXPECT_FALSE(raster_cache()->MarkSeen(
+        cacheable_container_layer11->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
 
-//     EXPECT_FALSE(raster_cache()->HasCache(cacheable_container_layer2->asLayer(),
-//                                           SkMatrix::I(),
-//                                           RasterCacheLayerStrategy::kLayer));
-//     EXPECT_FALSE(raster_cache()->HasCache(
-//         cacheable_container_layer2->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
-//     // render count < 2 don't cache it
-//     EXPECT_FALSE(raster_cache()->HasCache(cacheable_layer21->asLayer(),
-//                                           SkMatrix::I(),
-//                                           RasterCacheLayerStrategy::kLayer));
-//     preroll_context()->raster_cache->CleanupAfterFrame();
-//   }
+    // The cacheable_layer111 should be cached when rended 3 frames
+    EXPECT_EQ(cacheable_layer111->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kNone);
 
-//   {
-//     // frame2
-//     // new frame the layer tree will create new PrerollContext, so in here we
-//     // clear the cached_entries
-//     preroll_context()->raster_cached_entries.clear();
-//     preroll_context()->raster_cache->PrepareNewFrame();
-//     layer->Preroll(preroll_context(), SkMatrix::I());
+    // render count < 2 don't cache it
+    EXPECT_EQ(cacheable_container_layer2->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kNone);
+    preroll_context()->raster_cache->CleanupAfterFrame();
+  }
 
-//     // Cache the cacheable entries
-//     LayerTree::TryToRasterCache(preroll_context());
-//     EXPECT_EQ(preroll_context()->raster_cached_entries.size(),
-//               static_cast<unsigned long>(5));
-//     EXPECT_TRUE(raster_cache()->HasCache(
-//         cacheable_container_layer1->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
-//     EXPECT_FALSE(raster_cache()->HasCache(
-//         cacheable_container_layer11->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
-//     EXPECT_FALSE(raster_cache()->HasCache(cacheable_layer111->asLayer(),
-//                                           SkMatrix::I(),
-//                                           RasterCacheLayerStrategy::kLayer));
+  {
+    // frame2
+    // new frame the layer tree will create new PrerollContext, so in here we
+    // clear the cached_entries
+    preroll_context()->raster_cached_entries->clear();
+    preroll_context()->raster_cache->PrepareNewFrame();
+    layer->Preroll(preroll_context(), SkMatrix::I());
 
-//     EXPECT_FALSE(raster_cache()->HasCache(cacheable_container_layer2->asLayer(),
-//                                           SkMatrix::I(),
-//                                           RasterCacheLayerStrategy::kLayer));
-//     EXPECT_FALSE(raster_cache()->HasCache(
-//         cacheable_container_layer2->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
-//     // render count == 2 cache it
-//     EXPECT_TRUE(raster_cache()->HasCache(cacheable_layer21->asLayer(),
-//                                          SkMatrix::I(),
-//                                          RasterCacheLayerStrategy::kLayer));
-//     preroll_context()->raster_cache->CleanupAfterFrame();
-//   }
+    // Cache the cacheable entries
+    LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
+                                &paint_context());
+    EXPECT_EQ(preroll_context()->raster_cached_entries->size(),
+              static_cast<unsigned long>(5));
+    EXPECT_EQ(cacheable_container_layer1->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kChildren);
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_container_layer1->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
 
-//   {
-//     // frame3
-//     // new frame the layer tree will create new PrerollContext, so in here we
-//     // clear the cached_entries
-//     preroll_context()->raster_cache->PrepareNewFrame();
-//     preroll_context()->raster_cached_entries.clear();
-//     layer->Preroll(preroll_context(), SkMatrix::I());
+    EXPECT_EQ(cacheable_container_layer11->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kChildren);
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_container_layer11->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    EXPECT_FALSE(raster_cache()->MarkSeen(
+        cacheable_container_layer11->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
 
-//     // Cache the cacheable entries
-//     LayerTree::TryToRasterCache(preroll_context());
-//     EXPECT_EQ(preroll_context()->raster_cached_entries.size(),
-//               static_cast<unsigned long>(5));
-//     EXPECT_TRUE(raster_cache()->HasCache(cacheable_container_layer1->asLayer(),
-//                                          SkMatrix::I(),
-//                                          RasterCacheLayerStrategy::kLayer));
-//     EXPECT_FALSE(raster_cache()->HasCache(
-//         cacheable_container_layer11->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayer));
-//     EXPECT_FALSE(raster_cache()->HasCache(cacheable_layer111->asLayer(),
-//                                           SkMatrix::I(),
-//                                           RasterCacheLayerStrategy::kLayer));
+    EXPECT_EQ(cacheable_container_layer2->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kNone);
 
-//     // The third frame, we will cache the cacheable_container_layer2
-//     EXPECT_TRUE(raster_cache()->HasCache(cacheable_container_layer2->asLayer(),
-//                                          SkMatrix::I(),
-//                                          RasterCacheLayerStrategy::kLayer));
-//     EXPECT_FALSE(raster_cache()->HasCache(
-//         cacheable_container_layer2->asLayer(), SkMatrix::I(),
-//         RasterCacheLayerStrategy::kLayerChildren));
-//     EXPECT_TRUE(raster_cache()->HasCache(cacheable_layer21->asLayer(),
-//                                          SkMatrix::I(),
-//                                          RasterCacheLayerStrategy::kLayer));
-//     preroll_context()->raster_cache->CleanupAfterFrame();
-//   }
+    // render count == 2 cache it
+    EXPECT_EQ(cacheable_layer21->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kCurrent);
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_layer21->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    EXPECT_TRUE(raster_cache()->MarkSeen(
+        cacheable_layer21->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    ;
+    preroll_context()->raster_cache->CleanupAfterFrame();
+  }
 
-//   {
-//     preroll_context()->raster_cache->PrepareNewFrame();
-//     // frame4
-//     preroll_context()->raster_cached_entries.clear();
-//     layer->Preroll(preroll_context(), SkMatrix::I());
-//     preroll_context()->raster_cache->CleanupAfterFrame();
+  {
+    // frame3
+    // new frame the layer tree will create new PrerollContext, so in here we
+    // clear the cached_entries
+    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cached_entries->clear();
+    layer->Preroll(preroll_context(), SkMatrix::I());
 
-//     // frame5
-//     preroll_context()->raster_cache->PrepareNewFrame();
-//     preroll_context()->raster_cached_entries.clear();
-//     layer->Preroll(preroll_context(), SkMatrix::I());
-//     preroll_context()->raster_cache->CleanupAfterFrame();
+    // Cache the cacheable entries
+    LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
+                                &paint_context());
+    EXPECT_EQ(preroll_context()->raster_cached_entries->size(),
+              static_cast<unsigned long>(5));
+    EXPECT_EQ(cacheable_container_layer1->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kCurrent);
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_container_layer1->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_container_layer11->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    EXPECT_FALSE(raster_cache()->MarkSeen(
+        cacheable_container_layer11->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    // The 3td frame, we will cache the cacheable_layer111, but his ancestor has
+    // been cached, so cacheable_layer111 MarkSeen is false
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_layer111->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    EXPECT_FALSE(raster_cache()->MarkSeen(
+        cacheable_layer111->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
 
-//     // frame6
-//     preroll_context()->raster_cache->PrepareNewFrame();
-//     preroll_context()->raster_cached_entries.clear();
-//     layer->Preroll(preroll_context(), SkMatrix::I());
-//     preroll_context()->raster_cache->CleanupAfterFrame();
+    // The third frame, we will cache the cacheable_container_layer2
+    EXPECT_EQ(cacheable_container_layer2->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kCurrent);
 
-//     // Cause of the cacheable_layer21's parent cacheable_layer2 has cached
-//     and
-//     // has after third frames, we will remove the cacheable_layer21
-//     EXPECT_FALSE(raster_cache()->HasCache(cacheable_layer21->asLayer(),
-//                                           SkMatrix::I(),
-//                                           RasterCacheLayerStrategy::kLayer));
-//   }
-// }
+    EXPECT_TRUE(raster_cache()->HasEntry(
+        cacheable_layer21->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+    preroll_context()->raster_cache->CleanupAfterFrame();
+  }
+
+  {
+    preroll_context()->raster_cache->PrepareNewFrame();
+    // frame4
+    preroll_context()->raster_cached_entries->clear();
+    layer->Preroll(preroll_context(), SkMatrix::I());
+    LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
+                                &paint_context());
+    preroll_context()->raster_cache->CleanupAfterFrame();
+
+    // frame5
+    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cached_entries->clear();
+    layer->Preroll(preroll_context(), SkMatrix::I());
+    LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
+                                &paint_context());
+    preroll_context()->raster_cache->CleanupAfterFrame();
+
+    // frame6
+    preroll_context()->raster_cache->PrepareNewFrame();
+    preroll_context()->raster_cached_entries->clear();
+    layer->Preroll(preroll_context(), SkMatrix::I());
+    LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
+                                &paint_context());
+    preroll_context()->raster_cache->CleanupAfterFrame();
+
+    // Cause of the cacheable_layer21's parent cacheable_layer2 has cached
+    // and has after third frames, we will remove the cacheable_layer21
+    EXPECT_EQ(cacheable_layer21->raster_cache_item()->cache_state(),
+              RasterCacheItem::CacheState::kCurrent);
+    EXPECT_FALSE(raster_cache()->MarkSeen(
+        cacheable_layer21->raster_cache_item()->GetId().value(),
+        SkMatrix::I()));
+  }
+}
 
 TEST_F(ContainerLayerTest, OpacityInheritance) {
   auto path1 = SkPath().addRect({10, 10, 30, 30});
