@@ -34,7 +34,9 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
   // would be the sweep gradients which might be a full circle, but might
   // have their starting angle in a custom direction.
   SkColor colors[kGradientStaticRecaptureCount];
+  std::unique_ptr<SkColor[]> extra_colors;
   SkScalar stops[kGradientStaticRecaptureCount];
+  std::unique_ptr<SkScalar[]> extra_stops;
   SkShader::GradientInfo info = {};
   info.fColorCount = kGradientStaticRecaptureCount;
   info.fColors = colors;
@@ -43,8 +45,10 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
   if (type != SkShader::kNone_GradientType &&
       info.fColorCount > kGradientStaticRecaptureCount) {
     int count = info.fColorCount;
-    info.fColors = new SkColor[count];
-    info.fColorOffsets = new SkScalar[count];
+    extra_colors.reset(new SkColor[count]);
+    info.fColors = extra_colors.get();
+    extra_stops.reset(new SkScalar[count]);
+    info.fColorOffsets = extra_stops.get();
     sk_shader->asAGradient(&info);
     FML_DCHECK(count == info.fColorCount);
   }
@@ -75,12 +79,6 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
       source = MakeSweep(info.fPoint[0], 0, 360, info.fColorCount, dl_colors,
                          info.fColorOffsets, mode);
       break;
-  }
-  if (info.fColors != colors) {
-    delete info.fColors;
-  }
-  if (info.fColorOffsets != stops) {
-    delete info.fColorOffsets;
   }
   return source;
 }
