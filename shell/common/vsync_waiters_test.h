@@ -51,7 +51,7 @@ class ConstantFiringVsyncWaiter : public VsyncWaiter {
       fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromSeconds(100));
 
   explicit ConstantFiringVsyncWaiter(TaskRunners task_runners)
-      : VsyncWaiter(std::move(task_runners), /**use_callback_lock=*/false) {}
+      : VsyncWaiter(std::move(task_runners), /**use_callback_lock=*/true) {}
 
  protected:
   void AwaitVSync() override;
