@@ -2034,7 +2034,7 @@ class Locale {
         scriptCode,
         countryCode == '' ? null : countryCode,
       );
-  // Memoize this value since languageCode and countryCode require lookups.
+  // Memoize hashCode since languageCode and countryCode require lookups.
   static final Expando<int> _hashCode = Expando<int>();
 
   static Locale? _cachedLocale;
