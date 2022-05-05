@@ -32,7 +32,8 @@ class ShellTestVsyncWaiter : public VsyncWaiter {
  public:
   ShellTestVsyncWaiter(TaskRunners task_runners,
                        std::shared_ptr<ShellTestVsyncClock> clock)
-      : VsyncWaiter(std::move(task_runners)), clock_(clock) {}
+      : VsyncWaiter(std::move(task_runners), /**use_callback_lock=*/true),
+        clock_(clock) {}
 
  protected:
   void AwaitVSync() override;
@@ -50,7 +51,7 @@ class ConstantFiringVsyncWaiter : public VsyncWaiter {
       fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromSeconds(100));
 
   explicit ConstantFiringVsyncWaiter(TaskRunners task_runners)
-      : VsyncWaiter(std::move(task_runners)) {}
+      : VsyncWaiter(std::move(task_runners), /**use_callback_lock=*/false) {}
 
  protected:
   void AwaitVSync() override;

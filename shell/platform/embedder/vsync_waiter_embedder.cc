@@ -8,7 +8,8 @@ namespace flutter {
 
 VsyncWaiterEmbedder::VsyncWaiterEmbedder(const VsyncCallback& vsync_callback,
                                          flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)), vsync_callback_(vsync_callback) {
+    : VsyncWaiter(std::move(task_runners), /**use_callback_lock=*/false),
+      vsync_callback_(vsync_callback) {
   FML_DCHECK(vsync_callback_);
 }
 

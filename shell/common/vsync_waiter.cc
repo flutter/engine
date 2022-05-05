@@ -34,13 +34,16 @@ static constexpr const char* kVsyncTraceName = "vsync callback";
 static constexpr const char* kVsyncTraceName = "VsyncProcessCallback";
 #endif
 
-VsyncWaiter::VsyncWaiter(TaskRunners task_runners)
-    : task_runners_(std::move(task_runners)) {}
+VsyncWaiter::VsyncWaiter(TaskRunners task_runners, bool use_callback_lock)
+    : task_runners_(std::move(task_runners)),
+      use_callback_lock_(use_callback_lock) {}
 
 VsyncWaiter::~VsyncWaiter() = default;
 
 // Public method invoked by the animator.
 void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
   if (!callback) {
     return;
   }
@@ -48,7 +51,9 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
   TRACE_EVENT0("flutter", "AsyncWaitForVsync");
 
   {
-    std::scoped_lock lock(callback_mutex_);
+    std::unique_lock<std::mutex> lock(callback_mutex_, std::defer_lock);
+    if (use_callback_lock_)
+      lock.lock();
     if (callback_) {
       // The animator may request a frame more than once within a frame
       // interval. Multiple calls to request frame must result in a single
@@ -77,7 +82,9 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
   TRACE_EVENT0("flutter", "ScheduleSecondaryCallback");
 
   {
-    std::scoped_lock lock(callback_mutex_);
+    std::unique_lock<std::mutex> lock(callback_mutex_, std::defer_lock);
+    if (use_callback_lock_)
+      lock.lock();
     auto [_, inserted] = secondary_callbacks_.emplace(id, std::move(callback));
     if (!inserted) {
       // Multiple schedules must result in a single callback per frame interval.
@@ -98,12 +105,16 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
                                fml::TimePoint frame_target_time,
                                bool pause_secondary_tasks) {
   FML_DCHECK(fml::TimePoint::Now() >= frame_start_time);
+  FML_DCHECK(use_callback_lock_ ||
+             task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   Callback callback;
   std::vector<fml::closure> secondary_callbacks;
 
   {
-    std::scoped_lock lock(callback_mutex_);
+    std::unique_lock<std::mutex> lock(callback_mutex_, std::defer_lock);
+    if (use_callback_lock_)
+      lock.lock();
     callback = std::move(callback_);
     for (auto& pair : secondary_callbacks_) {
       secondary_callbacks.push_back(std::move(pair.second));

@@ -25,6 +25,9 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
   ~VsyncWaiterAndroid() override;
 
  private:
+  explicit VsyncWaiterAndroid(flutter::TaskRunners task_runners,
+                              bool use_ndk_choreographer);
+
   // |VsyncWaiter|
   void AwaitVSync() override;
 

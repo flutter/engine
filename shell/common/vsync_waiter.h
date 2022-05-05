@@ -40,7 +40,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
   const TaskRunners task_runners_;
 
-  explicit VsyncWaiter(TaskRunners task_runners);
+  explicit VsyncWaiter(TaskRunners task_runners, bool use_callback_lock);
 
   // There are two distinct situations where VsyncWaiter wishes to awaken at
   // the next vsync. Although the functionality can be the same, the intent is
@@ -75,6 +75,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   std::mutex callback_mutex_;
   Callback callback_;
   std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
+  const bool use_callback_lock_;
 
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);

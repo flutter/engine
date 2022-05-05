@@ -22,9 +22,14 @@ static jmethodID g_async_wait_for_vsync_method_ = nullptr;
 static std::atomic_uint g_refresh_rate_ = 60;
 
 VsyncWaiterAndroid::VsyncWaiterAndroid(flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)),
-      use_ndk_choreographer_(
-          AndroidChoreographer::ShouldUseNDKChoreographer()) {}
+    : VsyncWaiterAndroid(std::move(task_runners),
+                         AndroidChoreographer::ShouldUseNDKChoreographer()) {}
+
+VsyncWaiterAndroid::VsyncWaiterAndroid(flutter::TaskRunners task_runners,
+                                       bool use_ndk_choreographer)
+    : VsyncWaiter(std::move(task_runners),
+                  /**use_callback_lock=*/!use_ndk_choreographer),
+      use_ndk_choreographer_(use_ndk_choreographer) {}
 
 VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
