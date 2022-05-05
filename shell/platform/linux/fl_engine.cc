@@ -844,3 +844,14 @@ G_MODULE_EXPORT FlTextureRegistrar* fl_engine_get_texture_registrar(
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
   return self->texture_registrar;
 }
+
+void fl_engine_update_accessibility_features(FlEngine* self, int32_t flags) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  self->embedder_api.UpdateAccessibilityFeatures(
+      self->engine, static_cast<FlutterAccessibilityFeature>(flags));
+}
