@@ -68,33 +68,33 @@ G_DEFINE_TYPE_WITH_CODE(FlSettingsPortal,
                         G_IMPLEMENT_INTERFACE(fl_settings_get_type(),
                                               fl_settings_portal_iface_init))
 
-static gchar* fl_settings_portal_format_key(const FlSetting* setting) {
+static gchar* format_key(const FlSetting* setting) {
   return g_strconcat(setting->ns, "::", setting->key, nullptr);
 }
 
-static gboolean fl_settings_portal_get_value(FlSettingsPortal* self,
-                                             const FlSetting* setting,
-                                             GVariant** value) {
-  g_autofree const gchar* key = fl_settings_portal_format_key(setting);
-  *value = g_variant_dict_lookup_value(self->values, key, setting->type);
+static gboolean get_value(FlSettingsPortal* portal,
+                          const FlSetting* setting,
+                          GVariant** value) {
+  g_autofree const gchar* key = format_key(setting);
+  *value = g_variant_dict_lookup_value(portal->values, key, setting->type);
   return *value != nullptr;
 }
 
-static void fl_settings_portal_set_value(FlSettingsPortal* self,
-                                         const FlSetting* setting,
-                                         GVariant* value) {
-  g_autofree const gchar* key = fl_settings_portal_format_key(setting);
+static void set_value(FlSettingsPortal* portal,
+                      const FlSetting* setting,
+                      GVariant* value) {
+  g_autofree const gchar* key = format_key(setting);
 
   // ignore redundant changes from multiple XDG desktop portal backends
   g_autoptr(GVariant) old_value =
-      g_variant_dict_lookup_value(self->values, key, nullptr);
+      g_variant_dict_lookup_value(portal->values, key, nullptr);
   if (old_value != nullptr && value != nullptr &&
       g_variant_equal(old_value, value)) {
     return;
   }
 
-  g_variant_dict_insert_value(self->values, key, value);
-  fl_settings_emit_changed(FL_SETTINGS(self));
+  g_variant_dict_insert_value(portal->values, key, value);
+  fl_settings_emit_changed(FL_SETTINGS(portal));
 }
 
 static FlClockFormat fl_settings_portal_get_clock_format(FlSettings* settings) {
@@ -103,7 +103,7 @@ static FlClockFormat fl_settings_portal_get_clock_format(FlSettings* settings) {
   FlClockFormat clock_format = FL_CLOCK_FORMAT_24H;
 
   g_autoptr(GVariant) value = nullptr;
-  if (fl_settings_portal_get_value(self, &kClockFormat, &value)) {
+  if (get_value(self, &kClockFormat, &value)) {
     const gchar* clock_format_str = g_variant_get_string(value, nullptr);
     if (g_strcmp0(clock_format_str, kClockFormat12Hour) == 0) {
       clock_format = FL_CLOCK_FORMAT_12H;
@@ -119,11 +119,11 @@ static FlColorScheme fl_settings_portal_get_color_scheme(FlSettings* settings) {
   FlColorScheme color_scheme = FL_COLOR_SCHEME_LIGHT;
 
   g_autoptr(GVariant) value = nullptr;
-  if (fl_settings_portal_get_value(self, &kColorScheme, &value)) {
+  if (get_value(self, &kColorScheme, &value)) {
     if (g_variant_get_uint32(value) == PREFER_DARK) {
       color_scheme = FL_COLOR_SCHEME_DARK;
     }
-  } else if (fl_settings_portal_get_value(self, &kGtkTheme, &value)) {
+  } else if (get_value(self, &kGtkTheme, &value)) {
     const gchar* gtk_theme_str = g_variant_get_string(value, nullptr);
     if (g_str_has_suffix(gtk_theme_str, kGtkThemeDarkSuffix)) {
       color_scheme = FL_COLOR_SCHEME_DARK;
@@ -140,7 +140,7 @@ static gdouble fl_settings_portal_get_text_scaling_factor(
   gdouble scaling_factor = 1.0;
 
   g_autoptr(GVariant) value = nullptr;
-  if (fl_settings_portal_get_value(self, &kTextScalingFactor, &value)) {
+  if (get_value(self, &kTextScalingFactor, &value)) {
     scaling_factor = g_variant_get_double(value);
   }
 
@@ -226,7 +226,7 @@ static void settings_portal_changed_cb(GDBusProxy* proxy,
   FlSetting setting;
   g_autoptr(GVariant) value = nullptr;
   g_variant_get(parameters, "(&s&sv)", &setting.ns, &setting.key, &value);
-  fl_settings_portal_set_value(portal, &setting, value);
+  set_value(portal, &setting, value);
 }
 
 gboolean fl_settings_portal_start(FlSettingsPortal* self) {
@@ -248,7 +248,7 @@ gboolean fl_settings_portal_start(FlSettingsPortal* self) {
     g_autoptr(GVariant) value = nullptr;
     if (settings_portal_read(self->dbus_proxy, setting.ns, setting.key,
                              &value)) {
-      fl_settings_portal_set_value(self, &setting, value);
+      set_value(self, &setting, value);
     }
   }
 
