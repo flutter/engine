@@ -450,6 +450,13 @@ void hooksTests() {
     }
   });
 
+  test('deprecated region equals', () {
+    const Locale x = Locale('en', 'ZR');
+    const Locale y = Locale('en', 'CD');
+    expectEquals(x, y);
+    expectEquals(x.countryCode, y.countryCode);
+  });
+
   test('Window padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
