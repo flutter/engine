@@ -68,7 +68,7 @@ G_DEFINE_TYPE_WITH_CODE(FlSettingsPortal,
                         G_IMPLEMENT_INTERFACE(fl_settings_get_type(),
                                               fl_settings_portal_iface_init))
 
-static const gchar* fl_settings_portal_format_key(const FlSetting* setting) {
+static gchar* fl_settings_portal_format_key(const FlSetting* setting) {
   return g_strconcat(setting->ns, "::", setting->key, nullptr);
 }
 
