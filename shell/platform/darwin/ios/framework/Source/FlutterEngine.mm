@@ -989,7 +989,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - Undo Manager Delegate
 
 - (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
-                      handleUndo:(FlutterUndoRedoDirection)direction {
+         handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
   NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
   [_undoManagerChannel.get() invokeMethod:@"UndoManagerClient.handleUndo" arguments:@[ action ]];
 }

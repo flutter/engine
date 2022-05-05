@@ -53,40 +53,40 @@ static NSString* const kCanRedo = @"canRedo";
 }
 
 - (void)resetUndoManager API_AVAILABLE(ios(9.0)) {
-  [self.undoManager removeAllActionsWithTarget:self];
+  [[self undoManager] removeAllActionsWithTarget:self];
 }
 
 - (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction API_AVAILABLE(ios(9.0)) {
-  self.undoManager.groupsByEvent = NO;
-  [self.undoManager beginUndoGrouping];
-  [self.undoManager registerUndoWithTarget:self
-                                   handler:^(id target) {
-                                     // Register undo with opposite direction.
-                                     FlutterUndoRedoDirection newDirection =
-                                         (direction == FlutterUndoRedoDirectionRedo)
-                                             ? FlutterUndoRedoDirectionUndo
-                                             : FlutterUndoRedoDirectionRedo;
-                                     [target registerUndoWithDirection:newDirection];
-                                     // Invoke method on delegate.
-                                     [_undoManagerDelegate flutterUndoManagerPlugin:self
-                                                                         handleUndo:direction];
-                                   }];
-  [self.undoManager endUndoGrouping];
-  self.undoManager.groupsByEvent = YES;
+  [self undoManager].groupsByEvent = NO;
+  [[self undoManager] beginUndoGrouping];
+  [[self undoManager] registerUndoWithTarget:self
+                                     handler:^(id target) {
+                                       // Register undo with opposite direction.
+                                       FlutterUndoRedoDirection newDirection =
+                                           (direction == FlutterUndoRedoDirectionRedo)
+                                               ? FlutterUndoRedoDirectionUndo
+                                               : FlutterUndoRedoDirectionRedo;
+                                       [target registerUndoWithDirection:newDirection];
+                                       // Invoke method on delegate.
+                                       [_undoManagerDelegate flutterUndoManagerPlugin:self
+                                                              handleUndoWithDirection:direction];
+                                     }];
+  [[self undoManager] endUndoGrouping];
+  [self undoManager].groupsByEvent = YES;
 }
 
 - (void)registerRedo API_AVAILABLE(ios(9.0)) {
-  self.undoManager.groupsByEvent = NO;
-  [self.undoManager beginUndoGrouping];
-  [self.undoManager
+  [self undoManager].groupsByEvent = NO;
+  [[self undoManager] beginUndoGrouping];
+  [[self undoManager]
       registerUndoWithTarget:self
                      handler:^(id target) {
                        // Register undo with opposite direction.
                        [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
                      }];
-  [self.undoManager endUndoGrouping];
-  self.undoManager.groupsByEvent = YES;
-  [self.undoManager undo];
+  [[self undoManager] endUndoGrouping];
+  [self undoManager].groupsByEvent = YES;
+  [[self undoManager] undo];
 }
 
 - (void)setUndoState:(NSDictionary*)dictionary API_AVAILABLE(ios(9.0)) {

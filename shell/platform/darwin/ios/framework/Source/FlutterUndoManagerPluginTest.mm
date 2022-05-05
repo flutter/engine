@@ -26,41 +26,41 @@ FLUTTER_ASSERT_ARC
 @end
 
 @interface FlutterUndoManagerPluginTest : XCTestCase
+@property(nonatomic, strong) id engine;
+@property(nonatomic, strong) FlutterUndoManagerPluginForTest* undoManagerPlugin;
+@property(nonatomic, strong) FlutterViewController* viewController;
+@property(nonatomic, strong) NSUndoManager* undoManager;
 @end
 
 @implementation FlutterUndoManagerPluginTest {
-  id engine;
-  FlutterUndoManagerPluginForTest* undoManagerPlugin;
-  FlutterViewController* viewController;
-  NSUndoManager* undoManager;
 }
 
 - (void)setUp {
   [super setUp];
-  engine = OCMClassMock([FlutterEngine class]);
+  self.engine = OCMClassMock([FlutterEngine class]);
 
-  undoManagerPlugin = [[FlutterUndoManagerPluginForTest alloc] initWithDelegate:engine];
+  self.undoManagerPlugin = [[FlutterUndoManagerPluginForTest alloc] initWithDelegate:self.engine];
 
-  viewController = [FlutterViewController new];
-  undoManagerPlugin.viewController = viewController;
+  self.viewController = [FlutterViewController new];
+  self.undoManagerPlugin.viewController = self.viewController;
 
-  undoManager = OCMClassMock([NSUndoManager class]);
-  undoManagerPlugin.undoManager = undoManager;
+  self.undoManager = OCMClassMock([NSUndoManager class]);
+  self.undoManagerPlugin.undoManager = self.undoManager;
 }
 
 - (void)tearDown {
-  [undoManager removeAllActionsWithTarget:undoManagerPlugin];
-  undoManagerPlugin = nil;
-  engine = nil;
-  viewController = nil;
-  undoManager = nil;
+  [self.undoManager removeAllActionsWithTarget:self.undoManagerPlugin];
+  self.undoManagerPlugin = nil;
+  self.engine = nil;
+  self.viewController = nil;
+  self.undoManager = nil;
   [super tearDown];
 }
 
 - (void)testSetUndoState {
   __block int registerUndoCount = 0;
   __block void (^undoHandler)(id target);
-  OCMStub([undoManager registerUndoWithTarget:undoManagerPlugin handler:[OCMArg any]])
+  OCMStub([self.undoManager registerUndoWithTarget:self.undoManagerPlugin handler:[OCMArg any]])
       .andDo(^(NSInvocation* invocation) {
         registerUndoCount++;
         __weak void (^handler)(id target);
@@ -69,33 +69,35 @@ FLUTTER_ASSERT_ARC
         undoHandler = handler;
       });
   __block int removeAllActionsCount = 0;
-  OCMStub([undoManager removeAllActionsWithTarget:undoManagerPlugin])
+  OCMStub([self.undoManager removeAllActionsWithTarget:self.undoManagerPlugin])
       .andDo(^(NSInvocation* invocation) {
         removeAllActionsCount++;
       });
   __block int delegateUndoCount = 0;
-  OCMStub([engine flutterUndoManagerPlugin:[OCMArg any] handleUndo:FlutterUndoRedoDirectionUndo])
+  OCMStub([self.engine flutterUndoManagerPlugin:[OCMArg any]
+                        handleUndoWithDirection:FlutterUndoRedoDirectionUndo])
       .andDo(^(NSInvocation* invocation) {
         delegateUndoCount++;
       });
   __block int delegateRedoCount = 0;
-  OCMStub([engine flutterUndoManagerPlugin:[OCMArg any] handleUndo:FlutterUndoRedoDirectionRedo])
+  OCMStub([self.engine flutterUndoManagerPlugin:[OCMArg any]
+                        handleUndoWithDirection:FlutterUndoRedoDirectionRedo])
       .andDo(^(NSInvocation* invocation) {
         delegateRedoCount++;
       });
   __block int undoCount = 0;
-  OCMStub([undoManager undo]).andDo(^(NSInvocation* invocation) {
+  OCMStub([self.undoManager undo]).andDo(^(NSInvocation* invocation) {
     undoCount++;
-    undoHandler(undoManagerPlugin);
+    undoHandler(self.undoManagerPlugin);
   });
 
   // If canUndo and canRedo are false, only removeAllActionsWithTarget is called.
   FlutterMethodCall* setUndoStateCall =
       [FlutterMethodCall methodCallWithMethodName:@"UndoManager.setUndoState"
                                         arguments:@{@"canUndo" : @NO, @"canRedo" : @NO}];
-  [undoManagerPlugin handleMethodCall:setUndoStateCall
-                               result:^(id _Nullable result){
-                               }];
+  [self.undoManagerPlugin handleMethodCall:setUndoStateCall
+                                    result:^(id _Nullable result){
+                                    }];
   XCTAssertEqual(1, removeAllActionsCount);
   XCTAssertEqual(0, registerUndoCount);
 
@@ -103,20 +105,20 @@ FLUTTER_ASSERT_ARC
   setUndoStateCall =
       [FlutterMethodCall methodCallWithMethodName:@"UndoManager.setUndoState"
                                         arguments:@{@"canUndo" : @YES, @"canRedo" : @NO}];
-  [undoManagerPlugin handleMethodCall:setUndoStateCall
-                               result:^(id _Nullable result){
-                               }];
+  [self.undoManagerPlugin handleMethodCall:setUndoStateCall
+                                    result:^(id _Nullable result){
+                                    }];
   XCTAssertEqual(2, removeAllActionsCount);
   XCTAssertEqual(1, registerUndoCount);
 
   // Invoking the undo handler will invoke the handleUndo delegate method with "undo".
-  undoHandler(undoManagerPlugin);
+  undoHandler(self.undoManagerPlugin);
   XCTAssertEqual(1, delegateUndoCount);
   XCTAssertEqual(0, delegateRedoCount);
   XCTAssertEqual(2, registerUndoCount);
 
   // Invoking the redo handler will invoke the handleUndo delegate method with "redo".
-  undoHandler(undoManagerPlugin);
+  undoHandler(self.undoManagerPlugin);
   XCTAssertEqual(1, delegateUndoCount);
   XCTAssertEqual(1, delegateRedoCount);
   XCTAssertEqual(3, registerUndoCount);
@@ -125,15 +127,15 @@ FLUTTER_ASSERT_ARC
   setUndoStateCall =
       [FlutterMethodCall methodCallWithMethodName:@"UndoManager.setUndoState"
                                         arguments:@{@"canUndo" : @NO, @"canRedo" : @YES}];
-  [undoManagerPlugin handleMethodCall:setUndoStateCall
-                               result:^(id _Nullable result){
-                               }];
+  [self.undoManagerPlugin handleMethodCall:setUndoStateCall
+                                    result:^(id _Nullable result){
+                                    }];
   XCTAssertEqual(3, removeAllActionsCount);
   XCTAssertEqual(5, registerUndoCount);
   XCTAssertEqual(1, undoCount);
 
   // Invoking the redo handler will invoke the handleUndo delegate method with "redo".
-  undoHandler(undoManagerPlugin);
+  undoHandler(self.undoManagerPlugin);
   XCTAssertEqual(1, delegateUndoCount);
   XCTAssertEqual(2, delegateRedoCount);
 }

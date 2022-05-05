@@ -18,7 +18,7 @@ typedef NS_ENUM(NSInteger, FlutterUndoRedoDirection) {
 
 @protocol FlutterUndoManagerDelegate <NSObject>
 - (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
-                      handleUndo:(FlutterUndoRedoDirection)direction;
+         handleUndoWithDirection:(FlutterUndoRedoDirection)direction;
 @end
 NS_ASSUME_NONNULL_END
 
