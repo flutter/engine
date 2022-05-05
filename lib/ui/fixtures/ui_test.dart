@@ -451,6 +451,7 @@ void hooksTests() {
   });
 
   test('deprecated region equals', () {
+    // These are equal because ZR is deprecated and was mapped to CD.
     const Locale x = Locale('en', 'ZR');
     const Locale y = Locale('en', 'CD');
     expectEquals(x, y);
