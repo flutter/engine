@@ -46,8 +46,12 @@ void fl_settings_emit_changed(FlSettings* self) {
 
 FlSettings* fl_settings_new() {
   g_autoptr(FlSettingsPortal) portal = fl_settings_portal_new(nullptr);
-  if (!fl_settings_portal_start(portal)) {
+
+  g_autoptr(GError) error = nullptr;
+  if (!fl_settings_portal_start(portal, &error)) {
+    g_debug("XDG desktop portal settings unavailable: %s", error->message);
     return fl_gnome_settings_new();
   }
+
   return FL_SETTINGS(g_object_ref(portal));
 }

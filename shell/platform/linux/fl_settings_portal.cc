@@ -229,18 +229,15 @@ FlSettingsPortal* fl_settings_portal_new(GVariantDict* values) {
   return portal;
 }
 
-gboolean fl_settings_portal_start(FlSettingsPortal* self) {
+gboolean fl_settings_portal_start(FlSettingsPortal* self, GError** error) {
   g_return_val_if_fail(FL_IS_SETTINGS_PORTAL(self), false);
   g_return_val_if_fail(self->dbus_proxy == nullptr, false);
 
-  g_autoptr(GError) error = nullptr;
-
   self->dbus_proxy = g_dbus_proxy_new_for_bus_sync(
       G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, nullptr, kPortalName,
-      kPortalPath, pPortalSettings, nullptr, &error);
+      kPortalPath, pPortalSettings, nullptr, error);
 
-  if (error != nullptr) {
-    g_debug("XDG desktop portal settings unavailable: %s", error->message);
+  if (self->dbus_proxy == nullptr) {
     return false;
   }
 

@@ -33,13 +33,14 @@ FlSettingsPortal* fl_settings_portal_new(GVariantDict* values);
 /**
  * fl_settings_portal_start:
  * @portal: an #FlSettingsPortal.
+ * @error: (allow-none): #GError location to store the error occurring, or %NULL
  *
  * Reads the current settings and starts monitoring for changes in the desktop
  * portal settings.
  *
  * Returns: %TRUE on success, or %FALSE if the portal is not available.
  */
-gboolean fl_settings_portal_start(FlSettingsPortal* portal);
+gboolean fl_settings_portal_start(FlSettingsPortal* portal, GError** error);
 
 G_END_DECLS
 
