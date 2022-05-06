@@ -11,8 +11,10 @@ import android.view.textservice.TextInfo;
 import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
+import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
@@ -32,9 +34,11 @@ public class SpellCheckPlugin
   private final TextServicesManager mTextServicesManager;
   private SpellCheckerSession mSpellCheckerSession;
 
+  private MethodChannel.Result pendingResult;
+  private String pendingResultText;
+
   // The maximum number of suggestions that the Android spell check service is allowed to provide
-  // per word.
-  // Same number that is used by default for Android's TextViews.
+  // per word. Same number that is used by default for Android's TextViews.
   private static final int MAX_SPELL_CHECK_SUGGESTIONS = 5;
 
   public SpellCheckPlugin(
@@ -62,8 +66,21 @@ public class SpellCheckPlugin
     }
   }
 
+  /**
+   * Initiates call to native spell checker to spell check specified text if there is no result
+   * awaiting a response.
+   */
   @Override
-  public void initiateSpellCheck(@NonNull String locale, @NonNull String text) {
+  public void initiateSpellCheck(
+      @NonNull String locale, @NonNull String text, @NonNull MethodChannel.Result result) {
+    if (pendingResult != null) {
+      result.error("error", "Previous spell check request still pending.", null);
+      return;
+    }
+
+    pendingResult = result;
+    pendingResultText = text;
+
     performSpellCheck(locale, text);
   }
 
@@ -96,13 +113,13 @@ public class SpellCheckPlugin
    */
   @Override
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
-    ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
-
     if (results.length == 0) {
-      mSpellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans);
+      pendingResult.success(new ArrayList<>(Arrays.asList(pendingResultText, "")));
+      pendingResult = null;
       return;
     }
 
+    ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
     SentenceSuggestionsInfo spellCheckResults = results[0];
 
     for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
@@ -128,7 +145,9 @@ public class SpellCheckPlugin
           spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
     }
 
-    mSpellCheckChannel.updateSpellCheckResults(spellCheckerSuggestionSpans);
+    spellCheckerSuggestionSpans.add(0, pendingResultText);
+    pendingResult.success(spellCheckerSuggestionSpans);
+    pendingResult = null;
   }
 
   @Override

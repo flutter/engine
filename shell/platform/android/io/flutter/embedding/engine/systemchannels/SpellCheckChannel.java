@@ -11,7 +11,6 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import java.util.ArrayList;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -44,9 +43,6 @@ public class SpellCheckChannel {
   public final MethodChannel channel;
   private SpellCheckMethodHandler spellCheckMethodHandler;
 
-  private String textAwaitingResponse;
-  private MethodChannel.Result resultAwaitingResponse;
-
   @NonNull
   final MethodChannel.MethodCallHandler parsingMethodHandler =
       new MethodChannel.MethodCallHandler() {
@@ -67,10 +63,8 @@ public class SpellCheckChannel {
                 final JSONArray argumentList = (JSONArray) args;
                 String locale = argumentList.getString(0);
                 String text = argumentList.getString(1);
-                textAwaitingResponse = text;
-                resultAwaitingResponse = result;
 
-                spellCheckMethodHandler.initiateSpellCheck(locale, text);
+                spellCheckMethodHandler.initiateSpellCheck(locale, text, result);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
               }
@@ -87,18 +81,6 @@ public class SpellCheckChannel {
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
-  /** Responsible for sending spell check results and corresponding text through this channel. */
-  public void updateSpellCheckResults(ArrayList<String> spellCheckResults) {
-    spellCheckResults.add(0, textAwaitingResponse);
-
-    if (resultAwaitingResponse != null && textAwaitingResponse != null) {
-      resultAwaitingResponse.success(spellCheckResults);
-    }
-
-    resultAwaitingResponse = null;
-    textAwaitingResponse = null;
-  }
-
   /**
    * Sets the {@link SpellCheckMethodHandler} which receives all requests to spell check the
    * specified text sent through this channel.
@@ -110,11 +92,11 @@ public class SpellCheckChannel {
 
   public interface SpellCheckMethodHandler {
     /**
-     * Requests that spell check is initiated for the specified text, which will automatically
-     * result in a call to {@code
-     * SpellCheckChannel#setSpellCheckMethodHandler(SpellCheckMethodHandler)} once spell check
-     * results are received from the native spell check service.
+     * Requests that spell check is initiated for the specified text, which will respond to the
+     * {@code result} with either success if spell check results are received or error if the
+     * request is skipped.
      */
-    void initiateSpellCheck(@NonNull String locale, @NonNull String text);
+    void initiateSpellCheck(
+        @NonNull String locale, @NonNull String text, @NonNull MethodChannel.Result result);
   }
 }
