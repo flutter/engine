@@ -19,11 +19,20 @@ import 'package:js/js_util.dart' as js_util;
 class DomWindow {}
 
 extension DomWindowExtension on DomWindow {
+  external DomConsole get console;
   external DomDocument get document;
   external DomNavigator get navigator;
   external DomPerformance get performance;
   Future<Object?> fetch(String url) =>
       js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
+}
+
+@JS()
+@staticInterop
+class DomConsole {}
+
+extension DomConsoleExtension on DomConsole {
+  external void warn(Object? arg);
 }
 
 @JS('window')
@@ -86,6 +95,15 @@ extension DomEventExtension on DomEvent {
   external DomEventTarget? get target;
   external void preventDefault();
   external void stopPropagation();
+}
+
+@JS()
+@staticInterop
+class DomProgressEvent extends DomEvent {}
+
+extension DomProgressEventExtension on DomProgressEvent {
+  external int? get loaded;
+  external int? get total;
 }
 
 @JS()
@@ -252,6 +270,27 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
 
 @JS()
 @staticInterop
+class DomXMLHttpRequestEventTarget extends DomEventTarget {}
+
+@JS('XMLHttpRequest')
+@staticInterop
+class DomXMLHttpRequest extends DomXMLHttpRequestEventTarget {}
+
+DomXMLHttpRequest createDomXMLHttpRequest() =>
+    domCallConstructorString('XMLHttpRequest', <Object?>[])!
+        as DomXMLHttpRequest;
+
+extension DomXMLHttpRequestExtension on DomXMLHttpRequest {
+  external dynamic get response;
+  external String get responseType;
+  external int? get status;
+  external set responseType(String value);
+  external void open(String method, String url, [bool? async]);
+  external void send();
+}
+
+@JS()
+@staticInterop
 class DomResponse {}
 
 @JS()
@@ -277,6 +316,14 @@ extension DomResponseExtension on DomResponse {
 
 Object? domGetConstructor(String constructorName) =>
     js_util.getProperty(domWindow, constructorName);
+
+Object? domCallConstructorString(String constructorName, List<Object?> args) {
+  final Object? constructor = domGetConstructor(constructorName);
+  if (constructor == null) {
+    return null;
+  }
+  return js_util.callConstructor(constructor, args);
+}
 
 bool domInstanceOfString(Object? element, String objectType) =>
     js_util.instanceof(element, domGetConstructor(objectType)!);
