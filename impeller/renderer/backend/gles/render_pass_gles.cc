@@ -351,8 +351,22 @@ struct RenderPassData {
     }
   }
 
-  // TODO(csg): Respect the discard flags using glDiscardFramebuffer. Vital for
-  //            mobile GPUs.
+  if (gl.DiscardFramebufferEXT.IsAvailable()) {
+    std::vector<GLenum> attachments;
+    if (pass_data.discard_color_attachment) {
+      attachments.push_back(GL_COLOR_EXT);
+    }
+    if (pass_data.discard_depth_attachment) {
+      attachments.push_back(GL_DEPTH_EXT);
+    }
+    if (pass_data.discard_stencil_attachment) {
+      attachments.push_back(GL_STENCIL_EXT);
+    }
+    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
+                             attachments.size(),  // attachments to discard
+                             attachments.data()   // size
+    );
+  }
 
   return true;
 }

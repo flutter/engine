@@ -141,6 +141,7 @@ struct GLProc {
   PROC(Viewport);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC) \
+  PROC(DiscardFramebufferEXT);           \
   PROC(PushDebugGroupKHR);               \
   PROC(PopDebugGroupKHR);                \
   PROC(ObjectLabelKHR);

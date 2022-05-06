@@ -43,6 +43,10 @@ ProcTableGLES::Resolver WrappedResolver(ProcTableGLES::Resolver resolver) {
       auto truncated = function.substr(0u, function.size() - 3);
       return resolver(truncated.c_str());
     }
+    if (function.find("EXT", function.size() - 3) != std::string::npos) {
+      auto truncated = function.substr(0u, function.size() - 3);
+      return resolver(truncated.c_str());
+    }
     return nullptr;
   };
 }
@@ -95,6 +99,10 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
     PushDebugGroupKHR.Reset();
     PopDebugGroupKHR.Reset();
     ObjectLabelKHR.Reset();
+  }
+
+  if (!description_->HasExtension("GL_EXT_discard_framebuffer")) {
+    DiscardFramebufferEXT.Reset();
   }
 
   is_valid_ = true;
