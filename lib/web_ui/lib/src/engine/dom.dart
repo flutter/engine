@@ -23,7 +23,7 @@ extension DomWindowExtension on DomWindow {
   external DomNavigator get navigator;
   external DomPerformance get performance;
   Future<Object?> fetch(String url) =>
-    js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
+      js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
 }
 
 @JS('window')
@@ -225,6 +225,7 @@ extension DomCanvasElementExtension on DomCanvasElement {
   external set width(int? value);
   external int? get height;
   external set height(int? value);
+  external String toDataURL([String? type]);
 
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     return js_util.callMethod(this, 'getContext', <Object?>[
@@ -232,21 +233,46 @@ extension DomCanvasElementExtension on DomCanvasElement {
       if (attributes != null) js_util.jsify(attributes)
     ]);
   }
+
+  DomCanvasRenderingContext2D get getContext2D =>
+      getContext('2d')! as DomCanvasRenderingContext2D;
+}
+
+@JS()
+@staticInterop
+abstract class DomCanvasImageSource {}
+
+@JS()
+@staticInterop
+class DomCanvasRenderingContext2D {}
+
+extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
+  external void drawImage(DomCanvasImageSource source, num destX, num destY);
 }
 
 @JS()
 @staticInterop
 class DomResponse {}
 
+@JS()
+@staticInterop
+class DomException {
+  static const String notSupported = 'NotSupportedError';
+}
+
+extension DomExceptionExtension on DomException {
+  external String get name;
+}
+
 extension DomResponseExtension on DomResponse {
-  Future<dynamic> arrayBuffer() =>
-    js_util.promiseToFuture(js_util.callMethod(this, 'arrayBuffer', <Object>[]));
+  Future<dynamic> arrayBuffer() => js_util
+      .promiseToFuture(js_util.callMethod(this, 'arrayBuffer', <Object>[]));
 
   Future<dynamic> json() =>
-    js_util.promiseToFuture(js_util.callMethod(this, 'json', <Object>[]));
+      js_util.promiseToFuture(js_util.callMethod(this, 'json', <Object>[]));
 
   Future<String> text() =>
-    js_util.promiseToFuture(js_util.callMethod(this, 'text', <Object>[]));
+      js_util.promiseToFuture(js_util.callMethod(this, 'text', <Object>[]));
 }
 
 Object? domGetConstructor(String constructorName) =>
