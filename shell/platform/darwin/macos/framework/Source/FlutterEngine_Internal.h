@@ -42,7 +42,7 @@
 /**
  * The executable name for the current process.
  */
-@property(nonatomic, readonly, nonnull) const char* executableName;
+@property(nonatomic, readonly, nonnull) NSString* executableName;
 
 /**
  * Informs the engine that the associated view controller's view size has changed.

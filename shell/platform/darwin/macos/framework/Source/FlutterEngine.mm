@@ -5,12 +5,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
-#include <mach-o/dyld.h>
-#include <sys/param.h>
-
 #include <algorithm>
 #include <iostream>
-#include <optional>
 #include <vector>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
@@ -37,21 +33,6 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   flutterLocale.script_code = [[locale objectForKey:NSLocaleScriptCode] UTF8String];
   flutterLocale.variant_code = [[locale objectForKey:NSLocaleVariantCode] UTF8String];
   return flutterLocale;
-}
-
-// Returns the unresolved path of the executable for the current process.
-static std::optional<std::string> GetExecutablePath() {
-  // Determine the size of the buffer required.
-  uint32_t pathSize = 0;
-  if (_NSGetExecutablePath(nullptr, &pathSize) == 0) {
-    return std::nullopt;
-  }
-  std::string executablePath;
-  executablePath.resize(pathSize);
-  if (_NSGetExecutablePath(executablePath.data(), &pathSize) != 0) {
-    return std::nullopt;
-  }
-  return executablePath;
 }
 
 #pragma mark -
@@ -284,7 +265,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
 
   // The first argument of argv is required to be the executable name.
-  std::vector<const char*> argv = {self.executableName};
+  std::vector<const char*> argv = {[self.executableName UTF8String]};
   std::vector<std::string> switches = _project.switches;
   std::transform(switches.begin(), switches.end(), std::back_inserter(argv),
                  [](const std::string& arg) -> const char* { return arg.c_str(); });
@@ -534,11 +515,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return _bridge;
 }
 
-- (nonnull const char*)executableName {
-  // We hold onto the executable name as a static since this value will not change over the process
-  // lifetime and because argv contents are assumed to be stable over the life of the Dart runtime.
-  static const std::string executableName = GetExecutablePath().value_or("Flutter");
-  return executableName.c_str();
+- (nonnull NSString*)executableName {
+  NSArray<NSString*>* arguments = [[NSProcessInfo processInfo] arguments];
+  if ([arguments count] < 1) {
+    return @"Flutter";
+  }
+  return [arguments objectAtIndex:0];
 }
 
 - (void)updateWindowMetrics {
