@@ -200,6 +200,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
       []() { ImGui_ImplImpeller_Shutdown(); });
 
   ::glfwSetWindowSize(window, GetWindowSize().width, GetWindowSize().height);
+  ::glfwSetWindowPos(window, 200, 100);
   ::glfwShowWindow(window);
 
   while (true) {
