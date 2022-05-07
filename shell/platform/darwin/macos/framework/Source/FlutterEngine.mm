@@ -516,11 +516,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (nonnull NSString*)executableName {
-  NSArray<NSString*>* arguments = [[NSProcessInfo processInfo] arguments];
-  if ([arguments count] < 1) {
-    return @"Flutter";
-  }
-  return [arguments objectAtIndex:0];
+  return [[[NSProcessInfo processInfo] arguments] firstObject] ?: @"Flutter";
 }
 
 - (void)updateWindowMetrics {
