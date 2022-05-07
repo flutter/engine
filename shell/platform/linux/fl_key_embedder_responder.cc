@@ -8,7 +8,6 @@
 #include <cinttypes>
 
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_embedder_responder_private.h"
 #include "flutter/shell/platform/linux/key_mapping.h"
 
@@ -141,8 +140,7 @@ typedef enum {
 struct _FlKeyEmbedderResponder {
   GObject parent_instance;
 
-  // A weak pointer to the engine the responder is attached to.
-  FlEngine* engine;
+  EmbedderSendKeyEvent send_key_event;
 
   // Internal record for states of whether a key is pressed.
   //
@@ -171,7 +169,7 @@ struct _FlKeyEmbedderResponder {
   // For more information, see #update_caps_lock_state_logic_inferrence.
   StateLogicInferrence caps_lock_state_logic_inferrence;
 
-  // Record if any events has been sent through the engine during a
+  // Record if any events has been sent during a
   // |fl_key_embedder_responder_handle_event| call.
   bool sent_any_events;
 
@@ -214,6 +212,7 @@ G_DEFINE_TYPE_WITH_CODE(
 static void fl_key_embedder_responder_handle_event(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+    uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data);
 
@@ -259,18 +258,13 @@ static void initialize_logical_key_to_lock_bit_loop_body(gpointer lock_bit,
                       GUINT_TO_POINTER(lock_bit));
 }
 
-// Creates a new FlKeyEmbedderResponder instance with an engine.
-FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
-  g_return_val_if_fail(FL_IS_ENGINE(engine), nullptr);
-
+// Creates a new FlKeyEmbedderResponder instance.
+FlKeyEmbedderResponder* fl_key_embedder_responder_new(
+    EmbedderSendKeyEvent send_key_event) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(
       g_object_new(FL_TYPE_EMBEDDER_RESPONDER_USER_DATA, nullptr));
 
-  self->engine = engine;
-  // Add a weak pointer so we can know if the key event responder disappeared
-  // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(engine),
-                            reinterpret_cast<gpointer*>(&(self->engine)));
+  self->send_key_event = std::move(send_key_event);
 
   self->pressing_records = g_hash_table_new(g_direct_hash, g_direct_equal);
   self->mapping_records = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -351,7 +345,7 @@ static void handle_response(bool handled, gpointer user_data) {
   data->callback(handled, data->user_data);
 }
 
-// Sends a synthesized event to the engine with no demand for callback.
+// Sends a synthesized event to the framework with no demand for callback.
 static void synthesize_simple_event(FlKeyEmbedderResponder* self,
                                     FlutterKeyEventType type,
                                     uint64_t physical,
@@ -365,10 +359,8 @@ static void synthesize_simple_event(FlKeyEmbedderResponder* self,
   out_event.logical = logical;
   out_event.character = nullptr;
   out_event.synthesized = true;
-  if (self->engine != nullptr) {
-    self->sent_any_events = true;
-    fl_engine_send_key_event(self->engine, &out_event, nullptr, nullptr);
-  }
+  self->sent_any_events = true;
+  self->send_key_event(&out_event, nullptr, nullptr);
 }
 
 namespace {
@@ -707,6 +699,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
 static void fl_key_embedder_responder_handle_event_impl(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+    uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
@@ -715,7 +708,9 @@ static void fl_key_embedder_responder_handle_event_impl(
   g_return_if_fail(callback != nullptr);
 
   const uint64_t physical_key = event_to_physical_key(event);
-  const uint64_t logical_key = event_to_logical_key(event);
+  const uint64_t logical_key = specified_logical_key != 0
+                                   ? specified_logical_key
+                                   : event_to_logical_key(event);
   const double timestamp = event_to_timestamp(event);
   const bool is_down_event = event->is_press;
 
@@ -771,33 +766,31 @@ static void fl_key_embedder_responder_handle_event_impl(
     }
   }
 
-  update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
+  if (out_event.type != kFlutterKeyEventTypeRepeat) {
+    update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
+  }
   possibly_update_lock_bit(self, logical_key, is_down_event);
   if (is_down_event) {
     update_mapping_record(self, physical_key, logical_key);
   }
-  if (self->engine != nullptr) {
-    FlKeyEmbedderUserData* response_data =
-        fl_key_embedder_user_data_new(callback, user_data);
-    self->sent_any_events = true;
-    fl_engine_send_key_event(self->engine, &out_event, handle_response,
-                             response_data);
-  } else {
-    callback(true, user_data);
-  }
+  FlKeyEmbedderUserData* response_data =
+      fl_key_embedder_user_data_new(callback, user_data);
+  self->sent_any_events = true;
+  self->send_key_event(&out_event, handle_response, response_data);
 }
 
 // Sends a key event to the framework.
 static void fl_key_embedder_responder_handle_event(
     FlKeyResponder* responder,
     FlKeyEvent* event,
+    uint64_t specified_logical_key,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   self->sent_any_events = false;
-  fl_key_embedder_responder_handle_event_impl(responder, event, callback,
-                                              user_data);
+  fl_key_embedder_responder_handle_event_impl(
+      responder, event, specified_logical_key, callback, user_data);
   if (!self->sent_any_events) {
-    fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
+    self->send_key_event(&empty_event, nullptr, nullptr);
   }
 }

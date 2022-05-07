@@ -492,7 +492,6 @@ RasterStatus Rasterizer::DoDraw(
 RasterStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
-  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
   RasterStatus raster_status;
@@ -517,7 +516,6 @@ RasterStatus Rasterizer::DrawToSurface(
 RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
-  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurfaceUnsafe");
   FML_DCHECK(surface_);
 
   compositor_context_->ui_time().SetLapTime(
@@ -567,7 +565,10 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
     std::unique_ptr<FrameDamage> damage;
-    if (frame->framebuffer_info().supports_partial_repaint) {
+    // when leaf layer tracing is enabled we wish to repaing the whole frame for
+    // accurate performance metrics.
+    if (frame->framebuffer_info().supports_partial_repaint &&
+        !layer_tree.is_leaf_layer_tracing_enabled()) {
       // Disable partial repaint if external_view_embedder_ SubmitFrame is
       // involved - ExternalViewEmbedder unconditionally clears the entire
       // surface and also partial repaint with platform view present is
@@ -586,11 +587,17 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       }
     }
 
-    RasterStatus raster_status = compositor_frame->Raster(
-        layer_tree,                      // layer tree
-        !surface_->EnableRasterCache(),  // ignore raster cache
-        damage.get()                     // frame damage
-    );
+    bool ignore_raster_cache = true;
+    if (surface_->EnableRasterCache() &&
+        !layer_tree.is_leaf_layer_tracing_enabled()) {
+      ignore_raster_cache = false;
+    }
+
+    RasterStatus raster_status =
+        compositor_frame->Raster(layer_tree,           // layer tree
+                                 ignore_raster_cache,  // ignore raster cache
+                                 damage.get()          // frame damage
+        );
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
@@ -619,7 +626,6 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FireNextFrameCallbackIfPresent();
 
     if (surface_->GetContext()) {
-      TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
 

@@ -25,6 +25,7 @@ TEST_F(PhysicalShapeLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
+  EXPECT_EQ(layer->child_paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -55,6 +56,7 @@ TEST_F(PhysicalShapeLayerTest, NonEmptyLayer) {
                                            layer_path, Clip::none);
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
+  EXPECT_EQ(layer->child_paint_bounds(), SkRect::MakeEmpty());
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   SkPaint layer_paint;
@@ -93,6 +95,7 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathClip) {
   child_paint_bounds.join(child2->paint_bounds());
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
   EXPECT_NE(layer->paint_bounds(), child_paint_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_paint_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   SkPaint layer_paint;
@@ -142,13 +145,14 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathNoClip) {
   layer->Add(child1);
   layer->Add(child2);
 
-  SkRect total_bounds = SkRect::MakeEmpty();
   layer->Preroll(preroll_context(), SkMatrix());
-  total_bounds.join(child1->paint_bounds());
-  total_bounds.join(child2->paint_bounds());
+  SkRect child_bounds = child1->paint_bounds();
+  child_bounds.join(child2->paint_bounds());
+  SkRect total_bounds = child_bounds;
   total_bounds.join(layer_path.getBounds());
   EXPECT_NE(layer->paint_bounds(), layer_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), total_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   SkPaint layer_paint;
@@ -410,6 +414,20 @@ TEST_F(PhysicalShapeLayerTest, Readback) {
   EXPECT_TRUE(ReadbackResult(context, hard, reader, true));
   EXPECT_TRUE(ReadbackResult(context, soft, reader, true));
   EXPECT_TRUE(ReadbackResult(context, save_layer, reader, true));
+}
+
+TEST_F(PhysicalShapeLayerTest, OpacityInheritance) {
+  SkPath layer_path;
+  layer_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  auto layer =
+      std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK,
+                                           0.0f,  // elevation
+                                           layer_path, Clip::none);
+
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+  layer->Preroll(context, SkMatrix());
+  EXPECT_FALSE(context->subtree_can_inherit_opacity);
 }
 
 using PhysicalShapeLayerDiffTest = DiffContextTest;

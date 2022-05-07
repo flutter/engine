@@ -17,6 +17,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewParent;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
@@ -30,7 +31,6 @@ import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorView;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
-import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -45,7 +45,6 @@ import java.util.Map;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -313,7 +312,7 @@ public class PlatformViewsControllerTest {
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
     PlatformView platformView = mock(PlatformView.class);
 
-    Context context = RuntimeEnvironment.application.getApplicationContext();
+    Context context = ApplicationProvider.getApplicationContext();
     View androidView = new View(context);
 
     when(platformView.getView()).thenReturn(androidView);
@@ -354,7 +353,7 @@ public class PlatformViewsControllerTest {
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
     PlatformView platformView = mock(PlatformView.class);
 
-    Context context = RuntimeEnvironment.application.getApplicationContext();
+    Context context = ApplicationProvider.getApplicationContext();
     View androidView = new View(context);
     when(platformView.getView()).thenReturn(androidView);
     when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
@@ -785,7 +784,7 @@ public class PlatformViewsControllerTest {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
-    int platformViewId = 0;
+    int platformViewId = 100;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -891,7 +890,7 @@ public class PlatformViewsControllerTest {
 
   private static FlutterView attach(
       FlutterJNI jni, PlatformViewsController platformViewsController) {
-    final Context context = RuntimeEnvironment.application.getApplicationContext();
+    final Context context = ApplicationProvider.getApplicationContext();
     final FlutterView flutterView =
         new FlutterView(context, RenderMode.surface) {
           @Override
@@ -910,7 +909,7 @@ public class PlatformViewsControllerTest {
     final DartExecutor executor = new DartExecutor(jni, mock(AssetManager.class));
     executor.onAttachedToJNI();
 
-    final Context context = RuntimeEnvironment.application.getApplicationContext();
+    final Context context = ApplicationProvider.getApplicationContext();
     final TextureRegistry registry =
         new TextureRegistry() {
           public void TextureRegistry() {}
@@ -948,7 +947,6 @@ public class PlatformViewsControllerTest {
     when(engine.getSettingsChannel()).thenReturn(new SettingsChannel(executor));
     when(engine.getPlatformViewsController()).thenReturn(platformViewsController);
     when(engine.getLocalizationPlugin()).thenReturn(mock(LocalizationPlugin.class));
-    when(engine.getKeyEventChannel()).thenReturn(mock(KeyEventChannel.class));
     when(engine.getAccessibilityChannel()).thenReturn(mock(AccessibilityChannel.class));
 
     flutterView.attachToFlutterEngine(engine);

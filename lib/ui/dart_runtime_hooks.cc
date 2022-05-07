@@ -29,7 +29,6 @@
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
 using tonic::DartConverter;
-using tonic::LogIfError;
 using tonic::ToDart;
 
 namespace flutter {
@@ -188,7 +187,7 @@ void Logger_PrintString(Dart_NativeArguments args) {
 
   if (dart::bin::ShouldCaptureStdout()) {
     std::stringstream stream;
-    if (tag.size() > 0) {
+    if (!tag.empty()) {
       stream << tag << ": ";
     }
     stream << message;

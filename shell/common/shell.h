@@ -327,7 +327,7 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to reload the system fonts in
-  /// FontCollection.
+  ///             FontCollection.
   ///             It also clears the cached font families and send system
   ///             channel message to framework to rebuild affected widgets.
   ///
@@ -475,8 +475,6 @@ class Shell final : public PlatformView::Delegate,
 
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
-
-  sk_sp<GrDirectContext> shared_resource_context_;
 
   Shell(DartVMRef vm,
         TaskRunners task_runners,
@@ -703,6 +701,15 @@ class Shell final : public PlatformView::Delegate,
 
   // Service protocol handler
   bool OnServiceProtocolEstimateRasterCacheMemory(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  // Service protocol handler
+  //
+  // Renders a frame and responds with various statistics pertaining to the
+  // raster call. These include time taken to raster every leaf layer and also
+  // leaf layer snapshots.
+  bool OnServiceProtocolRenderFrameWithRasterStats(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 

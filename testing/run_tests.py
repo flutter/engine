@@ -106,7 +106,8 @@ def FindExecutablePath(path):
 
 
 def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
-                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False, coverage=False):
+                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False, coverage=False,
+                        extra_env={}):
   if filter is not None and executable_name not in filter:
     print('Skipping %s due to filter.' % executable_name)
     return
@@ -138,6 +139,8 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
   if not env:
     env = os.environ.copy()
   env['FLUTTER_BUILD_DIRECTORY'] = build_dir
+  for key, value in extra_env.items():
+    env[key] = value
 
   try:
     RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure, env=env)
@@ -198,6 +201,10 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
 
   RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
 
+  RunEngineExecutable(build_dir, 'display_list_unittests', filter, shuffle_flags)
+
+  RunEngineExecutable(build_dir, 'display_list_rendertests', filter, shuffle_flags)
+
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags, coverage=coverage)
 
   RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags, coverage=coverage)
@@ -234,7 +241,9 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
     RunEngineExecutable(build_dir, 'txt_unittests', filter, icu_flags + shuffle_flags, coverage=coverage)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags, coverage=coverage)
+    gtk_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
+    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags, coverage=coverage,
+                        extra_env={'G_DEBUG': 'fatal-criticals'})
     RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, shuffle_flags, coverage=coverage)
 
   # Impeller tests are only supported on macOS for now.
@@ -544,6 +553,22 @@ def RunClangTidyTests(build_dir):
       cwd=test_dir)
 
 
+def RunApiConsistencyTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'api_check')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file,
+      os.path.join(buildroot_dir, 'flutter')]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
+
 def main():
   parser = argparse.ArgumentParser()
   all_types = ['engine', 'dart', 'benchmarks', 'java', 'android', 'objc', 'font-subset']
@@ -611,6 +636,7 @@ def main():
     RunLitetestTests(build_dir)
     RunGithooksTests(build_dir)
     RunClangTidyTests(build_dir)
+    RunApiConsistencyTests(build_dir)
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)

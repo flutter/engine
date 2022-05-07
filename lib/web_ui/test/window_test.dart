@@ -42,6 +42,29 @@ void testMain() {
     await window.resetHistory();
   });
 
+  test('window.defaultRouteName should work with JsUrlStrategy', () async {
+    dynamic state = <dynamic, dynamic>{};
+    final JsUrlStrategy jsUrlStrategy = JsUrlStrategy(
+        getPath: allowInterop(() => '/initial'),
+        getState: allowInterop(() => state),
+        addPopStateListener: allowInterop((html.EventListener listener) => () {}),
+        prepareExternalUrl: allowInterop((String value) => ''),
+        pushState: allowInterop((Object? newState, String title, String url) {
+          expect(newState is Map, true);
+        }),
+        replaceState: allowInterop((Object? newState, String title, String url) {
+          expect(newState is Map, true);
+          state = newState;
+        }),
+        go: allowInterop(([int? delta]) async {
+          expect(delta, -1);
+        }));
+    final CustomUrlStrategy strategy =
+        CustomUrlStrategy.fromJs(jsUrlStrategy);
+    await window.debugInitializeHistory(strategy, useSingle: true);
+    expect(window.defaultRouteName, '/initial');
+  });
+
   test('window.defaultRouteName should not change', () async {
     final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
       const TestHistoryEntry('initial state', null, '/initial'),
@@ -143,7 +166,7 @@ void testMain() {
     ), useSingle: false);
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
     final List<String> executionOrder = <String>[];
-    window.handleNavigationMessage(
+    await window.handleNavigationMessage(
       const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectSingleEntryHistory',
         null,
@@ -151,7 +174,7 @@ void testMain() {
     ).then<void>((bool data) {
       executionOrder.add('1');
     });
-    window.handleNavigationMessage(
+    await window.handleNavigationMessage(
       const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectMultiEntryHistory',
         null,
@@ -159,7 +182,7 @@ void testMain() {
     ).then<void>((bool data) {
       executionOrder.add('2');
     });
-    window.handleNavigationMessage(
+    await window.handleNavigationMessage(
         const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectSingleEntryHistory',
         null,

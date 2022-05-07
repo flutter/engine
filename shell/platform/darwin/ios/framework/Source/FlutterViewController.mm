@@ -195,6 +195,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -206,7 +207,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   _viewOpaque = YES;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   _engine = std::move(engine);
   _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
   [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
@@ -826,7 +826,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
-  self.view.accessibilityElementsHidden = YES;
+  if ([FlutterViewController isUIAccessibilityIsVoiceOverRunning]) {
+    self.view.accessibilityElementsHidden = YES;
+  }
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
@@ -1722,6 +1724,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (id<FlutterPluginRegistry>)pluginRegistry {
   return _engine;
+}
+
++ (BOOL)isUIAccessibilityIsVoiceOverRunning {
+  return UIAccessibilityIsVoiceOverRunning();
 }
 
 #pragma mark - FlutterPluginRegistry

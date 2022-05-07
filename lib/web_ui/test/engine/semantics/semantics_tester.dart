@@ -7,8 +7,8 @@ import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show flutterViewEmbedder, toMatrix32;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/host_node.dart';
 import 'package:ui/src/engine/semantics.dart';
 import 'package:ui/src/engine/util.dart';
@@ -360,21 +360,22 @@ class SemanticsTester {
 
 /// Verifies the HTML structure of the current semantics tree.
 void expectSemanticsTree(String semanticsHtml) {
+  const List<String> ignoredAttributes = <String>['pointer-events'];
   expect(
-    canonicalizeHtml(appHostNode.querySelector('flt-semantics')!.outerHtml!),
+    canonicalizeHtml(appHostNode.querySelector('flt-semantics')!.outerHtml!, ignoredAttributes: ignoredAttributes),
     canonicalizeHtml(semanticsHtml),
   );
 }
 
 /// Finds the first HTML element in the semantics tree used for scrolling.
 html.Element? findScrollable() {
-  return appHostNode.querySelectorAll('flt-semantics').cast<html.Element?>().firstWhere(
-        (html.Element? element) =>
-            element!.style.overflow == 'hidden' ||
-            element.style.overflowY == 'scroll' ||
-            element.style.overflowX == 'scroll',
-        orElse: () => null,
-      );
+  return appHostNode.querySelectorAll('flt-semantics').firstWhereOrNull(
+    (html.Element element) {
+      return element.style.overflow == 'hidden' ||
+        element.style.overflowY == 'scroll' ||
+        element.style.overflowX == 'scroll';
+    },
+  );
 }
 
 /// Logs semantics actions dispatched to [ui.window].

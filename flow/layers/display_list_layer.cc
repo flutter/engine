@@ -5,6 +5,8 @@
 #include "flutter/flow/layers/display_list_layer.h"
 
 #include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_flags.h"
+#include "flutter/flow/layers/offscreen_surface.h"
 
 namespace flutter {
 
@@ -15,12 +17,7 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
     : offset_(offset),
       display_list_(std::move(display_list)),
       is_complex_(is_complex),
-      will_change_(will_change) {
-  if (display_list_.skia_object()) {
-    set_layer_can_inherit_opacity(
-        display_list_.skia_object()->can_apply_group_opacity());
-  }
-}
+      will_change_(will_change) {}
 
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
@@ -96,6 +93,10 @@ void DisplayListLayer::Preroll(PrerollContext* context,
 
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
 
+  if (disp_list->can_apply_group_opacity()) {
+    context->subtree_can_inherit_opacity = true;
+  }
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     if (context->cull_rect.intersects(bounds)) {
@@ -132,9 +133,38 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     }
   }
 
+  if (context.enable_leaf_layer_tracing) {
+    const auto canvas_size = context.leaf_nodes_canvas->getBaseLayerSize();
+    auto offscreen_surface =
+        std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
+
+    const auto start_time = fml::TimePoint::Now();
+    {
+      // render display list to offscreen surface.
+      auto* canvas = offscreen_surface->GetCanvas();
+      SkAutoCanvasRestore save(canvas, true);
+      canvas->clear(SK_ColorTRANSPARENT);
+      canvas->setMatrix(context.leaf_nodes_canvas->getTotalMatrix());
+      display_list()->RenderTo(canvas, context.inherited_opacity);
+      canvas->flush();
+    }
+    const fml::TimeDelta offscreen_render_time =
+        fml::TimePoint::Now() - start_time;
+
+    sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
+    context.layer_snapshot_store->Add(unique_id(), offscreen_render_time,
+                                      raster_data);
+  }
+
   if (context.leaf_nodes_builder) {
-    display_list()->RenderTo(context.leaf_nodes_builder,
-                             context.inherited_opacity);
+    AutoCachePaint save_paint(context);
+    int restore_count = context.leaf_nodes_builder->getSaveCount();
+    if (save_paint.paint() != nullptr) {
+      DlPaint paint = DlPaint().setAlpha(save_paint.paint()->getAlpha());
+      context.leaf_nodes_builder->saveLayer(&paint_bounds(), &paint);
+    }
+    context.leaf_nodes_builder->drawDisplayList(display_list_.skia_object());
+    context.leaf_nodes_builder->restoreToCount(restore_count);
   } else {
     display_list()->RenderTo(context.leaf_nodes_canvas,
                              context.inherited_opacity);
