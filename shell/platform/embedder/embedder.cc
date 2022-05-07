@@ -1177,6 +1177,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           "Not running in AOT mode but could not resolve the kernel binary.");
     }
     settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
+    settings.vm_snapshot_data_path =
+        fml::paths::JoinPaths({settings.assets_path, "vm_snapshot_data"});
+    settings.isolate_snapshot_data_path =
+        fml::paths::JoinPaths({settings.assets_path, "isolate_snapshot_data"});
   }
 
   settings.task_observer_add = [](intptr_t key, fml::closure callback) {
