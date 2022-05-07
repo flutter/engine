@@ -97,7 +97,7 @@ class LayerTree {
 
   PaintRegionMap paint_region_map_;
 
-  std::vector<RasterCacheItem*> raster_cached_entries_;
+  std::vector<RasterCacheItem*> raster_cache_items_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };

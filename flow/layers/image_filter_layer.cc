@@ -50,8 +50,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  AutoCache cache =
-      AutoCache::Create(layer_raster_cache_item_.get(), context, matrix);
+  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
 
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);

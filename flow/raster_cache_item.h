@@ -77,11 +77,10 @@ class RasterCacheItem {
       bool is_complex,
       bool will_change);
 
-  void Touch(const RasterCache*);
-
   virtual std::optional<RasterCacheKeyID> GetId() const { return key_id_; }
 
-  virtual bool TryToPrepareRasterCache(const PaintContext& context) const = 0;
+  virtual bool TryToPrepareRasterCache(const PaintContext& context,
+                                       bool parent_cached = false) const = 0;
 
   unsigned chld_entries() const { return child_entries_; }
 
@@ -93,7 +92,7 @@ class RasterCacheItem {
 
   CacheState cache_state() const { return cache_state_; }
 
-  bool need_cached() const { return cache_state_ != CacheState::kNone; }
+  bool need_caching() const { return cache_state_ != CacheState::kNone; }
 
   virtual ~RasterCacheItem() = default;
 

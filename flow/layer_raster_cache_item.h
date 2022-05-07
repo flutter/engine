@@ -33,7 +33,8 @@ class LayerRasterCacheItem : public RasterCacheItem {
 
   bool Rasterize(const PaintContext& paint_context, SkCanvas* canvas) const;
 
-  bool TryToPrepareRasterCache(const PaintContext& context) const override;
+  bool TryToPrepareRasterCache(const PaintContext& context,
+                               bool parent_cached = false) const override;
 
   void CacheChildren(const SkMatrix& matrix) {
     matrix_ = matrix;

@@ -15,25 +15,13 @@ namespace flutter {
 
 class AutoCache {
  public:
-  static AutoCache Create(LayerRasterCacheItem* raster_cache_item,
-                          PrerollContext* context,
-                          const SkMatrix& matrix);
-
-  static AutoCache Create(DisplayListRasterCacheItem* raster_cache_item,
-                          PrerollContext* context,
-                          const SkMatrix& matrix);
-
-  static AutoCache Create(SkPictureRasterCacheItem* raster_cache_item,
-                          PrerollContext* context,
-                          const SkMatrix& matrix);
-
-  ~AutoCache();
-
- private:
   AutoCache(RasterCacheItem* raster_cache_item,
             PrerollContext* context,
             const SkMatrix& matrix);
 
+  ~AutoCache();
+
+ private:
   int current_index_;
   RasterCacheItem* raster_cache_item_ = nullptr;
   PrerollContext* context_ = nullptr;

@@ -36,10 +36,4 @@ RasterCacheItem::MakeSkPictureRasterCacheItem(SkPicture* sk_picture,
                                                     is_complex, will_change);
 }
 
-void RasterCacheItem::Touch(const RasterCache* cache) {
-  if (GetId().has_value()) {
-    cache->Touch(GetId().value(), matrix_);
-  }
-}
-
 }  // namespace flutter

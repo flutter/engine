@@ -238,9 +238,6 @@ class RasterCache {
   struct Entry {
     bool used_this_frame = false;
     size_t access_count = 0;
-    // if this entry's parent has cached, we will remove this entry after the
-    // survive_frame_count.
-    int survive_frame_count = 3;
     std::unique_ptr<RasterCacheResult> image;
   };
 

@@ -117,8 +117,11 @@ bool LayerRasterCacheItem::Rasterize(const PaintContext& paint_context,
 
 static const auto* flow_type = "RasterCacheFlow::Layer";
 
-bool LayerRasterCacheItem::TryToPrepareRasterCache(
-    const PaintContext& context) const {
+bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
+                                                   bool parent_cached) const {
+  if (!context.raster_cache || parent_cached) {
+    return false;
+  }
   if (cache_state_ != kNone) {
     RasterCache::Context r_context = {
         // clang-format off
@@ -130,9 +133,6 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(
       .checkerboard       = context.checkerboard_offscreen_layers,
         // clang-format on
     };
-    if (!GetId().has_value()) {
-      return false;
-    }
     return context.raster_cache->UpdateCacheEntry(
         GetId().value(), r_context,
         [=](SkCanvas* canvas) { Rasterize(context, canvas); });

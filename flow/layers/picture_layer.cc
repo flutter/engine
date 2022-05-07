@@ -116,8 +116,7 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
-  AutoCache cache =
-      AutoCache::Create(raster_cache_item_.get(), context, matrix);
+  AutoCache cache = AutoCache(raster_cache_item_.get(), context, matrix);
 
   set_paint_bounds(bounds_);
 }

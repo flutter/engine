@@ -2471,7 +2471,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
           SkMatrix matrix = SkMatrix::I();
           picture_raster_cache_item.PrerollSetup(&preroll_context, matrix);
           picture_raster_cache_item.PrerollFinalize(&preroll_context, matrix);
-          picture_cache_generated = picture_raster_cache_item.need_cached();
+          picture_cache_generated = picture_raster_cache_item.need_caching();
           picture_raster_cache_item.TryToPrepareRasterCache(paint_context);
           picture_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
         }

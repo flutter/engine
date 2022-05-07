@@ -132,8 +132,9 @@ bool SkPictureRasterCacheItem::Draw(const PaintContext& context,
 static const auto* flow_type = "RasterCacheFlow::Picture";
 
 bool SkPictureRasterCacheItem::TryToPrepareRasterCache(
-    const PaintContext& context) const {
-  if (!context.raster_cache) {
+    const PaintContext& context,
+    bool parent_cached) const {
+  if (!context.raster_cache || parent_cached) {
     return false;
   }
   if (cache_state_ != kNone &&

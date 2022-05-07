@@ -278,7 +278,6 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     // The cacheable_layer111 should be cached when rended 3 frames
     EXPECT_EQ(cacheable_layer111->raster_cache_item()->cache_state(),
               RasterCacheItem::CacheState::kNone);
-
     // render count < 2 don't cache it
     EXPECT_EQ(cacheable_container_layer2->raster_cache_item()->cache_state(),
               RasterCacheItem::CacheState::kNone);
@@ -396,14 +395,6 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
                                 &paint_context());
     preroll_context()->raster_cache->CleanupAfterFrame();
-
-    // Cause of the cacheable_layer21's parent cacheable_layer2 has cached
-    // and has after third frames, we will remove the cacheable_layer21
-    EXPECT_EQ(cacheable_layer21->raster_cache_item()->cache_state(),
-              RasterCacheItem::CacheState::kCurrent);
-    EXPECT_FALSE(raster_cache()->MarkSeen(
-        cacheable_layer21->raster_cache_item()->GetId().value(),
-        SkMatrix::I()));
   }
 }
 

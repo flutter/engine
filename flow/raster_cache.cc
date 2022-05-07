@@ -120,12 +120,6 @@ bool RasterCache::Touch(const RasterCacheKeyID& id,
   auto it = cache_.find(cache_key);
   if (it != cache_.end()) {
     it->second.access_count++;
-    it->second.survive_frame_count--;
-    // current entry has beyond can live frame, try to remove it
-    if (it->second.survive_frame_count <= 0) {
-      it->second.used_this_frame = false;
-      return true;
-    }
     it->second.used_this_frame = true;
     return true;
   }

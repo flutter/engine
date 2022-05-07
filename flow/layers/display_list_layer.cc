@@ -101,7 +101,7 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   DisplayList* disp_list = display_list();
 
   AutoCache cache =
-      AutoCache::Create(display_list_raster_cache_item_.get(), context, matrix);
+      AutoCache(display_list_raster_cache_item_.get(), context, matrix);
   if (disp_list->can_apply_group_opacity()) {
     context->subtree_can_inherit_opacity = true;
   }

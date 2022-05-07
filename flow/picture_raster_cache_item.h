@@ -41,7 +41,8 @@ class SkPictureRasterCacheItem : public RasterCacheItem {
             SkCanvas* canvas,
             const SkPaint* paint) const override;
 
-  bool TryToPrepareRasterCache(const PaintContext& context) const override;
+  bool TryToPrepareRasterCache(const PaintContext& context,
+                               bool parent_cached = false) const override;
 
   void ModifyMatrix(SkPoint offset) const {
     matrix_ = matrix_.preTranslate(offset.x(), offset.y());

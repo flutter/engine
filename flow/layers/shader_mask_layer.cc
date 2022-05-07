@@ -40,8 +40,7 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  AutoCache cache =
-      AutoCache::Create(layer_raster_cache_item_.get(), context, matrix);
+  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
 
   ContainerLayer::Preroll(context, matrix);
   // We always paint with a saveLayer (or a cached rendering),
