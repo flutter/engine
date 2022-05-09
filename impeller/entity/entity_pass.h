@@ -43,10 +43,7 @@ class EntityPass {
 
   EntityPass* GetSuperpass() const;
 
-  bool Render(ContentContext& renderer,
-              RenderTarget& render_target,
-              Point position = Point(),
-              uint32_t depth = 0) const;
+  bool Render(ContentContext& renderer, RenderTarget render_target) const;
 
   void IterateAllEntities(std::function<bool(Entity&)> iterator);
 
@@ -61,12 +58,18 @@ class EntityPass {
   std::optional<Rect> GetElementsCoverage() const;
 
  private:
+  bool RenderInternal(ContentContext& renderer,
+                      RenderTarget render_target,
+                      Point position,
+                      uint32_t depth) const;
+
   std::vector<Element> elements_;
 
   EntityPass* superpass_ = nullptr;
   Matrix xformation_;
   size_t stencil_depth_ = 0u;
   Entity::BlendMode blend_mode_ = Entity::BlendMode::kSourceOver;
+  bool contains_advanced_blends_ = false;
   std::unique_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_ =

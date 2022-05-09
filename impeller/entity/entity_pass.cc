@@ -12,7 +12,9 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/texture.h"
@@ -31,6 +33,10 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
 }
 
 void EntityPass::AddEntity(Entity entity) {
+  if (entity.GetBlendMode() > Entity::BlendMode::kLastPipelineBlendMode) {
+    contains_advanced_blends_ = true;
+  }
+
   elements_.emplace_back(std::move(entity));
 }
 
@@ -114,14 +120,54 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   FML_DCHECK(pass->superpass_ == nullptr);
   pass->superpass_ = this;
   auto subpass_pointer = pass.get();
+  if (pass->blend_mode_ > Entity::BlendMode::kLastPipelineBlendMode) {
+    contains_advanced_blends_ = true;
+  }
   elements_.emplace_back(std::move(pass));
   return subpass_pointer;
 }
 
 bool EntityPass::Render(ContentContext& renderer,
-                        RenderTarget& render_target,
-                        Point position,
-                        uint32_t depth) const {
+                        RenderTarget render_target) const {
+  if (contains_advanced_blends_) {
+    auto offscreen_target = RenderTarget::CreateOffscreen(
+        *renderer.GetContext(), render_target.GetRenderTargetSize());
+    if (!RenderInternal(renderer, offscreen_target, Point(), 0)) {
+      return false;
+    }
+
+    auto command_buffer = renderer.GetContext()->CreateRenderCommandBuffer();
+    auto render_pass = command_buffer->CreateRenderPass(offscreen_target);
+
+    {
+      auto contents = std::make_shared<TextureContents>();
+      contents->SetTexture(offscreen_target.GetRenderTargetTexture());
+
+      Entity entity;
+      entity.SetContents(contents);
+      entity.SetBlendMode(Entity::BlendMode::kSource);
+
+      entity.Render(renderer, *render_pass);
+    }
+
+    if (!render_pass->EncodeCommands(
+            renderer.GetContext()->GetTransientsAllocator())) {
+      return false;
+    }
+    if (!command_buffer->SubmitCommands()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  return RenderInternal(renderer, render_target, Point(), 0);
+}
+
+bool EntityPass::RenderInternal(ContentContext& renderer,
+                                RenderTarget render_target,
+                                Point position,
+                                uint32_t depth) const {
   TRACE_EVENT0("impeller", "EntityPass::Render");
 
   auto context = renderer.GetContext();
@@ -173,7 +219,8 @@ bool EntityPass::Render(ContentContext& renderer,
 
       if (subpass->delegate_->CanCollapseIntoParentPass()) {
         // Directly render into the parent target and move on.
-        if (!subpass->Render(renderer, render_target, position, depth)) {
+        if (!subpass->RenderInternal(renderer, render_target, position,
+                                     depth)) {
           return false;
         }
         continue;
@@ -214,8 +261,8 @@ bool EntityPass::Render(ContentContext& renderer,
         return false;
       }
 
-      if (!subpass->Render(renderer, subpass_target, subpass_coverage->origin,
-                           ++depth)) {
+      if (!subpass->RenderInternal(renderer, subpass_target,
+                                   subpass_coverage->origin, ++depth)) {
         return false;
       }
 
@@ -244,7 +291,7 @@ bool EntityPass::Render(ContentContext& renderer,
       // input ("source"), writing the result to an intermediate texture, and
       // finally copying the data from the intermediate texture back to the
       // render target texture. And so all of the commands that have written to
-      // the render target texture so far need to execute before it's binded for
+      // the render target texture so far need to execute before it's bound for
       // blending (otherwise the blend pass will end up executing before all the
       // previous commands in the active pass).
       if (!end_pass()) {
