@@ -496,8 +496,6 @@ FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
-FILE: ../../../flutter/impeller/entity/contents/filters/filter_input.cc
-FILE: ../../../flutter/impeller/entity/contents/filters/filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.cc

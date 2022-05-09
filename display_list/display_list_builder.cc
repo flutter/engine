@@ -277,11 +277,11 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
 }
 void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
   if (effect == nullptr) {
-    current_path_effect_ = nullptr;
+    current_.setPathEffect(nullptr);
     Push<ClearPathEffectOp>(0, 0);
   } else {
-    current_path_effect_ = effect->shared();
-    switch (current_path_effect_->type()) {
+    current_.setPathEffect(effect->shared());
+    switch (effect->type()) {
       case DlPathEffectType::kDash: {
         const DlDashPathEffect* dash_effect = effect->asDash();
         void* pod = Push<SetPodPathEffectOp>(dash_effect->size(), 0);

@@ -12,6 +12,7 @@
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/display_list/display_list_paint.h"
+#include "flutter/display_list/display_list_path_effect.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
 
@@ -103,7 +104,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
     }
   }
   void setPathEffect(const DlPathEffect* effect) override {
-    if (NotEquals(current_path_effect_, effect)) {
+    if (NotEquals(current_.getPathEffect(), effect)) {
       onSetPathEffect(effect);
     }
   }
@@ -140,7 +141,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                             : SkBlender::Mode(ToSk(current_.getBlendMode()));
   }
   std::shared_ptr<const DlPathEffect> getPathEffect() const {
-    return current_path_effect_;
+    return current_.getPathEffect();
   }
   std::shared_ptr<const DlMaskFilter> getMaskFilter() const {
     return current_.getMaskFilter();
@@ -462,7 +463,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   DlPaint current_;
   // If |current_blender_| is set then ignore |current_.getBlendMode()|
   sk_sp<SkBlender> current_blender_;
-  sk_sp<SkPathEffect> current_path_effect_;
 };
 
 }  // namespace flutter
