@@ -130,6 +130,34 @@ void testMain() {
       );
     });
 
+    test('correctly offsets platform views', () async {
+      ui.platformViewRegistry.registerViewFactory(
+        'test-platform-view',
+        (int viewId) => html.DivElement()..id = 'view-0',
+      );
+      await createPlatformView(0, 'test-platform-view');
+
+      final EnginePlatformDispatcher dispatcher =
+          ui.window.platformDispatcher as EnginePlatformDispatcher;
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.addPlatformView(0, offset: const ui.Offset(3, 4), width: 5, height: 6);
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+
+      final html.Element slotHost =
+          flutterViewEmbedder.sceneElement!.querySelector('flt-platform-view-slot')!;
+      final html.CssStyleDeclaration style = slotHost.style;
+
+      expect(style.transform, 'matrix(1, 0, 0, 1, 3, 4)');
+      expect(style.width, '5px');
+      expect(style.height, '6px');
+
+      final html.Rectangle<num> slotRect = slotHost.getBoundingClientRect();
+      expect(slotRect.left, 3);
+      expect(slotRect.top, 4);
+      expect(slotRect.right, 8);
+      expect(slotRect.bottom, 10);
+    });
+
     // Returns the list of CSS transforms applied to the ancestor chain of
     // elements starting from `viewHost`, up until and excluding <flt-scene>.
     List<String> getTransformChain(html.Element viewHost) {
@@ -550,6 +578,39 @@ void testMain() {
       expect(result, isNull);
 
       result = diffViewList(<int>[3, 4], <int>[1, 2, 3, 4, 5, 6]);
+      expect(result, isNull);
+    });
+
+    test('diffViewList works for flutter/flutter#101580', () {
+      ViewListDiffResult? result;
+
+      // Reverse the list
+      result = diffViewList(<int>[1, 2, 3, 4], <int>[4, 3, 2, 1]);
+      expect(result, isNotNull);
+      expect(result!.viewsToAdd, <int>[3, 2, 1]);
+      expect(result.viewsToRemove, isEmpty);
+      expect(result.addToBeginning, isFalse);
+
+      // Sort the list
+      result = diffViewList(<int>[3, 4, 1, 2], <int>[1, 2, 3, 4]);
+      expect(result, isNotNull);
+      expect(result!.viewsToAdd, <int>[3, 4]);
+      expect(result.viewsToRemove, isEmpty);
+      expect(result.addToBeginning, isFalse);
+
+      // Move last view to the beginning
+      // (The algo explores the diff from left to right, but in this case, it'd
+      // more efficient to add [1] at the beginning. Maybe we should compute both
+      // diffs, from left and right, and return the one that results in fewer
+      // add/remove operations?)
+      result = diffViewList(<int>[2, 3, 4, 1], <int>[1, 2, 3, 4]);
+      expect(result, isNotNull);
+      expect(result!.viewsToAdd, <int>[2, 3, 4]);
+      expect(result.viewsToRemove, isEmpty);
+      expect(result.addToBeginning, isFalse);
+
+      // Shuffle the list
+      result = diffViewList(<int>[1, 2, 3, 4], <int>[2, 4, 1, 3]);
       expect(result, isNull);
     });
 

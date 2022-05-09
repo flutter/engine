@@ -1,0 +1,60 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/testing/testing.gni")
+
+impeller_component("playground") {
+  testonly = true
+
+  sources = [
+    "playground.cc",
+    "playground.h",
+    "playground_impl.cc",
+    "playground_impl.h",
+    "widgets.cc",
+    "widgets.h",
+  ]
+
+  deps = [ "../renderer/backend" ]
+
+  if (impeller_enable_metal) {
+    sources += [
+      "backend/metal/playground_impl_mtl.h",
+      "backend/metal/playground_impl_mtl.mm",
+    ]
+  }
+
+  if (impeller_enable_opengles) {
+    sources += [
+      "backend/gles/playground_impl_gles.cc",
+      "backend/gles/playground_impl_gles.h",
+    ]
+  }
+
+  public_deps = [
+    "../entity:entity_shaders",
+    "../fixtures:shader_fixtures",
+    "../renderer",
+    "imgui:imgui_impeller_backend",
+    "//flutter/testing",
+    "//third_party/glfw",
+    "//third_party/imgui:imgui_glfw",
+  ]
+
+  public_configs = [ ":playground_config" ]
+
+  if (is_mac) {
+    frameworks = [
+      "AppKit.framework",
+      "QuartzCore.framework",
+    ]
+  }
+}
+
+config("playground_config") {
+  if (impeller_enable_playground) {
+    defines = [ "IMPELLER_ENABLE_PLAYGROUND" ]
+  }
+}

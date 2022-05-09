@@ -25,7 +25,6 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
-import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -88,7 +87,6 @@ public class FlutterEngine {
   // System channels.
   @NonNull private final AccessibilityChannel accessibilityChannel;
   @NonNull private final DeferredComponentChannel deferredComponentChannel;
-  @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
@@ -303,7 +301,6 @@ public class FlutterEngine {
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
     deferredComponentChannel = new DeferredComponentChannel(dartExecutor);
-    keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
     mouseCursorChannel = new MouseCursorChannel(dartExecutor);
@@ -482,12 +479,6 @@ public class FlutterEngine {
   @NonNull
   public AccessibilityChannel getAccessibilityChannel() {
     return accessibilityChannel;
-  }
-
-  /** System channel that sends key events from Android to Flutter. */
-  @NonNull
-  public KeyEventChannel getKeyEventChannel() {
-    return keyEventChannel;
   }
 
   /** System channel that sends Android lifecycle events to Flutter. */

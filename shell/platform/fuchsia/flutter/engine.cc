@@ -166,8 +166,8 @@ void Engine::Initialize(
   } else {
     gfx_protocols.set_view_focuser(focuser.NewRequest());
     gfx_protocols.set_view_ref_focused(view_ref_focused.NewRequest());
-    // TODO(fxbug.dev/85125): Enable TouchSource for GFX.
-    // gfx_protocols.set_touch_source(touch_source.NewRequest());
+    gfx_protocols.set_touch_source(touch_source.NewRequest());
+    // GFX used only on products without a mouse.
   }
   scenic->CreateSessionT(std::move(gfx_protocols), [] {});
 
@@ -715,13 +715,9 @@ void Engine::OnMainIsolateStart() {
     FML_LOG(ERROR) << "Could not configure some native embedder bindings for a "
                       "new root isolate.";
   }
-  FML_DLOG(INFO) << "Main isolate for engine '" << thread_label_
-                 << "' was started.";
 }
 
 void Engine::OnMainIsolateShutdown() {
-  FML_DLOG(INFO) << "Main isolate for engine '" << thread_label_
-                 << "' shutting down.";
   Terminate();
 }
 
@@ -902,7 +898,7 @@ void Engine::WarmupSkps(
       skp_mappings = asset_manager->GetAsMappings(".*\\.skp$", "shaders");
     }
 
-    if (skp_mappings.size() == 0) {
+    if (skp_mappings.empty()) {
       FML_LOG(WARNING)
           << "Engine::WarmupSkps got zero SKP mappings, returning early";
       completion_callback(0);

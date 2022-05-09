@@ -264,11 +264,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
 
-  // FlutterProjectArgs is expecting a full argv, so when processing it for
-  // flags the first item is treated as the executable and ignored. Add a dummy
-  // value so that all provided arguments are used.
+  // The first argument of argv is required to be the executable name.
+  std::vector<const char*> argv = {[self.executableName UTF8String]};
   std::vector<std::string> switches = _project.switches;
-  std::vector<const char*> argv = {"placeholder"};
   std::transform(switches.begin(), switches.end(), std::back_inserter(argv),
                  [](const std::string& arg) -> const char* { return arg.c_str(); });
 
@@ -282,7 +280,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.assets_path = _project.assetsPath.UTF8String;
   flutterArguments.icu_data_path = _project.ICUDataPath.UTF8String;
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
-  flutterArguments.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
+  flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
   flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
                                                        void* user_data) {
@@ -515,6 +513,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (std::weak_ptr<flutter::AccessibilityBridge>)accessibilityBridge {
   return _bridge;
+}
+
+- (nonnull NSString*)executableName {
+  return [[[NSProcessInfo processInfo] arguments] firstObject] ?: @"Flutter";
 }
 
 - (void)updateWindowMetrics {

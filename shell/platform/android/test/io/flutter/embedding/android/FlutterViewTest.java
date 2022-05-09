@@ -60,7 +60,6 @@ import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
@@ -506,12 +505,12 @@ public class FlutterViewTest {
   @Test
   @Config(minSdk = 23, maxSdk = 29, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarRight() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(ctx));
     setExpectedDisplayRotation(Surface.ROTATION_90);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+    when(flutterView.getContext()).thenReturn(ctx);
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -542,12 +541,12 @@ public class FlutterViewTest {
   @Test
   @Config(minSdk = 20, maxSdk = 22, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarRightBelowSDK23() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(ctx));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+    when(flutterView.getContext()).thenReturn(ctx);
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -578,12 +577,12 @@ public class FlutterViewTest {
   @Test
   @Config(minSdk = 23, maxSdk = 29, qualifiers = "land")
   public void systemInsetHandlesFullscreenNavbarLeft() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(ctx));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+    when(flutterView.getContext()).thenReturn(ctx);
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -617,12 +616,12 @@ public class FlutterViewTest {
   @TargetApi(30)
   @Config(sdk = 30, qualifiers = "land")
   public void systemInsetGetInsetsFullscreen() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(ctx));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+    when(flutterView.getContext()).thenReturn(ctx);
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -653,12 +652,12 @@ public class FlutterViewTest {
   @TargetApi(28)
   @Config(sdk = 28, qualifiers = "land")
   public void systemInsetGetInsetsFullscreenLegacy() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(ctx));
     setExpectedDisplayRotation(Surface.ROTATION_270);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+    when(flutterView.getContext()).thenReturn(ctx);
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -691,10 +690,10 @@ public class FlutterViewTest {
   @TargetApi(30)
   @Config(sdk = 30, qualifiers = "land")
   public void systemInsetDisplayCutoutSimple() {
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(ctx));
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
-    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+    when(flutterView.getContext()).thenReturn(ctx);
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -739,9 +738,7 @@ public class FlutterViewTest {
     FlutterView flutterView = spy(new FlutterView(context));
     ShadowDisplay display =
         Shadows.shadowOf(
-            ((WindowManager)
-                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay());
+            ((WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
     WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
         mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
     // For reasoning behing using doReturn instead of when, read "Important gotcha" at
@@ -767,9 +764,7 @@ public class FlutterViewTest {
     FlutterView flutterView = spy(new FlutterView(context));
     ShadowDisplay display =
         Shadows.shadowOf(
-            ((WindowManager)
-                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay());
+            ((WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
     when(flutterView.getContext()).thenReturn(context);
     WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
         mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
@@ -1012,9 +1007,7 @@ public class FlutterViewTest {
   private void setExpectedDisplayRotation(int rotation) {
     ShadowDisplay display =
         Shadows.shadowOf(
-            ((WindowManager)
-                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay());
+            ((WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
     display.setRotation(rotation);
   }
 
