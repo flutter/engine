@@ -233,6 +233,11 @@ std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
 Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   Settings settings = {};
 
+  // Set executable name.
+  if (command_line.has_argv0()) {
+    settings.executable_name = command_line.argv0();
+  }
+
   // Enable Observatory
   settings.enable_observatory =
       !command_line.HasOption(FlagForSwitch(Switch::DisableObservatory));
@@ -372,11 +377,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       FlagForSwitch(Switch::IsolateSnapshotInstructions),
       &isolate_snapshot_instr_filename);
 
-  if (aot_shared_library_name.size() > 0) {
+  if (!aot_shared_library_name.empty()) {
     for (std::string_view name : aot_shared_library_name) {
       settings.application_library_path.emplace_back(name);
     }
-  } else if (snapshot_asset_path.size() > 0) {
+  } else if (!snapshot_asset_path.empty()) {
     settings.vm_snapshot_data_path =
         fml::paths::JoinPaths({snapshot_asset_path, vm_snapshot_data_filename});
     settings.vm_snapshot_instr_path = fml::paths::JoinPaths(

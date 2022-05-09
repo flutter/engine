@@ -10,20 +10,13 @@
 
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
-#include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
-#include "third_party/rapidjson/include/rapidjson/document.h"
 
-#if defined(WINUWP)
-#include "flutter/shell/platform/windows/accessibility_bridge_delegate_winuwp.h"
-#else
 #include <dwmapi.h>
 #include "flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h"
-#endif  // defined(WINUWP)
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -189,18 +182,14 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   texture_registrar_ =
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
   surface_manager_ = AngleSurfaceManager::Create();
-#ifndef WINUWP
   window_proc_delegate_manager_ =
       std::make_unique<WindowProcDelegateManagerWin32>();
-#endif
 
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
   // https://github.com/flutter/flutter/issues/71099
-  settings_channel_ =
-      std::make_unique<BasicMessageChannel<rapidjson::Document>>(
-          messenger_wrapper_.get(), "flutter/settings",
-          &JsonMessageCodec::GetInstance());
+  settings_plugin_ =
+      SettingsPlugin::Create(messenger_wrapper_.get(), task_runner_.get());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -269,10 +258,10 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   args.assets_path = assets_path_string.c_str();
   args.icu_data_path = icu_path_string.c_str();
   args.command_line_argc = static_cast<int>(argv.size());
-  args.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
+  args.command_line_argv = argv.empty() ? nullptr : argv.data();
   args.dart_entrypoint_argc = static_cast<int>(entrypoint_argv.size());
   args.dart_entrypoint_argv =
-      entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
+      entrypoint_argv.empty() ? nullptr : entrypoint_argv.data();
   args.platform_message_callback =
       [](const FlutterPlatformMessage* engine_message,
          void* user_data) -> void {
@@ -341,7 +330,10 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
                                     kFlutterEngineDisplaysUpdateTypeStartup,
                                     displays.data(), displays.size());
 
-  SendSystemSettings();
+  SendSystemLocales();
+
+  settings_plugin_->StartWatching();
+  settings_plugin_->SendSettings();
 
   return true;
 }
@@ -378,7 +370,6 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
   }
   uint64_t interval = 16600000;
 
-#ifndef WINUWP
   DWM_TIMING_INFO timing_info = {};
   timing_info.cbSize = sizeof(timing_info);
   HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
@@ -388,7 +379,6 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
                                    1000000000.0) /
                static_cast<double>(timing_info.rateRefresh.uiNumerator);
   }
-#endif
 
   return std::chrono::nanoseconds(interval);
 }
@@ -485,13 +475,7 @@ void FlutterWindowsEngine::ReloadSystemFonts() {
   embedder_api_.ReloadSystemFonts(engine_);
 }
 
-void FlutterWindowsEngine::ReloadPlatformBrightness() {
-  if (engine_) {
-    SendSystemSettings();
-  }
-}
-
-void FlutterWindowsEngine::SendSystemSettings() {
+void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
@@ -507,16 +491,6 @@ void FlutterWindowsEngine::SendSystemSettings() {
       [](const auto& arg) -> const auto* { return &arg; });
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
-
-  rapidjson::Document settings(rapidjson::kObjectType);
-  auto& allocator = settings.GetAllocator();
-  settings.AddMember("alwaysUse24HourFormat",
-                     Prefer24HourTime(GetUserTimeFormat()), allocator);
-  settings.AddMember("textScaleFactor", 1.0, allocator);
-  settings.AddMember("platformBrightness",
-                     fml::WideStringToUtf8(GetPreferredBrightness()),
-                     allocator);
-  settings_channel_->Send(settings);
 }
 
 bool FlutterWindowsEngine::RegisterExternalTexture(int64_t texture_id) {
@@ -545,11 +519,7 @@ bool FlutterWindowsEngine::DispatchSemanticsAction(
 }
 
 void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
-#if defined(WINUWP)
-  using AccessibilityBridgeDelegateWindows = AccessibilityBridgeDelegateWinUWP;
-#else
   using AccessibilityBridgeDelegateWindows = AccessibilityBridgeDelegateWin32;
-#endif  // defined(WINUWP)
 
   if (engine_ && semantics_enabled_ != enabled) {
     semantics_enabled_ = enabled;
