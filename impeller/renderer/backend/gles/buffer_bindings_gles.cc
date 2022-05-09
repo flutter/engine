@@ -23,7 +23,7 @@ BufferBindingsGLES::~BufferBindingsGLES() = default;
 bool BufferBindingsGLES::RegisterVertexStageInput(
     const ProcTableGLES& gl,
     const std::vector<ShaderStageIOSlot>& p_inputs) {
-  // Attrib locations have be iterated over in order or location because we will
+  // Attrib locations have to be iterated over in order of location because we will
   // be calculating offsets later.
   auto inputs = p_inputs;
   std::sort(inputs.begin(), inputs.end(), [](const auto& lhs, const auto& rhs) {
