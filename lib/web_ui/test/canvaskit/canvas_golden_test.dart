@@ -1144,7 +1144,7 @@ void drawTestPicture(CkCanvas canvas) {
 
 CkImage generateTestImage() {
   final DomCanvasElement canvas = createDomCanvasElement(width: 20, height: 20);
-  final DomCanvasRenderingContext2D ctx = canvas.getContext2D;
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#FF0000';
   ctx.fillRect(0, 0, 10, 10);
   ctx.fillStyle = '#00FF00';

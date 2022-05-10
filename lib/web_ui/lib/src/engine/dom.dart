@@ -281,7 +281,7 @@ extension DomCanvasElementExtension on DomCanvasElement {
     ]);
   }
 
-  DomCanvasRenderingContext2D get getContext2D =>
+  DomCanvasRenderingContext2D get context2D =>
       getContext('2d')! as DomCanvasRenderingContext2D;
 }
 
@@ -296,6 +296,11 @@ class DomCanvasRenderingContext2D {}
 extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external Object? get fillStyle;
   external set fillStyle(Object? style);
+  external DomCanvasGradient createLinearGradient(num x0, num y0, num x1, num
+      y1);
+  external DomCanvasPattern? createPattern(Object image, String reptitionType);
+  external DomCanvasGradient createRadialGradient(num x0, num y0, num r0, num
+      x1, num y1, num r1);
   external void drawImage(DomCanvasImageSource source, num destX, num destY);
   external void fillRect(num x, num y, num width, num height);
   external DomImageData getImageData(int x, int y, int sw, int sh);
@@ -307,6 +312,18 @@ class DomImageData {}
 
 extension DomImageDataExtension on DomImageData {
   external Uint8ClampedList get data;
+}
+
+@JS()
+@staticInterop
+class DomCanvasPattern {}
+
+@JS()
+@staticInterop
+class DomCanvasGradient {}
+
+extension DomCanvasGradientExtension on DomCanvasGradient {
+  external void addColorStop(num offset, String color);
 }
 
 @JS()
