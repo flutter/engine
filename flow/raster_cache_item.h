@@ -37,7 +37,7 @@ class RasterCacheItem {
                            unsigned child_entries = 0)
       : key_id_(key_id),
         cache_state_(cache_state),
-        child_entries_(child_entries) {}
+        child_items_(child_entries) {}
 
   virtual void PrerollSetup(PrerollContext* context,
                             const SkMatrix& matrix) = 0;
@@ -82,13 +82,9 @@ class RasterCacheItem {
   virtual bool TryToPrepareRasterCache(const PaintContext& context,
                                        bool parent_cached = false) const = 0;
 
-  unsigned chld_entries() const { return child_entries_; }
+  unsigned child_items() const { return child_items_; }
 
   void set_matrix(const SkMatrix& matrix) { matrix_ = matrix; }
-
-  void set_child_entries(unsigned child_entries) {
-    child_entries_ = child_entries;
-  }
 
   CacheState cache_state() const { return cache_state_; }
 
@@ -102,7 +98,7 @@ class RasterCacheItem {
   CacheState cache_state_ = CacheState::kCurrent;
   mutable int num_cache_attempts_ = 1;
   mutable SkMatrix matrix_;
-  unsigned child_entries_;
+  unsigned child_items_;
 };
 
 }  // namespace flutter

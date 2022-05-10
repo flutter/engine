@@ -21,7 +21,7 @@ void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
                                         const SkMatrix& matrix) {
   if (context->raster_cache && context->raster_cached_entries) {
     context->raster_cached_entries->push_back(this);
-    child_entries_ = context->raster_cached_entries->size();
+    child_items_ = context->raster_cached_entries->size();
     matrix_ = matrix;
   }
 }
@@ -39,7 +39,7 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
       !SkRect::Intersects(context->cull_rect, layer_->paint_bounds())) {
     return;
   }
-  child_entries_ = context->raster_cached_entries->size() - child_entries_;
+  child_items_ = context->raster_cached_entries->size() - child_items_;
   if (num_cache_attempts_ >= layer_cached_threshold_) {
     // the layer can be cached
     cache_state_ = CacheState::kCurrent;
