@@ -338,9 +338,12 @@ TEST_P(RendererTest, CanRenderInstanced) {
 }
 #endif  // IMPELLER_ENABLE_METAL
 
-#if IMPELLER_ENABLE_METAL  // The shader fails to link in the GLES backend for
-                           // some reason.
+#if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, TheImpeller) {
+  if (GetBackend() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_(
+        "The shader fails to link in the GLES backend for some reason.");
+  }
   using VS = ImpellerVertexShader;
   using FS = ImpellerFragmentShader;
 
