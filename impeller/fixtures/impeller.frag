@@ -33,7 +33,9 @@ const vec3 kSunDirection = normalize(vec3(2, -5, 3));
 const float kGlowBlend = 1.1;
 const vec4 kGlowColor = vec4(0.86, 0.98, 1.0, 1);
 const vec4 kGlowColor2 = vec4(1.66, 0.98, 0.5, 1);
-const float kGlassIOR = 1.10;
+// These refraction ratios are inverted for style purposes.
+const float kAirToGlassIOR = 1.10;
+const float kGlassToAirIOR = 1.0 / kAirToGlassIOR;
 
 // Camera
 const float kFocalLength = 12.0;
@@ -366,7 +368,7 @@ vec4 CombinedColor(vec3 ray_position, vec3 ray_direction, vec4 ray_noise) {
     glass_reflection_factor =
         0.5 - dot(glass_reflection_direction, surface_normal) * 0.6;
 
-    ray_direction = refract(ray_direction, surface_normal, kGlassIOR);
+    ray_direction = refract(ray_direction, surface_normal, kAirToGlassIOR);
     ray_position += ray_direction * 0.5;
     int steps;
     result = March(ray_position, ray_direction, steps, true, false);
@@ -377,14 +379,14 @@ vec4 CombinedColor(vec3 ray_position, vec3 ray_direction, vec4 ray_noise) {
   }
 
   if (result.y == -3.0) {  // March out of the glass.
-    ray_direction = refract(ray_direction, surface_normal, 1.0 / kGlassIOR);
-    ray_position += ray_direction * 0.5;
+    ray_direction = refract(ray_direction, surface_normal, kGlassToAirIOR);
+    ray_position += ray_direction * 1.0;
     int steps;
     result = March(ray_position + ray_direction * result.x, ray_direction,
                    steps, false, false);
     steps_taken += steps;
     ray_position = ray_position + ray_direction * result.x;
-    surface_normal = InnerGlassGradient(ray_position);
+    surface_normal = SceneGradient(ray_position);
   }
 
   float shadow_multiplier = MarchShadow(ray_position);
