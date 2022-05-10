@@ -7,22 +7,17 @@ package io.flutter.embedding.android;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
-import java.util.HashMap;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import io.flutter.plugin.common.BinaryMessenger;
+import java.util.HashMap;
 
 /**
- * A {@link KeyboardManager.Responder} of {@link KeyboardManager} that handles events by sending processed
- * information in {@link KeyData}.
+ * A {@link KeyboardManager.Responder} of {@link KeyboardManager} that handles events by sending
+ * processed information in {@link KeyData}.
  *
  * <p>This class corresponds to the HardwareKeyboard API in the framework.
  */
 public class KeyEmbedderResponder implements KeyboardManager.Responder {
   private static final String TAG = "KeyEmbedderResponder";
-
-  // TODO(dkwingsmt): Doc
-  public static final String CHANNEL = "flutter/keydata";
 
   // TODO(dkwingsmt): put the constants to key map.
   private static final Long kValueMask = 0x000ffffffffl;
@@ -93,7 +88,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   }
 
   private Long getPhysicalKey(@NonNull KeyEvent event) {
-    final Long byMapping = KeyboardMap.scanCodeToPhysical.get(event.getScanCode());
+    final Long byMapping = KeyboardMap.scanCodeToPhysical.get((long) event.getScanCode());
     if (byMapping != null) {
       return byMapping;
     }
@@ -103,7 +98,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
 
   private Long getLogicalKey(@NonNull KeyEvent event) {
     // TODO(dkwingsmt): Better logic.
-    final Long byMapping = KeyboardMap.keyCodeToLogical.get(event.getKeyCode());
+    final Long byMapping = KeyboardMap.keyCodeToLogical.get((long) event.getKeyCode());
     if (byMapping != null) {
       return byMapping;
     }
@@ -113,12 +108,10 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   void updatePressingState(Long physicalKey, Long logicalKey) {
     if (logicalKey != 0) {
       final Long previousValue = pressingRecords.put(physicalKey, logicalKey);
-      if (previousValue != null)
-        throw new AssertionError("The key was not empty");
+      if (previousValue != null) throw new AssertionError("The key was not empty");
     } else {
       final Long previousValue = pressingRecords.remove(physicalKey);
-      if (previousValue == null)
-        throw new AssertionError("The key was empty");
+      if (previousValue == null) throw new AssertionError("The key was empty");
     }
   }
 
@@ -129,7 +122,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     final Long logicalKey = getLogicalKey(event);
     final long timestamp = event.getEventTime();
     final Long lastLogicalRecord = pressingRecords.get(physicalKey);
-//    final boolean isRepeat = event.getRepeatCount() > 0;
+    //    final boolean isRepeat = event.getRepeatCount() > 0;
 
     boolean isDown = false;
     switch (event.getAction()) {
@@ -139,8 +132,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
       case KeyEvent.ACTION_UP:
         isDown = false;
         break;
-      case KeyEvent.ACTION_MULTIPLE:
-        // This action type has been deprecated in API level 29, and we don't know how to process it.
+      default:
         return false;
     }
 
@@ -157,7 +149,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
         type = KeyData.Type.kRepeat;
       }
       character = applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
-    } else {  // is_down_event false
+    } else { // is_down_event false
       if (lastLogicalRecord == null) {
         // The physical key has been released before. It might indicate a missed
         // event due to loss of focus, or multiple keyboards pressed keys with the
@@ -177,7 +169,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     output.type = type;
     output.logicalKey = logicalKey;
     output.physicalKey = physicalKey;
-    output.character = character;
+    output.character = "" + character;
     output.synthesized = false;
 
     sendKeyEvent(output, onKeyEventHandledCallback);
@@ -196,15 +188,19 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   }
 
   private void sendKeyEvent(KeyData data, OnKeyEventHandledCallback onKeyEventHandledCallback) {
-    final BinaryMessenger.BinaryReply handleMessageReply = onKeyEventHandledCallback == null ? null : message -> {
-      Boolean handled = false;
-      if (message.capacity() == 0) {
-        handled = message.get() != 0;
-      }
-      onKeyEventHandledCallback.onKeyEventHandled(handled);
-    };
+    final BinaryMessenger.BinaryReply handleMessageReply =
+        onKeyEventHandledCallback == null
+            ? null
+            : message -> {
+              Boolean handled = false;
+              message.rewind();
+              if (message.capacity() != 0) {
+                handled = message.get() != 0;
+              }
+              onKeyEventHandledCallback.onKeyEventHandled(handled);
+            };
 
-    messenger.send(CHANNEL, data.toBytes(), handleMessageReply);
+    messenger.send(KeyData.CHANNEL, data.toBytes(), handleMessageReply);
   }
 
   @Override

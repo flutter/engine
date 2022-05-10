@@ -9,10 +9,32 @@ public class FakeKeyEvent extends KeyEvent {
     super(action, keyCode);
   }
 
+  public FakeKeyEvent(
+      long eventTime,
+      int action,
+      int code,
+      int repeat,
+      int metaState,
+      int scancode,
+      char character) {
+    super(
+        /*downTime*/ eventTime,
+        eventTime,
+        action,
+        code,
+        repeat,
+        metaState, /*deviceId*/
+        0,
+        scancode);
+    this.character = character;
+  }
+
+  private char character = 0;
+
   public final int getUnicodeChar() {
     if (getKeyCode() == KeyEvent.KEYCODE_BACK) {
       return 0;
     }
-    return 1;
+    return character;
   }
 }
