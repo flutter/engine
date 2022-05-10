@@ -44,7 +44,7 @@ public class SpellCheckChannel {
   private SpellCheckMethodHandler spellCheckMethodHandler;
 
   @NonNull
-  final MethodChannel.MethodCallHandler parsingMethodHandler =
+  public final MethodChannel.MethodCallHandler parsingMethodHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
@@ -63,7 +63,6 @@ public class SpellCheckChannel {
                 final JSONArray argumentList = (JSONArray) args;
                 String locale = argumentList.getString(0);
                 String text = argumentList.getString(1);
-
                 spellCheckMethodHandler.initiateSpellCheck(locale, text, result);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);

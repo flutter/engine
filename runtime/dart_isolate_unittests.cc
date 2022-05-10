@@ -178,6 +178,76 @@ TEST_F(DartIsolateTest, CanRunDartCodeCodeSynchronously) {
   }));
 }
 
+TEST_F(DartIsolateTest, ImpellerFlagIsCorrectWhenTrue) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  auto vm_ref = DartVMRef::Create(settings);
+  TaskRunners task_runners(GetCurrentTestName(),    //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner()   //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, GetDefaultKernelFilePath());
+
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+  ASSERT_TRUE(isolate->RunInIsolateScope([settings]() -> bool {
+    Dart_Handle dart_ui = ::Dart_LookupLibrary(tonic::ToDart("dart:ui"));
+    if (tonic::CheckAndHandleError(dart_ui)) {
+      return false;
+    }
+    Dart_Handle impeller_enabled =
+        ::Dart_GetField(dart_ui, tonic::ToDart("_impellerEnabled"));
+    if (tonic::CheckAndHandleError(impeller_enabled)) {
+      return false;
+    }
+    bool result;
+    if (tonic::CheckAndHandleError(
+            Dart_BooleanValue(impeller_enabled, &result))) {
+      return false;
+    }
+    return result == settings.enable_impeller;
+  }));
+}
+
+TEST_F(DartIsolateTest, ImpellerFlagIsCorrectWhenFalse) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  settings.enable_impeller = false;
+  auto vm_ref = DartVMRef::Create(settings);
+  TaskRunners task_runners(GetCurrentTestName(),    //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner()   //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, GetDefaultKernelFilePath());
+
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+  ASSERT_TRUE(isolate->RunInIsolateScope([settings]() -> bool {
+    Dart_Handle dart_ui = ::Dart_LookupLibrary(tonic::ToDart("dart:ui"));
+    if (tonic::CheckAndHandleError(dart_ui)) {
+      return false;
+    }
+    Dart_Handle impeller_enabled =
+        ::Dart_GetField(dart_ui, tonic::ToDart("_impellerEnabled"));
+    if (tonic::CheckAndHandleError(impeller_enabled)) {
+      return false;
+    }
+    bool result;
+    if (tonic::CheckAndHandleError(
+            Dart_BooleanValue(impeller_enabled, &result))) {
+      return false;
+    }
+    return result == settings.enable_impeller;
+  }));
+}
+
 TEST_F(DartIsolateTest, CanRegisterNativeCallback) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   AddNativeCallback(
@@ -486,51 +556,6 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
   ASSERT_FALSE(root_isolate->LoadLoadingUnit(3, std::move(isolate_data),
                                              std::move(isolate_instructions)));
   ASSERT_TRUE(root_isolate->Shutdown());
-}
-
-// TODO(garyq): Re-enable this test, and resolve dart-side hanging future and
-// threading. See https://github.com/flutter/flutter/issues/72312
-TEST_F(DartIsolateTest, DISABLED_ValidLoadingUnitSucceeds) {
-  if (!DartVM::IsRunningPrecompiledCode()) {
-    FML_LOG(INFO) << "Split AOT does not work in JIT mode";
-    return;
-  }
-
-  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-  AddNativeCallback(
-      "NotifyNative",
-      CREATE_NATIVE_ENTRY(([this](Dart_NativeArguments args) { Signal(); })));
-  AddNativeCallback(
-      "NotifySuccess", CREATE_NATIVE_ENTRY([this](Dart_NativeArguments args) {
-        auto bool_handle = Dart_GetNativeArgument(args, 0);
-        ASSERT_FALSE(tonic::CheckAndHandleError(bool_handle));
-        ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(bool_handle));
-        Signal();
-      }));
-  const auto settings = CreateSettingsForFixture();
-  auto vm_ref = DartVMRef::Create(settings);
-  auto thread = CreateNewThread();
-  TaskRunners task_runners(GetCurrentTestName(),  //
-                           thread,                //
-                           thread,                //
-                           thread,                //
-                           thread                 //
-  );
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
-                                      "canCallDeferredLibrary", {},
-                                      GetDefaultKernelFilePath());
-  ASSERT_TRUE(isolate);
-  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
-  Wait();
-
-  auto isolate_data = std::make_unique<const fml::NonOwnedMapping>(
-      split_aot_symbols_.vm_isolate_data, 0);
-  auto isolate_instructions = std::make_unique<const fml::NonOwnedMapping>(
-      split_aot_symbols_.vm_isolate_instrs, 0);
-
-  ASSERT_TRUE(isolate->get()->LoadLoadingUnit(2, std::move(isolate_data),
-                                              std::move(isolate_instructions)));
-  Wait();
 }
 
 TEST_F(DartIsolateTest, DartPluginRegistrantIsCalled) {

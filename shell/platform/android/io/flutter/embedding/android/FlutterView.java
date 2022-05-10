@@ -60,6 +60,7 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.editing.SpellCheckPlugin;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
@@ -101,7 +102,8 @@ import java.util.Set;
  * See <a>https://source.android.com/devices/graphics/arch-tv#surface_or_texture</a> for more
  * information comparing {@link android.view.SurfaceView} and {@link android.view.TextureView}.
  */
-public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseCursorViewDelegate {
+public class FlutterView extends FrameLayout
+    implements MouseCursorPlugin.MouseCursorViewDelegate, KeyboardManager.ViewDelegate {
   private static final String TAG = "FlutterView";
 
   // Internal view hierarchy references.
@@ -124,7 +126,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   // possibly storing intermediate state, and communicating those events to Flutter.
   //
   // These components essentially add some additional behavioral logic on top of
-  // existing, stateless system channels, e.g., KeyEventChannel, TextInputChannel, etc.
+  // existing, stateless system channels, e.g., MouseCursorChannel, TextInputChannel, etc.
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
   @Nullable private SpellCheckPlugin spellCheckPlugin;
@@ -1078,6 +1080,25 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
   // -------- End: Mouse ---------
 
+  // -------- Start: Keyboard -------
+
+  @Override
+  public BinaryMessenger getBinaryMessenger() {
+    return flutterEngine.getDartExecutor();
+  }
+
+  @Override
+  public boolean onTextInputKeyEvent(@NonNull KeyEvent keyEvent) {
+    return textInputPlugin.handleKeyEvent(keyEvent);
+  }
+
+  @Override
+  public void redispatch(@NonNull KeyEvent keyEvent) {
+    getRootView().dispatchKeyEvent(keyEvent);
+  }
+
+  // -------- End: Keyboard -------
+
   /**
    * Connects this {@code FlutterView} to the given {@link
    * io.flutter.embedding.engine.FlutterEngine}.
@@ -1138,13 +1159,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 
-    keyboardManager =
-        new KeyboardManager(
-            this,
-            textInputPlugin,
-            new KeyChannelResponder[] {
-              new KeyChannelResponder(flutterEngine.getKeyEventChannel())
-            });
+    keyboardManager = new KeyboardManager(this);
     androidTouchProcessor =
         new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =

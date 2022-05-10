@@ -136,6 +136,7 @@ struct Settings {
   std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
+  bool enable_timeline_event_handler = true;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
   bool purge_persistent_cache = false;
@@ -155,6 +156,10 @@ struct Settings {
   // Used as the script entrypoint in debug messages. Does not affect how the
   // Dart code is executed.
   std::string advisory_script_entrypoint = "main";
+
+  // The executable path associated with this process. This is returned by
+  // Platform.executable from dart:io. If unknown, defaults to "Flutter".
+  std::string executable_name = "Flutter";
 
   // Observatory settings
 

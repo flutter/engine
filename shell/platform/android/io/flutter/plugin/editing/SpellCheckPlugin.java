@@ -10,6 +10,7 @@ import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextInfo;
 import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -34,8 +35,8 @@ public class SpellCheckPlugin
   private final TextServicesManager mTextServicesManager;
   private SpellCheckerSession mSpellCheckerSession;
 
-  private MethodChannel.Result pendingResult;
-  private String pendingResultText;
+  @VisibleForTesting MethodChannel.Result pendingResult;
+  @VisibleForTesting String pendingResultText;
 
   // The maximum number of suggestions that the Android spell check service is allowed to provide
   // per word. Same number that is used by default for Android's TextViews.

@@ -18,19 +18,12 @@ platform_properties:
       build_android_aot: "false"
       build_android_vulkan: "false"
       build_ios: "false"
-      build_windows_uwp: "false"
       build_android_jit_release: "false"
       gcs_goldens_bucket: ""
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
       no_bitcode: "false"
-      caches: >-
-        [
-          {"name":"builder_linux_engine","path":"builder"},
-          {"name":"gradle","path":"gradle"},
-          {"name":"openjdk","path":"java"}
-        ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -48,27 +41,19 @@ platform_properties:
       build_android_aot: "false"
       build_android_vulkan: "false"
       build_ios: "false"
-      build_windows_uwp: "false"
       build_android_jit_release: "false"
       gcs_goldens_bucket: ""
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
       no_bitcode: "false"
-      caches: >-
-        [
-          {"name":"flutter_cocoapods","path":"cocoapods"},
-          {"name":"osx_sdk_13a233","path":"osx_sdk"},
-          {"name":"builder_mac_engine","path":"builder"},
-          {"name":"openjdk","path":"java"}
-        ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
           {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"}
         ]
       device_type: none
-      mac_model: "Macmini8,1"
+      cpu: x86
       os: Mac-12
       xcode: 13a233 # xcode 13.0
   windows:
@@ -79,18 +64,12 @@ platform_properties:
       build_android_aot: "false"
       build_android_vulkan: "false"
       build_ios: "false"
-      build_windows_uwp: "false"
       build_android_jit_release: "false"
       gcs_goldens_bucket: ""
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
       no_bitcode: "false"
-      caches: >-
-        [
-          {"name":"builder_win_engine","path":"builder"},
-          {"name":"openjdk","path":"java"}
-        ]
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
@@ -156,6 +135,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 90
 
   - name: Linux Fuchsia FEMU
@@ -164,6 +145,8 @@ targets:
       add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
     timeout: 60
 
   - name: Linux Framework Smoke Tests
@@ -201,12 +184,36 @@ targets:
       build_host: "true"
     timeout: 90
 
+  - name: Linux linux_arm_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: linux_arm_host_engine
+      environment: Staging
+
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
     bringup: true
     timeout: 60
     properties:
       config_name: linux_host_engine
+      environment: Staging
+
+  - name: Linux linux_android_aot_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: linux_android_aot_engine
+      environment: Staging
+
+  - name: Linux linux_android_debug_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: linux_android_debug_engine
       environment: Staging
 
   - name: Linux Web Engine
@@ -271,20 +278,19 @@ targets:
       jazzy_version: "0.14.1"
     timeout: 75
 
+  - name: Mac mac_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_host_engine
+      environment: Staging
+
   - name: Mac Unopt
     recipe: engine/engine_unopt
     properties:
       add_recipes_cq: "true"
       jazzy_version: "0.14.1"
-      caches: >-
-        [
-          {"name":"flutter_cocoapods","path":"cocoapods"},
-          {"name":"osx_sdk_13a233_13_15","path":"osx_sdk"},
-          {"name":"builder_mac_engine","path":"builder"},
-          {"name":"openjdk","path":"java"},
-          {"name":"xcode_runtime_ios_13_0","path":"xcode_runtime_ios_13_0"},
-          {"name":"xcode_runtime_ios_15_0","path":"xcode_runtime_ios_15_0"}
-        ]
       runtime_versions: >-
         [
           "ios-13-0",
@@ -312,13 +318,6 @@ targets:
     properties:
       add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
-      caches: >-
-        [
-          {"name":"flutter_cocoapods","path":"cocoapods"},
-          {"name":"old_osx_sdk","path":"osx_sdk"},
-          {"name":"builder_mac_engine","path":"builder"},
-          {"name":"openjdk","path":"java"}
-        ]
       dependencies: >-
         [
           {"dependency": "goldctl"}
@@ -399,12 +398,6 @@ targets:
     properties:
       add_recipes_cq: "true"
     timeout: 75
-
-  - name: Windows UWP Engine
-    recipe: engine/engine
-    properties:
-      build_windows_uwp: "true"
-    timeout: 60
 
   - name: Windows Web Engine
     recipe: engine/web_engine

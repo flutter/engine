@@ -128,7 +128,7 @@ PlatformView::PlatformView(
       return;
     }
 
-    if (events.size() == 0) {
+    if (events.empty()) {
       return;  // No work, bounce out.
     }
 
@@ -137,8 +137,9 @@ PlatformView::PlatformView(
     auto packet = std::make_unique<flutter::PointerDataPacket>(events.size());
     for (size_t i = 0; i < events.size(); ++i) {
       auto& event = events[i];
-      // Translate logical to physical coordinates, as per flutter::PointerData
-      // contract. Done here because pixel ratio comes from the graphics API.
+      // Translate logical to physical coordinates, as per
+      // flutter::PointerData contract. Done here because pixel ratio comes
+      // from the graphics API.
       event.physical_x = event.physical_x * pixel_ratio;
       event.physical_y = event.physical_y * pixel_ratio;
       packet->SetPointerData(i, event);
@@ -365,17 +366,17 @@ bool PlatformView::OnHandlePointerEvent(
       break;
     case flutter::PointerData::Change::kAdd:
       if (down_pointers_.count(pointer_data.device) != 0) {
-        FML_DLOG(ERROR) << "Received add event for down pointer.";
+        FML_LOG(ERROR) << "Received add event for down pointer.";
       }
       break;
     case flutter::PointerData::Change::kRemove:
       if (down_pointers_.count(pointer_data.device) != 0) {
-        FML_DLOG(ERROR) << "Received remove event for down pointer.";
+        FML_LOG(ERROR) << "Received remove event for down pointer.";
       }
       break;
     case flutter::PointerData::Change::kHover:
       if (down_pointers_.count(pointer_data.device) != 0) {
-        FML_DLOG(ERROR) << "Received hover event for down pointer.";
+        FML_LOG(ERROR) << "Received hover event for down pointer.";
       }
       break;
     case flutter::PointerData::Change::kPanZoomStart:
@@ -411,7 +412,7 @@ void PlatformView::OnKeyEvent(
       break;
   }
   if (type == nullptr) {
-    FML_DLOG(ERROR) << "Unknown key event phase.";
+    FML_LOG(ERROR) << "Unknown key event phase.";
     callback(fuchsia::ui::input3::KeyEventStatus::NOT_HANDLED);
     return;
   }
@@ -658,8 +659,8 @@ bool PlatformView::HandleFlutterTextInputChannelPlatformMessage(
     last_text_state_ = nullptr;
     DeactivateIme();
   } else {
-    FML_DLOG(ERROR) << "Unknown " << message->channel() << " method "
-                    << method->value.GetString();
+    FML_LOG(ERROR) << "Unknown " << message->channel() << " method "
+                   << method->value.GetString();
   }
   // Complete with an empty response.
   return false;
@@ -832,7 +833,7 @@ bool PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
   } else if (method.rfind("View.focus", 0) == 0) {
     return focus_delegate_->HandlePlatformMessage(root, message->response());
   } else {
-    FML_DLOG(ERROR) << "Unknown " << message->channel() << " method " << method;
+    FML_LOG(ERROR) << "Unknown " << message->channel() << " method " << method;
   }
   // Complete with an empty response by default.
   return false;
