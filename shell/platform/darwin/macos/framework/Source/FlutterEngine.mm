@@ -112,6 +112,13 @@ constexpr char kTextPlainFormat[] = "text/plain";
  */
 - (void)setUpPlatformViewChannel;
 
+/**
+ * Handles messages received from the Flutter engine on the _*Channel channels.
+ */
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+// - (NSPasteboard*)pasteboard;
+
 @end
 
 #pragma mark -

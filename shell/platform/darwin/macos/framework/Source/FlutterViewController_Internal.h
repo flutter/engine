@@ -14,11 +14,6 @@
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
 
 /**
- * This just returns the NSPasteboard so that it can be mocked in the tests.
- */
-@property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
-
-/**
  * The text input plugin that handles text editing state for text fields.
  */
 @property(nonatomic, readonly, nonnull) FlutterTextInputPlugin* textInputPlugin;
