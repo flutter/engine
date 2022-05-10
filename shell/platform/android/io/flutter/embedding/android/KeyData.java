@@ -5,10 +5,9 @@
 package io.flutter.embedding.android;
 
 import androidx.annotation.NonNull;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.CharBuffer;
-import java.nio.charset.StandardCharsets;
 
 /**
  * A {@link KeyboardManager.Responder} of {@link KeyboardManager} that handles events by sending
@@ -70,9 +69,15 @@ public class KeyData {
           String.format(
               "Unexpected char length: charSize is %d while buffer has position %d, capacity %d, limit %d",
               charSize, buffer.position(), buffer.capacity(), buffer.limit()));
+    this.character = null;
     if (charSize != 0) {
-      final CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
-      this.character = charBuffer.toString();
+      final byte[] strBytes = new byte[(int) charSize];
+      buffer.get(strBytes, 0, (int) charSize);
+      try {
+        this.character = new String(strBytes, "UTF-8");
+      } catch (UnsupportedEncodingException e) {
+        throw new AssertionError("UTF-8 unsupported");
+      }
     }
   }
 
@@ -86,9 +91,14 @@ public class KeyData {
   String character;
 
   ByteBuffer toBytes() {
-    final ByteBuffer charBuffer =
-        character == null ? null : StandardCharsets.UTF_8.encode(character);
-    final int charSize = charBuffer == null ? 0 : charBuffer.capacity();
+    byte[] charBytes;
+    try {
+      charBytes = character == null ? null : character.getBytes("UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new AssertionError("UTF-8 not supported");
+    }
+    final int charSize = charBytes == null ? 0 : charBytes.length;
+    System.out.println(charSize);
     final ByteBuffer packet =
         ByteBuffer.allocateDirect((1 + FIELD_COUNT) * BYTES_PER_FIELD + charSize);
     packet.order(ByteOrder.LITTLE_ENDIAN);
@@ -99,16 +109,10 @@ public class KeyData {
     packet.putLong(physicalKey);
     packet.putLong(logicalKey);
     packet.putLong(synthesized ? 1l : 0l);
-    if (charBuffer != null) {
-      packet.put(charBuffer);
+    if (charBytes != null) {
+      packet.put(charBytes);
     }
 
-    // Verify that the packet is the expected size.
-    if (packet.position() != packet.capacity()) {
-      throw new AssertionError("Packet is not filled");
-    }
-
-    packet.rewind();
     return packet;
   }
 }

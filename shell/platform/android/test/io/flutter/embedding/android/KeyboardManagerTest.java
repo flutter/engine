@@ -299,6 +299,18 @@ public class KeyboardManagerTest {
     assertEquals(synthesized, data.synthesized);
   }
 
+  /**
+   * Print each byte of the given buffer as a hex (such as "0a" for 0x0a), and return the
+   * concatenated string.
+   */
+  static String printBufferBytes(@NonNull ByteBuffer buffer) {
+    final String[] results = new String[buffer.capacity()];
+    for (int byteIdx = 0; byteIdx < buffer.capacity(); byteIdx += 1) {
+      results[byteIdx] = String.format("%02x", buffer.get(byteIdx));
+    }
+    return String.join("", results);
+  }
+
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
@@ -307,10 +319,66 @@ public class KeyboardManagerTest {
   // Tests start
 
   @Test
+  public void serializeAndDeserializeKeyData() {
+    // Test data1: Non-empty character, synthesized.
+    final KeyData data1 = new KeyData();
+    data1.physicalKey = 0x0a;
+    data1.logicalKey = 0x0b;
+    data1.timestamp = 0x0c;
+    data1.type = KeyData.Type.kRepeat;
+    data1.character = "A";
+    data1.synthesized = true;
+
+    final ByteBuffer data1Buffer = data1.toBytes();
+
+    assertEquals(
+        ""
+            + "0100000000000000"
+            + "0c00000000000000"
+            + "0200000000000000"
+            + "0a00000000000000"
+            + "0b00000000000000"
+            + "0100000000000000"
+            + "41",
+        printBufferBytes(data1Buffer));
+    // `position` is considered as the message size.
+    assertEquals(49, data1Buffer.position());
+
+    data1Buffer.rewind();
+    final KeyData data1Loaded = new KeyData(data1Buffer);
+    assertEquals(data1Loaded.timestamp, data1.timestamp);
+
+    // Test data2: Empty character, not synthesized.
+    final KeyData data2 = new KeyData();
+    data2.physicalKey = 0xaaaabbbbccccl;
+    data2.logicalKey = 0x666677778888l;
+    data2.timestamp = 0x333344445555l;
+    data2.type = KeyData.Type.kUp;
+    data2.character = null;
+    data2.synthesized = false;
+
+    final ByteBuffer data2Buffer = data2.toBytes();
+
+    assertEquals(
+        ""
+            + "0000000000000000"
+            + "5555444433330000"
+            + "0100000000000000"
+            + "ccccbbbbaaaa0000"
+            + "8888777766660000"
+            + "0000000000000000",
+        printBufferBytes(data2Buffer));
+
+    data2Buffer.rewind();
+    final KeyData data2Loaded = new KeyData(data2Buffer);
+    assertEquals(data2Loaded.timestamp, data2.timestamp);
+  }
+
+  @Test
   public void respondsTrueWhenHandlingNewEvents() {
     final KeyboardTester tester = new KeyboardTester();
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
     tester.recordChannelCallsTo(calls);
 
@@ -330,7 +398,7 @@ public class KeyboardManagerTest {
   public void channelReponderHandlesEvents() {
     final KeyboardTester tester = new KeyboardTester();
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
     tester.recordChannelCallsTo(calls);
 
@@ -356,7 +424,7 @@ public class KeyboardManagerTest {
   public void embedderReponderHandlesEvents() {
     final KeyboardTester tester = new KeyboardTester();
     final KeyEvent keyEvent = new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 0, 0, 0x1e, 'a');
-    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
     tester.recordEmbedderCallsTo(calls);
 
@@ -383,7 +451,7 @@ public class KeyboardManagerTest {
   public void textInputHandlesEventsIfNoRespondersDo() {
     final KeyboardTester tester = new KeyboardTester();
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
     tester.recordChannelCallsTo(calls);
 
@@ -413,7 +481,7 @@ public class KeyboardManagerTest {
   public void redispatchEventsIfTextInputDoesntHandle() {
     final KeyboardTester tester = new KeyboardTester();
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
     tester.recordChannelCallsTo(calls);
 
@@ -439,7 +507,7 @@ public class KeyboardManagerTest {
   @Test
   public void redispatchedEventsAreCorrectlySkipped() {
     final KeyboardTester tester = new KeyboardTester();
-    final ArrayList<CallRecord> calls = new ArrayList<CallRecord>();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
     tester.recordChannelCallsTo(calls);
 
@@ -464,5 +532,88 @@ public class KeyboardManagerTest {
 
     // It's redispatched to the keyboard manager, but no eventual key calls.
     assertEquals(calls.size(), 1);
+  }
+
+  @Test
+  public void tapLowerA() {
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
+
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true); // Suppress redispatching
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 0, 0, 0x1e, 'a')));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).embedderObject, KeyData.Type.kDown, 0x00070004l, 0x00000000061l, "a", false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 1, 0, 0x1e, 'a')));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).embedderObject, KeyData.Type.kRepeat, 0x00070004l, 0x00000000061l, "a", false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(100, KeyEvent.ACTION_UP, 0x1d, 0, 0, 0x1e, 'a')));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).embedderObject, KeyData.Type.kUp, 0x00070004l, 0x00000000061l, null, false);
+    calls.clear();
+  }
+
+  @Test
+  public void tapUpperA() {
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
+
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true); // Suppress redispatching
+
+    // ShiftLeft
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x3b, 0, 0x41, 0x2a, '\0')));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).embedderObject, KeyData.Type.kDown, 0x000700e1l, 0x200000102l, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 0, 0x41, 0x1e, 'A')));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).embedderObject, KeyData.Type.kDown, 0x00070004l, 0x00000000061l, "A", false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(100, KeyEvent.ACTION_UP, 0x1d, 0, 0x41, 0x1e, 'A')));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).embedderObject, KeyData.Type.kUp, 0x00070004l, 0x00000000061l, null, false);
+    calls.clear();
+
+    // ShiftLeft
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(100, KeyEvent.ACTION_UP, 0x3b, 0, 0x41, 0x2a, '\0')));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).embedderObject, KeyData.Type.kUp, 0x000700e1l, 0x200000102l, null, false);
+    calls.clear();
   }
 }

@@ -61,6 +61,10 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
    * https://en.wikipedia.org/wiki/Combining_character
    */
   Character applyCombiningCharacterToBaseCharacter(int newCharacterCodePoint) {
+    if (newCharacterCodePoint == 0) {
+      combiningCharacter = 0;
+      return 0;
+    }
     char complexCharacter = (char) newCharacterCodePoint;
     boolean isNewCodePointACombiningCharacter =
         (newCharacterCodePoint & KeyCharacterMap.COMBINING_ACCENT) != 0;
@@ -136,7 +140,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
         return false;
     }
 
-    Character character = 0;
+    String character = null;
 
     // TODO(dkwingsmt): repeat logic
     KeyData.Type type;
@@ -148,7 +152,10 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
         // pressed one. This can happen during repeated events.
         type = KeyData.Type.kRepeat;
       }
-      character = applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
+      final char complexChar = applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
+      if (complexChar != 0) {
+        character = "" + complexChar;
+      }
     } else { // is_down_event false
       if (lastLogicalRecord == null) {
         // The physical key has been released before. It might indicate a missed
@@ -169,7 +176,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     output.type = type;
     output.logicalKey = logicalKey;
     output.physicalKey = physicalKey;
-    output.character = "" + character;
+    output.character = character;
     output.synthesized = false;
 
     sendKeyEvent(output, onKeyEventHandledCallback);
