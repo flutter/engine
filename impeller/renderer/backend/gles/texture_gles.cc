@@ -154,9 +154,9 @@ struct TexImage2DData {
 };
 
 // |Texture|
-bool TextureGLES::SetContents(const uint8_t* contents,
-                              size_t length,
-                              size_t slice) {
+bool TextureGLES::OnSetContents(const uint8_t* contents,
+                                size_t length,
+                                size_t slice) {
   if (length == 0u) {
     return true;
   }
@@ -193,13 +193,10 @@ bool TextureGLES::SetContents(const uint8_t* contents,
       texture_target = GL_TEXTURE_2D;
       break;
     case TextureType::kTexture2DMultisample:
-      VALIDATION_LOG << "Multisample texture uploading is not supported.";
+      VALIDATION_LOG << "Multisample texture uploading is not supported for "
+                        "the OpenGLES backend.";
       return false;
     case TextureType::kTextureCube:
-      if (slice > 5) {
-        VALIDATION_LOG << "Slice must be <= 5 when setting a cube texture.";
-        return false;
-      }
       texture_type = GL_TEXTURE_CUBE_MAP;
       texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + slice;
       break;

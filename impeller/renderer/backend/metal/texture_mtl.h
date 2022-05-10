@@ -30,7 +30,7 @@ class TextureMTL final : public Texture,
   void SetLabel(const std::string_view& label) override;
 
   // |Texture|
-  bool SetContents(const uint8_t* contents,
+  bool OnSetContents(const uint8_t* contents,
                    size_t length,
                    size_t slice) override;
 

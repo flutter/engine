@@ -30,9 +30,9 @@ void TextureMTL::SetLabel(const std::string_view& label) {
   [texture_ setLabel:@(label.data())];
 }
 
-bool TextureMTL::SetContents(const uint8_t* contents,
-                             size_t length,
-                             size_t slice) {
+bool TextureMTL::OnSetContents(const uint8_t* contents,
+                               size_t length,
+                               size_t slice) {
   if (!IsValid() || !contents) {
     return false;
   }
