@@ -57,11 +57,12 @@ void testMain() {
   });
 
   test('ios workaround', () {
-    final MockSafariPointerEventWorkaround mockSafariPointer = MockSafariPointerEventWorkaround();
+    final MockSafariPointerEventWorkaround mockSafariPointer =
+        MockSafariPointerEventWorkaround();
     SafariPointerEventWorkaround.instance = mockSafariPointer;
     PointerBinding(html.DivElement());
     expect(mockSafariPointer.workAroundInvoked, isIosSafari);
-  });
+  }, skip: !isIosSafari);
 
   test('_PointerEventContext generates expected events', () {
     if (!_PointerEventContext().isSupported) {
