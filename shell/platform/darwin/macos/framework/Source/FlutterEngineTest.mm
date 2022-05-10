@@ -39,6 +39,23 @@ TEST_F(FlutterEngineTest, CanLaunch) {
   EXPECT_TRUE(engine.running);
 }
 
+TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
+  // Launch the test entrypoint.
+  FlutterEngine* engine = GetFlutterEngine();
+  std::string executable_name = [[engine executableName] UTF8String];
+  EXPECT_TRUE([engine runWithEntrypoint:@"executableNameNotNull"]);
+
+  // Block until notified by the Dart test of the value of Platform.executable.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyStringValue", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      const auto dart_string = tonic::DartConverter<std::string>::FromDart(
+                          Dart_GetNativeArgument(args, 0));
+                      EXPECT_EQ(executable_name, dart_string);
+                      latch.Signal();
+                    }));
+  latch.Wait();
+}
+
 TEST_F(FlutterEngineTest, MessengerSend) {
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -357,7 +374,7 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
 
 TEST_F(FlutterEngineTest, NativeCallbacks) {
   FlutterEngine* engine = GetFlutterEngine();
-  EXPECT_TRUE([engine runWithEntrypoint:@"native_callback"]);
+  EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
   EXPECT_TRUE(engine.running);
 
   fml::AutoResetWaitableEvent latch;
@@ -384,7 +401,7 @@ TEST(FlutterEngine, DISABLED_Compositor) {
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
 
-  EXPECT_TRUE([engine runWithEntrypoint:@"can_composite_platform_views"]);
+  EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
 
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;

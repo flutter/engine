@@ -128,7 +128,7 @@ PlatformView::PlatformView(
       return;
     }
 
-    if (events.size() == 0) {
+    if (events.empty()) {
       return;  // No work, bounce out.
     }
 
@@ -137,8 +137,9 @@ PlatformView::PlatformView(
     auto packet = std::make_unique<flutter::PointerDataPacket>(events.size());
     for (size_t i = 0; i < events.size(); ++i) {
       auto& event = events[i];
-      // Translate logical to physical coordinates, as per flutter::PointerData
-      // contract. Done here because pixel ratio comes from the graphics API.
+      // Translate logical to physical coordinates, as per
+      // flutter::PointerData contract. Done here because pixel ratio comes
+      // from the graphics API.
       event.physical_x = event.physical_x * pixel_ratio;
       event.physical_y = event.physical_y * pixel_ratio;
       packet->SetPointerData(i, event);

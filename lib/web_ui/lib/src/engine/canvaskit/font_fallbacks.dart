@@ -4,11 +4,11 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../font_change_util.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
@@ -131,7 +131,7 @@ class FontFallbackData {
         List<bool>.filled(codeUnits.length, false);
     final String testString = String.fromCharCodes(codeUnits);
     for (final SkFont font in fonts) {
-      final Uint8List glyphs = font.getGlyphIDs(testString);
+      final Uint16List glyphs = font.getGlyphIDs(testString);
       assert(glyphs.length == codeUnitsSupported.length);
       for (int i = 0; i < glyphs.length; i++) {
         codeUnitsSupported[i] |= glyphs[i] != 0 || _isControlCode(codeUnits[i]);
@@ -182,7 +182,7 @@ class FontFallbackData {
         continue;
       }
       for (final SkFont font in fontsForFamily) {
-        final Uint8List glyphs = font.getGlyphIDs(testString);
+        final Uint16List glyphs = font.getGlyphIDs(testString);
         assert(glyphs.length == codeUnitsSupported.length);
         for (int i = 0; i < glyphs.length; i++) {
           final bool codeUnitSupported = glyphs[i] != 0;
@@ -487,7 +487,7 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
   final Set<NotoFont> minimumFonts = <NotoFont>{};
   final List<NotoFont> bestFonts = <NotoFont>[];
 
-  final String language = html.window.navigator.language;
+  final String language = domWindow.navigator.language;
 
   while (codeUnits.isNotEmpty) {
     int maxCodeUnitsCovered = 0;
@@ -970,7 +970,7 @@ class NotoDownloader {
       _debugActiveDownloadCount += 1;
     }
     final Future<ByteBuffer> result = httpFetch(url).then(
-        (html.Body fetchResult) => fetchResult
+        (DomResponse fetchResult) => fetchResult
             .arrayBuffer()
             .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
     if (assertionsEnabled) {
@@ -989,7 +989,7 @@ class NotoDownloader {
       _debugActiveDownloadCount += 1;
     }
     final Future<String> result = httpFetch(url).then(
-        (html.Body response) =>
+        (DomResponse response) =>
             response.text().then<String>((dynamic x) => x as String));
     if (assertionsEnabled) {
       result.whenComplete(() {

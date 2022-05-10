@@ -450,7 +450,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('Decode test images', () async {
-      final html.Body listingResponse = await httpFetch('/test_images/');
+      final DomResponse listingResponse = await httpFetch('/test_images/');
       final List<String> testFiles = (await listingResponse.json() as List<dynamic>).cast<String>();
 
       // Sanity-check the test file list. If suddenly test files are moved or
@@ -464,7 +464,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       expect(testFiles, contains(matches(RegExp(r'.*\.bmp'))));
 
       for (final String testFile in testFiles) {
-        final html.Body imageResponse = await httpFetch('/test_images/$testFile');
+        final DomResponse imageResponse = await httpFetch('/test_images/$testFile');
         final Uint8List imageData = (await imageResponse.arrayBuffer() as ByteBuffer).asUint8List();
         final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
         expect(codec.frameCount, greaterThan(0));
@@ -476,6 +476,54 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         }
         codec.dispose();
       }
+    });
+
+    // Reproduces https://skbug.com/12721
+    test('decoded image can be read back from picture', () async {
+      final DomResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final Uint8List imageData = (await imageResponse.arrayBuffer() as ByteBuffer).asUint8List();
+      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final CkImage image = frame.image as CkImage;
+
+      final CkImage snapshot;
+      {
+        final LayerSceneBuilder sb = LayerSceneBuilder();
+        sb.pushOffset(10, 10);
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.drawRect(
+          const ui.Rect.fromLTRB(5, 5, 20, 20),
+          CkPaint(),
+        );
+        canvas.drawImage(image, ui.Offset.zero, CkPaint());
+        canvas.drawRect(
+          const ui.Rect.fromLTRB(90, 90, 105, 105),
+          CkPaint(),
+        );
+        sb.addPicture(ui.Offset.zero, recorder.endRecording());
+        sb.pop();
+        snapshot = await sb.build().toImage(150, 150) as CkImage;
+      }
+
+      {
+        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.drawImage(snapshot, ui.Offset.zero, CkPaint());
+        sb.addPicture(ui.Offset.zero, recorder.endRecording());
+
+        final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
+        dispatcher.rasterizer!.draw(sb.build().layerTree);
+        await matchGoldenFile(
+          'canvaskit_read_back_decoded_image_$mode.png',
+          region: const ui.Rect.fromLTRB(0, 0, 150, 150),
+          maxDiffRatePercent: 0,
+        );
+      }
+
+      image.dispose();
+      codec.dispose();
     });
 
     // This is a regression test for the issues with transferring textures from

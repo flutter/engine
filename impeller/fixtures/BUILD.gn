@@ -1,0 +1,46 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/testing/testing.gni")
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_shaders("shader_fixtures") {
+  name = "fixtures"
+  shaders = [
+    "box_fade.vert",
+    "box_fade.frag",
+    "instanced_draw.vert",
+    "instanced_draw.frag",
+    "test_texture.vert",
+    "test_texture.frag",
+  ]
+}
+
+test_fixtures("file_fixtures") {
+  fixtures = [
+    "airplane.jpg",
+    "bay_bridge.jpg",
+    "boston.jpg",
+    "embarcadero.jpg",
+    "kalimba.jpg",
+    "sample.vert",
+    "struct_def_bug.vert",
+    "types.h",
+    "test_texture.frag",
+    "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
+    "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+    "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
+  ]
+}
+
+group("fixtures") {
+  testonly = true
+
+  public_deps = [
+    ":file_fixtures",
+    ":shader_fixtures",
+  ]
+}

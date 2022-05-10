@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'dom.dart';
 import 'safe_browser_api.dart';
 import 'vector_math.dart';
 
@@ -38,7 +39,7 @@ typedef Callbacker<T> = String? Function(Callback<T> callback);
 /// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
-///   new Timer(new Duration(seconds: 1), () { callback(1); });
+///   Timer(const Duration(seconds: 1), () { callback(1); });
 /// }
 ///
 /// Future<int> doSomething() {
@@ -499,24 +500,6 @@ void applyWebkitClipFix(html.Element? containerElement) {
   }
 }
 
-// Stores matrix in a form that allows zero allocation transforms.
-class FastMatrix32 {
-  final Float32List matrix;
-  double transformedX = 0, transformedY = 0;
-  FastMatrix32(this.matrix);
-
-  void transform(double x, double y) {
-    transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
-    transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
-  }
-
-  String debugToString() =>
-      '${matrix[0].toStringAsFixed(3)}, ${matrix[4].toStringAsFixed(3)}, ${matrix[8].toStringAsFixed(3)}, ${matrix[12].toStringAsFixed(3)}\n'
-      '${matrix[1].toStringAsFixed(3)}, ${matrix[5].toStringAsFixed(3)}, ${matrix[9].toStringAsFixed(3)}, ${matrix[13].toStringAsFixed(3)}\n'
-      '${matrix[2].toStringAsFixed(3)}, ${matrix[6].toStringAsFixed(3)}, ${matrix[10].toStringAsFixed(3)}, ${matrix[14].toStringAsFixed(3)}\n'
-      '${matrix[3].toStringAsFixed(3)}, ${matrix[7].toStringAsFixed(3)}, ${matrix[11].toStringAsFixed(3)}, ${matrix[15].toStringAsFixed(3)}\n';
-}
-
 /// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
 ///
 /// This does not inverse [ui.Shadow.convertRadiusToSigma] exactly, because on
@@ -576,9 +559,9 @@ bool unsafeIsNull(dynamic object) {
 }
 
 /// A typed variant of [html.Window.fetch].
-Future<html.Body> httpFetch(String url) async {
-  final dynamic result = await html.window.fetch(url);
-  return result as html.Body;
+Future<DomResponse> httpFetch(String url) async {
+  final Object? result = await html.window.fetch(url);
+  return result! as DomResponse;
 }
 
 /// Extensions to [Map] that make it easier to treat it as a JSON object. The
