@@ -358,7 +358,13 @@ TEST_P(RendererTest, Impeller) {
   auto noise_sampler =
       context->GetSamplerLibrary()->GetSampler(noise_sampler_desc);
 
-  Renderer::RenderCallback callback = [&](RenderPass& pass) {
+  auto cube_map = CreateTextureCubeForFixture(
+      {"table_mountain_px.png", "table_mountain_nx.png",
+       "table_mountain_py.png", "table_mountain_ny.png",
+       "table_mountain_pz.png", "table_mountain_nz.png"});
+  auto cube_map_sampler = context->GetSamplerLibrary()->GetSampler({});
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
     auto size = pass.GetRenderTargetSize();
 
     Command cmd;
@@ -385,6 +391,7 @@ TEST_P(RendererTest, Impeller) {
     FS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
+    FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
 
     pass.AddCommand(cmd);
     return true;

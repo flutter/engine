@@ -20,7 +20,10 @@ class Texture {
   virtual void SetLabel(const std::string_view& label) = 0;
 
   [[nodiscard]] virtual bool SetContents(const uint8_t* contents,
-                                         size_t length) = 0;
+                                         size_t length,
+                                         size_t slice) = 0;
+
+  [[nodiscard]] bool SetContents(const uint8_t* contents, size_t length);
 
   virtual bool IsValid() const = 0;
 
