@@ -96,7 +96,7 @@ void ImmutableBuffer::initFromAsset(Dart_NativeArguments args) {
   };
   void* peer = reinterpret_cast<void*>(data.release());
   auto sk_data = SkData::MakeWithProc(bytes, size, proc, peer);
-#endif // FML_OS_ANDROID
+#endif  // FML_OS_ANDROID
 
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
   buffer->AssociateWithDartWrapper(immutable_buffer);
