@@ -84,14 +84,20 @@ void ImmutableBuffer::initFromAsset(Dart_NativeArguments args) {
     return;
   }
 
+  auto size = data->GetSize();
+  const void* bytes = static_cast<const void*>(data->GetMapping());
+
+#if FML_OS_ANDROID
+  // fml::Mapping backed by android assets are not thread safe.
+  auto sk_data = MakeSkDataWithCopy(bytes, size);
+#else
   SkData::ReleaseProc proc = [](const void* ptr, void* context) {
     delete static_cast<fml::Mapping*>(context);
   };
-  const void* bytes = static_cast<const void*>(data->GetMapping());
-  auto size = data->GetSize();
   void* peer = reinterpret_cast<void*>(data.release());
-
   auto sk_data = SkData::MakeWithProc(bytes, size, proc, peer);
+#endif // FML_OS_ANDROID
+
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
   buffer->AssociateWithDartWrapper(immutable_buffer);
   tonic::DartInvoke(callback_handle, {tonic::ToDart(size)});
