@@ -23,6 +23,7 @@ G_DEFINE_TYPE(FlViewAccessible,
 
 static void fl_view_accessible_set_engine(FlViewAccessible* self,
                                           FlEngine* engine) {
+  g_assert(self->engine == nullptr);
   self->engine = engine;
   g_object_add_weak_pointer(G_OBJECT(self),
                             reinterpret_cast<gpointer*>(&self->engine));
