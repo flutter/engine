@@ -21,18 +21,17 @@ G_DEFINE_TYPE(FlViewAccessible,
               fl_view_accessible,
               GTK_TYPE_CONTAINER_ACCESSIBLE)
 
-static void fl_view_accessible_set_engine(FlViewAccessible* self,
-                                          FlEngine* engine) {
+static void init_engine(FlViewAccessible* self, FlEngine* engine) {
   g_assert(self->engine == nullptr);
   self->engine = engine;
   g_object_add_weak_pointer(G_OBJECT(self),
                             reinterpret_cast<gpointer*>(&self->engine));
 }
 
-static FlEngine* fl_view_accessible_get_engine(FlViewAccessible* self) {
+static FlEngine* get_engine(FlViewAccessible* self) {
   if (self->engine == nullptr) {
     FlView* view = FL_VIEW(gtk_accessible_get_widget(GTK_ACCESSIBLE(self)));
-    fl_view_accessible_set_engine(self, fl_view_get_engine(view));
+    init_engine(self, fl_view_get_engine(view));
   }
   return self->engine;
 }
@@ -46,7 +45,7 @@ static FlAccessibleNode* get_node(FlViewAccessible* self, int32_t id) {
     return node;
   }
 
-  FlEngine* engine = fl_view_accessible_get_engine(self);
+  FlEngine* engine = get_engine(self);
   node = fl_accessible_node_new(engine, id);
   if (id == 0) {
     fl_accessible_node_set_parent(node, ATK_OBJECT(self), 0);
@@ -87,7 +86,7 @@ static void fl_view_accessible_set_property(GObject* object,
   FlViewAccessible* self = FL_VIEW_ACCESSIBLE(object);
   switch (prop_id) {
     case PROP_ENGINE:
-      fl_view_accessible_set_engine(self, FL_ENGINE(g_value_get_object(value)));
+      init_engine(self, FL_ENGINE(g_value_get_object(value)));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
