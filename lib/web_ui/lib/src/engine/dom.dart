@@ -155,6 +155,7 @@ extension DomElementExtension on DomElement {
   external String get id;
   external set id(String id);
   external set spellcheck(bool? value);
+  external String get tagName;
   external DomCSSStyleDeclaration get style;
   external void append(DomNode node);
   external String? getAttribute(String attributeName);
@@ -184,6 +185,8 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set bottom(String value) => setProperty('bottom', value, '');
   set backgroundColor(String value) =>
       setProperty('background-color', value, '');
+  set pointerEvents(String value) => setProperty('pointer-events', value, '');
+  set filter(String value) => setProperty('filter', value, '');
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -198,6 +201,8 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get right => getPropertyValue('right');
   String get bottom => getPropertyValue('bottom');
   String get backgroundColor => getPropertyValue('background-color');
+  String get pointerEvents => getPropertyValue('pointer-events');
+  String get filter => getPropertyValue('filter');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
