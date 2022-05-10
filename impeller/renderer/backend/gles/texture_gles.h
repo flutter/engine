@@ -67,8 +67,8 @@ class TextureGLES final : public Texture,
 
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
-                   size_t length,
-                   size_t slice) override;
+                     size_t length,
+                     size_t slice) override;
 
   // |Texture|
   bool IsValid() const override;
