@@ -24,7 +24,6 @@ import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,8 +65,8 @@ public class SpellCheckPluginTest {
         "SpellCheck.initiateSpellCheck",
         Arrays.asList("en-US", "Hello, wrold!"));
 
-    
-    verify(mockHandler).initiateSpellCheck(eq("en-US"), eq("Hello, wrold!"), any(MethodChannel.Result.class));
+    verify(mockHandler)
+        .initiateSpellCheck(eq("en-US"), eq("Hello, wrold!"), any(MethodChannel.Result.class));
   }
 
   @Test
@@ -75,7 +74,7 @@ public class SpellCheckPluginTest {
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     SpellCheckPlugin spellCheckPlugin =
-    spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
 
@@ -93,7 +92,7 @@ public class SpellCheckPluginTest {
     SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
     TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
     SpellCheckPlugin spellCheckPlugin =
-    spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
     MethodChannel.Result mockPendingResult = mock(MethodChannel.Result.class);
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
     spellCheckPlugin.pendingResult = mockPendingResult;
@@ -138,8 +137,7 @@ public class SpellCheckPluginTest {
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
     Locale english_US = new Locale("en", "US");
 
-    when(fakeTextServicesManager.newSpellCheckerSession(
-            null, english_US, spellCheckPlugin, true))
+    when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
         .thenReturn(fakeSpellCheckerSession);
 
     int maxSuggestions = 5;
@@ -166,8 +164,7 @@ public class SpellCheckPluginTest {
     SpellCheckerSession fakeSpellCheckerSession = mock(SpellCheckerSession.class);
     Locale english_US = new Locale("en", "US");
 
-    when(fakeTextServicesManager.newSpellCheckerSession(
-            null, english_US, spellCheckPlugin, true))
+    when(fakeTextServicesManager.newSpellCheckerSession(null, english_US, spellCheckPlugin, true))
         .thenReturn(fakeSpellCheckerSession);
 
     spellCheckPlugin.performSpellCheck("en-US", "Hello, worl!");
@@ -189,8 +186,7 @@ public class SpellCheckPluginTest {
 
     spellCheckPlugin.onGetSentenceSuggestions(new SentenceSuggestionsInfo[] {});
 
-    verify(mockResult)
-        .success(new ArrayList<String>(Arrays.asList("Hello, world!", "")));
+    verify(mockResult).success(new ArrayList<String>(Arrays.asList("Hello, world!", "")));
   }
 
   @Test
