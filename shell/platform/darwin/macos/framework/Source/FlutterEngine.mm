@@ -13,8 +13,10 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
@@ -34,6 +36,14 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   flutterLocale.variant_code = [[locale objectForKey:NSLocaleVariantCode] UTF8String];
   return flutterLocale;
 }
+
+/// The private notification for voice over.
+static NSString* const EnhancedUserInterfaceNotification =
+    @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
+static NSString* const EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
+
+/// Clipboard plain text format.
+constexpr char kTextPlainFormat[] = "text/plain";
 
 #pragma mark -
 
@@ -206,6 +216,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Used to support creation and deletion of platform views and registering platform view
   // factories. Lifecycle is tied to the engine.
   FlutterPlatformViewController* _platformViewController;
+
+  // A message channel for sending user settings to the flutter engine.
+  FlutterBasicMessageChannel* _settingsChannel;
+
+  // A method channel for miscellaneous platform functionality.
+  FlutterMethodChannel* _platformChannel;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -241,6 +257,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
   [self setUpPlatformViewChannel];
+  [self setUpNotificationCenterListeners];
 
   return self;
 }
@@ -262,7 +279,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return NO;
   }
 
-  // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
+  [self addInternalPlugins];
 
   // The first argument of argv is required to be the executable name.
   std::vector<const char*> argv = {[self.executableName UTF8String]};
@@ -354,6 +371,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self sendUserLocales];
   [self updateWindowMetrics];
   [self updateDisplayConfig];
+  // Send the initial user settings such as brightness and text scale factor
+  // to the engine.
+  [self sendInitialSettings];
   return YES;
 }
 
@@ -505,6 +525,28 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 
   CVDisplayLinkRelease(displayLinkRef);
+}
+
+- (void)onSettingsChanged:(NSNotification*)notification {
+  // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32015.
+  NSString* brightness =
+      [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+  [_settingsChannel sendMessage:@{
+    @"platformBrightness" : [brightness isEqualToString:@"Dark"] ? @"dark" : @"light",
+    // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32006.
+    @"textScaleFactor" : @1.0,
+    @"alwaysUse24HourFormat" : @false
+  }];
+}
+
+- (void)sendInitialSettings {
+  // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32015.
+  [[NSDistributedNotificationCenter defaultCenter]
+      addObserver:self
+         selector:@selector(onSettingsChanged:)
+             name:@"AppleInterfaceThemeChangedNotification"
+           object:nil];
+  [self onSettingsChanged:nil];
 }
 
 - (FlutterEngineProcTable&)embedderAPI {
@@ -676,6 +718,109 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [_platformViewsChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [[weakSelf platformViewController] handleMethodCall:call result:result];
   }];
+}
+
+- (void)setUpNotificationCenterListeners {
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  // macOS fires this private message when VoiceOver turns on or off.
+  [center addObserver:self
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:EnhancedUserInterfaceNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(applicationWillTerminate:)
+                 name:NSApplicationWillTerminateNotification
+               object:nil];
+}
+
+- (void)addInternalPlugins {
+  __weak FlutterEngine* weakSelf = self;
+  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  [FlutterMenuPlugin registerWithRegistrar:[self registrarForPlugin:@"menu"]];
+  _settingsChannel =
+      [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
+                                         binaryMessenger:self.binaryMessenger
+                                                   codec:[FlutterJSONMessageCodec sharedInstance]];
+  _platformChannel =
+      [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
+                                  binaryMessenger:self.binaryMessenger
+                                            codec:[FlutterJSONMethodCodec sharedInstance]];
+  [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [weakSelf handleMethodCall:call result:result];
+  }];
+}
+
+- (void)applicationWillTerminate:(NSNotification*)notification {
+  [self shutDownEngine];
+}
+
+- (void)onAccessibilityStatusChanged:(NSNotification*)notification {
+  BOOL enabled = [notification.userInfo[EnhancedUserInterfaceKey] boolValue];
+  // TODO(goderbauer): WHAT?
+  // if (!enabled && self.viewLoaded && [_textInputPlugin isFirstResponder]) {
+  //   // The client (i.e. the FlutterTextField) of the textInputPlugin is a sibling
+  //   // of the FlutterView. macOS will pick the ancestor to be the next responder
+  //   // when the client is removed from the view hierarchy, which is the result of
+  //   // turning off semantics. This will cause the keyboard focus to stick at the
+  //   // NSWindow.
+  //   //
+  //   // Since the view controller creates the illustion that the FlutterTextField is
+  //   // below the FlutterView in accessibility (See FlutterViewWrapper), it has to
+  //   // manually pick the next responder.
+  //   [self.view.window makeFirstResponder:_flutterView];
+  // }
+  self.semanticsEnabled = enabled;
+}
+
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
+    [NSApp terminate:self];
+    result(nil);
+  } else if ([call.method isEqualToString:@"SystemSound.play"]) {
+    [self playSystemSound:call.arguments];
+    result(nil);
+  } else if ([call.method isEqualToString:@"Clipboard.getData"]) {
+    result([self getClipboardData:call.arguments]);
+  } else if ([call.method isEqualToString:@"Clipboard.setData"]) {
+    [self setClipboardData:call.arguments];
+    result(nil);
+  } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
+    result(@{@"value" : @([self clipboardHasStrings])});
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
+}
+
+- (void)playSystemSound:(NSString*)soundType {
+  if ([soundType isEqualToString:@"SystemSoundType.alert"]) {
+    NSBeep();
+  }
+}
+
+- (NSDictionary*)getClipboardData:(NSString*)format {
+  NSPasteboard* pasteboard = self.pasteboard;
+  if ([format isEqualToString:@(kTextPlainFormat)]) {
+    NSString* stringInPasteboard = [pasteboard stringForType:NSPasteboardTypeString];
+    return stringInPasteboard == nil ? nil : @{@"text" : stringInPasteboard};
+  }
+  return nil;
+}
+
+- (void)setClipboardData:(NSDictionary*)data {
+  NSPasteboard* pasteboard = self.pasteboard;
+  NSString* text = data[@"text"];
+  [pasteboard clearContents];
+  if (text && ![text isEqual:[NSNull null]]) {
+    [pasteboard setString:text forType:NSPasteboardTypeString];
+  }
+}
+
+- (BOOL)clipboardHasStrings {
+  return [self.pasteboard stringForType:NSPasteboardTypeString].length > 0;
+}
+
+- (NSPasteboard*)pasteboard {
+  return [NSPasteboard generalPasteboard];
 }
 
 #pragma mark - FlutterBinaryMessenger
