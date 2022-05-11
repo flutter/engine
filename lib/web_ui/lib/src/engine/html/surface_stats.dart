@@ -120,8 +120,7 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
       ..top = '0'
       ..zIndex = '1000'
       ..opacity = '0.8';
-    _debugSurfaceStatsOverlayCtx = _debugSurfaceStatsOverlay.getContext('2d') as
-        DomCanvasRenderingContext2D?;
+    _debugSurfaceStatsOverlayCtx = _debugSurfaceStatsOverlay.context2D;
     domDocument.body!.append(_debugSurfaceStatsOverlay);
   }
 
@@ -292,8 +291,7 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
   // A microtask will fire after the DOM is flushed, letting us probe into
   // actual <canvas> tags.
   scheduleMicrotask(() {
-    final List<DomNode> canvasElements =
-        domDocument.querySelectorAll('canvas').cast<DomNode>();
+    final List<DomElement> canvasElements = domDocument.querySelectorAll('canvas');
     final StringBuffer canvasInfo = StringBuffer();
     final int pixelCount = canvasElements
         .cast<DomCanvasElement>()
