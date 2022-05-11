@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "gtest/gtest.h"
@@ -24,15 +26,19 @@ std::string PlaygroundBackendToString(PlaygroundBackend backend);
 
 class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
  public:
+  using SinglePassCallback = std::function<bool(RenderPass& pass)>;
+
   Playground();
 
   ~Playground();
 
   static constexpr bool is_enabled() { return is_enabled_; }
 
-  PlaygroundBackend GetBackend() const;
+  void SetUp() override;
 
-  bool IsValid() const;
+  void TearDown() override;
+
+  PlaygroundBackend GetBackend() const;
 
   Point GetCursorPosition() const;
 
@@ -42,8 +48,16 @@ class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
 
   bool OpenPlaygroundHere(Renderer::RenderCallback render_callback);
 
+  bool OpenPlaygroundHere(SinglePassCallback pass_callback);
+
+  std::optional<DecompressedImage> LoadFixtureImageRGBA(
+      const char* fixture_name) const;
+
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name) const;
+
+  std::shared_ptr<Texture> CreateTextureCubeForFixture(
+      std::array<const char*, 6> fixture_names) const;
 
  private:
 #if IMPELLER_ENABLE_PLAYGROUND
@@ -52,11 +66,12 @@ class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
   static const bool is_enabled_ = false;
 #endif  // IMPELLER_ENABLE_PLAYGROUND
 
+  struct GLFWInitializer;
+  std::unique_ptr<GLFWInitializer> glfw_initializer_;
   std::unique_ptr<PlaygroundImpl> impl_;
-  Renderer renderer_;
+  std::unique_ptr<Renderer> renderer_;
   Point cursor_position_;
   ISize window_size_ = ISize{1024, 768};
-  bool is_valid_ = false;
 
   void SetCursorPosition(Point pos);
 
@@ -67,7 +82,9 @@ class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
 
 #define INSTANTIATE_PLAYGROUND_SUITE(playground)                        \
   INSTANTIATE_TEST_SUITE_P(                                             \
-      Play, playground, ::testing::Values(PlaygroundBackend::kMetal),   \
+      Play, playground,                                                 \
+      ::testing::Values(PlaygroundBackend::kMetal,                      \
+                        PlaygroundBackend::kOpenGLES),                  \
       [](const ::testing::TestParamInfo<Playground::ParamType>& info) { \
         return PlaygroundBackendToString(info.param);                   \
       });

@@ -11,6 +11,8 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/entity_pass.h"
+#include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/path_builder.h"
@@ -30,6 +32,74 @@ INSTANTIATE_PLAYGROUND_SUITE(EntityTest);
 TEST_P(EntityTest, CanCreateEntity) {
   Entity entity;
   ASSERT_TRUE(entity.GetTransformation().IsIdentity());
+}
+
+class TestPassDelegate final : public EntityPassDelegate {
+ public:
+  TestPassDelegate(std::optional<Rect> coverage) : coverage_(coverage) {}
+
+  // |EntityPassDelegate|
+  ~TestPassDelegate() override = default;
+
+  // |EntityPassDelegate|
+  std::optional<Rect> GetCoverageRect() override { return coverage_; }
+
+  // |EntityPassDelgate|
+  bool CanElide() override { return false; }
+
+  // |EntityPassDelgate|
+  bool CanCollapseIntoParentPass() override { return false; }
+
+  // |EntityPassDelgate|
+  std::shared_ptr<Contents> CreateContentsForSubpassTarget(
+      std::shared_ptr<Texture> target) override {
+    return nullptr;
+  }
+
+ private:
+  const std::optional<Rect> coverage_;
+};
+
+TEST_P(EntityTest, EntityPassSubpassCoverageIsCorrect) {
+  EntityPass pass;
+
+  auto subpass0 = std::make_unique<EntityPass>();
+  {
+    Entity entity;
+    entity.SetContents(SolidColorContents::Make(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath(),
+        Color::Red()));
+    subpass0->AddEntity(entity);
+    subpass0->SetDelegate(
+        std::make_unique<TestPassDelegate>(Rect::MakeLTRB(50, 50, 150, 150)));
+  }
+
+  auto subpass1 = std::make_unique<EntityPass>();
+  {
+    Entity entity;
+    entity.SetContents(SolidColorContents::Make(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(500, 500, 1000, 1000)).TakePath(),
+        Color::Red()));
+    subpass1->AddEntity(entity);
+    subpass1->SetDelegate(
+        std::make_unique<TestPassDelegate>(Rect::MakeLTRB(800, 800, 900, 900)));
+  }
+
+  auto subpass0_coverage = pass.GetSubpassCoverage(*subpass0.get());
+  ASSERT_TRUE(subpass0_coverage.has_value());
+  ASSERT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(50, 50, 100, 100));
+
+  auto subpass1_coverage = pass.GetSubpassCoverage(*subpass1.get());
+  ASSERT_TRUE(subpass1_coverage.has_value());
+  ASSERT_RECT_NEAR(subpass1_coverage.value(),
+                   Rect::MakeLTRB(800, 800, 900, 900));
+
+  pass.AddSubpass(std::move(subpass0));
+  pass.AddSubpass(std::move(subpass1));
+
+  auto coverage = pass.GetElementsCoverage();
+  ASSERT_TRUE(coverage.has_value());
+  ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
 }
 
 TEST_P(EntityTest, CanDrawRect) {
@@ -747,14 +817,16 @@ TEST_P(EntityTest, GaussianBlurFilter) {
         blur_styles[selected_blur_style]);
 
     auto mask_blur = FilterContents::MakeBorderMaskBlur(
-        FilterInput::Make(boston), FilterContents::Sigma{blur_amount[0]},
+        FilterInput::Make(bridge), FilterContents::Sigma{blur_amount[0]},
         FilterContents::Sigma{blur_amount[1]},
         blur_styles[selected_blur_style]);
 
+    auto input_size = bridge->GetSize();
     auto ctm = Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
                Matrix::MakeRotationZ(Radians(rotation)) *
                Matrix::MakeScale(Vector2(scale[0], scale[1])) *
-               Matrix::MakeSkew(skew[0], skew[1]);
+               Matrix::MakeSkew(skew[0], skew[1]) *
+               Matrix::MakeTranslation(-Point(input_size) / 2);
 
     auto target_contents = selected_blur_type == 0 ? blur : mask_blur;
 
@@ -768,10 +840,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     // unfiltered input.
     Entity cover_entity;
     cover_entity.SetContents(SolidColorContents::Make(
-        PathBuilder{}
-            .AddRect(
-                Rect(-Point(bridge->GetSize()) / 2, Size(bridge->GetSize())))
-            .TakePath(),
+        PathBuilder{}.AddRect(Rect::MakeSize(Size(input_size))).TakePath(),
         cover_color));
     cover_entity.SetTransformation(ctm);
 

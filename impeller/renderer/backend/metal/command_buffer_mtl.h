@@ -22,7 +22,6 @@ class CommandBufferMTL final : public CommandBuffer {
   friend class ContextMTL;
 
   id<MTLCommandBuffer> buffer_ = nullptr;
-  bool is_valid_ = false;
 
   CommandBufferMTL(id<MTLCommandQueue> queue);
 
@@ -36,10 +35,7 @@ class CommandBufferMTL final : public CommandBuffer {
   bool SubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
-  void ReserveSpotInQueue() override;
-
-  // |CommandBuffer|
-  std::shared_ptr<RenderPass> CreateRenderPass(
+  std::shared_ptr<RenderPass> OnCreateRenderPass(
       RenderTarget target) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferMTL);

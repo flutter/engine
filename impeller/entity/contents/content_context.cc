@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 
@@ -52,7 +53,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
         std::move(color_attachments));
     clip_pipelines_[{}] =
         std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor);
-
   } else {
     return;
   }
@@ -93,7 +93,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     return nullptr;
   }
 
-  if (!sub_renderpass->EncodeCommands(*context->GetTransientsAllocator())) {
+  if (!sub_renderpass->EncodeCommands(context->GetTransientsAllocator())) {
     return nullptr;
   }
 

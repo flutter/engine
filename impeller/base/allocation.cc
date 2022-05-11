@@ -80,4 +80,32 @@ bool Allocation::Reserve(size_t reserved) {
   return true;
 }
 
+std::shared_ptr<fml::Mapping> CreateMappingWithCopy(const uint8_t* contents,
+                                                    size_t length) {
+  if (contents == nullptr) {
+    return nullptr;
+  }
+
+  auto allocation = std::make_shared<Allocation>();
+  if (!allocation->Truncate(length)) {
+    return nullptr;
+  }
+
+  std::memmove(allocation->GetBuffer(), contents, length);
+
+  return CreateMappingFromAllocation(std::move(allocation));
+}
+
+std::shared_ptr<fml::Mapping> CreateMappingFromAllocation(
+    std::shared_ptr<Allocation> allocation) {
+  if (!allocation) {
+    return nullptr;
+  }
+  return std::make_shared<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(allocation->GetBuffer()),  //
+      allocation->GetLength(),                                    //
+      [allocation](auto, auto) {}                                 //
+  );
+}
+
 }  // namespace impeller

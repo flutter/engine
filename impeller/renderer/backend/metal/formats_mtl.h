@@ -140,10 +140,6 @@ constexpr MTLBlendOperation ToMTLBlendOperation(BlendOperation type) {
       return MTLBlendOperationSubtract;
     case BlendOperation::kReverseSubtract:
       return MTLBlendOperationReverseSubtract;
-    case BlendOperation::kMin:
-      return MTLBlendOperationMin;
-    case BlendOperation::kMax:
-      return MTLBlendOperationMax;
   }
   return MTLBlendOperationAdd;
 };
@@ -304,6 +300,8 @@ constexpr MTLTextureType ToMTLTextureType(TextureType type) {
       return MTLTextureType2D;
     case TextureType::kTexture2DMultisample:
       return MTLTextureType2DMultisample;
+    case TextureType::kTextureCube:
+      return MTLTextureTypeCube;
   }
   return MTLTextureType2D;
 }

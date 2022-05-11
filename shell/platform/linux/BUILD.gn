@@ -214,6 +214,7 @@ executable("flutter_linux_unittests") {
     "fl_texture_gl_test.cc",
     "fl_texture_registrar_test.cc",
     "fl_value_test.cc",
+    "fl_view_accessible_test.cc",
     "testing/fl_test.cc",
     "testing/mock_binary_messenger.cc",
     "testing/mock_binary_messenger_response_handle.cc",
@@ -265,10 +266,11 @@ copy("publish_headers_linux") {
 
 zip_bundle("flutter_gtk") {
   prefix = ""
-  if (flutter_runtime_mode != "debug") {
-    prefix = "$full_platform_name-$flutter_runtime_mode/"
+  if (flutter_runtime_mode != "debug" ||
+      (flutter_runtime_mode == "debug" && target_cpu != "x64")) {
+    prefix = "$full_target_platform_name-$flutter_runtime_mode/"
   }
-  output = "$prefix$full_platform_name-flutter-gtk.zip"
+  output = "${prefix}${full_target_platform_name}-flutter-gtk.zip"
   deps = [
     ":flutter_linux_gtk",
     ":publish_headers_linux",
