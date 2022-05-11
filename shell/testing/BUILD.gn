@@ -48,7 +48,7 @@ executable("testing_v2") {
 
   sources = [
     "support.h",
-    "tester_main.cc"
+    "tester_main.cc",
   ]
 
   if (is_win) {
