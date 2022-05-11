@@ -237,8 +237,9 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
   [invocation invokeWithTarget:flutterView];
 
   // The hover pointer is observed to be by the system after ~3.5 seconds of inactivity.
-  // While this is not documented behavior, it is the only way to test for the removal of the hover
-  // pointer. Waiting for 5 seconds will ensure that all events are received before processing.
+  // While this is not a documented behavior, it is the only way to test for the removal of the
+  // hover pointer. Waiting for 5 seconds will ensure that all events are received before
+  // processing.
   XCTestExpectation* sleepExpectation = [self expectationWithDescription:@"never fires"];
   sleepExpectation.inverted = true;
   [self waitForExpectations:@[ sleepExpectation ] timeout:5.0];

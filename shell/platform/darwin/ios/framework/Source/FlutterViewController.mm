@@ -46,11 +46,11 @@ typedef struct MouseState {
   // Current coordinate of the mouse cursor in physical device pixels.
   CGPoint location = CGPointZero;
 
-  // True if flutter::PointerData::Change::kAdd has been sent to Flutter.
-  // Used to determine whether to send a kAdd event before sending an
-  // incoming mouse event, since Flutter expects pointers to be added before
-  // events are sent for them.
-  BOOL flutter_state_is_added = NO;
+  // True if flutter::PointerData::Change::kAdd has been sent to Flutter for the hover pointer.
+  // Necessary because scroll events are sent using the same pointer identifier as the hover
+  // pointer, so synchronization is needed to ensure the pointer is added to Flutter before sending
+  // any events.
+  BOOL hover_pointer_is_added = NO;
 
   // Last reported translation for an in-flight pan gesture in physical device pixels.
   CGPoint last_translation = CGPointZero;
@@ -1868,7 +1868,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-  _mouseState.flutter_state_is_added = pointer_data.change != flutter::PointerData::Change::kRemove;
+  _mouseState.hover_pointer_is_added = pointer_data.change != flutter::PointerData::Change::kRemove;
 }
 
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
@@ -1879,7 +1879,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   translation.y *= scale;
 
   auto packet =
-      std::make_unique<flutter::PointerDataPacket>(_mouseState.flutter_state_is_added ? 1 : 2);
+      std::make_unique<flutter::PointerDataPacket>(_mouseState.hover_pointer_is_added ? 1 : 2);
 
   flutter::PointerData pointer_data = [self generateDataForHoverPointer];
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
@@ -1896,13 +1896,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     _mouseState.last_translation = CGPointZero;
   }
 
-  if (_mouseState.flutter_state_is_added) {
+  if (_mouseState.hover_pointer_is_added) {
     packet->SetPointerData(/*index=*/0, pointer_data);
   } else {
     flutter::PointerData add_pointer_data = pointer_data;
     add_pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
     add_pointer_data.change = flutter::PointerData::Change::kAdd;
-    _mouseState.flutter_state_is_added = true;
+    _mouseState.hover_pointer_is_added = true;
     packet->SetPointerData(/*index=*/0, add_pointer_data);
     packet->SetPointerData(/*index=*/1, pointer_data);
   }
