@@ -31,23 +31,23 @@ G_DECLARE_FINAL_TYPE(FlScrollingManager,
 FlScrollingManager* fl_scrolling_manager_new(
     FlScrollingViewDelegate* view_delegate);
 
-void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* manager,
+void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* self,
                                                   gdouble x,
                                                   gdouble y);
 
-void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* manager,
+void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* self,
                                               GdkEventScroll* event,
                                               gint scale_factor);
 
-void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* manager);
-void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* manager,
+void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* self);
+void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* self,
                                                  gdouble rotation);
-void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* manager);
+void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* self);
 
-void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* manager);
-void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* manager,
+void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* self);
+void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
                                              gdouble scale);
-void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* manager);
+void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* self);
 
 G_END_DECLS
 
