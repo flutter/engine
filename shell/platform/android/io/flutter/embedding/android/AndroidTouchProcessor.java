@@ -234,6 +234,9 @@ public class AndroidTouchProcessor {
       if (buttons == 0
           && event.getSource() == InputDevice.SOURCE_MOUSE
           && pointerChange == PointerChange.DOWN) {
+        // Some implementations translate trackpad scrolling into a mouse down-move-up event
+        // sequence with buttons: 0, such as ARC on a Chromebook. See #11420, a legacy
+        // implementation that uses the same condition but converts differently.
         ongoingPans.put(event.getPointerId(pointerIndex), viewToScreenCoords);
       }
     } else if (pointerKind == PointerDeviceKind.STYLUS) {
