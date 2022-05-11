@@ -25,6 +25,8 @@ class DomWindow {}
 extension DomWindowExtension on DomWindow {
   external DomConsole get console;
   external DomDocument get document;
+  external int? get innerHeight;
+  external int? get innerWidth;
   external DomNavigator get navigator;
   external DomPerformance get performance;
   Future<Object?> fetch(String url) =>
@@ -187,6 +189,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
       setProperty('background-color', value, '');
   set pointerEvents(String value) => setProperty('pointer-events', value, '');
   set filter(String value) => setProperty('filter', value, '');
+  set zIndex(String value) => setProperty('z-index', value, '');
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -203,6 +206,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get backgroundColor => getPropertyValue('background-color');
   String get pointerEvents => getPropertyValue('pointer-events');
   String get filter => getPropertyValue('filter');
+  String get zIndex => getPropertyValue('z-index');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -318,14 +322,28 @@ class DomCanvasRenderingContext2D {}
 extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external Object? get fillStyle;
   external set fillStyle(Object? style);
+  external set font(String value);
+  external set lineWidth(num? value);
+  external set strokeStyle(Object? value);
+  external void beginPath();
+  external void closePath();
   external DomCanvasGradient createLinearGradient(num x0, num y0, num x1, num
       y1);
   external DomCanvasPattern? createPattern(Object image, String reptitionType);
   external DomCanvasGradient createRadialGradient(num x0, num y0, num r0, num
       x1, num y1, num r1);
   external void drawImage(DomCanvasImageSource source, num destX, num destY);
+  external void fill();
   external void fillRect(num x, num y, num width, num height);
+  external void fillText(String text, num x, num y, [num? maxWidth]);
   external DomImageData getImageData(int x, int y, int sw, int sh);
+  external void lineTo(num x, num y);
+  external void moveTo(num x, num y);
+  external void save();
+  external void stroke();
+  external void rect(num x, num y, num width, num height);
+  external void resetTransform();
+  external void restore();
 }
 
 @JS()
