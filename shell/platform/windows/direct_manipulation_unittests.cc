@@ -190,5 +190,74 @@ TEST(DirectManipulationTest, TestGesture) {
                                    DIRECTMANIPULATION_INERTIA);
 }
 
+// Verify that scale mantissa rounding works as expected
+TEST(DirectManipulationTest, TestRounding) {
+  MockIDirectManipulationContent content;
+  MockWindowBindingHandlerDelegate delegate;
+  MockIDirectManipulationViewport viewport;
+  const float scale = 1.5;
+  const int DISPLAY_WIDTH = 800;
+  const int DISPLAY_HEIGHT = 600;
+  auto owner = std::make_unique<DirectManipulationOwner>(nullptr);
+  owner->SetBindingHandlerDelegate(&delegate);
+  auto handler =
+      fml::MakeRefCounted<DirectManipulationEventHandler>(owner.get());
+  int32_t device_id = (int32_t) reinterpret_cast<int64_t>(handler.get());
+  EXPECT_CALL(delegate, OnPointerPanZoomStart(device_id));
+  handler->OnViewportStatusChanged((IDirectManipulationViewport*)&viewport,
+                                   DIRECTMANIPULATION_RUNNING,
+                                   DIRECTMANIPULATION_READY);
+  EXPECT_CALL(content, GetContentTransform(_, 6))
+      .WillOnce(::testing::Invoke([scale](float* transform, DWORD size) {
+        transform[0] = 1.5000001f;
+        transform[4] = 4.0;
+        transform[5] = 0.0;
+        return S_OK;
+      }))
+      .RetiresOnSaturation();
+  EXPECT_CALL(delegate,
+              OnPointerPanZoomUpdate(device_id, 4.0, 0, 1.5000001f, 0))
+      .Times(0);
+  EXPECT_CALL(delegate, OnPointerPanZoomUpdate(device_id, 4.0, 0, 1.5f, 0))
+      .Times(1)
+      .RetiresOnSaturation();
+  EXPECT_CALL(content, GetContentTransform(_, 6))
+      .WillOnce(::testing::Invoke([scale](float* transform, DWORD size) {
+        transform[0] = 1.50000065f;
+        transform[4] = 2.0;
+        transform[5] = 0.0;
+        return S_OK;
+      }))
+      .RetiresOnSaturation();
+  EXPECT_CALL(delegate,
+              OnPointerPanZoomUpdate(device_id, 2.0, 0, 1.50000065f, 0))
+      .Times(0);
+  EXPECT_CALL(delegate,
+              OnPointerPanZoomUpdate(device_id, 2.0, 0, 1.50000047f, 0))
+      .Times(1)
+      .RetiresOnSaturation();
+  EXPECT_CALL(delegate, OnPointerPanZoomEnd(device_id));
+  EXPECT_CALL(viewport, GetViewportRect(_))
+      .WillOnce(::testing::Invoke([DISPLAY_WIDTH, DISPLAY_HEIGHT](RECT* rect) {
+        rect->left = 0;
+        rect->top = 0;
+        rect->right = DISPLAY_WIDTH;
+        rect->bottom = DISPLAY_HEIGHT;
+        return S_OK;
+      }));
+  EXPECT_CALL(viewport, ZoomToRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, false))
+      .WillOnce(::testing::Return(S_OK));
+  handler->OnContentUpdated((IDirectManipulationViewport*)&viewport,
+                            (IDirectManipulationContent*)&content);
+  handler->OnContentUpdated((IDirectManipulationViewport*)&viewport,
+                            (IDirectManipulationContent*)&content);
+  handler->OnViewportStatusChanged((IDirectManipulationViewport*)&viewport,
+                                   DIRECTMANIPULATION_INERTIA,
+                                   DIRECTMANIPULATION_RUNNING);
+  handler->OnViewportStatusChanged((IDirectManipulationViewport*)&viewport,
+                                   DIRECTMANIPULATION_READY,
+                                   DIRECTMANIPULATION_INERTIA);
+}
+
 }  // namespace testing
 }  // namespace flutter
