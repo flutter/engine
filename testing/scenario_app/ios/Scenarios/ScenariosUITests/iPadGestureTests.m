@@ -92,8 +92,8 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
   sleepExpectation.inverted = true;
   [self waitForExpectations:@[ sleepExpectation ] timeout:5.0];
 
-  // The hover events are interspersed with the right-click events in a varying order
-  // Ensure the individual orderings are respected without hardcoding the absolute sequence
+  // The hover events are interspersed with the right-click events in a varying order.
+  // Ensure the individual orderings are respected without hardcoding the absolute sequence.
   NSMutableDictionary<NSString*, NSMutableArray<NSNumber*>*>* messages =
       [[NSMutableDictionary alloc] init];
   for (XCUIElement* element in [app.textFields allElementsBoundByIndex]) {
@@ -112,7 +112,7 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
     }
     [messageSequenceNumberList addObject:@(messageSequenceNumber)];
   }
-  // The number of hover events is not consistent, there could be one or many
+  // The number of hover events is not consistent, there could be one or many.
   NSMutableArray<NSNumber*>* hoverSequenceNumbers =
       messages[@"PointerChange.hover,device=1,buttons=0"];
   int hoverRemovedSequenceNumber =
@@ -217,7 +217,6 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
   XCUIElement* flutterView = [[app descendantsMatchingType:XCUIElementTypeAny]
       elementMatchingPredicate:predicateToFindFlutterView];
   if (![flutterView waitForExistenceWithTimeout:kSecondsToWaitForFlutterView]) {
-    NSLog(@"%@", app.debugDescription);
     XCTFail(@"Failed due to not able to find any flutterView with %@ seconds",
             @(kSecondsToWaitForFlutterView));
   }
@@ -227,7 +226,7 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
   SEL scroll = @selector(scrollByDeltaX:deltaY:);
   XCTAssertTrue([flutterView respondsToSelector:scroll],
                 @"If supportsPointerInteraction is true, this should be true too.");
-  // Need to use NSInvocation in order to send primitive arguments to selector
+  // Need to use NSInvocation in order to send primitive arguments to selector.
   NSInvocation* invocation = [NSInvocation
       invocationWithMethodSignature:[XCUIElement instanceMethodSignatureForSelector:scroll]];
   [invocation setSelector:scroll];
@@ -237,13 +236,15 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
   [invocation setArgument:&deltaY atIndex:3];
   [invocation invokeWithTarget:flutterView];
 
-  // The hover pointer is removed after ~3.5 seconds, this ensures that all events are received
+  // The hover pointer is observed to be by the system after ~3.5 seconds of inactivity.
+  // While this is not documented behavior, it is the only way to test for the removal of the hover
+  // pointer. Waiting for 5 seconds will ensure that all events are received before processing.
   XCTestExpectation* sleepExpectation = [self expectationWithDescription:@"never fires"];
   sleepExpectation.inverted = true;
   [self waitForExpectations:@[ sleepExpectation ] timeout:5.0];
 
-  // There are hover events interspersed with the scroll events in a varying order
-  // Ensure the individual orderings are respected without hardcoding the absolute sequence
+  // There are hover events interspersed with the scroll events in a varying order.
+  // Ensure the individual orderings are respected without hardcoding the absolute sequence.
   NSMutableDictionary<NSString*, NSMutableArray<NSNumber*>*>* messages =
       [[NSMutableDictionary alloc] init];
   for (XCUIElement* element in [app.textFields allElementsBoundByIndex]) {
@@ -262,7 +263,7 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
     }
     [messageSequenceNumberList addObject:@(messageSequenceNumber)];
   }
-  // The number of hover events is not consistent, there could be one or many
+  // The number of hover events is not consistent, there could be one or many.
   int hoverAddedSequenceNumber =
       assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.add,device=0,buttons=0");
   NSMutableArray<NSNumber*>* hoverSequenceNumbers =
@@ -273,7 +274,7 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
       assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.add,device=1,buttons=0");
   int panZoomStartSequenceNumber = assertOneMessageAndGetSequenceNumber(
       messages, @"PointerChange.panZoomStart,device=1,buttons=0");
-  // The number of pan/zoom update events is not consistent, there could be one or many
+  // The number of pan/zoom update events is not consistent, there could be one or many.
   NSMutableArray<NSNumber*>* panZoomUpdateSequenceNumbers =
       messages[@"PointerChange.panZoomUpdate,device=1,buttons=0"];
   int panZoomEndSequenceNumber = assertOneMessageAndGetSequenceNumber(
