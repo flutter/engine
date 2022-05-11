@@ -23,10 +23,11 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   gradient_fill_pipelines_[{}] =
       std::make_unique<GradientFillPipeline>(*context_);
   solid_fill_pipelines_[{}] = std::make_unique<SolidFillPipeline>(*context_);
-  texture_blend_pipelines_[{}] =
-      std::make_unique<TextureBlendPipeline>(*context_);
-  texture_blend_screen_pipelines_[{}] =
-      std::make_unique<TextureBlendScreenPipeline>(*context_);
+  texture_blend_pipelines_[{}] = std::make_unique<BlendPipeline>(*context_);
+  blend_screen_pipelines_[{}] =
+      std::make_unique<BlendScreenPipeline>(*context_);
+  blend_colorburn_pipelines_[{}] =
+      std::make_unique<BlendColorburnPipeline>(*context_);
   texture_pipelines_[{}] = std::make_unique<TexturePipeline>(*context_);
   gaussian_blur_pipelines_[{}] =
       std::make_unique<GaussianBlurPipeline>(*context_);

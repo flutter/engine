@@ -493,6 +493,7 @@ TEST_P(AiksTest, CanDrawWithAdvancedBlend) {
         {"Modulate", Entity::BlendMode::kModulate},
         // Advanced blends (non Porter-Duff/color blends)
         {"Screen", Entity::BlendMode::kScreen},
+        {"ColorBurn", Entity::BlendMode::kColorBurn},
     };
     assert(blends.size() ==
            static_cast<size_t>(Entity::BlendMode::kLastAdvancedBlendMode) + 1);

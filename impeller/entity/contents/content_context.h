@@ -11,6 +11,11 @@
 #include "flutter/fml/macros.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/entity/advanced_blend.vert.h"
+#include "impeller/entity/advanced_blend_colorburn.frag.h"
+#include "impeller/entity/advanced_blend_screen.frag.h"
+#include "impeller/entity/blend.frag.h"
+#include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/entity.h"
@@ -24,10 +29,6 @@
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/solid_stroke.frag.h"
 #include "impeller/entity/solid_stroke.vert.h"
-#include "impeller/entity/texture_blend.frag.h"
-#include "impeller/entity/texture_blend.vert.h"
-#include "impeller/entity/texture_blend_screen.frag.h"
-#include "impeller/entity/texture_blend_screen.vert.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/formats.h"
@@ -38,10 +39,11 @@ using GradientFillPipeline =
     PipelineT<GradientFillVertexShader, GradientFillFragmentShader>;
 using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
-using TextureBlendPipeline =
-    PipelineT<TextureBlendVertexShader, TextureBlendFragmentShader>;
-using TextureBlendScreenPipeline =
-    PipelineT<TextureBlendScreenVertexShader, TextureBlendScreenFragmentShader>;
+using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
+using BlendScreenPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendScreenFragmentShader>;
+using BlendColorburnPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorburnFragmentShader>;
 using TexturePipeline =
     PipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
 using GaussianBlurPipeline =
@@ -98,14 +100,18 @@ class ContentContext {
     return GetPipeline(solid_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline> GetTextureBlendPipeline(
-      ContentContextOptions opts) const {
+  std::shared_ptr<Pipeline> GetBlendPipeline(ContentContextOptions opts) const {
     return GetPipeline(texture_blend_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline> GetTextureBlendScreenPipeline(
+  std::shared_ptr<Pipeline> GetBlendScreenPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(texture_blend_screen_pipelines_, opts);
+    return GetPipeline(blend_screen_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendColorburnPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_colorburn_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetTexturePipeline(
@@ -161,8 +167,9 @@ class ContentContext {
   // map.
   mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
-  mutable Variants<TextureBlendPipeline> texture_blend_pipelines_;
-  mutable Variants<TextureBlendScreenPipeline> texture_blend_screen_pipelines_;
+  mutable Variants<BlendPipeline> texture_blend_pipelines_;
+  mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
+  mutable Variants<BlendColorburnPipeline> blend_colorburn_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;

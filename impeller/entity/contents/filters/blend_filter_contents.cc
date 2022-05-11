@@ -99,7 +99,7 @@ void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
 
   if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
     static_assert(Entity::BlendMode::kLastAdvancedBlendMode ==
-                  Entity::BlendMode::kScreen);
+                  Entity::BlendMode::kColorBurn);
 
     switch (blend_mode) {
       case Entity::BlendMode::kScreen:
@@ -107,9 +107,20 @@ void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
                                   const ContentContext& renderer,
                                   const Entity& entity, RenderPass& pass,
                                   const Rect& coverage) {
-          PipelineProc p = &ContentContext::GetTextureBlendScreenPipeline;
-          return AdvancedBlend<TextureBlendScreenPipeline::VertexShader,
-                               TextureBlendScreenPipeline::FragmentShader>(
+          PipelineProc p = &ContentContext::GetBlendScreenPipeline;
+          return AdvancedBlend<BlendScreenPipeline::VertexShader,
+                               BlendScreenPipeline::FragmentShader>(
+              inputs, renderer, entity, pass, coverage, p);
+        };
+        break;
+      case Entity::BlendMode::kColorBurn:
+        advanced_blend_proc_ = [](const FilterInput::Vector& inputs,
+                                  const ContentContext& renderer,
+                                  const Entity& entity, RenderPass& pass,
+                                  const Rect& coverage) {
+          PipelineProc p = &ContentContext::GetBlendColorburnPipeline;
+          return AdvancedBlend<BlendColorburnPipeline::VertexShader,
+                               BlendColorburnPipeline::FragmentShader>(
               inputs, renderer, entity, pass, coverage, p);
         };
         break;
@@ -125,8 +136,8 @@ static bool BasicBlend(const FilterInput::Vector& inputs,
                        RenderPass& pass,
                        const Rect& coverage,
                        Entity::BlendMode basic_blend) {
-  using VS = TextureBlendPipeline::VertexShader;
-  using FS = TextureBlendPipeline::FragmentShader;
+  using VS = BlendPipeline::VertexShader;
+  using FS = BlendPipeline::FragmentShader;
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -175,7 +186,7 @@ static bool BasicBlend(const FilterInput::Vector& inputs,
   // Draw the first texture using kSource.
 
   options.blend_mode = Entity::BlendMode::kSource;
-  cmd.pipeline = renderer.GetTextureBlendPipeline(options);
+  cmd.pipeline = renderer.GetBlendPipeline(options);
   if (!add_blend_command(inputs[0]->GetSnapshot(renderer, entity))) {
     return true;
   }
@@ -187,7 +198,7 @@ static bool BasicBlend(const FilterInput::Vector& inputs,
   // Write subsequent textures using the selected blend mode.
 
   options.blend_mode = basic_blend;
-  cmd.pipeline = renderer.GetTextureBlendPipeline(options);
+  cmd.pipeline = renderer.GetBlendPipeline(options);
 
   for (auto texture_i = inputs.begin() + 1; texture_i < inputs.end();
        texture_i++) {
