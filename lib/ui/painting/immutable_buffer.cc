@@ -86,13 +86,7 @@ void ImmutableBuffer::initFromAsset(Dart_NativeArguments args) {
 
   auto size = data->GetSize();
   const void* bytes = static_cast<const void*>(data->GetMapping());
-
-#if FML_OS_ANDROID
   auto sk_data = MakeSkDataWithCopy(bytes, size);
-#else
-  auto sk_data = SkData::MakeWithCopy(bytes, size);
-#endif  // FML_OS_ANDROID
-
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
   buffer->AssociateWithDartWrapper(immutable_buffer);
   tonic::DartInvoke(callback_handle, {tonic::ToDart(size)});
