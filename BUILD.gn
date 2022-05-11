@@ -101,6 +101,7 @@ group("flutter") {
   if (build_engine_artifacts) {
     public_deps += [
       "//flutter/shell/testing",
+      "//flutter/shell/testing:testing_v2",
       "//flutter/tools/const_finder",
       "//flutter/tools/font-subset",
     ]
