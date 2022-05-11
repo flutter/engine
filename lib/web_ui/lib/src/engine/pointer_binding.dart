@@ -63,6 +63,7 @@ int convertButtonToButtons(int button) {
 }
 
 /// Wrapping the Safari iOS workaround that adds a dummy event listener
+/// More info about the issue and workaround: https://github.com/flutter/flutter/issues/70858
 class SafariPointerEventWorkaround {
   static SafariPointerEventWorkaround instance = SafariPointerEventWorkaround();
 
