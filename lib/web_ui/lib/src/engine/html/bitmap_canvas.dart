@@ -963,7 +963,7 @@ class BitmapCanvas extends EngineCanvas {
     }
 
     final html.Element paragraphElement =
-        drawParagraphElement(paragraph, offset);
+        drawParagraphElement(paragraph, offset) as html.Element;
     if (_canvasPool.isClipped) {
       final List<html.Element> clipElements = _clipContent(
           _canvasPool.clipStack!,

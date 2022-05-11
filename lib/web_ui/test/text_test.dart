@@ -225,7 +225,7 @@ Future<void> testMain() async {
     paragraph.layout(const ParagraphConstraints(width: 800.0));
     expect(paragraph.plainText, 'abcdef');
     final List<Element> spans =
-        paragraph.toDomElement().querySelectorAll('flt-span');
+        paragraph.toDomElement().querySelectorAll('flt-span').cast<Element>();
     expect(spans[0].style.fontFamily, 'Ahem, $fallback, sans-serif');
     // The nested span here should not set it's family to default sans-serif.
     expect(spans[1].style.fontFamily, 'Ahem, $fallback, sans-serif');
@@ -245,7 +245,8 @@ Future<void> testMain() async {
     ), 'Hello');
 
     paragraph.layout(constrain(double.infinity));
-    expect(paragraph.toDomElement().children.single.style.fontFamily,
+    expect(paragraph.toDomElement()
+        .children.single.style.fontFamily,
         'SomeFont, $fallback, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
@@ -265,7 +266,8 @@ Future<void> testMain() async {
     ), 'Hello');
 
     paragraph.layout(constrain(double.infinity));
-    expect(paragraph.toDomElement().children.single.style.fontFamily, 'serif');
+    expect(paragraph.toDomElement()
+        .children.single.style.fontFamily, 'serif');
 
     debugEmulateFlutterTesterEnvironment = true;
   });
@@ -280,7 +282,8 @@ Future<void> testMain() async {
     ), 'Hello');
 
     paragraph.layout(constrain(double.infinity));
-    expect(paragraph.toDomElement().children.single.style.fontFamily,
+    expect(paragraph.toDomElement()
+        .children.single.style.fontFamily,
         '"MyFont 2000", $fallback, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
