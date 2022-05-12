@@ -39,7 +39,7 @@ executable("testing") {
 
 # A second tester binary with SUPPORT_FRACTIONAL_TRANSLATION enabled.
 executable("testing_fractional_translation") {
-  output_name = "flutter_tester_v2"
+  output_name = "flutter_tester_fractional_translation"
 
   public_configs = [
     "//flutter:config",
