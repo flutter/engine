@@ -1,4 +1,4 @@
-Signature: 302025b5c1ccf2bedbe6f6e40f1e2a1a
+Signature: d4886abe22ab1a98d157dc9e0cebf32a
 
 UNUSED LICENSES:
 
@@ -6163,6 +6163,7 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/PathTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/PathTessellator.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/StrokeTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/StrokeTessellator.h
+FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/VertexChunkPatchAllocator.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ClipStack.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/ClipStack_graphite.h
 FILE: ../../../third_party/skia/src/gpu/graphite/DrawGeometry.h
