@@ -315,7 +315,7 @@ static const CGFloat kCompareAccuracy = 0.001;
                              kCompareAccuracy);
 
   XCUIElement* overlayView1 = app.otherElements[@"platform_view[0].overlay_view[1]"];
-  XCTAssertFalse(overlayVie1.exists);
+  XCTAssertFalse(overlayView1.exists);
 }
 
 @end
