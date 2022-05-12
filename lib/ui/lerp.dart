@@ -48,3 +48,18 @@ int _clampInt(int value, int min, int max) {
     return value;
   }
 }
+
+/// Same as [num.clamp] but optimized for non-null [double].
+double clampDouble(double x, double min, double max) {
+  assert(!x.isNaN);
+  assert(!max.isNaN);
+  assert(!min.isNaN);
+  assert(min <= max);
+  if (x < min) {
+    return min;
+  } else if (x > max) {
+    return max;
+  } else {
+    return x;
+  }
+}
