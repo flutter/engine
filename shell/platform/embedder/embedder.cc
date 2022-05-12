@@ -47,7 +47,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
-#include "flutter/shell/platform/embedder/common.h"
+#include "flutter/shell/platform/embedder/pixel_formats.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
@@ -700,9 +700,15 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterSoftwareBackingStore2* software) {
+
+  const auto color_info = getSkColorInfo(software->pixel_format);
+  if (!color_info) {
+    return nullptr;
+  }
+
   const auto image_info =
       SkImageInfo::Make(SkISize::Make(config.size.width, config.size.height),
-                        getSkColorInfo(software->pixel_format));
+                        *color_info);
 
   struct Captures {
     VoidCallback destruction_callback;
