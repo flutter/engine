@@ -17,6 +17,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.util.FakeKeyEvent;
+import io.flutter.util.KeyCodes;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
@@ -34,6 +35,10 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
 public class KeyboardManagerTest {
+  static public final int SCAN_KEY_A = 0x1e;
+  static public final int SCAN_SHIFT_LEFT = 0x2a;
+
+
   /**
    * Records a message that {@link KeyboardManager} sends to outside.
    *
@@ -423,7 +428,8 @@ public class KeyboardManagerTest {
   @Test
   public void embedderReponderHandlesEvents() {
     final KeyboardTester tester = new KeyboardTester();
-    final KeyEvent keyEvent = new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 0, 0, 0x1e, 'a');
+    final KeyEvent keyEvent =
+        new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A, 0, 0, SCAN_KEY_A, 'a');
     final ArrayList<CallRecord> calls = new ArrayList<>();
 
     tester.recordEmbedderCallsTo(calls);
@@ -433,7 +439,12 @@ public class KeyboardManagerTest {
     assertEquals(true, result);
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kDown, 0x00070004l, 0x00000000061l, "a", false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kDown,
+        KeyCodes.PHYSICAL_KEY_A,
+        KeyCodes.LOGICAL_KEY_A,
+        "a",
+        false);
 
     // Don't send the key event to the text plugin if the only primary responder
     // hasn't responded.
@@ -545,28 +556,43 @@ public class KeyboardManagerTest {
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 0, 0, 0x1e, 'a')));
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A, 0, 0, SCAN_KEY_A, 'a')));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kDown, 0x00070004l, 0x00000000061l, "a", false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kDown,
+        KeyCodes.PHYSICAL_KEY_A,
+        KeyCodes.LOGICAL_KEY_A,
+        "a",
+        false);
     calls.clear();
 
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 1, 0, 0x1e, 'a')));
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A, 1, 0, SCAN_KEY_A, 'a')));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kRepeat, 0x00070004l, 0x00000000061l, "a", false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kRepeat,
+        KeyCodes.PHYSICAL_KEY_A,
+        KeyCodes.LOGICAL_KEY_A,
+        "a",
+        false);
     calls.clear();
 
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(100, KeyEvent.ACTION_UP, 0x1d, 0, 0, 0x1e, 'a')));
+            new FakeKeyEvent(100, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_A, 0, 0, SCAN_KEY_A, 'a')));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kUp, 0x00070004l, 0x00000000061l, null, false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kUp,
+        KeyCodes.PHYSICAL_KEY_A,
+        KeyCodes.LOGICAL_KEY_A,
+        null,
+        false);
     calls.clear();
   }
 
@@ -582,38 +608,58 @@ public class KeyboardManagerTest {
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x3b, 0, 0x41, 0x2a, '\0')));
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x3b, 0, 0x41, SCAN_SHIFT_LEFT, '\0')));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kDown, 0x000700e1l, 0x200000102l, null, false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kDown,
+        KeyCodes.PHYSICAL_SHIFT_LEFT,
+        KeyCodes.LOGICAL_SHIFT_LEFT,
+        null,
+        false);
     calls.clear();
 
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, 0x1d, 0, 0x41, 0x1e, 'A')));
+            new FakeKeyEvent(100, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A, 0, 0x41, SCAN_KEY_A, 'A')));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kDown, 0x00070004l, 0x00000000061l, "A", false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kDown,
+        KeyCodes.PHYSICAL_KEY_A,
+        KeyCodes.LOGICAL_KEY_A,
+        "A",
+        false);
     calls.clear();
 
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(100, KeyEvent.ACTION_UP, 0x1d, 0, 0x41, 0x1e, 'A')));
+            new FakeKeyEvent(100, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_A, 0, 0x41, SCAN_KEY_A, 'A')));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kUp, 0x00070004l, 0x00000000061l, null, false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kUp,
+        KeyCodes.PHYSICAL_KEY_A,
+        KeyCodes.LOGICAL_KEY_A,
+        null,
+        false);
     calls.clear();
 
     // ShiftLeft
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(100, KeyEvent.ACTION_UP, 0x3b, 0, 0x41, 0x2a, '\0')));
+            new FakeKeyEvent(100, KeyEvent.ACTION_UP, 0x3b, 0, 0x41, SCAN_SHIFT_LEFT, '\0')));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).embedderObject, KeyData.Type.kUp, 0x000700e1l, 0x200000102l, null, false);
+        calls.get(0).embedderObject,
+        KeyData.Type.kUp,
+        KeyCodes.PHYSICAL_SHIFT_LEFT,
+        KeyCodes.LOGICAL_SHIFT_LEFT,
+        null,
+        false);
     calls.clear();
   }
 }
