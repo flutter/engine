@@ -153,30 +153,6 @@ class ContentContext {
   std::shared_ptr<Texture> MakeSubpass(ISize texture_size,
                                        SubpassCallback subpass_callback) const;
 
- private:
-  std::shared_ptr<Context> context_;
-
-  template <class T>
-  using Variants = std::unordered_map<ContentContextOptions,
-                                      std::unique_ptr<T>,
-                                      ContentContextOptions::Hash,
-                                      ContentContextOptions::Equal>;
-
-  // These are mutable because while the prototypes are created eagerly, any
-  // variants requested from that are lazily created and cached in the variants
-  // map.
-  mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
-  mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
-  mutable Variants<BlendPipeline> texture_blend_pipelines_;
-  mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
-  mutable Variants<BlendColorburnPipeline> blend_colorburn_pipelines_;
-  mutable Variants<TexturePipeline> texture_pipelines_;
-  mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
-  mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
-  mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
-  mutable Variants<ClipPipeline> clip_pipelines_;
-  mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-
   static void ApplyOptionsToDescriptor(PipelineDescriptor& desc,
                                        const ContentContextOptions& options) {
     auto blend_mode = options.blend_mode;
@@ -218,7 +194,7 @@ class ContentContext {
       case Entity::BlendMode::kSourceOver:
         color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
         color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kSourceAlpha;
+        color0.src_alpha_blend_factor = BlendFactor::kOne;
         color0.src_color_blend_factor = BlendFactor::kOne;
         break;
       case Entity::BlendMode::kDestinationOver:
@@ -295,6 +271,30 @@ class ContentContext {
       desc.SetStencilAttachmentDescriptors(stencil);
     }
   }
+
+ private:
+  std::shared_ptr<Context> context_;
+
+  template <class T>
+  using Variants = std::unordered_map<ContentContextOptions,
+                                      std::unique_ptr<T>,
+                                      ContentContextOptions::Hash,
+                                      ContentContextOptions::Equal>;
+
+  // These are mutable because while the prototypes are created eagerly, any
+  // variants requested from that are lazily created and cached in the variants
+  // map.
+  mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
+  mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<BlendPipeline> texture_blend_pipelines_;
+  mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
+  mutable Variants<BlendColorburnPipeline> blend_colorburn_pipelines_;
+  mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
+  mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
+  mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
+  mutable Variants<ClipPipeline> clip_pipelines_;
+  mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline> GetPipeline(Variants<TypedPipeline>& container,

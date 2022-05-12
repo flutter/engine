@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -20,13 +21,16 @@ BlendFilterContents::~BlendFilterContents() = default;
 using PipelineProc =
     std::shared_ptr<Pipeline> (ContentContext::*)(ContentContextOptions) const;
 
-template <typename VS, typename FS>
+template <typename TPipeline>
 static bool AdvancedBlend(const FilterInput::Vector& inputs,
                           const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass,
                           const Rect& coverage,
                           PipelineProc pipeline_proc) {
+  using VS = typename TPipeline::VertexShader;
+  using FS = typename TPipeline::FragmentShader;
+
   if (inputs.size() < 2) {
     return false;
   }
@@ -65,8 +69,7 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
   });
   auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
-  auto options = OptionsFromPass(pass);
-  options.blend_mode = Entity::BlendMode::kSource;
+  auto options = OptionsFromPassAndEntity(pass, entity);
   std::shared_ptr<Pipeline> pipeline =
       std::invoke(pipeline_proc, renderer, options);
 
@@ -108,9 +111,8 @@ void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
                                   const Entity& entity, RenderPass& pass,
                                   const Rect& coverage) {
           PipelineProc p = &ContentContext::GetBlendScreenPipeline;
-          return AdvancedBlend<BlendScreenPipeline::VertexShader,
-                               BlendScreenPipeline::FragmentShader>(
-              inputs, renderer, entity, pass, coverage, p);
+          return AdvancedBlend<BlendScreenPipeline>(inputs, renderer, entity,
+                                                    pass, coverage, p);
         };
         break;
       case Entity::BlendMode::kColorBurn:
@@ -119,9 +121,8 @@ void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
                                   const Entity& entity, RenderPass& pass,
                                   const Rect& coverage) {
           PipelineProc p = &ContentContext::GetBlendColorburnPipeline;
-          return AdvancedBlend<BlendColorburnPipeline::VertexShader,
-                               BlendColorburnPipeline::FragmentShader>(
-              inputs, renderer, entity, pass, coverage, p);
+          return AdvancedBlend<BlendColorburnPipeline>(inputs, renderer, entity,
+                                                       pass, coverage, p);
         };
         break;
       default:

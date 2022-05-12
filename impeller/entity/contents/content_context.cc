@@ -13,29 +13,35 @@
 
 namespace impeller {
 
+template <typename PipelineT>
+static std::unique_ptr<PipelineT> CreateDefault(const Context& context) {
+  auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+  if (!desc.has_value()) {
+    return nullptr;
+  }
+  // Apply default ContentContextOptions to the descriptor.
+  ContentContext::ApplyOptionsToDescriptor(*desc, {});
+  return std::make_unique<PipelineT>(context, desc);
+}
+
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
 
-  // Pipelines whose default descriptors work fine for the entity framework.
-  gradient_fill_pipelines_[{}] =
-      std::make_unique<GradientFillPipeline>(*context_);
-  solid_fill_pipelines_[{}] = std::make_unique<SolidFillPipeline>(*context_);
-  texture_blend_pipelines_[{}] = std::make_unique<BlendPipeline>(*context_);
-  blend_screen_pipelines_[{}] =
-      std::make_unique<BlendScreenPipeline>(*context_);
+  gradient_fill_pipelines_[{}] = CreateDefault<GradientFillPipeline>(*context_);
+  solid_fill_pipelines_[{}] = CreateDefault<SolidFillPipeline>(*context_);
+  texture_blend_pipelines_[{}] = CreateDefault<BlendPipeline>(*context_);
+  blend_screen_pipelines_[{}] = CreateDefault<BlendScreenPipeline>(*context_);
   blend_colorburn_pipelines_[{}] =
-      std::make_unique<BlendColorburnPipeline>(*context_);
-  texture_pipelines_[{}] = std::make_unique<TexturePipeline>(*context_);
-  gaussian_blur_pipelines_[{}] =
-      std::make_unique<GaussianBlurPipeline>(*context_);
+      CreateDefault<BlendColorburnPipeline>(*context_);
+  texture_pipelines_[{}] = CreateDefault<TexturePipeline>(*context_);
+  gaussian_blur_pipelines_[{}] = CreateDefault<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
-      std::make_unique<BorderMaskBlurPipeline>(*context_);
-  solid_stroke_pipelines_[{}] =
-      std::make_unique<SolidStrokePipeline>(*context_);
-  glyph_atlas_pipelines_[{}] = std::make_unique<GlyphAtlasPipeline>(*context_);
+      CreateDefault<BorderMaskBlurPipeline>(*context_);
+  solid_stroke_pipelines_[{}] = CreateDefault<SolidStrokePipeline>(*context_);
+  glyph_atlas_pipelines_[{}] = CreateDefault<GlyphAtlasPipeline>(*context_);
 
   // Pipelines that are variants of the base pipelines with custom descriptors.
   // TODO(98684): Rework this API to allow fetching the descriptor without

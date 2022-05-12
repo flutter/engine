@@ -17,14 +17,14 @@ vec3 ComponentIsValue(vec3 n, float value) {
 }
 
 void main() {
-  const vec4 dst =
-      SampleWithBorder(texture_sampler_dst, v_dst_texture_coords);
-  const vec4 src =
-      SampleWithBorder(texture_sampler_src, v_src_texture_coords);
+  const vec4 dst = Unpremultiply(
+      SampleWithBorder(texture_sampler_dst, v_dst_texture_coords));
+  const vec4 src = Unpremultiply(
+      SampleWithBorder(texture_sampler_src, v_src_texture_coords));
 
   vec3 color = 1 - min(vec3(1), (1 - dst.rgb) / src.rgb);
   color = mix(color, vec3(1), ComponentIsValue(dst.rgb, 1.0));
   color = mix(color, vec3(0), ComponentIsValue(src.rgb, 0.0));
 
-  frag_color = vec4(color, dst.a - src.a + src.a);
+  frag_color = vec4(color * src.a, src.a);
 }

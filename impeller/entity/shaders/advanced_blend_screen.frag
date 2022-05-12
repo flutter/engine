@@ -19,5 +19,5 @@ void main() {
       SampleWithBorder(texture_sampler_src, v_src_texture_coords));
 
   vec3 color = dst.rgb + src.rgb - (dst.rgb * src.rgb);
-  frag_color = vec4(color, dst.a - src.a + src.a);
+  frag_color = vec4(color * src.a, src.a);
 }
