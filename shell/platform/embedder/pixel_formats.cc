@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/pixel_formats.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 std::optional<SkColorType> getSkColorType(FlutterSoftwarePixelFormat pixfmt) {
   switch (pixfmt) {
@@ -34,8 +33,8 @@ std::optional<SkColorInfo> getSkColorInfo(FlutterSoftwarePixelFormat pixfmt) {
     return std::nullopt;
   }
 
-  auto at =
-      SkColorTypeIsAlwaysOpaque(*ct) ? kOpaque_SkAlphaType : kPremul_SkAlphaType;
+  auto at = SkColorTypeIsAlwaysOpaque(*ct) ? kOpaque_SkAlphaType
+                                           : kPremul_SkAlphaType;
 
   return SkColorInfo(*ct, at, SkColorSpace::MakeSRGB());
 }

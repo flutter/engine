@@ -4,8 +4,8 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 
-#include "flutter/shell/platform/embedder/pixel_formats.h"
 #include "flutter/fml/logging.h"
+#include "flutter/shell/platform/embedder/pixel_formats.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
@@ -220,10 +220,9 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware2(
   if (!color_info) {
     return false;
   }
-  
-  auto surface = SkSurface::MakeRaster(
-      SkImageInfo::Make(SkISize::Make(config->size.width, config->size.height),
-                        *color_info));
+
+  auto surface = SkSurface::MakeRaster(SkImageInfo::Make(
+      SkISize::Make(config->size.width, config->size.height), *color_info));
   if (!surface) {
     FML_LOG(ERROR)
         << "Could not create the render target for compositor layer.";
