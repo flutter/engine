@@ -104,6 +104,7 @@ class ClipShapeLayer : public ContainerLayer {
  private:
   const ClipShape clip_shape_;
   Clip clip_behavior_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ClipShapeLayer);
 };
 
