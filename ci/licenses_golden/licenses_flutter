@@ -93,6 +93,9 @@ FILE: ../../../flutter/display_list/display_list_ops.h
 FILE: ../../../flutter/display_list/display_list_paint.cc
 FILE: ../../../flutter/display_list/display_list_paint.h
 FILE: ../../../flutter/display_list/display_list_paint_unittests.cc
+FILE: ../../../flutter/display_list/display_list_path_effect.cc
+FILE: ../../../flutter/display_list/display_list_path_effect.h
+FILE: ../../../flutter/display_list/display_list_path_effect_unittests.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.h
 FILE: ../../../flutter/display_list/display_list_tile_mode.h
@@ -136,6 +139,7 @@ FILE: ../../../flutter/flow/layers/clip_rect_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/clip_rrect_layer.cc
 FILE: ../../../flutter/flow/layers/clip_rrect_layer.h
 FILE: ../../../flutter/flow/layers/clip_rrect_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/clip_shape_layer.h
 FILE: ../../../flutter/flow/layers/color_filter_layer.cc
 FILE: ../../../flutter/flow/layers/color_filter_layer.h
 FILE: ../../../flutter/flow/layers/color_filter_layer_unittests.cc
@@ -501,6 +505,7 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_f
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.h
+FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
@@ -544,15 +549,24 @@ FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
 FILE: ../../../flutter/impeller/fixtures/airplane.jpg
 FILE: ../../../flutter/impeller/fixtures/bay_bridge.jpg
+FILE: ../../../flutter/impeller/fixtures/blue_noise.png
 FILE: ../../../flutter/impeller/fixtures/boston.jpg
 FILE: ../../../flutter/impeller/fixtures/box_fade.frag
 FILE: ../../../flutter/impeller/fixtures/box_fade.vert
 FILE: ../../../flutter/impeller/fixtures/embarcadero.jpg
+FILE: ../../../flutter/impeller/fixtures/impeller.frag
+FILE: ../../../flutter/impeller/fixtures/impeller.vert
 FILE: ../../../flutter/impeller/fixtures/instanced_draw.frag
 FILE: ../../../flutter/impeller/fixtures/instanced_draw.vert
 FILE: ../../../flutter/impeller/fixtures/kalimba.jpg
 FILE: ../../../flutter/impeller/fixtures/sample.vert
 FILE: ../../../flutter/impeller/fixtures/struct_def_bug.vert
+FILE: ../../../flutter/impeller/fixtures/table_mountain_nx.png
+FILE: ../../../flutter/impeller/fixtures/table_mountain_ny.png
+FILE: ../../../flutter/impeller/fixtures/table_mountain_nz.png
+FILE: ../../../flutter/impeller/fixtures/table_mountain_px.png
+FILE: ../../../flutter/impeller/fixtures/table_mountain_py.png
+FILE: ../../../flutter/impeller/fixtures/table_mountain_pz.png
 FILE: ../../../flutter/impeller/fixtures/test_texture.frag
 FILE: ../../../flutter/impeller/fixtures/test_texture.vert
 FILE: ../../../flutter/impeller/fixtures/types.h
@@ -1559,7 +1573,6 @@ FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Flutter.podspec
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h
@@ -1632,6 +1645,10 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInp
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController.mm
@@ -1699,7 +1716,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/FlutterMacOS.podspec
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h
@@ -2193,6 +2209,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_value_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.h
+FILE: ../../../flutter/shell/platform/linux/fl_view_accessible_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_private.h
 FILE: ../../../flutter/shell/platform/linux/key_mapping.cc
 FILE: ../../../flutter/shell/platform/linux/key_mapping.h
