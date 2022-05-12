@@ -218,6 +218,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
       setProperty('font-feature-settings', value, '');
   set fontVariationSettings(String value) =>
       setProperty('font-variation-settings', value, '');
+  set visibility(String value) => setProperty('visibility', value, '');
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -249,6 +250,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get fontFeatureSettings => getPropertyValue('font-feature-settings');
   String get fontVariationSettings =>
       getPropertyValue('font-variation-settings');
+  String get visibility => getPropertyValue('visibility');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {

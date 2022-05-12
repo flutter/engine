@@ -1428,7 +1428,8 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
           ..transform = matrix4ToCssTransform(newClipTransform)
           ..transformOrigin = '0 0 0';
         final html.Element clipElement =
-            createSvgClipDef(curElement as html.HtmlElement, entry.path!);
+            createSvgClipDef(curElement as DomElement, entry.path!) as
+            html.Element;
         clipDefs.add(clipElement);
       }
     }
