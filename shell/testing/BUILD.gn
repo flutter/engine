@@ -37,7 +37,8 @@ executable("testing") {
   ]
 }
 
-# A second tester binary with SUPPORT_FRACTIONAL_TRANSLATION enabled.
+# A second tester binary with SUPPORT_FRACTIONAL_TRANSLATION enabled
+# and the raster cache disabled.
 executable("testing_fractional_translation") {
   output_name = "flutter_tester_fractional_translation"
 
@@ -57,7 +58,10 @@ executable("testing_fractional_translation") {
     ]
   }
 
-  defines = [ "SUPPORT_FRACTIONAL_TRANSLATION=1" ]
+  defines = [
+    "SUPPORT_FRACTIONAL_TRANSLATION=1",
+    "DISABLE_SOFTWARE_RASTER_CACHE=1",
+  ]
 
   deps = [
     "//flutter/assets",
