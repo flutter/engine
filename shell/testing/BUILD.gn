@@ -46,9 +46,7 @@ executable("testing_v2") {
     "//flutter:export_dynamic_symbols",
   ]
 
-  sources = [
-    "tester_main.cc",
-  ]
+  sources = [ "tester_main.cc" ]
 
   if (is_win) {
     libs = [
