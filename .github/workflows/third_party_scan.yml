@@ -12,7 +12,6 @@ jobs:
   analysis:
     name: Scorecards analysis
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'flutter/engine' }}
     permissions:
       # Needed to upload the results to code-scanning dashboard.
       security-events: write
