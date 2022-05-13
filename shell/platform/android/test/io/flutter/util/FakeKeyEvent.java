@@ -10,20 +10,19 @@ public class FakeKeyEvent extends KeyEvent {
   }
 
   public FakeKeyEvent(
-      long eventTime,
       int action,
+      int scancode,
       int code,
       int repeat,
-      int metaState,
-      int scancode,
-      char character) {
+      char character,
+      int metaState) {
     super(
-        /*downTime*/ eventTime,
-        eventTime,
+        0,
+        0,
         action,
         code,
         repeat,
-        metaState, /*deviceId*/
+        metaState,
         0,
         scancode);
     this.character = character;
