@@ -126,9 +126,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     final Long logicalKey = getLogicalKey(event);
     final long timestamp = event.getEventTime();
     final Long lastLogicalRecord = pressingRecords.get(physicalKey);
-    //    final boolean isRepeat = event.getRepeatCount() > 0;
+    final boolean isRepeat = event.getRepeatCount() > 0;
 
-    boolean isDown = false;
+    boolean isDown;
     switch (event.getAction()) {
       case KeyEvent.ACTION_DOWN:
         isDown = true;
@@ -149,8 +149,14 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
         type = KeyData.Type.kDown;
       } else {
         // A key has been pressed that has the exact physical key as a currently
-        // pressed one. This can happen during repeated events.
-        type = KeyData.Type.kRepeat;
+        // pressed one.
+        if (isRepeat) {
+          type = KeyData.Type.kRepeat;
+        } else {
+          synthesizeEvent(false, lastLogicalRecord, physicalKey, timestamp);
+          pressingRecords.remove(physicalKey);
+          type = KeyData.Type.kDown;
+        }
       }
       final char complexChar = applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
       if (complexChar != 0) {
@@ -159,8 +165,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     } else { // is_down_event false
       if (lastLogicalRecord == null) {
         // The physical key has been released before. It might indicate a missed
-        // event due to loss of focus, or multiple keyboards pressed keys with the
-        // same physical key. Ignore the up event.
+        // event due to loss of focus. Ignore the up event.
         return false;
       } else {
         type = KeyData.Type.kUp;
@@ -215,8 +220,8 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
     final boolean sentAny = handleEventImpl(event, onKeyEventHandledCallback);
     if (!sentAny) {
-      onKeyEventHandledCallback.onKeyEventHandled(true);
       synthesizeEvent(true, 0l, 0l, 0l);
+      onKeyEventHandledCallback.onKeyEventHandled(true);
     }
   }
 }
