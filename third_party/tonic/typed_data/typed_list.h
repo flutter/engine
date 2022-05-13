@@ -38,7 +38,6 @@ class TypedList {
   const ElemType& operator[](intptr_t i) const { return at(i); }
 
   const ElemType* data() const { return data_; }
-  ElemType* data() { return data_; }
   intptr_t num_elements() const { return num_elements_; }
   Dart_Handle dart_handle() const { return dart_handle_; }
 

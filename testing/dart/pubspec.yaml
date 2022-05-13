@@ -22,7 +22,6 @@ dependencies:
   sky_engine: any
   vector_math: any
   vm_service: any
-  matcher: any
 
 dependency_overrides:
   async_helper:
