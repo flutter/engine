@@ -81,7 +81,7 @@ struct ContentContextOptions {
     }
   };
 
-  void ApplyOptionsToDescriptor(PipelineDescriptor& desc) const;
+  void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
 };
 
 class ContentContext {
@@ -197,7 +197,7 @@ class ContentContext {
 
     auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
         [&opts, variants_count = container.size()](PipelineDescriptor& desc) {
-          opts.ApplyOptionsToDescriptor(desc);
+          opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });

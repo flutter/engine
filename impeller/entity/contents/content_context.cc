@@ -13,7 +13,7 @@
 
 namespace impeller {
 
-void ContentContextOptions::ApplyOptionsToDescriptor(
+void ContentContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
   auto pipeline_blend = blend_mode;
   if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
@@ -139,7 +139,7 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
     return nullptr;
   }
   // Apply default ContentContextOptions to the descriptor.
-  ContentContextOptions{}.ApplyOptionsToDescriptor(*desc);
+  ContentContextOptions{}.ApplyToPipelineDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
 }
 
