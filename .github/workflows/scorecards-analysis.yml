@@ -25,16 +25,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: setup python
-        uses: actions/setup-python@98f2ad02fd48d057ee3b4d4f66525b231c3e52b6
-        with:
-          python-version: '3.7.7' # install the python version needed
+      # - name: setup python
+      #   uses: actions/setup-python@98f2ad02fd48d057ee3b4d4f66525b231c3e52b6
+      #   with:
+      #     python-version: '3.7.7' # install the python version needed
 
-      - name: execute py script
-        run: python ci/deps_parser.py 
+      # - name: execute py script
+      #   run: python ci/deps_parser.py 
       
-      - name: parse deps_parser output.txt
-        run: python ci/scan_flattened_deps.py 
+      # - name: parse deps_parser output.txt
+      #   run: python ci/scan_flattened_deps.py 
 
       - name: "Run analysis"
         uses: ossf/scorecard-action@c1aec4ac820532bab364f02a81873c555a0ba3a1

@@ -1,0 +1,37 @@
+name: Third party dependency scan
+on:
+  # Only the default branch is supported.
+  branch_protection_rule:
+  push:
+    branches: [ main ]
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecards analysis
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'flutter/engine' }}
+    permissions:
+      # Needed to upload the results to code-scanning dashboard.
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        with:
+          persist-credentials: false
+
+      - name: setup python
+        uses: actions/setup-python@98f2ad02fd48d057ee3b4d4f66525b231c3e52b6
+        with:
+          python-version: '3.7.7' # install the python version needed
+
+      - name: execute py script
+        run: python ci/deps_parser.py 
+      
+      - name: parse deps_parser output.txt
+        run: python ci/scan_flattened_deps.py 
