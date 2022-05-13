@@ -28,7 +28,9 @@ jobs:
         uses: actions/setup-python@98f2ad02fd48d057ee3b4d4f66525b231c3e52b6
         with:
           python-version: '3.7.7' # install the python version needed
-          packages: requests
+
+      - name: install dependency
+        run: pip install requests
 
       - name: execute py script
         run: python ci/deps_parser.py 
