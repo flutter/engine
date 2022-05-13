@@ -637,13 +637,13 @@ def main():
     RunCCTests(build_dir, engine_filter, args.coverage, args.engine_capture_core_dump)
 
   if 'dart' in types:
-#    assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
+    assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
-    # RunDartSmokeTest(build_dir, args.verbose_dart_snapshot)
-    # RunLitetestTests(build_dir)
-    # RunGithooksTests(build_dir)
-    # RunClangTidyTests(build_dir)
-    # RunApiConsistencyTests(build_dir)
+    RunDartSmokeTest(build_dir, args.verbose_dart_snapshot)
+    RunLitetestTests(build_dir)
+    RunGithooksTests(build_dir)
+    RunClangTidyTests(build_dir)
+    RunApiConsistencyTests(build_dir)
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)
