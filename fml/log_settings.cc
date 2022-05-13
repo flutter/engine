@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
-#include <limits>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
@@ -32,11 +31,7 @@ void SetLogSettings(const LogSettings& settings) {
       std::min(LOG_FATAL, settings.min_log_level);
 #if defined(OS_FUCHSIA)
   // Syslog should accept all logs, since filtering by severity is done by fml.
-  fx_logger_t* logger = fx_log_get_logger();
-  if (logger) {
-    fx_logger_set_min_severity(logger,
-                               std::numeric_limits<fx_log_severity_t>::min());
-  }
+  FX_LOG_SET_SEVERITY(ALL);
 #endif
 }
 
