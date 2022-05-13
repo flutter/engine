@@ -93,6 +93,9 @@ FILE: ../../../flutter/display_list/display_list_ops.h
 FILE: ../../../flutter/display_list/display_list_paint.cc
 FILE: ../../../flutter/display_list/display_list_paint.h
 FILE: ../../../flutter/display_list/display_list_paint_unittests.cc
+FILE: ../../../flutter/display_list/display_list_path_effect.cc
+FILE: ../../../flutter/display_list/display_list_path_effect.h
+FILE: ../../../flutter/display_list/display_list_path_effect_unittests.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.h
 FILE: ../../../flutter/display_list/display_list_tile_mode.h
@@ -136,6 +139,7 @@ FILE: ../../../flutter/flow/layers/clip_rect_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/clip_rrect_layer.cc
 FILE: ../../../flutter/flow/layers/clip_rrect_layer.h
 FILE: ../../../flutter/flow/layers/clip_rrect_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/clip_shape_layer.h
 FILE: ../../../flutter/flow/layers/color_filter_layer.cc
 FILE: ../../../flutter/flow/layers/color_filter_layer.h
 FILE: ../../../flutter/flow/layers/color_filter_layer_unittests.cc
@@ -501,6 +505,7 @@ FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_f
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input.h
+FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/texture_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
@@ -2177,6 +2182,9 @@ FILE: ../../../flutter/shell/platform/linux/fl_settings.h
 FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_settings_portal.cc
+FILE: ../../../flutter/shell/platform/linux/fl_settings_portal.h
+FILE: ../../../flutter/shell/platform/linux/fl_settings_portal_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_test.cc
