@@ -127,7 +127,7 @@ public class SpellCheckPlugin
       SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
       int suggestionsCount = suggestionsInfo.getSuggestionsCount();
 
-      if (suggestionsCount == 0) {
+      if (suggestionsCount <= 0) {
         continue;
       }
 
