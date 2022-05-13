@@ -57,8 +57,9 @@ void testMain() {
     final MockSafariPointerEventWorkaround mockSafariPointer =
         MockSafariPointerEventWorkaround();
     SafariPointerEventWorkaround.instance = mockSafariPointer;
-    PointerBinding(html.DivElement());
+    final PointerBinding instance = PointerBinding(html.DivElement());
     expect(mockSafariPointer.workAroundInvoked, isIosSafari);
+    instance.dispose();
   }, skip: !isIosSafari);
 
   test('_PointerEventContext generates expected events', () {

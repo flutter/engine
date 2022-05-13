@@ -81,13 +81,18 @@ class PointerBinding {
     if (_instance == null) {
       _instance = PointerBinding(glassPaneElement);
       assert(() {
-        registerHotRestartListener(() {
-          _instance!._adapter.clearListeners();
-          _instance!._pointerDataConverter.clearPointerState();
-        });
+        registerHotRestartListener(_instance!.dispose);
         return true;
       }());
     }
+  }
+
+  /// Performs necessary clean up for PointerBinding including removing event listeners
+  /// and clearing the existing pointer state
+  void dispose()
+  {
+    _instance!._adapter.clearListeners();
+    _instance!._pointerDataConverter.clearPointerState();
   }
 
   PointerBinding(this.glassPaneElement)
