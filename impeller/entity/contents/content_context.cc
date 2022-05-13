@@ -13,14 +13,133 @@
 
 namespace impeller {
 
+void ContentContextOptions::ApplyOptionsToDescriptor(
+    PipelineDescriptor& desc) const {
+  auto pipeline_blend = blend_mode;
+  if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
+    VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
+                   << " as a pipeline blend.";
+    pipeline_blend = Entity::BlendMode::kSourceOver;
+  }
+
+  desc.SetSampleCount(sample_count);
+
+  ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
+  color0.alpha_blend_op = BlendOperation::kAdd;
+  color0.color_blend_op = BlendOperation::kAdd;
+
+  static_assert(Entity::BlendMode::kLastPipelineBlendMode ==
+                Entity::BlendMode::kModulate);
+
+  switch (pipeline_blend) {
+    case Entity::BlendMode::kClear:
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case Entity::BlendMode::kSource:
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kSourceAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
+    case Entity::BlendMode::kDestination:
+      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case Entity::BlendMode::kSourceOver:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
+    case Entity::BlendMode::kDestinationOver:
+      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case Entity::BlendMode::kSourceIn:
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
+      break;
+    case Entity::BlendMode::kDestinationIn:
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case Entity::BlendMode::kSourceOut:
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kZero;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case Entity::BlendMode::kDestinationOut:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    case Entity::BlendMode::kSourceATop:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
+      break;
+    case Entity::BlendMode::kDestinationATop:
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case Entity::BlendMode::kXor:
+      color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
+      color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
+      break;
+    case Entity::BlendMode::kPlus:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
+    case Entity::BlendMode::kModulate:
+      // kSourceColor and kDestinationColor override the alpha blend factor.
+      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+      color0.dst_color_blend_factor = BlendFactor::kSourceColor;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
+      break;
+    default:
+      FML_UNREACHABLE();
+  }
+  desc.SetColorAttachmentDescriptor(0u, std::move(color0));
+
+  if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
+    StencilAttachmentDescriptor stencil =
+        desc.GetFrontStencilAttachmentDescriptor().value();
+    stencil.stencil_compare = stencil_compare;
+    stencil.depth_stencil_pass = stencil_operation;
+    desc.SetStencilAttachmentDescriptors(stencil);
+  }
+}
+
 template <typename PipelineT>
-static std::unique_ptr<PipelineT> CreateDefault(const Context& context) {
+static std::unique_ptr<PipelineT> CreateDefaultPipeline(
+    const Context& context) {
   auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
   if (!desc.has_value()) {
     return nullptr;
   }
   // Apply default ContentContextOptions to the descriptor.
-  ContentContext::ApplyOptionsToDescriptor(*desc, {});
+  ContentContextOptions{}.ApplyOptionsToDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
 }
 
@@ -30,18 +149,25 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     return;
   }
 
-  gradient_fill_pipelines_[{}] = CreateDefault<GradientFillPipeline>(*context_);
-  solid_fill_pipelines_[{}] = CreateDefault<SolidFillPipeline>(*context_);
-  texture_blend_pipelines_[{}] = CreateDefault<BlendPipeline>(*context_);
-  blend_screen_pipelines_[{}] = CreateDefault<BlendScreenPipeline>(*context_);
+  gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<GradientFillPipeline>(*context_);
+  solid_fill_pipelines_[{}] =
+      CreateDefaultPipeline<SolidFillPipeline>(*context_);
+  texture_blend_pipelines_[{}] =
+      CreateDefaultPipeline<BlendPipeline>(*context_);
+  blend_screen_pipelines_[{}] =
+      CreateDefaultPipeline<BlendScreenPipeline>(*context_);
   blend_colorburn_pipelines_[{}] =
-      CreateDefault<BlendColorburnPipeline>(*context_);
-  texture_pipelines_[{}] = CreateDefault<TexturePipeline>(*context_);
-  gaussian_blur_pipelines_[{}] = CreateDefault<GaussianBlurPipeline>(*context_);
+      CreateDefaultPipeline<BlendColorburnPipeline>(*context_);
+  texture_pipelines_[{}] = CreateDefaultPipeline<TexturePipeline>(*context_);
+  gaussian_blur_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
-      CreateDefault<BorderMaskBlurPipeline>(*context_);
-  solid_stroke_pipelines_[{}] = CreateDefault<SolidStrokePipeline>(*context_);
-  glyph_atlas_pipelines_[{}] = CreateDefault<GlyphAtlasPipeline>(*context_);
+      CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
+  solid_stroke_pipelines_[{}] =
+      CreateDefaultPipeline<SolidStrokePipeline>(*context_);
+  glyph_atlas_pipelines_[{}] =
+      CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
 
   // Pipelines that are variants of the base pipelines with custom descriptors.
   // TODO(98684): Rework this API to allow fetching the descriptor without

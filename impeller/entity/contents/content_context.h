@@ -80,6 +80,8 @@ struct ContentContextOptions {
              lhs.stencil_operation == rhs.stencil_operation;
     }
   };
+
+  void ApplyOptionsToDescriptor(PipelineDescriptor& desc) const;
 };
 
 class ContentContext {
@@ -153,125 +155,6 @@ class ContentContext {
   std::shared_ptr<Texture> MakeSubpass(ISize texture_size,
                                        SubpassCallback subpass_callback) const;
 
-  static void ApplyOptionsToDescriptor(PipelineDescriptor& desc,
-                                       const ContentContextOptions& options) {
-    auto blend_mode = options.blend_mode;
-    if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
-      VALIDATION_LOG << "Cannot use blend mode "
-                     << static_cast<int>(options.blend_mode)
-                     << " as a pipeline blend.";
-      blend_mode = Entity::BlendMode::kSourceOver;
-    }
-
-    desc.SetSampleCount(options.sample_count);
-
-    ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
-    color0.alpha_blend_op = BlendOperation::kAdd;
-    color0.color_blend_op = BlendOperation::kAdd;
-
-    static_assert(Entity::BlendMode::kLastPipelineBlendMode ==
-                  Entity::BlendMode::kModulate);
-
-    switch (blend_mode) {
-      case Entity::BlendMode::kClear:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSource:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case Entity::BlendMode::kDestination:
-        color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSourceOver:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOne;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case Entity::BlendMode::kDestinationOver:
-        color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kSourceIn:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
-        break;
-      case Entity::BlendMode::kDestinationIn:
-        color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSourceOut:
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kZero;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kDestinationOut:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      case Entity::BlendMode::kSourceATop:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
-        break;
-      case Entity::BlendMode::kDestinationATop:
-        color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kXor:
-        color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
-        color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
-        break;
-      case Entity::BlendMode::kPlus:
-        color0.dst_alpha_blend_factor = BlendFactor::kOne;
-        color0.dst_color_blend_factor = BlendFactor::kOne;
-        color0.src_alpha_blend_factor = BlendFactor::kOne;
-        color0.src_color_blend_factor = BlendFactor::kOne;
-        break;
-      case Entity::BlendMode::kModulate:
-        // kSourceColor and kDestinationColor override the alpha blend factor.
-        color0.dst_alpha_blend_factor = BlendFactor::kZero;
-        color0.dst_color_blend_factor = BlendFactor::kSourceColor;
-        color0.src_alpha_blend_factor = BlendFactor::kZero;
-        color0.src_color_blend_factor = BlendFactor::kZero;
-        break;
-      default:
-        FML_UNREACHABLE();
-    }
-    desc.SetColorAttachmentDescriptor(0u, std::move(color0));
-
-    if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
-      StencilAttachmentDescriptor stencil =
-          desc.GetFrontStencilAttachmentDescriptor().value();
-      stencil.stencil_compare = options.stencil_compare;
-      stencil.depth_stencil_pass = options.stencil_operation;
-      desc.SetStencilAttachmentDescriptors(stencil);
-    }
-  }
-
  private:
   std::shared_ptr<Context> context_;
 
@@ -314,7 +197,7 @@ class ContentContext {
 
     auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
         [&opts, variants_count = container.size()](PipelineDescriptor& desc) {
-          ApplyOptionsToDescriptor(desc, opts);
+          opts.ApplyOptionsToDescriptor(desc);
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });
