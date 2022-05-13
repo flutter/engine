@@ -198,9 +198,15 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void transform(const SkMatrix& matrix) { transform(&matrix); }
   void transform(const SkM44& matrix44) { transform(&matrix44); }
 
+  SkM44 getCurrentTransformFullPerspective() { return current_layer_->matrix; }
+
+  SkMatrix getCurrentTransform() { return current_layer_->matrix.asM33(); }
+
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
+
+  SkRect getClipBounds() { return current_layer_->clip_bounds; }
 
   void drawPaint() override;
   void drawPaint(const DlPaint& paint);
@@ -350,11 +356,24 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   struct LayerInfo {
-    LayerInfo(size_t save_layer_offset = 0, bool has_layer = false)
+    LayerInfo(const SkM44& matrix,
+              const SkRect& clip_bounds,
+              size_t save_layer_offset = 0,
+              bool has_layer = false)
         : save_layer_offset(save_layer_offset),
           has_layer(has_layer),
           cannot_inherit_opacity(false),
-          has_compatible_op(false) {}
+          has_compatible_op(false),
+          matrix(matrix),
+          clip_bounds(clip_bounds) {}
+
+    LayerInfo(const LayerInfo* current_layer,
+              size_t save_layer_offset = 0,
+              bool has_layer = false)
+        : LayerInfo(current_layer->matrix,
+                    current_layer->clip_bounds,
+                    save_layer_offset,
+                    has_layer) {}
 
     // The offset into the memory buffer where the saveLayer DLOp record
     // for this saveLayer() call is placed. This may be needed if the
@@ -367,6 +386,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
     bool has_layer;
     bool cannot_inherit_opacity;
     bool has_compatible_op;
+
+    SkM44 matrix;
+    SkRect clip_bounds;
 
     bool is_group_opacity_compatible() const { return !cannot_inherit_opacity; }
 

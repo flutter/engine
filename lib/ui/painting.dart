@@ -4449,6 +4449,13 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
   void _transform(Float64List matrix4) native 'Canvas_transform';
 
+  Float64List getCurrentTransform() {
+    final Float64List matrix4 = Float64List(16);
+    _getCurrentTransform(matrix4);
+    return matrix4;
+  }
+  void _getCurrentTransform(Float64List matrix4) native 'Canvas_getCurrentTransform';
+
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
   ///
@@ -4502,6 +4509,13 @@ class Canvas extends NativeFieldWrapperClass1 {
     _clipPath(path, doAntiAlias);
   }
   void _clipPath(Path path, bool doAntiAlias) native 'Canvas_clipPath';
+
+  Rect getCurrentClipBounds() {
+    final Float64List bounds = Float64List(4);
+    _getCurrentClipBounds(bounds);
+    return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
+  }
+  void _getCurrentClipBounds(Float64List bounds) native 'Canvas_getCurrentClipBounds';
 
   /// Paints the given [Color] onto the canvas, applying the given
   /// [BlendMode], with the given color being the source and the background

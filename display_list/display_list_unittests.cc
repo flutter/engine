@@ -1957,5 +1957,208 @@ TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
   EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 304u);
 }
 
+TEST(DisplayList, TranslateAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.translate(12.3, 14.5);
+  SkMatrix matrix = SkMatrix::Translate(12.3, 14.5);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
+  SkMatrix curMatrix = builder.getCurrentTransform();
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  // Previous return values have not
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+}
+
+TEST(DisplayList, ScaleAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.scale(12.3, 14.5);
+  SkMatrix matrix = SkMatrix::Scale(12.3, 14.5);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
+  SkMatrix curMatrix = builder.getCurrentTransform();
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  // Previous return values have not
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+}
+
+TEST(DisplayList, RotateAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.rotate(12.3);
+  SkMatrix matrix = SkMatrix::RotateDeg(12.3);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
+  SkMatrix curMatrix = builder.getCurrentTransform();
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  // Previous return values have not
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+}
+
+TEST(DisplayList, SkewAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.skew(12.3, 14.5);
+  SkMatrix matrix = SkMatrix::Skew(12.3, 14.5);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
+  SkMatrix curMatrix = builder.getCurrentTransform();
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  // Previous return values have not
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+}
+
+TEST(DisplayList, TransformAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.transform2DAffine(3, 0, 12.3,  //
+                            1, 5, 14.5);
+  SkMatrix matrix = SkMatrix::MakeAll(3, 0, 12.3,  //
+                                      1, 5, 14.5,  //
+                                      0, 0, 1);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
+  SkMatrix curMatrix = builder.getCurrentTransform();
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  // Previous return values have not
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+}
+
+TEST(DisplayList, FullTransformAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.transformFullPerspective(3, 0, 4, 12.3,  //
+                                   1, 5, 3, 14.5,  //
+                                   0, 0, 7, 16.2,  //
+                                   0, 0, 0, 1);
+  SkMatrix matrix = SkMatrix::MakeAll(3, 0, 12.3,  //
+                                      1, 5, 14.5,  //
+                                      0, 0, 1);
+  SkM44 m44 = SkM44(3, 0, 4, 12.3,  //
+                    1, 5, 3, 14.5,  //
+                    0, 0, 7, 16.2,  //
+                    0, 0, 0, 1);
+  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
+  SkMatrix curMatrix = builder.getCurrentTransform();
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  // Previous return values have not
+  ASSERT_EQ(curM44, m44);
+  ASSERT_EQ(curMatrix, matrix);
+}
+
+TEST(DisplayList, ClipRectAffectsCurrentClipBounds) {
+  DisplayListBuilder builder;
+  SkRect clip = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  builder.clipRect(clip, SkClipOp::kIntersect, false);
+  SkRect curBounds = builder.getClipBounds();
+  ASSERT_EQ(curBounds, clip);
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getClipBounds(), clip);
+  // Previous return values have not
+  ASSERT_EQ(curBounds, clip);
+}
+
+TEST(DisplayList, ClipRRectAffectsCurrentClipBounds) {
+  DisplayListBuilder builder;
+  SkRRect clip = SkRRect::MakeRectXY({10.2, 11.3, 20.4, 25.7}, 3, 2);
+  builder.clipRRect(clip, SkClipOp::kIntersect, false);
+  SkRect curBounds = builder.getClipBounds();
+  ASSERT_EQ(curBounds, clip.getBounds());
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getClipBounds(), clip.getBounds());
+  // Previous return values have not
+  ASSERT_EQ(curBounds, clip.getBounds());
+}
+
+TEST(DisplayList, ClipPathAffectsCurrentClipBounds) {
+  DisplayListBuilder builder;
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+  SkRect curBounds = builder.getClipBounds();
+  ASSERT_EQ(curBounds, clip.getBounds());
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getClipBounds(), clip.getBounds());
+  // Previous return values have not
+  ASSERT_EQ(curBounds, clip.getBounds());
+}
+
+TEST(DisplayList, DiffClipRectDoesNotAffectCurrentClipBounds) {
+  DisplayListBuilder builder;
+  SkRect diff_clip = SkRect::MakeLTRB(0, 0, 15, 15);
+  SkRect clip = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  builder.clipRect(clip, SkClipOp::kIntersect, false);
+  builder.clipRect(diff_clip, SkClipOp::kDifference, false);
+  SkRect curBounds = builder.getClipBounds();
+  ASSERT_EQ(curBounds, clip);
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getClipBounds(), clip);
+  // Previous return values have not
+  ASSERT_EQ(curBounds, clip);
+}
+
+TEST(DisplayList, DiffClipRRectAffectsCurrentClipBounds) {
+  DisplayListBuilder builder;
+  SkRRect diff_clip = SkRRect::MakeRectXY({0, 0, 15, 15}, 1, 1);
+  SkRRect clip = SkRRect::MakeRectXY({10.2, 11.3, 20.4, 25.7}, 3, 2);
+  builder.clipRRect(clip, SkClipOp::kIntersect, false);
+  builder.clipRRect(diff_clip, SkClipOp::kDifference, false);
+  SkRect curBounds = builder.getClipBounds();
+  ASSERT_EQ(curBounds, clip.getBounds());
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getClipBounds(), clip.getBounds());
+  // Previous return values have not
+  ASSERT_EQ(curBounds, clip.getBounds());
+}
+
+TEST(DisplayList, DiffClipPathAffectsCurrentClipBounds) {
+  DisplayListBuilder builder;
+  SkPath diff_clip = SkPath().addRect({0, 0, 15, 15});
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+  builder.clipPath(diff_clip, SkClipOp::kDifference, false);
+  SkRect curBounds = builder.getClipBounds();
+  ASSERT_EQ(curBounds, clip.getBounds());
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getClipBounds(), clip.getBounds());
+  // Previous return values have not
+  ASSERT_EQ(curBounds, clip.getBounds());
+}
+
 }  // namespace testing
 }  // namespace flutter
