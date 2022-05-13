@@ -10,7 +10,7 @@ permissions: read-all
 
 jobs:
   analysis:
-    name: Scorecards analysis
+    name: Third party dependency scan
     runs-on: ubuntu-latest
     permissions:
       # Needed to upload the results to code-scanning dashboard.
