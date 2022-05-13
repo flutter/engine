@@ -419,12 +419,10 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
   settings.use_asset_fonts =
       !command_line.HasOption(FlagForSwitch(Switch::DisableAssetFonts));
-#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   std::string enable_skparagraph = command_line.GetOptionValueWithDefault(
       FlagForSwitch(Switch::EnableSkParagraph), "");
