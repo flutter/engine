@@ -31,7 +31,10 @@ jobs:
           python-version: '3.7.7' # install the python version needed
 
       - name: execute py script
-        run: python ci/deps_parser.py
+        run: python ci/deps_parser.py 
+      
+      - name: parse deps_parser output.txt
+        run: python ci/scan_flattened_deps.py 
 
       - name: "Run analysis"
         uses: ossf/scorecard-action@c1aec4ac820532bab364f02a81873c555a0ba3a1
