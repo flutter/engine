@@ -1,4 +1,4 @@
-Signature: 12d3ddce6ea5811347e2e0c66816994e
+Signature: 850fb07b402a6308e2c796e75ba8b45f
 
 UNUSED LICENSES:
 
@@ -5229,7 +5229,6 @@ ORIGIN: ../../../third_party/angle/src/common/third_party/base/anglebase/no_dest
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/no_destructor.h
 FILE: ../../../third_party/zlib/contrib/bench/zlib_bench.cc
-FILE: ../../../third_party/zlib/contrib/optimizations/slide_hash_neon.h
 FILE: ../../../third_party/zlib/cpu_features.c
 FILE: ../../../third_party/zlib/cpu_features.h
 ----------------------------------------------------------------------------------------------------
@@ -13991,101 +13990,13 @@ freely, subject to the following restrictions:
 ====================================================================================================
 LIBRARY: freetype2
 LIBRARY: zlib
-ORIGIN: ../../../third_party/freetype2/src/gzip/crc32.c + ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/crc32.c
-FILE: ../../../third_party/zlib/crc32.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: freetype2
-LIBRARY: zlib
 ORIGIN: ../../../third_party/freetype2/src/gzip/ftzconf.h + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/freetype2/src/gzip/ftzconf.h
 FILE: ../../../third_party/freetype2/src/gzip/zutil.h
 FILE: ../../../third_party/zlib/zconf.h
-FILE: ../../../third_party/zlib/zutil.h
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: freetype2
-LIBRARY: zlib
-ORIGIN: ../../../third_party/freetype2/src/gzip/gzguts.h + ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/gzguts.h
-FILE: ../../../third_party/zlib/gzguts.h
-FILE: ../../../third_party/zlib/gzread.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: freetype2
-LIBRARY: zlib
-ORIGIN: ../../../third_party/freetype2/src/gzip/infback.c + ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/infback.c
-FILE: ../../../third_party/freetype2/src/gzip/inflate.c
-FILE: ../../../third_party/freetype2/src/gzip/inflate.h
-FILE: ../../../third_party/zlib/contrib/optimizations/inflate.c
-FILE: ../../../third_party/zlib/infback.c
-FILE: ../../../third_party/zlib/inflate.c
-FILE: ../../../third_party/zlib/inflate.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2016 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -14113,7 +14024,6 @@ FILE: ../../../third_party/freetype2/src/gzip/inffast.c
 FILE: ../../../third_party/freetype2/src/gzip/inftrees.c
 FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c
 FILE: ../../../third_party/zlib/inffast.c
-FILE: ../../../third_party/zlib/inftrees.c
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 1995-2017 Mark Adler
 
@@ -14170,37 +14080,6 @@ FILE: ../../../third_party/freetype2/src/gzip/inftrees.h
 FILE: ../../../third_party/zlib/inftrees.h
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 1995-2005, 2010 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: freetype2
-LIBRARY: zlib
-ORIGIN: ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/crc32.h
-FILE: ../../../third_party/freetype2/src/gzip/inffixed.h
-FILE: ../../../third_party/freetype2/src/gzip/patches/freetype-zlib.diff
-FILE: ../../../third_party/freetype2/src/gzip/zlib.h
-FILE: ../../../third_party/zlib/deflate.c
-FILE: ../../../third_party/zlib/zlib.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -15055,6 +14934,111 @@ THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
 OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+ORIGIN: ../../../third_party/freetype2/src/gzip/crc32.c + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/crc32.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+ORIGIN: ../../../third_party/freetype2/src/gzip/gzguts.h + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/gzguts.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+ORIGIN: ../../../third_party/freetype2/src/gzip/infback.c + ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/infback.c
+FILE: ../../../third_party/freetype2/src/gzip/inflate.c
+FILE: ../../../third_party/freetype2/src/gzip/inflate.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+ORIGIN: ../../../third_party/freetype2/src/gzip/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/freetype2/src/gzip/crc32.h
+FILE: ../../../third_party/freetype2/src/gzip/inffixed.h
+FILE: ../../../third_party/freetype2/src/gzip/patches/freetype-zlib.diff
+FILE: ../../../third_party/freetype2/src/gzip/zlib.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
 
 ====================================================================================================
@@ -25813,9 +25797,9 @@ FILE: ../../../third_party/zlib/patches/0008-minizip-zip-unzip-tools.patch
 FILE: ../../../third_party/zlib/patches/0009-infcover-oob.patch
 FILE: ../../../third_party/zlib/trees.h
 ----------------------------------------------------------------------------------------------------
-version 1.2.11, January 15th, 2017
+version 1.2.12, March 27th, 2022
 
-Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
+Copyright (C) 1995-2022 Jean-loup Gailly and Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -25836,7 +25820,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/compress.c + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/compress.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/compress.c
 ----------------------------------------------------------------------------------------------------
@@ -25964,12 +25948,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 1995-2003, 2010 Mark Adler
 Copyright (C) 2017 ARM, Inc.
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inflate.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/contrib/optimizations/inflate.c
+FILE: ../../../third_party/zlib/crc32.c
+FILE: ../../../third_party/zlib/infback.c
+FILE: ../../../third_party/zlib/inflate.c
+FILE: ../../../third_party/zlib/inftrees.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2022 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -26027,7 +26040,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/crc_folding.c + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/crc_folding.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/crc_folding.c
 ----------------------------------------------------------------------------------------------------
@@ -26058,39 +26071,11 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/deflate.h + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/deflate.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/deflate.h
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2016 Jean-loup Gailly
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/fill_window_sse.c + ../../../third_party/freetype2/src/gzip/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/fill_window_sse.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2013 Intel Corporation
-Authors:
- Arjan van de Ven    <arjan@linux.intel.com>
- Jim Kukunas         <james.t.kukunas@linux.intel.com>
+Copyright (C) 1995-2018 Jean-loup Gailly
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -26182,7 +26167,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/gzclose.c + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/gzclose.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/gzclose.c
 ----------------------------------------------------------------------------------------------------
@@ -26207,10 +26192,36 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/gzlib.c + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/gzguts.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/gzguts.h
 FILE: ../../../third_party/zlib/gzlib.c
 FILE: ../../../third_party/zlib/gzwrite.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2004-2019 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/gzread.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/gzread.c
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 2004-2017 Mark Adler
 
@@ -26233,11 +26244,71 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/trees.c + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/inflate.h + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/inflate.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2019 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/slide_hash_simd.h + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/zlib/slide_hash_simd.h
+----------------------------------------------------------------------------------------------------
+Copyright 2022 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/trees.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/trees.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2017 Jean-loup Gailly
+Copyright (C) 1995-2021 Jean-loup Gailly
 detect_data_type() function provided freely by Cosmin Truta, 2006
 
 This software is provided 'as-is', without any express or implied
@@ -26259,7 +26330,7 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/uncompr.c + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/zlib/uncompr.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/uncompr.c
 ----------------------------------------------------------------------------------------------------
@@ -26281,4 +26352,55 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 411
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/deflate.c
+FILE: ../../../third_party/zlib/zlib.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2022 Jean-loup Gailly and Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/zutil.h + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/zutil.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2022 Jean-loup Gailly, Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+Total license count: 416
