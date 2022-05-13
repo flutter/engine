@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:js/js.dart';
 import 'package:js/js_util.dart' as js_util;
 
@@ -19,9 +21,20 @@ import 'package:js/js_util.dart' as js_util;
 class DomWindow {}
 
 extension DomWindowExtension on DomWindow {
+  external DomConsole get console;
   external DomDocument get document;
   external DomNavigator get navigator;
   external DomPerformance get performance;
+  Future<Object?> fetch(String url) =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
+}
+
+@JS()
+@staticInterop
+class DomConsole {}
+
+extension DomConsoleExtension on DomConsole {
+  external void warn(Object? arg);
 }
 
 @JS('window')
@@ -34,6 +47,7 @@ class DomNavigator {}
 extension DomNavigatorExtension on DomNavigator {
   external int? get maxTouchPoints;
   external String get vendor;
+  external String get language;
   external String? get platform;
   external String get userAgent;
 }
@@ -43,9 +57,12 @@ extension DomNavigatorExtension on DomNavigator {
 class DomDocument {}
 
 extension DomDocumentExtension on DomDocument {
+  external DomElement? querySelector(String selectors);
   external /* List<Node> */ List<Object?> querySelectorAll(String selectors);
   external DomElement createElement(String name, [dynamic options]);
   external DomHTMLScriptElement? get currentScript;
+  external DomElement createElementNS(
+      String namespaceURI, String qualifiedName);
 }
 
 @JS()
@@ -54,6 +71,7 @@ class DomHTMLDocument extends DomDocument {}
 
 extension DomHTMLDocumentExtension on DomHTMLDocument {
   external DomHTMLHeadElement? get head;
+  external DomHTMLBodyElement? get body;
 }
 
 @JS('document')
@@ -84,6 +102,15 @@ extension DomEventExtension on DomEvent {
 
 @JS()
 @staticInterop
+class DomProgressEvent extends DomEvent {}
+
+extension DomProgressEventExtension on DomProgressEvent {
+  external int? get loaded;
+  external int? get total;
+}
+
+@JS()
+@staticInterop
 class DomNode extends DomEventTarget {}
 
 extension DomNodeExtension on DomNode {
@@ -97,6 +124,7 @@ extension DomNodeExtension on DomNode {
       parent.removeChild(this);
     }
   }
+
   external DomNode removeChild(DomNode child);
   external bool? get isConnected;
 }
@@ -105,14 +133,17 @@ extension DomNodeExtension on DomNode {
 @staticInterop
 class DomElement extends DomNode {}
 
-DomElement createDomElement(String tag) =>
-  domDocument.createElement(tag);
+DomElement createDomElement(String tag) => domDocument.createElement(tag);
 
 extension DomElementExtension on DomElement {
   external /* List<DomElement> */ List<Object?> get children;
+  external String get id;
+  external set id(String id);
   external DomCSSStyleDeclaration get style;
   external void append(DomNode node);
+  external String? getAttribute(String attributeName);
   external void prepend(DomNode node);
+  external DomElement? querySelector(String selectors);
   external void setAttribute(String name, Object value);
 }
 
@@ -139,8 +170,8 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get opacity => getPropertyValue('opacity');
 
   external String getPropertyValue(String property);
-  external void setProperty(String propertyName, String value, [String
-      priority]);
+  external void setProperty(String propertyName, String value,
+      [String priority]);
 }
 
 @JS()
@@ -163,6 +194,10 @@ class DomHTMLHeadElement extends DomHTMLElement {}
 
 @JS()
 @staticInterop
+class DomHTMLBodyElement extends DomHTMLElement {}
+
+@JS()
+@staticInterop
 class DomHTMLScriptElement extends DomHTMLElement {}
 
 extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
@@ -171,6 +206,13 @@ extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
 
 DomHTMLScriptElement createDomHTMLScriptElement() =>
     domDocument.createElement('script') as DomHTMLScriptElement;
+
+@JS()
+@staticInterop
+class DomHTMLDivElement extends DomHTMLElement {}
+
+DomHTMLDivElement createDomHTMLDivElement() =>
+    domDocument.createElement('div') as DomHTMLDivElement;
 
 @JS()
 @staticInterop
@@ -211,6 +253,7 @@ extension DomCanvasElementExtension on DomCanvasElement {
   external set width(int? value);
   external int? get height;
   external set height(int? value);
+  external String toDataURL([String? type]);
 
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     return js_util.callMethod(this, 'getContext', <Object?>[
@@ -218,10 +261,91 @@ extension DomCanvasElementExtension on DomCanvasElement {
       if (attributes != null) js_util.jsify(attributes)
     ]);
   }
+
+  DomCanvasRenderingContext2D get context2D =>
+      getContext('2d')! as DomCanvasRenderingContext2D;
+}
+
+@JS()
+@staticInterop
+abstract class DomCanvasImageSource {}
+
+@JS()
+@staticInterop
+class DomCanvasRenderingContext2D {}
+
+extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
+  external Object? get fillStyle;
+  external set fillStyle(Object? style);
+  external void drawImage(DomCanvasImageSource source, num destX, num destY);
+  external void fillRect(num x, num y, num width, num height);
+  external DomImageData getImageData(int x, int y, int sw, int sh);
+}
+
+@JS()
+@staticInterop
+class DomImageData {}
+
+extension DomImageDataExtension on DomImageData {
+  external Uint8ClampedList get data;
+}
+
+@JS()
+@staticInterop
+class DomXMLHttpRequestEventTarget extends DomEventTarget {}
+
+@JS('XMLHttpRequest')
+@staticInterop
+class DomXMLHttpRequest extends DomXMLHttpRequestEventTarget {}
+
+DomXMLHttpRequest createDomXMLHttpRequest() =>
+    domCallConstructorString('XMLHttpRequest', <Object?>[])!
+        as DomXMLHttpRequest;
+
+extension DomXMLHttpRequestExtension on DomXMLHttpRequest {
+  external dynamic get response;
+  external String get responseType;
+  external int? get status;
+  external set responseType(String value);
+  external void open(String method, String url, [bool? async]);
+  external void send();
+}
+
+@JS()
+@staticInterop
+class DomResponse {}
+
+@JS()
+@staticInterop
+class DomException {
+  static const String notSupported = 'NotSupportedError';
+}
+
+extension DomExceptionExtension on DomException {
+  external String get name;
+}
+
+extension DomResponseExtension on DomResponse {
+  Future<dynamic> arrayBuffer() => js_util
+      .promiseToFuture(js_util.callMethod(this, 'arrayBuffer', <Object>[]));
+
+  Future<dynamic> json() =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'json', <Object>[]));
+
+  Future<String> text() =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'text', <Object>[]));
 }
 
 Object? domGetConstructor(String constructorName) =>
     js_util.getProperty(domWindow, constructorName);
+
+Object? domCallConstructorString(String constructorName, List<Object?> args) {
+  final Object? constructor = domGetConstructor(constructorName);
+  if (constructor == null) {
+    return null;
+  }
+  return js_util.callConstructor(constructor, args);
+}
 
 bool domInstanceOfString(Object? element, String objectType) =>
     js_util.instanceof(element, domGetConstructor(objectType)!);

@@ -6,8 +6,9 @@
 
 namespace impeller {
 
-TextureFilterInput::TextureFilterInput(std::shared_ptr<Texture> texture)
-    : texture_(texture) {}
+TextureFilterInput::TextureFilterInput(std::shared_ptr<Texture> texture,
+                                       Matrix local_transform)
+    : texture_(texture), local_transform_(local_transform) {}
 
 TextureFilterInput::~TextureFilterInput() = default;
 
@@ -28,8 +29,7 @@ std::optional<Rect> TextureFilterInput::GetCoverage(
 }
 
 Matrix TextureFilterInput::GetLocalTransform(const Entity& entity) const {
-  // Compute the local transform such that the texture is centered.
-  return Matrix::MakeTranslation(-Point(texture_->GetSize()) / 2);
+  return local_transform_;
 }
 
 }  // namespace impeller
