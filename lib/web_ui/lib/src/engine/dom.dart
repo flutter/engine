@@ -517,6 +517,7 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external set font(String value);
   external set lineWidth(num? value);
   external set strokeStyle(Object? value);
+  external Object? get strokeStyle;
   external void beginPath();
   external void closePath();
   external DomCanvasGradient createLinearGradient(
@@ -525,7 +526,8 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external DomCanvasGradient createRadialGradient(
       num x0, num y0, num r0, num x1, num y1, num r1);
   external void drawImage(DomCanvasImageSource source, num destX, num destY);
-  external void fill();
+  void fill([Object? pathOrWinding]) => js_util.callMethod(
+      this, 'fill', <Object?>[if (pathOrWinding != null) pathOrWinding]);
   external void fillRect(num x, num y, num width, num height);
   external void fillText(String text, num x, num y, [num? maxWidth]);
   external DomImageData getImageData(int x, int y, int sw, int sh);
@@ -537,6 +539,31 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external void rect(num x, num y, num width, num height);
   external void resetTransform();
   external void restore();
+  external void setTransform(num a, num b, num c, num d, num e, num f);
+  external void transform(num a, num b, num c, num d, num e, num f);
+  void clip([Object? pathOrWinding]) => js_util.callMethod(
+      this, 'clip', <Object?>[if (pathOrWinding != null) pathOrWinding]);
+  external void scale(num x, num y);
+  external void clearRect(num x, num y, num width, num height);
+  external void translate(num x, num y);
+  external void rotate(num angle);
+  external void bezierCurveTo(
+      num cp1x, num cp1y, num numcp2x, num cp2y, num x, num y);
+  external void quadraticCurveTo(num cpx, num cpy, num x, num y);
+  external set globalCompositeOperation(String value);
+  external set lineCap(String value);
+  external set lineJoin(String value);
+  external set shadowBlur(num value);
+  external void arc(num x, num y, num radius, num startAngle, num endAngle,
+      [bool antiClockwise = false]);
+  external set filter(String? value);
+  external set shadowOffsetX(num? x);
+  external set shadowOffsetY(num? y);
+  external set shadowColor(String? value);
+  external void ellipse(num x, num y, num radiusX, num radiusY, num rotation,
+      num startAngle, num endAngle, bool? antiClockwise);
+  external void strokeText(String text, num x, num y);
+  external set globalAlpha(num? value);
 }
 
 @JS()
@@ -862,6 +889,14 @@ class DomMediaQueryListEvent extends DomEvent {}
 extension DomMediaQueryListEventExtension on DomMediaQueryListEvent {
   external bool? get matches;
 }
+
+@JS()
+@staticInterop
+class DomPath2D {}
+
+DomPath2D createDomPath2D([Object? path]) =>
+    domCallConstructorString('Path2D', <Object>[if (path != null) path])!
+        as DomPath2D;
 
 Object? domGetConstructor(String constructorName) =>
     js_util.getProperty(domWindow, constructorName);
