@@ -35,6 +35,8 @@ extension DomWindowExtension on DomWindow {
   external DomPerformance get performance;
   Future<Object?> fetch(String url) =>
       js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
+  // ignore: non_constant_identifier_names
+  external DomURL get URL;
 }
 
 @JS()
@@ -361,7 +363,8 @@ class DomHTMLBodyElement extends DomHTMLElement {}
 
 @JS()
 @staticInterop
-class DomHTMLImageElement extends DomHTMLElement {}
+class DomHTMLImageElement extends DomHTMLElement
+    implements DomCanvasImageSource {}
 
 DomHTMLImageElement createDomHTMLImageElement() =>
     domDocument.createElement('img') as DomHTMLImageElement;
@@ -369,7 +372,14 @@ DomHTMLImageElement createDomHTMLImageElement() =>
 extension DomHTMLImageElemenExtension on DomHTMLImageElement {
   external String? get alt;
   external set alt(String? value);
-  external set src(String value);
+  external String? get src;
+  external set src(String? value);
+  external int get naturalWidth;
+  external int get naturalHeight;
+  external set width(int? value);
+  external set height(int? value);
+  Future<dynamic> decode() =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'decode', <Object>[]));
 }
 
 @JS()
@@ -732,6 +742,56 @@ DomPopStateEvent createDomPopStateEvent(
 
 extension DomPopStateEventExtension on DomPopStateEvent {
   dynamic get state => dartify(js_util.getProperty(this, 'state'));
+}
+
+@JS()
+@staticInterop
+class DomURL {}
+
+extension DomURLExtension on DomURL {
+  external String createObjectURL(Object object);
+  external void revokeObjectURL(String url);
+}
+
+@JS()
+@staticInterop
+class DomBlob {}
+
+DomBlob createDomBlob(List<Object?> parts) =>
+    domCallConstructorString('Blob', <Object>[parts])! as DomBlob;
+
+typedef DomMutationCallback = void Function(
+    List<dynamic> mutation, DomMutationObserver observer);
+
+@JS()
+@staticInterop
+class DomMutationObserver {}
+
+DomMutationObserver createDomMutationObserver(DomMutationCallback callback) =>
+    domCallConstructorString('MutationObserver', <Object>[callback])!
+        as DomMutationObserver;
+
+extension DomMutationObserverExtension on DomMutationObserver {
+  external void disconnect();
+  void observe(DomNode target, {bool? childList}) {
+    final Map<String, bool> options = <String, bool>{
+      if (childList != null) 'childList': childList,
+    };
+    return js_util
+        .callMethod(this, 'observe', <Object>[target, js_util.jsify(options)]);
+  }
+}
+
+@JS()
+@staticInterop
+class DomMutationRecord {}
+
+extension DomMutationRecordExtension on DomMutationRecord {
+  List<DomNode>? get addedNodes =>
+      js_util.getProperty<List<Object?>?>(this, 'addedNodes')?.cast<DomNode>();
+  List<DomNode>? get removedNodes => js_util
+      .getProperty<List<Object?>?>(this, 'removedNodes')
+      ?.cast<DomNode>();
 }
 
 Object? domGetConstructor(String constructorName) =>
