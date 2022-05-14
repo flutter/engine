@@ -737,7 +737,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   static List<ui.Locale> parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
     final List<String>? languages = domWindow.navigator.languages;
-
     if (languages == null || languages.isEmpty) {
       // To make it easier for the app code, let's not leave the locales list
       // empty. This way there's fewer corner cases for apps to handle.
