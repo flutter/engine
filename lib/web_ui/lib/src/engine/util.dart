@@ -494,7 +494,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element? containerElement) {
+void applyWebkitClipFix(DomElement? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
@@ -719,7 +719,7 @@ void drawEllipse(
 }
 
 /// Removes all children of a DOM node.
-void removeAllChildren(html.Node node) {
+void removeAllChildren(DomNode node) {
   while (node.lastChild != null) {
     node.lastChild!.remove();
   }
