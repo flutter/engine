@@ -26,8 +26,10 @@ extension DomWindowExtension on DomWindow {
   external DomConsole get console;
   external num get devicePixelRatio;
   external DomDocument get document;
+  external DomHistory get history;
   external int? get innerHeight;
   external int? get innerWidth;
+  external DomLocation get location;
   external DomNavigator get navigator;
   external DomVisualViewport? get visualViewport;
   external DomPerformance get performance;
@@ -61,7 +63,7 @@ extension DomNavigatorExtension on DomNavigator {
 
 @JS()
 @staticInterop
-class DomDocument {}
+class DomDocument extends DomNode {}
 
 extension DomDocumentExtension on DomDocument {
   external DomElement? get documentElement;
@@ -142,6 +144,7 @@ extension DomProgressEventExtension on DomProgressEvent {
 class DomNode extends DomEventTarget {}
 
 extension DomNodeExtension on DomNode {
+  external String? get baseUri;
   external DomNode? get firstChild;
   external String get innerText;
   external DomNode? get lastChild;
@@ -317,7 +320,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get flexDirection => getPropertyValue('flex-direction');
   String get alignItems => getPropertyValue('align-items');
   String get margin => getPropertyValue('margin');
-  String get background=> getPropertyValue('background');
+  String get background => getPropertyValue('background');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -652,11 +655,11 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
 class DomClipboard extends DomEventTarget {}
 
 extension DomClipboardExtension on DomClipboard {
-  Future<String> readText() =>
-      js_util.promiseToFuture<String>(js_util.callMethod(this, 'readText', <Object>[]));
+  Future<String> readText() => js_util.promiseToFuture<String>(
+      js_util.callMethod(this, 'readText', <Object>[]));
 
-  Future<dynamic> writeText(String data) =>
-      js_util.promiseToFuture(js_util.callMethod(this, 'readText', <Object>[data]));
+  Future<dynamic> writeText(String data) => js_util
+      .promiseToFuture(js_util.callMethod(this, 'readText', <Object>[data]));
 }
 
 extension DomResponseExtension on DomResponse {
@@ -691,6 +694,46 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external bool getModifierState(String keyArg);
 }
 
+@JS()
+@staticInterop
+class DomHistory {}
+
+extension DomHistoryExtension on DomHistory {
+  dynamic get state => dartify(js_util.getProperty(this, 'state'));
+  external void go([int? delta]);
+  void pushState(dynamic data, String title, String? url) => js_util.callMethod(
+      this, 'pushState', <Object?>[js_util.jsify(data), title, url]);
+  void replaceState(dynamic data, String title, String? url) =>
+      js_util.callMethod(
+          this, 'replaceState', <Object?>[js_util.jsify(data), title, url]);
+}
+
+@JS()
+@staticInterop
+class DomLocation {}
+
+extension DomLocationExtension on DomLocation {
+  external String? get pathname;
+  external String? get search;
+  // We have to change the name here because 'hash' is inherited from [Object].
+  String get locationHash => js_util.getProperty(this, 'hash');
+}
+
+@JS()
+@staticInterop
+class DomPopStateEvent extends DomEvent {}
+
+DomPopStateEvent createDomPopStateEvent(
+        String type, Map<Object?, Object?>? eventInitDict) =>
+    domCallConstructorString('PopStateEvent', <Object>[
+      type,
+      if (eventInitDict != null) js_util.jsify(eventInitDict)
+    ])! as DomPopStateEvent;
+
+extension DomPopStateEventExtension on DomPopStateEvent {
+  dynamic get state => dartify(js_util.getProperty(this, 'state'));
+}
+
 Object? domGetConstructor(String constructorName) =>
     js_util.getProperty(domWindow, constructorName);
 
@@ -704,3 +747,44 @@ Object? domCallConstructorString(String constructorName, List<Object?> args) {
 
 bool domInstanceOfString(Object? element, String objectType) =>
     js_util.instanceof(element, domGetConstructor(objectType)!);
+
+@JS('Object.getPrototypeOf')
+external Object? domObjectGetPrototypeOf(Object? value);
+
+@JS('Object.prototype')
+external Object? get domObjectPrototype;
+
+@JS('Object.keys')
+external List<Object?> domObjectKeys(Object? object);
+
+bool isJavaScriptArray(Object? value) => domInstanceOfString(value, 'Array');
+bool isJavaScriptSimpleObject(Object? value) {
+  final Object? proto = domObjectGetPrototypeOf(value);
+  return proto == null || proto == domObjectPrototype;
+}
+
+// This will likely be in js_util before this CL lands.
+Object? dartify(Object? o) {
+  if (o == null || o is bool || o is num || o is String) {
+    return o;
+  }
+  if (isJavaScriptSimpleObject(o)) {
+    final Map<Object?, Object?> dartO = <Object?, Object?>{};
+    final List<Object?> keys = domObjectKeys(o).map(dartify).toList();
+    for (final Object? key in keys) {
+      if (key != null) {
+        dartO[key] = dartify(js_util.getProperty(o, key));
+      }
+    }
+    return dartO;
+  }
+  if (isJavaScriptArray(o)) {
+    final List<Object?> dartO = <Object?>[];
+    final int length = js_util.getProperty(o, 'length');
+    for (int i = 0; i < length; i++) {
+      dartO.add(dartify(js_util.getProperty(o, i)));
+    }
+    return dartO;
+  }
+  throw 'Unexpected object $o';
+}
