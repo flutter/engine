@@ -152,6 +152,8 @@ extension DomNodeExtension on DomNode {
 
   external DomNode removeChild(DomNode child);
   external bool? get isConnected;
+  set text(String? value) =>
+      js_util.setProperty<String?>(this, 'textContent', value);
   external DomNode cloneNode(bool? deep);
 }
 
@@ -236,6 +238,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
       setProperty('border-bottom-right-radius', value, '');
   set borderRadius(String value) => setProperty('border-radius', value, '');
   set perspective(String value) => setProperty('perspective', value, '');
+  set padding(String value) => setProperty('padding', value, '');
+  set backgroundImage(String value) =>
+      setProperty('background-image', value, '');
+  set border(String value) => setProperty('border', value, '');
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -279,6 +285,9 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
       getPropertyValue('border-bottom-right-radius');
   String get borderRadius => getPropertyValue('border-radius');
   String get perspective => getPropertyValue('perspective');
+  String get padding => getPropertyValue('padding');
+  String get backgroundImage => getPropertyValue('background-image');
+  String get border => getPropertyValue('border');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -345,6 +354,13 @@ DomHTMLDivElement createDomHTMLDivElement() =>
 
 @JS()
 @staticInterop
+class DomHTMLButtonElement extends DomHTMLElement {}
+
+DomHTMLButtonElement createDomHTMLButtonElement() =>
+    domDocument.createElement('button') as DomHTMLButtonElement;
+
+@JS()
+@staticInterop
 class DomPerformance extends DomEventTarget {}
 
 extension DomPerformanceExtension on DomPerformance {
@@ -382,6 +398,7 @@ extension DomCanvasElementExtension on DomCanvasElement {
   external set width(int? value);
   external int? get height;
   external set height(int? value);
+  external bool? get isConnected;
   String toDataURL([String? type]) =>
       js_util.callMethod(this, 'toDataURL', <Object>[if (type != null) type]);
 

@@ -434,7 +434,8 @@ class BitmapCanvas extends EngineCanvas {
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
     if (_useDomForRenderingFillAndStroke(paint)) {
       final html.HtmlElement element = buildDrawRectElement(
-          rect, paint, 'draw-rect', _canvasPool.currentTransform);
+          rect, paint, 'draw-rect', _canvasPool.currentTransform) as
+          html.HtmlElement;
       _drawElement(
           element,
           ui.Offset(
@@ -478,8 +479,9 @@ class BitmapCanvas extends EngineCanvas {
     final ui.Rect rect = rrect.outerRect;
     if (_useDomForRenderingFillAndStroke(paint)) {
       final html.HtmlElement element = buildDrawRectElement(
-          rect, paint, 'draw-rrect', _canvasPool.currentTransform);
-      applyRRectBorderRadius(element.style, rrect);
+          rect, paint, 'draw-rrect', _canvasPool.currentTransform) as
+          html.HtmlElement;
+      applyRRectBorderRadius(element.style as DomCSSStyleDeclaration, rrect);
       _drawElement(
           element,
           ui.Offset(
@@ -503,7 +505,8 @@ class BitmapCanvas extends EngineCanvas {
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
     if (_useDomForRenderingFill(paint)) {
       final html.HtmlElement element = buildDrawRectElement(
-          rect, paint, 'draw-oval', _canvasPool.currentTransform);
+          rect, paint, 'draw-oval', _canvasPool.currentTransform) as
+          html.HtmlElement;
       _drawElement(
           element,
           ui.Offset(
@@ -523,7 +526,8 @@ class BitmapCanvas extends EngineCanvas {
     final ui.Rect rect = ui.Rect.fromCircle(center: c, radius: radius);
     if (_useDomForRenderingFillAndStroke(paint)) {
       final html.HtmlElement element = buildDrawRectElement(
-          rect, paint, 'draw-circle', _canvasPool.currentTransform);
+          rect, paint, 'draw-circle', _canvasPool.currentTransform) as
+          html.HtmlElement;
       _drawElement(
           element,
           ui.Offset(
@@ -555,7 +559,8 @@ class BitmapCanvas extends EngineCanvas {
                 pathAsLine.left, pathAsLine.top, 1, pathAsLine.height);
 
         final html.HtmlElement element = buildDrawRectElement(
-            rect, paint, 'draw-rect', _canvasPool.currentTransform);
+            rect, paint, 'draw-rect', _canvasPool.currentTransform) as
+            html.HtmlElement;
         _drawElement(
             element,
             ui.Offset(math.min(rect.left, rect.right),
