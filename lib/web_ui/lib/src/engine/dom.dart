@@ -38,6 +38,8 @@ extension DomWindowExtension on DomWindow {
       js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
   // ignore: non_constant_identifier_names
   external DomURL get URL;
+  external bool dispatchEvent(DomEvent event);
+  external DomMediaQueryList matchMedia(String? query);
 }
 
 @JS()
@@ -62,6 +64,8 @@ extension DomNavigatorExtension on DomNavigator {
   external String get language;
   external String? get platform;
   external String get userAgent;
+  List<String>? get languages =>
+      js_util.getProperty<List<Object?>?>(this, 'languages')?.cast<String>();
 }
 
 @JS()
@@ -82,6 +86,7 @@ extension DomDocumentExtension on DomDocument {
   external DomElement createElementNS(
       String namespaceURI, String qualifiedName);
   external DomText createTextNode(String data);
+  external DomEvent createEvent(String eventType);
 }
 
 @JS()
@@ -92,6 +97,7 @@ extension DomHTMLDocumentExtension on DomHTMLDocument {
   external DomFontFaceSet? get fonts;
   external DomHTMLHeadElement? get head;
   external DomHTMLBodyElement? get body;
+  external set title(String? value);
 }
 
 @JS('document')
@@ -131,6 +137,18 @@ extension DomEventExtension on DomEvent {
   external String get type;
   external void preventDefault();
   external void stopPropagation();
+  void initEvent(String type, [bool? bubbles, bool? cancelable]) =>
+      js_util.callMethod(this, 'initEvent', <Object>[
+        type,
+        if (bubbles != null) bubbles,
+        if (cancelable != null) cancelable
+      ]);
+}
+
+DomEvent createDomEvent(String type, String name) {
+  final DomEvent event = domDocument.createEvent(type);
+  event.initEvent(name, true, true);
+  return event;
 }
 
 @JS()
@@ -808,9 +826,12 @@ DomMutationObserver createDomMutationObserver(DomMutationCallback callback) =>
 
 extension DomMutationObserverExtension on DomMutationObserver {
   external void disconnect();
-  void observe(DomNode target, {bool? childList}) {
-    final Map<String, bool> options = <String, bool>{
+  void observe(DomNode target,
+      {bool? childList, bool? attributes, List<String>? attributeFilter}) {
+    final Map<String, dynamic> options = <String, dynamic>{
       if (childList != null) 'childList': childList,
+      if (attributes != null) 'attributes': attributes,
+      if (attributeFilter != null) 'attributeFilter': attributeFilter
     };
     return js_util
         .callMethod(this, 'observe', <Object>[target, js_util.jsify(options)]);
@@ -837,6 +858,27 @@ extension DomMutationRecordExtension on DomMutationRecord {
     }
     return createDomListWrapper<DomNode>(list);
   }
+
+  external String? get attributeName;
+  external String? get type;
+}
+
+@JS()
+@staticInterop
+class DomMediaQueryList extends DomEventTarget {}
+
+extension DomMediaQueryListExtension on DomMediaQueryList {
+  external bool get matches;
+  external void addListener(DomEventListener? listener);
+  external void removeListener(DomEventListener? listener);
+}
+
+@JS()
+@staticInterop
+class DomMediaQueryListEvent extends DomEvent {}
+
+extension DomMediaQueryListEventExtension on DomMediaQueryListEvent {
+  external bool? get matches;
 }
 
 Object? domGetConstructor(String constructorName) =>
