@@ -15,6 +15,7 @@ import 'canvaskit/initialization.dart';
 import 'canvaskit/layer_scene_builder.dart';
 import 'canvaskit/rasterizer.dart';
 import 'clipboard.dart';
+import 'dom.dart';
 import 'embedder.dart';
 import 'html/scene.dart';
 import 'mouse_cursor.dart';
@@ -483,8 +484,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/platform_views':
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
-          contentHandler: (html.Element content) {
-            flutterViewEmbedder.glassPaneElement!.append(content);
+          contentHandler: (DomElement content) {
+            flutterViewEmbedder.glassPaneElement!.append(content as html.Element);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
