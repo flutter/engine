@@ -176,10 +176,10 @@ abstract class _BaseAdapter {
   }
 
   /// Listeners that are registered through dart to js api.
-  static final Map<String, html.EventListener> _listeners =
+  final Map<String, html.EventListener> _listeners =
     <String, html.EventListener>{};
   /// Listeners that are registered through native javascript api.
-  static final Map<String, html.EventListener> _nativeListeners =
+  final Map<String, html.EventListener> _nativeListeners =
     <String, html.EventListener>{};
   final html.Element glassPaneElement;
   _PointerDataCallback _callback;
@@ -308,7 +308,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       'passive': false,
     });
     final html.EventListener jsHandler = allowInterop((html.Event event) => handler(event));
-    _BaseAdapter._nativeListeners['wheel'] = jsHandler;
+    _nativeListeners['wheel'] = jsHandler;
     addJsEventListener(glassPaneElement, 'wheel', jsHandler, eventOptions);
   }
 
