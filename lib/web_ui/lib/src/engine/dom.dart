@@ -80,6 +80,7 @@ extension DomDocumentExtension on DomDocument {
 class DomHTMLDocument extends DomDocument {}
 
 extension DomHTMLDocumentExtension on DomHTMLDocument {
+  external DomFontFaceSet? get fonts;
   external DomHTMLHeadElement? get head;
   external DomHTMLBodyElement? get body;
 }
@@ -168,12 +169,14 @@ extension DomElementExtension on DomElement {
       js_util.getProperty<List<Object?>>(this, 'children').cast<DomElement>();
   external String get id;
   external set id(String id);
+  external set innerHtml(String? html);
   external String? get outerHTML;
   external set spellcheck(bool? value);
   external String get tagName;
   external DomCSSStyleDeclaration get style;
   external void append(DomNode node);
   external String? getAttribute(String attributeName);
+  external DomRect getBoundingClientRect();
   external void prepend(DomNode node);
   external DomElement? querySelector(String selectors);
   List<DomElement> querySelectorAll(String selectors) =>
@@ -243,11 +246,14 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
       setProperty('background-image', value, '');
   set border(String value) => setProperty('border', value, '');
   set mixBlendMode(String value) => setProperty('mix-blend-mode', value, '');
-  set backgroundSize(String value) =>
-      setProperty('background-size', value, '');
+  set backgroundSize(String value) => setProperty('background-size', value, '');
   set backgroundBlendMode(String value) =>
       setProperty('background-blend-mode', value, '');
   set transformStyle(String value) => setProperty('transform-style', value, '');
+  set display(String value) => setProperty('display', value, '');
+  set flexDirection(String value) => setProperty('flex-direction', value, '');
+  set alignItems(String value) => setProperty('align-items', value, '');
+  set margin(String value) => setProperty('margin', value, '');
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -298,6 +304,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get backgroundSize => getPropertyValue('background-size');
   String get backgroundBlendMode => getPropertyValue('background-blend-mode');
   String get transformStyle => getPropertyValue('transform-style');
+  String get display => getPropertyValue('display');
+  String get flexDirection => getPropertyValue('flex-direction');
+  String get alignItems => getPropertyValue('align-items');
+  String get margin => getPropertyValue('margin');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -312,6 +322,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
 @JS()
 @staticInterop
 class DomHTMLElement extends DomElement {}
+
+extension DomHTMLElementExtension on DomHTMLElement {
+  int get offsetWidth => js_util.getProperty<num>(this, 'offsetWidth') as int;
+}
 
 @JS()
 @staticInterop
@@ -368,6 +382,21 @@ class DomHTMLButtonElement extends DomHTMLElement {}
 
 DomHTMLButtonElement createDomHTMLButtonElement() =>
     domDocument.createElement('button') as DomHTMLButtonElement;
+
+@JS()
+@staticInterop
+class DomHTMLParagraphElement extends DomHTMLElement {}
+
+DomHTMLParagraphElement createDomHTMLParagraphElement() =>
+    domDocument.createElement('p') as DomHTMLParagraphElement;
+
+@JS()
+@staticInterop
+class DomHTMLStyleElement extends DomHTMLElement {}
+
+extension DomHTMLStyleElementExtension on DomHTMLStyleElement {
+  external set type(String? value);
+}
 
 @JS()
 @staticInterop
@@ -434,6 +463,7 @@ class DomCanvasRenderingContext2D {}
 extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external Object? get fillStyle;
   external set fillStyle(Object? style);
+  external String get font;
   external set font(String value);
   external set lineWidth(num? value);
   external set strokeStyle(Object? value);
@@ -450,6 +480,7 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external void fillText(String text, num x, num y, [num? maxWidth]);
   external DomImageData getImageData(int x, int y, int sw, int sh);
   external void lineTo(num x, num y);
+  external DomTextMetrics measureText(String text);
   external void moveTo(num x, num y);
   external void save();
   external void stroke();
@@ -516,12 +547,65 @@ DomText createDomText(String data) => domDocument.createTextNode(data);
 
 @JS()
 @staticInterop
+class DomTextMetrics {}
+
+extension DomTextMetricsExtension on DomTextMetrics {
+  external num? get width;
+}
+
+@JS()
+@staticInterop
 class DomException {
   static const String notSupported = 'NotSupportedError';
 }
 
 extension DomExceptionExtension on DomException {
   external String get name;
+}
+
+@JS()
+@staticInterop
+class DomRectReadOnly {}
+
+extension DomRectReadOnlyExtension on DomRectReadOnly {
+  external num get x;
+  external num get y;
+  external num get width;
+  external num get height;
+  external num get top;
+  external num get right;
+  external num get bottom;
+  external num get left;
+}
+
+@JS()
+@staticInterop
+class DomRect extends DomRectReadOnly {}
+
+@JS()
+@staticInterop
+class DomFontFace {}
+
+DomFontFace createDomFontFace(String family, Object source,
+        [Map<Object?, Object?>? descriptors]) =>
+    domCallConstructorString('FontFace', <Object>[
+      family,
+      source,
+      if (descriptors != null) js_util.jsify(descriptors)
+    ])! as DomFontFace;
+
+extension DomFontFaceExtension on DomFontFace {
+  Future<DomFontFace> load() =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'load', <Object>[]));
+}
+
+@JS()
+@staticInterop
+class DomFontFaceSet extends DomEventTarget {}
+
+extension DomFontFaceSetExtension on DomFontFaceSet {
+  external DomFontFaceSet? add(DomFontFace font);
+  external void clear();
 }
 
 extension DomResponseExtension on DomResponse {
