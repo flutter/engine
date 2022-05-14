@@ -51,7 +51,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   ui.Rect _bounds;
-  CrossFrameCache<html.HtmlElement>? _elementCache;
+  CrossFrameCache<DomHTMLElement>? _elementCache;
 
   /// The amount of padding to add around the edges of this canvas to
   /// ensure that anti-aliased arcs are not clipped.
@@ -171,7 +171,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Setup cache for reusing DOM elements across frames.
-  void setElementCache(CrossFrameCache<html.HtmlElement>? cache) {
+  void setElementCache(CrossFrameCache<DomHTMLElement>? cache) {
     _elementCache = cache;
   }
 
@@ -574,10 +574,10 @@ class BitmapCanvas extends EngineCanvas {
         return;
       }
       final ui.Rect pathBounds = surfacePath.getBounds();
-      final html.Element svgElm = pathToSvgElement(
+      final DomElement svgElm = pathToSvgElement(
           surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
       if (!_canvasPool.isClipped) {
-        final html.CssStyleDeclaration style = svgElm.style;
+        final DomCSSStyleDeclaration style = svgElm.style;
         style.position = 'absolute';
         if (!transform.isIdentity()) {
           style
@@ -586,7 +586,7 @@ class BitmapCanvas extends EngineCanvas {
         }
       }
       _applyFilter(svgElm, paint);
-      _drawElement(svgElm, const ui.Offset(0, 0), paint);
+      _drawElement(svgElm as html.Element, const ui.Offset(0, 0), paint);
     } else {
       setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
       if (paint.style == null && paint.strokeWidth != null) {
@@ -598,7 +598,7 @@ class BitmapCanvas extends EngineCanvas {
     }
   }
 
-  void _applyFilter(html.Element element, SurfacePaintData paint) {
+  void _applyFilter(DomElement element, SurfacePaintData paint) {
     if (paint.maskFilter != null) {
       final bool isStroke = paint.style == ui.PaintingStyle.stroke;
       final String cssColor =
@@ -642,12 +642,13 @@ class BitmapCanvas extends EngineCanvas {
     // Can't reuse, create new instance.
     final html.ImageElement newImageElement = htmlImage.cloneImageElement();
     if (_elementCache != null) {
-      _elementCache!.cache(cacheKey, newImageElement, _onEvictElement);
+      _elementCache!.cache(cacheKey, newImageElement as DomHTMLImageElement,
+          _onEvictElement);
     }
     return newImageElement;
   }
 
-  static void _onEvictElement(html.HtmlElement element) {
+  static void _onEvictElement(DomHTMLElement element) {
     element.remove();
   }
 
