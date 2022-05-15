@@ -36,33 +36,6 @@ SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../../.."; pwd -P)"
 OUT_DIR="$SRC_DIR/out/$BUILD_VARIANT"
 
-# function step {
-#   printf "\e[1;32m+ $1\e[0m\n"
-# }
-
-# function completed {
-#   printf "\e[90mDone\e[0m\n"
-# }
-
-# ADB="$SRC_DIR/third_party/android_tools/sdk/platform-tools/adb"
-
-# function finish {
-#   step "Uninstalling packages"
-#   "$ADB" uninstall dev.flutter.scenarios &> /dev/null
-#   "$ADB" uninstall dev.flutter.scenarios.test &> /dev/null
-#   completed "Done"
-# }
-# trap finish EXIT
-
-# step "Installing packages"
-# "$ADB" install "$OUT_DIR"/scenario_app/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-# "$ADB" install "$OUT_DIR"/scenario_app/app/outputs/apk/debug/app-debug.apk
-# completed
-
-# step "Running instrumented tests"
-# "$ADB" shell am instrument -w dev.flutter.scenarios.test/dev.flutter.TestRunner
-# completed
-
 cd $SCRIPT_DIR
 
 "$SRC_DIR/third_party/dart/tools/sdks/dart-sdk/bin/dart" run \
