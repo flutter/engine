@@ -130,7 +130,8 @@ void webOnlySetPluginHandler(Future<void> Function(String, ByteData?, PlatformMe
 }
 
 /// A function which takes a unique `id` and creates an HTML element.
-typedef PlatformViewFactory = html.Element Function(int viewId);
+/// !!!! before landing ensure this won't break flutter.
+typedef PlatformViewFactory = engine.DomElement Function(int viewId);
 
 /// A registry for factories that create platform views.
 class PlatformViewRegistry {

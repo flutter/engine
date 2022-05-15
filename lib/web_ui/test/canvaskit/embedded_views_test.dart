@@ -27,7 +27,7 @@ void testMain() {
     test('embeds interactive platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -65,7 +65,7 @@ void testMain() {
     test('clips platform views with RRects', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -103,7 +103,7 @@ void testMain() {
     test('correctly transforms platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -136,7 +136,7 @@ void testMain() {
     test('correctly offsets platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -178,7 +178,7 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(4);
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -206,7 +206,7 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(4);
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -248,7 +248,7 @@ void testMain() {
       for (int i = 0; i < configuration.canvasKitMaximumSurfaces * 2; i++) {
         ui.platformViewRegistry.registerViewFactory(
           'test-platform-view',
-          (int viewId) => html.DivElement()..id = 'view-$i',
+          (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
         );
         await createPlatformView(i, 'test-platform-view');
         platformViewIds.add(i);
@@ -351,7 +351,7 @@ void testMain() {
       for (int i = 0; i < 20; i++) {
         ui.platformViewRegistry.registerViewFactory(
           'test-platform-view',
-          (int viewId) => html.DivElement()..id = 'view-$i',
+          (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
         );
         await createPlatformView(i, 'test-platform-view');
         platformViewIds.add(i);
@@ -400,7 +400,7 @@ void testMain() {
     test('embeds and disposes of a platform view', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -440,7 +440,7 @@ void testMain() {
     test('removed the DOM node of an unrendered platform view', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -498,7 +498,7 @@ void testMain() {
         () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'test-view',
+        (int viewId) => createDomHTMLDivElement()..id = 'test-view',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -625,7 +625,7 @@ void testMain() {
         () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -649,7 +649,7 @@ void testMain() {
       HtmlViewEmbedder.debugDisableOverlays = true;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -679,7 +679,7 @@ void testMain() {
 
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
       await createPlatformView(1, 'test-platform-view');
@@ -722,7 +722,7 @@ void testMain() {
       HtmlViewEmbedder.debugDisableOverlays = true;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
       await createPlatformView(1, 'test-platform-view');
@@ -761,11 +761,11 @@ void testMain() {
       ui.platformViewRegistry.registerViewFactory(
           'test-visible-view',
           (int viewId) =>
-              html.DivElement()..className = 'visible-platform-view');
+              createDomHTMLDivElement()..className = 'visible-platform-view');
       ui.platformViewRegistry.registerViewFactory(
         'test-invisible-view',
         (int viewId) =>
-            html.DivElement()..className = 'invisible-platform-view',
+            createDomHTMLDivElement()..className = 'invisible-platform-view',
         isVisible: false,
       );
       await createPlatformView(0, 'test-visible-view');
