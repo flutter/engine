@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
@@ -69,7 +68,7 @@ class SafariPointerEventWorkaround {
   static SafariPointerEventWorkaround instance = SafariPointerEventWorkaround();
 
   void workAroundMissingPointerEvents() {
-    html.document.addEventListener('touchstart', (html.Event event) {});
+    domDocument.addEventListener('touchstart', allowInterop((DomEvent event) {}));
   }
 }
 
@@ -233,7 +232,7 @@ abstract class _BaseAdapter {
       // Report the event to semantics. This information is used to debounce
       // browser gestures. Semantics tells us whether it is safe to forward
       // the event to the framework.
-      if (EngineSemanticsOwner.instance.receiveGlobalEvent(event as html.Event)) {
+      if (EngineSemanticsOwner.instance.receiveGlobalEvent(event)) {
         handler(event);
       }
     }

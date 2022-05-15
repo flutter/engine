@@ -12,6 +12,7 @@ import '../../engine.dart'  show registerHotRestartListener;
 import '../alarm_clock.dart';
 import '../browser_detection.dart';
 import '../configuration.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
@@ -622,7 +623,7 @@ class SemanticsObject {
   final EngineSemanticsOwner owner;
 
   /// The DOM element used to convey semantics information to the browser.
-  final html.Element element = html.Element.tag('flt-semantics');
+  final DomElement element = domDocument.createElement('flt-semantics');
 
   /// Bitfield showing which fields have been updated but have not yet been
   /// applied to the DOM.
@@ -643,9 +644,9 @@ class SemanticsObject {
   /// is not created. This is necessary for "aria-label" to function correctly.
   /// The browser will ignore the [label] of HTML element that contain child
   /// elements.
-  html.Element? getOrCreateChildContainer() {
+  DomElement? getOrCreateChildContainer() {
     if (_childContainerElement == null) {
-      _childContainerElement = html.Element.tag('flt-semantics-container');
+      _childContainerElement = createDomElement('flt-semantics-container');
       _childContainerElement!.style
         ..position = 'absolute'
         // Ignore pointer events on child container so that platform views
@@ -661,7 +662,7 @@ class SemanticsObject {
   ///
   /// This element is used to correct for [_rect] offsets. It is only non-`null`
   /// when there are non-zero children (i.e. when [hasChildren] is `true`).
-  html.Element? _childContainerElement;
+  DomElement? _childContainerElement;
 
   /// The parent of this semantics object.
   SemanticsObject? _parent;
@@ -926,7 +927,7 @@ class SemanticsObject {
     final Int32List childrenInTraversalOrder = _childrenInTraversalOrder!;
     final Int32List childrenInHitTestOrder = _childrenInHitTestOrder!;
     final int childCount = childrenInHitTestOrder.length;
-    final html.Element? containerElement = getOrCreateChildContainer();
+    final DomElement? containerElement = getOrCreateChildContainer();
 
     assert(childrenInTraversalOrder.length == childrenInHitTestOrder.length);
 
@@ -1040,7 +1041,7 @@ class SemanticsObject {
       }
     }
 
-    html.Element? refNode;
+    DomElement? refNode;
     for (int i = childCount - 1; i >= 0; i -= 1) {
       final SemanticsObject child = childrenInRenderOrder[i];
       if (!stationaryIds.contains(child.id)) {
@@ -1073,7 +1074,7 @@ class SemanticsObject {
     if (condition) {
       element.setAttribute('role', ariaRoleName);
     } else if (element.getAttribute('role') == ariaRoleName) {
-      element.attributes.remove('role');
+      element.removeAttribute('role');
     }
   }
 
@@ -1163,7 +1164,7 @@ class SemanticsObject {
       ..width = '${_rect!.width}px'
       ..height = '${_rect!.height}px';
 
-    final html.Element? containerElement =
+    final DomElement? containerElement =
         hasChildren ? getOrCreateChildContainer() : null;
 
     final bool hasZeroRectOffset = _rect!.top == 0.0 && _rect!.left == 0.0;
@@ -1231,7 +1232,7 @@ class SemanticsObject {
   /// handle traversal order.
   ///
   /// See https://github.com/flutter/flutter/issues/73347.
-  static void _clearSemanticElementTransform(html.Element element) {
+  static void _clearSemanticElementTransform(DomElement element) {
     element.style
       ..removeProperty('transform-origin')
       ..removeProperty('transform');
@@ -1377,7 +1378,7 @@ class EngineSemanticsOwner {
         object.element.remove();
       } else {
         assert(object._parent == parent);
-        assert(object.element.parent == parent._childContainerElement);
+        assert(object.element.parentNode == parent._childContainerElement);
       }
     }
     _detachments = <SemanticsObject?>[];
@@ -1404,7 +1405,7 @@ class EngineSemanticsOwner {
   }
 
   /// The top-level DOM element of the semantics DOM element tree.
-  html.Element? _rootSemanticsElement;
+  DomElement? _rootSemanticsElement;
 
   // ignore: prefer_function_declarations_over_variables
   TimestampFunction _now = () => DateTime.now();
@@ -1537,7 +1538,7 @@ class EngineSemanticsOwner {
   /// is likely that the gesture detected from the pointer even will do the
   /// right thing. However, if a standalone gesture is received, map it onto a
   /// [ui.SemanticsAction] to be processed by the framework.
-  bool receiveGlobalEvent(html.Event event) {
+  bool receiveGlobalEvent(DomEvent event) {
     // For pointer event reference see:
     //
     // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events
@@ -1561,7 +1562,7 @@ class EngineSemanticsOwner {
       _temporarilyDisableBrowserGestureMode();
     }
 
-    return semanticsHelper.shouldEnableSemantics(event);
+    return semanticsHelper.shouldEnableSemantics(event as html.Event);
   }
 
   /// Callbacks called when the [GestureMode] changes.
@@ -1673,7 +1674,7 @@ class EngineSemanticsOwner {
     if (_rootSemanticsElement == null) {
       final SemanticsObject root = _semanticsTree[0]!;
       _rootSemanticsElement = root.element;
-      flutterViewEmbedder.semanticsHostElement!.append(root.element);
+      flutterViewEmbedder.semanticsHostElement!.append(root.element as html.Node);
     }
 
     _finalizeTree();
