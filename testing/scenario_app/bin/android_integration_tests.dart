@@ -38,10 +38,10 @@ void main(List<String> args) async {
   final File appApk = File(join(apkOut, 'debug', 'app-debug.apk'));
 
   if (!testApk.existsSync()) {
-    panic(<String>['test apk does not exist: ${appApk.path}', 'make sure to build the selected engine variant']);
+    panic(<String>['test apk does not exist: ${testApk.path}', 'make sure to build the selected engine variant']);
   }
 
-  if (!testApk.existsSync()) {
+  if (!appApk.existsSync()) {
     panic(<String>['app apk does not exist: ${appApk.path}', 'make sure to build the selected engine variant']);
   }
 
