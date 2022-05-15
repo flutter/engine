@@ -214,8 +214,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final int physicalHeight = toPhysicalPixels(request.logicalHeight);
           wrapperView.setBufferSize(physicalWidth, physicalHeight);
 
-          final FrameLayout.LayoutParams layoutParams =
-              new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
+          final FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(800, 800);
 
           final int physicalTop = toPhysicalPixels(request.logicalTop);
           final int physicalLeft = toPhysicalPixels(request.logicalLeft);
@@ -323,8 +322,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
           final FrameLayout.LayoutParams layoutParams =
               (FrameLayout.LayoutParams) view.getLayoutParams();
-          layoutParams.width = newWidth;
-          layoutParams.height = newHeight;
+          layoutParams.width = 800;
+          layoutParams.height = 800;
           view.setLayoutParams(layoutParams);
 
           return new PlatformViewsChannel.PlatformViewBufferSize(
