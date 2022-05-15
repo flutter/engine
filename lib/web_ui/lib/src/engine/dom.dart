@@ -687,7 +687,7 @@ extension DomCanvasGradientExtension on DomCanvasGradient {
 @staticInterop
 class DomXMLHttpRequestEventTarget extends DomEventTarget {}
 
-@JS('XMLHttpRequest')
+@JS()
 @staticInterop
 class DomXMLHttpRequest extends DomXMLHttpRequestEventTarget {}
 
@@ -697,18 +697,20 @@ DomXMLHttpRequest createDomXMLHttpRequest() =>
 
 extension DomXMLHttpRequestExtension on DomXMLHttpRequest {
   external dynamic get response;
+  external String? get responseText;
   external String get responseType;
   external int? get status;
   external set responseType(String value);
   void open(String method, String url, [bool? async]) => js_util.callMethod(
       this, 'open', <Object>[method, url, if (async != null) async]);
-  external void send();
+  void send([Object? bodyOrData]) => js_util
+      .callMethod(this, 'send', <Object>[if (bodyOrData != null) bodyOrData]);
 }
 
-Future<DomXMLHttpRequest> domHttpRequest(String url, {String? responseType}) {
+Future<DomXMLHttpRequest> domHttpRequest(String url,
+    {String? responseType, String method = 'GET', dynamic sendData}) {
   final Completer<DomXMLHttpRequest> completer = Completer<DomXMLHttpRequest>();
   final DomXMLHttpRequest xhr = createDomXMLHttpRequest();
-  const String method = 'GET';
   xhr.open(method, url, /* async */ true);
   if (responseType != null) {
     xhr.responseType = responseType;
@@ -728,7 +730,7 @@ Future<DomXMLHttpRequest> domHttpRequest(String url, {String? responseType}) {
   }));
 
   xhr.addEventListener('error', allowInterop(completer.completeError));
-  xhr.send();
+  xhr.send(sendData);
   return completer.future;
 }
 
@@ -1098,6 +1100,10 @@ extension DomTouchExtension on DomTouch {
   external num get clientY;
   DomPoint get client => DomPoint(clientX, clientY);
 }
+
+DomTouch createDomTouch([Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('Touch')!,
+        <Object>[if (init != null) js_util.jsify(init)]) as DomTouch;
 
 DomTouchEvent createDomTouchEvent(String type, [Map<dynamic, dynamic>? init]) =>
     js_util.callConstructor(domGetConstructor('TouchEvent')!,
