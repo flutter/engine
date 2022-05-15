@@ -46,6 +46,7 @@ extension DomWindowExtension on DomWindow {
         elt,
         if (pseudoElt != null) pseudoElt
       ]) as DomCSSStyleDeclaration;
+  external DomScreen? get screen;
 }
 
 @JS()
@@ -1190,6 +1191,35 @@ class DomStyleSheet {}
 @JS()
 @staticInterop
 class DomCSSStyleSheet extends DomStyleSheet {}
+
+extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
+  List<DomCSSRule> get cssRules =>
+      js_util.getProperty<List<Object?>>(this, 'cssRules').cast<DomCSSRule>();
+  int insertRule(String rule, [int? index]) => js_util
+      .callMethod(this, 'insertRule', <Object>[rule, if (index != null) index]);
+}
+
+@JS()
+@staticInterop
+class DomCSSRule {}
+
+@JS()
+@staticInterop
+class DomScreen {}
+
+extension DomScreenExtension on DomScreen {
+  external DomScreenOrientation? get orientation;
+}
+
+@JS()
+@staticInterop
+class DomScreenOrientation extends DomEventTarget {}
+
+extension DomScreenOrientationExtension on DomScreenOrientation {
+  Future<dynamic> lock(String orientation) => js_util
+      .promiseToFuture(js_util.callMethod(this, 'lock', <String>[orientation]));
+  external void unlock();
+}
 
 // A helper class for managing a subscription. On construction it will add an
 // event listener of the requested type to the target. Calling [cancel] will
