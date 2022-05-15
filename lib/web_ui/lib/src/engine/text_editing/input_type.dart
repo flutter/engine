@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import '../browser_detection.dart';
+import '../dom.dart';
 
 /// Various types of inputs used in text fields.
 ///
@@ -72,10 +71,10 @@ abstract class EngineInputType {
   bool get submitActionOnEnter => true;
 
   /// Create the appropriate DOM element for this input type.
-  html.HtmlElement createDomElement() => html.InputElement();
+  DomHTMLElement createDomElement() => createDomHTMLInputElement();
 
   /// Given a [domElement], set attributes that are specific to this input type.
-  void configureInputMode(html.HtmlElement domElement) {
+  void configureInputMode(DomHTMLElement domElement) {
     if (inputmodeAttribute == null) {
       return;
     }
@@ -162,5 +161,5 @@ class MultilineInputType extends EngineInputType {
   bool get submitActionOnEnter => false;
 
   @override
-  html.HtmlElement createDomElement() => html.TextAreaElement();
+  DomHTMLElement createDomElement() => createDomHTMLTextAreaElement();
 }

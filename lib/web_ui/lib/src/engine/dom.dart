@@ -102,6 +102,7 @@ extension DomHTMLDocumentExtension on DomHTMLDocument {
   List<DomNode> getElementsByTagName(String tag) =>
       js_util.callMethod<List<Object?>>(
           this, 'getElementsByTagName', <Object>[tag]).cast<DomNode>();
+  external DomElement? get activeElement;
 }
 
 @JS('document')
@@ -149,6 +150,7 @@ extension DomEventExtension on DomEvent {
         if (bubbles != null) bubbles,
         if (cancelable != null) cancelable
       ]);
+  external bool get defaultPrevented;
 }
 
 DomEvent createDomEvent(String type, String name) {
@@ -234,6 +236,18 @@ extension DomElementExtension on DomElement {
   int get scrollLeft => js_util.getProperty(this, 'scrollLeft').round();
   set scrollLeft(int value) =>
       js_util.setProperty<int>(this, 'scrollLeft', value.round());
+  external DomTokenList get classList;
+  external set className(String value);
+  external void blur();
+  List<DomNode> getElementsByTagName(String tag) =>
+      js_util.callMethod<List<Object?>>(
+          this, 'getElementsByTagName', <Object>[tag]).cast<DomNode>();
+  List<DomNode> getElementsByClassName(String className) =>
+      js_util.callMethod<List<Object?>>(
+          this, 'getElementsByClassName', <Object>[className]).cast<DomNode>();
+  external void click();
+  external bool hasAttribute(String name);
+  external DomNodeList get childNodes;
 }
 
 @JS()
@@ -308,6 +322,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set overflowY(String value) => setProperty('overflow-y', value, '');
   set overflowX(String value) => setProperty('overflow-x', value, '');
   set outline(String value) => setProperty('outline', value, '');
+  set resize(String value) => setProperty('resize', value, '');
+  set alignContent(String value) => setProperty('align-content', value, '');
+  set textAlign(String value) => setProperty('text-align', value, '');
+  set font(String value) => setProperty('font', value, '');
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -367,6 +385,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get overflowY => getPropertyValue('overflow-y');
   String get overflowX => getPropertyValue('overflow-x');
   String get outline => getPropertyValue('outline');
+  String get resize => getPropertyValue('resize');
+  String get alignContent => getPropertyValue('align-content');
+  String get textAlign => getPropertyValue('text-align');
+  String get font => getPropertyValue('font');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -755,6 +777,16 @@ DomHTMLTextAreaElement createDomHTMLTextAreaElement() =>
 extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   external set value(String? value);
   external void select();
+  external set placeholder(String? value);
+  external set name(String value);
+  external int? get selectionStart;
+  external int? get selectionEnd;
+  external String? get value;
+  void setSelectionRange(int start, int end, [String? direction]) =>
+      js_util.callMethod(this, 'setSelectionRange',
+          <Object>[start, end, if (direction != null) direction]);
+  external String get name;
+  external String get placeholder;
 }
 
 @JS()
@@ -766,7 +798,7 @@ extension DomClipboardExtension on DomClipboard {
       js_util.callMethod(this, 'readText', <Object>[]));
 
   Future<dynamic> writeText(String data) => js_util
-      .promiseToFuture(js_util.callMethod(this, 'readText', <Object>[data]));
+      .promiseToFuture(js_util.callMethod(this, 'writeText', <Object>[data]));
 }
 
 extension DomResponseExtension on DomResponse {
@@ -1009,10 +1041,68 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   external String? get value;
   external bool? get disabled;
   external set disabled(bool? value);
+  external set placeholder(String? value);
+  external set name(String? value);
+  external set autocomplete(String value);
+  external int? get selectionStart;
+  external int? get selectionEnd;
+  void setSelectionRange(int start, int end, [String? direction]) =>
+      js_util.callMethod(this, 'setSelectionRange',
+          <Object>[start, end, if (direction != null) direction]);
+  external String get autocomplete;
+  external String? get name;
+  external String? get type;
+  external String get placeholder;
 }
 
 DomHTMLInputElement createDomHTMLInputElement() =>
     domDocument.createElement('input') as DomHTMLInputElement;
+
+@JS()
+@staticInterop
+class DomTokenList {}
+
+extension DomTokenListExtension on DomTokenList {
+  external void add(String value);
+  external bool contains(String token);
+}
+
+@JS()
+@staticInterop
+class DomHTMLFormElement extends DomHTMLElement {}
+
+extension DomHTMLFormElementExtension on DomHTMLFormElement {
+  external set noValidate(bool? value);
+  external set method(String? value);
+  external set action(String? value);
+}
+
+DomHTMLFormElement createDomHTMLFormElement() =>
+    domDocument.createElement('form') as DomHTMLFormElement;
+
+@JS()
+@staticInterop
+class DomNodeList {}
+
+extension DomNodeListExtension on DomNodeList {
+  external DomNode? item(int index);
+}
+
+// A helper class for managing a subscription. On construction it will add an
+// event listener of the requested type to the target. Calling [cancel] will
+// remove the listener. Caller is still responsible for calling [allowInterop]
+// on the listener before creating the subscription.
+class DomSubscription {
+  final String type;
+  final DomEventTarget target;
+  final DomEventListener listener;
+
+  DomSubscription(this.target, this.type, this.listener) {
+    target.addEventListener(type, listener);
+  }
+
+  void cancel() => target.removeEventListener(type, listener);
+}
 
 class DomPoint {
   final num x;

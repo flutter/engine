@@ -128,8 +128,8 @@ void testMain() {
       expect(textField.editableElement, strategy.domElement);
       expect((textField.editableElement as dynamic).value, 'hello');
       expect(textField.editableElement.getAttribute('aria-label'), 'greeting');
-      expect(textField.editableElement.style.width, '10px');
-      expect(textField.editableElement.style.height, '15px');
+      expect(textField.editableElement.style.getPropertyValue('width'), '10px');
+      expect(textField.editableElement.style.getPropertyValue('height'), '15px');
 
       // Update
       createTextFieldSemantics(
@@ -144,8 +144,8 @@ void testMain() {
       expect(strategy.domElement, null);
       expect((textField.editableElement as dynamic).value, 'bye');
       expect(textField.editableElement.getAttribute('aria-label'), 'farewell');
-      expect(textField.editableElement.style.width, '12px');
-      expect(textField.editableElement.style.height, '17px');
+      expect(textField.editableElement.style.getPropertyValue('width'), '12px');
+      expect(textField.editableElement.style.getPropertyValue('height'), '17px');
 
       strategy.disable();
       semantics().semanticsEnabled = false;
@@ -215,7 +215,7 @@ void testMain() {
 
       // It doesn't remove the DOM element.
       final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
-      expect(appHostNode.contains(textField.editableElement), isTrue);
+      expect(appHostNode.contains(textField.editableElement as html.Node), isTrue);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
       expect(html.document.activeElement, html.document.body);
@@ -343,9 +343,9 @@ void testMain() {
       // Checks that the placement attributes come from semantics and not from
       // EditableTextGeometry.
       void checkPlacementIsSetBySemantics() {
-        expect(strategy.activeDomElement.style.transform, '');
-        expect(strategy.activeDomElement.style.width, '${semanticsRect.width}px');
-        expect(strategy.activeDomElement.style.height, '${semanticsRect.height}px');
+        expect(strategy.activeDomElement.style.getPropertyValue('transform'), '');
+        expect(strategy.activeDomElement.style.getPropertyValue('width'), '${semanticsRect.width}px');
+        expect(strategy.activeDomElement.style.getPropertyValue('height'), '${semanticsRect.height}px');
       }
 
       checkPlacementIsSetBySemantics();

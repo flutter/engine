@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import '../host_node.dart';
 import '../platform_dispatcher.dart';
@@ -53,10 +54,10 @@ HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow!;
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _setStaticStyleAttributes(html.HtmlElement domElement) {
-  domElement.classes.add(HybridTextEditing.textEditingClass);
+void _setStaticStyleAttributes(DomHTMLElement domElement) {
+  domElement.classList.add(HybridTextEditing.textEditingClass);
 
-  final html.CssStyleDeclaration elementStyle = domElement.style;
+  final DomCSSStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
     ..alignContent = 'center'
@@ -76,7 +77,7 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
     ..transformOrigin = '0 0 0';
 
   if (browserHasAutofillOverlay()) {
-    domElement.classes.add(transparentTextEditingClass);
+    domElement.classList.add(transparentTextEditingClass);
   }
 
   // This property makes the input's blinking cursor transparent.
@@ -95,9 +96,9 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _hideAutofillElements(html.HtmlElement domElement,
+void _hideAutofillElements(DomHTMLElement domElement,
     {bool isOffScreen = false}) {
-  final html.CssStyleDeclaration elementStyle = domElement.style;
+  final DomCSSStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
     ..alignContent = 'center'
@@ -121,7 +122,7 @@ void _hideAutofillElements(html.HtmlElement domElement,
   }
 
   if (browserHasAutofillOverlay()) {
-    domElement.classes.add(transparentTextEditingClass);
+    domElement.classList.add(transparentTextEditingClass);
   }
 
   /// This property makes the input's blinking cursor transparent.
@@ -141,9 +142,9 @@ class EngineAutofillForm {
     this.formIdentifier = '',
   });
 
-  final html.FormElement formElement;
+  final DomHTMLFormElement formElement;
 
-  final Map<String, html.HtmlElement>? elements;
+  final Map<String, DomHTMLElement>? elements;
 
   final Map<String, AutofillInfo>? items;
 
@@ -180,17 +181,17 @@ class EngineAutofillForm {
     // If there is only one text field in the autofill model, `fields` will be
     // null. `focusedElementAutofill` contains the information about the one
     // text field.
-    final Map<String, html.HtmlElement> elements = <String, html.HtmlElement>{};
+    final Map<String, DomHTMLElement> elements = <String, DomHTMLElement>{};
     final Map<String, AutofillInfo> items = <String, AutofillInfo>{};
-    final html.FormElement formElement = html.FormElement();
+    final DomHTMLFormElement formElement = createDomHTMLFormElement();
 
     // Validation is in the framework side.
     formElement.noValidate = true;
     formElement.method = 'post';
     formElement.action = '#';
-    formElement.addEventListener('submit', (html.Event e) {
+    formElement.addEventListener('submit', allowInterop((DomEvent e) {
       e.preventDefault();
-    });
+    }));
 
     _hideAutofillElements(formElement);
 
@@ -220,7 +221,7 @@ class EngineAutofillForm {
             field.readJson('inputType').readString('name'),
           );
 
-          final html.HtmlElement htmlElement = engineInputType.createDomElement();
+          final DomHTMLElement htmlElement = engineInputType.createDomElement();
           autofill.editingState.applyToDomElement(htmlElement);
           autofill.applyToDomElement(htmlElement);
           _hideAutofillElements(htmlElement);
@@ -250,12 +251,12 @@ class EngineAutofillForm {
 
     // If a form with the same Autofill elements is already on the dom, remove
     // it from DOM.
-    final html.FormElement? form = formsOnTheDom[formIdentifier];
+    final DomHTMLFormElement? form = formsOnTheDom[formIdentifier];
     form?.remove();
 
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
-    final html.InputElement submitButton = html.InputElement();
+    final DomHTMLInputElement submitButton = createDomHTMLInputElement();
     _hideAutofillElements(submitButton, isOffScreen: true);
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
@@ -270,9 +271,9 @@ class EngineAutofillForm {
     );
   }
 
-  void placeForm(html.HtmlElement mainTextEditingElement) {
+  void placeForm(DomHTMLElement mainTextEditingElement) {
     formElement.append(mainTextEditingElement);
-    defaultTextEditingRoot.append(formElement);
+    defaultTextEditingRoot.append(formElement as html.Node);
   }
 
   void storeForm() {
@@ -290,33 +291,32 @@ class EngineAutofillForm {
   /// listeners with no exceptions are added during
   /// [TextEditingStrategy.addEventHandlers] method call and all
   /// listeners are removed during [TextEditingStrategy.disable] method call.
-  List<StreamSubscription<html.Event>> addInputEventListeners() {
+  List<DomSubscription> addInputEventListeners() {
     final Iterable<String> keys = elements!.keys;
-    final List<StreamSubscription<html.Event>> subscriptions =
-        <StreamSubscription<html.Event>>[];
+    final List<DomSubscription> subscriptions = <DomSubscription>[];
 
     void addSubscriptionForKey(String key) {
-        final html.Element element = elements![key]!;
+        final DomElement element = elements![key]!;
         subscriptions.add(
-            element.onInput.listen((html.Event e) {
-              if (items![key] == null) {
-                throw StateError(
-                    'AutofillInfo must have a valid uniqueIdentifier.');
-              } else {
-                final AutofillInfo autofillInfo = items![key]!;
-                handleChange(element, autofillInfo);
-              }
-            })
-        );
+            DomSubscription(element, 'input',
+                allowInterop((DomEvent e) {
+                  if (items![key] == null) {
+                    throw StateError(
+                        'AutofillInfo must have a valid uniqueIdentifier.');
+                  } else {
+                    final AutofillInfo autofillInfo = items![key]!;
+                    handleChange(element, autofillInfo);
+                  }
+                })));
     }
 
     keys.forEach(addSubscriptionForKey);
     return subscriptions;
   }
 
-  void handleChange(html.Element domElement, AutofillInfo autofillInfo) {
+  void handleChange(DomElement domElement, AutofillInfo autofillInfo) {
     final EditingState newEditingState = EditingState.fromDomElement(
-        domElement as html.HtmlElement?);
+        domElement as DomHTMLElement);
 
     _sendAutofillEditingState(autofillInfo.uniqueIdentifier, newEditingState);
   }
@@ -408,12 +408,12 @@ class AutofillInfo {
     );
   }
 
-  void applyToDomElement(html.HtmlElement domElement,
+  void applyToDomElement(DomHTMLElement domElement,
       {bool focusedElement = false}) {
     final String? autofillHint = this.autofillHint;
     final String? placeholder = this.placeholder;
-    if (domElement is html.InputElement) {
-      final html.InputElement element = domElement;
+    if (domInstanceOfString(domElement, 'HTMLInputElement')) {
+      final DomHTMLInputElement element = domElement as DomHTMLInputElement;
       if (placeholder != null) {
         element.placeholder = placeholder;
       }
@@ -427,15 +427,16 @@ class AutofillInfo {
         }
       }
       element.autocomplete = autofillHint ?? 'on';
-    } else if (domElement is html.TextAreaElement) {
+    } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
+      final DomHTMLTextAreaElement element = domElement as DomHTMLTextAreaElement;
       if (placeholder != null) {
-        domElement.placeholder = placeholder;
+        element.placeholder = placeholder;
       }
       if (autofillHint != null) {
-        domElement.name = autofillHint;
-        domElement.id = autofillHint;
+        element.name = autofillHint;
+        element.id = autofillHint;
       }
-      domElement.setAttribute('autocomplete', autofillHint ?? 'on');
+      element.setAttribute('autocomplete', autofillHint ?? 'on');
     }
   }
 }
@@ -690,15 +691,16 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
-  factory EditingState.fromDomElement(html.HtmlElement? domElement) {
-    if (domElement is html.InputElement) {
-      final html.InputElement element = domElement;
+  factory EditingState.fromDomElement(DomHTMLElement? domElement) {
+    if (domInstanceOfString(domElement, 'HTMLInputElement')) {
+      final DomHTMLInputElement element = domElement! as DomHTMLInputElement;
       return EditingState(
           text: element.value,
           baseOffset: element.selectionStart,
           extentOffset: element.selectionEnd);
-    } else if (domElement is html.TextAreaElement) {
-      final html.TextAreaElement element = domElement;
+    } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
+      final DomHTMLTextAreaElement element = domElement! as
+          DomHTMLTextAreaElement;
       return EditingState(
           text: element.value,
           baseOffset: element.selectionStart,
@@ -765,13 +767,14 @@ class EditingState {
   /// See also:
   ///
   ///  * [applyTextToDomElement], which is used for non-focused elements.
-  void applyToDomElement(html.HtmlElement? domElement) {
-    if (domElement is html.InputElement) {
-      final html.InputElement element = domElement;
+  void applyToDomElement(DomHTMLElement? domElement) {
+    if (domInstanceOfString(domElement, 'HTMLInputElement')) {
+      final DomHTMLInputElement element = domElement! as DomHTMLInputElement;
       element.value = text;
       element.setSelectionRange(baseOffset!, extentOffset!);
-    } else if (domElement is html.TextAreaElement) {
-      final html.TextAreaElement element = domElement;
+    } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
+      final DomHTMLTextAreaElement element = domElement! as
+          DomHTMLTextAreaElement;
       element.value = text;
       element.setSelectionRange(baseOffset!, extentOffset!);
     } else {
@@ -786,12 +789,13 @@ class EditingState {
   /// See also:
   ///
   ///  * [applyToDomElement], which is used for focused elements.
-  void applyTextToDomElement(html.HtmlElement? domElement) {
-    if (domElement is html.InputElement) {
-      final html.InputElement element = domElement;
+  void applyTextToDomElement(DomHTMLElement? domElement) {
+    if (domInstanceOfString(domElement, 'HTMLInputElement')) {
+      final DomHTMLInputElement element = domElement! as DomHTMLInputElement;
       element.value = text;
-    } else if (domElement is html.TextAreaElement) {
-      final html.TextAreaElement element = domElement;
+    } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
+      final DomHTMLTextAreaElement element = domElement! as
+          DomHTMLTextAreaElement;
       element.value = text;
     } else {
       throw UnsupportedError('Unsupported DOM element type');
@@ -1046,13 +1050,13 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   bool isEnabled = false;
 
   /// The DOM element used for editing, if any.
-  html.HtmlElement? domElement;
+  DomHTMLElement? domElement;
 
   /// Same as [domElement] but null-checked.
   ///
   /// This must only be called in places that know for sure that a DOM element
   /// is currently available for editing.
-  html.HtmlElement get activeDomElement {
+  DomHTMLElement get activeDomElement {
     assert(
       domElement != null,
       'The DOM element of this text editing strategy is not currently active.',
@@ -1078,8 +1082,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   OnChangeCallback? onChange;
   OnActionCallback? onAction;
 
-  final List<StreamSubscription<html.Event>> subscriptions =
-      <StreamSubscription<html.Event>>[];
+  final List<DomSubscription> subscriptions = <DomSubscription>[];
 
   bool get hasAutofillGroup => inputConfiguration.autofillGroup != null;
 
@@ -1087,7 +1090,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   bool get appendedToForm => _appendedToForm;
   bool _appendedToForm = false;
 
-  html.FormElement? get focusedFormElement =>
+  DomHTMLFormElement? get focusedFormElement =>
       inputConfiguration.autofillGroup?.formElement;
 
   @override
@@ -1109,7 +1112,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      defaultTextEditingRoot.append(activeDomElement);
+      defaultTextEditingRoot.append(activeDomElement as html.Node);
       _appendedToForm = false;
     }
 
@@ -1161,21 +1164,25 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
 
     // Subscribe to text and selection changes.
-    subscriptions.add(activeDomElement.onInput.listen(handleChange));
+    subscriptions.add(DomSubscription(activeDomElement, 'input',
+            allowInterop(handleChange)));
 
-    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
+    subscriptions.add(DomSubscription(activeDomElement, 'keydown',
+            allowInterop(maybeSendAction)));
 
-    subscriptions.add(html.document.onSelectionChange.listen(handleChange));
+    subscriptions.add(DomSubscription(domDocument, 'selectionchange',
+            allowInterop(handleChange)));
 
-    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+    activeDomElement.addEventListener('beforeinput',
+        allowInterop(handleBeforeInput));
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    activeDomElement.addEventListener('compositionupdate',
+        allowInterop(handleCompositionUpdate));
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
-    subscriptions.add(activeDomElement.onBlur.listen((_) {
-      activeDomElement.focus();
-    }));
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            allowInterop((_) { activeDomElement.focus(); })));
 
     preventDefaultForMouseEvents();
   }
@@ -1243,7 +1250,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _appendedToForm = true;
   }
 
-  void handleChange(html.Event event) {
+  void handleChange(DomEvent event) {
     assert(isEnabled);
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
@@ -1261,7 +1268,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
   }
 
-  void handleBeforeInput(html.Event event) {
+  void handleBeforeInput(DomEvent event) {
     // In some cases the beforeinput event is not fired such as when the selection
     // of a text field is updated. In this case only the oninput event is fired.
     // We still want a delta generated in these cases so we can properly update
@@ -1295,14 +1302,15 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
   }
 
-  void handleCompositionUpdate(html.Event event) {
+  void handleCompositionUpdate(DomEvent event) {
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     editingDeltaState.composingOffset = newEditingState.baseOffset!;
     editingDeltaState.composingExtent = newEditingState.extentOffset!;
   }
 
-  void maybeSendAction(html.Event event) {
-    if (event is html.KeyboardEvent) {
+  void maybeSendAction(DomEvent e) {
+    if (domInstanceOfString(e, 'KeyboardEvent')) {
+      final DomKeyboardEvent event = e as DomKeyboardEvent;
       if (inputConfiguration.inputType.submitActionOnEnter &&
           event.keyCode == _kReturnKeyCode) {
         event.preventDefault();
@@ -1344,17 +1352,20 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   /// selection conflicts with selection sent from the framework, which creates
   /// flickering during selection by mouse.
   void preventDefaultForMouseEvents() {
-    subscriptions.add(activeDomElement.onMouseDown.listen((_) {
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'mousedown', allowInterop((_) {
       _.preventDefault();
-    }));
+    })));
 
-    subscriptions.add(activeDomElement.onMouseUp.listen((_) {
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'mouseup', allowInterop((_) {
       _.preventDefault();
-    }));
+    })));
 
-    subscriptions.add(activeDomElement.onMouseMove.listen((_) {
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'mousemove', allowInterop((_) {
       _.preventDefault();
-    }));
+    })));
   }
 }
 
@@ -1425,7 +1436,8 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     }
-    inputConfig.textCapitalization.setAutocapitalizeAttribute(activeDomElement);
+    inputConfig.textCapitalization.setAutocapitalizeAttribute(activeDomElement
+        as html.HtmlElement);
   }
 
   @override
@@ -1446,21 +1458,27 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     }
 
     // Subscribe to text and selection changes.
-    subscriptions.add(activeDomElement.onInput.listen(handleChange));
+    subscriptions.add(DomSubscription(activeDomElement, 'input',
+            allowInterop(handleChange)));
 
-    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
+    subscriptions.add(DomSubscription(activeDomElement, 'keydown',
+            allowInterop(maybeSendAction)));
 
-    subscriptions.add(html.document.onSelectionChange.listen(handleChange));
+    subscriptions.add(DomSubscription(domDocument, 'selectionchange',
+            allowInterop(handleChange)));
 
-    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+    activeDomElement.addEventListener('beforeinput',
+        allowInterop(handleBeforeInput));
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    activeDomElement.addEventListener('compositionupdate',
+        allowInterop(handleCompositionUpdate));
 
     // Position the DOM element after it is focused.
-    subscriptions.add(activeDomElement.onFocus.listen((_) {
-      // Cancel previous timer if exists.
-      _schedulePlacement();
-    }));
+    subscriptions.add(DomSubscription(activeDomElement, 'focus',
+            allowInterop((_) {
+              // Cancel previous timer if exists.
+              _schedulePlacement();
+            })));
 
     _addTapListener();
 
@@ -1483,14 +1501,15 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    In order to detect this, we measure how much time has passed since the
     //    input field was activated. If the time is too short, we re-focus the
     //    input element.
-    subscriptions.add(activeDomElement.onBlur.listen((_) {
-      final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
-      if (windowHasFocus && isFastCallback) {
-        activeDomElement.focus();
-      } else {
-        owner.sendTextConnectionClosedToFrameworkIfAny();
-      }
-    }));
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            allowInterop((_) {
+              final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
+              if (windowHasFocus && isFastCallback) {
+                activeDomElement.focus();
+              } else {
+                owner.sendTextConnectionClosedToFrameworkIfAny();
+              }
+            })));
   }
 
   @override
@@ -1526,7 +1545,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   /// [_positionInputElementTimer] timer is restarted. The element will be
   /// placed to its correct position after [_delayBeforePlacement].
   void _addTapListener() {
-    subscriptions.add(activeDomElement.onClick.listen((_) {
+    subscriptions.add(DomSubscription(activeDomElement, 'click', allowInterop((_) {
       // Check if the element is already positioned. If not this does not fall
       // under `The user was using the long press, now they want to enter text
       // via keyboard` journey.
@@ -1537,7 +1556,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         // Re-configure the timer to place the element.
         _schedulePlacement();
       }
-    }));
+    })));
   }
 
   void _schedulePlacement() {
@@ -1577,9 +1596,10 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      defaultTextEditingRoot.append(activeDomElement);
+      defaultTextEditingRoot.append(activeDomElement as html.Node);
     }
-    inputConfig.textCapitalization.setAutocapitalizeAttribute(activeDomElement);
+    inputConfig.textCapitalization.setAutocapitalizeAttribute(
+        activeDomElement as html.HtmlElement);
   }
 
   @override
@@ -1590,27 +1610,36 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     }
 
     // Subscribe to text and selection changes.
-    subscriptions.add(activeDomElement.onInput.listen(handleChange));
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'input', allowInterop(handleChange)));
 
-    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'keydown',
+            allowInterop(maybeSendAction)));
 
-    subscriptions.add(html.document.onSelectionChange.listen(handleChange));
+    subscriptions.add(
+        DomSubscription(domDocument, 'selectionchange',
+            allowInterop(handleChange)));
 
-    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+    activeDomElement.addEventListener('beforeinput',
+        allowInterop(handleBeforeInput));
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    activeDomElement.addEventListener('compositionupdate',
+        allowInterop(handleCompositionUpdate));
 
-    subscriptions.add(activeDomElement.onBlur.listen((_) {
-      if (windowHasFocus) {
-        // Chrome on Android will hide the onscreen keyboard when you tap outside
-        // the text box. Instead, we want the framework to tell us to hide the
-        // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-        // refocus as long as [windowHasFocus] is true.
-        activeDomElement.focus();
-      } else {
-        owner.sendTextConnectionClosedToFrameworkIfAny();
-      }
-    }));
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'blur',
+            allowInterop((_) {
+              if (windowHasFocus) {
+                // Chrome on Android will hide the onscreen keyboard when you tap outside
+                // the text box. Instead, we want the framework to tell us to hide the
+                // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
+                // refocus as long as [windowHasFocus] is true.
+                activeDomElement.focus();
+              } else {
+                owner.sendTextConnectionClosedToFrameworkIfAny();
+              }
+            })));
   }
 
   @override
@@ -1648,13 +1677,18 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     }
 
     // Subscribe to text and selection changes.
-    subscriptions.add(activeDomElement.onInput.listen(handleChange));
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'input', allowInterop(handleChange)));
 
-    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
+    subscriptions.add(
+        DomSubscription(
+            activeDomElement, 'keydown', allowInterop(maybeSendAction)));
 
-    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+    activeDomElement.addEventListener('beforeinput',
+        allowInterop(handleBeforeInput));
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    activeDomElement.addEventListener('compositionupdate',
+        allowInterop(handleCompositionUpdate));
 
     // Detects changes in text selection.
     //
@@ -1669,20 +1703,30 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //
     // After each keyup, the start/end values of the selection is compared to
     // the previously saved editing state.
-    subscriptions.add(activeDomElement.onKeyUp.listen((html.KeyboardEvent event) {
-      handleChange(event);
-    }));
+    subscriptions.add(
+        DomSubscription(
+            activeDomElement,
+            'keyup',
+            allowInterop((DomEvent event) {
+              handleChange(event);
+            })));
 
     // In Firefox the context menu item "Select All" does not work without
     // listening to onSelect. On the other browsers onSelectionChange is
     // enough for covering "Select All" functionality.
-    subscriptions.add(activeDomElement.onSelect.listen(handleChange));
+    subscriptions.add(
+        DomSubscription(
+            activeDomElement, 'select', allowInterop(handleChange)));
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
-    subscriptions.add(activeDomElement.onBlur.listen((_) {
-      _postponeFocus();
-    }));
+    subscriptions.add(
+        DomSubscription(
+            activeDomElement,
+            'blur',
+            allowInterop((_) {
+              _postponeFocus();
+            })));
 
     preventDefaultForMouseEvents();
   }
@@ -1902,9 +1946,9 @@ class TextInputFinishAutofillContext extends TextInputCommand {
 /// Called when the form is finalized with save option `true`.
 /// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
 void saveForms() {
-  formsOnTheDom.forEach((String identifier, html.FormElement form) {
-    final html.InputElement submitBtn =
-        form.getElementsByClassName('submitBtn').first as html.InputElement;
+  formsOnTheDom.forEach((String identifier, DomHTMLFormElement form) {
+    final DomHTMLInputElement submitBtn =
+        form.getElementsByClassName('submitBtn').first as DomHTMLInputElement;
     submitBtn.click();
   });
 }
@@ -1913,7 +1957,7 @@ void saveForms() {
 ///
 /// Called when the form is finalized.
 void cleanForms() {
-  for (final html.FormElement form in formsOnTheDom.values) {
+  for (final DomHTMLFormElement form in formsOnTheDom.values) {
     form.remove();
   }
   formsOnTheDom.clear();
@@ -2087,8 +2131,8 @@ final HybridTextEditing textEditing = HybridTextEditing();
 /// save or cancel them.
 ///
 /// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
-final Map<String, html.FormElement> formsOnTheDom =
-    <String, html.FormElement>{};
+final Map<String, DomHTMLFormElement> formsOnTheDom =
+    <String, DomHTMLFormElement>{};
 
 /// Should be used as a singleton to provide support for text editing in
 /// Flutter Web.
@@ -2222,9 +2266,9 @@ class EditableTextStyle {
   String get cssFont =>
       '$fontWeight ${fontSize}px ${canonicalizeFontFamily(fontFamily)}';
 
-  void applyToDomElement(html.HtmlElement domElement) {
+  void applyToDomElement(DomHTMLElement domElement) {
     domElement.style
-      ..textAlign = align
+      ..textAlign = align!
       ..font = cssFont;
   }
 }
@@ -2279,11 +2323,11 @@ class EditableTextGeometry {
   /// example, if the editable DOM element is nested inside the semantics
   /// tree the semantics tree provides the placement parameters, in which
   /// case this method should not be used.
-  void applyToDomElement(html.HtmlElement domElement) {
+  void applyToDomElement(DomHTMLElement domElement) {
     final String cssTransform = float64ListToCssTransform(globalTransform);
     domElement.style
       ..width = '${width}px'
       ..height = '${height}px'
-      ..transform = cssTransform;
+      ..transform =  cssTransform;
   }
 }
