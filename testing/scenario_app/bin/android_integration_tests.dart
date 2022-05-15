@@ -54,13 +54,13 @@ void main(List<String> args) async {
     server = await ServerSocket.bind(InternetAddress.anyIPv4, tcpPort);
     stdout.writeln('listening on host ${server.address.address}:${server.port}');
     server.listen((Socket client) {
-      stdout.writeln('clientx connected ${client.remoteAddress.address}:${client.remotePort}');
+      stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
 
       client.listen((Uint8List data) {
         final int fnameLen = data.buffer.asByteData().getInt32(0);
         final String fileName = utf8.decode(data.buffer.asUint8List(4, fnameLen));
-        // final String fileContent = utf8.decode(data.buffer.asUint8List(4 + fnameLen));
-        stdout.writeln('data: $fileName');
+        final Uint8List fileContent = data.buffer.asUint8List(4 + fnameLen);
+        log('host received ${fileContent.lengthInBytes} bytes for screenshot `$fileName`');
       });
     });
   });

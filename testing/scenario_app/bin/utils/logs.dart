@@ -18,6 +18,10 @@ Future<void> step(String msg, Function() fn) async {
   }
 }
 
+void log(String msg) {
+  stdout.writeln('$_gray$msg$_reset');
+}
+
 void panic(List<String> messages) {
   for (final String message in messages) {
     stderr.writeln('$_red$message$_reset');
