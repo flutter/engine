@@ -220,6 +220,23 @@ extension DomElementExtension on DomElement {
   external void remove();
   external void setAttribute(String name, Object value);
   void appendText(String text) => append(createDomText(text));
+  external void removeAttribute(String name);
+  external set tabIndex(int? value);
+  external int? get tabIndex;
+  external void focus();
+
+  /// [scrollTop] and [scrollLeft] can both return non-integers when using
+  /// display scaling.
+  ///
+  /// The setters have a spurious round just in case the supplied [int] flowed
+  /// from the non-static interop JS API. When all of Flutter Web has been
+  /// migrated to static interop we can probably remove the rounds.
+  int get scrollTop => js_util.getProperty(this, 'scrollTop').round();
+  set scrollTop(int value) =>
+      js_util.setProperty<num>(this, 'scrollTop', value.round());
+  int get scrollLeft => js_util.getProperty(this, 'scrollLeft').round();
+  set scrollLeft(int value) =>
+      js_util.setProperty<num>(this, 'scrollLeft', value.round());
 }
 
 @JS()
@@ -287,6 +304,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set alignItems(String value) => setProperty('align-items', value);
   set margin(String value) => setProperty('margin', value);
   set background(String value) => setProperty('background', value);
+  set touchAction(String value) => setProperty('touch-action', value);
+  set overflowY(String value) => setProperty('overflow-y', value);
+  set overflowX(String value) => setProperty('overflow-x', value);
+  set outline(String value) => setProperty('outline', value);
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -342,6 +363,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get alignItems => getPropertyValue('align-items');
   String get margin => getPropertyValue('margin');
   String get background => getPropertyValue('background');
+  String get touchAction => getPropertyValue('touch-action');
+  String get overflowY => getPropertyValue('overflow-y');
+  String get overflowX => getPropertyValue('overflow-x');
+  String get outline => getPropertyValue('outline');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -359,7 +384,6 @@ class DomHTMLElement extends DomElement {}
 
 extension DomHTMLElementExtension on DomHTMLElement {
   int get offsetWidth => js_util.getProperty<num>(this, 'offsetWidth') as int;
-  external void focus();
 }
 
 @JS()
@@ -976,6 +1000,23 @@ extension DomTouchExtension on DomTouch {
   external num? get clientX;
   external num? get clientY;
 }
+
+@JS()
+@staticInterop
+class DomHTMLInputElement extends DomHTMLElement {}
+
+extension DomHTMLInputElementExtension on DomHTMLInputElement {
+  external set type(String? value);
+  external set max(String? value);
+  external set min(String value);
+  external set value(String? value);
+  external String? get value;
+  external bool? get disabled;
+  external set disabled(bool? value);
+}
+
+DomHTMLInputElement createDomHTMLInputElement() =>
+    domDocument.createElement('input') as DomHTMLInputElement;
 
 Object? domGetConstructor(String constructorName) =>
     js_util.getProperty(domWindow, constructorName);
