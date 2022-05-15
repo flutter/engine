@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
@@ -209,7 +207,7 @@ class TextHeightRuler {
     _dimensions.updateTextToSpace();
 
     _dimensions.appendToHost(host);
-    rulerHost.addElement(host as html.HtmlElement);
+    rulerHost.addElement(host);
     return host;
   }
 
