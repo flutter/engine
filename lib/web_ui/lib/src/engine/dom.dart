@@ -544,8 +544,8 @@ extension DomCanvasElementExtension on DomCanvasElement {
   external int? get height;
   external set height(int? value);
   external bool? get isConnected;
-  String toDataURL([String? type]) =>
-      js_util.callMethod(this, 'toDataURL', <Object>[if (type != null) type]);
+  String toDataURL([String type = 'image/png']) =>
+      js_util.callMethod(this, 'toDataURL', <Object>[type]);
 
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     return js_util.callMethod(this, 'getContext', <Object?>[
@@ -625,6 +625,10 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
 @JS()
 @staticInterop
 class DomImageData {}
+
+DomImageData createDomImageData(Object? dataOrSw, int shOrSw, [int? sh]) =>
+    js_util.callConstructor(domGetConstructor('ImageData')!,
+        <Object?>[dataOrSw, shOrSw, if (sh != null) sh]);
 
 extension DomImageDataExtension on DomImageData {
   external Uint8ClampedList get data;
@@ -1104,6 +1108,43 @@ class DomNodeList {}
 extension DomNodeListExtension on DomNodeList {
   external DomNode? item(int index);
 }
+
+@JS()
+@staticInterop
+class DomOffscreenCanvas extends DomEventTarget {}
+
+extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
+  external int? get height;
+  external int? get width;
+  external set height(int? value);
+  external set width(int? value);
+  Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
+    return js_util.callMethod(this, 'getContext', <Object?>[
+      contextType,
+      if (attributes != null) js_util.jsify(attributes)
+    ]);
+  }
+
+  Future<DomBlob> convertToBlob([Map<Object?, Object?>? options]) =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'convertToBlob',
+          <Object>[if (options != null) js_util.jsify(options)]));
+}
+
+DomOffscreenCanvas createDomOffscreenCanvas(int width, int height) =>
+    js_util.callConstructor(
+        domGetConstructor('OffscreenCanvas')!, <Object>[width, height]);
+
+@JS()
+@staticInterop
+class DomFileReader extends DomEventTarget {}
+
+extension DomFileReaderExtension on DomFileReader {
+  external void readAsDataURL(DomBlob blob);
+}
+
+DomFileReader createDomFileReader() =>
+    js_util.callConstructor(domGetConstructor('FileReader')!, <Object>[])
+        as DomFileReader;
 
 // A helper class for managing a subscription. On construction it will add an
 // event listener of the requested type to the target. Calling [cancel] will
