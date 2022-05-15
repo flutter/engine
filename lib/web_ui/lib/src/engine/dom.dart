@@ -256,6 +256,11 @@ extension DomElementExtension on DomElement {
   external void click();
   external bool hasAttribute(String name);
   external DomNodeList get childNodes;
+  void clearChildren() {
+    while (firstChild != null) {
+      removeChild(firstChild!);
+    }
+  }
 }
 
 @JS()
