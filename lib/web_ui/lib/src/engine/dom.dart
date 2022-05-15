@@ -421,7 +421,11 @@ extension DomHTMLMetaElementExtension on DomHTMLMetaElement {
   external String get name;
   external set name(String value);
   external String get content;
+  external set content(String value);
 }
+
+DomHTMLMetaElement createDomHTMLMetaElement() =>
+    domDocument.createElement('meta') as DomHTMLMetaElement;
 
 @JS()
 @staticInterop
@@ -507,6 +511,7 @@ extension DomPerformanceExtension on DomPerformance {
   external DomPerformanceEntry? mark(String markName);
   external DomPerformanceMeasure? measure(
       String measureName, String? startMark, String? endMark);
+  external double now();
 }
 
 @JS()
@@ -1106,6 +1111,13 @@ extension DomHTMLFormElementExtension on DomHTMLFormElement {
 
 DomHTMLFormElement createDomHTMLFormElement() =>
     domDocument.createElement('form') as DomHTMLFormElement;
+
+@JS()
+@staticInterop
+class DomHTMLLabelElement extends DomHTMLElement {}
+
+DomHTMLLabelElement createDomHTMLLabelElement() =>
+    domDocument.createElement('label') as DomHTMLLabelElement;
 
 @JS()
 @staticInterop
