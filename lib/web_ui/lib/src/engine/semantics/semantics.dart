@@ -1675,7 +1675,7 @@ class EngineSemanticsOwner {
       _temporarilyDisableBrowserGestureMode();
     }
 
-    return semanticsHelper.shouldEnableSemantics(event as html.Event);
+    return semanticsHelper.shouldEnableSemantics(event);
   }
 
   /// Callbacks called when the [GestureMode] changes.

@@ -99,6 +99,9 @@ extension DomHTMLDocumentExtension on DomHTMLDocument {
   external DomHTMLHeadElement? get head;
   external DomHTMLBodyElement? get body;
   external set title(String? value);
+  Iterable<DomElement> getElementsByTagName(String tag) =>
+      createDomListWrapper<DomElement>(js_util
+          .callMethod<_DomList>(this, 'getElementsByTagName', <Object>[tag]));
 }
 
 @JS('document')
@@ -124,6 +127,8 @@ extension DomEventTargetExtension on DomEventTarget {
           <Object>[type, listener, if (useCapture != null) useCapture]);
     }
   }
+
+  external bool dispatchEvent(DomEvent event);
 }
 
 typedef DomEventListener = void Function(DomEvent event);
@@ -951,10 +956,18 @@ class DomMouseEvent extends DomUIEvent {}
 extension DomMouseEventExtension on DomMouseEvent {
   external num get clientX;
   external num get clientY;
+  external num get offsetX;
+  external num get offsetY;
+  DomPoint get client => DomPoint(clientX, clientY);
+  DomPoint get offset => DomPoint(offsetX, offsetY);
   external int get button;
   external int? get buttons;
   external bool getModifierState(String keyArg);
 }
+
+DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('MouseEvent')!,
+        <Object>[type, if (init != null) js_util.jsify(init)]);
 
 @JS()
 @staticInterop
@@ -970,6 +983,11 @@ extension DomPointerEventExtension on DomPointerEvent {
       js_util.callMethod<List<Object?>>(
           this, 'getCoalescedEvents', <Object>[]).cast<DomPointerEvent>();
 }
+
+DomPointerEvent createDomPointerEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('PointerEvent')!,
+        <Object>[type, if (init != null) js_util.jsify(init)]);
 
 @JS()
 @staticInterop
@@ -997,9 +1015,14 @@ class DomTouch {}
 
 extension DomTouchExtension on DomTouch {
   external int? get identifier;
-  external num? get clientX;
-  external num? get clientY;
+  external num get clientX;
+  external num get clientY;
+  DomPoint get client => DomPoint(clientX, clientY);
 }
+
+DomTouchEvent createDomTouchEvent(String type, [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('TouchEvent')!,
+        <Object>[type, if (init != null) js_util.jsify(init)]);
 
 @JS()
 @staticInterop
@@ -1017,6 +1040,13 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
 
 DomHTMLInputElement createDomHTMLInputElement() =>
     domDocument.createElement('input') as DomHTMLInputElement;
+
+class DomPoint {
+  final num x;
+  final num y;
+
+  DomPoint(this.x, this.y);
+}
 
 Object? domGetConstructor(String constructorName) =>
     js_util.getProperty(domWindow, constructorName);
