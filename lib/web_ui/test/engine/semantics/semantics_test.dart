@@ -323,21 +323,21 @@ class MockSemanticsEnabler implements SemanticsEnabler {
   bool get isWaitingToEnableSemantics => throw UnimplementedError();
 
   @override
-  html.Element prepareAccessibilityPlaceholder() {
+  DomElement prepareAccessibilityPlaceholder() {
     throw UnimplementedError();
   }
 
   bool shouldEnableSemanticsReturnValue = false;
-  final List<html.Event> shouldEnableSemanticsEvents = <html.Event>[];
+  final List<DomEvent> shouldEnableSemanticsEvents = <DomEvent>[];
 
   @override
-  bool shouldEnableSemantics(html.Event event) {
+  bool shouldEnableSemantics(DomEvent event) {
     shouldEnableSemanticsEvents.add(event);
     return shouldEnableSemanticsReturnValue;
   }
 
   @override
-  bool tryEnableSemantics(html.Event event) {
+  bool tryEnableSemantics(DomEvent event) {
     throw UnimplementedError();
   }
 }
