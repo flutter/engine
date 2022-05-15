@@ -98,6 +98,7 @@ extension DomDocumentExtension on DomDocument {
   external DomText createTextNode(String data);
   external DomEvent createEvent(String eventType);
   external DomElement? get activeElement;
+  external DomElement? elementFromPoint(int x, int y);
 }
 
 @JS()
@@ -1225,6 +1226,7 @@ extension DomShadowRootExtension on DomShadowRoot {
   external DomElement? get host;
   external String? get mode;
   external bool? get delegatesFocus;
+  external DomElement? elementFromPoint(int x, int y);
 }
 
 @JS()
