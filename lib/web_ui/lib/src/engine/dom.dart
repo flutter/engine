@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
@@ -110,10 +111,12 @@ extension DomHTMLDocumentExtension on DomHTMLDocument {
   external DomHTMLHeadElement? get head;
   external DomHTMLBodyElement? get body;
   external set title(String? value);
+  external String? get title;
   Iterable<DomElement> getElementsByTagName(String tag) =>
       createDomListWrapper<DomElement>(js_util
           .callMethod<_DomList>(this, 'getElementsByTagName', <Object>[tag]));
   external DomElement? get activeElement;
+  external DomElement? getElementById(String id);
 }
 
 @JS('document')
@@ -266,6 +269,7 @@ extension DomElementExtension on DomElement {
       js_util.setProperty<num>(this, 'scrollLeft', value.round());
   external DomTokenList get classList;
   external set className(String value);
+  external String get className;
   external void blur();
   List<DomNode> getElementsByTagName(String tag) =>
       js_util.callMethod<List<Object?>>(
@@ -781,6 +785,15 @@ extension DomRectReadOnlyExtension on DomRectReadOnly {
   external num get left;
 }
 
+DomRect createDomRectFromPoints(DomPoint a, DomPoint b) {
+  final num left = math.min(a.x, b.x);
+  final num width = math.max(a.x, b.x) - left;
+  final num top = math.min(a.y, b.y);
+  final num height = math.max(a.y, b.y) - top;
+  return domCallConstructorString(
+      'DOMRect', <Object>[left, top, width, height])! as DomRect;
+}
+
 @JS()
 @staticInterop
 class DomRect extends DomRectReadOnly {}
@@ -839,6 +852,8 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   external set name(String value);
   external int? get selectionStart;
   external int? get selectionEnd;
+  external set selectionStart(int? value);
+  external set selectionEnd(int? value);
   external String? get value;
   void setSelectionRange(int start, int end, [String? direction]) =>
       js_util.callMethod(this, 'setSelectionRange',
@@ -1111,11 +1126,16 @@ DomTouchEvent createDomTouchEvent(String type, [Map<dynamic, dynamic>? init]) =>
 
 @JS()
 @staticInterop
-class DomCompositionEvent {}
+class DomCompositionEvent extends DomUIEvent {}
 
 extension DomCompositionEventExtension on DomCompositionEvent {
   external String? get data;
 }
+
+DomCompositionEvent createDomCompositionEvent(String type, [Map<dynamic,
+    dynamic>? options]) =>
+    js_util.callConstructor(domGetConstructor('CompositionEvent')!,
+        <Object>[type, if (options != null) js_util.jsify(options)]);
 
 @JS()
 @staticInterop
@@ -1134,6 +1154,8 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   external set autocomplete(String value);
   external int? get selectionStart;
   external int? get selectionEnd;
+  external set selectionStart(int? value);
+  external set selectionEnd(int? value);
   void setSelectionRange(int start, int end, [String? direction]) =>
       js_util.callMethod(this, 'setSelectionRange',
           <Object>[start, end, if (direction != null) direction]);
