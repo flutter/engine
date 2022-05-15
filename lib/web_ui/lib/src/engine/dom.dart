@@ -1133,6 +1133,7 @@ class DomNodeList {}
 
 extension DomNodeListExtension on DomNodeList {
   external DomNode? item(int index);
+  external int get length;
 }
 
 @JS()
