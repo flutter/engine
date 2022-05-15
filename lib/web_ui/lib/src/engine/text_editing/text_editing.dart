@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -273,7 +272,7 @@ class EngineAutofillForm {
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
     formElement.append(mainTextEditingElement);
-    defaultTextEditingRoot.append(formElement as html.Node);
+    defaultTextEditingRoot.append(formElement);
   }
 
   void storeForm() {
@@ -1112,7 +1111,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      defaultTextEditingRoot.append(activeDomElement as html.Node);
+      defaultTextEditingRoot.append(activeDomElement);
       _appendedToForm = false;
     }
 
@@ -1595,7 +1594,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      defaultTextEditingRoot.append(activeDomElement as html.Node);
+      defaultTextEditingRoot.append(activeDomElement);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(
         activeDomElement);

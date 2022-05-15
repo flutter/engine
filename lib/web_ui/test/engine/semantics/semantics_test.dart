@@ -97,7 +97,7 @@ void _testEngineSemanticsOwner() {
 
     // Synthesize a click on the placeholder.
     final html.Element placeholder =
-        appHostNode.querySelector('flt-semantics-placeholder')!;
+        appHostNode.querySelector('flt-semantics-placeholder')! as html.Element;
 
     expect(placeholder.isConnected, isTrue);
 
@@ -123,7 +123,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isFalse);
 
     final html.Element placeholder =
-        appHostNode.querySelector('flt-semantics-placeholder')!;
+        appHostNode.querySelector('flt-semantics-placeholder')! as html.Element;
 
     expect(placeholder.isConnected, isTrue);
 
@@ -448,9 +448,9 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        appHostNode.querySelector('flt-semantics')!;
+        appHostNode.querySelector('flt-semantics')! as html.Element;
     final html.Element container =
-        appHostNode.querySelector('flt-semantics-container')!;
+        appHostNode.querySelector('flt-semantics-container')! as html.Element;
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -502,9 +502,9 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        appHostNode.querySelector('flt-semantics')!;
+        appHostNode.querySelector('flt-semantics')! as html.Element;
     final html.Element container =
-        appHostNode.querySelector('flt-semantics-container')!;
+        appHostNode.querySelector('flt-semantics-container')! as html.Element;
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     expect(parentElement.style.transformOrigin, '0px 0px 0px');
@@ -545,9 +545,9 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        appHostNode.querySelector('flt-semantics')!;
+        appHostNode.querySelector('flt-semantics')! as html.Element;
     final html.Element container =
-        appHostNode.querySelector('flt-semantics-container')!;
+        appHostNode.querySelector('flt-semantics-container')! as html.Element;
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -684,13 +684,13 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final html.Element root = appHostNode.querySelector('#flt-semantic-node-0')!;
+    final DomElement root = appHostNode.querySelector('#flt-semantic-node-0')!;
     expect(root.style.pointerEvents, 'none');
 
-    final html.Element child1 = appHostNode.querySelector('#flt-semantic-node-1')!;
+    final DomElement child1 = appHostNode.querySelector('#flt-semantic-node-1')!;
     expect(child1.style.pointerEvents, 'all');
 
-    final html.Element child2 = appHostNode.querySelector('#flt-semantic-node-2')!;
+    final DomElement child2 = appHostNode.querySelector('#flt-semantic-node-2')!;
     expect(child2.style.pointerEvents, 'all');
 
     semantics().semanticsEnabled = false;
@@ -1165,7 +1165,8 @@ void _testTextField() {
     semantics().updateSemantics(builder.build());
 
     final html.Element textField =
-        appHostNode.querySelector('input[data-semantics-role="text-field"]')!;
+        appHostNode.querySelector('input[data-semantics-role="text-field"]')! as
+        html.Element;
 
     expect(appHostNode.activeElement, isNot(textField));
 
@@ -1694,7 +1695,7 @@ void _testPlatformView() {
     semantics().updateSemantics(builder.build());
 
     expectSemanticsTree('<sem style="$rootSemanticStyle"></sem>');
-    final html.Element element = appHostNode.querySelector('flt-semantics')!;
+    final DomElement element = appHostNode.querySelector('flt-semantics')!;
     expect(element.style.pointerEvents, 'none');
 
     semantics().semanticsEnabled = false;
@@ -1782,10 +1783,11 @@ void _testPlatformView() {
   </sem-c>
 </sem>''');
 
-    final html.Element root = appHostNode.querySelector('#flt-semantic-node-0')!;
+    final DomElement root = appHostNode.querySelector('#flt-semantic-node-0')!;
     expect(root.style.pointerEvents, 'none');
 
-    final html.Element child1 = appHostNode.querySelector('#flt-semantic-node-1')!;
+    final html.Element child1 =
+        appHostNode.querySelector('#flt-semantic-node-1')! as html.Element;
     expect(child1.style.pointerEvents, 'all');
     final html.Rectangle<num> child1Rect = child1.getBoundingClientRect();
     expect(child1Rect.left, 0);
@@ -1793,7 +1795,8 @@ void _testPlatformView() {
     expect(child1Rect.right, 20);
     expect(child1Rect.bottom, 25);
 
-    final html.Element child2 = appHostNode.querySelector('#flt-semantic-node-2')!;
+    final html.Element child2 =
+        appHostNode.querySelector('#flt-semantic-node-2')! as html.Element;
     expect(child2.style.pointerEvents, 'none');
     final html.Rectangle<num> child2Rect = child2.getBoundingClientRect();
     expect(child2Rect.left, 0);
@@ -1801,7 +1804,8 @@ void _testPlatformView() {
     expect(child2Rect.right, 20);
     expect(child2Rect.bottom, 45);
 
-    final html.Element child3 = appHostNode.querySelector('#flt-semantic-node-3')!;
+    final html.Element child3 =
+        appHostNode.querySelector('#flt-semantic-node-3')! as html.Element;
     expect(child3.style.pointerEvents, 'all');
     final html.Rectangle<num> child3Rect = child3.getBoundingClientRect();
     expect(child3Rect.left, 0);

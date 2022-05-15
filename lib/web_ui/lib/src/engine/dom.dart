@@ -40,7 +40,12 @@ extension DomWindowExtension on DomWindow {
   external DomURL get URL;
   external bool dispatchEvent(DomEvent event);
   external DomMediaQueryList matchMedia(String? query);
-  external DomCSSStyleDeclaration getComputedStyle(DomElement elt);
+  DomCSSStyleDeclaration getComputedStyle(DomElement elt,
+          [String? pseudoElt]) =>
+      js_util.callMethod(this, 'getComputedStyle', <Object>[
+        elt,
+        if (pseudoElt != null) pseudoElt
+      ]) as DomCSSStyleDeclaration;
 }
 
 @JS()
@@ -88,6 +93,7 @@ extension DomDocumentExtension on DomDocument {
       String namespaceURI, String qualifiedName);
   external DomText createTextNode(String data);
   external DomEvent createEvent(String eventType);
+  external DomElement? get activeElement;
 }
 
 @JS()
@@ -195,6 +201,14 @@ extension DomNodeExtension on DomNode {
       js_util.setProperty<String?>(this, 'textContent', value);
   external DomNode cloneNode(bool? deep);
   external bool contains(DomNode? other);
+  external void append(DomNode node);
+  external DomNodeList get childNodes;
+  external DomDocument? get ownerDocument;
+  void clearChildren() {
+    while (firstChild != null) {
+      removeChild(firstChild!);
+    }
+  }
 }
 
 @JS()
@@ -248,11 +262,10 @@ extension DomElementExtension on DomElement {
   external void click();
   external bool hasAttribute(String name);
   external DomNodeList get childNodes;
-  void clearChildren() {
-    while (firstChild != null) {
-      removeChild(firstChild!);
-    }
-  }
+  DomShadowRoot attachShadow(Map<Object?, Object?> initDict) => js_util
+          .callMethod(this, 'attachShadow', <Object?>[js_util.jsify(initDict)])
+      as DomShadowRoot;
+  external DomShadowRoot? get shadowRoot;
 }
 
 @JS()
@@ -501,7 +514,11 @@ class DomHTMLStyleElement extends DomHTMLElement {}
 
 extension DomHTMLStyleElementExtension on DomHTMLStyleElement {
   external set type(String? value);
+  external DomStyleSheet? get sheet;
 }
+
+DomHTMLStyleElement createDomHTMLStyleElement() =>
+    domDocument.createElement('style') as DomHTMLStyleElement;
 
 @JS()
 @staticInterop
@@ -1145,6 +1162,34 @@ extension DomFileReaderExtension on DomFileReader {
 DomFileReader createDomFileReader() =>
     js_util.callConstructor(domGetConstructor('FileReader')!, <Object>[])
         as DomFileReader;
+
+@JS()
+@staticInterop
+class DomDocumentFragment extends DomNode {}
+
+extension DomDocumentFragmentExtension on DomDocumentFragment {
+  external DomElement? querySelector(String selectors);
+  external DomNodeList querySelectorAll(String selectors);
+}
+
+@JS()
+@staticInterop
+class DomShadowRoot extends DomDocumentFragment {}
+
+extension DomShadowRootExtension on DomShadowRoot {
+  external DomElement? get activeElement;
+  external DomElement? get host;
+  external String? get mode;
+  external bool? get delegatesFocus;
+}
+
+@JS()
+@staticInterop
+class DomStyleSheet {}
+
+@JS()
+@staticInterop
+class DomCSSStyleSheet extends DomStyleSheet {}
 
 // A helper class for managing a subscription. On construction it will add an
 // event listener of the requested type to the target. Calling [cancel] will
