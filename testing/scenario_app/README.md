@@ -81,5 +81,5 @@ To generate new lockfiles, run:
 
 ```bash
 cd android
-gradle generateLockfiles
+../../../../third_party/gradle/bin/gradle generateLockfiles
 ```
