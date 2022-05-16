@@ -35,8 +35,6 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import android.view.textservice.SpellCheckerInfo;
-import android.view.textservice.TextServicesManager;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -60,7 +58,6 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.plugin.editing.SpellCheckPlugin;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
@@ -129,12 +126,10 @@ public class FlutterView extends FrameLayout
   // existing, stateless system channels, e.g., MouseCursorChannel, TextInputChannel, etc.
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
-  @Nullable private SpellCheckPlugin spellCheckPlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
-  @Nullable private TextServicesManager textServicesManager;
 
   // Provides access to foldable/hinge information
   @Nullable private WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo;
@@ -1146,17 +1141,6 @@ public class FlutterView extends FrameLayout
             this,
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
-
-    try {
-      textServicesManager =
-          (TextServicesManager)
-              getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
-      spellCheckPlugin =
-          new SpellCheckPlugin(textServicesManager, this.flutterEngine.getSpellCheckChannel());
-    } catch (Exception e) {
-      Log.e(TAG, "TextServicesManager not supported by device, spell check disabled.");
-    }
-
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 
     keyboardManager = new KeyboardManager(this);
@@ -1254,9 +1238,6 @@ public class FlutterView extends FrameLayout
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
     keyboardManager.destroy();
-    if (spellCheckPlugin != null) {
-      spellCheckPlugin.destroy();
-    }
 
     if (mouseCursorPlugin != null) {
       mouseCursorPlugin.destroy();
@@ -1441,34 +1422,10 @@ public class FlutterView extends FrameLayout
             ? SettingsChannel.PlatformBrightness.dark
             : SettingsChannel.PlatformBrightness.light;
 
-    boolean isNativeSpellCheckServiceDefined = false;
-
-    if (textServicesManager != null) {
-      if (Build.VERSION.SDK_INT >= 31) {
-        List<SpellCheckerInfo> enabledSpellCheckerInfos =
-            textServicesManager.getEnabledSpellCheckerInfos();
-        boolean gboardSpellCheckerEnabled =
-            enabledSpellCheckerInfos.stream()
-                .anyMatch(
-                    spellCheckerInfo ->
-                        spellCheckerInfo
-                            .getPackageName()
-                            .equals("com.google.android.inputmethod.latin"));
-
-        // Checks if enabled spell checker is the one that is suppported by Gboard, which is
-        // the one Flutter supports by default.
-        isNativeSpellCheckServiceDefined =
-            textServicesManager.isSpellCheckerEnabled() && gboardSpellCheckerEnabled;
-      } else {
-        isNativeSpellCheckServiceDefined = true;
-      }
-    }
-
     flutterEngine
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
-        .setNativeSpellCheckServiceDefined(isNativeSpellCheckServiceDefined)
         .setBrieflyShowPassword(
             Settings.System.getInt(
                     getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1)
