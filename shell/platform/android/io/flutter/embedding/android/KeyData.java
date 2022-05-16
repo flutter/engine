@@ -98,7 +98,6 @@ public class KeyData {
       throw new AssertionError("UTF-8 not supported");
     }
     final int charSize = charBytes == null ? 0 : charBytes.length;
-    System.out.println(charSize);
     final ByteBuffer packet =
         ByteBuffer.allocateDirect((1 + FIELD_COUNT) * BYTES_PER_FIELD + charSize);
     packet.order(ByteOrder.LITTLE_ENDIAN);
