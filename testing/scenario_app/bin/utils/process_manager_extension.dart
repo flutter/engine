@@ -25,7 +25,7 @@ extension RunAndForward on ProcessManager {
       .transform(utf8.decoder)
       .transform<String>(const LineSplitter())
       .listen((String line) {
-        stdout.writeln('[stderr] $line');
+        stderr.writeln('[stderr] $line');
       }, onDone: stderrCompleter.complete);
 
     final int exitCode = await process.exitCode;
