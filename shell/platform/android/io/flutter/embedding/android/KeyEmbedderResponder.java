@@ -160,7 +160,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     final boolean nowPressed = pressingRecords.containsKey(goal.physicalKey);
     final KeyData.Type type = getEventType(event);
     boolean targetPressed = true;
-    System.out.printf("Sync [ph 0x%x eventPh 0x%x] nowP %d trueP %d type %d\n", goal.physicalKey, eventPhysicalKey, nowPressed ? 1 : 0, truePressed ? 1 : 0, type.getValue());
+    // System.out.printf("Sync [ph 0x%x eventPh 0x%x] nowP %d trueP %d type %d\n", goal.physicalKey, eventPhysicalKey, nowPressed ? 1 : 0, truePressed ? 1 : 0, type.getValue());
     if (eventPhysicalKey != goal.physicalKey) {
       targetPressed = truePressed;
     } else {
@@ -210,7 +210,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
 
     for (final SyncGoal goal : syncGoals) {
       final boolean targetOn = (event.getMetaState() & goal.mask) != 0;
-      System.out.printf("Meta 0x%x mask 0x%x result %d\n", event.getMetaState(), goal.mask, targetOn ? 1 : 0);
+      // System.out.printf("Meta 0x%x mask 0x%x result %d\n", event.getMetaState(), goal.mask, targetOn ? 1 : 0);
       if (goal.toggling) {
 //        synchronizeTogglingKey(goal, targetOn, physicalKey, event);
       } else {
