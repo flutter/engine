@@ -37,6 +37,10 @@ void DartIO::InitForIsolate(bool may_insecurely_connect_to_all_domains,
       embedder_config_type, ToDart("_setDomainPolicies"), 1, dart_args);
   FML_CHECK(!CheckAndHandleError(set_domain_network_policy_result));
 
+  result =
+      Dart_SetField(embedder_config_type, ToDart("_mayExit"), Dart_False());
+  FML_CHECK(!CheckAndHandleError(result));
+
   Dart_Handle ui_lib = Dart_LookupLibrary(ToDart("dart:ui"));
   Dart_Handle dart_validate_args[1];
   dart_validate_args[0] = ToDart(may_insecurely_connect_to_all_domains);
