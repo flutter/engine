@@ -55,6 +55,9 @@ def get_out_dir(args):
     if args.target_os == 'fuchsia' and args.fuchsia_cpu is not None:
       target_dir.append(args.fuchsia_cpu)
 
+    if args.support_fractional_translation:
+      target_dir.append('fractional')
+
     # This exists for backwards compatibility of tests that are being run
     # on LUCI. This can be removed in coordination with a LUCI change:
     # https://github.com/flutter/flutter/issues/76547
