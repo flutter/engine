@@ -58,9 +58,7 @@ executable("testing_fractional_translation") {
     ]
   }
 
-  defines = [
-    "DISABLE_SOFTWARE_RASTER_CACHE=1",
-  ]
+  defines = []
 
   deps = [
     "//flutter/assets",
