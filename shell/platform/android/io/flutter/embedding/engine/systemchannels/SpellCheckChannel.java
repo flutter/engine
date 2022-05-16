@@ -28,7 +28,7 @@ import org.json.JSONException;
  * io.flutter.plugin.editing.SpellCheckPlugin}, it will send back to the framework the {@code
  * ArrayList<String>} of encoded spell check results (see {@link
  * io.flutter.plugin.editing.SpellCheckPlugin#onGetSentenceSuggestions} for details) with the text
- * that these results correspond to appeneded to the front as an argument. For example, the argument
+ * that these results correspond to appended to the front as an argument. For example, the argument
  * may look like: {@code {"Hello, wrold!", "7.11.world\nword\nold"}}. Please note that the {@link
  * io.flutter.plugin.editing.SpellCheckPlugin} only handles one request to fetch spell check results
  * at a time; see {@link io.flutter.plugin.editing.SpellCheckPlugin#initiateSpellCheck} for details.
