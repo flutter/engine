@@ -59,7 +59,6 @@ executable("testing_fractional_translation") {
   }
 
   defines = [
-    "SUPPORT_FRACTIONAL_TRANSLATION=1",
     "DISABLE_SOFTWARE_RASTER_CACHE=1",
   ]
 
