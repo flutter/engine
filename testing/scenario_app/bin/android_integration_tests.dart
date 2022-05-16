@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -65,7 +66,14 @@ void main(List<String> args) async {
     });
   });
 
+  late Process logcatProcess;
+  final StringBuffer logcat = StringBuffer();
   try {
+    await step('Starting logcat...', () async {
+      logcatProcess = await pm.start(<String>[adb.path, 'logcat', '*:E', '-T', '1']);
+      unawaited(pipeProcessStreams(logcatProcess, out: logcat));
+    });
+
     await step('Reverse port...', () async {
       final int exitCode = await pm.runAndForward(<String>[adb.path, 'reverse', 'tcp:3000', 'tcp:$tcpPort']);
       if (exitCode != 0) {
@@ -125,6 +133,14 @@ void main(List<String> args) async {
       if (exitCode != 0) {
         panic(<String>['could not uninstall app apk']);
       }
+    });
+
+    await step('Killing logcat process...', () async {
+      logcatProcess.kill();
+    });
+
+    await step('Dumping logcat (Errors only)...', () async {
+      stdout.write(logcat);
     });
   }
 }
