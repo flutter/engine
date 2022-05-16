@@ -89,10 +89,9 @@ class PointerBinding {
 
   /// Performs necessary clean up for PointerBinding including removing event listeners
   /// and clearing the existing pointer state
-  void dispose()
-  {
-    _instance!._adapter.clearListeners();
-    _instance!._pointerDataConverter.clearPointerState();
+  void dispose() {
+    _adapter.clearListeners();
+    _pointerDataConverter.clearPointerState();
   }
 
   PointerBinding(this.glassPaneElement)
