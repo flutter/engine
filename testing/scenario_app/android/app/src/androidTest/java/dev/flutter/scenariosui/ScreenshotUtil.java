@@ -90,7 +90,7 @@ public class ScreenshotUtil {
    * @param filename The file name.
    * @param fileContent The file content.
    */
-  public static synchronized void writeFile(String filename, byte[] fileContent) {
+  public static synchronized void writeFile(@NonNull String filename, @NonNull byte[] fileContent) {
     if (executor != null && conn != null) {
       executor.execute(
           () -> {
