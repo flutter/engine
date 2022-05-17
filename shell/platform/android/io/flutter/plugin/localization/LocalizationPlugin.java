@@ -188,7 +188,6 @@ public class LocalizationPlugin {
     localizationChannel.sendLocales(locales);
   }
 
-  @VisibleForTesting
   @NonNull
   public static Locale localeFromString(@NonNull String localeString) {
     // Use Locale.forLanguageTag if available (API 21+).
