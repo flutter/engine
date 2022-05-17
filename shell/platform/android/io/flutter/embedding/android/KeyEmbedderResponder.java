@@ -8,11 +8,8 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import io.flutter.plugin.common.BinaryMessenger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * A {@link KeyboardManager.Responder} of {@link KeyboardManager} that handles events by sending
@@ -23,19 +20,24 @@ import java.util.function.Supplier;
 public class KeyEmbedderResponder implements KeyboardManager.Responder {
   private static final String TAG = "KeyEmbedderResponder";
 
-  private static class SyncGoal {
-    public SyncGoal(boolean toggling, long physicalKey, long logicalKey, int mask) {
+  private static class KeyPair {
+    public KeyPair(long physicalKey, long logicalKey) {
       this.physicalKey = physicalKey;
       this.logicalKey = logicalKey;
-      this.toggling = toggling;
-      this.mask = mask;
     }
 
-    public final long physicalKey;
-    public final long logicalKey;
-    public final boolean toggling;
+    public long physicalKey;
+    public long logicalKey;
+  }
+
+  private static class PressingGoal {
+    public PressingGoal(int mask, KeyPair[] keys) {
+      this.mask = mask;
+      this.keys = keys;
+    }
+
     public final int mask;
-    public boolean enabled = false;
+    public final KeyPair[] keys;
   }
 
   private static KeyData.Type getEventType(KeyEvent event) {
@@ -58,14 +60,20 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   private final HashMap<Long, Long> pressingRecords = new HashMap<>();
   private BinaryMessenger messenger;
 
-  private final ArrayList<SyncGoal> syncGoals = new ArrayList<>();
+  private final ArrayList<PressingGoal> pressingGoals = new ArrayList<>();
 
   public KeyEmbedderResponder(BinaryMessenger messenger) {
     this.messenger = messenger;
-    // ShiftLeft
-    this.syncGoals.add(new SyncGoal(false, 0x00000700e1L, 0x0200000102L, KeyEvent.META_SHIFT_LEFT_ON));
+    this.pressingGoals.add(
+        new PressingGoal(
+            KeyEvent.META_SHIFT_LEFT_ON,
+            new KeyPair[] {
+              new KeyPair(0x00000700e1L, 0x0200000102L), // ShiftLeft
+              new KeyPair(0x00000700e5L, 0x0200000103L), // ShiftRight
+            }));
     // CapsLock
-    this.syncGoals.add(new SyncGoal(true, 0x0000070039L, 0x0100000104L, KeyEvent.META_CAPS_LOCK_ON));
+    //    this.pressingGoals.add(new PressingGoal(true, 0x0000070039L, 0x0100000104L,
+    // KeyEvent.META_CAPS_LOCK_ON));
   }
 
   private int combiningCharacter;
@@ -133,12 +141,10 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     if (byMapping != null) {
       return byMapping;
     }
-    // TODO(dkwingsmt): Logic for D-pad
     return kAndroidPlane + event.getScanCode();
   }
 
   private Long getLogicalKey(@NonNull KeyEvent event) {
-    // TODO(dkwingsmt): Better logic.
     final Long byMapping = KeyboardMap.keyCodeToLogical.get((long) event.getKeyCode());
     if (byMapping != null) {
       return byMapping;
@@ -156,66 +162,114 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
-  void synchronizePressingKey(SyncGoal goal, boolean truePressed, long eventPhysicalKey, KeyEvent event) {
-    final boolean nowPressed = pressingRecords.containsKey(goal.physicalKey);
-    final KeyData.Type type = getEventType(event);
-    boolean targetPressed = true;
-    // System.out.printf("Sync [ph 0x%x eventPh 0x%x] nowP %d trueP %d type %d\n", goal.physicalKey, eventPhysicalKey, nowPressed ? 1 : 0, truePressed ? 1 : 0, type.getValue());
-    if (eventPhysicalKey != goal.physicalKey) {
-      targetPressed = truePressed;
-    } else {
-      // The state if the goal key is the event key:
-      //
-      //   EventType       Down        Up
-      //     Pressed        1          0
-      switch (type) {
-        case kDown:
-          targetPressed = false;
-          if (!truePressed) {
-            throw new AssertionError(String.format(
-                "Unexpected metaState 0 for key 0x%x during an ACTION_DOWN event.", eventPhysicalKey));
-          }
-          break;
-        case kUp:
-          // Incoming event is a repeat. Although the previous state should be pressed,
-          // don't synthesize a down event even if it's not. The later code will handle such cases
-          // by skipping abrupt up events.
-          if (truePressed) {
-            throw new AssertionError(String.format(
-                "Unexpected metaState 1 for key 0x%x during an ACTION_UP event.", eventPhysicalKey));
-          }
-          return;
-        case kRepeat:
-          // Incoming event is repeat. The previous state can be either pressed or released.
-          // Don't synthesize a down event here, or there will be a down event and a repeat
-          // event, both of which sending printable characters.
-          if (!truePressed) {
-            throw new AssertionError(String.format(
-                "Unexpected metaState 0 for key 0x%x during an ACTION_down repeat event.", eventPhysicalKey));
-          }
-          return;
+  void synchronizePressingKey(
+      PressingGoal goal, boolean truePressed, long eventPhysicalKey, KeyEvent event) {
+    // A goal can contain multiple keys. The target of synchronization process is to derive a
+    // pre-event state that can fulfill the true state (`truePressed`) after the event, while
+    // requiring as few synthesized events from the current state (`nowStates`) as possible.
+    //
+    // NowState ---------------->  PreEventState --------------> TrueState
+    //           Synchronization                      Event
+
+    final boolean[] nowStates = new boolean[goal.keys.length];
+    final Boolean[] preEventStates = new Boolean[goal.keys.length];
+    boolean postEventAnyPressed = false;
+    // 1. Find the current states of all keys.
+    // 2. Derive the pre-event state of the event key (if applicable.)
+    for (int keyIdx = 0; keyIdx < goal.keys.length; keyIdx += 1) {
+      nowStates[keyIdx] = pressingRecords.containsKey(goal.keys[keyIdx].physicalKey);
+      if (goal.keys[keyIdx].physicalKey == eventPhysicalKey) {
+        switch (getEventType(event)) {
+          case kDown:
+            preEventStates[keyIdx] = false;
+            postEventAnyPressed = true;
+            if (!truePressed) {
+              throw new AssertionError(
+                  String.format(
+                      "Unexpected metaState 0 for key 0x%x during an ACTION_down event.",
+                      eventPhysicalKey));
+            }
+            break;
+          case kUp:
+            // Incoming event is an up. Although the previous state should be pressed,
+            // don't synthesize a down event even if it's not. The later code will handle such cases
+            // by skipping abrupt up events.
+            preEventStates[keyIdx] = nowStates[keyIdx];
+            return;
+          case kRepeat:
+            // Incoming event is repeat. The previous state can be either pressed or released.
+            // Don't synthesize a down event here, or there will be a down event and a repeat
+            // event, both of which sending printable characters. Obviously don't synthesize up
+            // events either.
+            if (!truePressed) {
+              throw new AssertionError(
+                  String.format(
+                      "Unexpected metaState 0 for key 0x%x during an ACTION_down repeat event.",
+                      eventPhysicalKey));
+            }
+            preEventStates[keyIdx] = nowStates[keyIdx];
+            postEventAnyPressed = true;
+            return;
+        }
+      } else {
+        postEventAnyPressed = postEventAnyPressed || nowStates[keyIdx];
       }
     }
-    if (nowPressed != targetPressed) {
-      synthesizeEvent(targetPressed, goal.logicalKey, goal.physicalKey, event.getEventTime());
-      updatePressingState(goal.physicalKey, targetPressed ? goal.logicalKey : null);
+
+    // Fill the rest of the pre-event states to match the true state.
+    if (truePressed) {
+      // It is required that at least one key is pressed.
+      for (int keyIdx = 0; keyIdx < goal.keys.length; keyIdx += 1) {
+        if (preEventStates[keyIdx] != null) {
+          continue;
+        }
+        if (postEventAnyPressed) {
+          preEventStates[keyIdx] = nowStates[keyIdx];
+          postEventAnyPressed = postEventAnyPressed || nowStates[keyIdx];
+        } else {
+          preEventStates[keyIdx] = true;
+          postEventAnyPressed = true;
+        }
+      }
+      if (!postEventAnyPressed) {
+        preEventStates[0] = true;
+      }
+    } else {
+      for (int keyIdx = 0; keyIdx < goal.keys.length; keyIdx += 1) {
+        if (preEventStates[keyIdx] != null) {
+          continue;
+        }
+        preEventStates[keyIdx] = false;
+      }
+    }
+
+    for (int keyIdx = 0; keyIdx < goal.keys.length; keyIdx += 1) {
+      if (nowStates[keyIdx] != preEventStates[keyIdx]) {
+        final KeyPair key = goal.keys[keyIdx];
+        synthesizeEvent(
+            preEventStates[keyIdx], key.logicalKey, key.physicalKey, event.getEventTime());
+      }
     }
   }
 
   // Return: if any events has been sent
   private boolean handleEventImpl(
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
+    System.out.printf(
+        "KeyEvent [0x%x] scan 0x%x key 0x%x uni 0x%x meta 0x%x\n",
+        event.getAction(),
+        event.getScanCode(),
+        event.getKeyCode(),
+        event.getUnicodeChar(),
+        event.getMetaState());
     final Long physicalKey = getPhysicalKey(event);
     final Long logicalKey = getLogicalKey(event);
 
-    for (final SyncGoal goal : syncGoals) {
-      final boolean targetOn = (event.getMetaState() & goal.mask) != 0;
-      // System.out.printf("Meta 0x%x mask 0x%x result %d\n", event.getMetaState(), goal.mask, targetOn ? 1 : 0);
-      if (goal.toggling) {
-//        synchronizeTogglingKey(goal, targetOn, physicalKey, event);
-      } else {
-        synchronizePressingKey(goal, targetOn, physicalKey, event);
-      }
+    for (final PressingGoal goal : pressingGoals) {
+      // System.out.printf("Meta 0x%x mask 0x%x result %d\n", event.getMetaState(), goal.mask,
+      // targetOn ? 1 : 0);
+      //        synchronizeTogglingKey(goal, targetOn, physicalKey, event);
+      synchronizePressingKey(goal, (event.getMetaState() & goal.mask) != 0, physicalKey, event);
     }
 
     boolean isDownEvent;
@@ -243,7 +297,6 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
           type = KeyData.Type.kRepeat;
         } else {
           synthesizeEvent(false, lastLogicalRecord, physicalKey, event.getEventTime());
-          updatePressingState(physicalKey, null);
           type = KeyData.Type.kDown;
         }
       }
@@ -284,6 +337,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     output.physicalKey = physicalKey;
     output.character = null;
     output.synthesized = true;
+    updatePressingState(physicalKey, isDown ? logicalKey : null);
     sendKeyEvent(output, null);
   }
 

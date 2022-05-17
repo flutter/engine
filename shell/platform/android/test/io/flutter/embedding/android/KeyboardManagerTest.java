@@ -824,12 +824,12 @@ public class KeyboardManagerTest {
     calls.clear();
 
     tester.keyboardManager.handleEvent(
-        new FakeKeyEvent(ACTION_UP, SCAN_DIGIT1, KEYCODE_1, 0, '&', 0));
+        new FakeKeyEvent(ACTION_UP, SCAN_DIGIT1, KEYCODE_1, 0, '&', 0x41));
     assertSingleEmbedderEventEquals(calls, Type.kUp, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, null, false);
     calls.clear();
 
     tester.keyboardManager.handleEvent(
-        new FakeKeyEvent(ACTION_UP, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', 0x41));
+        new FakeKeyEvent(ACTION_UP, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', 0));
     calls.clear();
 
     // Russian lowerA
@@ -859,7 +859,8 @@ public class KeyboardManagerTest {
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', SHIFT_LEFT_ON)));
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
@@ -874,14 +875,16 @@ public class KeyboardManagerTest {
         calls.get(0).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
     calls.clear();
 
-    // Test if ShiftLeft can be synchronized for events of this key. Test all 6 cases (3 types x 2 states)
+    // Test if ShiftLeft can be synchronized for events of this key. Test all 6 cases (3 types x 2
+    // states)
     // in the following order to keep the desired current states.
 
     // Repeat event while current state is 0.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', SHIFT_LEFT_ON)));
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
@@ -891,7 +894,8 @@ public class KeyboardManagerTest {
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
@@ -915,15 +919,15 @@ public class KeyboardManagerTest {
         tester.keyboardManager.handleEvent(
             new FakeKeyEvent(ACTION_UP, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
-    assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, 0l, 0l, null, true);
+    assertEmbedderEventEquals(calls.get(0).keyData, Type.kDown, 0l, 0l, null, true);
     calls.clear();
 
     // Down event while current state is 0.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
@@ -933,7 +937,8 @@ public class KeyboardManagerTest {
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
-            new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', SHIFT_LEFT_ON)));
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kRepeat, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
