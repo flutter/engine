@@ -19,8 +19,8 @@ const int tcpPort = 3001;
 void main(List<String> args) async {
   const ProcessManager pm = LocalProcessManager();
   final ArgParser parser = ArgParser()
-  ..addOption('adb', help: 'absolute path to the adb tool', mandatory: true)
-  ..addOption('out-dir', help: 'out directory', mandatory: true);
+    ..addOption('adb', help: 'absolute path to the adb tool', mandatory: true)
+    ..addOption('out-dir', help: 'out directory', mandatory: true);
 
   final ArgResults results = parser.parse(args);
   final Directory outDir = Directory(results['out-dir']);
