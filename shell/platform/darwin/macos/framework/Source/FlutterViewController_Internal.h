@@ -35,5 +35,5 @@
 
 // Private methods made visible for testing
 @interface FlutterViewController (TestMethods)
-- (void)onAccessibilityStatusChanged:(nonnull NSNotification*)notification;
+- (void)onAccessibilityStatusChanged:(BOOL)enabled;
 @end

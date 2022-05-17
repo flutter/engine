@@ -117,8 +117,6 @@ constexpr char kTextPlainFormat[] = "text/plain";
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
-// - (NSPasteboard*)pasteboard;
-
 @end
 
 #pragma mark -
@@ -763,19 +761,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
   BOOL enabled = [notification.userInfo[EnhancedUserInterfaceKey] boolValue];
-  // TODO(goderbauer): WHAT?
-  // if (!enabled && self.viewLoaded && [_textInputPlugin isFirstResponder]) {
-  //   // The client (i.e. the FlutterTextField) of the textInputPlugin is a sibling
-  //   // of the FlutterView. macOS will pick the ancestor to be the next responder
-  //   // when the client is removed from the view hierarchy, which is the result of
-  //   // turning off semantics. This will cause the keyboard focus to stick at the
-  //   // NSWindow.
-  //   //
-  //   // Since the view controller creates the illustion that the FlutterTextField is
-  //   // below the FlutterView in accessibility (See FlutterViewWrapper), it has to
-  //   // manually pick the next responder.
-  //   [self.view.window makeFirstResponder:_flutterView];
-  // }
+  [self.viewController onAccessibilityStatusChanged:enabled];
   self.semanticsEnabled = enabled;
 }
 

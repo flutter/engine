@@ -406,7 +406,6 @@ static void CommonInit(FlutterViewController* controller) {
 #pragma mark - Private methods
 
 - (BOOL)launchEngine {
-  // TODO(goderbauer): Should/could this be moved to the Engine?
   [self initializeKeyboard];
 
   _engine.viewController = self;
@@ -474,6 +473,8 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)initializeKeyboard {
+  // TODO(goderbauer): Seperate keyboard/textinput stuff into ViewController specific and Engine
+  // global parts. Move the global parts to FlutterEngine.
   __weak FlutterViewController* weakSelf = self;
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
   _keyboardManager = [[FlutterKeyboardManager alloc] initWithViewDelegate:weakSelf];
@@ -624,6 +625,21 @@ static void CommonInit(FlutterViewController* controller) {
     _mouseState.flutter_state_is_added = true;
   } else if (phase == kRemove) {
     _mouseState.Reset();
+  }
+}
+
+- (void)onAccessibilityStatusChanged:(BOOL)enabled {
+  if (!enabled && self.viewLoaded && [_textInputPlugin isFirstResponder]) {
+    // The client (i.e. the FlutterTextField) of the textInputPlugin is a sibling
+    // of the FlutterView. macOS will pick the ancestor to be the next responder
+    // when the client is removed from the view hierarchy, which is the result of
+    // turning off semantics. This will cause the keyboard focus to stick at the
+    // NSWindow.
+    //
+    // Since the view controller creates the illustion that the FlutterTextField is
+    // below the FlutterView in accessibility (See FlutterViewWrapper), it has to
+    // manually pick the next responder.
+    [self.view.window makeFirstResponder:_flutterView];
   }
 }
 

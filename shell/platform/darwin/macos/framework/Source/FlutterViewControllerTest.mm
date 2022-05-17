@@ -72,7 +72,7 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
 }
 
-TEST(FlutterViewController, DISABLED_SetsFlutterViewFirstResponderWhenAccessibilityDisabled) {
+TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -92,14 +92,7 @@ TEST(FlutterViewController, DISABLED_SetsFlutterViewFirstResponderWhenAccessibil
   // Makes sure the textInputPlugin can be the first responder.
   EXPECT_TRUE([window makeFirstResponder:viewController.textInputPlugin]);
   EXPECT_EQ([window firstResponder], viewController.textInputPlugin);
-  // Sends a notification to turn off the accessibility.
-  NSDictionary* userInfo = @{
-    @"AXEnhancedUserInterface" : @(NO),
-  };
-  NSNotification* accessibilityOff = [NSNotification notificationWithName:@""
-                                                                   object:nil
-                                                                 userInfo:userInfo];
-  [viewController onAccessibilityStatusChanged:accessibilityOff];
+  [viewController onAccessibilityStatusChanged:NO];
   // FlutterView becomes the first responder.
   EXPECT_EQ([window firstResponder], viewController.flutterView);
 }
