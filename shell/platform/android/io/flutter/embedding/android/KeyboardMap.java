@@ -580,7 +580,7 @@ public class KeyboardMap {
 
   public static TogglingGoal[] getTogglingGoals() {
     return new TogglingGoal[] {
-      new TogglingGoal(KeyEvent.META_CAPS_LOCK_ON, 0x0000070039L, 0x0100000104L),
+      new TogglingGoal(KeyEvent.META_CAPS_LOCK_ON, 0x00070039L, 0x0100000104L),
     };
   }
 
