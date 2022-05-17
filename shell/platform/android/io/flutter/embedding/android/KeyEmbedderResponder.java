@@ -66,7 +66,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     this.messenger = messenger;
     this.pressingGoals.add(
         new PressingGoal(
-            KeyEvent.META_SHIFT_LEFT_ON,
+            KeyEvent.META_SHIFT_ON,
             new KeyPair[] {
               new KeyPair(0x00000700e1L, 0x0200000102L), // ShiftLeft
               new KeyPair(0x00000700e5L, 0x0200000103L), // ShiftRight
@@ -164,9 +164,13 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
 
   void synchronizePressingKey(
       PressingGoal goal, boolean truePressed, long eventPhysicalKey, KeyEvent event) {
-    // A goal can contain multiple keys. The target of synchronization process is to derive a
-    // pre-event state that can fulfill the true state (`truePressed`) after the event, while
-    // requiring as few synthesized events from the current state (`nowStates`) as possible.
+    // A goal can contain multiple keys sharing the same mask. During an
+    // incoming event, there might be a synthesized Flutter event for each key,
+    // followed by an eventual main Flutter event. The core of the
+    // synchronization algorithm is to derive a pre-event state that can
+    // fulfill the true state (`truePressed`) after the event, while requiring
+    // as few synthesized events from the current state (`nowStates`) as
+    // possible.
     //
     // NowState ---------------->  PreEventState --------------> TrueState
     //           Synchronization                      Event
@@ -195,7 +199,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
             // don't synthesize a down event even if it's not. The later code will handle such cases
             // by skipping abrupt up events.
             preEventStates[keyIdx] = nowStates[keyIdx];
-            return;
+            break;
           case kRepeat:
             // Incoming event is repeat. The previous state can be either pressed or released.
             // Don't synthesize a down event here, or there will be a down event and a repeat
@@ -209,7 +213,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
             }
             preEventStates[keyIdx] = nowStates[keyIdx];
             postEventAnyPressed = true;
-            return;
+            break;
         }
       } else {
         postEventAnyPressed = postEventAnyPressed || nowStates[keyIdx];
@@ -266,9 +270,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     final Long logicalKey = getLogicalKey(event);
 
     for (final PressingGoal goal : pressingGoals) {
-      // System.out.printf("Meta 0x%x mask 0x%x result %d\n", event.getMetaState(), goal.mask,
-      // targetOn ? 1 : 0);
-      //        synchronizeTogglingKey(goal, targetOn, physicalKey, event);
+      // System.out.printf(
+      //     "Meta 0x%x mask 0x%x result %d\n",
+      //     event.getMetaState(), goal.mask, (event.getMetaState() & goal.mask) != 0 ? 1 : 0);
       synchronizePressingKey(goal, (event.getMetaState() & goal.mask) != 0, physicalKey, event);
     }
 

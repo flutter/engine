@@ -23,8 +23,10 @@ import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.util.FakeKeyEvent;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -49,6 +51,11 @@ public class KeyboardManagerTest {
   public static final int SCAN_ARROW_LEFT = 0x69;
   //  public static final int SCAN_META_LEFT = 0x2a;
   //  public static final int SCAN_META_RIGHT = 0x36;
+
+  public static final boolean DOWN_EVENT = true;
+  public static final boolean UP_EVENT = false;
+  public static final boolean SHIFT_LEFT_EVENT = true;
+  public static final boolean SHIFT_RIGHT_EVENT = false;
 
   /**
    * Records a message that {@link KeyboardManager} sends to outside.
@@ -845,7 +852,8 @@ public class KeyboardManagerTest {
   }
 
   @Test
-  public void synchronizeShiftLeft() {
+  public void synchronizeShiftLeftDuringForeignKeyEvents() {
+    // Test if ShiftLeft can be synchronized during events of ArrowLeft.
     final KeyboardTester tester = new KeyboardTester();
     final ArrayList<CallRecord> calls = new ArrayList<>();
 
@@ -853,8 +861,6 @@ public class KeyboardManagerTest {
     tester.respondToTextInputWith(true); // Suppress redispatching
 
     final int SHIFT_LEFT_ON = KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON;
-
-    // Test if ShiftLeft can be synchronized for events of other keys.
 
     assertEquals(
         true,
@@ -874,12 +880,22 @@ public class KeyboardManagerTest {
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
     calls.clear();
+  }
 
-    // Test if ShiftLeft can be synchronized for events of this key. Test all 6 cases (3 types x 2
-    // states)
-    // in the following order to keep the desired current states.
+  @Test
+  public void synchronizeShiftLeftDuringSelfKeyEvents() {
+    // Test if ShiftLeft can be synchronized during events of ShiftLeft.
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
-    // Repeat event while current state is 0.
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true); // Suppress redispatching
+
+    final int SHIFT_LEFT_ON = KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON;
+    // All 6 cases (3 types x 2 states) are arranged in the following order so that the starting
+    // states for each case are the desired states.
+
+    // Repeat event when current state is 0.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
@@ -890,7 +906,7 @@ public class KeyboardManagerTest {
         calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
     calls.clear();
 
-    // Down event while current state is 1.
+    // Down event when the current state is 1.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
@@ -903,7 +919,7 @@ public class KeyboardManagerTest {
         calls.get(1).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
     calls.clear();
 
-    // Up event while current state is 1.
+    // Up event when the current state is 1.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
@@ -913,7 +929,7 @@ public class KeyboardManagerTest {
         calls.get(0).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
     calls.clear();
 
-    // Up event while current state is 0.
+    // Up event when the current state is 0.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
@@ -922,7 +938,7 @@ public class KeyboardManagerTest {
     assertEmbedderEventEquals(calls.get(0).keyData, Type.kDown, 0l, 0l, null, true);
     calls.clear();
 
-    // Down event while current state is 0.
+    // Down event when the current state is 0.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
@@ -933,7 +949,7 @@ public class KeyboardManagerTest {
         calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
     calls.clear();
 
-    // Repeat event while current state is 1.
+    // Repeat event when the current state is 1.
     assertEquals(
         true,
         tester.keyboardManager.handleEvent(
@@ -943,5 +959,142 @@ public class KeyboardManagerTest {
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kRepeat, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
     calls.clear();
+  }
+
+  // Given the pressing states of ShiftLeft and ShiftRight, and the specified type of ShiftRight
+  // event occurs
+  // that requires the given true pressing state, store the resulting events to `calls`.
+  //
+  // The `calls` is always cleared at the beginning.
+  public static List<CallRecord> testShiftRightEvent(
+      boolean preEventLeftPressed,
+      boolean preEventRightPressed,
+      boolean rightEventIsDown,
+      boolean truePressed) {
+    System.out.printf("New test case\n");
+    final ArrayList<CallRecord> calls = new ArrayList<>();
+    final int SHIFT_LEFT_ON = KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON;
+
+    final KeyboardTester tester = new KeyboardTester();
+    tester.respondToTextInputWith(true); // Suppress redispatching
+    if (preEventLeftPressed) {
+      tester.keyboardManager.handleEvent(
+          new FakeKeyEvent(
+              ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON));
+    }
+    if (preEventRightPressed) {
+      tester.keyboardManager.handleEvent(
+          new FakeKeyEvent(
+              ACTION_DOWN, SCAN_SHIFT_RIGHT, KEYCODE_SHIFT_RIGHT, 0, '\0', SHIFT_LEFT_ON));
+    }
+    tester.recordEmbedderCallsTo(calls);
+    tester.keyboardManager.handleEvent(
+        new FakeKeyEvent(
+            rightEventIsDown ? ACTION_DOWN : ACTION_UP,
+            SCAN_SHIFT_RIGHT,
+            KEYCODE_SHIFT_RIGHT,
+            0,
+            '\0',
+            truePressed ? SHIFT_LEFT_ON : 0));
+    return calls.stream()
+        .filter(data -> data.keyData.physicalKey != 0)
+        .collect(Collectors.toList());
+  }
+
+  public static KeyData buildShiftKeyData(boolean isLeft, boolean isDown, boolean isSynthesized) {
+    final KeyData data = new KeyData();
+    data.type = isDown ? Type.kDown : Type.kUp;
+    data.physicalKey = isLeft ? PHYSICAL_SHIFT_LEFT : PHYSICAL_SHIFT_RIGHT;
+    data.logicalKey = isLeft ? LOGICAL_SHIFT_LEFT : LOGICAL_SHIFT_RIGHT;
+    data.synthesized = isSynthesized;
+    return data;
+  }
+
+  public static void verifyEmbedderEvents(List<CallRecord> receivedCalls, KeyData[] expectedData) {
+    assertEquals(receivedCalls.size(), expectedData.length);
+    for (int idx = 0; idx < receivedCalls.size(); idx += 1) {
+      final KeyData data = expectedData[idx];
+      assertEmbedderEventEquals(
+          receivedCalls.get(idx).keyData,
+          data.type,
+          data.physicalKey,
+          data.logicalKey,
+          data.character,
+          data.synthesized);
+    }
+  }
+
+  @Test
+  public void synchronizeShiftLeftDuringSiblingKeyEvents() {
+    // Test if ShiftLeft can be synchronized during events of ShiftRight.
+    // Real device test on ChromeOS shows that, unlike the documentations, ShiftRight events set
+    // meta flag META_SHIFT_LEFT_ON instead of META_SHIFT_RIGHT_ON (likewise for other modifiers.)
+
+    // UP_EVENT, truePressed: false
+
+    verifyEmbedderEvents(testShiftRightEvent(false, false, UP_EVENT, false), new KeyData[] {});
+    verifyEmbedderEvents(
+        testShiftRightEvent(false, true, UP_EVENT, false),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, UP_EVENT, false),
+        });
+    verifyEmbedderEvents(
+        testShiftRightEvent(true, false, UP_EVENT, false),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_LEFT_EVENT, UP_EVENT, true),
+        });
+    verifyEmbedderEvents(
+        testShiftRightEvent(true, true, UP_EVENT, false),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_LEFT_EVENT, UP_EVENT, true),
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, UP_EVENT, false),
+        });
+
+    // UP_EVENT, truePressed: true
+
+    verifyEmbedderEvents(
+        testShiftRightEvent(false, false, UP_EVENT, true),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_LEFT_EVENT, DOWN_EVENT, true),
+        });
+    verifyEmbedderEvents(
+        testShiftRightEvent(false, true, UP_EVENT, true),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_LEFT_EVENT, DOWN_EVENT, true),
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, UP_EVENT, false),
+        });
+    verifyEmbedderEvents(testShiftRightEvent(true, false, UP_EVENT, true), new KeyData[] {});
+    verifyEmbedderEvents(
+        testShiftRightEvent(true, true, UP_EVENT, true),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, UP_EVENT, false),
+        });
+
+    // DOWN_EVENT, truePressed: false - skipped, because they're impossible.
+
+    // DOWN_EVENT, truePressed: true
+
+    verifyEmbedderEvents(
+        testShiftRightEvent(false, false, DOWN_EVENT, true),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, DOWN_EVENT, false),
+        });
+    verifyEmbedderEvents(
+        testShiftRightEvent(false, true, DOWN_EVENT, true),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, UP_EVENT, true),
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, DOWN_EVENT, false),
+        });
+    verifyEmbedderEvents(
+        testShiftRightEvent(true, false, DOWN_EVENT, true),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, DOWN_EVENT, false),
+        });
+    verifyEmbedderEvents(
+        testShiftRightEvent(true, true, DOWN_EVENT, true),
+        new KeyData[] {
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, UP_EVENT, true),
+          buildShiftKeyData(SHIFT_RIGHT_EVENT, DOWN_EVENT, false),
+        });
   }
 }
