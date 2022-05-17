@@ -30,8 +30,10 @@ class AutoCache {
 
 class CacheableContainerLayer : public ContainerLayer {
  public:
-  explicit CacheableContainerLayer(int layer_cached_threshold = 1,
-                                   bool can_cache_children = false);
+  explicit CacheableContainerLayer(
+      int layer_cached_threshold =
+          RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer,
+      bool can_cache_children = false);
 
   const LayerRasterCacheItem* raster_cache_item() const {
     return layer_raster_cache_item_.get();

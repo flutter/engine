@@ -5,19 +5,20 @@
 #ifndef FLUTTER_FLOW_LAYERS_CLIP_SHAPE_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_CLIP_SHAPE_LAYER_H_
 
+#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/paint_utils.h"
 
 namespace flutter {
 
 template <class T>
-class ClipShapeLayer : public ContainerLayer {
+class ClipShapeLayer : public CacheableContainerLayer {
  public:
   using ClipShape = T;
   ClipShapeLayer(const ClipShape& clip_shape, Clip clip_behavior)
-      : clip_shape_(clip_shape),
-        clip_behavior_(clip_behavior),
-        render_count_(1) {
+      : CacheableContainerLayer(),
+        clip_shape_(clip_shape),
+        clip_behavior_(clip_behavior) {
     FML_DCHECK(clip_behavior != Clip::none);
   }
 
@@ -31,7 +32,12 @@ class ClipShapeLayer : public ContainerLayer {
         context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
       }
     }
-
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    if (UsesSaveLayer()) {
+      context->SetTransform(
+          RasterCache::GetIntegralTransCTM(context->GetTransform()));
+    }
+#endif
     if (context->PushCullRect(clip_shape_bounds())) {
       DiffChildren(context, prev);
     }
@@ -43,6 +49,8 @@ class ClipShapeLayer : public ContainerLayer {
     if (!context->cull_rect.intersect(clip_shape_bounds())) {
       context->cull_rect.setEmpty();
     }
+    AutoCache cache =
+        AutoCache(layer_raster_cache_item_.get(), context, matrix);
     Layer::AutoPrerollSaveLayerState save =
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
     OnMutatorsStackPushClipShape(context->mutators_stack);
@@ -61,13 +69,6 @@ class ClipShapeLayer : public ContainerLayer {
     // of our children and apply it in the saveLayer.
     if (UsesSaveLayer()) {
       context->subtree_can_inherit_opacity = true;
-      if (render_count_ >= kMinimumRendersBeforeCachingLayer) {
-        SkMatrix child_matrix(matrix);
-        TryToPrepareRasterCache(context, this, child_matrix,
-                                RasterCacheLayerStrategy::kLayer);
-      } else {
-        render_count_++;
-      }
     }
 
     context->mutators_stack.Pop();
@@ -85,12 +86,16 @@ class ClipShapeLayer : public ContainerLayer {
       return;
     }
 
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+        context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
+
     AutoCachePaint cache_paint(context);
-    if (context.raster_cache &&
-        context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayer,
-                                   cache_paint.paint())) {
-      return;
+    if (context.raster_cache) {
+      if (layer_raster_cache_item_->Draw(context, cache_paint.paint())) {
+        return;
+      }
     }
 
     Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
@@ -114,9 +119,6 @@ class ClipShapeLayer : public ContainerLayer {
  private:
   const ClipShape clip_shape_;
   Clip clip_behavior_;
-
-  static constexpr int kMinimumRendersBeforeCachingLayer = 3;
-  int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ClipShapeLayer);
 };
