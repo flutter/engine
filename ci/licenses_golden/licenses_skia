@@ -1,4 +1,4 @@
-Signature: 65323be02acd1f81af36f669b05b6a8e
+Signature: 5868e7bf2dc35e2bf1f6b3fba2d2db85
 
 UNUSED LICENSES:
 
@@ -2899,7 +2899,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/geom/Shape.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/Shape.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/Transform.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/Transform_graphite.h
-FILE: ../../../third_party/skia/src/gpu/graphite/geom/VectorTypes.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlCaps.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlCaps.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlCommandBuffer.h
@@ -6086,7 +6085,6 @@ FILE: ../../../third_party/skia/gm/clear_swizzle.cpp
 FILE: ../../../third_party/skia/gm/gpu_blur_utils.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFinishCallbacks.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/GrFinishCallbacks.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/GrVx.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/AtlasInstancedHelper.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/StrokeTessellateOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/StrokeTessellateOp.h
