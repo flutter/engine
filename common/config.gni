@@ -25,6 +25,9 @@ declare_args() {
 
   # True if we are building the Flutter Web SDK.
   flutter_web_sdk = false
+
+  # Whether layers can be drawn at half pixel boundaries.
+  support_fractional_translation = false
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -57,6 +60,10 @@ if (flutter_runtime_mode == "debug") {
   ]
 } else {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=0" ]
+}
+
+if (support_fractional_translation) {
+  feature_defines_list += [ "SUPPORT_FRACTIONAL_TRANSLATION=1" ]
 }
 
 if (is_ios || is_mac) {

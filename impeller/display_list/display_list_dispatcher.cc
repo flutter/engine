@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "display_list/display_list_path_effect.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
@@ -213,11 +214,13 @@ static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
     case flutter::DlBlendMode::kModulate:
       return Entity::BlendMode::kModulate;
     case flutter::DlBlendMode::kScreen:
+      return Entity::BlendMode::kScreen;
+    case flutter::DlBlendMode::kColorBurn:
+      return Entity::BlendMode::kColorBurn;
     case flutter::DlBlendMode::kOverlay:
     case flutter::DlBlendMode::kDarken:
     case flutter::DlBlendMode::kLighten:
     case flutter::DlBlendMode::kColorDodge:
-    case flutter::DlBlendMode::kColorBurn:
     case flutter::DlBlendMode::kHardLight:
     case flutter::DlBlendMode::kSoftLight:
     case flutter::DlBlendMode::kDifference:
@@ -239,6 +242,7 @@ void DisplayListDispatcher::setBlendMode(flutter::DlBlendMode dl_mode) {
     paint_.blend_mode = mode.value();
   } else {
     UNIMPLEMENTED;
+    paint_.blend_mode = Entity::BlendMode::kSourceOver;
   }
 }
 
@@ -249,7 +253,7 @@ void DisplayListDispatcher::setBlender(sk_sp<SkBlender> blender) {
 }
 
 // |flutter::Dispatcher|
-void DisplayListDispatcher::setPathEffect(sk_sp<SkPathEffect> effect) {
+void DisplayListDispatcher::setPathEffect(const flutter::DlPathEffect* effect) {
   // Needs https://github.com/flutter/flutter/issues/95434
   UNIMPLEMENTED;
 }
