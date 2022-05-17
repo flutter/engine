@@ -43,7 +43,7 @@ bool DeviceBufferGLES::CopyHostBuffer(const uint8_t* source,
   if (!reactor_) {
     return false;
   }
-
+  TRACE_EVENT0("impeller", "DeviceBufferCopy");
   auto mapping =
       CreateMappingWithCopy(source + source_range.offset, source_range.length);
   if (!mapping) {
@@ -79,7 +79,7 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
   gl.BindBuffer(target_type, buffer.value());
 
   if (!uploaded_) {
-    TRACE_EVENT0("impeller", "BufferData");
+    TRACE_EVENT0("impeller", "BufferDataUpload");
     gl.BufferData(target_type, data_->GetSize(), data_->GetMapping(),
                   GL_STATIC_DRAW);
     uploaded_ = true;

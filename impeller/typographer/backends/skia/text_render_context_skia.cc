@@ -119,33 +119,36 @@ static std::optional<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     return std::nullopt;
   }
 
-  atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
-                               const Rect& location) -> bool {
-    const auto position = SkPoint::Make(location.origin.x, location.origin.y);
-    SkGlyphID glyph_id = font_glyph.glyph.index;
+  {
+    TRACE_EVENT0("impeller", "DrawAtlasGlyphs");
+    atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
+                                 const Rect& location) -> bool {
+      const auto position = SkPoint::Make(location.origin.x, location.origin.y);
+      SkGlyphID glyph_id = font_glyph.glyph.index;
 
-    SkFont sk_font(
-        TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
-        font_glyph.font.GetMetrics().point_size *
-            font_glyph.font.GetMetrics().scale);
+      SkFont sk_font(
+          TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
+          font_glyph.font.GetMetrics().point_size *
+              font_glyph.font.GetMetrics().scale);
 
-    const auto& metrics = font_glyph.font.GetMetrics();
+      const auto& metrics = font_glyph.font.GetMetrics();
 
-    auto glyph_color = SK_ColorWHITE;
+      auto glyph_color = SK_ColorWHITE;
 
-    SkPaint glyph_paint;
-    glyph_paint.setColor(glyph_color);
-    canvas->drawGlyphs(
-        1u,         // count
-        &glyph_id,  // glyphs
-        &position,  // positions
-        SkPoint::Make(-metrics.min_extent.x * metrics.scale,
-                      -metrics.ascent * metrics.scale),  // origin
-        sk_font,                                         // font
-        glyph_paint                                      // paint
-    );
-    return true;
-  });
+      SkPaint glyph_paint;
+      glyph_paint.setColor(glyph_color);
+      canvas->drawGlyphs(
+          1u,         // count
+          &glyph_id,  // glyphs
+          &position,  // positions
+          SkPoint::Make(-metrics.min_extent.x * metrics.scale,
+                        -metrics.ascent * metrics.scale),  // origin
+          sk_font,                                         // font
+          glyph_paint                                      // paint
+      );
+      return true;
+    });
+  }
 
   return bitmap;
 }
@@ -154,7 +157,8 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     std::shared_ptr<Allocator> allocator,
     const SkBitmap& bitmap,
     size_t atlas_size) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
+  TRACE_EVENT1("impeller", __FUNCTION__, "WidthHeight",
+               std::to_string(atlas_size).c_str());
   if (!allocator) {
     return nullptr;
   }

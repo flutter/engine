@@ -140,7 +140,8 @@ struct RenderPassData {
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
     const std::vector<Command>& commands) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
+  TRACE_EVENT1("impeller", __FUNCTION__, "Commands",
+               std::to_string(commands.size()).c_str());
 
   if (commands.empty()) {
     return true;
@@ -450,6 +451,7 @@ struct RenderPassData {
 // |RenderPass|
 bool RenderPassGLES::EncodeCommands(
     const std::shared_ptr<Allocator>& transients_allocator) const {
+  TRACE_EVENT0("impeller", "EncodeCommands");
   if (!IsValid()) {
     return false;
   }

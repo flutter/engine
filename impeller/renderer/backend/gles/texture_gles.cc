@@ -7,6 +7,7 @@
 #include <optional>
 
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
@@ -104,7 +105,8 @@ struct TexImage2DData {
     switch (pixel_format) {
       case PixelFormat::kUnknown:
         return;
-      case PixelFormat::kR8UNormInt:
+      case PixelFormat::kR8UNormInt: {
+        TRACE_EVENT0("impeller", "R8UNormIntCopy");
         internal_format = GL_RGBA;
         format = GL_RGBA;
         type = GL_UNSIGNED_SHORT_4_4_4_4;
@@ -125,7 +127,10 @@ struct TexImage2DData {
           }
         }
         break;
-      case PixelFormat::kR8G8B8A8UNormInt:
+      }
+
+      case PixelFormat::kR8G8B8A8UNormInt: {
+        TRACE_EVENT0("impeller", "R8G8B8A8UNormIntCopy");
         internal_format = GL_RGBA;
         format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
@@ -135,6 +140,8 @@ struct TexImage2DData {
           return;
         }
         break;
+      }
+
       case PixelFormat::kR8G8B8A8UNormIntSRGB:
         return;
       case PixelFormat::kB8G8R8A8UNormInt:
@@ -183,6 +190,7 @@ bool TextureGLES::OnSetContents(const uint8_t* contents,
   }
 
   if (length < tex_descriptor.GetByteSizeOfBaseMipLevel()) {
+    return false;
   }
 
   GLenum texture_type;
@@ -228,16 +236,20 @@ bool TextureGLES::OnSetContents(const uint8_t* contents,
       tex_data = data->data->GetMapping();
     }
 
-    gl.TexImage2D(texture_target,         // target
-                  0u,                     // LOD level
-                  data->internal_format,  // internal format
-                  size.width,             // width
-                  size.height,            // height
-                  0u,                     // border
-                  data->format,           // format
-                  data->type,             // type
-                  tex_data                // data
-    );
+    {
+      TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
+                   std::to_string(data->data->GetSize()).c_str());
+      gl.TexImage2D(texture_target,         // target
+                    0u,                     // LOD level
+                    data->internal_format,  // internal format
+                    size.width,             // width
+                    size.height,            // height
+                    0u,                     // border
+                    data->format,           // format
+                    data->type,             // type
+                    tex_data                // data
+      );
+    }
   };
 
   contents_initialized_ = reactor_->AddOperation(texture_upload);
@@ -302,16 +314,20 @@ void TextureGLES::InitializeContentsIfNecessary() const {
         return;
       }
       gl.BindTexture(GL_TEXTURE_2D, handle.value());
-      gl.TexImage2D(GL_TEXTURE_2D,  // target
-                    0u,             // LOD level (base mip level size checked)
-                    tex_data.internal_format,  // internal format
-                    size.width,                // width
-                    size.height,               // height
-                    0u,                        // border
-                    tex_data.format,           // format
-                    tex_data.type,             // type
-                    nullptr                    // data
-      );
+      {
+        TRACE_EVENT0("impeller", "TexImage2DInitialization");
+        gl.TexImage2D(GL_TEXTURE_2D,  // target
+                      0u,             // LOD level (base mip level size checked)
+                      tex_data.internal_format,  // internal format
+                      size.width,                // width
+                      size.height,               // height
+                      0u,                        // border
+                      tex_data.format,           // format
+                      tex_data.type,             // type
+                      nullptr                    // data
+        );
+      }
+
     } break;
     case Type::kRenderBuffer:
       auto render_buffer_format =
@@ -321,11 +337,15 @@ void TextureGLES::InitializeContentsIfNecessary() const {
         return;
       }
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
-      gl.RenderbufferStorage(GL_RENDERBUFFER,               // target
-                             render_buffer_format.value(),  // internal format
-                             size.width,                    // width
-                             size.height                    // height
-      );
+      {
+        TRACE_EVENT0("impeller", "RenderBufferStorageInitialization");
+        gl.RenderbufferStorage(GL_RENDERBUFFER,               // target
+                               render_buffer_format.value(),  // internal format
+                               size.width,                    // width
+                               size.height                    // height
+        );
+      }
+
       break;
   }
   reactor_->SetDebugLabel(handle_, label_);
