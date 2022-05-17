@@ -24,6 +24,7 @@ FILE: ../../../flutter/benchmarking/library.cc
 FILE: ../../../flutter/benchmarking/library.h
 FILE: ../../../flutter/common/constants.h
 FILE: ../../../flutter/common/exported_symbols.sym
+FILE: ../../../flutter/common/exported_symbols_mac.sym
 FILE: ../../../flutter/common/graphics/gl_context_switch.cc
 FILE: ../../../flutter/common/graphics/gl_context_switch.h
 FILE: ../../../flutter/common/graphics/persistent_cache.cc
@@ -529,6 +530,12 @@ FILE: ../../../flutter/impeller/entity/entity_pass_delegate.h
 FILE: ../../../flutter/impeller/entity/entity_playground.cc
 FILE: ../../../flutter/impeller/entity/entity_playground.h
 FILE: ../../../flutter/impeller/entity/entity_unittests.cc
+FILE: ../../../flutter/impeller/entity/shaders/advanced_blend.vert
+FILE: ../../../flutter/impeller/entity/shaders/advanced_blend_colorburn.frag
+FILE: ../../../flutter/impeller/entity/shaders/advanced_blend_screen.frag
+FILE: ../../../flutter/impeller/entity/shaders/blend.frag
+FILE: ../../../flutter/impeller/entity/shaders/blend.vert
+FILE: ../../../flutter/impeller/entity/shaders/blending.glsl
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
@@ -541,10 +548,6 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
-FILE: ../../../flutter/impeller/entity/shaders/texture_blend.frag
-FILE: ../../../flutter/impeller/entity/shaders/texture_blend.vert
-FILE: ../../../flutter/impeller/entity/shaders/texture_blend_screen.frag
-FILE: ../../../flutter/impeller/entity/shaders/texture_blend_screen.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
 FILE: ../../../flutter/impeller/fixtures/airplane.jpg
@@ -810,6 +813,7 @@ FILE: ../../../flutter/lib/ui/dart_ui.cc
 FILE: ../../../flutter/lib/ui/dart_ui.h
 FILE: ../../../flutter/lib/ui/dart_wrapper.h
 FILE: ../../../flutter/lib/ui/fixtures/DashInNooglerHat.jpg
+FILE: ../../../flutter/lib/ui/fixtures/FontManifest.json
 FILE: ../../../flutter/lib/ui/fixtures/Horizontal.jpg
 FILE: ../../../flutter/lib/ui/fixtures/Horizontal.png
 FILE: ../../../flutter/lib/ui/fixtures/hello_loop_2.gif
@@ -1401,6 +1405,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/system
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/RestorationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SettingsChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SpellCheckChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SystemChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/TextInputChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/ActivityLifecycleListener.java
@@ -1425,6 +1430,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/FlutterT
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/ImeSyncDeferringInsetsCallback.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/ListenableEditingState.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/SpellCheckPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextEditingDelta.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/localization/LocalizationPlugin.java
@@ -2185,6 +2191,9 @@ FILE: ../../../flutter/shell/platform/linux/fl_settings.h
 FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_settings_portal.cc
+FILE: ../../../flutter/shell/platform/linux/fl_settings_portal.h
+FILE: ../../../flutter/shell/platform/linux/fl_settings_portal_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_test.cc
