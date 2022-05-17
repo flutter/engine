@@ -776,7 +776,7 @@ public class KeyboardManagerTest {
 
     // AltLeft
     tester.keyboardManager.handleEvent(
-        new FakeKeyEvent(ACTION_DOWN, SCAN_ALT_LEFT, KEYCODE_ALT_LEFT, 0, '\0', 0x3000));
+        new FakeKeyEvent(ACTION_DOWN, SCAN_ALT_LEFT, KEYCODE_ALT_LEFT, 0, '\0', 0x12));
     assertSingleEmbedderEventEquals(
         calls, Type.kDown, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, false);
     calls.clear();
@@ -789,7 +789,7 @@ public class KeyboardManagerTest {
 
     // AltRight
     tester.keyboardManager.handleEvent(
-        new FakeKeyEvent(ACTION_DOWN, SCAN_ALT_RIGHT, KEYCODE_ALT_RIGHT, 0, '\0', 0x3000));
+        new FakeKeyEvent(ACTION_DOWN, SCAN_ALT_RIGHT, KEYCODE_ALT_RIGHT, 0, '\0', 0x12));
     assertSingleEmbedderEventEquals(
         calls, Type.kDown, PHYSICAL_ALT_RIGHT, LOGICAL_ALT_RIGHT, null, false);
     calls.clear();

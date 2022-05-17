@@ -11,9 +11,30 @@ package io.flutter.embedding.android;
 // Edit the template dev/tools/gen_keycodes/data/android_keyboard_map_java.tmpl instead.
 // See dev/tools/gen_keycodes/README.md for more information.
 
+import android.view.KeyEvent;
 import java.util.HashMap;
 
 public class KeyboardMap {
+  public static class KeyPair {
+    public KeyPair(long physicalKey, long logicalKey) {
+      this.physicalKey = physicalKey;
+      this.logicalKey = logicalKey;
+    }
+
+    public long physicalKey;
+    public long logicalKey;
+  }
+
+  public static class PressingGoal {
+    public PressingGoal(int mask, KeyPair[] keys) {
+      this.mask = mask;
+      this.keys = keys;
+    }
+
+    public final int mask;
+    public final KeyPair[] keys;
+  }
+
   public static final HashMap<Long, Long> scanCodeToPhysical =
       new HashMap<Long, Long>() {
         private static final long serialVersionUID = 1L;
@@ -521,4 +542,30 @@ public class KeyboardMap {
           put(0x0000000065L, 0x020000031fL); // gameButtonZ
         }
       };
+
+  public static final PressingGoal[] pressingGoals =
+      new PressingGoal[] {
+        new PressingGoal(
+            KeyEvent.META_CTRL_ON,
+            new KeyPair[] {
+              new KeyPair(0x000700e0L, 0x0200000100L), // ControlLeft
+              new KeyPair(0x000700e4L, 0x0200000101L), // ControlRight
+            }),
+        new PressingGoal(
+            KeyEvent.META_SHIFT_ON,
+            new KeyPair[] {
+              new KeyPair(0x000700e1L, 0x0200000102L), // ShiftLeft
+              new KeyPair(0x000700e5L, 0x0200000103L), // ShiftRight
+            }),
+        new PressingGoal(
+            KeyEvent.META_ALT_ON,
+            new KeyPair[] {
+              new KeyPair(0x000700e2L, 0x0200000104L), // AltLeft
+              new KeyPair(0x000700e6L, 0x0200000105L), // AltRight
+            }),
+      };
+
+  public static final long kValueMask = 0x000ffffffffL;
+  public static final long kUnicodePlane = 0x00000000000L;
+  public static final long kAndroidPlane = 0x01100000000L;
 }

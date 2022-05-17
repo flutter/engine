@@ -8,7 +8,6 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import io.flutter.plugin.common.BinaryMessenger;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -19,26 +18,6 @@ import java.util.HashMap;
  */
 public class KeyEmbedderResponder implements KeyboardManager.Responder {
   private static final String TAG = "KeyEmbedderResponder";
-
-  private static class KeyPair {
-    public KeyPair(long physicalKey, long logicalKey) {
-      this.physicalKey = physicalKey;
-      this.logicalKey = logicalKey;
-    }
-
-    public long physicalKey;
-    public long logicalKey;
-  }
-
-  private static class PressingGoal {
-    public PressingGoal(int mask, KeyPair[] keys) {
-      this.mask = mask;
-      this.keys = keys;
-    }
-
-    public final int mask;
-    public final KeyPair[] keys;
-  }
 
   private static KeyData.Type getEventType(KeyEvent event) {
     final boolean isRepeatEvent = event.getRepeatCount() > 0;
@@ -52,25 +31,11 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
-  // TODO(dkwingsmt): put the constants to key map.
-  private static final Long kValueMask = 0x000ffffffffl;
-  private static final Long kUnicodePlane = 0x00000000000l;
-  private static final Long kAndroidPlane = 0x01100000000l;
-
   private final HashMap<Long, Long> pressingRecords = new HashMap<>();
   private BinaryMessenger messenger;
 
-  private final ArrayList<PressingGoal> pressingGoals = new ArrayList<>();
-
   public KeyEmbedderResponder(BinaryMessenger messenger) {
     this.messenger = messenger;
-    this.pressingGoals.add(
-        new PressingGoal(
-            KeyEvent.META_SHIFT_ON,
-            new KeyPair[] {
-              new KeyPair(0x00000700e1L, 0x0200000102L), // ShiftLeft
-              new KeyPair(0x00000700e5L, 0x0200000103L), // ShiftRight
-            }));
     // CapsLock
     //    this.pressingGoals.add(new PressingGoal(true, 0x0000070039L, 0x0100000104L,
     // KeyEvent.META_CAPS_LOCK_ON));
@@ -141,7 +106,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     if (byMapping != null) {
       return byMapping;
     }
-    return kAndroidPlane + event.getScanCode();
+    return KeyboardMap.kAndroidPlane + event.getScanCode();
   }
 
   private Long getLogicalKey(@NonNull KeyEvent event) {
@@ -149,7 +114,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     if (byMapping != null) {
       return byMapping;
     }
-    return kAndroidPlane + event.getKeyCode();
+    return KeyboardMap.kAndroidPlane + event.getKeyCode();
   }
 
   void updatePressingState(Long physicalKey, Long logicalKey) {
@@ -163,18 +128,16 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   }
 
   void synchronizePressingKey(
-      PressingGoal goal, boolean truePressed, long eventPhysicalKey, KeyEvent event) {
-    // A goal can contain multiple keys sharing the same mask. During an
-    // incoming event, there might be a synthesized Flutter event for each key,
-    // followed by an eventual main Flutter event. The core of the
-    // synchronization algorithm is to derive a pre-event state that can
-    // fulfill the true state (`truePressed`) after the event, while requiring
-    // as few synthesized events from the current state (`nowStates`) as
-    // possible.
+      KeyboardMap.PressingGoal goal, boolean truePressed, long eventPhysicalKey, KeyEvent event) {
+    // During an incoming event, there might be a synthesized Flutter event for each key of each
+    // pressing goal, followed by an eventual main Flutter event.
     //
-    // NowState ---------------->  PreEventState --------------> TrueState
-    //           Synchronization                      Event
-
+    //    NowState ---------------->  PreEventState --------------> TrueState
+    //              Synchronization                      Event
+    //
+    // The goal of the synchronization algorithm is to derive a pre-event state that can satisfy the
+    // true state (`truePressed`) after the event, and that requires as few synthesized events based
+    // on the current state (`nowStates`) as possible.
     final boolean[] nowStates = new boolean[goal.keys.length];
     final Boolean[] preEventStates = new Boolean[goal.keys.length];
     boolean postEventAnyPressed = false;
@@ -195,16 +158,16 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
             }
             break;
           case kUp:
-            // Incoming event is an up. Although the previous state should be pressed,
-            // don't synthesize a down event even if it's not. The later code will handle such cases
-            // by skipping abrupt up events.
+            // Incoming event is an up. Although the previous state should be pressed, don't
+            // synthesize a down event even if it's not. The later code will handle such cases by
+            // skipping abrupt up events. Obviously don't synthesize up events either.
             preEventStates[keyIdx] = nowStates[keyIdx];
             break;
           case kRepeat:
             // Incoming event is repeat. The previous state can be either pressed or released.
-            // Don't synthesize a down event here, or there will be a down event and a repeat
-            // event, both of which sending printable characters. Obviously don't synthesize up
-            // events either.
+            // Don't synthesize a down event here, or there will be a down event and a repeat event,
+            // both of which sending printable characters. Obviously don't synthesize up events
+            // either.
             if (!truePressed) {
               throw new AssertionError(
                   String.format(
@@ -247,9 +210,10 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
       }
     }
 
+    // Dispatch synthesized events for state differences.
     for (int keyIdx = 0; keyIdx < goal.keys.length; keyIdx += 1) {
       if (nowStates[keyIdx] != preEventStates[keyIdx]) {
-        final KeyPair key = goal.keys[keyIdx];
+        final KeyboardMap.KeyPair key = goal.keys[keyIdx];
         synthesizeEvent(
             preEventStates[keyIdx], key.logicalKey, key.physicalKey, event.getEventTime());
       }
@@ -269,7 +233,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     final Long physicalKey = getPhysicalKey(event);
     final Long logicalKey = getLogicalKey(event);
 
-    for (final PressingGoal goal : pressingGoals) {
+    for (final KeyboardMap.PressingGoal goal : KeyboardMap.pressingGoals) {
       // System.out.printf(
       //     "Meta 0x%x mask 0x%x result %d\n",
       //     event.getMetaState(), goal.mask, (event.getMetaState() & goal.mask) != 0 ? 1 : 0);
