@@ -961,9 +961,8 @@ public class KeyboardManagerTest {
     calls.clear();
   }
 
-  // Given the pressing states of ShiftLeft and ShiftRight, and the specified type of ShiftRight
-  // event occurs
-  // that requires the given true pressing state, store the resulting events to `calls`.
+  // Start a new tester, generate a ShiftRight event under the specified condition, and return the
+  // output events for that event.
   //
   // The `calls` is always cleared at the beginning.
   public static List<CallRecord> testShiftRightEvent(
@@ -971,7 +970,6 @@ public class KeyboardManagerTest {
       boolean preEventRightPressed,
       boolean rightEventIsDown,
       boolean truePressed) {
-    System.out.printf("New test case\n");
     final ArrayList<CallRecord> calls = new ArrayList<>();
     final int SHIFT_LEFT_ON = KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON;
 
@@ -1096,5 +1094,54 @@ public class KeyboardManagerTest {
           buildShiftKeyData(SHIFT_RIGHT_EVENT, UP_EVENT, true),
           buildShiftKeyData(SHIFT_RIGHT_EVENT, DOWN_EVENT, false),
         });
+  }
+
+  @Test
+  public void synchronizeOtherModifiers() {
+    // Test if other modifiers can be synchronized during events of ArrowLeft. Only the minimal
+    // cases are used here since the full logic has been tested on ShiftLeft.
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
+
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true); // Suppress redispatching
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', KeyEvent.META_CTRL_ON)));
+    assertEquals(calls.size(), 2);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_CONTROL_LEFT, LOGICAL_CONTROL_LEFT, null, true);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
+    assertEquals(calls.size(), 2);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_CONTROL_LEFT, LOGICAL_CONTROL_LEFT, null, true);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', KeyEvent.META_ALT_ON)));
+    assertEquals(calls.size(), 2);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, true);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
+    assertEquals(calls.size(), 2);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, true);
+    calls.clear();
   }
 }
