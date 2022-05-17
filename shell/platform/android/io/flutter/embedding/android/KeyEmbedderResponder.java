@@ -6,10 +6,13 @@ package io.flutter.embedding.android;
 
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
+
 import androidx.annotation.NonNull;
+
 import io.flutter.embedding.android.KeyboardMap.PressingGoal;
 import io.flutter.embedding.android.KeyboardMap.TogglingGoal;
 import io.flutter.plugin.common.BinaryMessenger;
+
 import java.util.HashMap;
 
 /**
@@ -21,6 +24,7 @@ import java.util.HashMap;
 public class KeyEmbedderResponder implements KeyboardManager.Responder {
   private static final String TAG = "KeyEmbedderResponder";
 
+  // Maps KeyEvent's action and repeatCount to a KeyData type.
   private static KeyData.Type getEventType(KeyEvent event) {
     final boolean isRepeatEvent = event.getRepeatCount() > 0;
     switch (event.getAction()) {
@@ -33,9 +37,17 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
-  private final HashMap<Long, Long> pressingRecords = new HashMap<>();
+  // The messenger used to send Flutter key events to the framework.
+  //
+  // On `handleEvent`, Flutter events are marshalled into byte buffers in the format specified by
+  // `KeyData.toBytes`.
   private final BinaryMessenger messenger;
-  // Map from logical key
+  // The keys being pressed currently, mapped from physical keys to logical keys.
+  private final HashMap<Long, Long> pressingRecords = new HashMap<>();
+  // Map from logical key to toggling goals.
+  //
+  // Besides immutable configuration, the toggling goals are also used to store the current enabling
+  // states in their `enabled` field.
   private final HashMap<Long, TogglingGoal> togglingGoals = new HashMap<>();
 
   public KeyEmbedderResponder(BinaryMessenger messenger) {
@@ -47,6 +59,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
 
   private int combiningCharacter;
   // TODO(dkwingsmt): Deduplicate this function from KeyChannelResponder.java.
+
   /**
    * Applies the given Unicode character in {@code newCharacterCodePoint} to a previously entered
    * Unicode combining character and returns the combination of these characters if a combination
@@ -105,6 +118,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     return complexCharacter;
   }
 
+  // Get the physical key for this event.
+  //
+  // The returned value is never null.
   private Long getPhysicalKey(@NonNull KeyEvent event) {
     final Long byMapping = KeyboardMap.scanCodeToPhysical.get((long) event.getScanCode());
     if (byMapping != null) {
@@ -113,6 +129,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     return KeyboardMap.kAndroidPlane + event.getScanCode();
   }
 
+  // Get the logical key for this event.
+  //
+  // The returned value is never null.
   private Long getLogicalKey(@NonNull KeyEvent event) {
     final Long byMapping = KeyboardMap.keyCodeToLogical.get((long) event.getKeyCode());
     if (byMapping != null) {
@@ -121,7 +140,14 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     return KeyboardMap.kAndroidPlane + event.getKeyCode();
   }
 
-  void updatePressingState(Long physicalKey, Long logicalKey) {
+  // Update `pressingRecords`.
+  //
+  // If the key indicated by `physicalKey` is currently not pressed, then `logicalKey` must not be
+  // null and this key will be marked pressed.
+  //
+  // If the key indicated by `physicalKey` is currently pressed, then `logicalKey` must be null
+  // and this key will be marked released.
+  void updatePressingState(@NonNull Long physicalKey, @Nullable Long logicalKey) {
     if (logicalKey != null) {
       final Long previousValue = pressingRecords.put(physicalKey, logicalKey);
       if (previousValue != null) throw new AssertionError("The key was not empty");
@@ -131,6 +157,16 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
+  // Synchronize for a pressing modifier (such as Shift or Ctrl).
+  //
+  // A pressing modifier is defined by a `PressingGoal`, which consists of a mask to get the true
+  // state out of `KeyEvent.getMetaState`, and a list of keys. The synchronization process
+  // dispatches synthesized events so that the state of these keys matches the true state taking
+  // the current event in consideration.
+  //
+  // Although Android KeyEvent defined bitmasks for sided modifiers (SHIFT_LEFT_ON and SHIFT_RIGHT_ON),
+  // this function only uses the unsided modifiers (SHIFT_ON), due to the weird behaviors observed
+  // on ChromeOS, where right modifiers produce events with UNSIDED | LEFT_SIDE meta state bits.
   void synchronizePressingKey(
       PressingGoal goal, boolean truePressed, long eventLogicalKey, KeyEvent event) {
     // During an incoming event, there might be a synthesized Flutter event for each key of each
@@ -168,10 +204,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
             preEventStates[keyIdx] = nowStates[keyIdx];
             break;
           case kRepeat:
-            // Incoming event is repeat. The previous state can be either pressed or released.
-            // Don't synthesize a down event here, or there will be a down event and a repeat event,
-            // both of which sending printable characters. Obviously don't synthesize up events
-            // either.
+            // Incoming event is repeat. The previous state can be either pressed or released. Don't
+            // synthesize a down event here, or there will be a down event *and* a repeat event,
+            // both of which have printable characters. Obviously don't synthesize up events either.
             if (!truePressed) {
               throw new AssertionError(
                   String.format(
@@ -196,7 +231,6 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
         }
         if (postEventAnyPressed) {
           preEventStates[keyIdx] = nowStates[keyIdx];
-          postEventAnyPressed = postEventAnyPressed || nowStates[keyIdx];
         } else {
           preEventStates[keyIdx] = true;
           postEventAnyPressed = true;
@@ -224,6 +258,19 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
+  // Synchronize for a toggling modifier (such as CapsLock).
+  //
+  // A toggling modifier is defined by a `TogglingGoal`, which consists of a mask to get the true
+  // state out of `KeyEvent.getMetaState`, and a key. The synchronization process dispatches
+  // synthesized events so that the state of these keys matches the true state taking the current
+  // event in consideration.
+  //
+  // Although Android KeyEvent defined bitmasks  for all "lock" modifiers and define them as the
+  // "lock" state, weird behaviors are observed on ChromeOS. First, ScrollLock and NumLock presses
+  // do not set metaState bits. Second, CapsLock key events set the CapsLock bit as if it is a
+  // pressing modifier (key down having state 1, key up having state 0), while other key events set
+  // the CapsLock bit correctly (locked having state 1, unlocked having state 0). Therefore this
+  // function only synchronizes the CapsLock state, and only does so during non-CapsLock key events.
   void synchronizeTogglingKey(
       TogglingGoal goal, boolean trueEnabled, long eventLogicalKey, KeyEvent event) {
     if (goal.logicalKey == eventLogicalKey) {
@@ -244,7 +291,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
-  // Return: if any events has been sent
+  // Implements the core algorithm of `handleEvent`.
+  //
+  // Returns whether any events are dispatched.
   private boolean handleEventImpl(
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
     System.out.printf(
@@ -345,17 +394,31 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
         onKeyEventHandledCallback == null
             ? null
             : message -> {
-              Boolean handled = false;
-              message.rewind();
-              if (message.capacity() != 0) {
-                handled = message.get() != 0;
-              }
-              onKeyEventHandledCallback.onKeyEventHandled(handled);
-            };
+          Boolean handled = false;
+          message.rewind();
+          if (message.capacity() != 0) {
+            handled = message.get() != 0;
+          }
+          onKeyEventHandledCallback.onKeyEventHandled(handled);
+        };
 
     messenger.send(KeyData.CHANNEL, data.toBytes(), handleMessageReply);
   }
 
+  /**
+   * Parses an Android key event, performs synchronization, and dispatches Flutter events through
+   * the messenger to the framework with the given callback.
+   *
+   * At least one event will be dispatched. If there are no others, an empty event with 0 physical
+   * key and 0 logical key will be synthesized.
+   *
+   * @param event The Android key event to be handled.
+   * @param onKeyEventHandledCallback the method to call when the framework has decided whether
+   *                                  to handle this event. This callback will always be called once
+   *                                  and only once. If there are no non-synthesized out of this
+   *                                  event, this callback will be called during this method with
+   *                                  true.
+   */
   @Override
   public void handleEvent(
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {

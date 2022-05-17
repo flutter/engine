@@ -14,7 +14,9 @@ package io.flutter.embedding.android;
 import android.view.KeyEvent;
 import java.util.HashMap;
 
+/** Static information used by {@link KeyEmbedderResponder}. */
 public class KeyboardMap {
+  /** A physicalKey-logicalKey pair used to define mappings. */
   public static class KeyPair {
     public KeyPair(long physicalKey, long logicalKey) {
       this.physicalKey = physicalKey;
@@ -25,6 +27,11 @@ public class KeyboardMap {
     public long logicalKey;
   }
 
+  /**
+   * An immutable configuration item that defines how to synchronize pressing modifiers (such as
+   * Shift or Ctrl), so that the {@link KeyEmbedderResponder} must synthesize events until the
+   * combined pressing state of {@link keys} matches the true meta state masked by {@link mask}.
+   */
   public static class PressingGoal {
     public PressingGoal(int mask, KeyPair[] keys) {
       this.mask = mask;
@@ -35,6 +42,14 @@ public class KeyboardMap {
     public final KeyPair[] keys;
   }
 
+  /**
+   * A configuration item that defines how to synchronize toggling modifiers (such as CapsLock), so
+   * that the {@link KeyEmbedderResponder} must synthesize events until the enabling state of the
+   * key matches the true meta state masked by {@link mask}.
+   *
+   * <p>The object of this class is not immutable. The {@link enabled} field will be used to store
+   * the current enabling state.
+   */
   public static class TogglingGoal {
     public TogglingGoal(int mask, long physicalKey, long logicalKey) {
       this.mask = mask;
@@ -45,9 +60,15 @@ public class KeyboardMap {
     public final int mask;
     public final long physicalKey;
     public final long logicalKey;
+    /**
+     * Used by {@link KeyEmbedderResponder} to store the current enabling state of this modifier.
+     *
+     * <p>Initialized as false.
+     */
     public boolean enabled = false;
   }
 
+  /** Maps from Android scan codes {@link KeyEvent.getScanCode} to Flutter physical keys. */
   public static final HashMap<Long, Long> scanCodeToPhysical =
       new HashMap<Long, Long>() {
         private static final long serialVersionUID = 1L;
@@ -288,6 +309,7 @@ public class KeyboardMap {
         }
       };
 
+  /** Maps from Android key codes {@link KeyEvent.getKeyCode} to Flutter logical keys. */
   public static final HashMap<Long, Long> keyCodeToLogical =
       new HashMap<Long, Long>() {
         private static final long serialVersionUID = 1L;
@@ -578,6 +600,12 @@ public class KeyboardMap {
             }),
       };
 
+  /**
+   * A list of toggling modifiers that must be synchronized on each key event.
+   *
+   * <p>The list is not a static variable but constructed by a function, because {@link
+   * TogglingGoal} is not immutable.
+   */
   public static TogglingGoal[] getTogglingGoals() {
     return new TogglingGoal[] {
       new TogglingGoal(KeyEvent.META_CAPS_LOCK_ON, 0x00070039L, 0x0100000104L),
