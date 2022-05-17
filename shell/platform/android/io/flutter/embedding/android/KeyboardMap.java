@@ -35,6 +35,19 @@ public class KeyboardMap {
     public final KeyPair[] keys;
   }
 
+  public static class TogglingGoal {
+    public TogglingGoal(int mask, long physicalKey, long logicalKey) {
+      this.mask = mask;
+      this.physicalKey = physicalKey;
+      this.logicalKey = logicalKey;
+    }
+
+    public final int mask;
+    public final long physicalKey;
+    public final long logicalKey;
+    public boolean enabled = false;
+  }
+
   public static final HashMap<Long, Long> scanCodeToPhysical =
       new HashMap<Long, Long>() {
         private static final long serialVersionUID = 1L;
@@ -564,6 +577,12 @@ public class KeyboardMap {
               new KeyPair(0x000700e6L, 0x0200000105L), // AltRight
             }),
       };
+
+  public static TogglingGoal[] getTogglingGoals() {
+    return new TogglingGoal[] {
+      new TogglingGoal(KeyEvent.META_CAPS_LOCK_ON, 0x0000070039L, 0x0100000104L),
+    };
+  }
 
   public static final long kValueMask = 0x000ffffffffL;
   public static final long kUnicodePlane = 0x00000000000L;

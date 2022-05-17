@@ -7,6 +7,8 @@ package io.flutter.embedding.android;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
+import io.flutter.embedding.android.KeyboardMap.PressingGoal;
+import io.flutter.embedding.android.KeyboardMap.TogglingGoal;
 import io.flutter.plugin.common.BinaryMessenger;
 import java.util.HashMap;
 
@@ -32,13 +34,15 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   }
 
   private final HashMap<Long, Long> pressingRecords = new HashMap<>();
-  private BinaryMessenger messenger;
+  private final BinaryMessenger messenger;
+  // Map from logical key
+  private final HashMap<Long, TogglingGoal> togglingGoals = new HashMap<>();
 
   public KeyEmbedderResponder(BinaryMessenger messenger) {
     this.messenger = messenger;
-    // CapsLock
-    //    this.pressingGoals.add(new PressingGoal(true, 0x0000070039L, 0x0100000104L,
-    // KeyEvent.META_CAPS_LOCK_ON));
+    for (final TogglingGoal goal : KeyboardMap.getTogglingGoals()) {
+      togglingGoals.put(goal.logicalKey, goal);
+    }
   }
 
   private int combiningCharacter;
@@ -128,7 +132,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   }
 
   void synchronizePressingKey(
-      KeyboardMap.PressingGoal goal, boolean truePressed, long eventPhysicalKey, KeyEvent event) {
+      PressingGoal goal, boolean truePressed, long eventLogicalKey, KeyEvent event) {
     // During an incoming event, there might be a synthesized Flutter event for each key of each
     // pressing goal, followed by an eventual main Flutter event.
     //
@@ -145,7 +149,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     // 2. Derive the pre-event state of the event key (if applicable.)
     for (int keyIdx = 0; keyIdx < goal.keys.length; keyIdx += 1) {
       nowStates[keyIdx] = pressingRecords.containsKey(goal.keys[keyIdx].physicalKey);
-      if (goal.keys[keyIdx].physicalKey == eventPhysicalKey) {
+      if (goal.keys[keyIdx].logicalKey == eventLogicalKey) {
         switch (getEventType(event)) {
           case kDown:
             preEventStates[keyIdx] = false;
@@ -154,7 +158,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
               throw new AssertionError(
                   String.format(
                       "Unexpected metaState 0 for key 0x%x during an ACTION_down event.",
-                      eventPhysicalKey));
+                      eventLogicalKey));
             }
             break;
           case kUp:
@@ -172,7 +176,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
               throw new AssertionError(
                   String.format(
                       "Unexpected metaState 0 for key 0x%x during an ACTION_down repeat event.",
-                      eventPhysicalKey));
+                      eventLogicalKey));
             }
             preEventStates[keyIdx] = nowStates[keyIdx];
             postEventAnyPressed = true;
@@ -220,6 +224,26 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
+  void synchronizeTogglingKey(
+      TogglingGoal goal, boolean trueEnabled, long eventLogicalKey, KeyEvent event) {
+    if (goal.logicalKey == eventLogicalKey) {
+      // Don't synthesize for self events, because the self events have weird metaStates on
+      // ChromeOS.
+      return;
+    }
+    if (goal.enabled != trueEnabled) {
+      final boolean firstIsDown = !pressingRecords.containsKey(goal.physicalKey);
+      if (firstIsDown) {
+        goal.enabled = !goal.enabled;
+      }
+      synthesizeEvent(firstIsDown, goal.logicalKey, goal.physicalKey, event.getEventTime());
+      if (!firstIsDown) {
+        goal.enabled = !goal.enabled;
+      }
+      synthesizeEvent(!firstIsDown, goal.logicalKey, goal.physicalKey, event.getEventTime());
+    }
+  }
+
   // Return: if any events has been sent
   private boolean handleEventImpl(
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
@@ -233,11 +257,12 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     final Long physicalKey = getPhysicalKey(event);
     final Long logicalKey = getLogicalKey(event);
 
-    for (final KeyboardMap.PressingGoal goal : KeyboardMap.pressingGoals) {
-      // System.out.printf(
-      //     "Meta 0x%x mask 0x%x result %d\n",
-      //     event.getMetaState(), goal.mask, (event.getMetaState() & goal.mask) != 0 ? 1 : 0);
-      synchronizePressingKey(goal, (event.getMetaState() & goal.mask) != 0, physicalKey, event);
+    for (final PressingGoal goal : KeyboardMap.pressingGoals) {
+      synchronizePressingKey(goal, (event.getMetaState() & goal.mask) != 0, logicalKey, event);
+    }
+
+    for (final TogglingGoal goal : togglingGoals.values()) {
+      synchronizeTogglingKey(goal, (event.getMetaState() & goal.mask) != 0, logicalKey, event);
     }
 
     boolean isDownEvent;
@@ -283,6 +308,12 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
 
     if (type != KeyData.Type.kRepeat) {
       updatePressingState(physicalKey, isDownEvent ? logicalKey : null);
+    }
+    if (type == KeyData.Type.kDown) {
+      final TogglingGoal maybeTogglingGoal = togglingGoals.get(logicalKey);
+      if (maybeTogglingGoal != null) {
+        maybeTogglingGoal.enabled = !maybeTogglingGoal.enabled;
+      }
     }
 
     final KeyData output = new KeyData();

@@ -49,8 +49,7 @@ public class KeyboardManagerTest {
   public static final int SCAN_ALT_LEFT = 0x38;
   public static final int SCAN_ALT_RIGHT = 0x64;
   public static final int SCAN_ARROW_LEFT = 0x69;
-  //  public static final int SCAN_META_LEFT = 0x2a;
-  //  public static final int SCAN_META_RIGHT = 0x36;
+  public static final int SCAN_CAPS_LOCK = 0x3a;
 
   public static final boolean DOWN_EVENT = true;
   public static final boolean UP_EVENT = false;
@@ -860,7 +859,7 @@ public class KeyboardManagerTest {
     tester.recordEmbedderCallsTo(calls);
     tester.respondToTextInputWith(true); // Suppress redispatching
 
-    final int SHIFT_LEFT_ON = KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON;
+    final int SHIFT_LEFT_ON = META_SHIFT_LEFT_ON | META_SHIFT_ON;
 
     assertEquals(
         true,
@@ -891,7 +890,7 @@ public class KeyboardManagerTest {
     tester.recordEmbedderCallsTo(calls);
     tester.respondToTextInputWith(true); // Suppress redispatching
 
-    final int SHIFT_LEFT_ON = KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON;
+    final int SHIFT_LEFT_ON = META_SHIFT_LEFT_ON | META_SHIFT_ON;
     // All 6 cases (3 types x 2 states) are arranged in the following order so that the starting
     // states for each case are the desired states.
 
@@ -971,7 +970,7 @@ public class KeyboardManagerTest {
       boolean rightEventIsDown,
       boolean truePressed) {
     final ArrayList<CallRecord> calls = new ArrayList<>();
-    final int SHIFT_LEFT_ON = KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON;
+    final int SHIFT_LEFT_ON = META_SHIFT_LEFT_ON | META_SHIFT_ON;
 
     final KeyboardTester tester = new KeyboardTester();
     tester.respondToTextInputWith(true); // Suppress redispatching
@@ -1024,9 +1023,9 @@ public class KeyboardManagerTest {
 
   @Test
   public void synchronizeShiftLeftDuringSiblingKeyEvents() {
-    // Test if ShiftLeft can be synchronized during events of ShiftRight.
-    // Real device test on ChromeOS shows that, unlike the documentations, ShiftRight events set
-    // meta flag META_SHIFT_LEFT_ON instead of META_SHIFT_RIGHT_ON (likewise for other modifiers.)
+    // Test if ShiftLeft can be synchronized during events of ShiftRight. The following events seem
+    // to have weird metaStates that don't follow Android's documentation (always using left masks)
+    // but are indeed observed on ChromeOS.
 
     // UP_EVENT, truePressed: false
 
@@ -1110,7 +1109,7 @@ public class KeyboardManagerTest {
         true,
         tester.keyboardManager.handleEvent(
             new FakeKeyEvent(
-                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', KeyEvent.META_CTRL_ON)));
+                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CTRL_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kDown, PHYSICAL_CONTROL_LEFT, LOGICAL_CONTROL_LEFT, null, true);
@@ -1129,7 +1128,7 @@ public class KeyboardManagerTest {
         true,
         tester.keyboardManager.handleEvent(
             new FakeKeyEvent(
-                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', KeyEvent.META_ALT_ON)));
+                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_ALT_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kDown, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, true);
@@ -1142,6 +1141,150 @@ public class KeyboardManagerTest {
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kUp, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, true);
+    calls.clear();
+  }
+
+  @Test
+  public void normalCapsLockEvents() {
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
+
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true); // Suppress redispatching
+
+    // The following two events seem to have weird metaStates that don't follow Android's
+    // documentation (CapsLock flag set on down events) but are indeed observed on ChromeOS.
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', META_CAPS_LOCK_ON)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_UP, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', 0)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', META_CAPS_LOCK_ON)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_UP, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', 0)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+    calls.clear();
+  }
+
+  @Test
+  public void synchronizeCapsLock() {
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
+
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true); // Suppress redispatching
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
+    assertEquals(calls.size(), 3);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+    assertEmbedderEventEquals(
+        calls.get(1).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+    assertEmbedderEventEquals(
+        calls.get(2).keyData, Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_DOWN, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', META_CAPS_LOCK_ON)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(
+                ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
+    assertEquals(calls.size(), 3);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+    assertEmbedderEventEquals(
+        calls.get(1).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+    assertEmbedderEventEquals(
+        calls.get(2).keyData, Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+    calls.clear();
+
+    assertEquals(
+        true,
+        tester.keyboardManager.handleEvent(
+            new FakeKeyEvent(ACTION_UP, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', 0)));
+    assertEquals(calls.size(), 1);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
     calls.clear();
   }
 }
