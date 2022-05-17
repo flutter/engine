@@ -451,7 +451,7 @@ Future<void> testMain() async {
     }
 
     String? getEditingInputMode() {
-      return textEditing!.strategy.domElement!.getAttribute('inputmode');
+      return textEditing!.strategy.domElement!.inputMode;
     }
 
     setUp(() {

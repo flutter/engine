@@ -85,7 +85,7 @@ abstract class EngineInputType {
     if (operatingSystem == OperatingSystem.iOs ||
         operatingSystem == OperatingSystem.android ||
         inputmodeAttribute == EngineInputType.none.inputmodeAttribute) {
-      domElement.setAttribute('inputmode', inputmodeAttribute!);
+      domElement.inputMode = inputmodeAttribute;
     }
   }
 }

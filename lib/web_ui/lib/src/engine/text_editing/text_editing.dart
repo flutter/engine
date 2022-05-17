@@ -1134,7 +1134,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
 
     if (config.inputType == EngineInputType.none) {
-      activeDomElement.setAttribute('inputmode', 'none');
+      activeDomElement.inputMode = 'none';
     }
 
     final AutofillInfo? autofill = config.autofill;
