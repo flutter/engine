@@ -225,6 +225,7 @@ targets:
         [
           {"dependency": "goldctl"}
         ]
+      gclient_custom_vars: {"download_emsdk": true}
     timeout: 60
     runIf:
       - DEPS
@@ -322,6 +323,7 @@ targets:
         [
           {"dependency": "goldctl"}
         ]
+      gclient_custom_vars: {"download_emsdk": true}
       os: Mac-10.15
       xcode: 12c33 # xcode 12.3
     timeout: 60
@@ -403,6 +405,7 @@ targets:
     recipe: engine/web_engine
     properties:
       gcs_goldens_bucket: flutter_logs
+      gclient_custom_vars: {"download_emsdk": true}
     timeout: 60
     runIf:
       - DEPS
