@@ -48,7 +48,7 @@ public class KeyboardManager implements InputConnectionAdaptor.KeyboardDelegate 
    * entered Unicode combining character and returns the combination of these characters if a
    * combination exists.
    *
-   * This class is not used by {@link KeyboardManager}, but by its responders.
+   * <p>This class is not used by {@link KeyboardManager}, but by its responders.
    */
   public static class CharacterCombiner {
     private int combiningCharacter = 0;
