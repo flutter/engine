@@ -4,15 +4,12 @@
 
 package io.flutter.embedding.android;
 
-import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
-
 import androidx.annotation.NonNull;
-
+import androidx.annotation.Nullable;
 import io.flutter.embedding.android.KeyboardMap.PressingGoal;
 import io.flutter.embedding.android.KeyboardMap.TogglingGoal;
 import io.flutter.plugin.common.BinaryMessenger;
-
 import java.util.HashMap;
 
 /**
@@ -41,81 +38,24 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   //
   // On `handleEvent`, Flutter events are marshalled into byte buffers in the format specified by
   // `KeyData.toBytes`.
-  private final BinaryMessenger messenger;
+  @NonNull private final BinaryMessenger messenger;
   // The keys being pressed currently, mapped from physical keys to logical keys.
-  private final HashMap<Long, Long> pressingRecords = new HashMap<>();
+  @NonNull private final HashMap<Long, Long> pressingRecords = new HashMap<>();
   // Map from logical key to toggling goals.
   //
   // Besides immutable configuration, the toggling goals are also used to store the current enabling
   // states in their `enabled` field.
-  private final HashMap<Long, TogglingGoal> togglingGoals = new HashMap<>();
+  @NonNull private final HashMap<Long, TogglingGoal> togglingGoals = new HashMap<>();
+
+  @NonNull
+  private final KeyboardManager.CharacterCombiner characterCombiner =
+      new KeyboardManager.CharacterCombiner();
 
   public KeyEmbedderResponder(BinaryMessenger messenger) {
     this.messenger = messenger;
     for (final TogglingGoal goal : KeyboardMap.getTogglingGoals()) {
       togglingGoals.put(goal.logicalKey, goal);
     }
-  }
-
-  private int combiningCharacter;
-  // TODO(dkwingsmt): Deduplicate this function from KeyChannelResponder.java.
-
-  /**
-   * Applies the given Unicode character in {@code newCharacterCodePoint} to a previously entered
-   * Unicode combining character and returns the combination of these characters if a combination
-   * exists.
-   *
-   * <p>This method mutates {@link #combiningCharacter} over time to combine characters.
-   *
-   * <p>One of the following things happens in this method:
-   *
-   * <ul>
-   *   <li>If no previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint}
-   *       is not a combining character, then {@code newCharacterCodePoint} is returned.
-   *   <li>If no previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint}
-   *       is a combining character, then {@code newCharacterCodePoint} is saved as the {@link
-   *       #combiningCharacter} and null is returned.
-   *   <li>If a previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint} is
-   *       also a combining character, then the {@code newCharacterCodePoint} is combined with the
-   *       existing {@link #combiningCharacter} and null is returned.
-   *   <li>If a previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint} is
-   *       not a combining character, then the {@link #combiningCharacter} is applied to the regular
-   *       {@code newCharacterCodePoint} and the resulting complex character is returned. The {@link
-   *       #combiningCharacter} is cleared.
-   * </ul>
-   *
-   * <p>The following reference explains the concept of a "combining character":
-   * https://en.wikipedia.org/wiki/Combining_character
-   */
-  Character applyCombiningCharacterToBaseCharacter(int newCharacterCodePoint) {
-    if (newCharacterCodePoint == 0) {
-      combiningCharacter = 0;
-      return 0;
-    }
-    char complexCharacter = (char) newCharacterCodePoint;
-    boolean isNewCodePointACombiningCharacter =
-        (newCharacterCodePoint & KeyCharacterMap.COMBINING_ACCENT) != 0;
-    if (isNewCodePointACombiningCharacter) {
-      // If a combining character was entered before, combine this one with that one.
-      int plainCodePoint = newCharacterCodePoint & KeyCharacterMap.COMBINING_ACCENT_MASK;
-      if (combiningCharacter != 0) {
-        combiningCharacter = KeyCharacterMap.getDeadChar(combiningCharacter, plainCodePoint);
-      } else {
-        combiningCharacter = plainCodePoint;
-      }
-    } else {
-      // The new character is a regular character. Apply combiningCharacter to it, if
-      // it exists.
-      if (combiningCharacter != 0) {
-        int combinedChar = KeyCharacterMap.getDeadChar(combiningCharacter, newCharacterCodePoint);
-        if (combinedChar > 0) {
-          complexCharacter = (char) combinedChar;
-        }
-        combiningCharacter = 0;
-      }
-    }
-
-    return complexCharacter;
   }
 
   // Get the physical key for this event.
@@ -164,7 +104,8 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   // dispatches synthesized events so that the state of these keys matches the true state taking
   // the current event in consideration.
   //
-  // Although Android KeyEvent defined bitmasks for sided modifiers (SHIFT_LEFT_ON and SHIFT_RIGHT_ON),
+  // Although Android KeyEvent defined bitmasks for sided modifiers (SHIFT_LEFT_ON and
+  // SHIFT_RIGHT_ON),
   // this function only uses the unsided modifiers (SHIFT_ON), due to the weird behaviors observed
   // on ChromeOS, where right modifiers produce events with UNSIDED | LEFT_SIDE meta state bits.
   void synchronizePressingKey(
@@ -296,13 +237,6 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   // Returns whether any events are dispatched.
   private boolean handleEventImpl(
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
-    System.out.printf(
-        "KeyEvent [0x%x] scan 0x%x key 0x%x uni 0x%x meta 0x%x\n",
-        event.getAction(),
-        event.getScanCode(),
-        event.getKeyCode(),
-        event.getUnicodeChar(),
-        event.getMetaState());
     final Long physicalKey = getPhysicalKey(event);
     final Long logicalKey = getLogicalKey(event);
 
@@ -342,7 +276,8 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
           type = KeyData.Type.kDown;
         }
       }
-      final char complexChar = applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
+      final char complexChar =
+          characterCombiner.applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
       if (complexChar != 0) {
         character = "" + complexChar;
       }
@@ -394,13 +329,13 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
         onKeyEventHandledCallback == null
             ? null
             : message -> {
-          Boolean handled = false;
-          message.rewind();
-          if (message.capacity() != 0) {
-            handled = message.get() != 0;
-          }
-          onKeyEventHandledCallback.onKeyEventHandled(handled);
-        };
+              Boolean handled = false;
+              message.rewind();
+              if (message.capacity() != 0) {
+                handled = message.get() != 0;
+              }
+              onKeyEventHandledCallback.onKeyEventHandled(handled);
+            };
 
     messenger.send(KeyData.CHANNEL, data.toBytes(), handleMessageReply);
   }
@@ -409,15 +344,14 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
    * Parses an Android key event, performs synchronization, and dispatches Flutter events through
    * the messenger to the framework with the given callback.
    *
-   * At least one event will be dispatched. If there are no others, an empty event with 0 physical
-   * key and 0 logical key will be synthesized.
+   * <p>At least one event will be dispatched. If there are no others, an empty event with 0
+   * physical key and 0 logical key will be synthesized.
    *
    * @param event The Android key event to be handled.
-   * @param onKeyEventHandledCallback the method to call when the framework has decided whether
-   *                                  to handle this event. This callback will always be called once
-   *                                  and only once. If there are no non-synthesized out of this
-   *                                  event, this callback will be called during this method with
-   *                                  true.
+   * @param onKeyEventHandledCallback the method to call when the framework has decided whether to
+   *     handle this event. This callback will always be called once and only once. If there are no
+   *     non-synthesized out of this event, this callback will be called during this method with
+   *     true.
    */
   @Override
   public void handleEvent(
