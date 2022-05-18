@@ -4449,12 +4449,20 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
   void _transform(Float64List matrix4) native 'Canvas_transform';
 
-  Float64List getCurrentTransform() {
+  /// Returns the current transform including the combined result of all transform
+  /// methods executed since the creation of this [Canvas] object, and respecting the
+  /// save/restore history.
+  ///
+  /// Methods that can change the current transform include [translate], [scale],
+  /// [rotate], [skew], and [transform]. The [restore] method can also modify
+  /// the current transform by restoring it to the same value it had before its
+  /// associated [save] or [saveLayer] call.
+  Float64List getTransform() {
     final Float64List matrix4 = Float64List(16);
-    _getCurrentTransform(matrix4);
+    _getTransform(matrix4);
     return matrix4;
   }
-  void _getCurrentTransform(Float64List matrix4) native 'Canvas_getCurrentTransform';
+  void _getTransform(Float64List matrix4) native 'Canvas_getTransform';
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
@@ -4510,12 +4518,48 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
   void _clipPath(Path path, bool doAntiAlias) native 'Canvas_clipPath';
 
-  Rect getCurrentClipBounds() {
+  /// Returns the bounds of the current clip including a conservative combined
+  /// result of all clip methods executed since the creation of this [Canvas]
+  /// object, and respecting the save/restore history.
+  ///
+  /// The returned bounds are a conservative estimate of the bounds of the actual
+  /// clip based on intersecting the bounds of each clip method that was executed
+  /// with [ClipOp.intersect] and potentially ignoring any clip method that was
+  /// executed with [ClipOp.difference]. These [ClipOp] arguments are only present
+  /// on the [clipRect] method.
+  ///
+  /// To understand how the bounds estimate can be conservative, consider the
+  /// following two clip method calls:
+  ///
+  /// ```dart
+  ///    clipPath(Path()
+  ///      ..addRect(const Rect.fromLTRB(10, 10, 20, 20))
+  ///      ..addRect(const Rect.fromLTRB(80, 80, 100, 100)));
+  ///    clipPath(Path()
+  ///      ..addRect(const Rect.fromLTRB(80, 10, 100, 20))
+  ///      ..addRect(const Rect.fromLTRB(10, 80, 20, 100)));
+  /// ```
+  ///
+  /// After executing both of those calls there is no area left in which to draw
+  /// because the two paths have no overlapping regions. But, in this case,
+  /// [getClipBounds] would return a rectangle from `10, 10` to `100, 100` because it
+  /// only intersects the bounds of the two path objects to obtain its conservative
+  /// estimate.
+  ///
+  /// The clip bounds are not affected by the bounds of any enclosing
+  /// [saveLayer] call as the engine does not currently guarantee the strict
+  /// enforcement of those bounds during rendering.
+  ///
+  /// Methods that can change the current clip include [clipRect], [clipRRect],
+  /// and [clipPath]. The [restore] method can also modify the current clip by
+  /// restoring it to the same value it had before its associated [save] or
+  /// [saveLayer] call.
+  Rect getClipBounds() {
     final Float64List bounds = Float64List(4);
-    _getCurrentClipBounds(bounds);
+    _getClipBounds(bounds);
     return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
   }
-  void _getCurrentClipBounds(Float64List bounds) native 'Canvas_getCurrentClipBounds';
+  void _getClipBounds(Float64List bounds) native 'Canvas_getClipBounds';
 
   /// Paints the given [Color] onto the canvas, applying the given
   /// [BlendMode], with the given color being the source and the background

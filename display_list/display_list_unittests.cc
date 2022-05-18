@@ -1962,14 +1962,14 @@ TEST(DisplayList, TranslateAffectsCurrentTransform) {
   builder.translate(12.3, 14.5);
   SkMatrix matrix = SkMatrix::Translate(12.3, 14.5);
   SkM44 m44 = SkM44(matrix);
-  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
-  SkMatrix curMatrix = builder.getCurrentTransform();
+  SkM44 curM44 = builder.getTransformFullPerspective();
+  SkMatrix curMatrix = builder.getTransform();
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
   builder.translate(10, 10);
   // CurrentTransform has changed
-  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
-  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), curMatrix);
   // Previous return values have not
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
@@ -1980,14 +1980,14 @@ TEST(DisplayList, ScaleAffectsCurrentTransform) {
   builder.scale(12.3, 14.5);
   SkMatrix matrix = SkMatrix::Scale(12.3, 14.5);
   SkM44 m44 = SkM44(matrix);
-  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
-  SkMatrix curMatrix = builder.getCurrentTransform();
+  SkM44 curM44 = builder.getTransformFullPerspective();
+  SkMatrix curMatrix = builder.getTransform();
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
   builder.translate(10, 10);
   // CurrentTransform has changed
-  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
-  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), curMatrix);
   // Previous return values have not
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
@@ -1998,14 +1998,14 @@ TEST(DisplayList, RotateAffectsCurrentTransform) {
   builder.rotate(12.3);
   SkMatrix matrix = SkMatrix::RotateDeg(12.3);
   SkM44 m44 = SkM44(matrix);
-  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
-  SkMatrix curMatrix = builder.getCurrentTransform();
+  SkM44 curM44 = builder.getTransformFullPerspective();
+  SkMatrix curMatrix = builder.getTransform();
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
   builder.translate(10, 10);
   // CurrentTransform has changed
-  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
-  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), curMatrix);
   // Previous return values have not
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
@@ -2016,14 +2016,14 @@ TEST(DisplayList, SkewAffectsCurrentTransform) {
   builder.skew(12.3, 14.5);
   SkMatrix matrix = SkMatrix::Skew(12.3, 14.5);
   SkM44 m44 = SkM44(matrix);
-  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
-  SkMatrix curMatrix = builder.getCurrentTransform();
+  SkM44 curM44 = builder.getTransformFullPerspective();
+  SkMatrix curMatrix = builder.getTransform();
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
   builder.translate(10, 10);
   // CurrentTransform has changed
-  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
-  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), curMatrix);
   // Previous return values have not
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
@@ -2037,14 +2037,14 @@ TEST(DisplayList, TransformAffectsCurrentTransform) {
                                       1, 5, 14.5,  //
                                       0, 0, 1);
   SkM44 m44 = SkM44(matrix);
-  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
-  SkMatrix curMatrix = builder.getCurrentTransform();
+  SkM44 curM44 = builder.getTransformFullPerspective();
+  SkMatrix curMatrix = builder.getTransform();
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
   builder.translate(10, 10);
   // CurrentTransform has changed
-  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
-  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), curMatrix);
   // Previous return values have not
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
@@ -2063,14 +2063,14 @@ TEST(DisplayList, FullTransformAffectsCurrentTransform) {
                     1, 5, 3, 14.5,  //
                     0, 0, 7, 16.2,  //
                     0, 0, 0, 1);
-  SkM44 curM44 = builder.getCurrentTransformFullPerspective();
-  SkMatrix curMatrix = builder.getCurrentTransform();
+  SkM44 curM44 = builder.getTransformFullPerspective();
+  SkMatrix curMatrix = builder.getTransform();
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);
   builder.translate(10, 10);
   // CurrentTransform has changed
-  ASSERT_NE(builder.getCurrentTransformFullPerspective(), m44);
-  ASSERT_NE(builder.getCurrentTransform(), curMatrix);
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), curMatrix);
   // Previous return values have not
   ASSERT_EQ(curM44, m44);
   ASSERT_EQ(curMatrix, matrix);

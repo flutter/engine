@@ -468,67 +468,67 @@ void main() {
     Expect.fail('$value is too close to $expected');
   };
 
-  test('Canvas.translate affects canvas.getCurrentTransform', () async {
+  test('Canvas.translate affects canvas.getTransform', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.translate(12, 14.5);
     final Float64List matrix = Matrix4.translationValues(12, 14.5, 0).storage;
-    final Float64List curMatrix = canvas.getCurrentTransform();
+    final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
     canvas.translate(10, 10);
-    final Float64List newCurMatrix = canvas.getCurrentTransform();
+    final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));
   });
 
-  test('Canvas.scale affects canvas.getCurrentTransform', () async {
+  test('Canvas.scale affects canvas.getTransform', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.scale(12, 14.5);
     final Float64List matrix = Matrix4.diagonal3Values(12, 14.5, 1).storage;
-    final Float64List curMatrix = canvas.getCurrentTransform();
+    final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
     canvas.translate(10, 10);
-    final Float64List newCurMatrix = canvas.getCurrentTransform();
+    final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));
   });
 
-  test('Canvas.rotate affects canvas.getCurrentTransform', () async {
+  test('Canvas.rotate affects canvas.getTransform', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.rotate(pi);
     final Float64List matrix = Matrix4.rotationZ(pi).storage;
-    final Float64List curMatrix = canvas.getCurrentTransform();
+    final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
     canvas.translate(10, 10);
-    final Float64List newCurMatrix = canvas.getCurrentTransform();
+    final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));
   });
 
-  test('Canvas.skew affects canvas.getCurrentTransform', () async {
+  test('Canvas.skew affects canvas.getTransform', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.skew(12, 14.5);
     final Float64List matrix = (Matrix4.identity()..setEntry(0, 1, 12)..setEntry(1, 0, 14.5)).storage;
-    final Float64List curMatrix = canvas.getCurrentTransform();
+    final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
     canvas.translate(10, 10);
-    final Float64List newCurMatrix = canvas.getCurrentTransform();
+    final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));
   });
 
-  test('Canvas.transform affects canvas.getCurrentTransform', () async {
+  test('Canvas.transform affects canvas.getTransform', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     final Float64List matrix = (Matrix4.identity()..translate(12.0, 14.5)..scale(12.0, 14.5)).storage;
     canvas.transform(matrix);
-    final Float64List curMatrix = canvas.getCurrentTransform();
+    final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
     canvas.translate(10, 10);
-    final Float64List newCurMatrix = canvas.getCurrentTransform();
+    final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));
   });
@@ -554,57 +554,57 @@ void main() {
     Expect.fail('$value is too close to $expected');
   };
 
-  test('Canvas.clipRect affects canvas.getCurrentClipBounds', () async {
+  test('Canvas.clipRect affects canvas.getClipBounds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clip = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     canvas.clipRect(clip);
-    final Rect curBounds = canvas.getCurrentClipBounds();
+    final Rect curBounds = canvas.getClipBounds();
     expect(curBounds, closeToRect(clip));
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
-    final Rect newCurBounds = canvas.getCurrentClipBounds();
+    final Rect newCurBounds = canvas.getClipBounds();
     expect(newCurBounds, notCloseToRect(clip));
     expect(curBounds, closeToRect(clip));
   });
 
-  test('Canvas.clipRRect affects canvas.getCurrentClipBounds', () async {
+  test('Canvas.clipRRect affects canvas.getClipBounds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     final RRect clip = RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
     canvas.clipRRect(clip);
-    final Rect curBounds = canvas.getCurrentClipBounds();
+    final Rect curBounds = canvas.getClipBounds();
     expect(curBounds, closeToRect(clipBounds));
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
-    final Rect newCurBounds = canvas.getCurrentClipBounds();
+    final Rect newCurBounds = canvas.getClipBounds();
     expect(newCurBounds, notCloseToRect(clipBounds));
     expect(curBounds, closeToRect(clipBounds));
   });
 
-  test('Canvas.clipPath affects canvas.getCurrentClipBounds', () async {
+  test('Canvas.clipPath affects canvas.getClipBounds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     final Path clip = Path()..addRect(clipBounds)..addOval(clipBounds);
     canvas.clipPath(clip);
-    final Rect curBounds = canvas.getCurrentClipBounds();
+    final Rect curBounds = canvas.getClipBounds();
     expect(curBounds, closeToRect(clipBounds));
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
-    final Rect newCurBounds = canvas.getCurrentClipBounds();
+    final Rect newCurBounds = canvas.getClipBounds();
     expect(newCurBounds, notCloseToRect(clipBounds));
     expect(curBounds, closeToRect(clipBounds));
   });
 
-  test('Canvas.clipRect(diff) does not affect canvas.getCurrentClipBounds', () async {
+  test('Canvas.clipRect(diff) does not affect canvas.getClipBounds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clip = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     canvas.clipRect(clip);
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), clipOp: ClipOp.difference);
-    final Rect curBounds = canvas.getCurrentClipBounds();
+    final Rect curBounds = canvas.getClipBounds();
     expect(curBounds, closeToRect(clip));
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
-    final Rect newCurBounds = canvas.getCurrentClipBounds();
+    final Rect newCurBounds = canvas.getClipBounds();
     expect(newCurBounds, notCloseToRect(clip));
     expect(curBounds, closeToRect(clip));
   });

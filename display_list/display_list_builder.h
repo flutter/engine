@@ -198,9 +198,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void transform(const SkMatrix& matrix) { transform(&matrix); }
   void transform(const SkM44& matrix44) { transform(&matrix44); }
 
-  SkM44 getCurrentTransformFullPerspective() { return current_layer_->matrix; }
-
-  SkMatrix getCurrentTransform() { return current_layer_->matrix.asM33(); }
+  SkM44 getTransformFullPerspective() { return current_layer_->matrix; }
+  SkMatrix getTransform() { return current_layer_->matrix.asM33(); }
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;

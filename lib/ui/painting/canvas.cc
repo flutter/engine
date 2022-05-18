@@ -46,11 +46,11 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, rotate)                 \
   V(Canvas, skew)                   \
   V(Canvas, transform)              \
-  V(Canvas, getCurrentTransform)    \
+  V(Canvas, getTransform)           \
   V(Canvas, clipRect)               \
   V(Canvas, clipRRect)              \
   V(Canvas, clipPath)               \
-  V(Canvas, getCurrentClipBounds)   \
+  V(Canvas, getClipBounds)          \
   V(Canvas, drawColor)              \
   V(Canvas, drawLine)               \
   V(Canvas, drawPaint)              \
@@ -221,10 +221,10 @@ void Canvas::transform(const tonic::Float64List& matrix4) {
   }
 }
 
-void Canvas::getCurrentTransform(tonic::Float64List& matrix4) {
+void Canvas::getTransform(tonic::Float64List& matrix4) {
   SkM44 sk_m44 = display_list_recorder_
                      ? display_list_recorder_->builder()
-                           ->getCurrentTransformFullPerspective()
+                           ->getTransformFullPerspective()
                      : canvas_->getLocalToDevice();
   SkScalar m44_values[16];
   // The Float array stored by Dart Matrix4 is in column-major order
@@ -270,7 +270,7 @@ void Canvas::clipPath(const CanvasPath* path, bool doAntiAlias) {
   }
 }
 
-void Canvas::getCurrentClipBounds(tonic::Float64List& rect) {
+void Canvas::getClipBounds(tonic::Float64List& rect) {
   SkRect bounds = display_list_recorder_
                       ? display_list_recorder_->builder()->getClipBounds()
                       : canvas_->getLocalClipBounds();
