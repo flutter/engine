@@ -66,7 +66,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     if (byMapping != null) {
       return byMapping;
     }
-    return KeyboardMap.kAndroidPlane + event.getScanCode();
+    return KeyboardMap.kAndroidPlane & event.getScanCode();
   }
 
   // Get the logical key for this event.
@@ -77,7 +77,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     if (byMapping != null) {
       return byMapping;
     }
-    return KeyboardMap.kAndroidPlane + event.getKeyCode();
+    return KeyboardMap.kAndroidPlane & event.getKeyCode();
   }
 
   // Update `pressingRecords`.
