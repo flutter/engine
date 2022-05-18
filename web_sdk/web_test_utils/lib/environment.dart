@@ -52,7 +52,7 @@ class Environment {
     for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
       outDir,
-
+      flutterWebSdkOutDir,
       dartSdkDir,
       webUiRootDir
     ]) {
