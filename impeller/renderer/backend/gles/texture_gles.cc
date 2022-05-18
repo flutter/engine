@@ -132,7 +132,6 @@ struct TexImage2DData {
       }
 
       case PixelFormat::kR8G8B8A8UNormInt: {
-        TRACE_EVENT0("impeller", "R8G8B8A8UNormIntCopy");
         internal_format = GL_RGBA;
         format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
