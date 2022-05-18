@@ -1,0 +1,5 @@
+This file exists as a signal to the recipe bots that they should use the new way
+of building the Flutter Web SDK.
+
+Once the bots no longer need to support both the old and new way, this file should
+be deleted.

@@ -111,7 +111,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '6c00bc8d3d3c80e07e58c1f91d255dcefc420641',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'e63045d27d5c21272dfe84c5e83326d2a7aae253',
 
    # Fuchsia compatibility
    #
@@ -156,7 +156,7 @@ deps = {
    # Chromium-style dependencies.
 
   'src/third_party/icu':
-   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '1fd0dbea04448c3f73fe5cb7599f9472f0f107f1',
+   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'f43d5654c25f3b2a202257da0906f3b7c6d2dc44',
 
   'src/third_party/khronos':
    Var('chromium_git') + '/chromium/src/third_party/khronos.git' + '@' + '7122230e90547962e0f0c627f62eeed3c701f275',
