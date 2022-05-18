@@ -59,7 +59,8 @@ PlatformViewIOS::PlatformViewIOS(
                       IOSContext::Create(rendering_api,
                                          delegate.OnPlatformViewGetSettings().enable_impeller
                                              ? IOSRenderingBackend::kImpeller
-                                             : IOSRenderingBackend::kSkia),
+                                             : IOSRenderingBackend::kSkia,
+                                         delegate.OnPlatformViewGetSettings().msaa_samples),
                       platform_views_controller,
                       task_runners) {}
 

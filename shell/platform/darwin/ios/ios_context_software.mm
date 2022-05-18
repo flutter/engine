@@ -6,7 +6,7 @@
 
 namespace flutter {
 
-IOSContextSoftware::IOSContextSoftware() = default;
+IOSContextSoftware::IOSContextSoftware() : IOSContext(1) {}
 
 // |IOSContext|
 IOSContextSoftware::~IOSContextSoftware() = default;
