@@ -62,15 +62,13 @@ public class KeyData {
     }
   }
 
-  /**
-   * Creates an empty {@link KeyData}.
-   */
+  /** Creates an empty {@link KeyData}. */
   public KeyData() {}
 
   /**
    * Unmarshal fields from a buffer.
    *
-   * For the binary format, see {@code lib/ui/window/key_data_packet.h}.
+   * <p>For the binary format, see {@code lib/ui/window/key_data_packet.h}.
    */
   public KeyData(@NonNull ByteBuffer buffer) {
     final long charSize = buffer.getLong();
@@ -103,15 +101,13 @@ public class KeyData {
   long logicalKey;
   boolean synthesized;
 
-  /**
-   * The character of this key data encoded in UTF-8.
-   */
+  /** The character of this key data encoded in UTF-8. */
   @Nullable String character;
 
   /**
    * Marshal the key data to a new byte buffer.
    *
-   * For the binary format, see {@code lib/ui/window/key_data_packet.h}.
+   * <p>For the binary format, see {@code lib/ui/window/key_data_packet.h}.
    *
    * @return the marshalled bytes.
    */
