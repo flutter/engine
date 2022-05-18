@@ -29,6 +29,22 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+@interface UIResponder (FirstResponder)
++(id)currentFirstResponder;
+@end
+
+static id currentFirstResponder;
+@implementation UIResponder (FirstResponder)
++(id)currentFirstResponder {
+    currentFirstResponder = nil;
+    [[UIApplication sharedApplication] sendAction:@selector(findFirstResponder:) to:nil from:nil forEvent:nil];
+    return currentFirstResponder;
+}
+-(void)findFirstResponder:(id)sender {
+    currentFirstResponder = self;
+}
+@end
+
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
@@ -1315,6 +1331,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)pressesBegan:(NSSet<UIPress*>*)presses
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  id currentFirstResponder = [UIResponder currentFirstResponder];
+  if (currentFirstResponder && ![currentFirstResponder isKindOfClass:[FlutterTextInputView class]]) {
+    [super pressesBegan:presses withEvent:event];
+    return;
+  }
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
       [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
