@@ -222,10 +222,10 @@ void Canvas::transform(const tonic::Float64List& matrix4) {
 }
 
 void Canvas::getTransform(tonic::Float64List& matrix4) {
-  SkM44 sk_m44 = display_list_recorder_
-                     ? display_list_recorder_->builder()
-                           ->getTransformFullPerspective()
-                     : canvas_->getLocalToDevice();
+  SkM44 sk_m44 =
+      display_list_recorder_
+          ? display_list_recorder_->builder()->getTransformFullPerspective()
+          : canvas_->getLocalToDevice();
   SkScalar m44_values[16];
   // The Float array stored by Dart Matrix4 is in column-major order
   sk_m44.getColMajor(m44_values);
