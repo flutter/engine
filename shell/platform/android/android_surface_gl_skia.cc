@@ -9,7 +9,9 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
+#include "flutter/shell/platform/android/android_gl_fbo_pool.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
 namespace flutter {
@@ -26,7 +28,8 @@ AndroidSurfaceGLSkia::AndroidSurfaceGLSkia(
     : AndroidSurface(android_context),
       native_window_(nullptr),
       onscreen_surface_(nullptr),
-      offscreen_surface_(nullptr) {
+      offscreen_surface_(nullptr),
+      fbo_pool_(std::make_unique<AndroidGLFBOPool>()) {
   // Acquire the offscreen surface.
   offscreen_surface_ = GLContextPtr()->CreateOffscreenSurface();
   if (!offscreen_surface_->IsValid()) {
@@ -158,13 +161,20 @@ bool AndroidSurfaceGLSkia::GLContextPresent(
     const std::optional<SkIRect>& damage) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
+  fbo_pool_->Submit(fbo_id);
   return onscreen_surface_->SwapBuffers(damage);
 }
 
+// |GPUSurfaceGLDelegate|
 intptr_t AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
   FML_DCHECK(IsValid());
   // The default window bound framebuffer on Android.
-  return 0;
+  return fbo_pool_->GetOrCreateFBO(frame_info);
+}
+
+// |GPUSurfaceGLDelegate|
+bool AndroidSurfaceGLSkia::GLContextFBOResetAfterPresent() const {
+  return true;
 }
 
 // |GPUSurfaceGLDelegate|

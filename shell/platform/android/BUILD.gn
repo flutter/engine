@@ -76,6 +76,7 @@ source_set("flutter_shell_native_src") {
     "android_environment_gl.h",
     "android_external_texture_gl.cc",
     "android_external_texture_gl.h",
+    "android_gl_fbo_pool.h",
     "android_shell_holder.cc",
     "android_shell_holder.h",
     "android_surface_gl_impeller.cc",

@@ -13,6 +13,7 @@
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
+#include "flutter/shell/platform/android/android_gl_fbo_pool.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 
@@ -71,6 +72,9 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
+  bool GLContextFBOResetAfterPresent() const override;
+
+  // |GPUSurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
 
   // Obtain a raw pointer to the on-screen AndroidEGLSurface.
@@ -85,6 +89,7 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   fml::RefPtr<AndroidNativeWindow> native_window_;
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
+  std::unique_ptr<AndroidGLFBOPool> fbo_pool_;
 
   //----------------------------------------------------------------------------
   /// @brief      Takes the super class AndroidSurface's AndroidContext and
