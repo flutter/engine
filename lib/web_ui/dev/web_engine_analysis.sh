@@ -9,7 +9,7 @@ set -x
 
 echo "Engine path $ENGINE_PATH"
 WEB_UI_DIR="$ENGINE_PATH/src/flutter/lib/web_ui"
-DART_SDK_DIR="${ENGINE_PATH}/src/out/host_debug_unopt/dart-sdk"
+DART_SDK_DIR="${ENGINE_PATH}/third_party/dart/tools/sdks/dart-sdk"
 DART_PATH="$DART_SDK_DIR/bin/dart"
 
 echo "Running \`dart pub get\` in 'engine/src/flutter/lib/web_ui'"
