@@ -34,7 +34,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
-  // The messenger used to send Flutter key events to the framework.
+  // The messenger that is used to send Flutter key events to the framework.
   //
   // On `handleEvent`, Flutter events are marshalled into byte buffers in the format specified by
   // `KeyData.toBytes`.
@@ -206,7 +206,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   // synthesized events so that the state of these keys matches the true state taking the current
   // event in consideration.
   //
-  // Although Android KeyEvent defined bitmasks  for all "lock" modifiers and define them as the
+  // Although Android KeyEvent defined bitmasks for all "lock" modifiers and define them as the
   // "lock" state, weird behaviors are observed on ChromeOS. First, ScrollLock and NumLock presses
   // do not set metaState bits. Second, CapsLock key events set the CapsLock bit as if it is a
   // pressing modifier (key down having state 1, key up having state 0), while other key events set
