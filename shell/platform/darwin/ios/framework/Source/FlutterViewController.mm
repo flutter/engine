@@ -695,13 +695,13 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     _discretePanGestureRecognizer =
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(scrollEvent:)];
     _discretePanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskDiscrete;
-    _discretePanGestureRecognizer.allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
+    _discretePanGestureRecognizer.allowedTouchTypes = @[];
     _discretePanGestureRecognizer.delegate = self;
     [_flutterView.get() addGestureRecognizer:_discretePanGestureRecognizer];
     _continuousPanGestureRecognizer =
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panEvent:)];
     _continuousPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskContinuous;
-    _continuousPanGestureRecognizer.allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
+    _continuousPanGestureRecognizer.allowedTouchTypes = @[];
     _continuousPanGestureRecognizer.delegate = self;
     [_flutterView.get() addGestureRecognizer:_continuousPanGestureRecognizer];
     _pinchGestureRecognizer =
