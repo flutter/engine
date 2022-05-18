@@ -11,6 +11,7 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/geometry/path_builder.h"
 
 namespace impeller {
@@ -296,6 +297,18 @@ void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
 
+  GetCurrentPass().AddEntity(std::move(entity));
+}
+
+void Canvas::DrawVertices(const flutter::DlVertices* vertices,
+                          flutter::DlBlendMode mode) {
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(mode);
+  entity.SetContents();
+  VerticesContents contents = {};
+  contents.SetVertices(vertices);
   GetCurrentPass().AddEntity(std::move(entity));
 }
 

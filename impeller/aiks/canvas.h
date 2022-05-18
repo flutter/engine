@@ -89,6 +89,9 @@ class Canvas {
 
   void DrawTextFrame(TextFrame text_frame, Point position, Paint paint);
 
+  void DrawVertices(const flutter::DlVertices* vertices,
+                    flutter::DlBlendMode mode);
+
   Picture EndRecordingAsPicture();
 
  private:
