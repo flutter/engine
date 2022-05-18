@@ -328,7 +328,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// By default this is the same as the [rootElement]. However, specialized
   /// surface implementations may choose to override this and provide a
   /// different element for nesting children.
-  html.Element? get childContainer => rootElement;
+  DomElement? get childContainer => rootElement as DomElement?;
 
   /// This surface's immediate parent.
   PersistedContainerSurface? parent;
@@ -669,7 +669,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     // Memoize length for efficiency.
     final int len = _children.length;
     // Memoize container element for efficiency. [childContainer] is polymorphic
-    final html.Element? containerElement = childContainer;
+    final html.Element? containerElement = childContainer as html.Element?;
     for (int i = 0; i < len; i++) {
       final PersistedSurface child = _children[i];
       if (child.isPendingRetention) {
@@ -760,7 +760,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
             PersistedSurfaceState.pendingRetention));
         assert(newChild.rootElement != null);
-        assert(newChild.rootElement!.parent == childContainer);
+        assert(newChild.rootElement!.parent == childContainer as html.Element?);
       }
       return true;
     }());
@@ -774,7 +774,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     assert(oldSurface._children.isEmpty);
 
     // Memoizing variables for efficiency.
-    final html.Element? containerElement = childContainer;
+    final html.Element? containerElement = childContainer as html.Element?;
     final int length = _children.length;
 
     for (int i = 0; i < length; i++) {
@@ -830,8 +830,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       assert(newChild.rootElement != null);
 
       // Move the HTML node if necessary.
-      if (newChild.rootElement!.parent != childContainer) {
-        childContainer!.append(newChild.rootElement!);
+      if (newChild.rootElement!.parent != childContainer as html.Element?) {
+        childContainer!.append(newChild.rootElement! as DomNode);
       }
 
       newChild.retain();
@@ -854,8 +854,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
           newChild.oldLayer! as PersistedContainerSurface;
 
       // Move the HTML node if necessary.
-      if (oldLayer.rootElement!.parent != childContainer) {
-        childContainer!.append(oldLayer.rootElement!);
+      if (oldLayer.rootElement!.parent != childContainer as html.Element?) {
+        childContainer!.append(oldLayer.rootElement! as DomNode);
       }
 
       newChild.update(oldLayer);
@@ -886,15 +886,15 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       newChild.update(bestMatch);
 
       // Move the HTML node if necessary.
-      if (newChild.rootElement!.parent != childContainer) {
-        childContainer!.append(newChild.rootElement!);
+      if (newChild.rootElement!.parent != childContainer as html.Element?) {
+        childContainer!.append(newChild.rootElement! as DomNode);
       }
 
       assert(
           debugAssertSurfaceState(bestMatch, PersistedSurfaceState.released));
     } else {
       newChild.build();
-      childContainer!.append(newChild.rootElement!);
+      childContainer!.append(newChild.rootElement! as DomNode);
       assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
     }
 
@@ -915,7 +915,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     assert(_children.isNotEmpty && oldSurface._children.isNotEmpty);
 
     // Memoize container element for efficiency. [childContainer] is polymorphic
-    final html.Element? containerElement = childContainer;
+    final html.Element? containerElement = childContainer as html.Element?;
     final Map<PersistedSurface?, PersistedSurface> matches =
         _matchChildren(oldSurface);
 
@@ -1043,7 +1043,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     }
 
     html.HtmlElement? refNode;
-    final html.Element? containerElement = childContainer;
+    final html.Element? containerElement = childContainer as html.Element?;
     for (int i = _children.length - 1; i >= 0; i -= 1) {
       final int indexInNew = indexMapNew!.indexOf(i);
       final bool isStationary =
@@ -1060,7 +1060,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         }
       }
       refNode = childElement;
-      assert(child.rootElement!.parent == childContainer);
+      assert(child.rootElement!.parent == childContainer as html.Element?);
     }
   }
 

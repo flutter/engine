@@ -664,7 +664,7 @@ void setElementStyle(
   }
 }
 
-void setClipPath(html.Element element, String? value) {
+void setClipPath(DomElement element, String? value) {
   if (browserEngine == BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
