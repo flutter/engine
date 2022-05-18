@@ -30,18 +30,21 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 
 @interface UIResponder (FirstResponder)
-+(id)currentFirstResponder;
++ (id)currentFirstResponder;
 @end
 
 static id currentFirstResponder;
 @implementation UIResponder (FirstResponder)
-+(id)currentFirstResponder {
-    currentFirstResponder = nil;
-    [[UIApplication sharedApplication] sendAction:@selector(findFirstResponder:) to:nil from:nil forEvent:nil];
-    return currentFirstResponder;
++ (id)currentFirstResponder {
+  currentFirstResponder = nil;
+  [[UIApplication sharedApplication] sendAction:@selector(findFirstResponder:)
+                                             to:nil
+                                           from:nil
+                                       forEvent:nil];
+  return currentFirstResponder;
 }
--(void)findFirstResponder:(id)sender {
-    currentFirstResponder = self;
+- (void)findFirstResponder:(id)sender {
+  currentFirstResponder = self;
 }
 @end
 
@@ -1332,7 +1335,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesBegan:(NSSet<UIPress*>*)presses
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   id currentFirstResponder = [UIResponder currentFirstResponder];
-  if (currentFirstResponder && ![currentFirstResponder isKindOfClass:[FlutterTextInputView class]]) {
+  if (currentFirstResponder &&
+      ![currentFirstResponder isKindOfClass:[FlutterTextInputView class]]) {
+    // When the first responer of the event exists but it is not a FlutterTextInputView,
+    // which means the first responder is a PlatformView view.
     [super pressesBegan:presses withEvent:event];
     return;
   }
