@@ -21,6 +21,9 @@ class Context;
 
 namespace flutter {
 
+// Supported MSAA sample count values for iOS.
+enum class MsaaSampleCount { kNone = 1, kTwo = 2, kFour = 4, kEight = 8 };
+
 //------------------------------------------------------------------------------
 /// @brief      Manages the lifetime of the on-screen and off-screen rendering
 ///             contexts on iOS. On-screen contexts are used by Flutter for
@@ -55,7 +58,7 @@ class IOSContext {
   ///
   static std::unique_ptr<IOSContext> Create(IOSRenderingAPI api,
                                             IOSRenderingBackend backend,
-                                            int msaa_samples);
+                                            MsaaSampleCount msaa_samples);
 
   //----------------------------------------------------------------------------
   /// @brief      Collects the context object. This must happen on the thread on
@@ -140,13 +143,13 @@ class IOSContext {
 
   virtual std::shared_ptr<impeller::Context> GetImpellerContext() const;
 
-  int get_msaa_samples() const { return msaa_samples_; }
+  int GetMsaaSampleCount() const { return static_cast<int>(msaa_samples_); }
 
  protected:
-  explicit IOSContext(int msaa_samples);
+  explicit IOSContext(MsaaSampleCount msaa_samples);
 
  private:
-  int msaa_samples_ = 1;
+  MsaaSampleCount msaa_samples_ = MsaaSampleCount::kNone;
   FML_DISALLOW_COPY_AND_ASSIGN(IOSContext);
 };
 

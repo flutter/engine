@@ -44,7 +44,7 @@ std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* 
   FML_DCHECK(context);
   return std::make_unique<GPUSurfaceMetalSkia>(this,                             // delegate
                                                sk_ref_sp(context),               // context
-                                               GetContext()->get_msaa_samples()  // sample count
+                                               GetContext()->GetMsaaSampleCount()  // sample count
   );
 }
 

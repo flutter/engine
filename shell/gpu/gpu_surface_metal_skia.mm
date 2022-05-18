@@ -53,7 +53,12 @@ GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
       msaa_samples_(msaa_samples),
-      render_to_surface_(render_to_surface) {}
+      render_to_surface_(render_to_surface) {
+  // Skia allows 0 and clamps it to 1.
+  FML_CHECK(msaa_samples_ == 0 || msaa_samples_ == 1 || msaa_samples_ == 2 || msaa_samples_ == 4 ||
+            msaa_samples_ == 8)
+      << "Invalid MSAA sample count value: " << msaa_samples_;
+}
 
 GPUSurfaceMetalSkia::~GPUSurfaceMetalSkia() = default;
 
