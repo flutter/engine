@@ -150,8 +150,8 @@ class ContentContext {
   }
 
   std::shared_ptr<Pipeline> GetVerticesPipeline(
-    ContentContextOptions opts) const {
-      return GetPipeline(vertices_pipelines_, opts);
+      ContentContextOptions opts) const {
+    return GetPipeline(vertices_pipelines_, opts);
   }
 
   std::shared_ptr<Context> GetContext() const;
