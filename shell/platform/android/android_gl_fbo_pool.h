@@ -132,6 +132,7 @@ class AndroidGLFBOPool {
     FML_DLOG(ERROR) << "GL error after blit: " << glGetError();
 
     eglSwapBuffers(display_, surface_);
+    glFinish();
 
     {
       std::scoped_lock<std::mutex> lock(ds_mutex);
