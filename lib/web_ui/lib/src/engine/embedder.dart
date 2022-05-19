@@ -11,6 +11,7 @@ import '../engine.dart' show buildMode, registerHotRestartListener;
 import 'browser_detection.dart';
 import 'canvaskit/initialization.dart';
 import 'configuration.dart';
+import 'dom.dart';
 import 'host_node.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
@@ -199,7 +200,7 @@ class FlutterViewEmbedder {
       hasAutofillOverlay: browserHasAutofillOverlay(),
     );
 
-    final html.BodyElement bodyElement = html.document.body!;
+    final DomHTMLBodyElement bodyElement = domDocument.body!;
 
     bodyElement.setAttribute(
       'flt-renderer',
@@ -269,8 +270,8 @@ class FlutterViewEmbedder {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    final html.Element glassPaneElement = html.document.createElement(_glassPaneTagName);
-    _glassPaneElement = glassPaneElement;
+    final DomElement glassPaneElement = domDocument.createElement(_glassPaneTagName);
+    _glassPaneElement = glassPaneElement as html.Element;
     glassPaneElement.style
       ..position = 'absolute'
       ..top = '0'
@@ -284,7 +285,8 @@ class FlutterViewEmbedder {
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
-    final HostNode glassPaneElementHostNode = _createHostNode(glassPaneElement);
+    final HostNode glassPaneElementHostNode = _createHostNode(glassPaneElement
+        as html.Element);
     _glassPaneShadow = glassPaneElementHostNode;
 
     // Don't allow the scene to receive pointer events.
@@ -295,8 +297,8 @@ class FlutterViewEmbedder {
     /// added eagerly during initialization here and never touched, unless the
     /// system is reset due to hot restart or in a test.
     if (useCanvasKit) {
-      skiaSceneHost = html.Element.tag('flt-scene');
-      addSceneToSceneHost(skiaSceneHost);
+      skiaSceneHost = createDomElement('flt-scene');
+      addSceneToSceneHost(skiaSceneHost as html.Element?);
     }
 
     final html.Element semanticsHostElement =
@@ -334,8 +336,8 @@ class FlutterViewEmbedder {
       _sceneHostElement!.style.opacity = '0.3';
     }
 
-    PointerBinding.initInstance(glassPaneElement);
-    KeyboardBinding.initInstance(glassPaneElement);
+    PointerBinding.initInstance(glassPaneElement as html.Element);
+    KeyboardBinding.initInstance(glassPaneElement as html.Element);
 
     if (html.window.visualViewport == null && isWebKit) {
       // Older Safari versions sometimes give us bogus innerWidth/innerHeight

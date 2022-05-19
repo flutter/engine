@@ -4,7 +4,7 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_context_metal_impeller.h"
 
-#include "flutter/impeller/entity/entity_shaders.h"
+#include "flutter/impeller/entity/mtl/entity_shaders.h"
 #include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 
 namespace flutter {
@@ -22,7 +22,8 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext() {
   return context;
 }
 
-IOSContextMetalImpeller::IOSContextMetalImpeller() : context_(CreateImpellerContext()) {}
+IOSContextMetalImpeller::IOSContextMetalImpeller()
+    : IOSContext(MsaaSampleCount::kFour), context_(CreateImpellerContext()) {}
 
 IOSContextMetalImpeller::~IOSContextMetalImpeller() = default;
 

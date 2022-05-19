@@ -15,7 +15,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../common.dart';
 import 'semantics_tester.dart';
 
 DateTime _testTime = DateTime(2018, 12, 17);
@@ -1472,6 +1471,39 @@ void _testTappable() {
     expectSemanticsTree('''
 <sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>
 ''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('can switch tappable between enabled and disabled', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    void updateTappable({required bool enabled}) {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        hasTap: true,
+        hasEnabledState: true,
+        isEnabled: enabled,
+        isButton: true,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+    }
+
+    updateTappable(enabled: false);
+    expectSemanticsTree('<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
+
+    updateTappable(enabled: true);
+    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
+
+    updateTappable(enabled: false);
+    expectSemanticsTree('<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
+
+    updateTappable(enabled: true);
+    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
 
     semantics().semanticsEnabled = false;
   });

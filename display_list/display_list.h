@@ -74,7 +74,9 @@ namespace flutter {
                                     \
   V(SetBlender)                     \
   V(ClearBlender)                   \
-  V(SetPathEffect)                  \
+                                    \
+  V(SetSkPathEffect)                \
+  V(SetPodPathEffect)               \
   V(ClearPathEffect)                \
                                     \
   V(ClearColorFilter)               \
@@ -254,7 +256,11 @@ class DisplayList : public SkRefCnt {
     return bounds_;
   }
 
-  bool Equals(const DisplayList& other) const;
+  bool Equals(const DisplayList* other) const;
+  bool Equals(const DisplayList& other) const { return Equals(&other); }
+  bool Equals(sk_sp<const DisplayList> other) const {
+    return Equals(other.get());
+  }
 
   bool can_apply_group_opacity() { return can_apply_group_opacity_; }
 

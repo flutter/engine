@@ -237,7 +237,7 @@ static void ValidateDestroyPlatformView(Shell* shell) {
 }
 
 static std::string CreateFlagsString(std::vector<const char*>& flags) {
-  if (flags.size() == 0) {
+  if (flags.empty()) {
     return "";
   }
   std::string flags_string = flags[0];
@@ -511,14 +511,7 @@ TEST_F(ShellTest, LastEntrypointArgs) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_DisallowedDartVMFlag
-#else
-       DisallowedDartVMFlag
-#endif  // defined(WINUWP)
-) {
+TEST_F(ShellTest, DisallowedDartVMFlag) {
   // Run this test in a thread-safe manner, otherwise gtest will complain.
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
@@ -532,14 +525,7 @@ TEST_F(ShellTest,
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_AllowedDartVMFlag
-#else
-       AllowedDartVMFlag
-#endif  // defined(WINUWP)
-) {
+TEST_F(ShellTest, AllowedDartVMFlag) {
   std::vector<const char*> flags = {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
@@ -663,7 +649,7 @@ TEST_F(ShellTest, ReportTimingsIsCalled) {
   DestroyShell(std::move(shell));
 
   fml::TimePoint finish = fml::TimePoint::Now();
-  ASSERT_TRUE(timestamps.size() > 0);
+  ASSERT_TRUE(!timestamps.empty());
   ASSERT_TRUE(timestamps.size() % FrameTiming::kCount == 0);
   std::vector<FrameTiming> timings(timestamps.size() / FrameTiming::kCount);
 
@@ -837,7 +823,7 @@ TEST_F(ShellTest,
 }
 
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA) || defined(WINUWP)
+#if defined(OS_FUCHSIA)
        // TODO(dworsham): https://github.com/flutter/flutter/issues/59816
        // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
        DISABLED_OnPlatformViewDestroyDisablesThreadMerger
@@ -1285,63 +1271,6 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
-// flakiness.
-// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
-TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
-       DISABLED_ResubmitFrame
-#else
-       DISABLED_ResubmitFrame
-#endif
-) {
-  auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent end_frame_latch;
-  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
-  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
-  auto end_frame_callback =
-      [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        if (!raster_thread_merger_ref) {
-          raster_thread_merger_ref = raster_thread_merger;
-        }
-        if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
-          raster_thread_merger->MergeWithLease(10);
-          external_view_embedder->UpdatePostPrerollResult(
-              PostPrerollResult::kSuccess);
-        }
-        end_frame_latch.Signal();
-      };
-  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kResubmitFrame, true);
-
-  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
-                           false, external_view_embedder);
-  PlatformViewNotifyCreated(shell.get());
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("emptyMain");
-  RunEngine(shell.get(), std::move(configuration));
-
-  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
-
-  PumpOneFrame(shell.get());
-  // `EndFrame` changed the post preroll result to `kSuccess` and merged the
-  // threads. During the frame, the threads are not merged, So no
-  // `external_view_embedder->GetSubmittedFrameCount()` is called.
-  end_frame_latch.Wait();
-  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
-
-  // This is the resubmitted frame, which threads are also merged.
-  end_frame_latch.Wait();
-  // 2 frames are submitted because `kResubmitFrame`, but only the 2nd frame
-  // should be submitted with `external_view_embedder`, hence the below check.
-  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
-
-  PlatformViewNotifyDestroyed(shell.get());
-  DestroyShell(std::move(shell));
-}
-
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   // Ensure that all phases are in kPhases.
   ASSERT_EQ(sizeof(FrameTiming::kPhases),
@@ -1426,14 +1355,7 @@ TEST_F(ShellTest, ReloadSystemFonts) {
   shell.reset();
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_WaitForFirstFrame
-#else
-       WaitForFirstFrame
-#endif
-) {
+TEST_F(ShellTest, WaitForFirstFrame) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
@@ -1488,15 +1410,7 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_WaitForFirstFrameMultiple
-#else
-       WaitForFirstFrameMultiple
-#endif  // defined(WINUWP)
-) {
-
+TEST_F(ShellTest, WaitForFirstFrameMultiple) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
@@ -1520,15 +1434,7 @@ TEST_F(ShellTest,
 
 /// Makes sure that WaitForFirstFrame works if we rendered a frame with the
 /// single-thread setup.
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_WaitForFirstFrameInlined
-#else
-       WaitForFirstFrameInlined
-#endif  // defined(WINUWP)
-) {
-
+TEST_F(ShellTest, WaitForFirstFrameInlined) {
   Settings settings = CreateSettingsForFixture();
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
@@ -2315,14 +2221,7 @@ TEST_F(ShellTest, CanRegisterImageDecoders) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_OnServiceProtocolGetSkSLsWorks
-#else
-       OnServiceProtocolGetSkSLsWorks
-#endif  // defined(WINUWP)
-) {
+TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
   fml::ScopedTemporaryDirectory base_dir;
   ASSERT_TRUE(base_dir.fd().is_valid());
   PersistentCache::SetCacheDirectoryPath(base_dir.path());
@@ -2785,15 +2684,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_OnServiceProtocolSetAssetBundlePathWorks
-#else
-       OnServiceProtocolSetAssetBundlePathWorks
-#endif  // defined(WINUWP)
-) {
-
+TEST_F(ShellTest, OnServiceProtocolSetAssetBundlePathWorks) {
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
   RunConfiguration configuration =
@@ -2865,15 +2756,7 @@ TEST_F(ShellTest, EngineRootIsolateLaunchesDontTakeVMDataSettings) {
   isolate_create_latch.Wait();
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_AssetManagerSingle
-#else
-       AssetManagerSingle
-#endif  // defined(WINUWP)
-) {
-
+TEST_F(ShellTest, AssetManagerSingle) {
   fml::ScopedTemporaryDirectory asset_dir;
   fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
       asset_dir.path().c_str(), false, fml::FilePermission::kRead);
@@ -2898,15 +2781,7 @@ TEST_F(ShellTest,
   ASSERT_TRUE(result == content);
 }
 
-TEST_F(ShellTest,
-#if defined(WINUWP)
-       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
-       DISABLED_AssetManagerMulti
-#else
-       AssetManagerMulti
-#endif  // defined(WINUWP)
-) {
-
+TEST_F(ShellTest, AssetManagerMulti) {
   fml::ScopedTemporaryDirectory asset_dir;
   fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
       asset_dir.path().c_str(), false, fml::FilePermission::kRead);

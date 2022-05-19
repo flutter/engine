@@ -842,6 +842,14 @@ class PlatformDispatcher {
     _onTextScaleFactorChangedZone = Zone.current;
   }
 
+  /// Whether the spell check service is supported on the current platform.
+  ///
+  /// This option is used by [EditableTextState] to define its
+  /// [SpellCheckConfiguration] when a default spell check service
+  /// is requested.
+  bool get nativeSpellCheckServiceDefined => _nativeSpellCheckServiceDefined;
+  bool _nativeSpellCheckServiceDefined = false;
+
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
   ///
@@ -903,6 +911,12 @@ class PlatformDispatcher {
 
     final double textScaleFactor = (data['textScaleFactor']! as num).toDouble();
     final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat']! as bool;
+    final bool? nativeSpellCheckServiceDefined = data['nativeSpellCheckServiceDefined'] as bool?;
+    if (nativeSpellCheckServiceDefined != null) {
+      _nativeSpellCheckServiceDefined = nativeSpellCheckServiceDefined;
+    } else {
+      _nativeSpellCheckServiceDefined = false;
+    }
     // This field is optional.
     final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
     if (brieflyShowPassword != null) {
@@ -1992,17 +2006,23 @@ class Locale {
     if (other is! Locale) {
       return false;
     }
-    final String? countryCode = _countryCode;
+    final String? thisCountryCode = countryCode;
     final String? otherCountryCode = other.countryCode;
     return other.languageCode == languageCode
         && other.scriptCode == scriptCode // scriptCode cannot be ''
-        && (other.countryCode == countryCode // Treat '' as equal to null.
-            || otherCountryCode != null && otherCountryCode.isEmpty && countryCode == null
-            || countryCode != null && countryCode.isEmpty && other.countryCode == null);
+        && (other.countryCode == thisCountryCode // Treat '' as equal to null.
+            || otherCountryCode != null && otherCountryCode.isEmpty && thisCountryCode == null
+            || thisCountryCode != null && thisCountryCode.isEmpty && other.countryCode == null);
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode == '' ? null : countryCode);
+  int get hashCode => _hashCode[this] ??= hashValues(
+        languageCode,
+        scriptCode,
+        countryCode == '' ? null : countryCode,
+      );
+  // Memoize hashCode since languageCode and countryCode require lookups.
+  static final Expando<int> _hashCode = Expando<int>();
 
   static Locale? _cachedLocale;
   static String? _cachedLocaleString;

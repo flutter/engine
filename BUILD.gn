@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/toolchain/clang.gni")
 import("//flutter/common/config.gni")
 import("//flutter/examples/examples.gni")
 import("//flutter/shell/platform/config.gni")
@@ -25,19 +26,23 @@ config("config") {
 }
 
 config("export_dynamic_symbols") {
+  # --dynamic-list is the GNU linker syntax supported by ELF linkers.
+  # -exported_symbols_list is the macOS linker syntax. The different flags
+  # accept files formatted differently, so we have exported_symbols.sym for GNU
+  # linker syntax, and exported_symbols_mac.sym for the macOS linker syntax.
   if (is_linux || is_fuchsia) {
     inputs = [ "//flutter/common/exported_symbols.sym" ]
     ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  } else if (is_mac && !use_xcode) {
+    inputs = [ "//flutter/common/exported_symbols_mac.sym" ]
+    ldflags = [
+      "-Xlinker",
+      "-exported_symbols_list",
+      "-Xlinker",
+      rebase_path(inputs[0], root_build_dir),
+    ]
   }
 }
-
-# Flutter SDK artifacts should only be built when either doing host builds, or
-# for cross-compiled desktop targets.
-# TODO: We can't build the engine artifacts for arm (32-bit) right now;
-# see https://github.com/flutter/flutter/issues/74322
-_build_engine_artifacts =
-    current_toolchain == host_toolchain ||
-    (is_linux && !is_chromeos && current_cpu != "arm") || is_mac
 
 if (flutter_prebuilt_dart_sdk) {
   copy_trees("_copy_trees") {
@@ -85,7 +90,7 @@ group("flutter") {
   if (!is_fuchsia) {
     public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
-    if (_build_engine_artifacts) {
+    if (build_engine_artifacts) {
       public_deps += [
         ":dart_sdk",
         "//flutter/flutter_frontend_server:frontend_server",
@@ -94,6 +99,10 @@ group("flutter") {
         # //flutter/lib/snapshot:generate_snapshot_bin will only build
         # gen_snapshot for the host and not the target.
         "//third_party/dart/runtime/bin:gen_snapshot",
+
+        # Impeller artifacts - compiler and libtessellator
+        "//flutter/impeller/compiler:impellerc",
+        "//flutter/impeller/tessellator:tessellator_shared",
       ]
 
       if (full_dart_sdk) {
@@ -102,16 +111,17 @@ group("flutter") {
     }
   }
 
-  if (_build_engine_artifacts) {
+  if (build_engine_artifacts) {
     public_deps += [
       "//flutter/shell/testing",
+      "//flutter/shell/testing:testing_fractional_translation",
       "//flutter/tools/const_finder",
       "//flutter/tools/font-subset",
     ]
   }
 
   # Compile all benchmark targets if enabled.
-  if (enable_unittests && !is_win) {
+  if (enable_unittests && !is_win && !is_fuchsia) {
     public_deps += [
       "//flutter/display_list:display_list_benchmarks",
       "//flutter/fml:fml_benchmarks",
@@ -144,6 +154,8 @@ group("unittests") {
   # Compile all unittests targets if enabled.
   if (enable_unittests) {
     public_deps += [
+      "//flutter/display_list:display_list_rendertests",
+      "//flutter/display_list:display_list_unittests",
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
       "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
@@ -174,11 +186,13 @@ group("unittests") {
       public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
     }
 
+    if (is_mac || is_linux) {
+      public_deps += [ "//flutter/impeller:impeller_unittests" ]
+    }
+
     if (is_mac) {
-      public_deps += [
-        "//flutter/impeller:impeller_unittests",
-        "//flutter/shell/platform/darwin:flutter_channels_unittests",
-      ]
+      public_deps +=
+          [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
     }
 
     if (!is_win && !is_fuchsia) {
@@ -221,19 +235,20 @@ group("unittests") {
       }
 
       if (is_win) {
-        if (target_os == "winuwp") {
-          # TODO: Add winnup variant of client_wrapper_windows_unittests here; see
-          # https://github.com/flutter/flutter/issues/70197
-          public_deps +=
-              [ "//flutter/shell/platform/windows:flutter_windows_unittests" ]
-        } else {
-          public_deps += [
-            "//flutter/shell/platform/windows:flutter_windows_unittests",
-            "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
-          ]
-        }
+        public_deps += [
+          "//flutter/shell/platform/windows:flutter_windows_unittests",
+          "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
+        ]
       }
     }
+  }
+}
+
+if (build_engine_artifacts) {
+  group("archives") {
+    testonly = true
+
+    deps = [ "//flutter/build/archives:artifacts" ]
   }
 }
 

@@ -25,7 +25,6 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
-import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -33,6 +32,7 @@ import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
+import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -87,7 +87,6 @@ public class FlutterEngine {
   // System channels.
   @NonNull private final AccessibilityChannel accessibilityChannel;
   @NonNull private final DeferredComponentChannel deferredComponentChannel;
-  @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
@@ -95,6 +94,7 @@ public class FlutterEngine {
   @NonNull private final RestorationChannel restorationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
+  @NonNull private final SpellCheckChannel spellCheckChannel;
   @NonNull private final SystemChannel systemChannel;
   @NonNull private final TextInputChannel textInputChannel;
 
@@ -301,7 +301,6 @@ public class FlutterEngine {
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
     deferredComponentChannel = new DeferredComponentChannel(dartExecutor);
-    keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
     mouseCursorChannel = new MouseCursorChannel(dartExecutor);
@@ -309,6 +308,7 @@ public class FlutterEngine {
     platformChannel = new PlatformChannel(dartExecutor);
     restorationChannel = new RestorationChannel(dartExecutor, waitForRestorationData);
     settingsChannel = new SettingsChannel(dartExecutor);
+    spellCheckChannel = new SpellCheckChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
@@ -481,12 +481,6 @@ public class FlutterEngine {
     return accessibilityChannel;
   }
 
-  /** System channel that sends key events from Android to Flutter. */
-  @NonNull
-  public KeyEventChannel getKeyEventChannel() {
-    return keyEventChannel;
-  }
-
   /** System channel that sends Android lifecycle events to Flutter. */
   @NonNull
   public LifecycleChannel getLifecycleChannel() {
@@ -557,6 +551,12 @@ public class FlutterEngine {
   @NonNull
   public TextInputChannel getTextInputChannel() {
     return textInputChannel;
+  }
+
+  /** System channel that sends and receives spell check requests and results. */
+  @NonNull
+  public SpellCheckChannel getSpellCheckChannel() {
+    return spellCheckChannel;
   }
 
   /**

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -201,15 +202,15 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('skiaInstantiateWebImageCodec loads an image from the network',
         () async {
-      httpRequestFactory = () {
-        return TestHttpRequest()
+      final TestHttpRequestMock mock = TestHttpRequestMock()
           ..status = 200
-          ..onLoad = Stream<html.ProgressEvent>.fromIterable(<html.ProgressEvent>[
-            html.ProgressEvent('test progress event'),
-          ])
           ..response = kTransparentImage.buffer;
-      };
-      final ui.Codec codec = await skiaInstantiateWebImageCodec('http://image-server.com/picture.jpg', null);
+      httpRequestFactory = () => TestHttpRequest(mock);
+      final Future<ui.Codec> futureCodec =
+          skiaInstantiateWebImageCodec('http://image-server.com/picture.jpg',
+              null);
+      mock.sendEvent('load', DomProgressEvent());
+      final ui.Codec codec = await futureCodec;
       expect(codec.frameCount, 1);
       final ui.Image image = (await codec.getNextFrame()).image;
       expect(image.height, 1);
@@ -251,14 +252,13 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('skiaInstantiateWebImageCodec throws exception on request error',
         () async {
-      httpRequestFactory = () {
-        return TestHttpRequest()
-          ..onError = Stream<html.ProgressEvent>.fromIterable(<html.ProgressEvent>[
-            html.ProgressEvent('test error'),
-          ]);
-      };
+      final TestHttpRequestMock mock = TestHttpRequestMock();
+      httpRequestFactory = () => TestHttpRequest(mock);
       try {
-        await skiaInstantiateWebImageCodec('url-does-not-matter', null);
+        final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
+            'url-does-not-matter', null);
+        mock.sendEvent('error', DomProgressEvent());
+        await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
         expect(
@@ -290,16 +290,15 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('skiaInstantiateWebImageCodec includes URL in the error for malformed image',
         () async {
-      httpRequestFactory = () {
-        return TestHttpRequest()
+      final TestHttpRequestMock mock = TestHttpRequestMock()
           ..status = 200
-          ..onLoad = Stream<html.ProgressEvent>.fromIterable(<html.ProgressEvent>[
-            html.ProgressEvent('test progress event'),
-          ])
           ..response = Uint8List(0).buffer;
-      };
+      httpRequestFactory = () => TestHttpRequest(mock);
       try {
-        await skiaInstantiateWebImageCodec('http://image-server.com/picture.jpg', null);
+        final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
+            'http://image-server.com/picture.jpg', null);
+        mock.sendEvent('load', DomProgressEvent());
+        await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
         if (!browserSupportsImageDecoder) {
@@ -450,7 +449,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('Decode test images', () async {
-      final html.Body listingResponse = await httpFetch('/test_images/');
+      final DomResponse listingResponse = await httpFetch('/test_images/');
       final List<String> testFiles = (await listingResponse.json() as List<dynamic>).cast<String>();
 
       // Sanity-check the test file list. If suddenly test files are moved or
@@ -464,7 +463,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       expect(testFiles, contains(matches(RegExp(r'.*\.bmp'))));
 
       for (final String testFile in testFiles) {
-        final html.Body imageResponse = await httpFetch('/test_images/$testFile');
+        final DomResponse imageResponse = await httpFetch('/test_images/$testFile');
         final Uint8List imageData = (await imageResponse.arrayBuffer() as ByteBuffer).asUint8List();
         final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
         expect(codec.frameCount, greaterThan(0));
@@ -476,6 +475,54 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         }
         codec.dispose();
       }
+    });
+
+    // Reproduces https://skbug.com/12721
+    test('decoded image can be read back from picture', () async {
+      final DomResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final Uint8List imageData = (await imageResponse.arrayBuffer() as ByteBuffer).asUint8List();
+      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final CkImage image = frame.image as CkImage;
+
+      final CkImage snapshot;
+      {
+        final LayerSceneBuilder sb = LayerSceneBuilder();
+        sb.pushOffset(10, 10);
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.drawRect(
+          const ui.Rect.fromLTRB(5, 5, 20, 20),
+          CkPaint(),
+        );
+        canvas.drawImage(image, ui.Offset.zero, CkPaint());
+        canvas.drawRect(
+          const ui.Rect.fromLTRB(90, 90, 105, 105),
+          CkPaint(),
+        );
+        sb.addPicture(ui.Offset.zero, recorder.endRecording());
+        sb.pop();
+        snapshot = await sb.build().toImage(150, 150) as CkImage;
+      }
+
+      {
+        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.drawImage(snapshot, ui.Offset.zero, CkPaint());
+        sb.addPicture(ui.Offset.zero, recorder.endRecording());
+
+        final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
+        dispatcher.rasterizer!.draw(sb.build().layerTree);
+        await matchGoldenFile(
+          'canvaskit_read_back_decoded_image_$mode.png',
+          region: const ui.Rect.fromLTRB(0, 0, 150, 150),
+          maxDiffRatePercent: 0,
+        );
+      }
+
+      image.dispose();
+      codec.dispose();
     });
 
     // This is a regression test for the issues with transferring textures from
@@ -654,116 +701,53 @@ void _testCkBrowserImageDecoder() {
   });
 }
 
-class TestHttpRequest implements html.HttpRequest {
-  @override
+class TestHttpRequestMock {
   String responseType = 'invalid';
-
-  @override
-  int? timeout = 10;
-
-  @override
-  bool? withCredentials = false;
-
-  @override
-  void abort() {
-    throw UnimplementedError();
-  }
-
-  @override
-  void addEventListener(String type, html.EventListener? listener, [bool? useCapture]) {
-    throw UnimplementedError();
-  }
-
-  @override
-  bool dispatchEvent(html.Event event) {
-    throw UnimplementedError();
-  }
-
-  @override
-  String getAllResponseHeaders() {
-    throw UnimplementedError();
-  }
-
-  @override
-  String getResponseHeader(String name) {
-    throw UnimplementedError();
-  }
-
-  @override
-  html.Events get on => throw UnimplementedError();
-
-  @override
-  Stream<html.ProgressEvent> get onAbort => throw UnimplementedError();
-
-  @override
-  Stream<html.ProgressEvent> onError = Stream<html.ProgressEvent>.fromIterable(<html.ProgressEvent>[]);
-
-  @override
-  Stream<html.ProgressEvent> onLoad = Stream<html.ProgressEvent>.fromIterable(<html.ProgressEvent>[]);
-
-  @override
-  Stream<html.ProgressEvent> get onLoadEnd => throw UnimplementedError();
-
-  @override
-  Stream<html.ProgressEvent> get onLoadStart => throw UnimplementedError();
-
-  @override
-  Stream<html.ProgressEvent> get onProgress => throw UnimplementedError();
-
-  @override
-  Stream<html.Event> get onReadyStateChange => throw UnimplementedError();
-
-  @override
-  Stream<html.ProgressEvent> get onTimeout => throw UnimplementedError();
-
-  @override
-  void open(String method, String url, {bool? async, String? user, String? password}) {}
-
-  @override
-  void overrideMimeType(String mime) {
-    throw UnimplementedError();
-  }
-
-  @override
-  int get readyState => throw UnimplementedError();
-
-  @override
-  void removeEventListener(String type, html.EventListener? listener, [bool? useCapture]) {
-    throw UnimplementedError();
-  }
-
-  @override
+  int timeout = 10;
+  bool withCredentials = false;
   dynamic response;
-
-  @override
-  Map<String, String> get responseHeaders => throw UnimplementedError();
-
-  @override
-  String get responseText => throw UnimplementedError();
-
-  @override
-  String get responseUrl => throw UnimplementedError();
-
-  @override
-  html.Document get responseXml => throw UnimplementedError();
-
-  @override
-  void send([dynamic bodyOrData]) {
-  }
-
-  @override
-  void setRequestHeader(String name, String value) {
-    throw UnimplementedError();
-  }
-
-  @override
   int status = -1;
+  Map<String, DomEventListener> listeners = <String, DomEventListener>{};
 
-  @override
-  String get statusText => throw UnimplementedError();
+  void open(String method, String url, [bool? async]) {}
+  void send() {}
+  void addEventListener(String eventType, DomEventListener listener, [bool?
+      useCapture]) =>
+      listeners[eventType] = listener;
 
-  @override
-  html.HttpRequestUpload get upload => throw UnimplementedError();
+  void sendEvent(String eventType, DomProgressEvent event) =>
+      listeners[eventType]!(event);
+}
+
+@JS()
+@anonymous
+@staticInterop
+class TestHttpRequest implements DomXMLHttpRequest {
+  factory TestHttpRequest(TestHttpRequestMock mock) {
+    return TestHttpRequest._(
+        responseType: mock.responseType,
+        timeout: mock.timeout,
+        withCredentials: mock.withCredentials,
+        response: mock.response,
+        status: mock.status,
+        open: allowInterop((String method, String url, [bool? async]) =>
+            mock.open(method, url, async)),
+        send: allowInterop(() => mock.send()),
+        addEventListener: allowInterop((String eventType, DomEventListener
+                listener, [bool? useCapture]) =>
+            mock.addEventListener(eventType, listener, useCapture)));
+  }
+
+  external factory TestHttpRequest._({
+    String responseType,
+    int timeout,
+    bool withCredentials,
+    dynamic response,
+    int status,
+    void Function(String method, String url, [bool? async]) open,
+    void Function() send,
+    void Function(String eventType, DomEventListener listener) addEventListener
+  });
 }
 
 Future<void> expectFrameData(ui.FrameInfo frame, List<int> data) async {

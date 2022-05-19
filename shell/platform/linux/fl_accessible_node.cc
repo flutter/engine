@@ -22,6 +22,7 @@ static struct {
      FALSE},
     {ATK_STATE_SELECTED, kFlutterSemanticsFlagIsSelected, FALSE},
     {ATK_STATE_ENABLED, kFlutterSemanticsFlagIsEnabled, FALSE},
+    {ATK_STATE_SENSITIVE, kFlutterSemanticsFlagIsEnabled, FALSE},
     {ATK_STATE_READ_ONLY, kFlutterSemanticsFlagIsReadOnly, FALSE},
     {ATK_STATE_INVALID, static_cast<FlutterSemanticsFlag>(0), FALSE},
 };
@@ -206,6 +207,10 @@ static AtkRole fl_accessible_node_get_role(AtkObject* accessible) {
   }
   if ((self->flags & kFlutterSemanticsFlagIsSlider) != 0) {
     return ATK_ROLE_SLIDER;
+  }
+  if ((self->flags & kFlutterSemanticsFlagIsTextField) != 0 &&
+      (self->flags & kFlutterSemanticsFlagIsObscured) != 0) {
+    return ATK_ROLE_PASSWORD_TEXT;
   }
   if ((self->flags & kFlutterSemanticsFlagIsTextField) != 0) {
     return ATK_ROLE_TEXT;

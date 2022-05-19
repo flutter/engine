@@ -172,7 +172,9 @@ bool Engine::UpdateAssetManager(
   }
 
   // Using libTXT as the text engine.
-  font_collection_->RegisterFonts(asset_manager_);
+  if (settings_.use_asset_fonts) {
+    font_collection_->RegisterFonts(asset_manager_);
+  }
 
   if (settings_.use_test_fonts) {
     font_collection_->RegisterTestFonts();
@@ -244,7 +246,6 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 }
 
 void Engine::BeginFrame(fml::TimePoint frame_time, uint64_t frame_number) {
-  TRACE_EVENT0("flutter", "Engine::BeginFrame");
   runtime_controller_->BeginFrame(frame_time, frame_number);
 }
 

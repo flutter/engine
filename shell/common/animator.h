@@ -91,8 +91,6 @@ class Animator final {
 
   void AwaitVSync();
 
-  const char* FrameParity();
-
   // Clear |trace_flow_ids_| if |frame_scheduled_| is false.
   void ScheduleMaybeClearTraceFlowIds();
 

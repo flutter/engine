@@ -83,6 +83,10 @@ dependency_overrides:
     path: ../../third_party/dart/pkg/frontend_server
   http_parser:
     path: ../../third_party/dart/third_party/pkg/http_parser
+  js_ast:
+    path: ../../third_party/dart/pkg/js_ast
+  js_runtime:
+    path: ../../third_party/dart/pkg/js_runtime
   kernel:
     path: ../../third_party/dart/pkg/kernel
   litetest:
@@ -99,14 +103,12 @@ dependency_overrides:
     path: ../../third_party/dart/third_party/pkg_tested/package_config
   path:
     path: ../../third_party/dart/third_party/pkg/path
-  pedantic:
-    path: ../../third_party/dart/third_party/pkg/pedantic
   protobuf:
     path: ../../third_party/dart/third_party/pkg/protobuf/protobuf
   shelf:
-    path: ../../third_party/dart/third_party/pkg/shelf
+    path: ../../third_party/dart/third_party/pkg/shelf/pkgs/shelf
   shelf_static:
-    path: ../../third_party/dart/third_party/pkg/shelf_static
+    path: ../../third_party/dart/third_party/pkg/shelf/pkgs/shelf_static
   smith:
     path: ../../third_party/dart/pkg/smith
   source_maps:
