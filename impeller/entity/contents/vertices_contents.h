@@ -11,17 +11,17 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/path.h"
+#include "impeller/geometry/point.h"
 #include "impeller/renderer/sampler_descriptor.h"
+#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
 class VerticesContents final : public Contents {
  public:
-  VerticesContents();
+  explicit VerticesContents(Vertices vertices);
 
   ~VerticesContents() override;
-
-  void SetVertices(Path path);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -32,7 +32,7 @@ class VerticesContents final : public Contents {
               RenderPass& pass) const override;
 
  public:
-  flutter::DlVertices* vertices_;
+  Vertices vertices_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VerticesContents);
 };

@@ -13,26 +13,21 @@
 
 namespace impeller {
 
-VerticesContents::VerticesContents() = default;
+VerticesContents::VerticesContents(Vertices vertices) : vertices_(vertices) {};
 
 VerticesContents::~VerticesContents() = default;
 
-void VerticesContents::SetVertices(const flutter::DlVertices* vertices) {
-  vertices_ = std::move(vertices);
-}
-
-std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
-  return vertices_.bounds();
+std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
+  return vertices_.GetBoundingBox();
 };
 
-bool TextureContents::Render(const ContentContext& renderer,
-                             const Entity& entity,
-                             RenderPass& pass) const {
+bool VerticesContents::Render(const ContentContext& renderer,
+                              const Entity& entity,
+                              RenderPass& pass) const {
 
   using VS = VerticesVertexShader;
-  using FS = VerticesFragmentShader;
 
-  const auto coverage_rect = vertices_.bounds();
+  const auto coverage_rect = vertices_.GetBoundingBox();
 
   if (!coverage_rect.has_value()) {
     return true;
@@ -42,12 +37,23 @@ bool TextureContents::Render(const ContentContext& renderer,
     return true;
   }
 
-
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  for (int i = 0; i < vertices_.Size(); i++) {
-      vertex_builder.AppendVertex(vertices_.vertices()[i]);
-  }
+  std::vector<Point> points = vertices_.get_points();
+  std::vector<uint16_t> indexes = vertices_.get_indexes();
 
+  if (indexes.size() == 0) {
+    for (uint i = 0; i < points.size(); i += 1) {
+      VS::PerVertexData data;
+      data.vertices = points[i];
+      vertex_builder.AppendVertex(data);
+    }
+  } else {
+    for (uint i = 0; i < indexes.size(); i += 1) {
+      VS::PerVertexData data;
+      data.vertices = points[indexes[i]];
+      vertex_builder.AppendVertex(data);
+    }
+  }
 
   if (!vertex_builder.HasVertices()) {
     return true;
@@ -62,7 +68,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   Command cmd;
   cmd.label = "Vertices";
   cmd.pipeline =
-      renderer.GetTexturePipeline(OptionsFromPassAndEntity(pass, entity));
+      renderer.GetVerticesPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));

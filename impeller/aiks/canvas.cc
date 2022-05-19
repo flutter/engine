@@ -13,6 +13,7 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
@@ -300,15 +301,15 @@ void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
-void Canvas::DrawVertices(const flutter::DlVertices* vertices,
-                          flutter::DlBlendMode mode) {
+void Canvas::DrawVertices(Vertices vertices,
+                          Entity::BlendMode mode) {
+  std::shared_ptr<VerticesContents> contents = std::make_shared<VerticesContents>(vertices);
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(mode);
-  entity.SetContents();
-  VerticesContents contents = {};
-  contents.SetVertices(vertices);
+  entity.SetContents(contents);
+
   GetCurrentPass().AddEntity(std::move(entity));
 }
 

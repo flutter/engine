@@ -14,6 +14,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/vertices.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "third_party/skia/include/core/SkColor.h"
 
@@ -490,6 +491,21 @@ static Path ToPath(const SkRRect& rrect) {
       .TakePath();
 }
 
+static Vertices ToVertices(const flutter::DlVertices* vertices) {
+  std::vector<Point> points;
+  std::vector<uint16_t> indexes;
+  for (int i = 0; i < vertices->vertex_count(); i++) {
+    auto point = vertices->vertices()[i];
+    points.push_back(Point(point.x(), point.y()));
+  }
+  for (int i = 0; i < vertices->index_count(); i++) {
+    auto index = vertices->indices()[i];
+    indexes.push_back(index);
+  }
+  auto bounds = vertices->bounds();
+  return Vertices(points, indexes, ToRect(bounds));
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::clipRRect(const SkRRect& rrect,
                                       SkClipOp clip_op,
@@ -592,8 +608,12 @@ void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
-                                         flutter::DlBlendMode mode) {
-  canvas_->DrawVertices(vertices, mode);
+                                         flutter::DlBlendMode dl_mode) {
+  if (auto mode = ToBlendMode(dl_mode); mode.has_value()) {
+    canvas_.DrawVertices(ToVertices(vertices), mode.value());
+  } else {
+    FML_DLOG(ERROR) << "Unimplemented blend mode in " << __FUNCTION__;
+  }
 }
 
 // |flutter::Dispatcher|
