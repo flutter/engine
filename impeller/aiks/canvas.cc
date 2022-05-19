@@ -311,7 +311,7 @@ void Canvas::DrawVertices(Vertices vertices,
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetBlendMode(mode);
+  entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(contents);
 
   GetCurrentPass().AddEntity(std::move(entity));
