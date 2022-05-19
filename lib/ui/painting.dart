@@ -3911,10 +3911,11 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     required ByteBuffer spirv,
     bool debugPrint = false,
   }) async {
+    return Future<FragmentProgram>(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
     // Delay compilation without creating a timer, which interacts poorly with the
     // flutter test framework. See: https://github.com/flutter/flutter/issues/104084
-    await null;
-    return FragmentProgram._(spirv: spirv, debugPrint: debugPrint);
+    // await null;
+    // return FragmentProgram._(spirv: spirv, debugPrint: debugPrint);
   }
 
   @pragma('vm:entry-point')
