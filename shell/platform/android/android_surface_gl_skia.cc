@@ -162,10 +162,12 @@ bool AndroidSurfaceGLSkia::GLContextPresent(
     const std::optional<SkIRect>& damage) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
+  glFlush();
+  glFinish();
   fbo_pool_->Submit(fbo_id);
-  // return true;
+  return true;
   // TODO do we need this???????????
-  return onscreen_surface_->SwapBuffers(damage);
+  // return onscreen_surface_->SwapBuffers(damage);
 }
 
 // |GPUSurfaceGLDelegate|

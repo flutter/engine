@@ -46,7 +46,7 @@ class AndroidGLFBOPool {
       FML_CHECK(context_ != EGL_NO_CONTEXT);
 
       const EGLint attribs[] = {
-          EGL_WIDTH, 512, EGL_HEIGHT, 512, EGL_NONE,
+          EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE,
       };
       auto config = android_context_gl_skia->Config();
       surface_ = eglCreatePbufferSurface(display_, config, attribs);
@@ -109,7 +109,7 @@ class AndroidGLFBOPool {
       glGenFramebuffers(1, &new_fbo_id);
       glBindFramebuffer(GL_FRAMEBUFFER, new_fbo_id);
       glBindTexture(GL_TEXTURE_2D, packet.texture_id);
-      // glBindTexture(GL_TEXTURE_2D, 0);
+      glBindTexture(GL_TEXTURE_2D, 0);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                              GL_TEXTURE_2D, packet.texture_id, 0);
     }
