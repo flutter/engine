@@ -213,4 +213,12 @@ EGLContext AndroidContextGLSkia::CreateNewContext() const {
   return success ? context : EGL_NO_CONTEXT;
 }
 
+EGLContext AndroidContextGLSkia::CreateNewSharedContext() const {
+  bool success;
+  EGLContext context;
+  std::tie(success, context) =
+      CreateContext(environment_->Display(), config_, context_);
+  return success ? context : EGL_NO_CONTEXT;
+}
+
 }  // namespace flutter

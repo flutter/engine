@@ -133,7 +133,7 @@ source_set("flutter_shell_native_src") {
   libs = [
     "android",
     "EGL",
-    "GLESv2",
+    "GLESv3",
   ]
 }
 

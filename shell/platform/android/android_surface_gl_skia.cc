@@ -28,10 +28,11 @@ AndroidSurfaceGLSkia::AndroidSurfaceGLSkia(
     : AndroidSurface(android_context),
       native_window_(nullptr),
       onscreen_surface_(nullptr),
-      offscreen_surface_(nullptr),
-      fbo_pool_(std::make_unique<AndroidGLFBOPool>()) {
+      offscreen_surface_(nullptr) {
   // Acquire the offscreen surface.
   offscreen_surface_ = GLContextPtr()->CreateOffscreenSurface();
+  fbo_pool_ = std::make_unique<AndroidGLFBOPool>(GLContextPtr());
+
   if (!offscreen_surface_->IsValid()) {
     offscreen_surface_ = nullptr;
   }
@@ -162,7 +163,8 @@ bool AndroidSurfaceGLSkia::GLContextPresent(
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
   fbo_pool_->Submit(fbo_id);
-  return onscreen_surface_->SwapBuffers(damage);
+  return true;
+  // return onscreen_surface_->SwapBuffers(damage);
 }
 
 // |GPUSurfaceGLDelegate|

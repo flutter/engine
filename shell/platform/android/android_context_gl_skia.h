@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_SKIA_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_SKIA_H_
 
+#include <EGL/egl.h>
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -82,6 +83,8 @@ class AndroidContextGLSkia : public AndroidContext {
   /// @return     The EGLContext.
   ///
   EGLContext CreateNewContext() const;
+
+  EGLContext CreateNewSharedContext() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The EGLConfig for this context.
