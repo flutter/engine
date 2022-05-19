@@ -31,8 +31,7 @@ class DeviceBufferGLES final
 
  private:
   ReactorGLES::Ref reactor_;
-  HandleGLES handle_;
-  std::string label_;
+  GLESHandle handle_;
   mutable std::shared_ptr<fml::Mapping> data_;
   mutable bool uploaded_ = false;
 

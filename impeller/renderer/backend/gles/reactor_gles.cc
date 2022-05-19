@@ -36,7 +36,7 @@ const ProcTableGLES& ReactorGLES::GetProcTable() const {
   return *proc_table_;
 }
 
-std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
+std::optional<GLuint> ReactorGLES::GetGLHandle(const GLESHandle& handle) const {
   auto found = live_gl_handles_.find(handle);
   if (found != live_gl_handles_.end()) {
     return found->second;
@@ -101,20 +101,20 @@ static bool CollectGLHandle(const ProcTableGLES& gl,
   return false;
 }
 
-HandleGLES ReactorGLES::CreateHandle(HandleType type) {
+GLESHandle ReactorGLES::CreateHandle(HandleType type) {
   if (type == HandleType::kUnknown) {
-    return HandleGLES::DeadHandle();
+    return GLESHandle::DeadHandle();
   }
-  auto new_handle = HandleGLES::Create(type);
+  auto new_handle = GLESHandle::Create(type);
   if (new_handle.IsDead()) {
-    return HandleGLES::DeadHandle();
+    return GLESHandle::DeadHandle();
   }
   live_gl_handles_[new_handle] =
       in_reaction_ ? CreateGLHandle(GetProcTable(), type) : std::nullopt;
   return new_handle;
 }
 
-void ReactorGLES::CollectHandle(HandleGLES handle) {
+void ReactorGLES::CollectHandle(GLESHandle handle) {
   auto live_handle = live_gl_handles_.find(handle);
   if (live_handle == live_gl_handles_.end()) {
     return;
@@ -219,7 +219,7 @@ bool ReactorGLES::ReactOnce() {
   return true;
 }
 
-void ReactorGLES::SetDebugLabel(const HandleGLES& handle, std::string label) {
+void ReactorGLES::SetDebugLabel(const GLESHandle& handle, std::string label) {
   if (!can_set_debug_labels_) {
     return;
   }

@@ -22,8 +22,6 @@ impeller_component("base") {
     "thread_safety.h",
     "validation.cc",
     "validation.h",
-    "version.cc",
-    "version.h",
   ]
 
   deps = [ "//flutter/fml" ]

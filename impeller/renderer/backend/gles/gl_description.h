@@ -8,17 +8,16 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
-#include "impeller/base/version.h"
 
 namespace impeller {
 
 class ProcTableGLES;
 
-class DescriptionGLES {
+class GLDescription {
  public:
-  DescriptionGLES(const ProcTableGLES& gl);
+  GLDescription(const ProcTableGLES& gl);
 
-  ~DescriptionGLES();
+  ~GLDescription();
 
   bool IsValid() const;
 
@@ -29,17 +28,14 @@ class DescriptionGLES {
   bool HasDebugExtension() const;
 
  private:
-  Version gl_version_;
-  Version sl_version_;
-  bool is_es_ = true;
   std::string vendor_;
   std::string renderer_;
-  std::string gl_version_string_;
-  std::string sl_version_string_;
+  std::string gl_version_;
+  std::string sl_version_;
   std::set<std::string> extensions_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DescriptionGLES);
+  FML_DISALLOW_COPY_AND_ASSIGN(GLDescription);
 };
 
 }  // namespace impeller

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
+#include "flutter/shell/gpu/gpu_surface_gl.h"
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/base32.h"
@@ -35,7 +35,7 @@ namespace flutter {
 // system channel.
 static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
 
-sk_sp<GrDirectContext> GPUSurfaceGLSkia::MakeGLContext(
+sk_sp<GrDirectContext> GPUSurfaceGL::MakeGLContext(
     GPUSurfaceGLDelegate* delegate) {
   auto context_switch = delegate->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
@@ -61,15 +61,15 @@ sk_sp<GrDirectContext> GPUSurfaceGLSkia::MakeGLContext(
   return context;
 }
 
-GPUSurfaceGLSkia::GPUSurfaceGLSkia(GPUSurfaceGLDelegate* delegate,
-                                   bool render_to_surface)
-    : GPUSurfaceGLSkia(MakeGLContext(delegate), delegate, render_to_surface) {
+GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
+                           bool render_to_surface)
+    : GPUSurfaceGL(MakeGLContext(delegate), delegate, render_to_surface) {
   context_owner_ = true;
 }
 
-GPUSurfaceGLSkia::GPUSurfaceGLSkia(sk_sp<GrDirectContext> gr_context,
-                                   GPUSurfaceGLDelegate* delegate,
-                                   bool render_to_surface)
+GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrDirectContext> gr_context,
+                           GPUSurfaceGLDelegate* delegate,
+                           bool render_to_surface)
     : delegate_(delegate),
       context_(gr_context),
       context_owner_(false),
@@ -87,7 +87,7 @@ GPUSurfaceGLSkia::GPUSurfaceGLSkia(sk_sp<GrDirectContext> gr_context,
   valid_ = gr_context != nullptr;
 }
 
-GPUSurfaceGLSkia::~GPUSurfaceGLSkia() {
+GPUSurfaceGL::~GPUSurfaceGL() {
   if (!valid_) {
     return;
   }
@@ -109,7 +109,7 @@ GPUSurfaceGLSkia::~GPUSurfaceGLSkia() {
 }
 
 // |Surface|
-bool GPUSurfaceGLSkia::IsValid() {
+bool GPUSurfaceGL::IsValid() {
   return valid_;
 }
 
@@ -156,7 +156,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   );
 }
 
-bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
+bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   if (onscreen_surface_ != nullptr &&
       size == SkISize::Make(onscreen_surface_->width(),
                             onscreen_surface_->height())) {
@@ -200,13 +200,12 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
 }
 
 // |Surface|
-SkMatrix GPUSurfaceGLSkia::GetRootTransformation() const {
+SkMatrix GPUSurfaceGL::GetRootTransformation() const {
   return delegate_->GLContextSurfaceTransformation();
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
-    const SkISize& size) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
@@ -252,8 +251,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
                                         std::move(context_switch));
 }
 
-bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
-                                      SkCanvas* canvas) {
+bool GPUSurfaceGL::PresentSurface(const SurfaceFrame& frame, SkCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
   }
@@ -296,7 +294,7 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
   return true;
 }
 
-sk_sp<SkSurface> GPUSurfaceGLSkia::AcquireRenderSurface(
+sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(
     const SkISize& untransformed_size,
     const SkMatrix& root_surface_transformation) {
   const auto transformed_rect = root_surface_transformation.mapRect(
@@ -313,22 +311,22 @@ sk_sp<SkSurface> GPUSurfaceGLSkia::AcquireRenderSurface(
 }
 
 // |Surface|
-GrDirectContext* GPUSurfaceGLSkia::GetContext() {
+GrDirectContext* GPUSurfaceGL::GetContext() {
   return context_.get();
 }
 
 // |Surface|
-std::unique_ptr<GLContextResult> GPUSurfaceGLSkia::MakeRenderContextCurrent() {
+std::unique_ptr<GLContextResult> GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 
 // |Surface|
-bool GPUSurfaceGLSkia::ClearRenderContext() {
+bool GPUSurfaceGL::ClearRenderContext() {
   return delegate_->GLContextClearCurrent();
 }
 
 // |Surface|
-bool GPUSurfaceGLSkia::AllowsDrawingWhenGpuDisabled() const {
+bool GPUSurfaceGL::AllowsDrawingWhenGpuDisabled() const {
   return delegate_->AllowsDrawingWhenGpuDisabled();
 }
 

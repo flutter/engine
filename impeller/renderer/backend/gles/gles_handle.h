@@ -27,17 +27,17 @@ enum class HandleType {
 
 class ReactorGLES;
 
-struct HandleGLES {
+struct GLESHandle {
   HandleType type = HandleType::kUnknown;
 
-  static HandleGLES DeadHandle() {
-    return HandleGLES{HandleType::kUnknown, std::nullopt};
+  static GLESHandle DeadHandle() {
+    return GLESHandle{HandleType::kUnknown, std::nullopt};
   }
 
   constexpr bool IsDead() const { return !name_.has_value(); }
 
   struct Hash {
-    std::size_t operator()(const HandleGLES& handle) const {
+    std::size_t operator()(const GLESHandle& handle) const {
       return fml::HashCombine(
           std::underlying_type_t<decltype(handle.type)>(handle.type),
           handle.name_);
@@ -45,7 +45,7 @@ struct HandleGLES {
   };
 
   struct Equal {
-    bool operator()(const HandleGLES& lhs, const HandleGLES& rhs) const {
+    bool operator()(const GLESHandle& lhs, const GLESHandle& rhs) const {
       return lhs.type == rhs.type && lhs.name_ == rhs.name_;
     }
   };
@@ -55,21 +55,21 @@ struct HandleGLES {
 
   std::optional<UniqueID> name_;
 
-  HandleGLES(HandleType p_type, UniqueID p_name)
+  GLESHandle(HandleType p_type, UniqueID p_name)
       : type(p_type), name_(p_name) {}
 
-  HandleGLES(HandleType p_type, std::optional<UniqueID> p_name)
+  GLESHandle(HandleType p_type, std::optional<UniqueID> p_name)
       : type(p_type), name_(p_name) {}
 
-  static HandleGLES Create(HandleType type) {
-    return HandleGLES{type, UniqueID{}};
+  static GLESHandle Create(HandleType type) {
+    return GLESHandle{type, UniqueID{}};
   }
 };
 
 using GLESHandleSet =
-    std::unordered_set<HandleGLES, HandleGLES::Hash, HandleGLES::Equal>;
+    std::unordered_set<GLESHandle, GLESHandle::Hash, GLESHandle::Equal>;
 template <class T>
 using GLESHandleMap =
-    std::unordered_map<HandleGLES, T, HandleGLES::Hash, HandleGLES::Equal>;
+    std::unordered_map<GLESHandle, T, GLESHandle::Hash, GLESHandle::Equal>;
 
 }  // namespace impeller
