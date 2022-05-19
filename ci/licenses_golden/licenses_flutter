@@ -523,6 +523,8 @@ FILE: ../../../flutter/impeller/entity/contents/text_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/text_contents.h
 FILE: ../../../flutter/impeller/entity/contents/texture_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/texture_contents.h
+FILE: ../../../flutter/impeller/entity/contents/vertices_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/vertices_contents.h
 FILE: ../../../flutter/impeller/entity/entity.cc
 FILE: ../../../flutter/impeller/entity/entity.h
 FILE: ../../../flutter/impeller/entity/entity_pass.cc
@@ -552,6 +554,8 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
+FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
+FILE: ../../../flutter/impeller/entity/shaders/vertices.vert
 FILE: ../../../flutter/impeller/fixtures/airplane.jpg
 FILE: ../../../flutter/impeller/fixtures/bay_bridge.jpg
 FILE: ../../../flutter/impeller/fixtures/blue_noise.png
@@ -606,6 +610,8 @@ FILE: ../../../flutter/impeller/geometry/type_traits.cc
 FILE: ../../../flutter/impeller/geometry/type_traits.h
 FILE: ../../../flutter/impeller/geometry/vector.cc
 FILE: ../../../flutter/impeller/geometry/vector.h
+FILE: ../../../flutter/impeller/geometry/vertices.cc
+FILE: ../../../flutter/impeller/geometry/vertices.h
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h
 FILE: ../../../flutter/impeller/image/compressed_image.cc
