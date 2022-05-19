@@ -518,8 +518,21 @@ static Vertices ToVertices(const flutter::DlVertices* vertices) {
       });
     }
   }
+  VertexMode mode;
+  switch (vertices->mode()) {
+    case flutter::DlVertexMode::kTriangles:
+      mode = VertexMode::kTriangle;
+      break;
+    case flutter::DlVertexMode::kTriangleStrip:
+      mode = VertexMode::kTriangleStrip;
+      break;
+    case flutter::DlVertexMode::kTriangleFan:
+      mode = VertexMode::kTriangleFan;
+      break;
+  }
+
   auto bounds = vertices->bounds();
-  return Vertices(points, indexes, colors, ToRect(bounds));
+  return Vertices(points, indexes, colors, mode, ToRect(bounds));
 }
 
 // |flutter::Dispatcher|

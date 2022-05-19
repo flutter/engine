@@ -9,13 +9,14 @@ namespace impeller {
 Vertices::Vertices(std::vector<Point> points,
                    std::vector<uint16_t> indexes,
                    std::vector<Color> colors,
+                   VertexMode vertex_mode,
                    Rect bounds)
-    : points_(points), indexes_(indexes), colors_(colors), bounds_(bounds){};
+    : points_(points),
+      indexes_(indexes),
+      colors_(colors),
+      vertex_mode_(vertex_mode),
+      bounds_(bounds){};
 
 Vertices::~Vertices() = default;
-
-std::optional<Rect> Vertices::GetBoundingBox() const {
-  return bounds_;
-};
 
 }  // namespace impeller

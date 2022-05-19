@@ -11,6 +11,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -41,6 +42,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
   std::vector<Point> points = vertices_.get_points();
   std::vector<uint16_t> indexes = vertices_.get_indexes();
   std::vector<Color> colors = vertices_.get_colors();
+  VertexMode mode = vertices_.mode();
 
   if (indexes.size() == 0) {
     for (uint i = 0; i < points.size(); i += 1) {
@@ -58,6 +60,21 @@ bool VerticesContents::Render(const ContentContext& renderer,
     }
   }
 
+  PrimitiveType primitiveType;
+  switch (mode) {
+    case VertexMode::kTriangle:
+      primitiveType = PrimitiveType::kTriangle;
+      break;
+    case VertexMode::kTriangleStrip:
+      primitiveType = PrimitiveType::kTriangleStrip;
+      break;
+    case VertexMode::kTriangleFan:
+      // TODO: either unpack fan into triangles or add
+      // support for triangle fan.
+      primitiveType = PrimitiveType::kTriangle;
+      break;
+  }
+
   if (!vertex_builder.HasVertices()) {
     return true;
   }
@@ -73,6 +90,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
   cmd.pipeline =
       renderer.GetVerticesPipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.primitive_type = primitiveType;
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   pass.AddCommand(std::move(cmd));
