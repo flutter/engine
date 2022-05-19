@@ -2,12 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
 import("//build/toolchain/clang.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
 import("//flutter/testing/testing.gni")
+import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 
 declare_args() {
   embedder_enable_software = shell_enable_software
@@ -94,6 +96,26 @@ template("embedder_source_set") {
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
     ]
+
+    if (is_fuchsia) {
+      deps += [
+        "$fuchsia_sdk_root/pkg:sys_cpp",
+        "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
+        "//flutter/shell/platform/fuchsia/runtime/dart/utils",
+
+        # TODO(akbiggs): Why do I get this error without this? https://pastebin.com/07m66KWt
+        # This should already be included by //flutter/runtime:libdart.
+        "//third_party/dart/runtime:libdart_jit",
+        "//third_party/dart/runtime/platform:libdart_platform_jit",
+      ]
+    } else {
+      # Needed to gn host_debug even though this dep is only used by fuchsia???
+      # and apparently I need to gn host_debug to run clang_tidy now????
+      # which I need to push my change???
+      # deps +=
+      #     [ "//third_party/dart/runtime/platform:libdart_platform_precompiler" ]
+      deps += [ "//third_party/dart/runtime/platform:libdart_platform_jit" ]
+    }
 
     if (embedder_enable_metal) {
       sources += [

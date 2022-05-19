@@ -59,6 +59,12 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
 
+#if OS_FUCHSIA
+#include "flutter/shell/platform/fuchsia/runtime/dart/utils/build_info.h"
+#include "flutter/shell/platform/fuchsia/runtime/dart/utils/root_inspect_node.h"
+#include "platform/utils.h"
+#endif
+
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #endif
@@ -1498,6 +1504,33 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "Task runner configuration was invalid.");
   }
 
+#if OS_FUCHSIA
+
+#include <iostream>
+  // Terrible hack to get the component context.
+  struct FuchsiaEmbedderData {
+    std::unique_ptr<sys::ComponentContext> component_context;
+  };
+  auto fuchsia_user_data = reinterpret_cast<FuchsiaEmbedderData*>(user_data);
+
+  // We inject the 'vm' node into the dart vm so that it can add any inspect
+  // data that it needs to the inspect tree.
+  //
+  // We need to do this after the message loop has been initialized for the
+  // current thread so we have a dispatcher we can use to talk to the inspect
+  // service.
+  //
+  // NOTE: IF YOU DON'T DO THIS, THE DART VM WILL SERVE OUTGOING PERMISSIONS
+  // ON BEHALF OF YOUR APP AND YOU WILL NEVER BE ABLE TO SERVE OUTGOING
+  // PERMISSIONS. SEE fxb/75282.
+  dart_utils::RootInspectNode::Initialize(
+      fuchsia_user_data->component_context.get());
+  auto build_info = dart_utils::RootInspectNode::CreateRootChild("build_info");
+  dart_utils::BuildInfo::Dump(build_info);
+  dart::SetDartVmNode(std::make_unique<inspect::Node>(
+      dart_utils::RootInspectNode::CreateRootChild("vm")));
+#endif
+
   auto run_configuration =
       flutter::RunConfiguration::InferFromSettings(settings);
 
@@ -1542,6 +1575,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   // Release the ownership of the embedder engine to the caller.
   *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(
       embedder_engine.release());
+
   return kSuccess;
 }
 
