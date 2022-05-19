@@ -7,7 +7,11 @@ uniform FrameInfo {
 } frame_info;
 
 in vec2 vertices;
+in vec4 vertex_color;
+
+out vec4 color;
 
 void main() {
-    gl_Position = frame_info.mvp * vec4(vertices, 0.0, 1.0);
+  gl_Position = frame_info.mvp * vec4(vertices, 0.0, 1.0);
+  color = vertex_color;
 }

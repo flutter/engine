@@ -8,8 +8,9 @@ namespace impeller {
 
 Vertices::Vertices(std::vector<Point> points,
                    std::vector<uint16_t> indexes,
+                   std::vector<Color> colors,
                    Rect bounds)
-    : points_(points), indexes_(indexes), bounds_(bounds){};
+    : points_(points), indexes_(indexes), colors_(colors), bounds_(bounds){};
 
 Vertices::~Vertices() = default;
 

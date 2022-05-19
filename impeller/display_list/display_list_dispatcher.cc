@@ -494,6 +494,7 @@ static Path ToPath(const SkRRect& rrect) {
 static Vertices ToVertices(const flutter::DlVertices* vertices) {
   std::vector<Point> points;
   std::vector<uint16_t> indexes;
+  std::vector<Color> colors;
   for (int i = 0; i < vertices->vertex_count(); i++) {
     auto point = vertices->vertices()[i];
     points.push_back(Point(point.x(), point.y()));
@@ -502,8 +503,23 @@ static Vertices ToVertices(const flutter::DlVertices* vertices) {
     auto index = vertices->indices()[i];
     indexes.push_back(index);
   }
+
+  auto* dl_colors = vertices->colors();
+  if (dl_colors != nullptr) {
+    auto color_length = vertices->index_count() > 0 ? vertices->index_count()
+                                                    : vertices->vertex_count();
+    for (int i = 0; i < color_length; i++) {
+      auto dl_color = dl_colors[i];
+      colors.push_back({
+          dl_color.getRedF(),
+          dl_color.getGreenF(),
+          dl_color.getBlueF(),
+          dl_color.getAlphaF(),
+      });
+    }
+  }
   auto bounds = vertices->bounds();
-  return Vertices(points, indexes, ToRect(bounds));
+  return Vertices(points, indexes, colors, ToRect(bounds));
 }
 
 // |flutter::Dispatcher|
@@ -610,7 +626,7 @@ void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
 void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
                                          flutter::DlBlendMode dl_mode) {
   if (auto mode = ToBlendMode(dl_mode); mode.has_value()) {
-    canvas_.DrawVertices(ToVertices(vertices), mode.value());
+    canvas_.DrawVertices(ToVertices(vertices), mode.value(), paint_);
   } else {
     FML_DLOG(ERROR) << "Unimplemented blend mode in " << __FUNCTION__;
   }

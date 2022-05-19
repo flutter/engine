@@ -6,14 +6,15 @@
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
-#include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/vertices.vert.h"
+#include "impeller/geometry/color.h"
+#include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
-VerticesContents::VerticesContents(Vertices vertices) : vertices_(vertices) {};
+VerticesContents::VerticesContents(Vertices vertices) : vertices_(vertices){};
 
 VerticesContents::~VerticesContents() = default;
 
@@ -24,7 +25,6 @@ std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
 bool VerticesContents::Render(const ContentContext& renderer,
                               const Entity& entity,
                               RenderPass& pass) const {
-
   using VS = VerticesVertexShader;
 
   const auto coverage_rect = vertices_.GetBoundingBox();
@@ -40,17 +40,20 @@ bool VerticesContents::Render(const ContentContext& renderer,
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   std::vector<Point> points = vertices_.get_points();
   std::vector<uint16_t> indexes = vertices_.get_indexes();
+  std::vector<Color> colors = vertices_.get_colors();
 
   if (indexes.size() == 0) {
     for (uint i = 0; i < points.size(); i += 1) {
       VS::PerVertexData data;
       data.vertices = points[i];
+      data.vertex_color = color_;
       vertex_builder.AppendVertex(data);
     }
   } else {
     for (uint i = 0; i < indexes.size(); i += 1) {
       VS::PerVertexData data;
       data.vertices = points[indexes[i]];
+      data.vertex_color = color_;
       vertex_builder.AppendVertex(data);
     }
   }

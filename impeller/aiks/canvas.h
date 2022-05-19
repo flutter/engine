@@ -90,7 +90,7 @@ class Canvas {
 
   void DrawTextFrame(TextFrame text_frame, Point position, Paint paint);
 
-  void DrawVertices(Vertices vertices, Entity::BlendMode mode);
+  void DrawVertices(Vertices vertices, Entity::BlendMode mode, Paint paint);
 
   Picture EndRecordingAsPicture();
 
