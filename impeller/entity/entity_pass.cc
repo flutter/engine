@@ -14,8 +14,10 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/allocator.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/texture.h"
 
@@ -119,10 +121,12 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   }
   FML_DCHECK(pass->superpass_ == nullptr);
   pass->superpass_ = this;
-  auto subpass_pointer = pass.get();
+
   if (pass->blend_mode_ > Entity::BlendMode::kLastPipelineBlendMode) {
     contains_advanced_blends_ = true;
   }
+
+  auto subpass_pointer = pass.get();
   elements_.emplace_back(std::move(pass));
   return subpass_pointer;
 }
@@ -131,21 +135,30 @@ bool EntityPass::Render(ContentContext& renderer,
                         RenderTarget render_target) const {
   if (contains_advanced_blends_) {
     auto offscreen_target = RenderTarget::CreateOffscreen(
-        *renderer.GetContext(), render_target.GetRenderTargetSize());
+        *renderer.GetContext(), render_target.GetRenderTargetSize(),
+        "EntityPass",  //
+        StorageMode::kDevicePrivate, LoadAction::kClear, StoreAction::kStore,
+        StorageMode::kDevicePrivate, LoadAction::kClear, StoreAction::kStore);
     if (!RenderInternal(renderer, offscreen_target, Point(), 0)) {
       return false;
     }
 
     auto command_buffer = renderer.GetContext()->CreateRenderCommandBuffer();
-    auto render_pass = command_buffer->CreateRenderPass(offscreen_target);
+    command_buffer->SetLabel("EntityPass Root Command Buffer");
+    auto render_pass = command_buffer->CreateRenderPass(render_target);
+    render_pass->SetLabel("EntityPass Root Render Pass");
 
     {
+      auto size_rect =
+          Rect::MakeSize(Size(offscreen_target.GetRenderTargetSize()));
       auto contents = std::make_shared<TextureContents>();
+      contents->SetPath(PathBuilder{}.AddRect(size_rect).TakePath());
       contents->SetTexture(offscreen_target.GetRenderTargetTexture());
+      contents->SetSourceRect(size_rect);
 
       Entity entity;
       entity.SetContents(contents);
-      entity.SetBlendMode(Entity::BlendMode::kSource);
+      entity.SetBlendMode(Entity::BlendMode::kSourceOver);
 
       entity.Render(renderer, *render_pass);
     }
@@ -167,7 +180,8 @@ bool EntityPass::Render(ContentContext& renderer,
 bool EntityPass::RenderInternal(ContentContext& renderer,
                                 RenderTarget render_target,
                                 Point position,
-                                uint32_t depth) const {
+                                uint32_t pass_depth,
+                                size_t stencil_depth_floor) const {
   TRACE_EVENT0("impeller", "EntityPass::Render");
 
   auto context = renderer.GetContext();
@@ -220,7 +234,7 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
       if (subpass->delegate_->CanCollapseIntoParentPass()) {
         // Directly render into the parent target and move on.
         if (!subpass->RenderInternal(renderer, render_target, position,
-                                     depth)) {
+                                     pass_depth, stencil_depth_floor)) {
           return false;
         }
         continue;
@@ -237,8 +251,20 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
         continue;
       }
 
-      auto subpass_target = RenderTarget::CreateOffscreen(
-          *context, ISize::Ceil(subpass_coverage->size));
+      RenderTarget subpass_target;
+      if (subpass->contains_advanced_blends_) {
+        subpass_target = RenderTarget::CreateOffscreen(
+            *context, ISize::Ceil(subpass_coverage->size), "EntityPass",
+            StorageMode::kDevicePrivate, LoadAction::kClear,
+            StoreAction::kStore, StorageMode::kDevicePrivate,
+            LoadAction::kClear, StoreAction::kStore);
+      } else {
+        subpass_target = RenderTarget::CreateOffscreen(
+            *context, ISize::Ceil(subpass_coverage->size), "EntityPass",
+            StorageMode::kDevicePrivate, LoadAction::kClear,
+            StoreAction::kStore, StorageMode::kDeviceTransient,
+            LoadAction::kClear, StoreAction::kDontCare);
+      }
 
       auto subpass_texture = subpass_target.GetRenderTargetTexture();
 
@@ -261,13 +287,16 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
         return false;
       }
 
+      // Stencil textures aren't shared between EntityPasses (as much of the
+      // time they are transient).
       if (!subpass->RenderInternal(renderer, subpass_target,
-                                   subpass_coverage->origin, ++depth)) {
+                                   subpass_coverage->origin, ++pass_depth,
+                                   subpass->stencil_depth_)) {
         return false;
       }
 
       element_entity.SetContents(std::move(offscreen_texture_contents));
-      element_entity.SetStencilDepth(stencil_depth_);
+      element_entity.SetStencilDepth(subpass->stencil_depth_);
       element_entity.SetBlendMode(subpass->blend_mode_);
       // Once we have filters being applied for SaveLayer, some special sauce
       // may be needed here (or in PaintPassDelegate) to ensure the filter
@@ -280,7 +309,7 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
     }
 
     // =========================================================================
-    // Render the element ======================================================
+    // Configure the RenderPass ================================================
     // =========================================================================
 
     if (pass && element_entity.GetBlendMode() >
@@ -307,12 +336,14 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
       }
       auto color0 = render_target.GetColorAttachments().find(0)->second;
 
-      auto input = FilterInput::Make({
-          element_entity.GetContents(),
-          color0.resolve_texture ? color0.resolve_texture : color0.texture,
-      });
-      element_entity.SetContents(FilterContents::MakeBlend(blend_mode_, input));
-      element_entity.SetBlendMode(Entity::BlendMode::kSource);
+      FilterInput::Vector inputs = {
+          FilterInput::Make(element_entity.GetContents()),
+          FilterInput::Make(
+              color0.resolve_texture ? color0.resolve_texture : color0.texture,
+              element_entity.GetTransformation().Invert())};
+      element_entity.SetContents(
+          FilterContents::MakeBlend(element_entity.GetBlendMode(), inputs));
+      element_entity.SetBlendMode(Entity::BlendMode::kSourceOver);
     }
 
     // Create a new render pass to render the element if one isn't active.
@@ -323,7 +354,7 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
       }
 
       command_buffer->SetLabel(
-          "EntityPass Command Buffer: Depth=" + std::to_string(depth) +
+          "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
           " Count=" + std::to_string(pass_count));
 
       // Never clear the texture for subsequent passes.
@@ -346,11 +377,19 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
         return false;
       }
 
-      pass->SetLabel("EntityPass Render Pass: Depth=" + std::to_string(depth) +
-                     " Count=" + std::to_string(pass_count));
+      pass->SetLabel(
+          "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
+          " Count=" + std::to_string(pass_count));
 
       ++pass_count;
     }
+
+    // =========================================================================
+    // Render the element ======================================================
+    // =========================================================================
+
+    element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
+                                   stencil_depth_floor);
 
     if (!element_entity.Render(renderer, *pass)) {
       return false;

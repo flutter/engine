@@ -120,7 +120,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                    FlutterPointerMouseButtons button) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+  void OnPointerLeave(double x,
+                      double y,
+                      FlutterPointerDeviceKind device_kind,
                       int32_t device_id = 0) override;
 
   // |WindowBindingHandlerDelegate|
@@ -262,7 +264,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Win32 api doesn't have "mouse enter" event. Therefore, there is no
   // SendPointerEnter method. A mouse enter event is tracked then the "move"
   // event is called.
-  void SendPointerLeave(PointerState* state);
+  void SendPointerLeave(double x, double y, PointerState* state);
 
   void SendPointerPanZoomStart(int32_t device_id, double x, double y);
 

@@ -469,14 +469,14 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanDrawWithAdvancedBlend) {
+TEST_P(AiksTest, ColorWheel) {
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
   std::vector<const char*> blend_mode_names;
   std::vector<Entity::BlendMode> blend_mode_values;
   {
     const std::vector<std::tuple<const char*, Entity::BlendMode>> blends = {
-        // Pipeline blends (Porter-Duff/alpha blends)
+        // Pipeline blends (Porter-Duff alpha compositing)
         {"Clear", Entity::BlendMode::kClear},
         {"Source", Entity::BlendMode::kSource},
         {"Destination", Entity::BlendMode::kDestination},
@@ -491,8 +491,9 @@ TEST_P(AiksTest, CanDrawWithAdvancedBlend) {
         {"Xor", Entity::BlendMode::kXor},
         {"Plus", Entity::BlendMode::kPlus},
         {"Modulate", Entity::BlendMode::kModulate},
-        // Advanced blends (non Porter-Duff/color blends)
+        // Advanced blends (color component blends)
         {"Screen", Entity::BlendMode::kScreen},
+        {"ColorBurn", Entity::BlendMode::kColorBurn},
     };
     assert(blends.size() ==
            static_cast<size_t>(Entity::BlendMode::kLastAdvancedBlendMode) + 1);
@@ -520,6 +521,7 @@ TEST_P(AiksTest, CanDrawWithAdvancedBlend) {
     };
 
     Paint paint;
+    paint.blend_mode = Entity::BlendMode::kSourceOver;
 
     // Draw a fancy color wheel for the backdrop.
     // https://www.desmos.com/calculator/xw7kafthwd
@@ -546,10 +548,16 @@ TEST_P(AiksTest, CanDrawWithAdvancedBlend) {
       ImGui::SetNextWindowPos({325, 550});
     }
 
-    ImGui::Begin("Controls");
+    // UI state.
     static int current_blend_index = 3;
-    ImGui::ListBox("Blending mode", &current_blend_index,
-                   blend_mode_names.data(), blend_mode_names.size());
+    static float alpha = 1;
+
+    ImGui::Begin("Controls");
+    {
+      ImGui::ListBox("Blending mode", &current_blend_index,
+                     blend_mode_names.data(), blend_mode_names.size());
+      ImGui::SliderFloat("Alpha", &alpha, 0, 1);
+    }
     ImGui::End();
 
     Canvas canvas;
@@ -564,7 +572,8 @@ TEST_P(AiksTest, CanDrawWithAdvancedBlend) {
     draw_color_wheel(canvas);
 
     // Draw 3 circles to a subpass and blend it in.
-    canvas.SaveLayer({.blend_mode = blend_mode_values[current_blend_index]});
+    canvas.SaveLayer({.color = Color::White().WithAlpha(alpha),
+                      .blend_mode = blend_mode_values[current_blend_index]});
     {
       paint.blend_mode = Entity::BlendMode::kPlus;
       const Scalar x = std::sin(k2Pi / 3);
@@ -791,6 +800,30 @@ TEST_P(AiksTest, SiblingSaveLayerBoundsAreRespected) {
     paint.color = Color::Red();
     canvas.DrawRect(rect, paint);
     canvas.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderClippedLayers) {
+  Canvas canvas;
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  // Draw a green circle on the screen.
+  {
+    // Increase the clip depth for the savelayer to contend with.
+    canvas.ClipPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath());
+
+    canvas.SaveLayer({}, Rect::MakeXYWH(50, 50, 100, 100));
+
+    // Fill the layer with white.
+    canvas.DrawRect(Rect::MakeSize({400, 400}), {.color = Color::White()});
+    // Fill the layer with green, but do so with a color blend that can't be
+    // collapsed into the parent pass.
+    canvas.DrawRect(
+        Rect::MakeSize({400, 400}),
+        {.color = Color::Green(), .blend_mode = Entity::BlendMode::kColorBurn});
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

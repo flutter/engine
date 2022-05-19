@@ -1,4 +1,4 @@
-Signature: e82bba2cde4499deb4a640d48bb8a5d6
+Signature: e4a5b4dd66c179eed7b88e4bd4db64be
 
 UNUSED LICENSES:
 
@@ -3462,7 +3462,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/health.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/hierarchy.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/inspect.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/reader.h
-FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/value_list.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/vmo/block.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/vmo/scanner.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/vmo/snapshot.h
