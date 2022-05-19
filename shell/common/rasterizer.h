@@ -25,6 +25,7 @@
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
 
@@ -456,6 +457,11 @@ class Rasterizer final : public SnapshotDelegate,
   void DisableThreadMergerIfNeeded();
 
  private:
+  // |SnapshotDelegate|
+  std::pair<sk_sp<SkImage>, std::string> MakeGpuImage(
+      sk_sp<DisplayList> display_list,
+      SkISize picture_size) override;
+
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(
       std::function<void(SkCanvas*)> draw_callback,

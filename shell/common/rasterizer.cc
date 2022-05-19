@@ -245,6 +245,35 @@ bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
          raster_status == RasterStatus::kSkipAndRetry;
 }
 
+std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size) {
+  TRACE_EVENT0("flutter", "Rasterizer::MakeGpuImage");
+  FML_DCHECK(display_list);
+  if (!surface_) {
+    return {nullptr, "GPU surface unavilable"};
+  }
+
+  auto* context = surface_->GetContext();
+  if (!context) {
+    return {nullptr, "GPU context unavailable"};
+  }
+
+  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(picture_size);
+  sk_sp<SkSurface> surface =
+      SkSurface::MakeRenderTarget(context, SkBudgeted::kYes, image_info);
+  if (!surface) {
+    return {nullptr, "unable to create render target at specified size"};
+  }
+
+  SkCanvas* canvas = surface->getCanvas();
+  canvas->clear(SK_ColorTRANSPARENT);
+  display_list->RenderTo(canvas);
+
+  sk_sp<SkImage> image = surface->makeImageSnapshot();
+  return {image, image ? "" : "Unable to create image"};
+}
+
 namespace {
 sk_sp<SkImage> DrawSnapshot(
     sk_sp<SkSurface> surface,

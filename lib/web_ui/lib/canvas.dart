@@ -152,6 +152,7 @@ abstract class Canvas {
 
 abstract class Picture {
   Future<Image> toImage(int width, int height);
+  Image toGpuImage(int width, int height);
   void dispose();
   bool get debugDisposed;
   int get approximateBytesUsed;

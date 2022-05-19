@@ -35,7 +35,7 @@ class Scene extends NativeFieldWrapperClass1 {
         if (image == null) {
           callback(null);
         } else {
-          callback(Image._(image));
+          callback(Image._(image, image.width, image.height));
         }
       }),
     );

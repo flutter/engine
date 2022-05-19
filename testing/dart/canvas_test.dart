@@ -409,4 +409,83 @@ void main() {
     await fuzzyGoldenImageCompare(image, 'text_with_gradient_with_matrix.png');
     expect(areEqual, true);
   }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
+
+  test('toGpuImage - too big', () async {
+    PictureRecorder recorder = PictureRecorder();
+    Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = const Color(0xFF123456));
+    final Picture picture = recorder.endRecording();
+    final Image image = picture.toGpuImage(300000, 4000000);
+    picture.dispose();
+
+    expect(image.width, 300000);
+    expect(image.height, 4000000);
+
+    recorder = PictureRecorder();
+    canvas = Canvas(recorder);
+    expect(
+      () => canvas.drawImage(image, Offset.zero, Paint()),
+      throwsException,
+    );
+    expect(
+      () => canvas.drawImageRect(image, Rect.zero, Rect.zero, Paint()),
+      throwsException,
+    );
+    expect(
+      () => canvas.drawImageNine(image, Rect.zero, Rect.zero, Paint()),
+      throwsException,
+    );
+    expect(
+      () => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
+      throwsException,
+    );
+  });
+
+  test('toGpuImage - succeeds', () async {
+    PictureRecorder recorder = PictureRecorder();
+    Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = const Color(0xFF123456));
+    final Picture picture = recorder.endRecording();
+    final Image image = picture.toGpuImage(30, 40);
+    picture.dispose();
+
+    expect(image.width, 30);
+    expect(image.height, 40);
+
+    recorder = PictureRecorder();
+    canvas = Canvas(recorder);
+    expect(
+      () => canvas.drawImage(image, Offset.zero, Paint()),
+      returnsNormally,
+    );
+    expect(
+      () => canvas.drawImageRect(image, Rect.zero, Rect.zero, Paint()),
+      returnsNormally,
+    );
+    expect(
+      () => canvas.drawImageNine(image, Rect.zero, Rect.zero, Paint()),
+      returnsNormally,
+    );
+    expect(
+      () => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
+      returnsNormally,
+    );
+  });
+
+  test('toGpuImage - toByteData', () async {
+    const Color color = Color(0xFF123456);
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = color);
+    final Picture picture = recorder.endRecording();
+    final Image image = picture.toGpuImage(30, 40);
+    picture.dispose();
+
+    final ByteData? data = await image.toByteData();
+
+    expect(data, isNotNull);
+    expect(data!.lengthInBytes, 30 * 40 * 4);
+    // The tester is using a mock GrDirectContext, so the actual image color
+    // data returned is not real and cannot be tested here.
+  });
 }

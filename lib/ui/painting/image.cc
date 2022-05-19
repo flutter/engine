@@ -27,6 +27,7 @@ const tonic::DartWrapperInfo& Image::dart_wrapper_info_ =
   V(Image, width)           \
   V(Image, height)          \
   V(Image, toByteData)      \
+  V(Image, errorState)      \
   V(Image, dispose)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -54,6 +55,17 @@ size_t CanvasImage::GetAllocationSize() const {
     size += image_->GetApproximateByteSize();
   }
   return size;
+}
+
+Dart_Handle CanvasImage::errorState() {
+  if (!image_) {
+    return Dart_Null();
+  }
+  auto error = image_->get_error();
+  if (error) {
+    return tonic::ToDart(error.value());
+  }
+  return Dart_Null();
 }
 
 }  // namespace flutter

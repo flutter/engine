@@ -33,6 +33,8 @@ class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
 
   int height() { return image_ ? image_->height() : 0; }
 
+  Dart_Handle errorState();
+
   Dart_Handle toByteData(int format, Dart_Handle callback);
 
   void dispose();
