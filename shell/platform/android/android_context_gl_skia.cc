@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
+#include <EGL/egl.h>
 
 #include <utility>
 
@@ -172,6 +173,15 @@ AndroidContextGLSkia::CreateOffscreenSurface() const {
   EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
   return std::make_unique<AndroidEGLSurface>(surface, display,
                                              resource_context_);
+}
+
+std::unique_ptr<AndroidEGLSurface>
+AndroidContextGLSkia::CreateOffscreenSurfaceWithContext(
+    EGLContext context) const {
+  EGLDisplay display = environment_->Display();
+  const EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
+  EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
+  return std::make_unique<AndroidEGLSurface>(surface, display, context);
 }
 
 std::unique_ptr<AndroidEGLSurface> AndroidContextGLSkia::CreatePbufferSurface()

@@ -163,8 +163,9 @@ bool AndroidSurfaceGLSkia::GLContextPresent(
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
   fbo_pool_->Submit(fbo_id);
-  return true;
-  // return onscreen_surface_->SwapBuffers(damage);
+  // return true;
+  // TODO do we need this???????????
+  return onscreen_surface_->SwapBuffers(damage);
 }
 
 // |GPUSurfaceGLDelegate|

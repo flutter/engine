@@ -60,6 +60,9 @@ class AndroidContextGLSkia : public AndroidContext {
   ///
   std::unique_ptr<AndroidEGLSurface> CreatePbufferSurface() const;
 
+  std::unique_ptr<AndroidEGLSurface> CreateOffscreenSurfaceWithContext(
+      EGLContext context) const;
+
   //----------------------------------------------------------------------------
   /// @return     The Android environment that contains a reference to the
   /// display.

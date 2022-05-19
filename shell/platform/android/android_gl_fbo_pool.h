@@ -5,41 +5,26 @@
 
 #include <cstdint>
 #include <deque>
+#include <memory>
+#include <mutex>
+#include <optional>
 #include <utility>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
+#include "flutter/shell/platform/android/android_egl_surface.h"
+#include "fml/task_runner.h"
+#include "fml/thread.h"
 
 namespace flutter {
-
-class AndroidGLContextSwitch {
- public:
-  explicit AndroidGLContextSwitch(EGLContext ctx_to_switch_to) {
-    old_context_ = eglGetCurrentContext();
-    MakeCurrent(ctx_to_switch_to);
-  }
-
-  ~AndroidGLContextSwitch() { MakeCurrent(old_context_); }
-
- private:
-  void MakeCurrent(EGLContext context) {
-    EGLDisplay display = eglGetCurrentDisplay();
-    EGLSurface draw_surface = eglGetCurrentSurface(EGL_DRAW);
-    EGLSurface read_surface = eglGetCurrentSurface(EGL_READ);
-    EGLBoolean result =
-        eglMakeCurrent(display, draw_surface, read_surface, context);
-    FML_DCHECK(result == EGL_TRUE)
-        << "AndroidGLContextSwitch: failed to make context current";
-  }
-
-  EGLContext old_context_;
-};
 
 struct _FBOPacket {
   uint32_t fbo_id;
   uint32_t texture_id;
+  uint32_t width;
+  uint32_t height;
 };
 
 class AndroidGLFBOPool {
@@ -48,8 +33,28 @@ class AndroidGLFBOPool {
     FML_CHECK(android_context_gl_skia)
         << "AndroidGLFBOPool: gl context was null";
 
-    // this has to be a shared context.
-    egl_context_ = android_context_gl_skia->CreateNewSharedContext();
+    sb_thread_ = std::make_unique<fml::Thread>("swap_buffers");
+    sb_task_runner_ = sb_thread_->GetTaskRunner();
+
+    fml::AutoResetWaitableEvent setup_done;
+    sb_task_runner_->PostTask([&, android_context_gl_skia]() {
+      // this has to be a shared context, and given that offscreen surfaces
+      // are in the same share group as the main gl context, this is fine.
+      display_ = android_context_gl_skia->Environment()->Display();
+      context_ = android_context_gl_skia->CreateNewSharedContext();
+
+      FML_CHECK(context_ != EGL_NO_CONTEXT);
+
+      const EGLint attribs[] = {
+          EGL_WIDTH, 512, EGL_HEIGHT, 512, EGL_NONE,
+      };
+      auto config = android_context_gl_skia->Config();
+      surface_ = eglCreatePbufferSurface(display_, config, attribs);
+
+      setup_done.Signal();
+    });
+
+    setup_done.Wait();
   }
 
   ~AndroidGLFBOPool() {
@@ -64,11 +69,9 @@ class AndroidGLFBOPool {
 
   uint32_t GetOrCreateFBO(const GLFrameInfo& frame_info) {
     TRACE_EVENT0("flutter", "FBO_POOL_GET_OR_CREATE");
+    std::scoped_lock<std::mutex> lock(ds_mutex);
 
     FML_DLOG(ERROR) << __PRETTY_FUNCTION__;
-
-    // TODO evaluate if this is OK.
-    // AndroidGLContextSwitch ctx_switch(egl_context_);
 
     if (unused_fbo_ids.empty()) {
       FML_DLOG(ERROR) << "returning a new fbo";
@@ -83,39 +86,58 @@ class AndroidGLFBOPool {
 
   void Submit(uint32_t fbo_id) {
     TRACE_EVENT0("flutter", "FBO_POOL_SUBMIT");
+    sb_task_runner_->PostTask([&, fbo_id]() {
+      // pleaseee work!!
+      SubmitInternal(fbo_id);
+    });
+  }
 
-    FML_DLOG(ERROR) << __PRETTY_FUNCTION__;
-    AndroidGLContextSwitch ctx_switch(egl_context_);
+  void SubmitInternal(uint32_t fbo_id) {
+    TRACE_EVENT0("flutter", "FBO_POOL_SUBMIT_INTERNAL");
+    eglMakeCurrent(display_, surface_, surface_, context_);
 
-    // TODO blit to on_screen_fbo 0.
     FML_DLOG(ERROR) << "blit to screen fbo: " << fbo_id;
+
+    _FBOPacket packet;
+    {
+      std::scoped_lock<std::mutex> lock(ds_mutex);
+      packet = fbo_to_packet[fbo_id];
+    }
 
     GLuint new_fbo_id = 0;
     {
       glGenFramebuffers(1, &new_fbo_id);
       glBindFramebuffer(GL_FRAMEBUFFER, new_fbo_id);
-      _FBOPacket packet = fbo_to_packet[fbo_id];
       glBindTexture(GL_TEXTURE_2D, packet.texture_id);
-      glBindTexture(GL_TEXTURE_2D, 0);
+      // glBindTexture(GL_TEXTURE_2D, 0);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                              GL_TEXTURE_2D, packet.texture_id, 0);
+    }
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (GL_FRAMEBUFFER_COMPLETE != status) {
+      FML_DLOG(ERROR) << "[in_submit] fbo failed, status: " << status;
+      FML_CHECK(1 < 0);
+    } else {
+      FML_DLOG(ERROR) << __PRETTY_FUNCTION__ << " FBO_SUCCESS";
     }
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);           // draw frame buffer
     glBindFramebuffer(GL_READ_FRAMEBUFFER, new_fbo_id);  // read frame buffer
 
-    GLFrameInfo frame_info = frame_info_map[fbo_id];
-    const auto w = frame_info.width;
-    const auto h = frame_info.height;
+    const auto w = packet.width;
+    const auto h = packet.height;
     glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
     FML_DLOG(ERROR) << "GL error after blit: " << glGetError();
 
-    EGLDisplay display = eglGetCurrentDisplay();
-    EGLSurface draw_surface = eglGetCurrentSurface(EGL_DRAW);
-    eglSwapBuffers(display, draw_surface);
+    eglSwapBuffers(display_, surface_);
 
-    unused_fbo_ids.push_back(fbo_id);
+    {
+      std::scoped_lock<std::mutex> lock(ds_mutex);
+      unused_fbo_ids.push_back(fbo_id);
+    }
+
     return;
   }
 
@@ -129,10 +151,12 @@ class AndroidGLFBOPool {
       glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
       uint32_t texture = CreateTexture(frame_info);
 
-      _FBOPacket packet;
-      packet.fbo_id = fbo_id;
-      packet.texture_id = texture;
-      fbo_to_packet[fbo_id] = packet;
+      fbo_to_packet[fbo_id] = {
+          .fbo_id = fbo_id,
+          .texture_id = texture,
+          .width = frame_info.width,
+          .height = frame_info.height,
+      };
 
       glBindTexture(GL_TEXTURE_2D, 0);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -148,14 +172,12 @@ class AndroidGLFBOPool {
     }
 
     FML_DLOG(ERROR) << "created a new fbo_id: " << fbo_id;
-    frame_info_map[fbo_id] = frame_info;
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     return fbo_id;
   }
 
-  uint32_t CreateTexture(const GLFrameInfo& frame_info) {
+  static uint32_t CreateTexture(const GLFrameInfo& frame_info) {
     GLuint texture = 0;
     glGenTextures(1, &texture);
 
@@ -169,11 +191,17 @@ class AndroidGLFBOPool {
     return texture;
   }
 
+  std::unique_ptr<fml::Thread> sb_thread_;
+  fml::RefPtr<fml::TaskRunner> sb_task_runner_;
+
+  std::mutex ds_mutex;
   std::deque<uint32_t> unused_fbo_ids;
   std::map<uint32_t, _FBOPacket> fbo_to_packet;
-  std::map<uint32_t, GLFrameInfo> frame_info_map;
 
-  EGLContext egl_context_;
+  // EGL stuff
+  EGLContext context_;
+  EGLDisplay display_;
+  EGLSurface surface_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidGLFBOPool);
 };
