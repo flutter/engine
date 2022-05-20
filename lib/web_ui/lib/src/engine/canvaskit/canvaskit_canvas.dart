@@ -105,6 +105,11 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   @override
+  Float64List getTransform() {
+    throw UnimplementedError('getTransform not implemented on CanvasKit back end');
+  }
+
+  @override
   void clipRect(ui.Rect rect,
       {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
     assert(rectIsValid(rect));
@@ -134,6 +139,17 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(path != null); // path is checked on the engine side
     assert(doAntiAlias != null); // ignore: unnecessary_null_comparison
     _canvas.clipPath(path as CkPath, doAntiAlias);
+  }
+
+
+  @override
+  ui.Rect getLocalClipBounds() {
+    throw UnimplementedError('getLocalClipBounds not implemented on CanvasKit back end');
+  }
+
+  @override
+  ui.Rect getDestinationClipBounds() {
+    throw UnimplementedError('getDestinationClipBounds not implemented on CanvasKit back end');
   }
 
   @override

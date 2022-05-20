@@ -97,6 +97,11 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   @override
+  Float64List getTransform() {
+    throw UnimplementedError('getTransform not implemented on HTML back end');
+  }
+
+  @override
   void clipRect(ui.Rect rect,
       {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
     assert(rectIsValid(rect));
@@ -130,6 +135,16 @@ class SurfaceCanvas implements ui.Canvas {
 
   void _clipPath(ui.Path path, bool doAntiAlias) {
     _canvas.clipPath(path, doAntiAlias: doAntiAlias);
+  }
+
+  @override
+  ui.Rect getLocalClipBounds() {
+    throw UnimplementedError('getLocalClipBounds not implemented on HTML back end');
+  }
+
+  @override
+  ui.Rect getDestinationClipBounds() {
+    throw UnimplementedError('getDestinationClipBounds not implemented on HTML back end');
   }
 
   @override
