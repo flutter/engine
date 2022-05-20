@@ -140,53 +140,6 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   }
 };
 
-class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
- public:
-  MockWindowBindingHandlerDelegate() {}
-
-  // Prevent copying.
-  MockWindowBindingHandlerDelegate(MockWindowBindingHandlerDelegate const&) =
-      delete;
-  MockWindowBindingHandlerDelegate& operator=(
-      MockWindowBindingHandlerDelegate const&) = delete;
-
-  MOCK_METHOD2(OnWindowSizeChanged, void(size_t, size_t));
-  MOCK_METHOD4(OnPointerMove,
-               void(double, double, FlutterPointerDeviceKind, int32_t));
-  MOCK_METHOD5(OnPointerDown,
-               void(double,
-                    double,
-                    FlutterPointerDeviceKind,
-                    int32_t,
-                    FlutterPointerMouseButtons));
-  MOCK_METHOD5(OnPointerUp,
-               void(double,
-                    double,
-                    FlutterPointerDeviceKind,
-                    int32_t,
-                    FlutterPointerMouseButtons));
-  MOCK_METHOD4(OnPointerLeave,
-               void(double, double, FlutterPointerDeviceKind, int32_t));
-  MOCK_METHOD1(OnText, void(const std::u16string&));
-  MOCK_METHOD7(OnKey,
-               void(int, int, int, char32_t, bool, bool, KeyEventCallback));
-  MOCK_METHOD0(OnComposeBegin, void());
-  MOCK_METHOD0(OnComposeCommit, void());
-  MOCK_METHOD0(OnComposeEnd, void());
-  MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
-  MOCK_METHOD1(OnUpdateSemanticsEnabled, void(bool));
-  MOCK_METHOD0(GetNativeViewAccessible, gfx::NativeViewAccessible());
-  MOCK_METHOD7(OnScroll,
-               void(double,
-                    double,
-                    double,
-                    double,
-                    int,
-                    FlutterPointerDeviceKind,
-                    int32_t));
-  MOCK_METHOD0(OnPlatformBrightnessChanged, void());
-};
-
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
 // to register the keyboard hook handlers that can be spied upon.
 class TestFlutterWindowsView : public FlutterWindowsView {

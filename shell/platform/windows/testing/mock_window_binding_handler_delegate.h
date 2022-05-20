@@ -36,7 +36,8 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
                     FlutterPointerDeviceKind,
                     int32_t,
                     FlutterPointerMouseButtons));
-  MOCK_METHOD2(OnPointerLeave, void(FlutterPointerDeviceKind, int32_t));
+  MOCK_METHOD4(OnPointerLeave,
+               void(double, double, FlutterPointerDeviceKind, int32_t));
   MOCK_METHOD1(OnPointerPanZoomStart, void(int32_t));
   MOCK_METHOD5(OnPointerPanZoomUpdate,
                void(int32_t, double, double, double, double));
