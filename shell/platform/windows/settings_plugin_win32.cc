@@ -41,10 +41,10 @@ SettingsPluginWin32::~SettingsPluginWin32() {
 }
 
 void SettingsPluginWin32::StartWatching() {
-  if (preferred_brightness_reg_hkey_ != NULL) {
+  if (preferred_brightness_reg_hkey_ != nullptr) {
     WatchPreferredBrightnessChanged();
   }
-  if (text_scale_factor_reg_hkey_ != NULL) {
+  if (text_scale_factor_reg_hkey_ != nullptr) {
     WatchTextScaleFactorChanged();
   }
 }
