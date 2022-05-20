@@ -262,15 +262,9 @@ TEST_F(ColorFilterLayerTest, CacheChild) {
   const auto* cachebale_color_filter_item = layer->raster_cache_item();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  // The color_filter layer default cache itself
   EXPECT_EQ(cachebale_color_filter_item->cache_state(),
-            RasterCacheItem::CacheState::kCurrent);
-  EXPECT_EQ(cachebale_color_filter_item->GetId().value(),
-            RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(
-      cachebale_color_filter_item->GetId().value(), other_canvas, &paint));
-  EXPECT_FALSE(raster_cache()->Draw(
-      cachebale_color_filter_item->GetId().value(), cache_canvas, &paint));
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_color_filter_item->GetId().has_value());
 
   layer->Preroll(preroll_context(), initial_transform);
   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
@@ -313,15 +307,10 @@ TEST_F(ColorFilterLayerTest, CacheChildren) {
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
   const auto* cachebale_color_filter_item = layer->raster_cache_item();
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  // The color_filter layer default cache itself
+
   EXPECT_EQ(cachebale_color_filter_item->cache_state(),
-            RasterCacheItem::CacheState::kCurrent);
-  EXPECT_EQ(cachebale_color_filter_item->GetId().value(),
-            RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(
-      cachebale_color_filter_item->GetId().value(), other_canvas, &paint));
-  EXPECT_FALSE(raster_cache()->Draw(
-      cachebale_color_filter_item->GetId().value(), cache_canvas, &paint));
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_color_filter_item->GetId().has_value());
 
   layer->Preroll(preroll_context(), initial_transform);
   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());

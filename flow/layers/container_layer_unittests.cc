@@ -12,6 +12,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
 #include "gtest/gtest.h"
+#include "include/core/SkCanvas.h"
 #include "include/core/SkMatrix.h"
 
 namespace flutter {
@@ -203,6 +204,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   const SkPath child_path3 = SkPath().addRect(26.0f, 6.0f, 30.5f, 21.5f);
   const SkPaint child_paint1(SkColors::kGray);
   const SkPaint child_paint2(SkColors::kGreen);
+  const SkPaint paint;
   auto cacheable_container_layer1 =
       std::make_shared<MockCacheableContainerLayer>();
   auto cacheable_container_layer2 =
@@ -211,15 +213,15 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
       std::make_shared<MockCacheableContainerLayer>();
 
   auto cacheable_layer111 =
-      std::make_shared<MockCacheableLayer>(child_path3, SkPaint());
+      std::make_shared<MockCacheableLayer>(child_path3, paint);
   // if the frame had rendered 2 frames, we will cache the cacheable_layer21
   // layer
   auto cacheable_layer21 =
-      std::make_shared<MockCacheableLayer>(child_path1, SkPaint(), 2);
+      std::make_shared<MockCacheableLayer>(child_path1, paint, 2);
 
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(SkPath(), child_paint2);
-  auto mock_layer3 = std::make_shared<MockLayer>(child_path2, SkPaint());
+  auto mock_layer3 = std::make_shared<MockLayer>(child_path2, paint);
 
   cacheable_container_layer1->Add(mock_layer1);
   cacheable_container_layer1->Add(mock_layer3);
@@ -232,6 +234,10 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   layer->Add(cacheable_container_layer1);
   layer->Add(mock_layer2);
   layer->Add(cacheable_container_layer2);
+
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(SkMatrix::I());
+
   // frame1
   layer->Preroll(preroll_context(), SkMatrix::I());
 
@@ -271,9 +277,9 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     EXPECT_TRUE(raster_cache()->HasEntry(
         cacheable_container_layer11->raster_cache_item()->GetId().value(),
         SkMatrix::I()));
-    EXPECT_FALSE(raster_cache()->MarkSeen(
+    EXPECT_FALSE(raster_cache()->Draw(
         cacheable_container_layer11->raster_cache_item()->GetId().value(),
-        SkMatrix::I()));
+        cache_canvas, &paint));
 
     // The cacheable_layer111 should be cached when rended 3 frames
     EXPECT_EQ(cacheable_layer111->raster_cache_item()->cache_state(),
@@ -308,9 +314,9 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     EXPECT_TRUE(raster_cache()->HasEntry(
         cacheable_container_layer11->raster_cache_item()->GetId().value(),
         SkMatrix::I()));
-    EXPECT_FALSE(raster_cache()->MarkSeen(
+    EXPECT_FALSE(raster_cache()->Draw(
         cacheable_container_layer11->raster_cache_item()->GetId().value(),
-        SkMatrix::I()));
+        cache_canvas, &paint));
 
     EXPECT_EQ(cacheable_container_layer2->raster_cache_item()->cache_state(),
               RasterCacheItem::CacheState::kNone);
@@ -321,10 +327,9 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     EXPECT_TRUE(raster_cache()->HasEntry(
         cacheable_layer21->raster_cache_item()->GetId().value(),
         SkMatrix::I()));
-    EXPECT_TRUE(raster_cache()->MarkSeen(
-        cacheable_layer21->raster_cache_item()->GetId().value(),
-        SkMatrix::I()));
-    ;
+    EXPECT_TRUE(raster_cache()->Draw(
+        cacheable_layer21->raster_cache_item()->GetId().value(), cache_canvas,
+        &paint));
     preroll_context()->raster_cache->CleanupAfterFrame();
   }
 
@@ -349,17 +354,17 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     EXPECT_TRUE(raster_cache()->HasEntry(
         cacheable_container_layer11->raster_cache_item()->GetId().value(),
         SkMatrix::I()));
-    EXPECT_FALSE(raster_cache()->MarkSeen(
+    EXPECT_FALSE(raster_cache()->Draw(
         cacheable_container_layer11->raster_cache_item()->GetId().value(),
-        SkMatrix::I()));
+        cache_canvas, &paint));
     // The 3td frame, we will cache the cacheable_layer111, but his ancestor has
-    // been cached, so cacheable_layer111 MarkSeen is false
+    // been cached, so cacheable_layer111 Draw is false
     EXPECT_TRUE(raster_cache()->HasEntry(
         cacheable_layer111->raster_cache_item()->GetId().value(),
         SkMatrix::I()));
-    EXPECT_FALSE(raster_cache()->MarkSeen(
-        cacheable_layer111->raster_cache_item()->GetId().value(),
-        SkMatrix::I()));
+    EXPECT_FALSE(raster_cache()->Draw(
+        cacheable_layer111->raster_cache_item()->GetId().value(), cache_canvas,
+        &paint));
 
     // The third frame, we will cache the cacheable_container_layer2
     EXPECT_EQ(cacheable_container_layer2->raster_cache_item()->cache_state(),

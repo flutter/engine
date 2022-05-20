@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 
 namespace flutter {
 
@@ -13,19 +14,25 @@ AutoCache::AutoCache(RasterCacheItem* raster_cache_item,
     : raster_cache_item_(raster_cache_item),
       context_(context),
       matrix_(matrix) {
-  if (context_ && context_->raster_cache) {
+  if (checked()) {
     raster_cache_item->PrerollSetup(context, matrix);
     current_index_ = context_->raster_cached_entries->size();
   }
 }
 
+bool AutoCache::checked() {
+  return raster_cache_item_ && context_ && context_->raster_cache;
+}
+
 AutoCache::~AutoCache() {
-  raster_cache_item_->PrerollFinalize(context_, matrix_);
+  if (checked()) {
+    raster_cache_item_->PrerollFinalize(context_, matrix_);
+  }
 }
 
 CacheableContainerLayer::CacheableContainerLayer(int layer_cached_threshold,
                                                  bool can_cache_children) {
-  layer_raster_cache_item_ = RasterCacheItem::MakeLayerRasterCacheItem(
+  layer_raster_cache_item_ = LayerRasterCacheItem::Make(
       this, layer_cached_threshold, can_cache_children);
 }
 

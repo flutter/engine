@@ -5,7 +5,7 @@
 #include "flutter/flow/testing/mock_raster_cache.h"
 
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/picture_raster_cache_item.h"
+#include "flutter/flow/layers/picture_raster_cache_item.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "include/core/SkCanvas.h"

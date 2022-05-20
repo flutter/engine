@@ -30,6 +30,11 @@ class SkPictureRasterCacheItem : public RasterCacheItem {
                            bool is_complex = true,
                            bool will_change = false);
 
+  static std::unique_ptr<SkPictureRasterCacheItem> Make(SkPicture*,
+                                                        const SkPoint& offset,
+                                                        bool is_complex,
+                                                        bool will_change);
+
   void PrerollSetup(PrerollContext* context, const SkMatrix& matrix) override;
 
   void PrerollFinalize(PrerollContext* context,

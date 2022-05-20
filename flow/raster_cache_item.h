@@ -33,7 +33,7 @@ class RasterCacheItem {
   };
 
   explicit RasterCacheItem(RasterCacheKeyID key_id,
-                           CacheState cache_state = CacheState::kCurrent,
+                           CacheState cache_state = CacheState::kNone,
                            unsigned child_entries = 0)
       : key_id_(key_id),
         cache_state_(cache_state),
@@ -51,31 +51,6 @@ class RasterCacheItem {
   virtual bool Draw(const PaintContext& context,
                     SkCanvas* canvas,
                     const SkPaint* paint) const = 0;
-
-  /**
-   * @brief Create a LayerRasterCacheItem, connect a layer and manage the
-   * Layer's raster cache
-   *
-   * @param layer_cache_threshold  after how many frames to start trying to
-   * cache the layer self
-   * @param can_cache_children the layer can do a cache for his children
-   */
-  static std::unique_ptr<LayerRasterCacheItem> MakeLayerRasterCacheItem(
-      Layer*,
-      int layer_cache_threshold,
-      bool can_cache_children = false);
-
-  static std::unique_ptr<DisplayListRasterCacheItem>
-  MakeDisplayListRasterCacheItem(DisplayList*,
-                                 const SkPoint& offset,
-                                 bool is_complex,
-                                 bool will_change);
-
-  static std::unique_ptr<SkPictureRasterCacheItem> MakeSkPictureRasterCacheItem(
-      SkPicture*,
-      const SkPoint& offset,
-      bool is_complex,
-      bool will_change);
 
   virtual std::optional<RasterCacheKeyID> GetId() const { return key_id_; }
 
@@ -95,8 +70,7 @@ class RasterCacheItem {
  protected:
   // The id for cache the layer self.
   RasterCacheKeyID key_id_;
-  CacheState cache_state_ = CacheState::kCurrent;
-  mutable int num_cache_attempts_ = 1;
+  CacheState cache_state_ = CacheState::kNone;
   mutable SkMatrix matrix_;
   unsigned child_items_;
 };

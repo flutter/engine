@@ -11,6 +11,7 @@
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 
 namespace flutter {
 
@@ -22,10 +23,8 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
   if (display_list_.skia_object() != nullptr) {
     bounds_ = display_list_.skia_object()->bounds().makeOffset(offset_.x(),
                                                                offset_.y());
-    display_list_raster_cache_item_ =
-        RasterCacheItem::MakeDisplayListRasterCacheItem(
-            display_list_.skia_object().get(), offset_, is_complex,
-            will_change);
+    display_list_raster_cache_item_ = DisplayListRasterCacheItem::Make(
+        display_list_.skia_object().get(), offset_, is_complex, will_change);
   }
 }
 
@@ -120,7 +119,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache) {
+  if (context.raster_cache && display_list_raster_cache_item_) {
     AutoCachePaint cache_paint(context);
     if (display_list_raster_cache_item_->Draw(context, cache_paint.paint())) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");

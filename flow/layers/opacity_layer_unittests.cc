@@ -14,6 +14,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/mock_canvas.h"
+#include "gtest/gtest.h"
+#include "include/core/SkPaint.h"
 
 namespace flutter {
 namespace testing {
@@ -101,13 +103,8 @@ TEST_F(OpacityLayerTest, CacheChild) {
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
   EXPECT_EQ(cachebale_opacity_item->cache_state(),
-            RasterCacheItem::CacheState::kCurrent);
-  EXPECT_EQ(cachebale_opacity_item->GetId().value(),
-            RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(cachebale_opacity_item->GetId().value(),
-                                    other_canvas, &paint));
-  EXPECT_FALSE(raster_cache()->Draw(cachebale_opacity_item->GetId().value(),
-                                    cache_canvas, &paint));
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_opacity_item->GetId().has_value());
 
   layer->Preroll(preroll_context(), initial_transform);
   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
@@ -154,13 +151,8 @@ TEST_F(OpacityLayerTest, CacheChildren) {
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
   EXPECT_EQ(cachebale_opacity_item->cache_state(),
-            RasterCacheItem::CacheState::kCurrent);
-  EXPECT_EQ(cachebale_opacity_item->GetId().value(),
-            RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(cachebale_opacity_item->GetId().value(),
-                                    other_canvas, &paint));
-  EXPECT_FALSE(raster_cache()->Draw(cachebale_opacity_item->GetId().value(),
-                                    cache_canvas, &paint));
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_opacity_item->GetId().has_value());
 
   layer->Preroll(preroll_context(), initial_transform);
   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
@@ -177,6 +169,38 @@ TEST_F(OpacityLayerTest, CacheChildren) {
                                     other_canvas, &paint));
   EXPECT_TRUE(raster_cache()->Draw(cachebale_opacity_item->GetId().value(),
                                    cache_canvas, &paint));
+}
+
+TEST_F(OpacityLayerTest, ShouldNotCacheChildren) {
+  SkPaint paint;
+  auto opacityLayer =
+      std::make_shared<OpacityLayer>(128, SkPoint::Make(20, 20));
+  auto mockLayer = MockLayer::MakeOpacityCompatible(SkPath());
+  opacityLayer->Add(mockLayer);
+
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+
+  const auto* cachebale_opacity_item = opacityLayer->raster_cache_item();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(cachebale_opacity_item->cache_state(),
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_opacity_item->GetId().has_value());
+
+  opacityLayer->Preroll(preroll_context(), SkMatrix::I());
+
+  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  EXPECT_TRUE(opacityLayer->children_can_accept_opacity());
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(cachebale_opacity_item->cache_state(),
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cachebale_opacity_item->Draw(paint_context(), &paint));
 }
 
 TEST_F(OpacityLayerTest, FullyOpaque) {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/display_list_raster_cache_item.h"
+#include "flutter/flow/layers/display_list_raster_cache_item.h"
 
 #include <optional>
 #include <utility>
@@ -10,6 +10,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/raster_cache_key.h"
 #include "flutter/flow/raster_cache_util.h"
 #include "flutter/flow/skia_gpu_object.h"
@@ -57,13 +58,18 @@ DisplayListRasterCacheItem::DisplayListRasterCacheItem(
       is_complex_(is_complex),
       will_change_(will_change) {}
 
+std::unique_ptr<DisplayListRasterCacheItem> DisplayListRasterCacheItem::Make(
+    DisplayList* display_list,
+    const SkPoint& offset,
+    bool is_complex,
+    bool will_change) {
+  return std::make_unique<DisplayListRasterCacheItem>(display_list, offset,
+                                                      is_complex, will_change);
+}
+
 void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
                                               const SkMatrix& matrix) {
   cache_state_ = CacheState::kNone;
-  if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
-    return;
-  }
-
   DisplayListComplexityCalculator* complexity_calculator =
       context->gr_context ? DisplayListComplexityCalculator::GetForBackend(
                                 context->gr_context->backend())
@@ -96,6 +102,11 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
       !context->raster_cached_entries) {
     return;
   }
+  if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
+    cache_state_ = CacheState::kNone;
+    return;
+  }
+  auto* raster_cache = context->raster_cache;
   SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
   // We've marked the cache entry that we would like to cache so it stays
   // alive, but if the following conditions apply then we need to set our
@@ -104,20 +115,15 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
     cache_state_ = CacheState::kNone;
     return;
   }
-  if (context->raster_cache) {
-    // Frame threshold has not yet been reached.
-    if (num_cache_attempts_ <= context->raster_cache->access_threshold()) {
-      if (!context->raster_cache->HasEntry(key_id_, transformation_matrix_)) {
-        // Creates an entry, if not present prior.
-        context->raster_cache->MarkSeen(key_id_, transformation_matrix_);
-      }
-      cache_state_ = CacheState::kNone;
-    } else {
-      context->subtree_can_inherit_opacity = true;
-      cache_state_ = CacheState::kCurrent;
-    }
-    return;
+  // Frame threshold has not yet been reached.
+  if (raster_cache->MarkSeen(key_id_, transformation_matrix_) <
+      raster_cache->access_threshold()) {
+    cache_state_ = CacheState::kNone;
+  } else {
+    context->subtree_can_inherit_opacity = true;
+    cache_state_ = CacheState::kCurrent;
   }
+  return;
 }
 
 bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
@@ -131,9 +137,7 @@ bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
   if (!context.raster_cache || !canvas) {
     return false;
   }
-  if (context.raster_cache->HasEntry(key_id_, canvas->getTotalMatrix())) {
-    num_cache_attempts_++;
-  }
+  context.raster_cache->Touch(key_id_, canvas->getTotalMatrix());
   if (cache_state_ == CacheState::kCurrent) {
     return context.raster_cache->Draw(key_id_, *canvas, paint);
   }
@@ -148,8 +152,10 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
   if (!context.raster_cache || parent_cached) {
     return false;
   }
+  auto* raster_cache = context.raster_cache;
   if (cache_state_ != kNone &&
-      num_cache_attempts_ >= context.raster_cache->access_threshold()) {
+      raster_cache->MarkSeen(key_id_, transformation_matrix_) >=
+          context.raster_cache->access_threshold()) {
     auto transformation_matrix = transformation_matrix_;
 // GetIntegralTransCTM effect for matrix which only contains scale,
 // translate, so it won't affect result of matrix decomposition and cache

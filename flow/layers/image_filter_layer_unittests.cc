@@ -321,7 +321,7 @@ TEST_F(ImageFilterLayerTest, CacheChild) {
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
   // ImageFilterLayer default cache itself.
   EXPECT_EQ(cachebale_image_filter_item->cache_state(),
-            RasterCacheItem::CacheState::kCurrent);
+            RasterCacheItem::CacheState::kNone);
   EXPECT_FALSE(cachebale_image_filter_item->Draw(paint_context(), &paint));
 
   layer->Preroll(preroll_context(), initial_transform);
@@ -366,7 +366,7 @@ TEST_F(ImageFilterLayerTest, CacheChildren) {
 
   // ImageFilterLayer default cache itself.
   EXPECT_EQ(cachebale_image_filter_item->cache_state(),
-            RasterCacheItem::CacheState::kCurrent);
+            RasterCacheItem::CacheState::kNone);
   EXPECT_FALSE(cachebale_image_filter_item->Draw(paint_context(), &paint));
 
   layer->Preroll(preroll_context(), initial_transform);

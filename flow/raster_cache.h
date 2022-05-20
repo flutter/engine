@@ -158,6 +158,7 @@ class RasterCache {
   bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 
   void PrepareNewFrame();
+
   void CleanupAfterFrame();
 
   void Clear();
@@ -224,10 +225,9 @@ class RasterCache {
    * @brief if the item has been cached return true.
    * We mean the item will show in the screen, and will create a cache entry if
    * the item doesn't create cache.
-   * @param id item id
-   * @param matrix
+   * the return value is the entry access count, so if a new entry it will be 1
    */
-  bool MarkSeen(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
+  int MarkSeen(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
 
   bool UpdateCacheEntry(
       const RasterCacheKeyID& id,

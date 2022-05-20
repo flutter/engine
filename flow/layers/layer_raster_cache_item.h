@@ -18,6 +18,17 @@ class LayerRasterCacheItem : public RasterCacheItem {
                                 int layer_cached_threshold = 1,
                                 bool can_cache_children = false);
 
+  /**
+   * @brief Create a LayerRasterCacheItem, connect a layer and manage the
+   * Layer's raster cache
+   *
+   * @param layer_cache_threshold  after how many frames to start trying to
+   * cache the layer self
+   * @param can_cache_children the layer can do a cache for his children
+   */
+  static std::unique_ptr<LayerRasterCacheItem>
+  Make(Layer*, int layer_cache_threshold, bool can_cache_children = false);
+
   std::optional<RasterCacheKeyID> GetId() const override;
 
   void PrerollSetup(PrerollContext* context, const SkMatrix& matrix) override;
@@ -55,6 +66,8 @@ class LayerRasterCacheItem : public RasterCacheItem {
 
   // if the layer's children can be directly cache, set the param is true;
   bool can_cache_children_ = false;
+
+  mutable int num_cache_attempts_ = 1;
 };
 
 }  // namespace flutter

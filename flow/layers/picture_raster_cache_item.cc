@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/picture_raster_cache_item.h"
+#include "flutter/flow/layers/picture_raster_cache_item.h"
 
 #include <optional>
 #include <utility>
@@ -10,6 +10,7 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/raster_cache_key.h"
 
 #include "flutter/flow/raster_cache_util.h"
@@ -56,12 +57,18 @@ SkPictureRasterCacheItem::SkPictureRasterCacheItem(SkPicture* sk_picture,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
+std::unique_ptr<SkPictureRasterCacheItem> SkPictureRasterCacheItem::Make(
+    SkPicture* sk_picture,
+    const SkPoint& offset,
+    bool is_complex,
+    bool will_change) {
+  return std::make_unique<SkPictureRasterCacheItem>(sk_picture, offset,
+                                                    is_complex, will_change);
+}
+
 void SkPictureRasterCacheItem::PrerollSetup(PrerollContext* context,
                                             const SkMatrix& matrix) {
   cache_state_ = CacheState::kNone;
-  if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
-    return;
-  }
   if (!IsPictureWorthRasterizing(sk_picture_, will_change_, is_complex_)) {
     // We only deal with pictures that are worthy of rasterization.
     return;
@@ -86,6 +93,11 @@ void SkPictureRasterCacheItem::PrerollFinalize(PrerollContext* context,
       !context->raster_cached_entries) {
     return;
   }
+  if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
+    cache_state_ = CacheState::kNone;
+    return;
+  }
+  auto* raster_cache = context->raster_cache;
   SkRect bounds = sk_picture_->cullRect().makeOffset(offset_.x(), offset_.y());
   // We've marked the cache entry that we would like to cache so it stays
   // alive, but if the following conditions apply then we need to set our
@@ -94,19 +106,16 @@ void SkPictureRasterCacheItem::PrerollFinalize(PrerollContext* context,
     cache_state_ = CacheState::kNone;
     return;
   }
-  if (context->raster_cache) {
-    // Frame threshold has not yet been reached.
-    if (num_cache_attempts_ <= context->raster_cache->access_threshold()) {
-      if (!context->raster_cache->HasEntry(key_id_, transformation_matrix_)) {
-        context->raster_cache->MarkSeen(key_id_, transformation_matrix_);
-      }
-      cache_state_ = CacheState::kNone;
-    } else {
-      context->subtree_can_inherit_opacity = true;
-      cache_state_ = CacheState::kCurrent;
-    }
-    return;
+
+  // Frame threshold has not yet been reached.
+  if (raster_cache->MarkSeen(key_id_, transformation_matrix_) <
+      context->raster_cache->access_threshold()) {
+    cache_state_ = CacheState::kNone;
+  } else {
+    context->subtree_can_inherit_opacity = true;
+    cache_state_ = CacheState::kCurrent;
   }
+  return;
 }
 
 bool SkPictureRasterCacheItem::Draw(const PaintContext& context,
@@ -120,9 +129,7 @@ bool SkPictureRasterCacheItem::Draw(const PaintContext& context,
   if (!context.raster_cache || !canvas) {
     return false;
   }
-  if (context.raster_cache->HasEntry(key_id_, canvas->getTotalMatrix())) {
-    num_cache_attempts_++;
-  }
+  context.raster_cache->Touch(key_id_, canvas->getTotalMatrix());
   if (cache_state_ == CacheState::kCurrent) {
     return context.raster_cache->Draw(key_id_, *canvas, paint);
   }
@@ -138,7 +145,7 @@ bool SkPictureRasterCacheItem::TryToPrepareRasterCache(
     return false;
   }
   if (cache_state_ != kNone &&
-      num_cache_attempts_ >= context.raster_cache->access_threshold()) {
+      context.raster_cache->MarkSeen(key_id_, transformation_matrix_)) {
     auto transformation_matrix = transformation_matrix_;
 // GetIntegralTransCTM effect for matrix which only contains scale,
 // translate, so it won't affect result of matrix decomposition and cache

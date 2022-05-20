@@ -116,8 +116,6 @@ FILE: ../../../flutter/flow/compositor_context.h
 FILE: ../../../flutter/flow/diff_context.cc
 FILE: ../../../flutter/flow/diff_context.h
 FILE: ../../../flutter/flow/diff_context_unittests.cc
-FILE: ../../../flutter/flow/display_list_raster_cache_item.cc
-FILE: ../../../flutter/flow/display_list_raster_cache_item.h
 FILE: ../../../flutter/flow/embedded_view_params_unittests.cc
 FILE: ../../../flutter/flow/embedded_views.cc
 FILE: ../../../flutter/flow/embedded_views.h
@@ -131,8 +129,6 @@ FILE: ../../../flutter/flow/gl_context_switch_unittests.cc
 FILE: ../../../flutter/flow/instrumentation.cc
 FILE: ../../../flutter/flow/instrumentation.h
 FILE: ../../../flutter/flow/instrumentation_unittests.cc
-FILE: ../../../flutter/flow/layer_raster_cache_item.cc
-FILE: ../../../flutter/flow/layer_raster_cache_item.h
 FILE: ../../../flutter/flow/layer_snapshot_store.cc
 FILE: ../../../flutter/flow/layer_snapshot_store.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.cc
@@ -197,8 +193,6 @@ FILE: ../../../flutter/flow/paint_region.cc
 FILE: ../../../flutter/flow/paint_region.h
 FILE: ../../../flutter/flow/paint_utils.cc
 FILE: ../../../flutter/flow/paint_utils.h
-FILE: ../../../flutter/flow/picture_raster_cache_item.cc
-FILE: ../../../flutter/flow/picture_raster_cache_item.h
 FILE: ../../../flutter/flow/raster_cache.cc
 FILE: ../../../flutter/flow/raster_cache.h
 FILE: ../../../flutter/flow/raster_cache_item.cc

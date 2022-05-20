@@ -50,7 +50,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
 
-  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
+  AutoCache auto_cache =
+      AutoCache(layer_raster_cache_item_.get(), context, matrix);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
@@ -77,6 +78,11 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix_);
 #endif
     layer_raster_cache_item_->CacheChildren(child_matrix);
+  } else {
+    // For opacity layer, we can use raster_cache children only when the
+    // children can't accept opacity so if the children_can_accept_opacity we
+    // should tell the AutoCache object don't do raster_cache.
+    auto_cache.ShouldNotBeCached();
   }
 
   // Restore cull_rect

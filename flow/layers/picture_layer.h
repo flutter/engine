@@ -9,7 +9,7 @@
 
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/picture_raster_cache_item.h"
+#include "flutter/flow/layers/picture_raster_cache_item.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/skia_gpu_object.h"
@@ -42,7 +42,6 @@ class PictureLayer : public Layer {
 
  private:
   SkPoint offset_;
-  SkRect bounds_;
 
   std::unique_ptr<SkPictureRasterCacheItem> raster_cache_item_;
 

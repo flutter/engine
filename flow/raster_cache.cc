@@ -126,12 +126,12 @@ bool RasterCache::Touch(const RasterCacheKeyID& id,
   return false;
 }
 
-bool RasterCache::MarkSeen(const RasterCacheKeyID& id,
-                           const SkMatrix& matrix) const {
+int RasterCache::MarkSeen(const RasterCacheKeyID& id,
+                          const SkMatrix& matrix) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
   entry.used_this_frame = true;
-  return entry.image != nullptr;
+  return entry.access_count;
 }
 
 bool RasterCache::HasEntry(const RasterCacheKeyID& id,

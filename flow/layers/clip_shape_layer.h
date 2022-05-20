@@ -46,11 +46,18 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override {
     SkRect previous_cull_rect = context->cull_rect;
+    bool uses_save_layer = UsesSaveLayer();
+
     if (!context->cull_rect.intersect(clip_shape_bounds())) {
       context->cull_rect.setEmpty();
     }
+    // We can use the raster_cache for children only when the use_save_layer is
+    // true so if use_save_layer is false we pass the layer_raster_item is
+    // nullptr which mean we don't do raster cache logic.
     AutoCache cache =
-        AutoCache(layer_raster_cache_item_.get(), context, matrix);
+        AutoCache(uses_save_layer ? layer_raster_cache_item_.get() : nullptr,
+                  context, matrix);
+
     Layer::AutoPrerollSaveLayerState save =
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
     OnMutatorsStackPushClipShape(context->mutators_stack);
@@ -67,7 +74,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     // If we use a SaveLayer then we can accept opacity on behalf
     // of our children and apply it in the saveLayer.
-    if (UsesSaveLayer()) {
+    if (uses_save_layer) {
       context->subtree_can_inherit_opacity = true;
     }
 

@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/layer_raster_cache_item.h"
+#include "flutter/flow/layers/layer_raster_cache_item.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/raster_cache_item.h"
 
 namespace flutter {
 
@@ -12,7 +13,7 @@ LayerRasterCacheItem::LayerRasterCacheItem(Layer* layer,
                                            bool can_cache_children)
     : RasterCacheItem(
           RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer),
-          CacheState::kCurrent),
+          CacheState::kNone),
       layer_(layer),
       layer_cached_threshold_(layer_cached_threshold),
       can_cache_children_(can_cache_children) {}
@@ -24,6 +25,14 @@ void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
     child_items_ = context->raster_cached_entries->size();
     matrix_ = matrix;
   }
+}
+
+std::unique_ptr<LayerRasterCacheItem> LayerRasterCacheItem::Make(
+    Layer* layer,
+    int layer_cache_threshold,
+    bool can_cache_children) {
+  return std::make_unique<LayerRasterCacheItem>(layer, layer_cache_threshold,
+                                                can_cache_children);
 }
 
 void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
@@ -51,7 +60,6 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
       if (!layer_children_id_.has_value()) {
         auto ids = RasterCacheKeyID::LayerChildrenIds(layer_);
         if (!ids.has_value()) {
-          cache_state_ = CacheState::kNone;
           return;
         }
         layer_children_id_.emplace(std::move(ids.value()),
