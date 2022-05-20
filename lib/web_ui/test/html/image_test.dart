@@ -75,7 +75,7 @@ Future<Image> _encodeToHtmlThenDecode(
 // This utility function detects how the current Web engine decodes pixel data.
 //
 // The HTML renderer uses the BMP format to display pixel data, but it used to
-// uses a wrong implementation. The bug has been fixed, but the fix breaks apps
+// use a wrong implementation. The bug has been fixed, but the fix breaks apps
 // that had to provide incorrect data to work around this issue. This function
 // is used in the migration guide to assist libraries that would like to run on
 // both pre- and post-patch engines by testing the current behavior on a single
@@ -87,7 +87,7 @@ Future<Image> _encodeToHtmlThenDecode(
 // See also:
 //
 //  * Patch: https://github.com/flutter/engine/pull/29448
-//  * Migration guide: (TODO)
+//  * Migration guide: https://docs.flutter.dev/release/breaking-changes/raw-images-on-web-uses-correct-origin-and-colors
 Future<bool> rawImageUsesCorrectBehavior(PixelFormat format) async {
   final ImageDescriptor descriptor = ImageDescriptor.raw(
     await ImmutableBuffer.fromUint8List(Uint8List.fromList(<int>[0xED, 0, 0, 0])),
