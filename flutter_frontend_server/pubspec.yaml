@@ -37,6 +37,8 @@ dependency_overrides:
     path: ../../third_party/dart/third_party/pkg/args
   async_helper:
     path: ../../third_party/dart/pkg/async_helper
+  bazel_worker:
+    path: ../../third_party/dart/third_party/pkg/bazel_worker
   build_integration:
     path: ../../third_party/dart/pkg/build_integration
   compiler:
