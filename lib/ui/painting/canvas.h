@@ -63,7 +63,8 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                 bool doAntiAlias = true);
   void clipRRect(const RRect& rrect, bool doAntiAlias = true);
   void clipPath(const CanvasPath* path, bool doAntiAlias = true);
-  void getClipBounds(tonic::Float64List& rect);
+  void getDestinationClipBounds(tonic::Float64List& rect);
+  void getLocalClipBounds(tonic::Float64List& rect);
 
   void drawColor(SkColor color, DlBlendMode blend_mode);
   void drawLine(double x1,

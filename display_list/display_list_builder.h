@@ -198,14 +198,27 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void transform(const SkMatrix& matrix) { transform(&matrix); }
   void transform(const SkM44& matrix44) { transform(&matrix44); }
 
+  /// Returns the 4x4 full perspective transform representing all transform
+  /// operations executed so far in this DisplayList within the enclosing
+  /// save stack.
   SkM44 getTransformFullPerspective() { return current_layer_->matrix; }
+  /// Returns the 3x3 partial perspective transform representing all transform
+  /// operations executed so far in this DisplayList within the enclosing
+  /// save stack.
   SkMatrix getTransform() { return current_layer_->matrix.asM33(); }
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
 
-  SkRect getClipBounds() { return current_layer_->clip_bounds; }
+  /// Conservative estimate of the bounds of all outstanding clip operations
+  /// measured in the coordinate space within which this DisplayList will
+  /// be rendered.
+  SkRect getDestinationClipBounds() { return current_layer_->clip_bounds; }
+  /// Conservative estimate of the bounds of all outstanding clip operations
+  /// transformed into the local coordinate space in which currently
+  /// recorded rendering operations are interpreted.
+  SkRect getLocalClipBounds();
 
   void drawPaint() override;
   void drawPaint(const DlPaint& paint);

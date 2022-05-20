@@ -35,39 +35,40 @@ static void Canvas_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
 
-#define FOR_EACH_BINDING(V)         \
-  V(Canvas, save)                   \
-  V(Canvas, saveLayerWithoutBounds) \
-  V(Canvas, saveLayer)              \
-  V(Canvas, restore)                \
-  V(Canvas, getSaveCount)           \
-  V(Canvas, translate)              \
-  V(Canvas, scale)                  \
-  V(Canvas, rotate)                 \
-  V(Canvas, skew)                   \
-  V(Canvas, transform)              \
-  V(Canvas, getTransform)           \
-  V(Canvas, clipRect)               \
-  V(Canvas, clipRRect)              \
-  V(Canvas, clipPath)               \
-  V(Canvas, getClipBounds)          \
-  V(Canvas, drawColor)              \
-  V(Canvas, drawLine)               \
-  V(Canvas, drawPaint)              \
-  V(Canvas, drawRect)               \
-  V(Canvas, drawRRect)              \
-  V(Canvas, drawDRRect)             \
-  V(Canvas, drawOval)               \
-  V(Canvas, drawCircle)             \
-  V(Canvas, drawArc)                \
-  V(Canvas, drawPath)               \
-  V(Canvas, drawImage)              \
-  V(Canvas, drawImageRect)          \
-  V(Canvas, drawImageNine)          \
-  V(Canvas, drawPicture)            \
-  V(Canvas, drawPoints)             \
-  V(Canvas, drawVertices)           \
-  V(Canvas, drawAtlas)              \
+#define FOR_EACH_BINDING(V)           \
+  V(Canvas, save)                     \
+  V(Canvas, saveLayerWithoutBounds)   \
+  V(Canvas, saveLayer)                \
+  V(Canvas, restore)                  \
+  V(Canvas, getSaveCount)             \
+  V(Canvas, translate)                \
+  V(Canvas, scale)                    \
+  V(Canvas, rotate)                   \
+  V(Canvas, skew)                     \
+  V(Canvas, transform)                \
+  V(Canvas, getTransform)             \
+  V(Canvas, clipRect)                 \
+  V(Canvas, clipRRect)                \
+  V(Canvas, clipPath)                 \
+  V(Canvas, getLocalClipBounds)       \
+  V(Canvas, getDestinationClipBounds) \
+  V(Canvas, drawColor)                \
+  V(Canvas, drawLine)                 \
+  V(Canvas, drawPaint)                \
+  V(Canvas, drawRect)                 \
+  V(Canvas, drawRRect)                \
+  V(Canvas, drawDRRect)               \
+  V(Canvas, drawOval)                 \
+  V(Canvas, drawCircle)               \
+  V(Canvas, drawArc)                  \
+  V(Canvas, drawPath)                 \
+  V(Canvas, drawImage)                \
+  V(Canvas, drawImageRect)            \
+  V(Canvas, drawImageNine)            \
+  V(Canvas, drawPicture)              \
+  V(Canvas, drawPoints)               \
+  V(Canvas, drawVertices)             \
+  V(Canvas, drawAtlas)                \
   V(Canvas, drawShadow)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -270,9 +271,25 @@ void Canvas::clipPath(const CanvasPath* path, bool doAntiAlias) {
   }
 }
 
-void Canvas::getClipBounds(tonic::Float64List& rect) {
+void Canvas::getDestinationClipBounds(tonic::Float64List& rect) {
+  if (display_list_recorder_) {
+    SkRect bounds = builder()->getDestinationClipBounds();
+    rect[0] = bounds.fLeft;
+    rect[1] = bounds.fTop;
+    rect[2] = bounds.fRight;
+    rect[3] = bounds.fBottom;
+  } else {
+    SkIRect bounds = canvas_->getDeviceClipBounds();
+    rect[0] = bounds.fLeft;
+    rect[1] = bounds.fTop;
+    rect[2] = bounds.fRight;
+    rect[3] = bounds.fBottom;
+  }
+}
+
+void Canvas::getLocalClipBounds(tonic::Float64List& rect) {
   SkRect bounds = display_list_recorder_
-                      ? display_list_recorder_->builder()->getClipBounds()
+                      ? display_list_recorder_->builder()->getLocalClipBounds()
                       : canvas_->getLocalClipBounds();
   rect[0] = bounds.fLeft;
   rect[1] = bounds.fTop;

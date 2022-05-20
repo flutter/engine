@@ -653,6 +653,15 @@ void DisplayListBuilder::clipPath(const SkPath& path,
     Push<ClipDifferencePathOp>(0, 1, path, is_aa);
   }
 }
+SkRect DisplayListBuilder::getLocalClipBounds() {
+  SkM44 inverse;
+  if (current_layer_->matrix.invert(&inverse)) {
+    SkRect devBounds;
+    current_layer_->clip_bounds.roundOut(&devBounds);
+    return inverse.asM33().mapRect(devBounds);
+  }
+  return kMaxCullRect_;
+}
 
 void DisplayListBuilder::drawPaint() {
   Push<DrawPaintOp>(0, 1);

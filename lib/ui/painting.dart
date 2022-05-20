@@ -4518,15 +4518,27 @@ class Canvas extends NativeFieldWrapperClass1 {
   }
   void _clipPath(Path path, bool doAntiAlias) native 'Canvas_clipPath';
 
-  /// Returns the bounds of the current clip including a conservative combined
-  /// result of all clip methods executed since the creation of this [Canvas]
-  /// object, and respecting the save/restore history.
+  /// Returns the conservative bounds of the combined result of all clip methods
+  /// executed within the current save stack of this [Canvas] object, as measured
+  /// in the local coordinate space under which rendering operations are curretnly
+  /// performed.
   ///
-  /// The returned bounds are a conservative estimate of the bounds of the actual
-  /// clip based on intersecting the bounds of each clip method that was executed
-  /// with [ClipOp.intersect] and potentially ignoring any clip method that was
-  /// executed with [ClipOp.difference]. These [ClipOp] arguments are only present
-  /// on the [clipRect] method.
+  /// The combined clip results are rounded out to an integer pixel boundary before
+  /// they are transformed back into the local coordinate space which accounts for
+  /// the pixel roundoff in rendering operations, particularly when antialiasing.
+  /// Because the [Picture] may eventually be rendered into a scene within the
+  /// context of transforming widgets or layers, the result may thus be overly
+  /// conservative due to premature rounding. Using the [getDestinationClipBounds]
+  /// method combined with the external transforms and rounding in the true device
+  /// coordinate system will produce more accurate results, but this value may
+  /// provide a more convenient approximation to compare rendering operations to
+  /// the established clip.
+  ///
+  /// {@template dart.ui.canvas.conservativeClipBounds}
+  /// The conservative estimate of the bounds is based on intersecting the bounds
+  /// of each clip method that was executed with [ClipOp.intersect] and potentially
+  /// ignoring any clip method that was executed with [ClipOp.difference]. The
+  /// [ClipOp] argument is only present on the [clipRect] method.
   ///
   /// To understand how the bounds estimate can be conservative, consider the
   /// following two clip method calls:
@@ -4554,12 +4566,34 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// and [clipPath]. The [restore] method can also modify the current clip by
   /// restoring it to the same value it had before its associated [save] or
   /// [saveLayer] call.
-  Rect getClipBounds() {
+  /// {@endtemplate}
+  Rect getLocalClipBounds() {
     final Float64List bounds = Float64List(4);
-    _getClipBounds(bounds);
+    _getLocalClipBounds(bounds);
     return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
   }
-  void _getClipBounds(Float64List bounds) native 'Canvas_getClipBounds';
+  void _getLocalClipBounds(Float64List bounds) native 'Canvas_getLocalClipBounds';
+
+  /// Returns the conservative bounds of the combined result of all clip methods
+  /// executed within the current save stack of this [Canvas] object, as measured
+  /// in the destination coordinate space in which the [Picture] will be rendered.
+  ///
+  /// Unlike [getLocalClipBounds], the bounds are not rounded out to an integer
+  /// pixel boundary as the Destination coordinate space may not represent pixels
+  /// if the [Picture] being constructed will be further transformed when it is
+  /// rendered or added to a scene. In order to determine the true pixels being
+  /// affected, those external transforms should be applied first before rounding
+  /// out the result to integer pixel boundaries. Most typically, [Picture] objects
+  /// are rendered in a scene with a scale transform representing the Device Pixel
+  /// Ratio.
+  ///
+  /// {@macro dart.ui.canvas.conservativeClipBounds}
+  Rect getDestinationClipBounds() {
+    final Float64List bounds = Float64List(4);
+    _getDestinationClipBounds(bounds);
+    return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
+  }
+  void _getDestinationClipBounds(Float64List bounds) native 'Canvas_getDestinationClipBounds';
 
   /// Paints the given [Color] onto the canvas, applying the given
   /// [BlendMode], with the given color being the source and the background
