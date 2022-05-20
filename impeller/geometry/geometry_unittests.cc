@@ -1086,5 +1086,20 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
   ASSERT_EQ(polyline.points[6], Point(0, 100));
 }
 
+TEST(GeometryTest, VerticesConstructorAndGetters) {
+  std::vector<Point> points = {Point(1, 2), Point(2, 3), Point(3, 4)};
+  std::vector<uint16_t> indexes = {0, 1, 2};
+  std::vector<Color> colors = {Color::White(), Color::White(), Color::White()};
+
+  Vertices vertices = Vertices(points, indexes, colors, VertexMode::kTriangle,
+                               Rect(0, 0, 4, 4));
+
+  ASSERT_EQ(vertices.GetBoundingBox().value(), Rect(0, 0, 4, 4));
+  ASSERT_EQ(vertices.get_points(), points);
+  ASSERT_EQ(vertices.get_indexes(), indexes);
+  ASSERT_EQ(vertices.get_colors(), colors);
+  ASSERT_EQ(vertices.mode(), VertexMode::kTriangle);
+}
+
 }  // namespace testing
 }  // namespace impeller
