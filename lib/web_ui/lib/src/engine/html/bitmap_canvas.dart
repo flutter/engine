@@ -1096,11 +1096,14 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(paintOrderElement);
       }
     }
-    final html.Node? firstChild = (rootElement as html.Element).firstChild;
-    if (firstChild != null && firstChild is html.HtmlElement &&
-        firstChild.tagName.toLowerCase() ==
-            'canvas') {
-      firstChild.style.zIndex = '-1';
+    final DomNode? firstChild = rootElement.firstChild;
+    if (firstChild != null) {
+      if (domInstanceOfString(firstChild, 'HTMLElement')) {
+        final DomHTMLElement maybeCanvas = firstChild as DomHTMLElement;
+        if (maybeCanvas.tagName.toLowerCase() == 'canvas') {
+          maybeCanvas.style.zIndex = '-1';
+        }
+      }
     }
   }
 
