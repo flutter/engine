@@ -1068,18 +1068,8 @@ class BitmapCanvas extends EngineCanvas {
   void endOfPaint() {
     _canvasPool.endOfPaint();
     _elementCache?.commitFrame();
-    // Wrap all elements in translate3d (workaround for webkit paint order bug).
-    /*if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
-      for (final DomElement element in rootElement.children) {
-        final DomHTMLDivElement paintOrderElement = createDomHTMLDivElement()
-          ..style.transform = 'translate3d(0,0,0)';
-        paintOrderElement.append(element);
-        rootElement.append(paintOrderElement);
-        _children.add(paintOrderElement as html.Element);
-      }
-    }
-    */
     if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
+      // Copy the children list to avoid concurrent modification.
       final List<DomElement> children = rootElement.children.toList();
       for (final DomElement element in children) {
         final DomHTMLDivElement paintOrderElement = createDomHTMLDivElement()
