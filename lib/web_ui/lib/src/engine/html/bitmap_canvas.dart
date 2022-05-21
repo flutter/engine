@@ -1078,10 +1078,7 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(paintOrderElement as html.Element);
       }
     }
-          maybeCanvas.style.zIndex = '-1';
-        }
-      }
-    }*/
+    */
     if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
       for (final html.Element element in (rootElement as html.Element).children) {
         final html.DivElement paintOrderElement = html.DivElement()
