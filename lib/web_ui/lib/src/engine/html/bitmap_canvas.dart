@@ -1078,7 +1078,6 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(paintOrderElement as html.Element);
       }
     }
-    if (firstChild != null) {
       if (domInstanceOfString(firstChild, 'HTMLElement')) {
         final DomHTMLElement maybeCanvas = firstChild as DomHTMLElement;
         if (maybeCanvas.tagName.toLowerCase() == 'canvas') {
