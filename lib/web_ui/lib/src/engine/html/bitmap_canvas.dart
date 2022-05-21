@@ -1078,7 +1078,6 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(paintOrderElement as html.Element);
       }
     }
-        if (maybeCanvas.tagName.toLowerCase() == 'canvas') {
           maybeCanvas.style.zIndex = '-1';
         }
       }
