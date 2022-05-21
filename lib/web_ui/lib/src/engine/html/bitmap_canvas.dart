@@ -1081,11 +1081,11 @@ class BitmapCanvas extends EngineCanvas {
     */
     if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
       for (final html.Element element in (rootElement as html.Element).children) {
-        final html.DivElement paintOrderElement = html.DivElement()
+        final DomHTMLDivElement paintOrderElement = createDomHTMLDivElement()
           ..style.transform = 'translate3d(0,0,0)';
-        paintOrderElement.append(element);
-        rootElement.append(paintOrderElement as DomElement);
-        _children.add(paintOrderElement);
+        paintOrderElement.append(element as DomElement);
+        rootElement.append(paintOrderElement);
+        _children.add(paintOrderElement as html.Element);
       }
     }
     final DomNode? firstChild = rootElement.firstChild;
