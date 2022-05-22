@@ -24,7 +24,7 @@ class StubFlutterWindowsApi {
   // will be forwarded.
   static void SetTestStub(StubFlutterWindowsApi* stub);
 
-  // Returns the current stub, as last set by SetTestFluttterStub.
+  // Returns the current stub, as last set by SetTestFlutterStub.
   static StubFlutterWindowsApi* GetTestStub();
 
   virtual ~StubFlutterWindowsApi() {}
