@@ -15,7 +15,8 @@
 
 namespace impeller {
 
-VerticesContents::VerticesContents(Vertices vertices) : vertices_(std::move(vertices)){};
+VerticesContents::VerticesContents(Vertices vertices)
+    : vertices_(std::move(vertices)){};
 
 VerticesContents::~VerticesContents() = default;
 
