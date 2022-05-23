@@ -29,7 +29,7 @@ class StubFlutterApi {
   // will be forwarded.
   static void SetTestStub(StubFlutterApi* stub);
 
-  // Returns the current stub, as last set by SetTestFluttterStub.
+  // Returns the current stub, as last set by SetTestFlutterStub.
   static StubFlutterApi* GetTestStub();
 
   virtual ~StubFlutterApi() {}
