@@ -31,7 +31,9 @@ class RasterCacheResult {
 
   virtual ~RasterCacheResult() = default;
 
-  virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
+  virtual void draw(SkCanvas& canvas,
+                    const SkPaint* paint,
+                    const SkMatrix* matrix) const;
 
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
@@ -234,13 +236,15 @@ class RasterCache {
   //
   // Additional paint can be given to change how the raster cache is drawn
   // (e.g., draw the raster cache with some opacity).
+  // May accept an SkMatrix if this only applies scale and translation.
   //
   // Return true if the layer raster cache is found and drawn.
   bool Draw(
       const Layer* layer,
       SkCanvas& canvas,
       RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer,
-      const SkPaint* paint = nullptr) const;
+      const SkPaint* paint = nullptr,
+      const SkMatrix* matrix = nullptr) const;
 
   void PrepareNewFrame();
   void CleanupAfterFrame();
@@ -309,7 +313,8 @@ class RasterCache {
 
   bool Draw(const RasterCacheKey& cache_key,
             SkCanvas& canvas,
-            const SkPaint* paint) const;
+            const SkPaint* paint,
+            const SkMatrix* matrix = nullptr) const;
 
   void SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
                                RasterCacheMetrics& picture_metrics,

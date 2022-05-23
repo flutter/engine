@@ -7,12 +7,13 @@
 
 #include "flutter/flow/layers/container_layer.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
+#include "flutter/display_list/display_list_image_filter.h"
 
 namespace flutter {
 
 class ImageFilterLayer : public ContainerLayer {
  public:
-  explicit ImageFilterLayer(sk_sp<SkImageFilter> filter);
+  explicit ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -37,7 +38,7 @@ class ImageFilterLayer : public ContainerLayer {
   // filtered output of this layer.
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
 
-  sk_sp<SkImageFilter> filter_;
+  std::shared_ptr<const DlImageFilter> filter_;
   sk_sp<SkImageFilter> transformed_filter_;
   int render_count_;
 

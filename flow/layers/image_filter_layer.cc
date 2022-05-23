@@ -6,7 +6,7 @@
 
 namespace flutter {
 
-ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
+ImageFilterLayer::ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter)
     : filter_(std::move(filter)),
       transformed_filter_(nullptr),
       render_count_(1) {}
@@ -22,7 +22,8 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
 
   if (filter_) {
-    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
+    auto filter =
+        filter_->skia_object()->makeWithLocalMatrix(context->GetTransform());
     if (filter) {
       // This transform will be applied to every child rect in the subtree
       context->PushFilterBoundsAdjustment([filter](SkRect rect) {
@@ -56,7 +57,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   }
 
   const SkIRect filter_input_bounds = child_bounds.roundOut();
-  SkIRect filter_output_bounds = filter_->filterBounds(
+  SkIRect filter_output_bounds = filter_->skia_object()->filterBounds(
       filter_input_bounds, SkMatrix::I(), SkImageFilter::kForward_MapDirection);
   child_bounds = SkRect::Make(filter_output_bounds);
 
@@ -83,7 +84,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     // instances can do this operation on some transforms and some
     // (filters or transforms) cannot. We can only cache the children
     // and apply the filter on the fly if this operation succeeds.
-    transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
+    transformed_filter_ = filter_->skia_object()->makeWithLocalMatrix(matrix);
     if (transformed_filter_) {
       // With a modified SkImageFilter we can now try to cache the
       // children to avoid their rendering costs if they remain
@@ -103,6 +104,18 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   AutoCachePaint cache_paint(context);
 
   if (context.raster_cache) {
+    // Special case an ImageFilter.matrix transformation that only
+    // applies scaling. This is used by the default Android zoom page
+    // transition.
+    auto matrix_filter = filter_->asMatrix();
+    if (matrix_filter != nullptr &&
+        matrix_filter->matrix().isScaleTranslate() &&
+        context.raster_cache->Draw(
+            this, *context.leaf_nodes_canvas, RasterCacheLayerStrategy::kLayer,
+            cache_paint.paint(), &matrix_filter->matrix())) {
+      return;
+    }
+
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
                                    RasterCacheLayerStrategy::kLayer,
                                    cache_paint.paint())) {
@@ -118,7 +131,7 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     }
   }
 
-  cache_paint.setImageFilter(filter_);
+  cache_paint.setImageFilter(filter_->skia_object());
 
   // Normally a save_layer is sized to the current layer bounds, but in this
   // case the bounds of the child may not be the same as the filtered version

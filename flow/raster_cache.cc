@@ -26,18 +26,30 @@ RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
                                      const char* type)
     : image_(std::move(image)), logical_rect_(logical_rect), flow_(type) {}
 
-void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
+void RasterCacheResult::draw(SkCanvas& canvas,
+                             const SkPaint* paint,
+                             const SkMatrix* matrix) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
+  auto device_total_matrix = canvas.getTotalMatrix();
   SkIRect bounds =
-      RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+      RasterCache::GetDeviceBounds(logical_rect_, device_total_matrix);
   FML_DCHECK(
       std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
       std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
   flow_.Step();
-  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
-                   paint);
+  if (matrix == nullptr) {
+    canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
+                     paint);
+  } else {
+    FML_DCHECK(matrix->isScaleTranslate());
+    SkRect dest_rect;
+    matrix->mapRect(&dest_rect, logical_rect_);
+    SkRect dest_rect_2;
+    device_total_matrix.mapRect(&dest_rect_2, dest_rect);
+    canvas.drawImageRect(image_, dest_rect_2, SkSamplingOptions(), paint);
+  }
 }
 
 RasterCache::RasterCache(size_t access_threshold,
@@ -430,18 +442,20 @@ bool RasterCache::Draw(const DisplayList& display_list,
 bool RasterCache::Draw(const Layer* layer,
                        SkCanvas& canvas,
                        RasterCacheLayerStrategy strategy,
-                       const SkPaint* paint) const {
+                       const SkPaint* paint,
+                       const SkMatrix* matrix) const {
   auto cache_key_optional =
       TryToMakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
   if (!cache_key_optional) {
     return false;
   }
-  return Draw(cache_key_optional.value(), canvas, paint);
+  return Draw(cache_key_optional.value(), canvas, paint, matrix);
 }
 
 bool RasterCache::Draw(const RasterCacheKey& cache_key,
                        SkCanvas& canvas,
-                       const SkPaint* paint) const {
+                       const SkPaint* paint,
+                       const SkMatrix* matrix) const {
   auto it = cache_.find(cache_key);
   if (it == cache_.end()) {
     return false;
@@ -452,7 +466,7 @@ bool RasterCache::Draw(const RasterCacheKey& cache_key,
   entry.used_this_frame = true;
 
   if (entry.image) {
-    entry.image->draw(canvas, paint);
+    entry.image->draw(canvas, paint, matrix);
     return true;
   }
 
