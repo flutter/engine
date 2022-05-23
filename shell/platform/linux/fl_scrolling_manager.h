@@ -20,7 +20,7 @@ G_DECLARE_FINAL_TYPE(FlScrollingManager,
                      GObject);
 
 /**
- * fl_keyboard_manager_new:
+ * fl_scrolling_manager_new:
  * @view_delegate: An interface that the manager requires to communicate with
  * the platform. Usually implemented by FlView.
  *
@@ -31,22 +31,81 @@ G_DECLARE_FINAL_TYPE(FlScrollingManager,
 FlScrollingManager* fl_scrolling_manager_new(
     FlScrollingViewDelegate* view_delegate);
 
+/**
+ * fl_scrolling_manager_set_last_mouse_position:
+ * @manager: the #FlScrollingManager self.
+ * @x: the mouse x-position, in window coordinates.
+ * @y: the mouse y-position, in window coordinates.
+ *
+ * Inform the scrolling manager of the mouse position.
+ * This position will be used when sending scroll pointer events.
+ */
 void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* self,
                                                   gdouble x,
                                                   gdouble y);
 
+/**
+ * fl_scrolling_manager_handle_scroll_event:
+ * @manager: the #FlScrollingManager self.
+ * @event: the scroll event.
+ * @scale_factor: the GTK scaling factor of the window.
+ *
+ * Inform the scrolling manager of a scroll event.
+ */
 void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* self,
                                               GdkEventScroll* event,
                                               gint scale_factor);
 
+/**
+ * fl_scrolling_manager_handle_rotation_begin:
+ * @manager: the #FlScrollingManager self.
+ *
+ * Inform the scrolling manager that a rotation gesture has begun.
+ */
 void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* self);
+
+/**
+ * fl_scrolling_manager_handle_rotation_update:
+ * @manager: the #FlScrollingManager self.
+ * @rotation: the rotation angle, in radians.
+ *
+ * Inform the scrolling manager that a rotation gesture has updated.
+ */
 void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* self,
                                                  gdouble rotation);
+
+/**
+ * fl_scrolling_manager_handle_rotation_end:
+ * @manager: the #FlScrollingManager self.
+ *
+ * Inform the scrolling manager that a rotation gesture has ended.
+ */
 void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* self);
 
+/**
+ * fl_scrolling_manager_handle_zoom_begin:
+ * @manager: the #FlScrollingManager self.
+ *
+ * Inform the scrolling manager that a zoom gesture has begun.
+ */
 void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* self);
+
+/**
+ * fl_scrolling_manager_handle_zoom_update:
+ * @manager: the #FlScrollingManager self.
+ * @scale: the zoom scale.
+ *
+ * Inform the scrolling manager that a zoom gesture has updated.
+ */
 void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
                                              gdouble scale);
+
+/**
+ * fl_scrolling_manager_handle_zoom_end:
+ * @manager: the #FlScrollingManager self.
+ *
+ * Inform the scrolling manager that a zoom gesture has ended.
+ */
 void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* self);
 
 G_END_DECLS
