@@ -15,12 +15,12 @@
 
 namespace impeller {
 
-VerticesContents::VerticesContents(Vertices vertices) : vertices_(vertices){};
+VerticesContents::VerticesContents(Vertices vertices) : vertices_(std::move(vertices)){};
 
 VerticesContents::~VerticesContents() = default;
 
 std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
-  return vertices_.GetBoundingBox();
+  return vertices_.GetTransformedBoundingBox(entity.GetTransformation());
 };
 
 bool VerticesContents::Render(const ContentContext& renderer,
@@ -39,22 +39,24 @@ bool VerticesContents::Render(const ContentContext& renderer,
   }
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  std::vector<Point> points = vertices_.get_points();
-  std::vector<uint16_t> indexes = vertices_.get_indexes();
-  std::vector<Color> colors = vertices_.get_colors();
-  VertexMode mode = vertices_.mode();
+  std::vector<Point> points = vertices_.GetPoints();
+  std::vector<uint16_t> indices = vertices_.GetIndices();
+  // TODO: colors are currently unused, must be blended with
+  // paint color based on provided blend mode.
+  std::vector<Color> colors = vertices_.GetColors();
+  VertexMode mode = vertices_.GetMode();
 
-  if (indexes.size() == 0) {
+  if (indices.size() == 0) {
     for (uint i = 0; i < points.size(); i += 1) {
       VS::PerVertexData data;
-      data.vertices = points[i];
+      data.point = points[i];
       data.vertex_color = color_;
       vertex_builder.AppendVertex(data);
     }
   } else {
-    for (uint i = 0; i < indexes.size(); i += 1) {
+    for (uint i = 0; i < indices.size(); i += 1) {
       VS::PerVertexData data;
-      data.vertices = points[indexes[i]];
+      data.point = points[indices[i]];
       data.vertex_color = color_;
       vertex_builder.AppendVertex(data);
     }
@@ -67,11 +69,6 @@ bool VerticesContents::Render(const ContentContext& renderer,
       break;
     case VertexMode::kTriangleStrip:
       primitiveType = PrimitiveType::kTriangleStrip;
-      break;
-    case VertexMode::kTriangleFan:
-      // TODO: either unpack fan into triangles or add
-      // support for triangle fan.
-      primitiveType = PrimitiveType::kTriangle;
       break;
   }
 

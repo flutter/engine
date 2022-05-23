@@ -16,14 +16,12 @@ namespace impeller {
 enum class VertexMode {
   kTriangle,
   kTriangleStrip,
-  // Triangle fan isn't directly supported and must be emulated.
-  kTriangleFan
 };
 
 class Vertices {
  public:
   Vertices(std::vector<Point> points,
-           std::vector<uint16_t> indexes,
+           std::vector<uint16_t> indices,
            std::vector<Color> colors,
            VertexMode vertex_mode,
            Rect bounds);
@@ -32,16 +30,19 @@ class Vertices {
 
   std::optional<Rect> GetBoundingBox() const { return bounds_; };
 
-  std::vector<Point> get_points() const { return points_; }
+  std::optional<Rect> GetTransformedBoundingBox(const Matrix& transform) const;
 
-  std::vector<uint16_t> get_indexes() const { return indexes_; }
+  const std::vector<Point>& GetPoints() const { return points_; }
 
-  std::vector<Color> get_colors() const { return colors_; }
+  const std::vector<uint16_t>& GetIndices() const { return indices_; }
 
-  VertexMode mode() const { return vertex_mode_; }
+  const std::vector<Color>& GetColors() const { return colors_; }
 
+  VertexMode GetMode() const { return vertex_mode_; }
+
+ private:
   std::vector<Point> points_;
-  std::vector<uint16_t> indexes_;
+  std::vector<uint16_t> indices_;
   std::vector<Color> colors_;
   VertexMode vertex_mode_;
   Rect bounds_;

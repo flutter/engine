@@ -493,7 +493,7 @@ static Path ToPath(const SkRRect& rrect) {
 
 static Vertices ToVertices(const flutter::DlVertices* vertices) {
   std::vector<Point> points;
-  std::vector<uint16_t> indexes;
+  std::vector<uint16_t> indices;
   std::vector<Color> colors;
   for (int i = 0; i < vertices->vertex_count(); i++) {
     auto point = vertices->vertices()[i];
@@ -501,7 +501,7 @@ static Vertices ToVertices(const flutter::DlVertices* vertices) {
   }
   for (int i = 0; i < vertices->index_count(); i++) {
     auto index = vertices->indices()[i];
-    indexes.push_back(index);
+    indices.push_back(index);
   }
 
   auto* dl_colors = vertices->colors();
@@ -527,12 +527,15 @@ static Vertices ToVertices(const flutter::DlVertices* vertices) {
       mode = VertexMode::kTriangleStrip;
       break;
     case flutter::DlVertexMode::kTriangleFan:
-      mode = VertexMode::kTriangleFan;
+      FML_DLOG(ERROR) << "Unimplemented vertex mode TriangleFan in "
+                      << __FUNCTION__;
+      mode = VertexMode::kTriangle;
       break;
   }
 
   auto bounds = vertices->bounds();
-  return Vertices(points, indexes, colors, mode, ToRect(bounds));
+  return Vertices(std::move(points), std::move(indices), std::move(colors),
+                  mode, ToRect(bounds));
 }
 
 // |flutter::Dispatcher|

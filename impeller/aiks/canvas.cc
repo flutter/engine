@@ -306,13 +306,13 @@ void Canvas::DrawVertices(Vertices vertices,
                           Entity::BlendMode mode,
                           Paint paint) {
   std::shared_ptr<VerticesContents> contents =
-      std::make_shared<VerticesContents>(vertices);
+      std::make_shared<VerticesContents>(std::move(vertices));
   contents->set_color(paint.color);
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(contents);
+  entity.SetContents(paint.WithFilters(std::move(contents), true));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }
