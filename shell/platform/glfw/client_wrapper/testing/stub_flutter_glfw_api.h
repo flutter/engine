@@ -16,7 +16,7 @@ namespace testing {
 // the headers in platform/glfw/public/.
 
 // Linking this class into a test binary will provide dummy forwarding
-// implementantions of that C API, so that the wrapper can be tested separately
+// implementations of that C API, so that the wrapper can be tested separately
 // from the actual library.
 class StubFlutterGlfwApi {
  public:
