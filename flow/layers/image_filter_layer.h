@@ -5,9 +5,9 @@
 #ifndef FLUTTER_FLOW_LAYERS_IMAGE_FILTER_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_IMAGE_FILTER_LAYER_H_
 
+#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
-#include "flutter/display_list/display_list_image_filter.h"
 
 namespace flutter {
 

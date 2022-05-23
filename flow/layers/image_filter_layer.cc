@@ -105,14 +105,15 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
 
   if (context.raster_cache) {
     // Special case an ImageFilter.matrix transformation that only
-    // applies scaling. This is used by the default Android zoom page
-    // transition.
+    // applies scaling/translation. This is used by the default Android zoom
+    // page transition.
     auto matrix_filter = filter_->asMatrix();
     if (matrix_filter != nullptr &&
         matrix_filter->matrix().isScaleTranslate() &&
         context.raster_cache->Draw(
             this, *context.leaf_nodes_canvas, RasterCacheLayerStrategy::kLayer,
-            cache_paint.paint(), &matrix_filter->matrix())) {
+            cache_paint.paint(), &matrix_filter->matrix(),
+            &matrix_filter->sampling())) {
       return;
     }
 
