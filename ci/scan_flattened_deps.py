@@ -6,7 +6,7 @@
 
 # Usage: scan_flattened_deps.py --flat-deps <flat DEPS file> --output <vulnerability report>
 #
-# This script parses the flattened, fully qualified dependencies, 
+# This script parses the flattened, fully qualified dependencies,
 # and uses the OSV API to check for known vulnerabilities
 # for the given hash of the dependency
 
