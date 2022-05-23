@@ -1,4 +1,4 @@
-Signature: ede9fae178ba65905866dc7548a447b5
+Signature: 4e1c45cee36ad8dfde5e3f99f83b586a
 
 UNUSED LICENSES:
 
@@ -167,6 +167,33 @@ liability incurred by, or claims asserted against, such Contributor by
 reason of your accepting any such warranty or additional liability.
 
 END OF TERMS AND CONDITIONS
+====================================================================================================
+
+====================================================================================================
+ORIGIN: ../../../third_party/skia/third_party/rive/LICENSE
+TYPE: LicenseType.mit
+----------------------------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2020 Rive
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ====================================================================================================
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 USED LICENSES:
@@ -2512,6 +2539,7 @@ FILE: ../../../third_party/skia/include/gpu/graphite/TextureInfo.h
 FILE: ../../../third_party/skia/include/gpu/graphite/mtl/MtlBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/graphite/mtl/MtlTypes.h
 FILE: ../../../third_party/skia/include/private/chromium/GrSlug.h
+FILE: ../../../third_party/skia/include/private/chromium/Slug.h
 FILE: ../../../third_party/skia/include/private/gpu/ganesh/GrDawnTypesPriv.h
 FILE: ../../../third_party/skia/include/private/gpu/ganesh/GrMockTypesPriv.h
 FILE: ../../../third_party/skia/include/sksl/DSLSymbols.h
@@ -2560,7 +2588,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/mtl/GrMtlTypesPriv.mm
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/DrawMeshOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/DrawMeshOp.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/FillPathFlags.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrSlug.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkBuffer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Attribute.h
@@ -2598,7 +2625,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/GraphicsPipelineDesc.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Image_Graphite.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Image_Graphite.h
 FILE: ../../../third_party/skia/src/gpu/graphite/PipelineDataCache.h
-FILE: ../../../third_party/skia/src/gpu/graphite/ProgramCache.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Recorder.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Recording.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/RenderPassTask.cpp
@@ -2706,6 +2732,7 @@ FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateDeadGlobalVariab
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateDeadLocalVariables.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateUnreachableCode.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLProgramWriter.h
+FILE: ../../../third_party/skia/src/text/gpu/Slug.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SubRunAllocator.cpp
 FILE: ../../../third_party/skia/src/text/gpu/SubRunAllocator.h
 FILE: ../../../third_party/skia/src/utils/SkVMVisualizer.cpp
@@ -3004,8 +3031,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/ops/LatticeOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/LatticeOp.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/TriangulatingPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/TriangulatingPathRenderer.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrDistanceFieldAdjustTable.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrDistanceFieldAdjustTable.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrTextBlob.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrTextBlob.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrTextBlobRedrawCoordinator.cpp
@@ -3072,6 +3097,8 @@ FILE: ../../../third_party/skia/src/shaders/SkImageShader.h
 FILE: ../../../third_party/skia/src/svg/SkSVGCanvas.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.h
+FILE: ../../../third_party/skia/src/text/gpu/DistanceFieldAdjustTable.cpp
+FILE: ../../../third_party/skia/src/text/gpu/DistanceFieldAdjustTable.h
 FILE: ../../../third_party/skia/src/text/gpu/StrikeCache.cpp
 FILE: ../../../third_party/skia/src/text/gpu/StrikeCache.h
 FILE: ../../../third_party/skia/src/utils/SkPaintFilterCanvas.cpp
@@ -3626,8 +3653,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/ops/StrokeRectOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/StrokeRectOp.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrAtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrAtlasManager.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrSDFMaskFilter.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrSDFMaskFilter.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkAMDMemoryAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkAMDMemoryAllocator.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkCommandPool.cpp
@@ -3653,6 +3678,7 @@ FILE: ../../../third_party/skia/src/pdf/SkPDFTag.h
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_fuchsia.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLPipelineStageCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVariableReference.cpp
+FILE: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.cpp
 FILE: ../../../third_party/skia/src/utils/SkAnimCodecPlayer.cpp
 FILE: ../../../third_party/skia/src/utils/SkCallableTraits.h
 FILE: ../../../third_party/skia/src/utils/SkJSON.cpp
@@ -4305,14 +4331,14 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathAtlasMgr.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathAtlasMgr.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathShapeData.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/SmallPathShapeData.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrSDFTControl.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrSDFTControl.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/MiddleOutPolygonTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeIterator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/WangsFormula.h
 FILE: ../../../third_party/skia/src/opts/SkOpts_skx.cpp
 FILE: ../../../third_party/skia/src/ports/SkScalerContext_mac_ct.h
 FILE: ../../../third_party/skia/src/ports/SkTypeface_mac_ct.h
+FILE: ../../../third_party/skia/src/text/gpu/SDFTControl.cpp
+FILE: ../../../third_party/skia/src/text/gpu/SDFTControl.h
 FILE: ../../../third_party/skia/src/utils/mac/SkCGBase.h
 FILE: ../../../third_party/skia/src/utils/mac/SkCGGeometry.h
 FILE: ../../../third_party/skia/src/utils/mac/SkCTFont.cpp
@@ -5928,6 +5954,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CoverBoundsRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CoverBoundsRenderStep.h
+FILE: ../../../third_party/skia/src/gpu/graphite/render/DynamicInstancesPatchAllocator.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/MiddleOutFanRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/MiddleOutFanRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/StencilAndCoverDSS.h
@@ -6529,6 +6556,7 @@ FILE: ../../../third_party/skia/samplecode/SampleSBIX.cpp
 FILE: ../../../third_party/skia/src/sfnt/SkOTTable_hmtx.h
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLWGSLCodeGenerator.h
+FILE: ../../../third_party/skia/src/text/gpu/SDFMaskFilter.h
 FILE: ../../../third_party/skia/src/utils/SkBlitterTrace.h
 FILE: ../../../third_party/skia/src/utils/SkBlitterTraceCommon.h
 FILE: ../../../third_party/skia/src/utils/SkCycles.h
@@ -7946,4 +7974,4 @@ Materials are furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Materials.
 ====================================================================================================
-Total license count: 67
+Total license count: 68
