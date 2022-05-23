@@ -647,7 +647,13 @@ class TextEditingDeltaState {
 
 /// The current text and selection state of a text field.
 class EditingState {
-  EditingState({this.text, int? baseOffset, int? extentOffset}) :
+  EditingState({
+      this.text, 
+      int? baseOffset, 
+      int? extentOffset,
+      this.composingBaseOffset,
+      this.composingExtentOffset
+    }) :
     // Don't allow negative numbers. Pick the smallest selection index for base.
     baseOffset = math.max(0, math.min(baseOffset ?? 0, extentOffset ?? 0)),
     // Don't allow negative numbers. Pick the greatest selection index for extent.
@@ -674,14 +680,20 @@ class EditingState {
   /// valid selection range for input DOM elements.
   factory EditingState.fromFrameworkMessage(
       Map<String, dynamic> flutterEditingState) {
+    final String? text = flutterEditingState.tryString('text');
+
     final int selectionBase = flutterEditingState.readInt('selectionBase');
     final int selectionExtent = flutterEditingState.readInt('selectionExtent');
-    final String? text = flutterEditingState.tryString('text');
+
+    final int? composingBase = flutterEditingState.tryInt('composingBase');
+    final int? composingExtent = flutterEditingState.tryInt('composingExtent');
 
     return EditingState(
       text: text,
       baseOffset: selectionBase,
       extentOffset: selectionExtent,
+      composingBaseOffset: composingBase,
+      composingExtentOffset: composingExtent
     );
   }
 
@@ -708,6 +720,22 @@ class EditingState {
     }
   }
 
+    EditingState copyWith({
+     String? text,
+     int? baseOffset,
+     int? extentOffset,
+     int? composingBaseOffset,
+     int? composingExtentOffset,
+   }) {
+     return EditingState(
+       text: text ?? this.text,
+       baseOffset: baseOffset ?? this.baseOffset,
+       extentOffset: extentOffset ?? this.extentOffset,
+       composingBaseOffset: composingBaseOffset ?? this.composingBaseOffset,
+       composingExtentOffset: composingExtentOffset ?? this.composingExtentOffset,
+     );
+   }
+
   /// The counterpart of [EditingState.fromFrameworkMessage]. It generates a Map that
   /// can be sent to Flutter.
   // TODO(mdebbar): Should we get `selectionAffinity` and other properties from flutter's editing state?
@@ -715,6 +743,8 @@ class EditingState {
         'text': text,
         'selectionBase': baseOffset,
         'selectionExtent': extentOffset,
+        'composingBase': composingBaseOffset ?? -1,
+        'composingExtent': composingExtentOffset ?? -1,
       };
 
   /// The current text being edited.
@@ -726,11 +756,18 @@ class EditingState {
   /// The offset at which the text selection terminates.
   final int? extentOffset;
 
+  /// The offset at which text is still being composed.
+  final int? composingBaseOffset;
+
+  /// The offset at which composing text terminates.
+  final int? composingExtentOffset;
+
   /// Whether the current editing state is valid or not.
   bool get isValid => baseOffset! >= 0 && extentOffset! >= 0;
 
   @override
-  int get hashCode => ui.hashValues(text, baseOffset, extentOffset);
+  int get hashCode => ui.hashValues(
+    text, baseOffset, extentOffset, composingBaseOffset, composingExtentOffset);
 
   @override
   bool operator ==(Object other) {
@@ -743,7 +780,9 @@ class EditingState {
     return other is EditingState &&
         other.text == text &&
         other.baseOffset == baseOffset &&
-        other.extentOffset == extentOffset;
+        other.extentOffset == extentOffset &&
+        other.composingBaseOffset == composingBaseOffset &&
+        other.composingExtentOffset == composingExtentOffset;
   }
 
   @override
@@ -1048,6 +1087,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   /// The DOM element used for editing, if any.
   html.HtmlElement? domElement;
 
+  html.EventListener? compositionStart;
+  html.EventListener? compositionUpdate;
+  html.EventListener? compositionEnd;
+
   /// Same as [domElement] but null-checked.
   ///
   /// This must only be called in places that know for sure that a DOM element
@@ -1086,6 +1129,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   /// Whether the focused input element is part of a form.
   bool get appendedToForm => _appendedToForm;
   bool _appendedToForm = false;
+
+  String? composingText;
 
   html.FormElement? get focusedFormElement =>
       inputConfiguration.autofillGroup?.formElement;
@@ -1153,6 +1198,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     placeElement();
   }
 
+  void addCompositionEventHandlers() {
+    activeDomElement.addEventListener('compositionstart', handleCompositionStart);
+    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    activeDomElement.addEventListener('compositionend', handleCompositionEnd);
+  }
+
   @override
   void addEventHandlers() {
     if (inputConfiguration.autofillGroup != null) {
@@ -1169,7 +1220,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    addCompositionEventHandlers();
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
@@ -1196,6 +1247,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
   }
 
+  void removeCompositionEventHandlers() {
+    activeDomElement.removeEventListener('compositionstart', handleCompositionStart);
+    activeDomElement.removeEventListener('compositionupdate', handleCompositionUpdate);
+    activeDomElement.removeEventListener('compositionend', handleCompositionEnd);
+  }
+
   @override
   void disable() {
     assert(isEnabled);
@@ -1210,6 +1267,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       subscriptions[i].cancel();
     }
     subscriptions.clear();
+    removeCompositionEventHandlers();
+
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
     // More details on `TextInput.finishAutofillContext` call.
@@ -1246,7 +1305,23 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   void handleChange(html.Event event) {
     assert(isEnabled);
 
-    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
+    EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
+
+    // REVIEW text editing delta needs to have composing updated
+    if (composingText != null && newEditingState.text != null) {
+      //REVIEW if composition extent is null, we will certainly fail
+      //the following check: perhaps we short circuit instead of null check?
+      final int compositionExtent = newEditingState.baseOffset ?? -1;
+      final int composingBase = compositionExtent - composingText!.length;
+
+      if (composingBase >= 0) {
+        newEditingState = newEditingState.copyWith(
+          composingBaseOffset: composingBase,
+          composingExtentOffset: composingBase + composingText!.length,
+        );
+      }
+    }
+
     TextEditingDeltaState? newTextEditingDeltaState;
     if (inputConfiguration.enableDeltaModel) {
       newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);
@@ -1295,11 +1370,20 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
   }
 
-  void handleCompositionUpdate(html.Event event) {
-    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-    editingDeltaState.composingOffset = newEditingState.baseOffset!;
-    editingDeltaState.composingExtent = newEditingState.extentOffset!;
+ void handleCompositionStart(html.Event event) {
+    composingText = null;
   }
+
+   void handleCompositionUpdate(html.Event event) {
+     if (event is html.CompositionEvent) {
+       composingText = event.data;
+     }
+   }
+
+   void handleCompositionEnd(html.Event event) {
+      handleChange(event);
+      composingText = null;
+   }
 
   void maybeSendAction(html.Event event) {
     if (event is html.KeyboardEvent) {
