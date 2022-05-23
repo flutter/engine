@@ -20,6 +20,7 @@ import '../services.dart';
 import '../text/paragraph.dart';
 import '../util.dart';
 import 'autofill_hint.dart';
+import 'composition_aware_mixin.dart';
 import 'input_type.dart';
 import 'text_capitalization.dart';
 
@@ -648,8 +649,8 @@ class TextEditingDeltaState {
 /// The current text and selection state of a text field.
 class EditingState {
   EditingState({
-      this.text, 
-      int? baseOffset, 
+      this.text,
+      int? baseOffset,
       int? extentOffset,
       this.composingBaseOffset,
       this.composingExtentOffset
@@ -1077,7 +1078,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
 ///
 /// Unless a formfactor/browser requires specific implementation for a specific
 /// strategy the methods in this class should be used.
-abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
+abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements TextEditingStrategy  {
   final HybridTextEditing owner;
 
   DefaultTextEditingStrategy(this.owner);
@@ -1086,10 +1087,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   /// The DOM element used for editing, if any.
   html.HtmlElement? domElement;
-
-  html.EventListener? compositionStart;
-  html.EventListener? compositionUpdate;
-  html.EventListener? compositionEnd;
 
   /// Same as [domElement] but null-checked.
   ///
@@ -1129,8 +1126,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   /// Whether the focused input element is part of a form.
   bool get appendedToForm => _appendedToForm;
   bool _appendedToForm = false;
-
-  String? composingText;
 
   html.FormElement? get focusedFormElement =>
       inputConfiguration.autofillGroup?.formElement;
@@ -1198,12 +1193,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     placeElement();
   }
 
-  void addCompositionEventHandlers() {
-    activeDomElement.addEventListener('compositionstart', handleCompositionStart);
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
-    activeDomElement.addEventListener('compositionend', handleCompositionEnd);
-  }
-
   @override
   void addEventHandlers() {
     if (inputConfiguration.autofillGroup != null) {
@@ -1220,7 +1209,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    addCompositionEventHandlers();
+    addCompositionEventHandlers(activeDomElement);
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
@@ -1247,12 +1236,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
   }
 
-  void removeCompositionEventHandlers() {
-    activeDomElement.removeEventListener('compositionstart', handleCompositionStart);
-    activeDomElement.removeEventListener('compositionupdate', handleCompositionUpdate);
-    activeDomElement.removeEventListener('compositionend', handleCompositionEnd);
-  }
-
   @override
   void disable() {
     assert(isEnabled);
@@ -1267,7 +1250,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       subscriptions[i].cancel();
     }
     subscriptions.clear();
-    removeCompositionEventHandlers();
+    removeCompositionEventHandlers(activeDomElement);
 
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
@@ -1306,21 +1289,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     assert(isEnabled);
 
     EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-
-    // REVIEW text editing delta needs to have composing updated
-    if (composingText != null && newEditingState.text != null) {
-      //REVIEW if composition extent is null, we will certainly fail
-      //the following check: perhaps we short circuit instead of null check?
-      final int compositionExtent = newEditingState.baseOffset ?? -1;
-      final int composingBase = compositionExtent - composingText!.length;
-
-      if (composingBase >= 0) {
-        newEditingState = newEditingState.copyWith(
-          composingBaseOffset: composingBase,
-          composingExtentOffset: composingBase + composingText!.length,
-        );
-      }
-    }
+    newEditingState = determineCompositionState(newEditingState);
 
     TextEditingDeltaState? newTextEditingDeltaState;
     if (inputConfiguration.enableDeltaModel) {
@@ -1369,21 +1338,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       }
     }
   }
-
- void handleCompositionStart(html.Event event) {
-    composingText = null;
-  }
-
-   void handleCompositionUpdate(html.Event event) {
-     if (event is html.CompositionEvent) {
-       composingText = event.data;
-     }
-   }
-
-   void handleCompositionEnd(html.Event event) {
-      handleChange(event);
-      composingText = null;
-   }
 
   void maybeSendAction(html.Event event) {
     if (event is html.KeyboardEvent) {
@@ -1538,7 +1492,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    addCompositionEventHandlers(activeDomElement);
 
     // Position the DOM element after it is focused.
     subscriptions.add(activeDomElement.onFocus.listen((_) {
@@ -1682,7 +1636,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    addCompositionEventHandlers(activeDomElement);
 
     subscriptions.add(activeDomElement.onBlur.listen((_) {
       if (windowHasFocus) {
@@ -1738,7 +1692,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+    addCompositionEventHandlers(activeDomElement);
 
     // Detects changes in text selection.
     //
