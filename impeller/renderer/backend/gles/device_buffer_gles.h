@@ -39,9 +39,9 @@ class DeviceBufferGLES final
   ReactorGLES::Ref reactor_;
   HandleGLES handle_;
   std::string label_;
-  mutable std::shared_ptr<Allocation> buffer_;
-  mutable bool dirty_ = false;
-  mutable bool has_uploaded_ = false;
+  mutable std::shared_ptr<Allocation> backing_store_;
+  mutable uint32_t generation_ = 0;
+  mutable uint32_t upload_generation_ = 0;
 
   // |DeviceBuffer|
   bool CopyHostBuffer(const uint8_t* source,

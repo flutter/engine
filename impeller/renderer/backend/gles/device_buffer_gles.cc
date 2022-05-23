@@ -15,14 +15,14 @@
 namespace impeller {
 
 DeviceBufferGLES::DeviceBufferGLES(ReactorGLES::Ref reactor,
-                                   std::shared_ptr<Allocation> buffer,
+                                   std::shared_ptr<Allocation> backing_store,
                                    size_t size,
                                    StorageMode mode)
     : DeviceBuffer(size, mode),
       reactor_(std::move(reactor)),
       handle_(reactor_ ? reactor_->CreateHandle(HandleType::kBuffer)
                        : HandleGLES::DeadHandle()),
-      buffer_(std::move(buffer)) {}
+      backing_store_(std::move(backing_store)) {}
 
 // |DeviceBuffer|
 DeviceBufferGLES::~DeviceBufferGLES() {
@@ -49,13 +49,13 @@ bool DeviceBufferGLES::CopyHostBuffer(const uint8_t* source,
     return false;
   }
 
-  if (offset + source_range.length > buffer_->GetLength()) {
+  if (offset + source_range.length > backing_store_->GetLength()) {
     return false;
   }
 
-  std::memmove(buffer_->GetBuffer() + offset, source + source_range.offset,
-               source_range.length);
-  dirty_ = true;
+  std::memmove(backing_store_->GetBuffer() + offset,
+               source + source_range.offset, source_range.length);
+  ++generation_;
 
   return true;
 }
@@ -85,12 +85,11 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 
   gl.BindBuffer(target_type, buffer.value());
 
-  if (dirty_) {
+  if (upload_generation_ != generation_) {
     TRACE_EVENT0("impeller", "BufferData");
-    gl.BufferData(target_type, buffer_->GetLength(), buffer_->GetBuffer(),
-                  GL_STATIC_DRAW);
-    dirty_ = false;
-    has_uploaded_ = true;
+    gl.BufferData(target_type, backing_store_->GetLength(),
+                  backing_store_->GetBuffer(), GL_STATIC_DRAW);
+    upload_generation_ = generation_;
 
     reactor_->SetDebugLabel(handle_, label_);
   }
@@ -101,7 +100,7 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 // |DeviceBuffer|
 bool DeviceBufferGLES::SetLabel(const std::string& label) {
   label_ = label;
-  if (has_uploaded_) {
+  if (upload_generation_ > 0) {
     reactor_->SetDebugLabel(handle_, label_);
   }
   return true;
@@ -115,6 +114,6 @@ bool DeviceBufferGLES::SetLabel(const std::string& label, Range range) {
 }
 
 const uint8_t* DeviceBufferGLES::GetBufferData() const {
-  return buffer_->GetBuffer();
+  return backing_store_->GetBuffer();
 }
 }  // namespace impeller

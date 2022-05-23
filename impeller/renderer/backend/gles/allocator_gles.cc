@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/gles/allocator_gles.h"
+
 #include <memory>
 
 #include "impeller/base/allocation.h"
@@ -26,12 +27,12 @@ bool AllocatorGLES::IsValid() const {
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorGLES::CreateBuffer(StorageMode mode,
                                                           size_t length) {
-  auto buffer = std::make_shared<Allocation>();
-  if (!buffer->Truncate(length)) {
+  auto backing_store = std::make_shared<Allocation>();
+  if (!backing_store->Truncate(length)) {
     return nullptr;
   }
-  return std::make_shared<DeviceBufferGLES>(reactor_, std::move(buffer), length,
-                                            mode);
+  return std::make_shared<DeviceBufferGLES>(reactor_, std::move(backing_store),
+                                            length, mode);
 }
 
 // |Allocator|
