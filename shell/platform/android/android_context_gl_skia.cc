@@ -148,7 +148,8 @@ AndroidContextGLSkia::~AndroidContextGLSkia() {
 
 std::unique_ptr<AndroidEGLSurface> AndroidContextGLSkia::CreateOnscreenSurface(
     fml::RefPtr<AndroidNativeWindow> window) const {
-  if (window->IsFakeWindow()) {
+  if (window->IsFakeWindow() || true) {
+    FML_LOG(ERROR) << "just creating a pbuffer surface to not interfere";
     return CreatePbufferSurface();
   } else {
     EGLDisplay display = environment_->Display();

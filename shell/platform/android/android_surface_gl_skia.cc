@@ -114,6 +114,7 @@ bool AndroidSurfaceGLSkia::SetNativeWindow(
   onscreen_surface_ = nullptr;
   // Create the onscreen surface.
   onscreen_surface_ = GLContextPtr()->CreateOnscreenSurface(window);
+  fbo_pool_->SetNativeWindow(window);
   if (!onscreen_surface_->IsValid()) {
     return false;
   }

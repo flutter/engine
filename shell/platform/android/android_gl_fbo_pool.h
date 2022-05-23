@@ -12,11 +12,12 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/task_runner.h"
+#include "flutter/fml/thread.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
-#include "fml/task_runner.h"
-#include "fml/thread.h"
+#include "flutter/shell/platform/android/surface/android_native_window.h"
 
 namespace flutter {
 
@@ -32,24 +33,29 @@ class AndroidGLFBOPool {
   explicit AndroidGLFBOPool(AndroidContextGLSkia* android_context_gl_skia) {
     FML_CHECK(android_context_gl_skia)
         << "AndroidGLFBOPool: gl context was null";
-
+    android_context_gl_skia_ = android_context_gl_skia;
     sb_thread_ = std::make_unique<fml::Thread>("swap_buffers");
     sb_task_runner_ = sb_thread_->GetTaskRunner();
 
+    display_ = android_context_gl_skia->Environment()->Display();
+  }
+
+  void SetNativeWindow(fml::RefPtr<AndroidNativeWindow> native_window) {
     fml::AutoResetWaitableEvent setup_done;
-    sb_task_runner_->PostTask([&, android_context_gl_skia]() {
+    sb_task_runner_->PostTask([&, ctx = android_context_gl_skia_]() {
       // this has to be a shared context, and given that offscreen surfaces
       // are in the same share group as the main gl context, this is fine.
-      display_ = android_context_gl_skia->Environment()->Display();
-      context_ = android_context_gl_skia->CreateNewSharedContext();
-
+      context_ = ctx->CreateNewSharedContext();
       FML_CHECK(context_ != EGL_NO_CONTEXT);
 
-      const EGLint attribs[] = {
-          EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE,
-      };
-      auto config = android_context_gl_skia->Config();
-      surface_ = eglCreatePbufferSurface(display_, config, attribs);
+      ClearCurrent();
+
+      auto config = ctx->Config();
+      surface_ = CreateWindowSurface(config, display_, native_window->handle());
+
+      if (surface_ == nullptr) {
+        FML_LOG(ERROR) << "creating a window surface failed!!";
+      }
 
       setup_done.Signal();
     });
@@ -192,8 +198,35 @@ class AndroidGLFBOPool {
     return texture;
   }
 
+  static EGLSurface CreateWindowSurface(
+      EGLConfig config,
+      EGLDisplay display,
+      flutter::AndroidNativeWindow::Handle window_handle) {
+    const EGLint attribs[] = {EGL_NONE};
+    const auto window = reinterpret_cast<EGLNativeWindowType>(window_handle);
+    return eglCreateWindowSurface(display, config, window, attribs);
+  }
+
+  void ClearCurrent() {
+    if (eglGetCurrentContext() != context_) {
+      return;
+    }
+
+    if (eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                       EGL_NO_CONTEXT) != EGL_TRUE) {
+      FML_LOG(ERROR) << "Could not clear the current context";
+      LogLastEGLError();
+      return;
+    }
+
+    return;
+  }
+
   std::unique_ptr<fml::Thread> sb_thread_;
   fml::RefPtr<fml::TaskRunner> sb_task_runner_;
+
+  fml::RefPtr<AndroidNativeWindow> native_window_ = nullptr;
+  AndroidContextGLSkia* android_context_gl_skia_;
 
   std::mutex ds_mutex;
   std::deque<uint32_t> unused_fbo_ids;
