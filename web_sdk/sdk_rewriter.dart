@@ -23,8 +23,8 @@ import\s*'src/engine.dart'\s*as\s+engine;
 '''), r'''
 import 'dart:_engine' as engine;
 '''),
-  AllReplacer(RegExp(
-    r'''
+  AllReplacer(
+    RegExp(r'''
 export\s*'src/engine.dart'
 '''),
     r'''
@@ -52,9 +52,11 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 '''),
   // Replace exports of engine files with "part" directives.
-  MappedReplacer(RegExp(r'''
+  MappedReplacer(
+      RegExp(r'''
 export\s*'engine/(.*)';
-'''), (Match match) => '''
+'''),
+      (Match match) => '''
 part 'engine/${match.group(1)}';
 '''),
 ];
@@ -83,12 +85,15 @@ final List<Replacer> sharedPatterns = <Replacer>[
 // So far this only requires a replace of the library declarations.
 void main(List<String> arguments) {
   final ArgResults results = argParser.parse(arguments);
-  final Directory directory = Directory(results['output-dir'] as String);
-  final String inputDirectoryPath = results['input-dir'] as String;
-  for (final String inputFilePath in results['input'] as Iterable<String>) {
+  final Directory directory =
+      Directory(path.canonicalize(results['output-dir'] as String));
+  final String inputDirectoryPath =
+      path.canonicalize(results['input-dir'] as String);
+  for (var inputFilePath in results['input'] as Iterable<String>) {
+    inputFilePath = path.canonicalize(inputFilePath);
     final File inputFile = File(inputFilePath);
-    final File outputFile = File(path.join(
-        directory.path, inputFile.path.substring(inputDirectoryPath.length)))
+    final File outputFile = File(path.join(directory.path,
+        inputFile.path.substring(inputDirectoryPath.length + 1)))
       ..createSync(recursive: true);
     final String source = inputFile.readAsStringSync();
     final String rewrittenContent = rewriteFile(
@@ -104,7 +109,8 @@ void main(List<String> arguments) {
   }
 }
 
-String rewriteFile(String source, {required String filePath, required bool isUi, required bool isEngine}) {
+String rewriteFile(String source,
+    {required String filePath, required bool isUi, required bool isEngine}) {
   final List<Replacer> replacementPatterns = <Replacer>[];
   replacementPatterns.addAll(sharedPatterns);
   if (isUi) {
@@ -168,7 +174,8 @@ void _validateEngineSource(String engineDartPath, String engineDartCode) {
 }
 
 String _preprocessEnginePartFile(String source) {
-  if (source.startsWith('part of engine;') || source.contains('\npart of engine;')) {
+  if (source.startsWith('part of engine;') ||
+      source.contains('\npart of engine;')) {
     // The file hasn't been migrated yet.
     // Do nothing.
   } else {
