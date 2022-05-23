@@ -40,7 +40,7 @@ FlScrollingManager* fl_scrolling_manager_new(
  * Inform the scrolling manager of the mouse position.
  * This position will be used when sending scroll pointer events.
  */
-void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* self,
+void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* manager,
                                                   gdouble x,
                                                   gdouble y);
 
@@ -52,7 +52,7 @@ void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* self,
  *
  * Inform the scrolling manager of a scroll event.
  */
-void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* self,
+void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* manager,
                                               GdkEventScroll* event,
                                               gint scale_factor);
 
@@ -62,7 +62,7 @@ void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* self,
  *
  * Inform the scrolling manager that a rotation gesture has begun.
  */
-void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* self);
+void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* manager);
 
 /**
  * fl_scrolling_manager_handle_rotation_update:
@@ -71,7 +71,7 @@ void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* self);
  *
  * Inform the scrolling manager that a rotation gesture has updated.
  */
-void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* self,
+void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* manager,
                                                  gdouble rotation);
 
 /**
@@ -80,7 +80,7 @@ void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* self,
  *
  * Inform the scrolling manager that a rotation gesture has ended.
  */
-void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* self);
+void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* manager);
 
 /**
  * fl_scrolling_manager_handle_zoom_begin:
@@ -88,7 +88,7 @@ void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* self);
  *
  * Inform the scrolling manager that a zoom gesture has begun.
  */
-void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* self);
+void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* manager);
 
 /**
  * fl_scrolling_manager_handle_zoom_update:
@@ -97,7 +97,7 @@ void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* self);
  *
  * Inform the scrolling manager that a zoom gesture has updated.
  */
-void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
+void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* manager,
                                              gdouble scale);
 
 /**
@@ -106,7 +106,7 @@ void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
  *
  * Inform the scrolling manager that a zoom gesture has ended.
  */
-void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* self);
+void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* manager);
 
 G_END_DECLS
 
