@@ -1753,6 +1753,7 @@ void _testPlatformView() {
       rect: const ui.Rect.fromLTRB(0, 0, 20, 60),
       childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
       childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3]),
+      transform: Float64List.fromList(Matrix4.diagonal3Values(ui.window.devicePixelRatio, ui.window.devicePixelRatio, 1).storage)
     );
     updateNode(
       builder,
