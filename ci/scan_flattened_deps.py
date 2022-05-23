@@ -25,22 +25,26 @@ def ParseDepsFile(deps_flat_file):
 
     headers = { 'Content-Type': 'application/x-www-form-urlencoded',}
     osv_url = 'https://api.osv.dev/v1/query'
-
+    vulns = []
 
     # Extract commit hash, call OSV with each hash
     for line in Lines:
         commit_hash = line.strip().split('@')[1]
         data = {"commit" : commit_hash}
-        response = requests.post('https://api.osv.dev/v1/query', headers=headers, data=str(data), allow_redirects=True)
+        response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
+        if(response.json() != {}):
+            vulns.append(response.text)
+            print(response.text)
+    return vulns
 
-        print(response.text)
-    # return filtered_deps
 
-
-# def WriteManifest(deps, manifest_file):
-#     print('\n'.join(sorted(deps)))
-#     with open(manifest_file, 'w') as manifest:
-#         manifest.write('\n'.join(sorted(deps)))
+def WriteManifest(vulns, manifest_file):
+    if len(vulns) == 0:
+        print('No vulnerabilities detected')
+    else:
+        print('\n'.join(vulns))
+        with open(manifest_file, 'w') as manifest:
+            manifest.write('\n'.join(vulns))
 
 
 def ParseArgs(args):
@@ -66,8 +70,8 @@ def ParseArgs(args):
 
 def Main(argv):
     args = ParseArgs(argv)
-    deps = ParseDepsFile(args.flat_deps)
-    # WriteManifest(deps, args.output)
+    vulns = ParseDepsFile(args.flat_deps)
+    WriteManifest(vulns, args.output)
     return 0
 
 
