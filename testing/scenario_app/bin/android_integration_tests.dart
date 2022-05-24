@@ -70,6 +70,10 @@ void main(List<String> args) async {
   final StringBuffer logcat = StringBuffer();
   try {
     await step('Starting logcat...', () async {
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'logcat', '-c']);
+      if (exitCode != 0) {
+        panic(<String>['could not clear logs']);
+      }
       logcatProcess = await pm.start(<String>[adb.path, 'logcat', '*:E', '-T', '1']);
       unawaited(pipeProcessStreams(logcatProcess, out: logcat));
     });
