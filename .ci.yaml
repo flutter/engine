@@ -116,7 +116,7 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
-      - testing/scenario_app/**
+      - testing/**
       - shell/platforms/android/**
 
   - name: Linux Benchmarks
