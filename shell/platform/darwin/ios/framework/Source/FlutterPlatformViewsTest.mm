@@ -1105,4 +1105,36 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   return pixel[3];
 }
 
+- (void)testHasFirstResponderInViewHierarchySubtree_viewItselfBecomesFirstResponder {
+  // For view to become the first responder, it must be a descendant of a UIWindow
+  UIWindow* window = [[UIWindow alloc] init];
+  UITextField* textField = [[UITextField alloc] init];
+  [window addSubview:textField];
+
+  [textField becomeFirstResponder];
+  XCTAssertTrue(textField.isFirstResponder);
+  XCTAssertTrue(textField.hasFirstResponderInViewHierarchySubtree);
+  [textField resignFirstResponder];
+  XCTAssertFalse(textField.isFirstResponder);
+  XCTAssertFalse(textField.hasFirstResponderInViewHierarchySubtree);
+}
+
+- (void)testHasFirstResponderInViewHierarchySubtree_descendantViewBecomesFirstResponder {
+  // For view to become the first responder, it must be a descendant of a UIWindow
+  UIWindow* window = [[UIWindow alloc] init];
+  UIView* view = [[UIView alloc] init];
+  UIView* childView = [[UIView alloc] init];
+  UITextField* textField = [[UITextField alloc] init];
+  [window addSubview:view];
+  [view addSubview:childView];
+  [childView addSubview:textField];
+
+  [textField becomeFirstResponder];
+  XCTAssertTrue(textField.isFirstResponder);
+  XCTAssertTrue(view.hasFirstResponderInViewHierarchySubtree);
+  [textField resignFirstResponder];
+  XCTAssertFalse(textField.isFirstResponder);
+  XCTAssertFalse(view.hasFirstResponderInViewHierarchySubtree);
+}
+
 @end

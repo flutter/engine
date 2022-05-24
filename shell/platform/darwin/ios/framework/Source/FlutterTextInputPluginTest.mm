@@ -1866,4 +1866,31 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotNil([flutterEngine.textInputPlugin hostView]);
 }
 
+- (void)testSetPlatformViewClient {
+  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
+  myInputPlugin.viewController = flutterViewController;
+
+  __weak UIView* activeView;
+  @autoreleasepool {
+    FlutterMethodCall* setClientCall = [FlutterMethodCall
+        methodCallWithMethodName:@"TextInput.setClient"
+                       arguments:@[
+                         [NSNumber numberWithInt:123], self.mutablePasswordTemplateCopy
+                       ]];
+    [myInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+    activeView = myInputPlugin.textInputView;
+    XCTAssertNotNil(activeView.superview, @"activeView must be added to the view hierarchy.");
+    FlutterMethodCall* setPlatformViewClientCall = [FlutterMethodCall
+        methodCallWithMethodName:@"TextInput.setPlatformViewClient"
+                       arguments:@{@"platformViewId" : [NSNumber numberWithLong:456]}];
+    [myInputPlugin handleMethodCall:setPlatformViewClientCall
+                             result:^(id _Nullable result){
+                             }];
+    XCTAssertNil(activeView.superview, @"activeView must be removed from view hierarchy.");
+  }
+}
+
 @end
