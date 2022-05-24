@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/opacity_layer.h"
 
+#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/image_filter_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -530,8 +531,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
 TEST_F(OpacityLayerTest, OpacityInheritanceThroughImageFilter) {
   auto opacityLayer =
       std::make_shared<OpacityLayer>(128, SkPoint::Make(20, 20));
+
   auto filterLayer = std::make_shared<ImageFilterLayer>(
-      SkImageFilters::Blur(5.0, 5.0, nullptr));
+      std::make_shared<DlBlurImageFilter>(5.0, 5.0, DlTileMode::kClamp));
   auto mockLayer = MockLayer::MakeOpacityCompatible(SkPath());
   filterLayer->Add(mockLayer);
   opacityLayer->Add(filterLayer);
