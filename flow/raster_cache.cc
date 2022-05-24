@@ -5,6 +5,7 @@
 #include "flutter/flow/raster_cache.h"
 
 #include <vector>
+#include <iostream>
 
 #include "flutter/common/constants.h"
 #include "flutter/flow/layers/container_layer.h"
@@ -46,6 +47,7 @@ void RasterCacheResult::draw(SkCanvas& canvas,
     // Sampling options and matrix must be provided together.
     FML_DCHECK(sampling != nullptr);
     FML_DCHECK(matrix->isScaleTranslate());
+    FML_DCHECK(matrix->getScaleX() >= 0.0 && matrix->getScaleY() >= 0.0);
 
     SkRect dest_rect;
     matrix->mapRect(&dest_rect, logical_rect_);

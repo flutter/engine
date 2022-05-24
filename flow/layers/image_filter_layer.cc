@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/image_filter_layer.h"
+#include <iostream>
 
 namespace flutter {
 
@@ -119,7 +120,8 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     if (matrix_filter != nullptr) {
       auto matrix = &matrix_filter->matrix();
       auto sampling = &matrix_filter->sampling();
-      if (matrix->isScaleTranslate() &&
+      if (matrix->isScaleTranslate() && matrix->getScaleX() >= 0.0 &&
+          matrix->getScaleY() >= 0.0 &&
           context.raster_cache->DrawWithMatrix(
               this, *context.leaf_nodes_canvas, matrix, sampling,
               RasterCacheLayerStrategy::kLayerChildren, cache_paint.paint())) {
