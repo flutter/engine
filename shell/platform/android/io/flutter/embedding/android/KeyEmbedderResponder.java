@@ -90,10 +90,14 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   void updatePressingState(@NonNull Long physicalKey, @Nullable Long logicalKey) {
     if (logicalKey != null) {
       final Long previousValue = pressingRecords.put(physicalKey, logicalKey);
-      if (previousValue != null) throw new AssertionError("The key was not empty");
+      if (previousValue != null) {
+        throw new AssertionError("The key was not empty");
+      }
     } else {
       final Long previousValue = pressingRecords.remove(physicalKey);
-      if (previousValue == null) throw new AssertionError("The key was empty");
+      if (previousValue == null) {
+        throw new AssertionError("The key was empty");
+      }
     }
   }
 
@@ -358,7 +362,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
     final boolean sentAny = handleEventImpl(event, onKeyEventHandledCallback);
     if (!sentAny) {
-      synthesizeEvent(true, 0l, 0l, 0l);
+      synthesizeEvent(true, 0L, 0L, 0L);
       onKeyEventHandledCallback.onKeyEventHandled(true);
     }
   }
