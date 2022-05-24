@@ -2,32 +2,27 @@ import 'dart:html' as html;
 
 import 'text_editing.dart';
 
-typedef OnCompositionEndCallback = void Function(html.Event);
 mixin CompositionAwareMixin {
   static const String kCompositionStart = 'compositionstart';
   static const String kCompositionUpdate = 'compositionupdate';
   static const String kCompositionEnd = 'compositionend';
 
+  late final html.EventListener _compositionStartListener = _handleCompositionStart;
+  late final html.EventListener _compositionUpdateListener = _handleCompositionUpdate;
+  late final html.EventListener _compositionEndListener = _handleCompositionEnd;
+
   String? composingText;
 
-  OnCompositionEndCallback? _onCompositionEndCallback;
-
-  void addCompositionEventHandlers(html.HtmlElement domElement,
-      {required OnCompositionEndCallback onCompositionEndCallback}) {
-    domElement.addEventListener(kCompositionStart, _handleCompositionStart);
-    domElement.addEventListener(kCompositionUpdate, _handleCompositionUpdate);
-    domElement.addEventListener(kCompositionEnd, _handleCompositionEnd);
-
-    _onCompositionEndCallback = onCompositionEndCallback;
+  void addCompositionEventHandlers(html.HtmlElement domElement) {
+    domElement.addEventListener(kCompositionStart, _compositionStartListener);
+    domElement.addEventListener(kCompositionUpdate, _compositionUpdateListener);
+    domElement.addEventListener(kCompositionEnd, _compositionEndListener);
   }
 
   void removeCompositionEventHandlers(html.HtmlElement domElement) {
-    domElement.removeEventListener(kCompositionStart, _handleCompositionStart);
-    domElement.removeEventListener(
-        kCompositionUpdate, _handleCompositionUpdate);
-    domElement.removeEventListener(kCompositionEnd, _handleCompositionEnd);
-
-    _onCompositionEndCallback = null;
+    domElement.removeEventListener(kCompositionStart, _compositionStartListener);
+    domElement.removeEventListener(kCompositionUpdate, _compositionUpdateListener);
+    domElement.removeEventListener(kCompositionEnd, _compositionEndListener);
   }
 
   void _handleCompositionStart(html.Event event) {
@@ -41,15 +36,11 @@ mixin CompositionAwareMixin {
   }
 
   void _handleCompositionEnd(html.Event event) {
-    assert(_onCompositionEndCallback != null,
-        'cannot call composition update without having registered composition handlers');
-
-    _onCompositionEndCallback!(event);
     composingText = null;
   }
 
   EditingState determineCompositionState(EditingState editingState) {
-    if (editingState.baseOffset == null || editingState.baseOffset == -1) {
+    if (editingState.baseOffset == null) {
       return editingState;
     }
 
@@ -66,7 +57,6 @@ mixin CompositionAwareMixin {
     if (composingBase < 0) {
       return editingState;
     }
-
     return editingState.copyWith(
       composingBaseOffset: composingBase,
       composingExtentOffset: composingBase + composingText!.length,

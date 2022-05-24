@@ -1209,7 +1209,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    addCompositionEventHandlers(activeDomElement, onCompositionEndCallback: handleChange);
+    addCompositionEventHandlers(activeDomElement);
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
@@ -1492,7 +1492,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    addCompositionEventHandlers(activeDomElement, onCompositionEndCallback: handleChange);
+    addCompositionEventHandlers(activeDomElement);
 
     // Position the DOM element after it is focused.
     subscriptions.add(activeDomElement.onFocus.listen((_) {
@@ -1636,7 +1636,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    addCompositionEventHandlers(activeDomElement, onCompositionEndCallback: handleChange);
+    addCompositionEventHandlers(activeDomElement);
 
     subscriptions.add(activeDomElement.onBlur.listen((_) {
       if (windowHasFocus) {
@@ -1692,7 +1692,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    addCompositionEventHandlers(activeDomElement, onCompositionEndCallback: handleChange);
+    addCompositionEventHandlers(activeDomElement);
 
     // Detects changes in text selection.
     //

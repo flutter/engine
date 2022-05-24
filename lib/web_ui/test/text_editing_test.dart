@@ -1586,9 +1586,6 @@ Future<void> testMain() async {
       );
       spy.messages.clear();
 
-      input.dispatchEvent(CompositionEvent(CompositionAwareMixin.kCompositionEnd));
-
-
       hideKeyboard();
     });
 
@@ -2311,16 +2308,6 @@ Future<void> testMain() async {
           expect(editingState1, editingState2);
           expect(editingState1, isNot(editingState3));
       });
-    });
-
-    group('composing range', () {
-      test('is correct on new composing text', () {
-        //ANCHOR do me
-      });
-
-      test('is -1, -1 on no composing text', () {});
-
-      test('is correct on composing in the middle of text', () {});
     });
   });
 
