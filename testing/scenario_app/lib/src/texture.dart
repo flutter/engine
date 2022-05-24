@@ -24,7 +24,7 @@ class DisplayTexture extends Scenario {
       (scenarioParams['texture_height'] as num).toDouble();
 
   @override
-  void onBeginFrame(Duration duration) {
+  Future<void> onBeginFrame(Duration duration) async {
     final SceneBuilder builder = SceneBuilder();
     builder.addTexture(
       _textureId,

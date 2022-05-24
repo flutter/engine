@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
@@ -10,7 +10,6 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'src/scenarios.dart';
-
 
 void main() {
   assert(window.locale != null);
@@ -83,16 +82,16 @@ Future<Map<String, dynamic>> _getJson(Uri uri) async {
   return json.decode(data) as Map<String, dynamic>;
 }
 
-void _onBeginFrame(Duration duration) {
-  currentScenario?.onBeginFrame(duration);
-
+Future<void> _onBeginFrame(Duration duration) async {
   // Render an empty frame to signal first frame in the platform side.
   if (currentScenario == null) {
     final SceneBuilder builder = SceneBuilder();
     final Scene scene = builder.build();
     window.render(scene);
     scene.dispose();
+    return;
   }
+  unawaited(currentScenario!.onBeginFrame(duration));
 }
 
 void _onDrawFrame() {

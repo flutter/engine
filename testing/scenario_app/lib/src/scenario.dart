@@ -19,7 +19,7 @@ abstract class Scenario {
   /// Called by the program when a frame is ready to be drawn.
   ///
   /// See [PlatformDispatcher.onBeginFrame] for more details.
-  void onBeginFrame(Duration duration) {}
+  Future<void> onBeginFrame(Duration duration) async {}
 
   /// Called by the program when the microtasks from [onBeginFrame] have been
   /// flushed.

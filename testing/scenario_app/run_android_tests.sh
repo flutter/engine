@@ -38,6 +38,8 @@ OUT_DIR="$SRC_DIR/out/$BUILD_VARIANT"
 
 cd $SCRIPT_DIR
 
+"$SRC_DIR/third_party/dart/tools/sdks/dart-sdk/bin/dart" pub get
+
 "$SRC_DIR/third_party/dart/tools/sdks/dart-sdk/bin/dart" run \
   "$SCRIPT_DIR/bin/android_integration_tests.dart" \
   --adb="$SRC_DIR"/third_party/android_tools/sdk/platform-tools/adb \
