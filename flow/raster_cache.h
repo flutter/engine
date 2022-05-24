@@ -250,8 +250,8 @@ class RasterCache {
   // Additional paint can be given to change how the raster cache is drawn
   // (e.g., draw the raster cache with some opacity).
   //
-  // Providing a positive scale/translation matrix and sampling options will apply to
-  // the cached raster, allowing certain matrix image filters to elide
+  // Providing a positive scale/translation matrix and sampling options will
+  // apply to the cached raster, allowing certain matrix image filters to elide
   // additional render target switches required by Skia image filters.
   //
   // Return true if the layer raster cache is found and drawn.
