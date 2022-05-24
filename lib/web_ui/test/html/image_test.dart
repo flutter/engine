@@ -90,7 +90,7 @@ Future<Image> _encodeToHtmlThenDecode(
 //  * Migration guide: https://docs.flutter.dev/release/breaking-changes/raw-images-on-web-uses-correct-origin-and-colors
 Future<bool> rawImageUsesCorrectBehavior(PixelFormat format) async {
   final ImageDescriptor descriptor = ImageDescriptor.raw(
-    await ImmutableBuffer.fromUint8List(Uint8List.fromList(<int>[0xED, 0, 0, 0])),
+    await ImmutableBuffer.fromUint8List(Uint8List.fromList(<int>[0xED, 0, 0, 0xFF])),
     width: 1, height: 1, pixelFormat: format);
   final Image image = (await (await descriptor.instantiateCodec()).getNextFrame()).image;
   final Uint8List resultPixels = Uint8List.sublistView(
