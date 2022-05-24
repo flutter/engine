@@ -25,7 +25,7 @@ class VirtualDisplayController {
   public static VirtualDisplayController create(
       Context context,
       AccessibilityEventsDelegate accessibilityEventsDelegate,
-      PlatformViewFactory viewFactory,
+      PlatformView view,
       TextureRegistry.SurfaceTextureEntry textureEntry,
       int width,
       int height,
@@ -44,33 +44,40 @@ class VirtualDisplayController {
     if (virtualDisplay == null) {
       return null;
     }
-
-    return new VirtualDisplayController(
-        context,
-        accessibilityEventsDelegate,
-        virtualDisplay,
-        viewFactory,
-        surface,
-        textureEntry,
-        focusChangeListener,
-        viewId,
-        createParams);
+    VirtualDisplayController controller =
+        new VirtualDisplayController(
+            context,
+            accessibilityEventsDelegate,
+            virtualDisplay,
+            view,
+            surface,
+            textureEntry,
+            focusChangeListener,
+            viewId,
+            createParams);
+    controller.bufferWidth = width;
+    controller.bufferHeight = height;
+    return controller;
   }
+
+  @VisibleForTesting SingleViewPresentation presentation;
 
   private final Context context;
   private final AccessibilityEventsDelegate accessibilityEventsDelegate;
   private final int densityDpi;
   private final TextureRegistry.SurfaceTextureEntry textureEntry;
   private final OnFocusChangeListener focusChangeListener;
-  private VirtualDisplay virtualDisplay;
-  @VisibleForTesting SingleViewPresentation presentation;
   private final Surface surface;
+
+  private VirtualDisplay virtualDisplay;
+  private int bufferWidth;
+  private int bufferHeight;
 
   private VirtualDisplayController(
       Context context,
       AccessibilityEventsDelegate accessibilityEventsDelegate,
       VirtualDisplay virtualDisplay,
-      PlatformViewFactory viewFactory,
+      PlatformView view,
       Surface surface,
       TextureRegistry.SurfaceTextureEntry textureEntry,
       OnFocusChangeListener focusChangeListener,
@@ -87,12 +94,20 @@ class VirtualDisplayController {
         new SingleViewPresentation(
             context,
             this.virtualDisplay.getDisplay(),
-            viewFactory,
+            view,
             accessibilityEventsDelegate,
             viewId,
             createParams,
             focusChangeListener);
     presentation.show();
+  }
+
+  public int getBufferWidth() {
+    return bufferWidth;
+  }
+
+  public int getBufferHeight() {
+    return bufferHeight;
   }
 
   public void resize(final int width, final int height, final Runnable onNewSizeFrameAvailable) {
@@ -107,6 +122,8 @@ class VirtualDisplayController {
     virtualDisplay.setSurface(null);
     virtualDisplay.release();
 
+    bufferWidth = width;
+    bufferHeight = height;
     textureEntry.surfaceTexture().setDefaultBufferSize(width, height);
     DisplayManager displayManager =
         (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
@@ -164,11 +181,9 @@ class VirtualDisplayController {
   }
 
   public void dispose() {
-    PlatformView view = presentation.getView();
     // Fix rare crash on HuaWei device described in: https://github.com/flutter/engine/pull/9192
     presentation.cancel();
     presentation.detachState();
-    view.dispose();
     virtualDisplay.release();
     textureEntry.release();
   }

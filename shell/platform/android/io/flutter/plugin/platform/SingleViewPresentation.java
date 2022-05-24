@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.app.Presentation;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.MutableContextWrapper;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
@@ -72,8 +73,6 @@ class SingleViewPresentation extends Presentation {
     private FakeWindowViewGroup fakeWindowViewGroup;
   }
 
-  private final PlatformViewFactory viewFactory;
-
   // A reference to the current accessibility bridge to which accessibility events will be
   // delegated.
   private final AccessibilityEventsDelegate accessibilityEventsDelegate;
@@ -112,19 +111,19 @@ class SingleViewPresentation extends Presentation {
   public SingleViewPresentation(
       Context outerContext,
       Display display,
-      PlatformViewFactory viewFactory,
+      PlatformView view,
       AccessibilityEventsDelegate accessibilityEventsDelegate,
       int viewId,
       Object createParams,
       OnFocusChangeListener focusChangeListener) {
     super(new ImmContext(outerContext), display);
-    this.viewFactory = viewFactory;
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;
     this.viewId = viewId;
     this.createParams = createParams;
     this.focusChangeListener = focusChangeListener;
     this.outerContext = outerContext;
     state = new PresentationState();
+    state.platformView = view;
     getWindow()
         .setFlags(
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
@@ -148,7 +147,6 @@ class SingleViewPresentation extends Presentation {
       boolean startFocused) {
     super(new ImmContext(outerContext), display);
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;
-    viewFactory = null;
     this.state = state;
     this.focusChangeListener = focusChangeListener;
     this.outerContext = outerContext;
@@ -178,14 +176,18 @@ class SingleViewPresentation extends Presentation {
 
     // Our base mContext has already been wrapped with an IMM cache at instantiation time, but
     // we want to wrap it again here to also return state.windowManagerHandler.
-    Context context =
+    Context baseContext =
         new PresentationContext(getContext(), state.windowManagerHandler, outerContext);
 
-    if (state.platformView == null) {
-      state.platformView = viewFactory.create(context, viewId, createParams);
+    View embeddedView = state.platformView.getView();
+    if (embeddedView.getContext() instanceof MutableContextWrapper) {
+      MutableContextWrapper currentContext = (MutableContextWrapper) embeddedView.getContext();
+      currentContext.setBaseContext(baseContext);
+    } else {
+      throw new IllegalStateException(
+          "embedded view context must be a MutableContextWrapper: " + viewId);
     }
 
-    View embeddedView = state.platformView.getView();
     container.addView(embeddedView);
     rootView =
         new AccessibilityDelegatingFrameLayout(

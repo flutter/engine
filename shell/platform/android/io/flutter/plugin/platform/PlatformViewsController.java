@@ -9,9 +9,12 @@ import static android.view.MotionEvent.PointerProperties;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.MutableContextWrapper;
 import android.os.Build;
 import android.util.SparseArray;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -30,9 +33,11 @@ import io.flutter.embedding.engine.mutatorsstack.*;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.util.ViewUtils;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -45,6 +50,7 @@ import java.util.List;
  */
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
+  private static Class[] VIEW_TYPES_REQUIRE_VD = {SurfaceView.class, TextureView.class};
 
   private final PlatformViewRegistryImpl registry;
 
@@ -67,6 +73,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // The accessibility bridge to which accessibility events form the platform views will be
   // dispatched.
   private final AccessibilityEventsDelegate accessibilityEventsDelegate;
+
+  // TODO(mattcarroll): Refactor overall platform views to facilitate testing and then make
+  // this private. This is visible as a hack to facilitate testing. This was deemed the least
+  // bad option at the time of writing.
+  @VisibleForTesting /* package */ final HashMap<Integer, VirtualDisplayController> vdControllers;
+
+  // Maps a virtual display's context to the embedded view hosted in this virtual display.
+  // Since each virtual display has it's unique context this allows associating any view with the
+  // platform view that
+  // it is associated with(e.g if a platform view creates other views in the same virtual display.
+  @VisibleForTesting /* package */ final HashMap<Context, View> contextToEmbeddedView;
 
   // The platform views.
   private final SparseArray<PlatformView> platformViews;
@@ -123,14 +140,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
 
-        @TargetApi(Build.VERSION_CODES.KITKAT)
+        @TargetApi(19)
         @Override
         // TODO(egarciad): Remove the need for this.
         // https://github.com/flutter/flutter/issues/96679
         public void createForPlatformViewLayer(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           // API level 19 is required for `android.graphics.ImageReader`.
-          ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT);
+          ensureValidAndroidVersion(19);
 
           if (!validateDirection(request.direction)) {
             throw new IllegalStateException(
@@ -157,7 +174,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           platformViews.put(request.viewId, platformView);
         }
 
-        @TargetApi(Build.VERSION_CODES.M)
+        @TargetApi(20)
         @Override
         public long createForTextureLayer(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
@@ -194,8 +211,70 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             createParams = viewFactory.getCreateArgsCodec().decodeMessage(request.params);
           }
 
-          final PlatformView platformView = viewFactory.create(context, viewId, createParams);
+          // The virtual display controller will change the embedded view context.
+          final Context embeddedViewContext = new MutableContextWrapper(context);
+          final PlatformView platformView =
+              viewFactory.create(embeddedViewContext, viewId, createParams);
           platformViews.put(viewId, platformView);
+
+          final View embeddedView = platformView.getView();
+          if (embeddedView == null) {
+            throw new IllegalStateException(
+                "PlatformView#getView() returned null, but an Android view reference was expected.");
+          } else if (embeddedView.getParent() != null) {
+            throw new IllegalStateException(
+                "The Android view returned from PlatformView#getView() was already added to a parent view.");
+          }
+
+          embeddedView.setLayoutDirection(request.direction);
+
+          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
+          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
+          final boolean shouldUseVirtualDisplay =
+              ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VD);
+
+          if (!usesSoftwareRendering && shouldUseVirtualDisplay) {
+            // API level 20 is required to use VirtualDisplay#setSurface.
+            ensureValidAndroidVersion(20);
+
+            final TextureRegistry.SurfaceTextureEntry textureEntry =
+                textureRegistry.createSurfaceTexture();
+            VirtualDisplayController vdController =
+                VirtualDisplayController.create(
+                    context,
+                    accessibilityEventsDelegate,
+                    platformView,
+                    textureEntry,
+                    physicalWidth,
+                    physicalHeight,
+                    request.viewId,
+                    createParams,
+                    (view, hasFocus) -> {
+                      if (hasFocus) {
+                        platformViewsChannel.invokeViewFocused(request.viewId);
+                      }
+                    });
+            if (vdController == null) {
+              throw new IllegalStateException(
+                  "Failed creating virtual display for a "
+                      + request.viewType
+                      + " with id: "
+                      + request.viewId);
+            }
+
+            // If our FlutterEngine is already attached to a Flutter UI, provide that Android
+            // View to this new platform view.
+            if (flutterView != null) {
+              vdController.onFlutterViewAttached(flutterView);
+            }
+
+            vdControllers.put(request.viewId, vdController);
+            contextToEmbeddedView.put(embeddedView.getContext(), embeddedView);
+            return textureEntry.id();
+          }
+
+          // API level 23 is required to use Surface#lockHardwareCanvas().
+          ensureValidAndroidVersion(23);
 
           PlatformViewWrapper wrapperView;
           long txId;
@@ -209,9 +288,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             txId = textureEntry.id();
           }
           wrapperView.setTouchProcessor(androidTouchProcessor);
-
-          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
-          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
           wrapperView.setBufferSize(physicalWidth, physicalHeight);
 
           final FrameLayout.LayoutParams layoutParams =
@@ -265,7 +341,19 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             platformViews.remove(viewId);
             platformView.dispose();
           }
-          // The platform view is displayed using a TextureLayer.
+          final VirtualDisplayController vdController = vdControllers.get(viewId);
+          // The platform view is displayed using TextureLayer and a virtual display.
+          if (vdController != null) {
+            final View embeddedView = platformView.getView();
+            if (embeddedView != null) {
+              contextToEmbeddedView.remove(embeddedView.getContext());
+            }
+            vdController.dispose();
+            vdControllers.remove(viewId);
+            return;
+          }
+          // The platform view is displayed using a TextureLayer and is inserted in the view
+          // hierarchy.
           final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
           if (viewWrapper != null) {
             viewWrapper.removeAllViews();
@@ -295,6 +383,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void offset(int viewId, double top, double left) {
+          // Virtual displays don't need an accessibility offset.
+          if (vdControllers.containsKey(viewId)) {
+            return;
+          }
+          // For platform views that use TextureView and are in the view hierarchy, set
+          // an offset to the wrapper view.
+          // This ensures that the accessibility highlights are drawn in the expected position on
+          // screen.
+          // This offset doesn't affect the position of the embeded view by itself since the GL
+          // texture
+          // is positioned by the Flutter engine, which knows where to position different types of
+          // layers.
           final PlatformViewWrapper wrapper = viewWrappers.get(viewId);
           if (wrapper == null) {
             Log.e(TAG, "Setting offset for unknown platform view with id: " + viewId);
@@ -310,18 +410,38 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public PlatformViewsChannel.PlatformViewBufferSize resize(
-            @NonNull PlatformViewsChannel.PlatformViewResizeRequest request) {
+        public void resize(
+            @NonNull PlatformViewsChannel.PlatformViewResizeRequest request,
+            @NonNull PlatformViewsChannel.PlatformViewBufferResized onComplete) {
+          final int physicalWidth = toPhysicalPixels(request.newLogicalWidth);
+          final int physicalHeight = toPhysicalPixels(request.newLogicalHeight);
           final int viewId = request.viewId;
+          final VirtualDisplayController vdController = vdControllers.get(viewId);
+          if (vdController != null) {
+            // Resizing involved moving the platform view to a new virtual display. Doing so
+            // potentially results in losing an active input connection. To make sure we preserve
+            // the input connection when resizing we lock it here and unlock after the resize is
+            // complete.
+            lockInputConnection(vdController);
+            vdController.resize(
+                physicalWidth,
+                physicalHeight,
+                () -> {
+                  unlockInputConnection(vdController);
+                  onComplete.run(
+                      new PlatformViewsChannel.PlatformViewBufferSize(
+                          toLogicalPixels(vdController.getBufferWidth()),
+                          toLogicalPixels(vdController.getBufferHeight())));
+                });
+            return;
+          }
+
           final PlatformView platformView = platformViews.get(viewId);
           final PlatformViewWrapper view = viewWrappers.get(viewId);
           if (platformView == null || view == null) {
             Log.e(TAG, "Resizing unknown platform view with id: " + viewId);
-            return null;
+            return;
           }
-          final int newWidth = toPhysicalPixels(request.newLogicalWidth);
-          final int newHeight = toPhysicalPixels(request.newLogicalHeight);
-
           // Resize the buffer only when the current buffer size is smaller than the new size.
           // This is required to prevent a situation when smooth keyboard animation
           // resizes the texture too often, such that the GPU and the platform thread don't agree on
@@ -330,8 +450,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // Resizing the texture causes pixel stretching since the size of the GL texture used in
           // the engine
           // is set by the framework, but the texture buffer size is set by the platform down below.
-          if (newWidth > view.getBufferWidth() || newHeight > view.getBufferHeight()) {
-            view.setBufferSize(newWidth, newHeight);
+          if (physicalWidth > view.getBufferWidth() || physicalHeight > view.getBufferHeight()) {
+            view.setBufferSize(physicalWidth, physicalHeight);
           }
 
           final ViewGroup.LayoutParams viewWrapperLayoutParams = view.getLayoutParams();
@@ -346,30 +466,36 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             embeddedViewLayoutParams.height = newHeight;
             embeddedView.setLayoutParams(embeddedViewLayoutParams);
           }
-          return new PlatformViewsChannel.PlatformViewBufferSize(
-              toLogicalPixels(view.getBufferWidth()), toLogicalPixels(view.getBufferHeight()));
+          onComplete.run(
+              new PlatformViewsChannel.PlatformViewBufferSize(
+                  toLogicalPixels(view.getBufferWidth()), toLogicalPixels(view.getBufferHeight())));
         }
 
         @Override
         public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
           final int viewId = touch.viewId;
+          final VirtualDisplayController vdController = vdControllers.get(viewId);
+          final float density = context.getResources().getDisplayMetrics().density;
+          if (vdController != null) {
+            final MotionEvent event = toMotionEvent(density, touch, true);
+            vdController.dispatchTouchEvent(event);
+            return;
+          }
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView == null) {
             Log.e(TAG, "Sending touch to an unknown view with id: " + viewId);
             return;
           }
-          ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
-          final float density = context.getResources().getDisplayMetrics().density;
-          final MotionEvent event = toMotionEvent(density, touch);
           final View view = platformView.getView();
           if (view == null) {
             Log.e(TAG, "Sending touch to a null view with id: " + viewId);
             return;
           }
+          final MotionEvent event = toMotionEvent(density, touch, false);
           view.dispatchTouchEvent(event);
         }
 
-        @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+        @TargetApi(17)
         @Override
         public void setDirection(int viewId, int direction) {
           if (!validateDirection(direction)) {
@@ -385,7 +511,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             Log.e(TAG, "Setting direction to an unknown view with id: " + viewId);
             return;
           }
-          ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
           final View view = platformView.getView();
           if (view == null) {
             Log.e(TAG, "Setting direction to a null view with id: " + viewId);
@@ -426,7 +551,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       };
 
   @VisibleForTesting
-  public MotionEvent toMotionEvent(float density, PlatformViewsChannel.PlatformViewTouch touch) {
+  public MotionEvent toMotionEvent(
+      float density, PlatformViewsChannel.PlatformViewTouch touch, boolean usingVirtualDiplay) {
     MotionEventTracker.MotionEventId motionEventId =
         MotionEventTracker.MotionEventId.from(touch.motionEventId);
     MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
@@ -442,7 +568,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         parsePointerCoordsList(touch.rawPointerCoords, density)
             .toArray(new PointerCoords[touch.pointerCount]);
 
-    if (trackedEvent != null) {
+    if (!usingVirtualDiplay && trackedEvent != null) {
       return MotionEvent.obtain(
           trackedEvent.getDownTime(),
           trackedEvent.getEventTime(),
@@ -481,7 +607,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public PlatformViewsController() {
     registry = new PlatformViewRegistryImpl();
+    vdControllers = new HashMap<>();
     accessibilityEventsDelegate = new AccessibilityEventsDelegate();
+    contextToEmbeddedView = new HashMap<>();
     overlayLayerViews = new SparseArray<>();
     currentFrameUsedOverlayLayerIds = new HashSet<>();
     currentFrameUsedPlatformViewIds = new HashSet<>();
@@ -574,6 +702,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       final PlatformView view = platformViews.valueAt(index);
       view.onFlutterViewAttached(flutterView);
     }
+    for (VirtualDisplayController controller : vdControllers.values()) {
+      controller.onFlutterViewAttached(flutterView);
+    }
   }
 
   /**
@@ -594,6 +725,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       final FlutterMutatorView view = platformViewParent.valueAt(index);
       flutterView.removeView(view);
     }
+    // Inform all existing platform views that they are no longer associated with
+    // a Flutter View.
+    for (VirtualDisplayController controller : vdControllers.values()) {
+      controller.onFlutterViewDetached();
+    }
+
     destroyOverlaySurfaces();
     removeOverlaySurfaces();
     flutterView = null;
@@ -668,6 +805,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return platformView.getView();
   }
 
+  private void lockInputConnection(@NonNull VirtualDisplayController controller) {
+    if (textInputPlugin == null) {
+      return;
+    }
+    textInputPlugin.lockPlatformViewInputConnection();
+    controller.onInputConnectionLocked();
+  }
+
+  private void unlockInputConnection(@NonNull VirtualDisplayController controller) {
+    if (textInputPlugin == null) {
+      return;
+    }
+    textInputPlugin.unlockPlatformViewInputConnection();
+    controller.onInputConnectionUnlocked();
+  }
+
   private static boolean validateDirection(int direction) {
     return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;
   }
@@ -730,8 +883,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void flushAllViews() {
+    for (VirtualDisplayController controller : vdControllers.values()) {
+      controller.dispose();
+    }
+    vdControllers.clear();
+    contextToEmbeddedView.clear();
+
     while (platformViews.size() > 0) {
-      channelHandler.dispose(platformViews.keyAt(0));
+      final int viewId = platformViews.keyAt(0);
+      platformViews.remove(viewId);
+      channelHandler.dispose(viewId);
     }
   }
 

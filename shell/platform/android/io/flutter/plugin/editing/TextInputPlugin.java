@@ -54,6 +54,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // Initialize the "last seen" text editing values to a non-null value.
   private TextEditState mLastKnownFrameworkTextEditingState;
 
+  // When true following calls to createInputConnection will return the cached lastInputConnection
+  // if the input
+  // target is a platform view. See the comments on lockPlatformViewInputConnection for more
+  // details.
+  private boolean isInputConnectionLocked;
+
   @SuppressLint("NewApi")
   public TextInputPlugin(
       @NonNull View view,
@@ -174,6 +180,34 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @VisibleForTesting
   ImeSyncDeferringInsetsCallback getImeSyncCallback() {
     return imeSyncCallback;
+  }
+
+  /**
+   * Use the current platform view input connection until unlockPlatformViewInputConnection is
+   * called.
+   *
+   * <p>The current input connection instance is cached and any following call to @{link
+   * createInputConnection} returns the cached connection until unlockPlatformViewInputConnection is
+   * called.
+   *
+   * <p>This is a no-op if the current input target isn't a platform view.
+   *
+   * <p>This is used to preserve an input connection when moving a platform view from one virtual
+   * display to another.
+   */
+  public void lockPlatformViewInputConnection() {
+    if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW) {
+      isInputConnectionLocked = true;
+    }
+  }
+
+  /**
+   * Unlocks the input connection.
+   *
+   * <p>See also: @{link lockPlatformViewInputConnection}.
+   */
+  public void unlockPlatformViewInputConnection() {
+    isInputConnectionLocked = false;
   }
 
   /**
