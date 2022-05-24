@@ -1,4 +1,4 @@
-Signature: 50062312eb12eab6825be1fb0ed8c207
+Signature: e1e4a5253428d3a3aa57719a786e1b3a
 
 UNUSED LICENSES:
 
@@ -2873,9 +2873,6 @@ FILE: ../../../third_party/skia/include/ports/SkFontMgr_directory.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_empty.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_fontconfig.h
 FILE: ../../../third_party/skia/include/private/SkMutex.h
-FILE: ../../../third_party/skia/include/private/SkNx.h
-FILE: ../../../third_party/skia/include/private/SkNx_neon.h
-FILE: ../../../third_party/skia/include/private/SkNx_sse.h
 FILE: ../../../third_party/skia/include/private/SkSemaphore.h
 FILE: ../../../third_party/skia/include/private/SkSpinlock.h
 FILE: ../../../third_party/skia/include/private/SkTHash.h
