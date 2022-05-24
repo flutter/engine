@@ -27,6 +27,7 @@ FILE: ../../../flutter/common/exported_symbols.sym
 FILE: ../../../flutter/common/exported_symbols_mac.sym
 FILE: ../../../flutter/common/graphics/gl_context_switch.cc
 FILE: ../../../flutter/common/graphics/gl_context_switch.h
+FILE: ../../../flutter/common/graphics/msaa_sample_count.h
 FILE: ../../../flutter/common/graphics/persistent_cache.cc
 FILE: ../../../flutter/common/graphics/persistent_cache.h
 FILE: ../../../flutter/common/graphics/texture.cc
@@ -564,6 +565,9 @@ FILE: ../../../flutter/impeller/fixtures/impeller.vert
 FILE: ../../../flutter/impeller/fixtures/instanced_draw.frag
 FILE: ../../../flutter/impeller/fixtures/instanced_draw.vert
 FILE: ../../../flutter/impeller/fixtures/kalimba.jpg
+FILE: ../../../flutter/impeller/fixtures/sample.comp
+FILE: ../../../flutter/impeller/fixtures/sample.tesc
+FILE: ../../../flutter/impeller/fixtures/sample.tese
 FILE: ../../../flutter/impeller/fixtures/sample.vert
 FILE: ../../../flutter/impeller/fixtures/struct_def_bug.vert
 FILE: ../../../flutter/impeller/fixtures/table_mountain_nx.png
@@ -1363,10 +1367,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Flutt
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyChannelResponder.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyData.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyEmbedderResponder.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardManager.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardMap.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/MotionEventTracker.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/RenderMode.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreen.java
@@ -2209,6 +2210,11 @@ FILE: ../../../flutter/shell/platform/linux/fl_renderer_gl.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_gl.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_headless.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_headless.h
+FILE: ../../../flutter/shell/platform/linux/fl_scrolling_manager.cc
+FILE: ../../../flutter/shell/platform/linux/fl_scrolling_manager.h
+FILE: ../../../flutter/shell/platform/linux/fl_scrolling_manager_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_scrolling_view_delegate.cc
+FILE: ../../../flutter/shell/platform/linux/fl_scrolling_view_delegate.h
 FILE: ../../../flutter/shell/platform/linux/fl_settings.cc
 FILE: ../../../flutter/shell/platform/linux/fl_settings.h
 FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin.cc
@@ -2289,6 +2295,9 @@ FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plu
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/plugin_registrar_windows_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/cursor_handler.cc
 FILE: ../../../flutter/shell/platform/windows/cursor_handler.h
+FILE: ../../../flutter/shell/platform/windows/direct_manipulation.cc
+FILE: ../../../flutter/shell/platform/windows/direct_manipulation.h
+FILE: ../../../flutter/shell/platform/windows/direct_manipulation_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32.cc
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32.h
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32_unittests.cc
