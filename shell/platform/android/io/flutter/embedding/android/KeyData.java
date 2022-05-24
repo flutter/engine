@@ -33,6 +33,7 @@ public class KeyData {
   private static final int FIELD_COUNT = 5;
   private static final int BYTES_PER_FIELD = 8;
 
+  /** The action type of the key data. */
   public enum Type {
     kDown(0),
     kUp(1),
@@ -78,11 +79,12 @@ public class KeyData {
     this.logicalKey = buffer.getLong();
     this.synthesized = buffer.getLong() != 0;
 
-    if (buffer.remaining() != charSize)
+    if (buffer.remaining() != charSize) {
       throw new AssertionError(
           String.format(
               "Unexpected char length: charSize is %d while buffer has position %d, capacity %d, limit %d",
               charSize, buffer.position(), buffer.capacity(), buffer.limit()));
+    }
     this.character = null;
     if (charSize != 0) {
       final byte[] strBytes = new byte[(int) charSize];
@@ -128,7 +130,7 @@ public class KeyData {
     packet.putLong(type.getValue());
     packet.putLong(physicalKey);
     packet.putLong(logicalKey);
-    packet.putLong(synthesized ? 1l : 0l);
+    packet.putLong(synthesized ? 1L : 0L);
     if (charBytes != null) {
       packet.put(charBytes);
     }
