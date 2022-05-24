@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/image_filter_layer.h"
+#include <iostream>
 
 namespace flutter {
 
@@ -108,15 +109,16 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     // applies scaling/translation. This is used by the default Android zoom
     // page transition.
     auto matrix_filter = filter_->asMatrix();
-    if (matrix_filter != nullptr &&
-        matrix_filter->matrix().isScaleTranslate() &&
-        context.raster_cache->Draw(
-            this, *context.leaf_nodes_canvas, RasterCacheLayerStrategy::kLayer,
-            cache_paint.paint(), &matrix_filter->matrix(),
-            &matrix_filter->sampling())) {
-      return;
+    if (matrix_filter != nullptr) {
+      auto matrix = &matrix_filter->matrix();
+      auto sampling = &matrix_filter->sampling();
+      if (matrix->isScaleTranslate() &&
+          context.raster_cache->DrawWithMatrix(
+              this, *context.leaf_nodes_canvas, matrix, sampling,
+              RasterCacheLayerStrategy::kLayerChildren, cache_paint.paint())) {
+        return;
+      }
     }
-
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
                                    RasterCacheLayerStrategy::kLayer,
                                    cache_paint.paint())) {

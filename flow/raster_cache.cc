@@ -4,6 +4,7 @@
 
 #include "flutter/flow/raster_cache.h"
 
+#include <iostream>
 #include <vector>
 
 #include "flutter/common/constants.h"
@@ -32,27 +33,23 @@ void RasterCacheResult::draw(SkCanvas& canvas,
                              const SkSamplingOptions* sampling) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
-  auto device_total_matrix = canvas.getTotalMatrix();
-  SkIRect bounds =
-      RasterCache::GetDeviceBounds(logical_rect_, device_total_matrix);
-  FML_DCHECK(
-      std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
-      std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
-  canvas.resetMatrix();
-  flow_.Step();
   if (matrix == nullptr) {
+    SkIRect bounds =
+        RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+    FML_DCHECK(
+        std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
+        std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
+    canvas.resetMatrix();
+    flow_.Step();
     canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
                      paint);
   } else {
-    // Sampling options and matrix must be provided together, and matrix must
-    // only be a scale/translate to use this method.
+    // Sampling options and matrix must be provided together.
     FML_DCHECK(sampling != nullptr);
-    FML_DCHECK(matrix->isScaleTranslate());
     SkRect dest_rect;
     matrix->mapRect(&dest_rect, logical_rect_);
-    SkRect dest_rect_2;
-    device_total_matrix.mapRect(&dest_rect_2, dest_rect);
-    canvas.drawImageRect(image_, dest_rect_2, *sampling, paint);
+    canvas.drawImageRect(image_, dest_rect, *sampling, paint);
+    canvas.resetMatrix();
   }
 }
 
@@ -431,7 +428,7 @@ bool RasterCache::Draw(const SkPicture& picture,
                        const SkPaint* paint) const {
   RasterCacheKey cache_key(picture.uniqueID(), RasterCacheKeyType::kPicture,
                            canvas.getTotalMatrix());
-  return Draw(cache_key, canvas, paint);
+  return Draw(cache_key, canvas, paint, nullptr, nullptr);
 }
 
 bool RasterCache::Draw(const DisplayList& display_list,
@@ -440,21 +437,33 @@ bool RasterCache::Draw(const DisplayList& display_list,
   RasterCacheKey cache_key(display_list.unique_id(),
                            RasterCacheKeyType::kDisplayList,
                            canvas.getTotalMatrix());
-  return Draw(cache_key, canvas, paint);
+  return Draw(cache_key, canvas, paint, nullptr, nullptr);
 }
 
-bool RasterCache::Draw(const Layer* layer,
-                       SkCanvas& canvas,
-                       RasterCacheLayerStrategy strategy,
-                       const SkPaint* paint,
-                       const SkMatrix* matrix,
-                       const SkSamplingOptions* sampling) const {
+bool RasterCache::DrawWithMatrix(const Layer* layer,
+                                 SkCanvas& canvas,
+                                 const SkMatrix* matrix,
+                                 const SkSamplingOptions* sampling,
+                                 RasterCacheLayerStrategy strategy,
+                                 const SkPaint* paint) const {
   auto cache_key_optional =
       TryToMakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
   if (!cache_key_optional) {
     return false;
   }
   return Draw(cache_key_optional.value(), canvas, paint, matrix, sampling);
+}
+
+bool RasterCache::Draw(const Layer* layer,
+                       SkCanvas& canvas,
+                       RasterCacheLayerStrategy strategy,
+                       const SkPaint* paint) const {
+  auto cache_key_optional =
+      TryToMakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
+  if (!cache_key_optional) {
+    return false;
+  }
+  return Draw(cache_key_optional.value(), canvas, paint, nullptr, nullptr);
 }
 
 bool RasterCache::Draw(const RasterCacheKey& cache_key,

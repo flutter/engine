@@ -244,10 +244,16 @@ class RasterCache {
   bool Draw(
       const Layer* layer,
       SkCanvas& canvas,
-      RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer,
-      const SkPaint* paint = nullptr,
-      const SkMatrix* matrix = nullptr,
-      const SkSamplingOptions* sampling = nullptr) const;
+      RasterCacheLayerStrategy strategy = RasterCacheLayerStrategy::kLayer,
+      const SkPaint* paint = nullptr) const;
+
+  bool DrawWithMatrix(
+      const Layer* layer,
+      SkCanvas& canvas,
+      const SkMatrix* matrix,
+      const SkSamplingOptions* sampling,
+      RasterCacheLayerStrategy strategy = RasterCacheLayerStrategy::kLayer,
+      const SkPaint* paint = nullptr) const;
 
   void PrepareNewFrame();
   void CleanupAfterFrame();
@@ -317,8 +323,8 @@ class RasterCache {
   bool Draw(const RasterCacheKey& cache_key,
             SkCanvas& canvas,
             const SkPaint* paint,
-            const SkMatrix* matrix = nullptr,
-            const SkSamplingOptions* sampling = nullptr) const;
+            const SkMatrix* matrix,
+            const SkSamplingOptions* sampling) const;
 
   void SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
                                RasterCacheMetrics& picture_metrics,
