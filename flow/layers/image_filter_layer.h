@@ -15,6 +15,8 @@ class ImageFilterLayer : public ContainerLayer {
  public:
   explicit ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter);
 
+  explicit ImageFilterLayer(sk_sp<SkImageFilter> filter);
+
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
@@ -39,6 +41,7 @@ class ImageFilterLayer : public ContainerLayer {
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
 
   std::shared_ptr<const DlImageFilter> filter_;
+  sk_sp<SkImageFilter> skia_filter_;
   sk_sp<SkImageFilter> transformed_filter_;
   int render_count_;
 

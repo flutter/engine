@@ -20,7 +20,7 @@ using ImageFilterLayerTest = LayerTest;
 
 #ifndef NDEBUG
 TEST_F(ImageFilterLayerTest, PaintingEmptyLayerDies) {
-  auto layer = std::make_shared<ImageFilterLayer>(nullptr);
+  auto layer = std::make_shared<ImageFilterLayer>(sk_sp<SkImageFilter>());
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -34,7 +34,7 @@ TEST_F(ImageFilterLayerTest, PaintBeforePrerollDies) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto layer = std::make_shared<ImageFilterLayer>(nullptr);
+  auto layer = std::make_shared<ImageFilterLayer>(sk_sp<SkImageFilter>());
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -50,7 +50,7 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<ImageFilterLayer>(nullptr);
+  auto layer = std::make_shared<ImageFilterLayer>(sk_sp<SkImageFilter>());
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
@@ -83,7 +83,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
       SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
   auto layer_filter = dl_layer_filter->skia_object();
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
 
   const SkRect child_rounded_bounds =
@@ -120,7 +120,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
       SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
   auto layer_filter = dl_layer_filter->skia_object();
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
 
   const SkRect filter_bounds = SkRect::MakeLTRB(10.0f, 12.0f, 42.0f, 44.0f);
@@ -159,7 +159,7 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   auto layer_filter = dl_layer_filter->skia_object();
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
@@ -213,8 +213,8 @@ TEST_F(ImageFilterLayerTest, Nested) {
 
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto layer1 = std::make_shared<ImageFilterLayer>(dl_layer_filter1);
-  auto layer2 = std::make_shared<ImageFilterLayer>(dl_layer_filter2);
+  auto layer1 = std::make_shared<ImageFilterLayer>(layer_filter1);
+  auto layer2 = std::make_shared<ImageFilterLayer>(layer_filter2);
   layer2->Add(mock_layer2);
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
@@ -397,7 +397,7 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
 
   // The mock_layer child will not be compatible with opacity
   auto mock_layer = MockLayer::Make(child_path, child_paint);
-  auto image_filter_layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  auto image_filter_layer = std::make_shared<ImageFilterLayer>(layer_filter);
   image_filter_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
@@ -419,7 +419,7 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   auto opacity_integer_transform = RasterCache::GetIntegralTransCTM(
       SkMatrix::Translate(offset.fX, offset.fY));
 #endif
-  auto dl_image_filter = DlImageFilter::From(layer_filter);
+  auto dl_image_filter = DlUnknownImageFilter(layer_filter);
   DisplayListBuilder expected_builder;
   /* opacity_layer::Paint() */ {
     expected_builder.save();
@@ -431,7 +431,7 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
 #endif
       /* image_filter_layer::Paint() */ {
         expected_builder.setColor(opacity_alpha << 24);
-        expected_builder.setImageFilter(dl_image_filter.get());
+        expected_builder.setImageFilter(&dl_image_filter);
         expected_builder.saveLayer(&child_path.getBounds(), true);
         /* mock_layer::Paint() */ {
           expected_builder.setColor(child_paint.getColor());

@@ -8,6 +8,15 @@ namespace flutter {
 
 ImageFilterLayer::ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter)
     : filter_(std::move(filter)),
+      skia_filter_(filter_->skia_object()),
+      transformed_filter_(nullptr),
+      render_count_(1) {}
+
+ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
+    : filter_(filter == nullptr
+                  ? nullptr
+                  : std::make_shared<DlUnknownImageFilter>(filter)),
+      skia_filter_(std::move(filter)),
       transformed_filter_(nullptr),
       render_count_(1) {}
 
@@ -22,8 +31,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
 
   if (filter_) {
-    auto filter =
-        filter_->skia_object()->makeWithLocalMatrix(context->GetTransform());
+    auto filter = skia_filter_->makeWithLocalMatrix(context->GetTransform());
     if (filter) {
       // This transform will be applied to every child rect in the subtree
       context->PushFilterBoundsAdjustment([filter](SkRect rect) {
@@ -57,7 +65,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   }
 
   const SkIRect filter_input_bounds = child_bounds.roundOut();
-  SkIRect filter_output_bounds = filter_->skia_object()->filterBounds(
+  SkIRect filter_output_bounds = skia_filter_->filterBounds(
       filter_input_bounds, SkMatrix::I(), SkImageFilter::kForward_MapDirection);
   child_bounds = SkRect::Make(filter_output_bounds);
 
@@ -84,7 +92,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     // instances can do this operation on some transforms and some
     // (filters or transforms) cannot. We can only cache the children
     // and apply the filter on the fly if this operation succeeds.
-    transformed_filter_ = filter_->skia_object()->makeWithLocalMatrix(matrix);
+    transformed_filter_ = skia_filter_->makeWithLocalMatrix(matrix);
     if (transformed_filter_) {
       // With a modified SkImageFilter we can now try to cache the
       // children to avoid their rendering costs if they remain
@@ -133,7 +141,7 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     }
   }
 
-  cache_paint.setImageFilter(filter_->skia_object());
+  cache_paint.setImageFilter(skia_filter_);
 
   // Normally a save_layer is sized to the current layer bounds, but in this
   // case the bounds of the child may not be the same as the filtered version
