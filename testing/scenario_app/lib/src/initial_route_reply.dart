@@ -18,7 +18,7 @@ class InitialRouteReply extends Scenario {
         super(dispatcher);
 
   @override
-  void onBeginFrame(Duration duration) {
+  Future<void> onBeginFrame(Duration duration) async {
     sendJsonMethodCall(
       dispatcher: dispatcher,
       channel: 'initial_route_test_channel',

@@ -20,7 +20,7 @@ class LocaleInitialization extends Scenario {
 
   /// Start off by sending the supported locales list via semantics.
   @override
-  void onBeginFrame(Duration duration) {
+  Future<void> onBeginFrame(Duration duration) async {
     // Doesn't matter what we draw. Just paint white.
     final SceneBuilder builder = SceneBuilder();
     final PictureRecorder recorder = PictureRecorder();
