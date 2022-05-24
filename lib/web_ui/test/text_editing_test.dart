@@ -15,7 +15,6 @@ import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
-import 'package:ui/src/engine/text_editing/composition_aware_mixin.dart';
 import 'package:ui/src/engine/text_editing/input_type.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
 import 'package:ui/src/engine/util.dart';
