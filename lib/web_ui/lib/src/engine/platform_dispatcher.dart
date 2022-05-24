@@ -607,7 +607,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement as html.Element?);
     }
     frameTimingsOnRasterFinish();
   }

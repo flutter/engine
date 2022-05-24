@@ -314,6 +314,19 @@ class DomHTMLBodyElement extends DomHTMLElement {}
 
 @JS()
 @staticInterop
+class DomHTMLImageElement extends DomHTMLElement {}
+
+DomHTMLImageElement createDomHTMLImageElement() =>
+    domDocument.createElement('img') as DomHTMLImageElement;
+
+extension DomHTMLImageElemenExtension on DomHTMLImageElement {
+  external String? get alt;
+  external set alt(String? value);
+  external set src(String value);
+}
+
+@JS()
+@staticInterop
 class DomHTMLScriptElement extends DomHTMLElement {}
 
 extension DomHTMLScriptElementExtension on DomHTMLScriptElement {

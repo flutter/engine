@@ -4,7 +4,6 @@
 
 import 'dart:html' as html;
 import 'dart:math' as math;
-import 'dart:svg' as svg;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
@@ -12,6 +11,7 @@ import 'package:ui/ui.dart' as ui;
 import '../browser_detection.dart';
 import '../dom.dart';
 import '../engine_canvas.dart';
+import '../svg.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -280,16 +280,16 @@ String _borderStrokeToCssUnit(double value) {
   return '${value.toStringAsFixed(3)}px';
 }
 
-svg.SvgSvgElement pathToSvgElement(
+SVGSVGElement pathToSvgElement(
     SurfacePath path, SurfacePaintData paint, String width, String height) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
-  final svg.SvgSvgElement root = svg.SvgSvgElement()
+  final SVGSVGElement root = createSVGSVGElement()
     ..setAttribute('width', '${width}px')
     ..setAttribute('height', '${height}px')
     ..setAttribute('viewBox', '0 0 $width $height');
 
-  final svg.PathElement svgPath = svg.PathElement();
+  final SVGPathElement svgPath = createSVGPathElement();
   root.append(svgPath);
   final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
   if (paint.style == ui.PaintingStyle.stroke ||
