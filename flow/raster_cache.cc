@@ -45,6 +45,8 @@ void RasterCacheResult::draw(SkCanvas& canvas,
   } else {
     // Sampling options and matrix must be provided together.
     FML_DCHECK(sampling != nullptr);
+    FML_DCHECK(matrix->isScaleTranslate());
+
     SkRect dest_rect;
     matrix->mapRect(&dest_rect, logical_rect_);
     canvas.drawImageRect(image_, dest_rect, *sampling, paint);
@@ -445,6 +447,9 @@ bool RasterCache::DrawWithMatrix(const Layer* layer,
                                  const SkSamplingOptions* sampling,
                                  RasterCacheLayerStrategy strategy,
                                  const SkPaint* paint) const {
+  // TODO: if we had a drawImageQuad method, we could relax this check.
+  FML_DCHECK(matrix->isScaleTranslate());
+
   auto cache_key_optional =
       TryToMakeRasterCacheKeyForLayer(layer, strategy, canvas.getTotalMatrix());
   if (!cache_key_optional) {

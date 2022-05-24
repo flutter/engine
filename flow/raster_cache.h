@@ -237,8 +237,6 @@ class RasterCache {
   //
   // Additional paint can be given to change how the raster cache is drawn
   // (e.g., draw the raster cache with some opacity).
-  // May accept an SkMatrix if this only applies scale and translation, along
-  // with a sampling options.
   //
   // Return true if the layer raster cache is found and drawn.
   bool Draw(
@@ -247,6 +245,16 @@ class RasterCache {
       RasterCacheLayerStrategy strategy = RasterCacheLayerStrategy::kLayer,
       const SkPaint* paint = nullptr) const;
 
+  // Find the raster cache for the layer and draw it to the canvas.
+  //
+  // Additional paint can be given to change how the raster cache is drawn
+  // (e.g., draw the raster cache with some opacity).
+  //
+  // Providing a scale/transform matrix and sampling options will apply to
+  // the cached raster, allowing certain matrix image filters to elide
+  // additional render target switches required by Skia image filters.
+  //
+  // Return true if the layer raster cache is found and drawn.
   bool DrawWithMatrix(
       const Layer* layer,
       SkCanvas& canvas,
