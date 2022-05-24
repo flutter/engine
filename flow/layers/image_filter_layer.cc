@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/image_filter_layer.h"
-#include <iostream>
 
 namespace flutter {
 

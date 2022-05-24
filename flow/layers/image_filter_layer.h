@@ -36,7 +36,7 @@ class ImageFilterLayer : public ContainerLayer {
   // same ImageFilterLayer before we consider the layer and filter to be
   // stable enough to switch from caching the children to caching the
   // filtered output of this layer.
-  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 111111113;
+  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
 
   std::shared_ptr<const DlImageFilter> filter_;
   sk_sp<SkImageFilter> transformed_filter_;
