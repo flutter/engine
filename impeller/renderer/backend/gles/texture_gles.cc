@@ -88,7 +88,7 @@ struct TexImage2DData {
       case PixelFormat::kR8G8B8A8UNormInt:
       case PixelFormat::kB8G8R8A8UNormInt:
       case PixelFormat::kR8G8B8A8UNormIntSRGB:
-      case PixelFormat::kB8G8R8A8UNormIntSRGB:g
+      case PixelFormat::kB8G8R8A8UNormIntSRGB:
         internal_format = GL_RGBA;
         external_format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
