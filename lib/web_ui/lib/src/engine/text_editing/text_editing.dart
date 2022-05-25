@@ -757,10 +757,10 @@ class EditingState {
   /// The offset at which the text selection terminates.
   final int? extentOffset;
 
-  /// The offset at which text is still being composed.
+  /// The offset at which [CompositionAwareMixin.composingText] begins if any.
   final int? composingBaseOffset;
 
-  /// The offset at which composing text terminates.
+  /// The offset at which [CompositionAwareMixin.composingText] terminate, if any.
   final int? composingExtentOffset;
 
   /// Whether the current editing state is valid or not.

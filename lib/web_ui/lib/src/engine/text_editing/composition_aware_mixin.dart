@@ -6,7 +6,6 @@ import 'dart:html' as html;
 
 import 'text_editing.dart';
 
-
 /// Provides default functionality for listening to HTML composition events.
 ///
 /// A class with this mixin generally calls [determineCompositionState] in order to update
@@ -16,25 +15,25 @@ import 'text_editing.dart';
 /// A class with this mixin should call [addCompositionEventHandlers] on initalization, and
 /// [removeCompositionEventHandlers] on deinitalization.
 ///
-/// see also:
+/// See also:
 ///
 /// * [EditingState], the state of a text field that [CompositionAwareMixin] updates.
 /// * [DefaultTextEditingStrategy], the primary implementer of [CompositionAwareMixin].
 mixin CompositionAwareMixin {
-  /// the name of the HTML composition event type that triggers on starting a composition.
-  static const String kCompositionStart = 'compositionstart';
+  /// The name of the HTML composition event type that triggers on starting a composition.
+  static const String _kCompositionStart = 'compositionstart';
 
-  /// the name of the HTML composition event type that triggers on updating a composition.
-  static const String kCompositionUpdate = 'compositionupdate';
+  /// The name of the HTML composition event type that triggers on updating a composition.
+  static const String _kCompositionUpdate = 'compositionupdate';
 
-  /// the name of the HTML composition event type that triggers on ending a composition.
-  static const String kCompositionEnd = 'compositionend';
+  /// The name of the HTML composition event type that triggers on ending a composition.
+  static const String _kCompositionEnd = 'compositionend';
 
   late final html.EventListener _compositionStartListener = _handleCompositionStart;
   late final html.EventListener _compositionUpdateListener = _handleCompositionUpdate;
   late final html.EventListener _compositionEndListener = _handleCompositionEnd;
 
-  /// the currently composing text in the domElement.
+  /// The currently composing text in the domElement.
   ///
   /// Will be null if composing just started, ended, or no composing is being done.
   /// This member is kept up to date provided compositionEventHandlers are in place,
@@ -42,15 +41,15 @@ mixin CompositionAwareMixin {
   String? composingText;
 
   void addCompositionEventHandlers(html.HtmlElement domElement) {
-    domElement.addEventListener(kCompositionStart, _compositionStartListener);
-    domElement.addEventListener(kCompositionUpdate, _compositionUpdateListener);
-    domElement.addEventListener(kCompositionEnd, _compositionEndListener);
+    domElement.addEventListener(_kCompositionStart, _compositionStartListener);
+    domElement.addEventListener(_kCompositionUpdate, _compositionUpdateListener);
+    domElement.addEventListener(_kCompositionEnd, _compositionEndListener);
   }
 
   void removeCompositionEventHandlers(html.HtmlElement domElement) {
-    domElement.removeEventListener(kCompositionStart, _compositionStartListener);
-    domElement.removeEventListener(kCompositionUpdate, _compositionUpdateListener);
-    domElement.removeEventListener(kCompositionEnd, _compositionEndListener);
+    domElement.removeEventListener(_kCompositionStart, _compositionStartListener);
+    domElement.removeEventListener(_kCompositionUpdate, _compositionUpdateListener);
+    domElement.removeEventListener(_kCompositionEnd, _compositionEndListener);
   }
 
   void _handleCompositionStart(html.Event event) {
