@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <array>
+#include <memory>
+#include <optional>
 #include <sstream>
+
+#include "impeller/image/decompressed_image.h"
+#include "impeller/renderer/command_buffer.h"
 
 #define GLFW_INCLUDE_NONE
 #import "third_party/glfw/include/GLFW/glfw3.h"
@@ -200,6 +206,7 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
       []() { ImGui_ImplImpeller_Shutdown(); });
 
   ::glfwSetWindowSize(window, GetWindowSize().width, GetWindowSize().height);
+  ::glfwSetWindowPos(window, 200, 100);
   ::glfwShowWindow(window);
 
   while (true) {
@@ -211,13 +218,41 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
     ImGui_ImplGlfw_NewFrame();
 
-    Renderer::RenderCallback wrapped_callback = [render_callback](auto& pass) {
-      pass.SetLabel("Playground Main Render Pass");
-
+    Renderer::RenderCallback wrapped_callback =
+        [render_callback,
+         &renderer = renderer_](RenderTarget& render_target) -> bool {
       ImGui::NewFrame();
-      bool result = render_callback(pass);
+      bool result = render_callback(render_target);
       ImGui::Render();
-      ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), pass);
+
+      // Render ImGui overlay.
+      {
+        auto buffer = renderer->GetContext()->CreateRenderCommandBuffer();
+        if (!buffer) {
+          return false;
+        }
+        buffer->SetLabel("ImGui Command Buffer");
+
+        if (render_target.GetColorAttachments().empty()) {
+          return false;
+        }
+        auto color0 = render_target.GetColorAttachments().find(0)->second;
+        color0.load_action = LoadAction::kLoad;
+        render_target.SetColorAttachment(color0, 0);
+        auto pass = buffer->CreateRenderPass(render_target);
+        if (!pass) {
+          return false;
+        }
+        pass->SetLabel("ImGui Render Pass");
+
+        ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass);
+
+        pass->EncodeCommands(renderer->GetContext()->GetTransientsAllocator());
+        if (!buffer->SubmitCommands()) {
+          return false;
+        }
+      }
+
       return result;
     };
 
@@ -233,17 +268,44 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
   return true;
 }
 
-std::shared_ptr<Texture> Playground::CreateTextureForFixture(
+bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
+  return OpenPlaygroundHere(
+      [context = GetContext(), &pass_callback](RenderTarget& render_target) {
+        auto buffer = context->CreateRenderCommandBuffer();
+        if (!buffer) {
+          return false;
+        }
+        buffer->SetLabel("Playground Command Buffer");
+
+        auto pass = buffer->CreateRenderPass(render_target);
+        if (!pass) {
+          return false;
+        }
+        pass->SetLabel("Playground Render Pass");
+
+        if (!pass_callback(*pass)) {
+          return false;
+        }
+
+        pass->EncodeCommands(context->GetTransientsAllocator());
+        if (!buffer->SubmitCommands()) {
+          return false;
+        }
+        return true;
+      });
+}
+
+std::optional<DecompressedImage> Playground::LoadFixtureImageRGBA(
     const char* fixture_name) const {
   if (!renderer_) {
-    return nullptr;
+    return std::nullopt;
   }
 
   auto compressed_image = CompressedImage::Create(
       flutter::testing::OpenFixtureAsMapping(fixture_name));
   if (!compressed_image) {
     VALIDATION_LOG << "Could not create compressed image.";
-    return nullptr;
+    return std::nullopt;
   }
   // The decoded image is immediately converted into RGBA as that format is
   // known to be supported everywhere. For image sources that don't need 32
@@ -253,13 +315,22 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   auto image = compressed_image->Decode().ConvertToRGBA();
   if (!image.IsValid()) {
     VALIDATION_LOG << "Could not find fixture named " << fixture_name;
+    return std::nullopt;
+  }
+
+  return image;
+}
+
+std::shared_ptr<Texture> Playground::CreateTextureForFixture(
+    const char* fixture_name) const {
+  auto image = LoadFixtureImageRGBA(fixture_name);
+  if (!image.has_value()) {
     return nullptr;
   }
 
   auto texture_descriptor = TextureDescriptor{};
-  // We just converted to RGBA above.
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-  texture_descriptor.size = image.GetSize();
+  texture_descriptor.size = image->GetSize();
   texture_descriptor.mip_count = 1u;
 
   auto texture =
@@ -271,13 +342,51 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   }
   texture->SetLabel(fixture_name);
 
-  auto uploaded = texture->SetContents(image.GetAllocation()->GetMapping(),
-                                       image.GetAllocation()->GetSize());
+  auto uploaded = texture->SetContents(image->GetAllocation());
   if (!uploaded) {
     VALIDATION_LOG << "Could not upload texture to device memory for fixture "
                    << fixture_name;
     return nullptr;
   }
+  return texture;
+}
+
+std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
+    std::array<const char*, 6> fixture_names) const {
+  std::array<DecompressedImage, 6> images;
+  for (size_t i = 0; i < fixture_names.size(); i++) {
+    auto image = LoadFixtureImageRGBA(fixture_names[i]);
+    if (!image.has_value()) {
+      return nullptr;
+    }
+    images[i] = image.value();
+  }
+
+  auto texture_descriptor = TextureDescriptor{};
+  texture_descriptor.type = TextureType::kTextureCube;
+  texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_descriptor.size = images[0].GetSize();
+  texture_descriptor.mip_count = 1u;
+
+  auto texture =
+      renderer_->GetContext()->GetPermanentsAllocator()->CreateTexture(
+          StorageMode::kHostVisible, texture_descriptor);
+  if (!texture) {
+    VALIDATION_LOG << "Could not allocate texture cube.";
+    return nullptr;
+  }
+  texture->SetLabel("Texture cube");
+
+  for (size_t i = 0; i < fixture_names.size(); i++) {
+    auto uploaded =
+        texture->SetContents(images[i].GetAllocation()->GetMapping(),
+                             images[i].GetAllocation()->GetSize(), i);
+    if (!uploaded) {
+      VALIDATION_LOG << "Could not upload texture to device memory.";
+      return nullptr;
+    }
+  }
+
   return texture;
 }
 

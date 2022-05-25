@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "gtest/gtest.h"
@@ -24,6 +26,8 @@ std::string PlaygroundBackendToString(PlaygroundBackend backend);
 
 class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
  public:
+  using SinglePassCallback = std::function<bool(RenderPass& pass)>;
+
   Playground();
 
   ~Playground();
@@ -44,8 +48,16 @@ class Playground : public ::testing::TestWithParam<PlaygroundBackend> {
 
   bool OpenPlaygroundHere(Renderer::RenderCallback render_callback);
 
+  bool OpenPlaygroundHere(SinglePassCallback pass_callback);
+
+  std::optional<DecompressedImage> LoadFixtureImageRGBA(
+      const char* fixture_name) const;
+
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name) const;
+
+  std::shared_ptr<Texture> CreateTextureCubeForFixture(
+      std::array<const char*, 6> fixture_names) const;
 
  private:
 #if IMPELLER_ENABLE_PLAYGROUND

@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 
+#include <algorithm>
 #include <sstream>
 
 #include "impeller/base/config.h"
@@ -21,7 +22,14 @@ BufferBindingsGLES::~BufferBindingsGLES() = default;
 
 bool BufferBindingsGLES::RegisterVertexStageInput(
     const ProcTableGLES& gl,
-    const std::vector<ShaderStageIOSlot>& inputs) {
+    const std::vector<ShaderStageIOSlot>& p_inputs) {
+  // Attrib locations have to be iterated over in order of location because we
+  // will be calculating offsets later.
+  auto inputs = p_inputs;
+  std::sort(inputs.begin(), inputs.end(), [](const auto& lhs, const auto& rhs) {
+    return lhs.location < rhs.location;
+  });
+
   std::vector<VertexAttribPointer> vertex_attrib_arrays;
   size_t offset = 0u;
   for (const auto& input : inputs) {
@@ -184,8 +192,8 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     return false;
   }
   const auto& device_buffer_gles = DeviceBufferGLES::Cast(*device_buffer);
-  const uint8_t* buffer_ptr = device_buffer_gles.GetBufferData()->GetMapping() +
-                              buffer.resource.range.offset;
+  const uint8_t* buffer_ptr =
+      device_buffer_gles.GetBufferData() + buffer.resource.range.offset;
 
   if (metadata->members.empty()) {
     VALIDATION_LOG << "Uniform buffer had no members. This is currently "

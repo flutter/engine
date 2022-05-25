@@ -44,6 +44,8 @@ source_set("flutter_windows_source") {
     "angle_surface_manager.h",
     "cursor_handler.cc",
     "cursor_handler.h",
+    "direct_manipulation.cc",
+    "direct_manipulation.h",
     "dpi_utils_win32.cc",
     "dpi_utils_win32.h",
     "event_watcher_win32.cc",
@@ -130,6 +132,7 @@ source_set("flutter_windows_source") {
 
   deps = [
     ":flutter_windows_headers",
+    "//flutter/fml:fml",
     "//flutter/shell/platform/common:common_cpp",
     "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/common:common_cpp_switches",
@@ -169,9 +172,8 @@ executable("flutter_windows_unittests") {
 
   # Common Windows test sources.
   sources = [
-    # "flutter_project_bundle_unittests.cc", //TODO failing due to switches test failing.  Blocked on https://github.com/flutter/flutter/issues/74153
-    # "flutter_windows_engine_unittests.cc", //TODO failing to send / receive platform message get plugins working first.  Blocked on https://github.com/flutter/flutter/issues/74155
     "accessibility_bridge_delegate_win32_unittests.cc",
+    "direct_manipulation_unittests.cc",
     "dpi_utils_win32_unittests.cc",
     "flutter_project_bundle_unittests.cc",
     "flutter_window_win32_unittests.cc",

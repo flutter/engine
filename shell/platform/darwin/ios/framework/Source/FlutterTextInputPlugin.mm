@@ -47,6 +47,7 @@ static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect"
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
 static NSString* const kStartCapturingTextFromCameraMethod =
     @"TextInput.startCapturingTextFromCamera";
+static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -2087,12 +2088,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
     result(nil);
-  } else if ([method isEqualToString:kStartCapturingTextFromCameraMethod]) {
-    [self startCapturingTextFromCamera];
-    result(nil);
-  } else if ([method isEqualToString:@"TextInput.setSelectionRects"]) {
+  } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];
     result(nil);
+  } else if ([method isEqualToString:kStartCapturingTextFromCameraMethod]) {
+      [self startCapturingTextFromCamera];
+      result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }

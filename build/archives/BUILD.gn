@@ -13,6 +13,7 @@ if (build_engine_artifacts) {
       "//flutter/impeller/tessellator:tessellator_shared",
       "//flutter/lib/snapshot:generate_snapshot_bin",
       "//flutter/shell/testing:testing",
+      "//flutter/shell/testing:testing_fractional_translation",
     ]
     prefix = "$full_target_platform_name/"
     if (flutter_runtime_mode != "debug") {
@@ -52,6 +53,10 @@ if (build_engine_artifacts) {
       {
         source = "$root_out_dir/flutter_tester$exe"
         destination = "flutter_tester$exe"
+      },
+      {
+        source = "$root_out_dir/flutter_tester_fractional_translation$exe"
+        destination = "flutter_tester_fractional_translation$exe"
       },
       {
         source = "$root_out_dir/impellerc$exe"
@@ -99,10 +104,15 @@ zip_bundle("flutter_patched_sdk") {
 # Flutter consumes the dart sdk as a prebuilt. Rather than regenerating
 # the zip file we are just copying the original file to the artifacts location.
 if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
-  copy("dart_sdk_archive") {
-    sources = [ prebuilt_dart_sdk_archive ]
-    outputs =
-        [ "$root_out_dir/zip_archives/dart-sdk-$full_target_platform_name.zip" ]
+  zip_bundle("dart_sdk_archive") {
+    deps = []
+    output = "dart-sdk-$full_target_platform_name.zip"
+    files = [
+      {
+        source = prebuilt_dart_sdk
+        destination = "dart-sdk"
+      },
+    ]
   }
 }
 

@@ -10,7 +10,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
-#include "impeller/renderer/backend/gles/gl_description.h"
+#include "impeller/renderer/backend/gles/description_gles.h"
 #include "impeller/renderer/backend/gles/gles.h"
 
 namespace impeller {
@@ -27,9 +27,11 @@ struct AutoErrorCheck {
   ~AutoErrorCheck() {
     if (error_fn) {
       auto error = error_fn();
-      FML_CHECK(error == GL_NO_ERROR)
-          << "GL Error " << GLErrorToString(error) << "(" << error << ")"
-          << " encountered on call to " << name;
+      if (error != GL_NO_ERROR) {
+        FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
+                       << ")"
+                       << " encountered on call to " << name;
+      }
     }
   }
 };
@@ -80,6 +82,8 @@ struct GLProc {
   PROC(AttachShader);                        \
   PROC(BindAttribLocation);                  \
   PROC(BindBuffer);                          \
+  PROC(BindFramebuffer);                     \
+  PROC(BindRenderbuffer);                    \
   PROC(BindTexture);                         \
   PROC(BlendEquationSeparate);               \
   PROC(BlendFuncSeparate);                   \
@@ -95,7 +99,9 @@ struct GLProc {
   PROC(CreateShader);                        \
   PROC(CullFace);                            \
   PROC(DeleteBuffers);                       \
+  PROC(DeleteFramebuffers);                  \
   PROC(DeleteProgram);                       \
+  PROC(DeleteRenderbuffers);                 \
   PROC(DeleteShader);                        \
   PROC(DeleteTextures);                      \
   PROC(DepthFunc);                           \
@@ -107,8 +113,12 @@ struct GLProc {
   PROC(DrawElements);                        \
   PROC(Enable);                              \
   PROC(EnableVertexAttribArray);             \
+  PROC(FramebufferRenderbuffer);             \
+  PROC(FramebufferTexture2D);                \
   PROC(FrontFace);                           \
   PROC(GenBuffers);                          \
+  PROC(GenFramebuffers);                     \
+  PROC(GenRenderbuffers);                    \
   PROC(GenTextures);                         \
   PROC(GetActiveUniform);                    \
   PROC(GetBooleanv);                         \
@@ -123,6 +133,7 @@ struct GLProc {
   PROC(IsFramebuffer);                       \
   PROC(IsProgram);                           \
   PROC(LinkProgram);                         \
+  PROC(RenderbufferStorage);                 \
   PROC(Scissor);                             \
   PROC(ShaderBinary);                        \
   PROC(ShaderSource);                        \
@@ -141,6 +152,7 @@ struct GLProc {
   PROC(Viewport);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC) \
+  PROC(DiscardFramebufferEXT);           \
   PROC(PushDebugGroupKHR);               \
   PROC(PopDebugGroupKHR);                \
   PROC(ObjectLabelKHR);
@@ -150,6 +162,8 @@ enum class DebugResourceType {
   kBuffer,
   kProgram,
   kShader,
+  kRenderBuffer,
+  kFrameBuffer,
 };
 
 class ProcTableGLES {
@@ -171,7 +185,7 @@ class ProcTableGLES {
 
   void ShaderSourceMapping(GLuint shader, const fml::Mapping& mapping) const;
 
-  const GLDescription* GetDescription() const;
+  const DescriptionGLES* GetDescription() const;
 
   std::string DescribeCurrentFramebuffer() const;
 
@@ -181,9 +195,14 @@ class ProcTableGLES {
                      GLint name,
                      const std::string& label) const;
 
+  void PushDebugGroup(const std::string& string) const;
+
+  void PopDebugGroup() const;
+
  private:
   bool is_valid_ = false;
-  std::unique_ptr<GLDescription> description_;
+  std::unique_ptr<DescriptionGLES> description_;
+  GLint debug_label_max_length_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ProcTableGLES);
 };

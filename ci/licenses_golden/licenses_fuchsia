@@ -1,4 +1,4 @@
-Signature: 555d6705530b3ce51c35a24caa0ca268
+Signature: 90f0e22dbc3fa466cfad44315aac047b
 
 UNUSED LICENSES:
 
@@ -2344,8 +2344,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/wlan_common.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.ieee80211/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.ieee80211/rsn.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/types.fidl
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/transformer.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/transformer.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/wire_format_metadata.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_creation_tokens.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_identity.h
@@ -3464,7 +3462,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/health.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/hierarchy.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/inspect.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/reader.h
-FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/value_list.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/vmo/block.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/vmo/scanner.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/include/lib/inspect/cpp/vmo/snapshot.h
@@ -3674,13 +3671,19 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediastreams/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/common.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/host_name_resolver.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/host_name_subscriber.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/proxy_host_publisher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/service_instance_publisher.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/service_instance_resolver.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/service_subscriber.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.clientlevel/clientlevel.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.systemmode/systemmode.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/progress.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings.policy/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/overview.fidl

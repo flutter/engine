@@ -30,7 +30,18 @@ void TextureMTL::SetLabel(const std::string_view& label) {
   [texture_ setLabel:@(label.data())];
 }
 
-bool TextureMTL::SetContents(const uint8_t* contents, size_t length) {
+// |Texture|
+bool TextureMTL::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                               size_t slice) {
+  // Metal has no threading restrictions. So we can pass this data along to the
+  // client rendering API immediately.
+  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), slice);
+}
+
+// |Texture|
+bool TextureMTL::OnSetContents(const uint8_t* contents,
+                               size_t length,
+                               size_t slice) {
   if (!IsValid() || !contents) {
     return false;
   }
@@ -48,10 +59,12 @@ bool TextureMTL::SetContents(const uint8_t* contents, size_t length) {
   // that there seems to be no error handling guidance.
   const auto region =
       MTLRegionMake2D(0u, 0u, desc.size.width, desc.size.height);
-  [texture_ replaceRegion:region                 //
-              mipmapLevel:0u                     //
-                withBytes:contents               //
-              bytesPerRow:desc.GetBytesPerRow()  //
+  [texture_ replaceRegion:region                            //
+              mipmapLevel:0u                                //
+                    slice:slice                             //
+                withBytes:contents                          //
+              bytesPerRow:desc.GetBytesPerRow()             //
+            bytesPerImage:desc.GetByteSizeOfBaseMipLevel()  //
   ];
 
   return true;

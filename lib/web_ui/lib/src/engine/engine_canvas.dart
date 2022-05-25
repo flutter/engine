@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import 'dom.dart';
 import 'html/painting.dart';
 import 'html/render_vertices.dart';
 import 'text/canvas_paragraph.dart';
@@ -22,7 +23,7 @@ import 'vector_math.dart';
 /// This can be used either as an interface or super-class.
 abstract class EngineCanvas {
   /// The element that is attached to the DOM.
-  html.Element get rootElement;
+  DomElement get rootElement;
 
   void dispose() {
     clear();
@@ -257,18 +258,18 @@ mixin SaveStackTracking on EngineCanvas {
   }
 }
 
-html.Element drawParagraphElement(
+DomElement drawParagraphElement(
   CanvasParagraph paragraph,
   ui.Offset offset, {
   Matrix4? transform,
 }) {
   assert(paragraph.isLaidOut);
 
-  final html.HtmlElement paragraphElement = paragraph.toDomElement();
+  final DomHTMLElement paragraphElement = paragraph.toDomElement();
 
   if (transform != null) {
     setElementTransform(
-      paragraphElement,
+      paragraphElement as html.Element,
       transformWithOffset(transform, offset).storage,
     );
   }
@@ -295,7 +296,7 @@ mixin SaveElementStackTracking on EngineCanvas {
   /// The element at the top of the element stack, or [rootElement] if the stack
   /// is empty.
   html.Element get currentElement =>
-      _elementStack.isEmpty ? rootElement : _elementStack.last;
+      _elementStack.isEmpty ? rootElement as html.Element : _elementStack.last;
 
   /// The stack that maintains the DOM elements used to express certain paint
   /// operations, such as clips.

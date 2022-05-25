@@ -2053,6 +2053,48 @@ Future<Codec> instantiateImageCodec(
   bool allowUpscaling = true,
 }) async {
   final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(list);
+  return instantiateImageCodecFromBuffer(
+    buffer,
+    targetWidth: targetWidth,
+    targetHeight: targetHeight,
+    allowUpscaling: allowUpscaling,
+  );
+}
+
+/// Instantiates an image [Codec].
+///
+/// This method is a convenience wrapper around the [ImageDescriptor] API, and
+/// using [ImageDescriptor] directly is preferred since it allows the caller to
+/// make better determinations about how and whether to use the `targetWidth`
+/// and `targetHeight` parameters.
+///
+/// The [buffer] parameter is the binary image data (e.g a PNG or GIF binary data).
+/// The data can be for either static or animated images. The following image
+/// formats are supported: {@macro dart.ui.imageFormats}
+///
+/// The [targetWidth] and [targetHeight] arguments specify the size of the
+/// output image, in image pixels. If they are not equal to the intrinsic
+/// dimensions of the image, then the image will be scaled after being decoded.
+/// If the `allowUpscaling` parameter is not set to true, both dimensions will
+/// be capped at the intrinsic dimensions of the image, even if only one of
+/// them would have exceeded those intrinsic dimensions. If exactly one of these
+/// two arguments is specified, then the aspect ratio will be maintained while
+/// forcing the image to match the other given dimension. If neither is
+/// specified, then the image maintains its intrinsic size.
+///
+/// Scaling the image to larger than its intrinsic size should usually be
+/// avoided, since it causes the image to use more memory than necessary.
+/// Instead, prefer scaling the [Canvas] transform. If the image must be scaled
+/// up, the `allowUpscaling` parameter must be set to true.
+///
+/// The returned future can complete with an error if the image decoding has
+/// failed.
+Future<Codec> instantiateImageCodecFromBuffer(
+  ImmutableBuffer buffer, {
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
+}) async {
   final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
   if (!allowUpscaling) {
     if (targetWidth != null && targetWidth > descriptor.width) {
@@ -2087,8 +2129,9 @@ Future<void> _decodeImageFromListAsync(Uint8List list,
 
 /// Convert an array of pixel values into an [Image] object.
 ///
-/// The `pixels` parameter is the pixel data in the encoding described by
-/// `format`.
+/// The `pixels` parameter is the pixel data. They are packed in bytes in the
+/// order described by `format`, then grouped in rows, from left to right,
+/// then top to bottom.
 ///
 /// The `rowBytes` parameter is the number of bytes consumed by each row of
 /// pixels in the data buffer. If unspecified, it defaults to `width` multiplied
@@ -3869,7 +3912,9 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     required ByteBuffer spirv,
     bool debugPrint = false,
   }) {
-    return Future<FragmentProgram>(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
+    // Delay compilation without creating a timer, which interacts poorly with the
+    // flutter test framework. See: https://github.com/flutter/flutter/issues/104084
+    return Future<FragmentProgram>.microtask(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
   }
 
   @pragma('vm:entry-point')
@@ -5511,7 +5556,7 @@ class Shadow {
 /// The creator of this object is responsible for calling [dispose] when it is
 /// no longer needed.
 class ImmutableBuffer extends NativeFieldWrapperClass1 {
-  ImmutableBuffer._(this.length);
+  ImmutableBuffer._(this._length);
 
   /// Creates a copy of the data from a [Uint8List] suitable for internal use
   /// in the engine.
@@ -5521,10 +5566,24 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
       instance._init(list, callback);
     }).then((_) => instance);
   }
+
+  /// Create a buffer from the asset with key [assetKey].
+  ///
+  /// Throws an [Exception] if the asset does not exist.
+  static Future<ImmutableBuffer> fromAsset(String assetKey) {
+    final ImmutableBuffer instance = ImmutableBuffer._(0);
+    return _futurize((_Callback<int> callback) {
+      return instance._initFromAsset(assetKey, callback);
+    }).then((int length) => instance.._length = length);
+  }
+
   void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
 
+  String? _initFromAsset(String assetKey, _Callback<int> callback) native 'ImmutableBuffer_initFromAsset';
+
   /// The length, in bytes, of the underlying data.
-  final int length;
+  int get length => _length;
+  int _length;
 
   bool _debugDisposed = false;
 
@@ -5579,8 +5638,9 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
 
   /// Creates an image descriptor from raw image pixels.
   ///
-  /// The `pixels` parameter is the pixel data in the encoding described by
-  /// `format`.
+  /// The `pixels` parameter is the pixel data. They are packed in bytes in the
+  /// order described by `pixelFormat`, then grouped in rows, from left to right,
+  /// then top to bottom.
   ///
   /// The `rowBytes` parameter is the number of bytes consumed by each row of
   /// pixels in the data buffer. If unspecified, it defaults to `width` multiplied

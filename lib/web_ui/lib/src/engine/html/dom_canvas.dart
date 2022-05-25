@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../engine_canvas.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
@@ -23,7 +24,7 @@ import 'shaders/shader.dart';
 /// A canvas that renders to DOM elements and CSS properties.
 class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
-  final html.Element rootElement;
+  final DomElement rootElement;
 
   DomCanvas(this.rootElement);
 
@@ -128,7 +129,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
     final html.Element paragraphElement = drawParagraphElement(
         paragraph as CanvasParagraph, offset,
-        transform: currentTransform);
+        transform: currentTransform) as html.Element;
     currentElement.append(paragraphElement);
   }
 
