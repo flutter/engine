@@ -1635,6 +1635,8 @@ Future<void> testMain() async {
                 'deltaEnd': -1,
                 'selectionBase': 2,
                 'selectionExtent': 5,
+                'composingBase': null,
+                'composingExtent': null
               }
             ],
           }
