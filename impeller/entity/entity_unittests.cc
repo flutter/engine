@@ -962,7 +962,7 @@ TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithoutIndex) {
 
   std::shared_ptr<VerticesContents> contents =
       std::make_shared<VerticesContents>(vertices);
-  contents->set_color(Color::White());
+  contents->SetColor(Color::White());
   Entity e;
   e.SetContents(contents);
 

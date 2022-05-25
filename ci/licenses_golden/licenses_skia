@@ -1,4 +1,4 @@
-Signature: 4e1c45cee36ad8dfde5e3f99f83b586a
+Signature: 5e7b63305018b65d70df581827534665
 
 UNUSED LICENSES:
 
@@ -2873,9 +2873,6 @@ FILE: ../../../third_party/skia/include/ports/SkFontMgr_directory.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_empty.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_fontconfig.h
 FILE: ../../../third_party/skia/include/private/SkMutex.h
-FILE: ../../../third_party/skia/include/private/SkNx.h
-FILE: ../../../third_party/skia/include/private/SkNx_neon.h
-FILE: ../../../third_party/skia/include/private/SkNx_sse.h
 FILE: ../../../third_party/skia/include/private/SkSemaphore.h
 FILE: ../../../third_party/skia/include/private/SkSpinlock.h
 FILE: ../../../third_party/skia/include/private/SkTHash.h
@@ -3031,10 +3028,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/ops/LatticeOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/LatticeOp.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/TriangulatingPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/ops/TriangulatingPathRenderer.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrTextBlob.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrTextBlob.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrTextBlobRedrawCoordinator.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/text/GrTextBlobRedrawCoordinator.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/v1/Device_drawTexture.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/v1/SurfaceDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/v1/SurfaceDrawContext_v1.h
@@ -3062,9 +3055,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkUtil.h
 FILE: ../../../third_party/skia/src/image/SkImage_Gpu.h
 FILE: ../../../third_party/skia/src/image/SkImage_Lazy.cpp
-FILE: ../../../third_party/skia/src/opts/Sk4px_NEON.h
-FILE: ../../../third_party/skia/src/opts/Sk4px_SSE2.h
-FILE: ../../../third_party/skia/src/opts/Sk4px_none.h
 FILE: ../../../third_party/skia/src/opts/SkBlitMask_opts.h
 FILE: ../../../third_party/skia/src/opts/SkBlitRow_opts.h
 FILE: ../../../third_party/skia/src/opts/SkOpts_sse41.cpp
@@ -3101,6 +3091,10 @@ FILE: ../../../third_party/skia/src/text/gpu/DistanceFieldAdjustTable.cpp
 FILE: ../../../third_party/skia/src/text/gpu/DistanceFieldAdjustTable.h
 FILE: ../../../third_party/skia/src/text/gpu/StrikeCache.cpp
 FILE: ../../../third_party/skia/src/text/gpu/StrikeCache.h
+FILE: ../../../third_party/skia/src/text/gpu/TextBlob.cpp
+FILE: ../../../third_party/skia/src/text/gpu/TextBlob.h
+FILE: ../../../third_party/skia/src/text/gpu/TextBlobRedrawCoordinator.cpp
+FILE: ../../../third_party/skia/src/text/gpu/TextBlobRedrawCoordinator.h
 FILE: ../../../third_party/skia/src/utils/SkPaintFilterCanvas.cpp
 FILE: ../../../third_party/skia/src/xps/SkXPSDocument.cpp
 ----------------------------------------------------------------------------------------------------
@@ -5895,6 +5889,7 @@ FILE: ../../../third_party/skia/gm/crbug_1313579.cpp
 FILE: ../../../third_party/skia/include/core/SkAlphaType.h
 FILE: ../../../third_party/skia/include/core/SkCapabilities.h
 FILE: ../../../third_party/skia/include/core/SkColorType.h
+FILE: ../../../third_party/skia/include/core/SkCombinationBuilder.h
 FILE: ../../../third_party/skia/include/gpu/GpuTypes.h
 FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/include/sksl/SkSLVersion.h
@@ -5903,6 +5898,7 @@ FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_check_includes/baz
 FILE: ../../../third_party/skia/infra/bots/task_drivers/check_generated_bazel_files/check_generated_bazel_files.go
 FILE: ../../../third_party/skia/src/core/SkBuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/core/SkCapabilities.cpp
+FILE: ../../../third_party/skia/src/core/SkCombinationBuilder.cpp
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
 FILE: ../../../third_party/skia/src/core/SkKeyContext.cpp
 FILE: ../../../third_party/skia/src/core/SkKeyContext.h
@@ -5960,6 +5956,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/render/MiddleOutFanRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/StencilAndCoverDSS.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateCurvesRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateCurvesRenderStep.h
+FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateStrokesRenderStep.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateStrokesRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateWedgesRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/TessellateWedgesRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/FixedCountBufferUtils.cpp

@@ -24,7 +24,7 @@ class VerticesContents final : public Contents {
 
   ~VerticesContents() override;
 
-  void set_color(Color color) { color_ = color.Premultiply(); }
+  void SetColor(Color color);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;

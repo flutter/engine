@@ -128,8 +128,12 @@ struct GLProc {
   PROC(GetShaderiv);                         \
   PROC(GetString);                           \
   PROC(GetUniformLocation);                  \
+  PROC(IsBuffer);                            \
   PROC(IsFramebuffer);                       \
   PROC(IsProgram);                           \
+  PROC(IsRenderbuffer);                      \
+  PROC(IsShader);                            \
+  PROC(IsTexture);                           \
   PROC(LinkProgram);                         \
   PROC(RenderbufferStorage);                 \
   PROC(Scissor);                             \
@@ -189,7 +193,7 @@ class ProcTableGLES {
 
   bool IsCurrentFramebufferComplete() const;
 
-  void SetDebugLabel(DebugResourceType type,
+  bool SetDebugLabel(DebugResourceType type,
                      GLint name,
                      const std::string& label) const;
 

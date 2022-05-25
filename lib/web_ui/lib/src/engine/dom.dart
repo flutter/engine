@@ -24,6 +24,7 @@ class DomWindow {}
 
 extension DomWindowExtension on DomWindow {
   external DomConsole get console;
+  external num get devicePixelRatio;
   external DomDocument get document;
   external int? get innerHeight;
   external int? get innerWidth;
@@ -134,8 +135,12 @@ extension DomProgressEventExtension on DomProgressEvent {
 class DomNode extends DomEventTarget {}
 
 extension DomNodeExtension on DomNode {
+  external DomNode? get firstChild;
+  external String get innerText;
+  external DomNode? get lastChild;
   external DomNode appendChild(DomNode node);
-  external DomElement? get parentElement;
+  DomElement? get parent => js_util.getProperty(this, 'parentElement');
+  String? get text => js_util.getProperty(this, 'textContent');
   external DomNode? get parentNode;
   external DomNode insertBefore(DomNode newNode, DomNode? referenceNode);
   void remove() {
@@ -147,6 +152,8 @@ extension DomNodeExtension on DomNode {
 
   external DomNode removeChild(DomNode child);
   external bool? get isConnected;
+  set text(String? value) =>
+      js_util.setProperty<String?>(this, 'textContent', value);
   external DomNode cloneNode(bool? deep);
 }
 
@@ -218,6 +225,23 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
       setProperty('font-feature-settings', value, '');
   set fontVariationSettings(String value) =>
       setProperty('font-variation-settings', value, '');
+  set visibility(String value) => setProperty('visibility', value, '');
+  set overflow(String value) => setProperty('overflow', value, '');
+  set boxShadow(String value) => setProperty('box-shadow', value, '');
+  set borderTopLeftRadius(String value) =>
+      setProperty('border-top-left-radius', value, '');
+  set borderTopRightRadius(String value) =>
+      setProperty('border-top-right-radius', value, '');
+  set borderBottomLeftRadius(String value) =>
+      setProperty('border-bottom-left-radius', value, '');
+  set borderBottomRightRadius(String value) =>
+      setProperty('border-bottom-right-radius', value, '');
+  set borderRadius(String value) => setProperty('border-radius', value, '');
+  set perspective(String value) => setProperty('perspective', value, '');
+  set padding(String value) => setProperty('padding', value, '');
+  set backgroundImage(String value) =>
+      setProperty('background-image', value, '');
+  set border(String value) => setProperty('border', value, '');
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -249,6 +273,21 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get fontFeatureSettings => getPropertyValue('font-feature-settings');
   String get fontVariationSettings =>
       getPropertyValue('font-variation-settings');
+  String get visibility => getPropertyValue('visibility');
+  String get overflow => getPropertyValue('overflow');
+  String get boxShadow => getPropertyValue('box-shadow');
+  String get borderTopLeftRadius => getPropertyValue('border-top-left-radius');
+  String get borderTopRightRadius =>
+      getPropertyValue('border-top-right-radius');
+  String get borderBottomLeftRadius =>
+      getPropertyValue('border-bottom-left-radius');
+  String get borderBottomRightRadius =>
+      getPropertyValue('border-bottom-right-radius');
+  String get borderRadius => getPropertyValue('border-radius');
+  String get perspective => getPropertyValue('perspective');
+  String get padding => getPropertyValue('padding');
+  String get backgroundImage => getPropertyValue('background-image');
+  String get border => getPropertyValue('border');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -284,6 +323,19 @@ class DomHTMLBodyElement extends DomHTMLElement {}
 
 @JS()
 @staticInterop
+class DomHTMLImageElement extends DomHTMLElement {}
+
+DomHTMLImageElement createDomHTMLImageElement() =>
+    domDocument.createElement('img') as DomHTMLImageElement;
+
+extension DomHTMLImageElemenExtension on DomHTMLImageElement {
+  external String? get alt;
+  external set alt(String? value);
+  external set src(String value);
+}
+
+@JS()
+@staticInterop
 class DomHTMLScriptElement extends DomHTMLElement {}
 
 extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
@@ -299,6 +351,13 @@ class DomHTMLDivElement extends DomHTMLElement {}
 
 DomHTMLDivElement createDomHTMLDivElement() =>
     domDocument.createElement('div') as DomHTMLDivElement;
+
+@JS()
+@staticInterop
+class DomHTMLButtonElement extends DomHTMLElement {}
+
+DomHTMLButtonElement createDomHTMLButtonElement() =>
+    domDocument.createElement('button') as DomHTMLButtonElement;
 
 @JS()
 @staticInterop
@@ -339,6 +398,7 @@ extension DomCanvasElementExtension on DomCanvasElement {
   external set width(int? value);
   external int? get height;
   external set height(int? value);
+  external bool? get isConnected;
   String toDataURL([String? type]) =>
       js_util.callMethod(this, 'toDataURL', <Object>[if (type != null) type]);
 

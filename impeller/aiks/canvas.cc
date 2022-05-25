@@ -307,7 +307,7 @@ void Canvas::DrawVertices(Vertices vertices,
                           Paint paint) {
   std::shared_ptr<VerticesContents> contents =
       std::make_shared<VerticesContents>(std::move(vertices));
-  contents->set_color(paint.color);
+  contents->SetColor(paint.color);
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
