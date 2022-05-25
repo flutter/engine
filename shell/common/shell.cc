@@ -1874,6 +1874,11 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     }
 
     response->AddMember("snapshots", snapshots, allocator);
+
+    const auto& frame_size = last_layer_tree->frame_size();
+    response->AddMember("frame_width", frame_size.width(), allocator);
+    response->AddMember("frame_height", frame_size.height(), allocator);
+
     return true;
   } else {
     const char* error =
