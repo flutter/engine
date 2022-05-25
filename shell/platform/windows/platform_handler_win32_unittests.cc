@@ -45,8 +45,9 @@ class TestPlatformHandlerWin32 : public PlatformHandlerWin32 {
   explicit TestPlatformHandlerWin32(
       BinaryMessenger* messenger,
       FlutterWindowsView* view,
-      std::unique_ptr<ScopedClipboardInterface> clipboard = nullptr)
-      : PlatformHandlerWin32(messenger, view, std::move(clipboard)) {}
+      std::optional<std::function<std::unique_ptr<ScopedClipboardInterface>()>>
+          clipboard_builder = std::nullopt)
+      : PlatformHandlerWin32(messenger, view, clipboard_builder) {}
 
   virtual ~TestPlatformHandlerWin32() = default;
 
@@ -99,7 +100,7 @@ TestScopedClipboard::TestScopedClipboard(
     std::shared_ptr<MockSystemClipboard> clipboard = nullptr) {
   open_error_ = open_error;
   has_strings_ = has_strings;
-  clipboard_ = std::move(clipboard);
+  clipboard_ = clipboard;
 }
 
 TestScopedClipboard::~TestScopedClipboard() {
@@ -144,9 +145,9 @@ TEST(PlatformHandlerWin32, HasStringsAccessDeniedReturnsFalseWithoutError) {
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
   // HasStrings will receive access denied on the clipboard, but will return
   // false without error.
-  PlatformHandlerWin32 platform_handler(
-      &messenger, &view,
-      std::make_unique<TestScopedClipboard>(kAccessDeniedErrorCode, true));
+  PlatformHandlerWin32 platform_handler(&messenger, &view, []() {
+    return std::make_unique<TestScopedClipboard>(kAccessDeniedErrorCode, true);
+  });
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
@@ -180,9 +181,9 @@ TEST(PlatformHandlerWin32, HasStringsSuccessWithStrings) {
   FlutterWindowsView view(
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
   // HasStrings will succeed and return true.
-  PlatformHandlerWin32 platform_handler(
-      &messenger, &view,
-      std::make_unique<TestScopedClipboard>(kErrorSuccess, true));
+  PlatformHandlerWin32 platform_handler(&messenger, &view, []() {
+    return std::make_unique<TestScopedClipboard>(kErrorSuccess, true);
+  });
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
@@ -216,9 +217,9 @@ TEST(PlatformHandlerWin32, HasStringsSuccessWithoutStrings) {
   FlutterWindowsView view(
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
   // HasStrings will succeed and return false.
-  PlatformHandlerWin32 platform_handler(
-      &messenger, &view,
-      std::make_unique<TestScopedClipboard>(kErrorSuccess, false));
+  PlatformHandlerWin32 platform_handler(&messenger, &view, []() {
+    return std::make_unique<TestScopedClipboard>(kErrorSuccess, false);
+  });
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
@@ -252,9 +253,9 @@ TEST(PlatformHandlerWin32, HasStringsError) {
   FlutterWindowsView view(
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
   // HasStrings will fail.
-  PlatformHandlerWin32 platform_handler(
-      &messenger, &view,
-      std::make_unique<TestScopedClipboard>(kArbitraryErrorCode, true));
+  PlatformHandlerWin32 platform_handler(&messenger, &view, []() {
+    return std::make_unique<TestScopedClipboard>(kArbitraryErrorCode, true);
+  });
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
   auto& allocator = args->GetAllocator();
@@ -289,9 +290,10 @@ TEST(PlatformHandlerWin32, ReleaseClipboard) {
   FlutterWindowsView view(
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
   TestPlatformHandlerWin32 platform_handler(
-      &messenger, &view,
-      std::make_unique<TestScopedClipboard>(kErrorSuccess, true,
-                                            system_clipboard));
+      &messenger, &view, [system_clipboard]() {
+        return std::make_unique<TestScopedClipboard>(kErrorSuccess, false,
+                                                     system_clipboard);
+      });
 
   platform_handler.CallGetPlainText(std::make_unique<MockMethodResult>(),
                                     "text");

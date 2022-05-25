@@ -48,7 +48,8 @@ class PlatformHandlerWin32 : public PlatformHandler {
   explicit PlatformHandlerWin32(
       BinaryMessenger* messenger,
       FlutterWindowsView* view,
-      std::unique_ptr<ScopedClipboardInterface> clipboard = nullptr);
+      std::optional<std::function<std::unique_ptr<ScopedClipboardInterface>()>>
+          clipboard_builder = std::nullopt);
 
   virtual ~PlatformHandlerWin32();
 
@@ -74,8 +75,8 @@ class PlatformHandlerWin32 : public PlatformHandler {
  private:
   // A reference to the Flutter view.
   FlutterWindowsView* view_;
-  // A clipboard instance that can be passed in for mocking in tests.
-  std::unique_ptr<ScopedClipboardInterface> clipboard_;
+  // A clipboard builder that can be passed in for mocking in tests.
+  std::function<std::unique_ptr<ScopedClipboardInterface>()> clipboard_builder_;
 };
 
 }  // namespace flutter
