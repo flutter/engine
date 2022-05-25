@@ -23,6 +23,12 @@ class ImageFilterLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
+  // Whether this image filter layer is an matrix filter that applies
+  // a non-negative scale/translate to a leaf-node-canvas that also
+  // only applies non-negative scale/translate. This is used to
+  // optimize the performance of the Android zoom page transition.
+  bool DrawScaledRaster(PaintContext& context, const SkPaint* paint) const;
+
  private:
   // The ImageFilterLayer might cache the filtered output of this layer
   // if the layer remains stable (if it is not animating for instance).

@@ -109,6 +109,144 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
             }));
 }
 
+TEST_F(ImageFilterLayerTest, ScaleMatrixFilter) {
+  use_mock_raster_cache();
+  MockRasterCache* mock_cache = static_cast<MockRasterCache*>(raster_cache());
+
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+
+  auto dl_layer_filter = std::make_shared<DlMatrixImageFilter>(
+      SkMatrix().setScale(2.0, 2.0),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
+  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  layer->Add(mock_layer);
+
+  mock_cache->Prepare(preroll_context(), layer.get(),
+                      paint_context().leaf_nodes_canvas->getTotalMatrix(),
+                      RasterCacheLayerStrategy::kLayerChildren);
+
+  EXPECT_TRUE(layer->DrawScaledRaster(paint_context(), nullptr));
+}
+
+TEST_F(ImageFilterLayerTest, ScaleMatrixFilterWithNegativeScaleLeafNodes) {
+  use_mock_raster_cache();
+  MockRasterCache* mock_cache = static_cast<MockRasterCache*>(raster_cache());
+
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+
+  auto dl_layer_filter = std::make_shared<DlMatrixImageFilter>(
+      SkMatrix().setScale(2.0, 2.0),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
+  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  layer->Add(mock_layer);
+
+  // Add a negative scale transform to the leaf node canvas.
+  paint_context().leaf_nodes_canvas->setMatrix(SkMatrix().setScale(-1.0, -1.0));
+
+  mock_cache->Prepare(preroll_context(), layer.get(),
+                      paint_context().leaf_nodes_canvas->getTotalMatrix(),
+                      RasterCacheLayerStrategy::kLayerChildren);
+
+  EXPECT_FALSE(layer->DrawScaledRaster(paint_context(), nullptr));
+}
+
+TEST_F(ImageFilterLayerTest, ScaleMatrixFilterWithRotationLeafNodes) {
+  use_mock_raster_cache();
+  MockRasterCache* mock_cache = static_cast<MockRasterCache*>(raster_cache());
+
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+
+  auto dl_layer_filter = std::make_shared<DlMatrixImageFilter>(
+      SkMatrix().setScale(2.0, 2.0),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
+  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  layer->Add(mock_layer);
+
+  // Add a negative scale transform to the leaf node canvas.
+  paint_context().leaf_nodes_canvas->setMatrix(SkMatrix().setRotate(30));
+
+  mock_cache->Prepare(preroll_context(), layer.get(),
+                      paint_context().leaf_nodes_canvas->getTotalMatrix(),
+                      RasterCacheLayerStrategy::kLayerChildren);
+
+  EXPECT_FALSE(layer->DrawScaledRaster(paint_context(), nullptr));
+}
+
+TEST_F(ImageFilterLayerTest, TranslateMatrixFilter) {
+  use_mock_raster_cache();
+  MockRasterCache* mock_cache = static_cast<MockRasterCache*>(raster_cache());
+
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+
+  auto dl_layer_filter = std::make_shared<DlMatrixImageFilter>(
+      SkMatrix().setTranslate(4.0, -2.0),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
+  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  layer->Add(mock_layer);
+
+  mock_cache->Prepare(preroll_context(), layer.get(),
+                      paint_context().leaf_nodes_canvas->getTotalMatrix(),
+                      RasterCacheLayerStrategy::kLayerChildren);
+
+  EXPECT_TRUE(layer->DrawScaledRaster(paint_context(), nullptr));
+}
+
+TEST_F(ImageFilterLayerTest, NegativeScaleMatrixFilter) {
+  use_mock_raster_cache();
+  MockRasterCache* mock_cache = static_cast<MockRasterCache*>(raster_cache());
+
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+
+  auto dl_layer_filter = std::make_shared<DlMatrixImageFilter>(
+      SkMatrix().setScale(-2.0, -2.0),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
+  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  layer->Add(mock_layer);
+
+  mock_cache->Prepare(preroll_context(), layer.get(),
+                      paint_context().leaf_nodes_canvas->getTotalMatrix(),
+                      RasterCacheLayerStrategy::kLayerChildren);
+
+  EXPECT_FALSE(layer->DrawScaledRaster(paint_context(), nullptr));
+}
+
+TEST_F(ImageFilterLayerTest, RotationMatrixFilter) {
+  use_mock_raster_cache();
+  MockRasterCache* mock_cache = static_cast<MockRasterCache*>(raster_cache());
+
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+
+  auto dl_layer_filter = std::make_shared<DlMatrixImageFilter>(
+      SkMatrix().setRotate(30),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
+  auto layer = std::make_shared<ImageFilterLayer>(dl_layer_filter);
+  layer->Add(mock_layer);
+
+  mock_cache->Prepare(preroll_context(), layer.get(),
+                      paint_context().leaf_nodes_canvas->getTotalMatrix(),
+                      RasterCacheLayerStrategy::kLayerChildren);
+
+  EXPECT_FALSE(layer->DrawScaledRaster(paint_context(), nullptr));
+}
+
 TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
   const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);

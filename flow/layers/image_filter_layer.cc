@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/image_filter_layer.h"
-#include <iostream>
 
 namespace flutter {
 
@@ -14,9 +13,7 @@ ImageFilterLayer::ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter)
       render_count_(1) {}
 
 ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
-    : filter_(filter == nullptr
-                  ? nullptr
-                  : std::make_shared<DlUnknownImageFilter>(filter)),
+    : filter_(DlImageFilter::From(filter)),
       skia_filter_(std::move(filter)),
       transformed_filter_(nullptr),
       render_count_(1) {}
@@ -106,6 +103,28 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   }
 }
 
+bool ImageFilterLayer::DrawScaledRaster(PaintContext& context,
+                                        const SkPaint* paint) const {
+  auto matrix_filter = filter_->asMatrix();
+  if (matrix_filter == nullptr) {
+    return false;
+  }
+  auto matrix = &matrix_filter->matrix();
+  auto sampling = &matrix_filter->sampling();
+  if (!matrix->isScaleTranslate() || matrix->getScaleX() < 0.0 ||
+      matrix->getScaleY() < 0.0) {
+    return false;
+  }
+  auto canvas_matrix = context.leaf_nodes_canvas->getTotalMatrix();
+  if (!canvas_matrix.isScaleTranslate() || canvas_matrix.getScaleX() < 0.0 ||
+      canvas_matrix.getScaleY() < 0.0) {
+    return false;
+  }
+  return context.raster_cache->DrawWithMatrix(
+      this, *context.leaf_nodes_canvas, matrix, sampling,
+      RasterCacheLayerStrategy::kLayerChildren, paint);
+}
+
 void ImageFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
@@ -113,20 +132,8 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   AutoCachePaint cache_paint(context);
 
   if (context.raster_cache) {
-    // Special case an ImageFilter.matrix transformation that only
-    // applies scaling/translation. This is used by the default Android zoom
-    // page transition.
-    auto matrix_filter = filter_->asMatrix();
-    if (matrix_filter != nullptr) {
-      auto matrix = &matrix_filter->matrix();
-      auto sampling = &matrix_filter->sampling();
-      if (matrix->isScaleTranslate() && matrix->getScaleX() >= 0.0 &&
-          matrix->getScaleY() >= 0.0 &&
-          context.raster_cache->DrawWithMatrix(
-              this, *context.leaf_nodes_canvas, matrix, sampling,
-              RasterCacheLayerStrategy::kLayerChildren, cache_paint.paint())) {
-        return;
-      }
+    if (DrawScaledRaster(context, cache_paint.paint())) {
+      return;
     }
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
                                    RasterCacheLayerStrategy::kLayer,
