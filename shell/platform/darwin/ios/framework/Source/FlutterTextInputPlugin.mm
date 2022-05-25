@@ -2092,8 +2092,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     [self setSelectionRects:args];
     result(nil);
   } else if ([method isEqualToString:kStartCapturingTextFromCameraMethod]) {
-      [self startCapturingTextFromCamera];
-      result(nil);
+    [self startCapturingTextFromCamera];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
