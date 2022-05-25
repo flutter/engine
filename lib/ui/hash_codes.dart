@@ -43,7 +43,7 @@ class _Jenkins {
 /// ```
 @Deprecated(
   'Use Object.hash() instead. '
-  'This feature was deprecated in v2.9.0-0.1.pre'
+  'This feature was deprecated in v3.1.0-0.0.pre.897'
 )
 int hashValues(
   Object? arg01,            Object? arg02,          [ Object? arg03 = _hashEnd,
@@ -119,7 +119,7 @@ int hashValues(
 /// given null as if given an empty list.
 @Deprecated(
   'Use Object.hashAll() or Object.hashAllUnordered() instead. '
-  'This feature was deprecated in v2.9.0-0.1.pre'
+  'This feature was deprecated in v3.1.0-0.0.pre.897'
 )
 int hashList(Iterable<Object?>? arguments) {
   int result = 0;
