@@ -1820,6 +1820,13 @@ static rapidjson::Value SerializeLayerSnapshot(
   result.AddMember("layer_unique_id", snapshot.GetLayerUniqueId(), allocator);
   result.AddMember("duration_micros", snapshot.GetDuration().ToMicroseconds(),
                    allocator);
+
+  const SkRect bounds = snapshot.GetBounds();
+  result.AddMember("top", bounds.top(), allocator);
+  result.AddMember("left", bounds.left(), allocator);
+  result.AddMember("width", bounds.width(), allocator);
+  result.AddMember("height", bounds.height(), allocator);
+
   sk_sp<SkData> snapshot_bytes = snapshot.GetSnapshot();
   if (snapshot_bytes) {
     rapidjson::Value image;
