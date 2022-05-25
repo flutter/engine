@@ -88,7 +88,7 @@ struct TexImage2DData {
       case PixelFormat::kR8G8B8A8UNormInt:
       case PixelFormat::kB8G8R8A8UNormInt:
       case PixelFormat::kR8G8B8A8UNormIntSRGB:
-      case PixelFormat::kB8G8R8A8UNormIntSRGB:
+      case PixelFormat::kB8G8R8A8UNormIntSRGB:g
         internal_format = GL_RGBA;
         external_format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
@@ -338,6 +338,18 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 }
 
+static std::optional<GLenum> ToTextureTarget(TextureType type) {
+  switch (type) {
+    case TextureType::kTexture2D:
+      return GL_TEXTURE_2D;
+    case TextureType::kTexture2DMultisample:
+      return std::nullopt;
+    case TextureType::kTextureCube:
+      return GL_TEXTURE_CUBE_MAP;
+  }
+  FML_UNREACHABLE();
+}
+
 bool TextureGLES::Bind() const {
   if (!IsValid()) {
     return false;
@@ -348,9 +360,14 @@ bool TextureGLES::Bind() const {
   }
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
-    case Type::kTexture:
-      gl.BindTexture(GL_TEXTURE_2D, handle.value());
-      break;
+    case Type::kTexture: {
+      const auto target = ToTextureTarget(GetTextureDescriptor().type);
+      if (!target.has_value()) {
+        VALIDATION_LOG << "Could not bind texture of this type.";
+        return false;
+      }
+      gl.BindTexture(target.value(), handle.value());
+    } break;
     case Type::kRenderBuffer:
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
       break;
