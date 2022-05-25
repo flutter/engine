@@ -32,10 +32,46 @@ static constexpr int kArbitraryErrorCode = 1;
 
 }  // namespace
 
+// A test version of system clipboard.
+class MockSystemClipboard {
+ public:
+  void OpenClipboard() { opened = true; }
+  void CloseClipboard() { opened = false; }
+  bool opened = false;
+};
+
+class TestPlatformHandlerWin32 : public PlatformHandlerWin32 {
+ public:
+  explicit TestPlatformHandlerWin32(
+      BinaryMessenger* messenger,
+      FlutterWindowsView* view,
+      std::unique_ptr<ScopedClipboardInterface> clipboard = nullptr)
+      : PlatformHandlerWin32(messenger, view, std::move(clipboard)) {}
+
+  virtual ~TestPlatformHandlerWin32() = default;
+
+  void CallGetPlainText(
+      std::unique_ptr<MethodResult<rapidjson::Document>> result,
+      std::string_view key) {
+    GetPlainText(std::move(result), key);
+  }
+  void CallGetHasStrings(
+      std::unique_ptr<MethodResult<rapidjson::Document>> result) {
+    GetHasStrings(std::move(result));
+  }
+  void CallSetPlainText(
+      const std::string& text,
+      std::unique_ptr<MethodResult<rapidjson::Document>> result) {
+    SetPlainText(text, std::move(result));
+  }
+};
+
 // A test version of the private ScopedClipboard.
 class TestScopedClipboard : public ScopedClipboardInterface {
  public:
-  TestScopedClipboard(int open_error, bool has_strings);
+  TestScopedClipboard(int open_error,
+                      bool has_strings,
+                      std::shared_ptr<MockSystemClipboard> clipboard);
   ~TestScopedClipboard();
 
   // Prevent copying.
@@ -54,20 +90,28 @@ class TestScopedClipboard : public ScopedClipboardInterface {
   bool opened_ = false;
   bool has_strings_;
   int open_error_;
+  std::shared_ptr<MockSystemClipboard> clipboard_;
 };
 
-TestScopedClipboard::TestScopedClipboard(int open_error, bool has_strings) {
+TestScopedClipboard::TestScopedClipboard(
+    int open_error,
+    bool has_strings,
+    std::shared_ptr<MockSystemClipboard> clipboard = nullptr) {
   open_error_ = open_error;
   has_strings_ = has_strings;
-};
+  clipboard_ = std::move(clipboard);
+}
 
 TestScopedClipboard::~TestScopedClipboard() {
-  if (opened_) {
-    ::CloseClipboard();
+  if ((!open_error_) && clipboard_ != nullptr) {
+    clipboard_->CloseClipboard();
   }
 }
 
 int TestScopedClipboard::Open(HWND window) {
+  if ((!open_error_) && clipboard_ != nullptr) {
+    clipboard_->OpenClipboard();
+  }
   return open_error_;
 }
 
@@ -235,6 +279,29 @@ TEST(PlatformHandlerWin32, HasStringsError) {
         JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
             reply, reply_size, &result);
       }));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/103205.
+TEST(PlatformHandlerWin32, ReleaseClipboard) {
+  auto system_clipboard = std::make_shared<MockSystemClipboard>();
+
+  TestBinaryMessenger messenger;
+  FlutterWindowsView view(
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
+  TestPlatformHandlerWin32 platform_handler(
+      &messenger, &view,
+      std::make_unique<TestScopedClipboard>(kErrorSuccess, true,
+                                            system_clipboard));
+
+  platform_handler.CallGetPlainText(std::make_unique<MockMethodResult>(),
+                                    "text");
+  ASSERT_FALSE(system_clipboard->opened);
+
+  platform_handler.CallGetHasStrings(std::make_unique<MockMethodResult>());
+  ASSERT_FALSE(system_clipboard->opened);
+
+  platform_handler.CallSetPlainText("", std::make_unique<MockMethodResult>());
+  ASSERT_FALSE(system_clipboard->opened);
 }
 
 }  // namespace testing
