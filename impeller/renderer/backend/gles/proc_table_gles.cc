@@ -324,7 +324,7 @@ std::string ProcTableGLES::GetProgramInfoLogString(GLuint program) const {
     return "";
   }
 
-  length = std::max<GLint>(length, 1024);
+  length = std::min<GLint>(length, 1024);
   Allocation allocation;
   if (!allocation.Truncate(length, false)) {
     return "";
