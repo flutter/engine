@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <fractional>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
