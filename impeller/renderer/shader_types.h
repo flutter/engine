@@ -72,8 +72,8 @@ struct ShaderStageIOSlot {
   size_t columns;
 
   constexpr size_t GetHash() const {
-    return fml::HashCombine(name, location, set, binding, type, bit_width,
-                            vec_size, columns);
+    return fml::HashCombine((const void*) name, location, set, binding, type,
+                            bit_width, vec_size, columns);
   }
 
   constexpr bool operator==(const ShaderStageIOSlot& other) const {
