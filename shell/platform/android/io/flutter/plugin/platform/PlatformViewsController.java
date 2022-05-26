@@ -155,12 +155,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // API level 19 is required for `android.graphics.ImageReader`.
           ensureValidAndroidVersion(19);
 
+          final int viewId = request.viewId;
           if (!validateDirection(request.direction)) {
             throw new IllegalStateException(
                 "Trying to create a view with unknown direction value: "
                     + request.direction
                     + "(view id: "
-                    + request.viewId
+                    + viewId
                     + ")");
           }
 
@@ -175,9 +176,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             createParams = factory.getCreateArgsCodec().decodeMessage(request.params);
           }
 
-          final PlatformView platformView = factory.create(context, request.viewId, createParams);
+          final PlatformView platformView = factory.create(context, viewId, createParams);
           platformView.getView().setLayoutDirection(request.direction);
-          platformViews.put(request.viewId, platformView);
+          platformViews.put(viewId, platformView);
           Log.v(TAG, "Using hybrid composition for platform view: " + viewId);
         }
 
