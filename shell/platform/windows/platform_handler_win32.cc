@@ -206,7 +206,7 @@ PlatformHandlerWin32::~PlatformHandlerWin32() = default;
 void PlatformHandlerWin32::GetPlainText(
     std::unique_ptr<MethodResult<rapidjson::Document>> result,
     std::string_view key) {
-  auto clipboard = clipboard_builder_();
+  std::unique_ptr<ScopedClipboardInterface> clipboard = clipboard_builder_();
 
   int open_result = clipboard->Open(std::get<HWND>(*view_->GetRenderTarget()));
   if (open_result != kErrorSuccess) {
@@ -241,7 +241,7 @@ void PlatformHandlerWin32::GetPlainText(
 
 void PlatformHandlerWin32::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-  auto clipboard = clipboard_builder_();
+  std::unique_ptr<ScopedClipboardInterface> clipboard = clipboard_builder_();
 
   bool hasStrings;
   int open_result = clipboard->Open(std::get<HWND>(*view_->GetRenderTarget()));
@@ -271,7 +271,7 @@ void PlatformHandlerWin32::GetHasStrings(
 void PlatformHandlerWin32::SetPlainText(
     const std::string& text,
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-  auto clipboard = clipboard_builder_();
+  std::unique_ptr<ScopedClipboardInterface> clipboard = clipboard_builder_();
 
   int open_result = clipboard->Open(std::get<HWND>(*view_->GetRenderTarget()));
   if (open_result != kErrorSuccess) {
