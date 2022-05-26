@@ -33,7 +33,7 @@ class TextLayoutService {
 
   double height = 0.0;
 
-  EngineLineMetrics? longestLine;
+  RichLineMetrics? longestLine;
 
   double minIntrinsicWidth = 0.0;
 
@@ -45,7 +45,7 @@ class TextLayoutService {
 
   bool didExceedMaxLines = false;
 
-  final List<EngineLineMetrics> lines = <EngineLineMetrics>[];
+  final List<RichLineMetrics> lines = <RichLineMetrics>[];
 
   /// The bounds that contain the text painted inside this paragraph.
   ui.Rect get paintBounds => _paintBounds;
@@ -65,7 +65,7 @@ class TextLayoutService {
   /// starts looping through the paragraph to calculate all layout metrics.
   ///
   /// It uses a [Spanometer] to perform measurements within spans of the
-  /// paragraph. It also uses [LineBuilders] to generate [EngineLineMetrics] as
+  /// paragraph. It also uses [LineBuilders] to generate [RichLineMetrics] as
   /// it iterates through the paragraph.
   ///
   /// The main loop keeps going until:
@@ -214,7 +214,7 @@ class TextLayoutService {
 
     double boundsLeft = double.infinity;
     double boundsRight = double.negativeInfinity;
-    for (final EngineLineMetrics line in lines) {
+    for (final RichLineMetrics line in lines) {
       height += line.height;
       if (alphabeticBaseline == -1.0) {
         alphabeticBaseline = line.baseline;
@@ -246,12 +246,12 @@ class TextLayoutService {
     // ********************** //
 
     if (lines.isNotEmpty) {
-      final EngineLineMetrics lastLine = lines.last;
+      final RichLineMetrics lastLine = lines.last;
       final bool shouldJustifyParagraph =
         width.isFinite &&
         paragraph.paragraphStyle.textAlign == ui.TextAlign.justify;
 
-      for (final EngineLineMetrics line in lines) {
+      for (final RichLineMetrics line in lines) {
         // Don't apply justification to the last line.
         final bool shouldJustifyLine = shouldJustifyParagraph && line != lastLine;
         _positionLineBoxes(line, withJustification: shouldJustifyLine);
@@ -313,7 +313,7 @@ class TextLayoutService {
 
   /// Positions the boxes in the given [line] and takes into account their
   /// directions, the paragraph's direction, and alignment justification.
-  void _positionLineBoxes(EngineLineMetrics line, {
+  void _positionLineBoxes(RichLineMetrics line, {
     required bool withJustification,
   }) {
     final List<RangeBox> boxes = line.boxes;
@@ -405,7 +405,7 @@ class TextLayoutService {
   ///
   /// [first] and [last] are expected to be inclusive.
   double _positionLineBoxesInReverse(
-    EngineLineMetrics line,
+    RichLineMetrics line,
     int first,
     int last, {
     required double startOffset,
@@ -431,7 +431,7 @@ class TextLayoutService {
   /// Calculates for the given [line], the amount of extra width that needs to be
   /// added to each space box in order to align the line with the rest of the
   /// paragraph.
-  double _calculateJustifyPerSpaceBox(EngineLineMetrics line) {
+  double _calculateJustifyPerSpaceBox(RichLineMetrics line) {
     final double justifyTotal = width - line.width;
 
     final int spaceBoxesToJustify = line.nonTrailingSpaceBoxCount;
@@ -444,7 +444,7 @@ class TextLayoutService {
 
   List<ui.TextBox> getBoxesForPlaceholders() {
     final List<ui.TextBox> boxes = <ui.TextBox>[];
-    for (final EngineLineMetrics line in lines) {
+    for (final RichLineMetrics line in lines) {
       for (final RangeBox box in line.boxes) {
         if (box is PlaceholderBox) {
           boxes.add(box.toTextBox(line, forPainting: false));
@@ -473,7 +473,7 @@ class TextLayoutService {
 
     final List<ui.TextBox> boxes = <ui.TextBox>[];
 
-    for (final EngineLineMetrics line in lines) {
+    for (final RichLineMetrics line in lines) {
       if (line.overlapsWith(start, end)) {
         for (final RangeBox box in line.boxes) {
           if (box is SpanBox && box.overlapsWith(start, end)) {
@@ -490,7 +490,7 @@ class TextLayoutService {
     // it possible to do hit testing. Once we find the box, we look inside that
     // box to find where exactly the `offset` is located.
 
-    final EngineLineMetrics line = _findLineForY(offset.dy);
+    final RichLineMetrics line = _findLineForY(offset.dy);
     // [offset] is to the left of the line.
     if (offset.dx <= line.left) {
       return ui.TextPosition(
@@ -517,11 +517,11 @@ class TextLayoutService {
     return ui.TextPosition(offset: line.startIndex);
   }
 
-  EngineLineMetrics _findLineForY(double y) {
+  RichLineMetrics _findLineForY(double y) {
     // We could do a binary search here but it's not worth it because the number
     // of line is typically low, and each iteration is a cheap comparison of
     // doubles.
-    for (final EngineLineMetrics line in lines) {
+    for (final RichLineMetrics line in lines) {
       if (y <= line.height) {
         return line;
       }
@@ -1001,7 +1001,7 @@ class LineSegment {
   bool get isSpaceOnly => width == 0;
 }
 
-/// Builds instances of [EngineLineMetrics] for the given [paragraph].
+/// Builds instances of [RichLineMetrics] for the given [paragraph].
 ///
 /// Usage of this class starts by calling [LineBuilder.first] to start building
 /// the first line of the paragraph.
@@ -1009,7 +1009,7 @@ class LineSegment {
 /// Then new line breaks can be found by calling [LineBuilder.findNextBreak].
 ///
 /// The line can be extended one or more times before it's built by calling
-/// [LineBuilder.build] which generates the [EngineLineMetrics] instace.
+/// [LineBuilder.build] which generates the [RichLineMetrics] instace.
 ///
 /// To start building the next line, simply call [LineBuilder.nextLine] which
 /// creates a new [LineBuilder] that can be extended and built and so on.
@@ -1485,8 +1485,8 @@ class LineBuilder {
     _currentBoxStartOffset = widthIncludingSpace;
   }
 
-  /// Builds the [EngineLineMetrics] instance that represents this line.
-  EngineLineMetrics build({String? ellipsis}) {
+  /// Builds the [RichLineMetrics] instance that represents this line.
+  RichLineMetrics build({String? ellipsis}) {
     // At the end of each line, we cut the last box of the line.
     createBox();
 
@@ -1503,8 +1503,8 @@ class LineBuilder {
 
     _processTrailingSpaces();
 
-    return EngineLineMetrics.rich(
-      lineNumber,
+    return RichLineMetrics(
+      lineNumber: lineNumber,
       ellipsis: ellipsis,
       startIndex: start.index,
       endIndex: end.index,
@@ -1517,6 +1517,7 @@ class LineBuilder {
       baseline: accumulatedHeight + ascent,
       ascent: ascent,
       descent: descent,
+      unscaledAscent: ascent,
       boxes: _boxes,
       spaceBoxCount: _spaceBoxCount,
       trailingSpaceBoxCount: _trailingSpaceBoxCount,

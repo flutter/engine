@@ -166,10 +166,10 @@ class CanvasParagraph implements ui.Paragraph {
     // 2. Append all spans to the paragraph.
 
     DomHTMLElement? lastSpanElement;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
+    final List<RichLineMetrics> lines = computeLineMetrics();
 
     for (int i = 0; i < lines.length; i++) {
-      final EngineLineMetrics line = lines[i];
+      final RichLineMetrics line = lines[i];
       final List<RangeBox> boxes = line.boxes;
       final StringBuffer buffer = StringBuffer();
 
@@ -237,27 +237,27 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
     final int index = position.offset;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
+    final List<RichLineMetrics> lines = computeLineMetrics();
 
     int i;
     for (i = 0; i < lines.length - 1; i++) {
-      final EngineLineMetrics line = lines[i];
+      final RichLineMetrics line = lines[i];
       if (index >= line.startIndex && index < line.endIndex) {
         break;
       }
     }
 
-    final EngineLineMetrics line = lines[i];
+    final RichLineMetrics line = lines[i];
     return ui.TextRange(start: line.startIndex, end: line.endIndex);
   }
 
   @override
-  List<EngineLineMetrics> computeLineMetrics() {
+  List<RichLineMetrics> computeLineMetrics() {
     return _layoutService.lines;
   }
 }
 
-void _positionSpanElement(DomElement element, EngineLineMetrics line, RangeBox box) {
+void _positionSpanElement(DomElement element, RichLineMetrics line, RangeBox box) {
   final ui.Rect boxRect = box.toTextBox(line, forPainting: true).toRect();
   element.style
     ..position = 'absolute'
