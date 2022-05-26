@@ -77,7 +77,7 @@ class PlatformHandlerWin32 : public PlatformHandler {
   FlutterWindowsView* view_;
   // A scoped clipboard provider that can be passed in for mocking in tests.
   // Use this to acquire clipboard in each operation to avoid blocking clipboard
-  // unnecessary.
+  // unnecessarily. See flutter/flutter#103205.
   std::function<std::unique_ptr<ScopedClipboardInterface>()>
       scoped_clipboard_provider_;
 };
