@@ -614,6 +614,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (void)setMarkedText:(id)string
+        selectedRange:(NSRange)selectedRange {
+}
+
+- (void)setMarkedText:(id)string
         selectedRange:(NSRange)selectedRange
      replacementRange:(NSRange)replacementRange {
   if (_activeModel == nullptr) {
