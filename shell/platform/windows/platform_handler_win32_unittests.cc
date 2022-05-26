@@ -46,8 +46,8 @@ class TestPlatformHandlerWin32 : public PlatformHandlerWin32 {
       BinaryMessenger* messenger,
       FlutterWindowsView* view,
       std::optional<std::function<std::unique_ptr<ScopedClipboardInterface>()>>
-          clipboard_builder = std::nullopt)
-      : PlatformHandlerWin32(messenger, view, clipboard_builder) {}
+          scoped_clipboard_provider = std::nullopt)
+      : PlatformHandlerWin32(messenger, view, scoped_clipboard_provider) {}
 
   virtual ~TestPlatformHandlerWin32() = default;
 
