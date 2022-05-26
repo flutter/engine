@@ -430,10 +430,10 @@ import java.util.List;
         "Executing Dart entrypoint: "
                     + host.getDartEntrypointFunctionName()
                     + ", library uri: "
-                    + libraryUri
+                    + (libraryUri
                 == null
             ? "\"\""
-            : libraryUri + ", and sending initial route: " + initialRoute);
+            : libraryUri + ", and sending initial route: " + initialRoute));
 
     // The engine needs to receive the Flutter app's initial route before executing any
     // Dart code to ensure that the initial route arrives in time to be applied.
