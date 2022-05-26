@@ -31,7 +31,8 @@ import java.util.List;
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
   @SuppressWarnings("deprecation")
-  public static final int DEFAULT_SYSTEM_UI = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+  public static final int DEFAULT_SYSTEM_UI =
+      View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
   private final Activity activity;
   private final PlatformChannel platformChannel;
