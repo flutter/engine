@@ -56,6 +56,7 @@ def ParseDepsFile(deps_file):
     deps = local_scope.get('deps', {})
     filtered_deps = []
     for k, v in deps.items():
+        print(v)
         # We currently do not support packages or cipd which are represented
         # as dictionaries.
         if isinstance(v, str):
