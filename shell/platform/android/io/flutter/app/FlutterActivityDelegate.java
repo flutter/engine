@@ -24,7 +24,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager.LayoutParams;
-import androidx.core.view.WindowCompat;
 import io.flutter.Log;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.util.Preconditions;
@@ -136,19 +135,13 @@ public final class FlutterActivityDelegate
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public void onCreate(Bundle savedInstanceState) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       Window window = activity.getWindow();
       window.addFlags(LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.setStatusBarColor(0x40000000);
-      if (Build.VERSION.SDK_INT < 30) {
-        WindowCompat.setDecorFitsSystemWindows(window, false);
-        // This ensures that the navigation bar is not hidden for APIs < 30,
-        // as dictated by the implementation of WindowCompat.
-        View view = window.getDecorView();
-        view.setSystemUiVisibility(
-            view.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-      }
+      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
     }
 
     String[] args = getArgsFromIntent(activity.getIntent());
