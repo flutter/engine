@@ -882,9 +882,9 @@ class PlatformDispatcher {
     _onPlatformBrightnessChangedZone = Zone.current;
   }
 
-  /// Indicates this device supports capture text from camera (OCR) or not
-  bool _captureTextFromCameraEnabled = false;
+  /// Indicates this device supports capture text from camera or not
   bool get captureTextFromCameraEnabled => _captureTextFromCameraEnabled;
+  bool _captureTextFromCameraEnabled = false;
 
 
   /// The setting indicating the current system font of the host platform.

@@ -110,6 +110,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
   MouseState _mouseState;
+
+  // This textField is to judge whether this device supports caputureTextFromCamera API or not.
+  // See method "captureTextFromCameraEnabled"
+  fml::scoped_nsobject<UITextField> _textField;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -622,6 +626,14 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   _splashScreenView.reset([view retain]);
   _splashScreenView.get().autoresizingMask =
       UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+}
+
+- (UITextField*)textField {
+  if (_textField.get() == nil) {
+    UITextField* newTextField = [[UITextField alloc] init];
+    _textField.reset(newTextField);
+  }
+  return _textField.get();
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
@@ -1517,11 +1529,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }];
 }
 
-- (BOOL)captureTextFromCameraEnabled {
-  /// TODO(luckysmg):How can we know this device supports OCR or not?
-  return YES;
-}
-
 - (CGFloat)textScaleFactor {
   UIContentSizeCategory category = [UIApplication sharedApplication].preferredContentSizeCategory;
   // The delta is computed by approximating Apple's typography guidelines:
@@ -1625,6 +1632,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     return @"normal";
   }
+}
+
+- (BOOL)captureTextFromCameraEnabled {
+  if (@available(iOS 15, *)) {
+    UITextField* textField = [self textField];
+    return [textField canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
+  }
+  return false;
 }
 
 #pragma mark - Status bar style

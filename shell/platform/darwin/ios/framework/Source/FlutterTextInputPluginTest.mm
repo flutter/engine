@@ -68,6 +68,7 @@ FLUTTER_ASSERT_ARC
 - (UIView*)hostView;
 - (fml::WeakPtr<FlutterTextInputPlugin>)getWeakPtr;
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView;
+- (void)startCapturingTextFromCamera;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -166,17 +167,15 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Tests
 
-- (void)testCaptureTextFromCamera {
-  FlutterTextInputView* activeView = textInputPlugin.activeView;
+- (void)testInvokeStartCapturingTextFromCamera {
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"TextInput.startCapturingTextFromCamera"
                                         arguments:nil];
-  [textInputPlugin handleMethodCall:methodCall
-                             result:^(id _Nullable result){
-                             }];
-  if (@available(iOS 15.0, *)) {
-    OCMVerify([activeView captureTextFromCamera:nil]);
-  }
+  FlutterTextInputPlugin* mockPlugin = OCMPartialMock(textInputPlugin);
+  [mockPlugin handleMethodCall:methodCall
+                        result:^(id _Nullable result){
+                        }];
+  OCMVerify([mockPlugin startCapturingTextFromCamera]);
 }
 
 - (void)testNoDanglingEnginePointer {

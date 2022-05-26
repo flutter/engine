@@ -2176,6 +2176,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)startCapturingTextFromCamera {
+  if (_activeView == nil || !_activeView.isFirstResponder) {
+    return;
+  }
   if (@available(iOS 15.0, *)) {
     [_activeView captureTextFromCamera:nil];
   }
