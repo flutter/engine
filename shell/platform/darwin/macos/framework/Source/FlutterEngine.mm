@@ -38,9 +38,9 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 }
 
 /// The private notification for voice over.
-static NSString* const EnhancedUserInterfaceNotification =
+static const NSString* EnhancedUserInterfaceNotification =
     @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
-static NSString* const EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
+static const NSString* EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
