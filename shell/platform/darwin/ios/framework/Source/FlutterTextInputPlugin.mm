@@ -2081,7 +2081,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     [self setTextInputClient:[args[0] intValue] withConfiguration:args[1]];
     result(nil);
   } else if ([method isEqualToString:kSetPlatformViewClientMethod]) {
-    [self setPlatformViewTextInputClient:[args[@"platformViewId"] longValue]];
+    // This method call has a `platformViewId` argument, but we do not need it for iOS for now.
+    [self setPlatformViewTextInputClient];
     result(nil);
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
     [self setTextInputEditingState:args];
@@ -2199,10 +2200,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [self addToInputParentViewIfNeeded:_activeView];
 }
 
-- (void)setPlatformViewTextInputClient:(long)platformViewID {
-  // No need to track the platformViewID for now (unlike in Android), because in iOS there can
-  // only be one single first responder. When a platform view becomes first responder, hide
-  // this dummy text input view (`_activeView`) for the previously focused widget.
+- (void)setPlatformViewTextInputClient {
+  // No need to track the platformViewID (unlike in Android). When a platform view
+  // becomes the first responder, simply hide this dummy text input view (`_activeView`)
+  // for the previously focused widget.
   [self removeEnableFlutterTextInputViewAccessibilityTimer];
   _activeView.accessibilityEnabled = NO;
   [_activeView removeFromSuperview];

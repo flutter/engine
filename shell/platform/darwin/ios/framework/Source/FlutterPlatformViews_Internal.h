@@ -335,7 +335,7 @@ class FlutterPlatformViewsController {
 
 @interface UIView (FirstResponder)
 // Returns YES if a view or any of its descendant view is the first responder. Returns NO otherwise.
-@property(nonatomic, readonly) BOOL hasFirstResponderInViewHierarchySubtree;
+@property(nonatomic, readonly) BOOL flt_hasFirstResponderInViewHierarchySubtree;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

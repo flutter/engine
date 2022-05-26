@@ -1113,10 +1113,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   [textField becomeFirstResponder];
   XCTAssertTrue(textField.isFirstResponder);
-  XCTAssertTrue(textField.hasFirstResponderInViewHierarchySubtree);
+  XCTAssertTrue(textField.flt_hasFirstResponderInViewHierarchySubtree);
   [textField resignFirstResponder];
   XCTAssertFalse(textField.isFirstResponder);
-  XCTAssertFalse(textField.hasFirstResponderInViewHierarchySubtree);
+  XCTAssertFalse(textField.flt_hasFirstResponderInViewHierarchySubtree);
 }
 
 - (void)testHasFirstResponderInViewHierarchySubtree_descendantViewBecomesFirstResponder {
@@ -1131,10 +1131,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   [textField becomeFirstResponder];
   XCTAssertTrue(textField.isFirstResponder);
-  XCTAssertTrue(view.hasFirstResponderInViewHierarchySubtree);
+  XCTAssertTrue(view.flt_hasFirstResponderInViewHierarchySubtree);
   [textField resignFirstResponder];
   XCTAssertFalse(textField.isFirstResponder);
-  XCTAssertFalse(view.hasFirstResponderInViewHierarchySubtree);
+  XCTAssertFalse(view.flt_hasFirstResponderInViewHierarchySubtree);
 }
 
 @end

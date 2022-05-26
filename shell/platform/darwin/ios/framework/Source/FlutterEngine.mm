@@ -990,7 +990,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // Platform view's first responder detection logic
   //
   // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view
-  // in the text input plugin. When this dummy UITextInput view resigns first responder,
+  // in the TextInputPlugin. When this dummy UITextInput view resigns first responder,
   // check if any platform view becomes first responder. If any platform view becomes
   // first responder, send a "viewFocused" channel message to inform the framework to un-focus
   // the previously focused text input.
@@ -998,12 +998,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // Caveat:
   // 1. This detection logic does not cover the scenario when a platform view becomes
   // first responder without any flutter text input resigning its first responder status
-  // (e.g. user tapping on platform view first). For now it works fine because there can only be
-  // one first responder in iOS, so we do not need to keep platform view's first responder status
-  // in the text input plugin (which is different from Android implementation).
+  // (e.g. user tapping on platform view first). For now it works fine because the TextInputPlugin
+  // does not track the focused platform view id (which is different from Android implementation).
   //
   // 2. This detection logic assumes that all text input widgets are backed by a dummy
-  // UITextInput view in the text input plugin, which may not hold true in the future.
+  // UITextInput view in the TextInputPlugin, which may not hold true in the future.
 
   // Have to check in the next run loop, because iOS requests the previous first responder to
   // resign before requesting the next view to become first responder.

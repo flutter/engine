@@ -20,12 +20,12 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 @implementation UIView (FirstResponder)
-- (BOOL)hasFirstResponderInViewHierarchySubtree {
+- (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
   if (self.isFirstResponder) {
     return YES;
   }
   for (UIView* subview in self.subviews) {
-    if (subview.hasFirstResponderInViewHierarchySubtree) {
+    if (subview.flt_hasFirstResponderInViewHierarchySubtree) {
       return YES;
     }
   }
@@ -344,7 +344,7 @@ UIView* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
 
 long FlutterPlatformViewsController::FindFirstResponderPlatformViewId() {
   for (auto const& [id, root_view] : root_views_) {
-    if ([(UIView*)root_view.get() hasFirstResponderInViewHierarchySubtree]) {
+    if ((UIView*)(root_view.get()).flt_hasFirstResponderInViewHierarchySubtree) {
       return id;
     }
   }
