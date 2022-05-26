@@ -50,6 +50,12 @@ import java.util.List;
  */
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
+
+  // These view types allow to issue drawing commands directly without
+  // notifying the Android view hierarchy that a change was made.
+  // To support these cases, Flutter hosts the embedded view in a VirtualDisplay,
+  // and binds the VirtualDisplay to a GL texture that is then composed by the engine.
+  // Related issue: https://github.com/flutter/flutter/issues/103630
   private static Class[] VIEW_TYPES_REQUIRE_VD = {SurfaceView.class, TextureView.class};
 
   private final PlatformViewRegistryImpl registry;
@@ -233,7 +239,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final int physicalHeight = toPhysicalPixels(request.logicalHeight);
           final boolean shouldUseVirtualDisplay =
               ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VD);
-
           if (!usesSoftwareRendering && shouldUseVirtualDisplay) {
             Log.v(TAG, "Hosting view in a virtual display for platform view: " + viewId);
             // API level 20 is required to use VirtualDisplay#setSurface.
