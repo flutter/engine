@@ -51,20 +51,7 @@ class TestPlatformHandlerWin32 : public PlatformHandlerWin32 {
 
   virtual ~TestPlatformHandlerWin32() = default;
 
-  void CallGetPlainText(
-      std::unique_ptr<MethodResult<rapidjson::Document>> result,
-      std::string_view key) {
-    GetPlainText(std::move(result), key);
-  }
-  void CallGetHasStrings(
-      std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-    GetHasStrings(std::move(result));
-  }
-  void CallSetPlainText(
-      const std::string& text,
-      std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-    SetPlainText(text, std::move(result));
-  }
+  FRIEND_TEST(PlatformHandlerWin32, ReleaseClipboard);
 };
 
 // A test version of the private ScopedClipboard.
@@ -295,14 +282,13 @@ TEST(PlatformHandlerWin32, ReleaseClipboard) {
                                                      system_clipboard);
       });
 
-  platform_handler.CallGetPlainText(std::make_unique<MockMethodResult>(),
-                                    "text");
+  platform_handler.GetPlainText(std::make_unique<MockMethodResult>(), "text");
   ASSERT_FALSE(system_clipboard->opened);
 
-  platform_handler.CallGetHasStrings(std::make_unique<MockMethodResult>());
+  platform_handler.GetHasStrings(std::make_unique<MockMethodResult>());
   ASSERT_FALSE(system_clipboard->opened);
 
-  platform_handler.CallSetPlainText("", std::make_unique<MockMethodResult>());
+  platform_handler.SetPlainText("", std::make_unique<MockMethodResult>());
   ASSERT_FALSE(system_clipboard->opened);
 }
 
