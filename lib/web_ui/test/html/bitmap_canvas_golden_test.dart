@@ -11,7 +11,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
-import '../common.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -32,7 +31,7 @@ Future<void> testMain() async {
       testScene.style.transformOrigin = '0 0 0';
       testScene.style.transform = 'scale(0.3)';
     }
-    testScene.append(canvas.rootElement);
+    testScene.append(canvas.rootElement as html.Node);
     flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
   }
 
@@ -178,7 +177,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((html.Element e) => e.innerText).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((DomElement e) => e.innerText).toList(),
       <String>['Am I blurry?', 'Am I blurry?'],
       reason: 'Expected to render text using HTML',
     );
@@ -236,7 +235,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, const Offset(180, 50));
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((html.Element e) => e.text).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((DomElement e) => e.text).toList(),
       <String>[text],
       reason: 'Expected to render text using HTML',
     );
@@ -252,7 +251,7 @@ Future<void> testMain() async {
     sb.pop();
     sb.pop();
     final SurfaceScene scene = sb.build() as SurfaceScene;
-    final html.Element sceneElement = scene.webOnlyRootElement!;
+    final DomElement sceneElement = scene.webOnlyRootElement!;
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -261,7 +260,7 @@ Future<void> testMain() async {
     }
 
     sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
-    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
+    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement as html.Node);
 
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',

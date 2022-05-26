@@ -1,4 +1,4 @@
-Signature: 3ba5c363f75bbbf037406b682ef2d3e9
+Signature: d859d1be20be1de35aaef2bd6fa54bf0
 
 UNUSED LICENSES:
 
@@ -1182,6 +1182,9 @@ FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_xlib.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_xlib_xrandr.h
 FILE: ../../../third_party/fuchsia-vulkan/registry/validusage.json
 FILE: ../../../third_party/fuchsia-vulkan/registry/vk.xml
+FILE: ../../../third_party/khronos/EGL/egl.h
+FILE: ../../../third_party/khronos/EGL/eglext.h
+FILE: ../../../third_party/khronos/EGL/eglplatform.h
 FILE: ../../../third_party/khronos/GLES2/gl2platform.h
 FILE: ../../../third_party/khronos/GLES3/gl3platform.h
 FILE: ../../../third_party/libwebp/gradlew
@@ -2116,37 +2119,6 @@ FILE: ../../../third_party/khronos/GLES2/gl2ext.h
 FILE: ../../../third_party/khronos/GLES3/gl3.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013-2018 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-LIBRARY: khronos
-ORIGIN: ../../../third_party/angle/include/GLES/glext.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/GLES/glext.h
-FILE: ../../../third_party/khronos/EGL/egl.h
-FILE: ../../../third_party/khronos/EGL/eglext.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013-2017 The Khronos Group Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and/or associated documentation files (the
@@ -3376,6 +3348,34 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
+ORIGIN: ../../../third_party/angle/include/GLES/glext.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/angle/include/GLES/glext.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2013-2017 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 ====================================================================================================
 
 ====================================================================================================
@@ -10001,6 +10001,7 @@ FILE: ../../../third_party/dart/runtime/vm/instructions.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/runtime_metrics.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/synced/embedded_names.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart
@@ -10252,8 +10253,8 @@ FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/bindings/types.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/collections/closable_iterator.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/database.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/rti.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/recipe_syntax.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/rti.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/synced/recipe_syntax.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_dynamic_library_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_type_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_patch.dart
@@ -10681,7 +10682,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/debugge
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/developer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/d8.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/jsshell.js
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/async_await_error_codes.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/async_await_error_codes.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/async_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/compact_hash.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/developer.dart
@@ -12511,7 +12512,7 @@ FILE: ../../../third_party/dart/runtime/vm/unibrow.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/d8.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/jsshell.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/linked_hash_map.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/embedded_names.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/embedded_names.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/convert_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/lib_prefix.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/profiler.dart
@@ -21658,34 +21659,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: khronos
-ORIGIN: ../../../third_party/khronos/EGL/eglplatform.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/khronos/EGL/eglplatform.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2007-2016 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: khronos
 ORIGIN: ../../../third_party/khronos/GLES3/gl31.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/khronos/GLES3/gl31.h
@@ -21746,6 +21719,7 @@ LIBRARY: khronos
 ORIGIN: ../../../third_party/khronos/LICENSE
 TYPE: LicenseType.mit
 FILE: ../../../third_party/khronos/DEPS
+FILE: ../../../third_party/khronos/DIR_METADATA
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2007-2010 The Khronos Group Inc.
 
@@ -26413,4 +26387,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 416
+Total license count: 415

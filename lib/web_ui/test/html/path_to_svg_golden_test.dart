@@ -12,8 +12,6 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../common.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -68,8 +66,8 @@ Future<void> testMain() async {
     canvas.endRecording();
     canvas.apply(bitmapCanvas, canvasBounds);
 
-    final html.Element sceneElement = html.Element.tag('flt-scene');
-    html.document.body!.append(sceneElement);
+    final DomElement sceneElement = createDomElement('flt-scene');
+    domDocument.body!.append(sceneElement);
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -77,7 +75,7 @@ Future<void> testMain() async {
       sceneElement.style.transform = 'scale(0.3)';
     }
     sceneElement.append(bitmapCanvas.rootElement);
-    sceneElement.append(svgElement);
+    sceneElement.append(svgElement as DomElement);
 
     await matchGoldenFile('$scubaFileName.png',
         region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);

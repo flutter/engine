@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
+import '../dom.dart';
 import '../picture.dart';
 import '../profiler.dart';
 import '../util.dart';

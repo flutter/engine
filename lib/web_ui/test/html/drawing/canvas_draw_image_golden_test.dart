@@ -13,7 +13,6 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../../common.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -363,7 +362,7 @@ Future<void> testMain() async {
     builder.addPicture(const Offset(0, 0), picture);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -372,7 +371,7 @@ Future<void> testMain() async {
     }
     try {
       sceneElement.append(builder.build().webOnlyRootElement!);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       await matchGoldenFile('draw_nine_slice.png',
           region: region, maxDiffRatePercent: 0);
     } finally {
@@ -402,7 +401,7 @@ Future<void> testMain() async {
     builder.addPicture(const Offset(0, 0), picture);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -411,7 +410,7 @@ Future<void> testMain() async {
     }
     try {
       sceneElement.append(builder.build().webOnlyRootElement!);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       await matchGoldenFile('draw_nine_slice_empty_center.png',
           region: region, maxDiffRatePercent: 0);
     } finally {

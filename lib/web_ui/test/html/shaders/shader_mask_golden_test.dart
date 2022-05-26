@@ -12,8 +12,6 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../../common.dart';
-
 /// To debug compositing failures on browsers, set this flag to true and run
 /// flutter run -d chrome --web-renderer=html
 ///        test/golden_tests/engine/shader_mask_golden_test.dart --profile
@@ -165,7 +163,8 @@ void _renderCirclesScene(BlendMode blendMode) {
   builder.addPicture(Offset.zero, circles2);
   builder.pop();
 
-  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!
+      as html.Element);
 }
 
 Picture _drawTestPictureWithText(
@@ -221,5 +220,6 @@ void _renderTextScene(BlendMode blendMode) {
   builder.addPicture(Offset.zero, textPicture2);
   builder.pop();
 
-  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!
+      as html.Element);
 }

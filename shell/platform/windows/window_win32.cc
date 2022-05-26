@@ -95,6 +95,22 @@ void WindowWin32::InitializeChild(const char* title,
     OutputDebugString(message);
     LocalFree(message);
   }
+  DEVMODE dmi;
+  ZeroMemory(&dmi, sizeof(dmi));
+  dmi.dmSize = sizeof(dmi);
+  if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmi)) {
+    directManipulationPollingRate_ = dmi.dmDisplayFrequency;
+  } else {
+    OutputDebugString(
+        L"Failed to get framerate, will use default of 60 Hz for gesture "
+        L"polling.");
+  }
+  SetUserObjectInformationA(GetCurrentProcess(),
+                            UOI_TIMERPROC_EXCEPTION_SUPPRESSION, FALSE, 1);
+  SetTimer(result, kDirectManipulationTimer,
+           1000 / directManipulationPollingRate_, nullptr);
+  direct_manipulation_owner_ = std::make_unique<DirectManipulationOwner>(this);
+  direct_manipulation_owner_->Init(width, height);
 }
 
 std::wstring WindowWin32::NarrowToWide(const char* source) {
@@ -332,7 +348,7 @@ WindowWin32::HandleMessage(UINT const message,
           } else if (touch.dwFlags & TOUCHEVENTF_UP) {
             OnPointerUp(x, y, kFlutterPointerDeviceKindTouch, touch_id,
                         WM_LBUTTONDOWN);
-            OnPointerLeave(kFlutterPointerDeviceKindTouch, touch_id);
+            OnPointerLeave(x, y, kFlutterPointerDeviceKindTouch, touch_id);
             touch_id_generator_.ReleaseNumber(touch.dwID);
           }
         }
@@ -347,15 +363,17 @@ WindowWin32::HandleMessage(UINT const message,
 
         xPos = GET_X_LPARAM(lparam);
         yPos = GET_Y_LPARAM(lparam);
+        mouse_x_ = static_cast<double>(xPos);
+        mouse_y_ = static_cast<double>(yPos);
 
-        OnPointerMove(static_cast<double>(xPos), static_cast<double>(yPos),
-                      device_kind, kDefaultPointerDeviceId);
+        OnPointerMove(mouse_x_, mouse_y_, device_kind, kDefaultPointerDeviceId);
       }
       break;
     case WM_MOUSELEAVE:
       device_kind = GetFlutterPointerDeviceKind();
       if (device_kind == kFlutterPointerDeviceKindMouse) {
-        OnPointerLeave(device_kind, kDefaultPointerDeviceId);
+        OnPointerLeave(mouse_x_, mouse_y_, device_kind,
+                       kDefaultPointerDeviceId);
       }
 
       // Once the tracked event is received, the TrackMouseEvent function
@@ -439,6 +457,25 @@ WindowWin32::HandleMessage(UINT const message,
       LRESULT lresult = OnGetObject(message, wparam, lparam);
       if (lresult) {
         return lresult;
+      }
+      break;
+    }
+    case WM_TIMER:
+      if (wparam == kDirectManipulationTimer) {
+        direct_manipulation_owner_->Update();
+        SetTimer(window_handle_, kDirectManipulationTimer,
+                 1000 / directManipulationPollingRate_, nullptr);
+        return 0;
+      }
+      break;
+    case DM_POINTERHITTEST: {
+      if (direct_manipulation_owner_) {
+        UINT contactId = GET_POINTERID_WPARAM(wparam);
+        POINTER_INPUT_TYPE pointerType;
+        if (GetPointerType(contactId, &pointerType) &&
+            pointerType == PT_TOUCHPAD) {
+          direct_manipulation_owner_->SetContact(contactId);
+        }
       }
       break;
     }
@@ -529,6 +566,9 @@ void WindowWin32::Destroy() {
 void WindowWin32::HandleResize(UINT width, UINT height) {
   current_width_ = width;
   current_height_ = height;
+  if (direct_manipulation_owner_) {
+    direct_manipulation_owner_->ResizeViewport(width, height);
+  }
   OnResize(width, height);
 }
 

@@ -7,11 +7,10 @@ import 'dart:html' as html;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
 import 'package:web_engine_tester/golden_tester.dart';
-
-import '../common.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -42,7 +41,7 @@ Future<void> testMain() async {
     }
 
     try {
-      sceneElement.append(engineCanvas.rootElement);
+      sceneElement.append(engineCanvas.rootElement as html.Element);
       html.document.body!.append(sceneElement);
       // TODO(yjbanov): 10% diff rate is excessive. Update goldens.
       await matchGoldenFile('$fileName.png', region: region);

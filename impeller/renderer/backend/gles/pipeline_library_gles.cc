@@ -48,6 +48,15 @@ static void LogShaderCompilationFailure(const ProcTableGLES& gl,
     case ShaderStage::kFragment:
       stream << "fragment";
       break;
+    case ShaderStage::kTessellationControl:
+      stream << "tessellation control";
+      break;
+    case ShaderStage::kTessellationEvaluation:
+      stream << "tessellation evaluation";
+      break;
+    case ShaderStage::kCompute:
+      stream << "compute";
+      break;
   }
   stream << " shader for '" << name << "' with error:" << std::endl;
   stream << GetShaderInfoLog(gl, shader) << std::endl;
@@ -150,7 +159,8 @@ static bool LinkProgram(
   gl.GetProgramiv(*program, GL_LINK_STATUS, &link_status);
 
   if (link_status != GL_TRUE) {
-    VALIDATION_LOG << "Could not link shader program.";
+    VALIDATION_LOG << "Could not link shader program: "
+                   << gl.GetProgramInfoLogString(*program);
     return false;
   }
   return true;
