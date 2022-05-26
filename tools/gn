@@ -11,6 +11,7 @@ import argparse
 import subprocess
 import sys
 import os
+import platform
 
 SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -54,11 +55,17 @@ def get_out_dir(args):
     if args.target_os == 'fuchsia' and args.fuchsia_cpu is not None:
       target_dir.append(args.fuchsia_cpu)
 
+    if args.support_fractional_translation:
+      target_dir.append('fractional')
+
     # This exists for backwards compatibility of tests that are being run
     # on LUCI. This can be removed in coordination with a LUCI change:
     # https://github.com/flutter/flutter/issues/76547
     if args.macos_enable_metal:
       target_dir.append('metal')
+
+    if args.target_dir != '':
+      target_dir = [args.target_dir]
 
     return os.path.join(args.out_dir, 'out', '_'.join(target_dir))
 
@@ -75,7 +82,7 @@ def to_command_line(gn_args):
     return [merge(x, y) for x, y in gn_args.items()]
 
 def cpu_for_target_arch(arch):
-  if arch in ['ia32', 'arm', 'armv6', 'armv5te', 'mips',
+  if arch in ['ia32', 'x86', 'arm', 'armv6', 'armv5te', 'mips',
               'simarm', 'simarmv6', 'simarmv5te', 'simmips', 'simdbc',
               'armsimdbc']:
     return 'x86'
@@ -86,8 +93,6 @@ def is_host_build(args):
     # If target_os == None, then this is a host build.
     # However, for linux arm64 builds, we cross compile from x64 hosts, so the
     # target_os='linux' and linux-cpu='arm64'
-    # TODO(fujino): make host platform explicit
-    #   https://github.com/flutter/flutter/issues/79403
     return args.target_os is None or (args.target_os == 'linux' and args.linux_cpu == 'arm64')
 
 # Determines whether a prebuilt Dart SDK can be used instead of building one.
@@ -111,13 +116,78 @@ def can_use_prebuilt_dart(args):
     prebuilt = 'linux-%s' % args.linux_cpu
   elif args.target_os == 'mac' and args.mac_cpu in ['x64', 'arm64']:
     prebuilt = 'macos-%s' % args.mac_cpu
-  elif args.target_os in ['win', 'winuwp'] and args.windows_cpu == 'x64':
-    prebuilt = 'windows-%s' % args.windows_cpu
 
   prebuilts_dir = None
   if prebuilt != None:
     prebuilts_dir = os.path.join(SRC_ROOT, 'flutter', 'prebuilts', prebuilt)
   return prebuilts_dir != None and os.path.isdir(prebuilts_dir)
+
+
+# Returns the host machine operating system.
+def get_host_os():
+  if sys.platform.startswith(('cygwin', 'win')):
+    return 'win'
+  if sys.platform == 'darwin':
+    return 'mac'
+  return 'linux'
+
+
+# Runs true if the currently executing python interpreter is running under
+# Rosetta. I.e., python3 is an x64 executable and we're on an arm64 Mac.
+def is_rosetta():
+  if platform.system() == 'Darwin':
+    p = subprocess.Popen(['sysctl', '-in', 'sysctl.proc_translated'],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+    output, _ = p.communicate()
+    return output.decode('utf-8').strip() == '1'
+  return False
+
+
+# Returns the host machine CPU architecture.
+def get_host_cpu(args):
+  # If gn itself is running under Rosetta on an arm64 Mac, platform.machine()
+  # will return x86_64; instead return the underlying host architecture.
+  if is_rosetta():
+    return 'arm64'
+  m = platform.machine()
+  if m in ['aarch64', 'arm64']:
+    return 'arm64'
+  if m in ['x86_64', 'AMD64', 'x64']:
+    return 'x64'
+  if m in ['i686', 'i386', 'x86']:
+    return 'x86'
+  raise Exception('Unknown CPU architecture: %s' % m)
+
+
+# Returns the target CPU architecture.
+#
+# For macOS host builds where --mac-cpu is specified, returns that value.
+# For all other host builds, assumes 'x64'.
+def get_target_cpu(args):
+  if args.target_os == 'android':
+    return args.android_cpu
+  if args.target_os == 'ios':
+    if args.simulator:
+      return args.simulator_cpu
+    else:
+      return args.ios_cpu
+  if args.target_os == 'mac':
+    return args.mac_cpu
+  if args.target_os == 'linux':
+    return args.linux_cpu
+  if args.target_os == 'fuchsia':
+    return args.fuchsia_cpu
+  if args.target_os == 'wasm':
+    return 'wasm'
+  if args.target_os == 'win':
+    return args.windows_cpu
+
+  # Host build. Default to x64 unless overridden.
+  if get_host_os() == 'mac' and args.mac_cpu:
+    return args.mac_cpu
+  return 'x64'
+
 
 def to_gn_args(args):
     if args.simulator:
@@ -147,15 +217,15 @@ def to_gn_args(args):
     gn_args['skia_use_wuffs'] = True
     gn_args['skia_use_expat'] = args.target_os == 'android'
     gn_args['skia_use_fontconfig'] = args.enable_fontconfig
-    gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
-    gn_args['flutter_enable_skshaper'] = args.enable_skshaper
+
     if args.enable_skshaper:
       gn_args['skia_use_icu'] = True
-      gn_args['flutter_always_use_skshaper'] = args.always_use_skshaper
-    if args.target_os == 'winuwp':
-      gn_args['skia_enable_winuwp'] = True
+      if args.target_os != 'wasm':
+        gn_args['flutter_always_use_skshaper'] = args.always_use_skshaper
+      else:
+        gn_args['skia_use_harfbuzz'] = True
+        gn_args['icu_use_data_file'] = False
     gn_args['is_official_build'] = True    # Disable Skia test utilities.
-    gn_args['dart_component_kind'] = 'static_library' # Always link Dart in statically.
     gn_args['is_debug'] = args.unoptimized
     gn_args['android_full_debug'] = args.target_os == 'android' and args.unoptimized
     if args.clang is None:
@@ -165,14 +235,14 @@ def to_gn_args(args):
 
     if args.target_os == 'android' or args.target_os == 'ios':
       gn_args['skia_gl_standard'] = 'gles'
+    elif args.target_os == 'wasm':
+      gn_args['skia_gl_standard'] = 'webgl'
     else:
       # We explicitly don't want to pick GL because we run GLES tests using SwiftShader.
       gn_args['skia_gl_standard'] = ''
 
     if not sys.platform.startswith(('cygwin', 'win')):
       gn_args['use_clang_static_analyzer'] = args.clang_static_analyzer
-
-    gn_args['embedder_for_target'] = args.embedder_for_target
 
     gn_args['enable_coverage'] = args.coverage
 
@@ -188,29 +258,40 @@ def to_gn_args(args):
       # The GN arg is not available in the windows toolchain.
       gn_args['enable_lto'] = enable_lto
 
-    if args.target_os == 'android':
-        gn_args['target_os'] = 'android'
-    elif args.target_os == 'ios':
-        gn_args['target_os'] = 'ios'
-        gn_args['use_ios_simulator'] = args.simulator
-    elif args.target_os == 'mac':
-        gn_args['target_os'] = 'mac'
-        gn_args['use_ios_simulator'] = False
-    elif args.target_os == 'fuchsia':
-        gn_args['target_os'] = 'fuchsia'
-    elif args.target_os == 'winuwp':
-        gn_args['target_os'] = 'winuwp'
-    elif args.target_os is not None:
-        gn_args['target_os'] = args.target_os
-
-    gn_args['dart_lib_export_symbols'] = False
-
-    if runtime_mode == 'debug':
-        gn_args['dart_runtime_mode'] = 'develop'
-    elif runtime_mode == 'jit_release':
-        gn_args['dart_runtime_mode'] = 'release';
+    # Set OS, CPU arch for host or target build.
+    if is_host_build(args):
+      gn_args['host_os'] = get_host_os()
+      gn_args['host_cpu'] = get_host_cpu(args)
+      gn_args['target_os'] = gn_args['host_os']
+      gn_args['target_cpu'] = get_target_cpu(args)
+      gn_args['dart_target_arch'] = gn_args['target_cpu']
     else:
-        gn_args['dart_runtime_mode'] = runtime_mode
+      gn_args['target_os'] = args.target_os
+      gn_args['target_cpu'] = get_target_cpu(args)
+      gn_args['dart_target_arch'] = gn_args['target_cpu']
+
+    # No cross-compilation on Windows (for now). Use host toolchain that
+    # matches the bit-width of the target architecture.
+    if sys.platform.startswith(('cygwin', 'win')) and args.target_os != 'win':
+      gn_args['host_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
+      gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
+
+    # macOS host builds (whether x64 or arm64) must currently be built under
+    # Rosetta on Apple Silicon Macs.
+    # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
+    if is_host_build(args) and gn_args['host_os'] == 'mac':
+      gn_args['host_cpu'] = 'x64'
+
+    # macOS target builds (whether x64 or arm64) must currently be built under
+    # Rosetta on Apple Silicon Macs.
+    # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
+    if 'target_os' in gn_args and gn_args['target_os'] == 'mac':
+      gn_args['host_cpu'] = 'x64'
+
+    if gn_args['target_os'] == 'ios':
+      gn_args['use_ios_simulator'] = args.simulator
+    else:
+      gn_args['use_ios_simulator'] = False
 
     if args.dart_debug:
         gn_args['dart_debug'] = True
@@ -219,43 +300,49 @@ def to_gn_args(args):
       gn_args['dart_debug'] = True
       gn_args['dart_debug_optimization_level'] = '0'
 
-    if args.target_os == 'android':
-        gn_args['target_cpu'] = args.android_cpu
-    elif args.target_os == 'ios':
-        if args.simulator:
-            gn_args['target_cpu'] = args.simulator_cpu
-        else:
-            gn_args['target_cpu'] = args.ios_cpu
-    elif args.target_os == 'mac':
-      gn_args['target_cpu'] = args.mac_cpu
-    elif args.target_os == 'linux':
-      gn_args['target_cpu'] = args.linux_cpu
-    elif args.target_os == 'fuchsia':
-      gn_args['target_cpu'] = args.fuchsia_cpu
-    elif args.target_os == 'win':
-      gn_args['target_cpu'] = args.windows_cpu
-    else:
-        # Building host artifacts
-        gn_args['target_cpu'] = 'x64'
+    # Flutter-specific arguments which don't apply for a CanvasKit build.
+    if args.target_os != 'wasm':
+      gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
+      gn_args['flutter_enable_skshaper'] = args.enable_skshaper
+      gn_args['dart_component_kind'] = 'static_library' # Always link Dart in statically.
+      gn_args['embedder_for_target'] = args.embedder_for_target
+      gn_args['dart_lib_export_symbols'] = False
+      gn_args['flutter_runtime_mode'] = runtime_mode
+      gn_args['full_dart_sdk'] = args.full_dart_sdk
+      gn_args['dart_version_git_info'] = not args.no_dart_version_git_info
+
+      gn_args['dart_lib_export_symbols'] = False
+      if runtime_mode == 'debug':
+          gn_args['dart_runtime_mode'] = 'develop'
+      elif runtime_mode == 'jit_release':
+          gn_args['dart_runtime_mode'] = 'release'
+      else:
+          gn_args['dart_runtime_mode'] = runtime_mode
+
+      # Desktop embeddings can have more dependencies than the engine library,
+      # which can be problematic in some build environments (e.g., building on
+      # Linux will bring in pkg-config dependencies at generation time). These
+      # flags allow preventing those those targets from being part of the build
+      # tree.
+      gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
+
+      # Overrides whether Boring SSL is compiled with system as. Only meaningful
+      # on Android.
+      gn_args['bssl_use_clang_integrated_as'] = True
+
+    if args.allow_deprecated_api_calls:
+      gn_args['allow_deprecated_api_calls'] = args.allow_deprecated_api_calls
+
+    if args.support_fractional_translation:
+      gn_args['support_fractional_translation'] = args.support_fractional_translation
 
     # DBC is not supported anymore.
     if args.interpreter:
       raise Exception('--interpreter is no longer needed on any supported platform.')
-    gn_args['dart_target_arch'] = gn_args['target_cpu']
-
-    if sys.platform.startswith(('cygwin', 'win')) and args.target_os != 'win':
-      if 'target_cpu' in gn_args:
-        gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
 
     if args.target_os is None:
       if sys.platform.startswith(('cygwin', 'win')):
         gn_args['dart_use_fallback_root_certificates'] = True
-
-    # Make sure host_cpu matches the bit width of target_cpu on x86.
-    if gn_args['target_cpu'] == 'x86':
-      gn_args['host_cpu'] = 'x86'
-
-    gn_args['flutter_runtime_mode'] = runtime_mode
 
     if args.target_sysroot:
       gn_args['target_sysroot'] = args.target_sysroot
@@ -303,7 +390,7 @@ def to_gn_args(args):
       # attributes in release modes till the toolchain is updated.
       gn_args['skia_enable_api_available_macro'] = args.runtime_mode != "release"
 
-    if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia']:
+    if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia', 'wasm']:
       # OpenGL is deprecated on macOS > 10.11.
       # This is not necessarily needed but enabling this until we have a way to
       # build a macOS metal only shell and a gl only shell.
@@ -314,7 +401,7 @@ def to_gn_args(args):
     # Enable Vulkan on all platforms except for Android and iOS. This is just
     # to save on mobile binary size, as there's no reason the Vulkan embedder
     # features can't work on these platforms.
-    if args.target_os not in ['android', 'ios']:
+    if args.target_os not in ['android', 'ios', 'wasm']:
       gn_args['skia_use_vulkan'] = True
       gn_args['shell_enable_vulkan'] = True
       # Disable VMA's use of std::shared_mutex in environments where the
@@ -359,14 +446,7 @@ def to_gn_args(args):
       # dart_platform_sdk=True means exclude web-related files, e.g. dart2js,
       # dartdevc, web SDK kernel and source files.
       gn_args['dart_platform_sdk'] = not args.full_dart_sdk
-    gn_args['full_dart_sdk'] = args.full_dart_sdk
 
-    # Desktop embeddings can have more dependencies than the engine library,
-    # which can be problematic in some build environments (e.g., building on
-    # Linux will bring in pkg-config dependencies at generation time). These
-    # flags allow preventing those those targets from being part of the build
-    # tree.
-    gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
     if args.build_glfw_shell is not None:
       gn_args['build_glfw_shell'] = args.build_glfw_shell
 
@@ -396,11 +476,6 @@ def to_gn_args(args):
         sys.exit(1)
       gn_args['enable_vulkan_validation_layers'] = True
 
-    gn_args['dart_version_git_info'] = not args.no_dart_version_git_info
-
-    # Overrides whether Boring SSL is compiled with system as. Only meaningful
-    # on Android.
-    gn_args['bssl_use_clang_integrated_as'] = True
 
     # Enable pointer compression on 64-bit mobile targets.
     if args.target_os in ['android', 'ios'] and gn_args['target_cpu'] in ['x64' , 'arm64']:
@@ -413,15 +488,24 @@ def to_gn_args(args):
       with open(os.path.join(os.path.dirname(__file__), 'fuchsia/target_api_level')) as f:
         gn_args['fuchsia_target_api_level'] = int(f.read().strip())
 
+    # Flags for Dart features:
+    if args.use_mallinfo2:
+      gn_args['dart_use_mallinfo2'] = args.use_mallinfo2
+
     # Impeller flags.
     if args.enable_impeller_playground:
       gn_args['impeller_enable_playground'] = args.enable_impeller_playground
+    elif os.getenv('FLUTTER_IMPELLER_ENABLE_PLAYGROUND', '0') == '1':
+      gn_args['impeller_enable_playground'] = True
+
+    if args.prebuilt_impellerc is not None:
+      gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
     return gn_args
 
 def parse_args(args):
   args = args[1:]
-  parser = argparse.ArgumentParser(description='A script run` gn gen`.')
+  parser = argparse.ArgumentParser(description='A script to run `gn gen`.')
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
@@ -436,7 +520,7 @@ def parse_args(args):
   parser.add_argument('--full-dart-debug', default=False, action='store_true', help='Implies --dart-debug ' +
       'and also disables optimizations in the Dart VM making it easier to step through VM code in the debugger.')
 
-  parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'win', 'winuwp'])
+  parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'wasm', 'win'])
   parser.add_argument('--android', dest='target_os', action='store_const', const='android')
   parser.add_argument('--android-cpu', type=str, choices=['arm', 'x64', 'x86', 'arm64'], default='arm')
   parser.add_argument('--ios', dest='target_os', action='store_const', const='ios')
@@ -446,11 +530,12 @@ def parse_args(args):
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument('--linux', dest='target_os', action='store_const', const='linux')
   parser.add_argument('--fuchsia', dest='target_os', action='store_const', const='fuchsia')
-  parser.add_argument('--winuwp', dest='target_os', action='store_const', const='winuwp')
+  parser.add_argument('--wasm', dest='target_os', action='store_const', const='wasm')
+  parser.add_argument('--windows', dest='target_os', action='store_const', const='win')
 
   parser.add_argument('--linux-cpu', type=str, choices=['x64', 'x86', 'arm64', 'arm'])
   parser.add_argument('--fuchsia-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
-  parser.add_argument('--windows-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
+  parser.add_argument('--windows-cpu', type=str, choices=['x64', 'arm64', 'x86'], default = 'x64')
   parser.add_argument('--simulator-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
   parser.add_argument('--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp'])
 
@@ -493,7 +578,10 @@ def parse_args(args):
 
   parser.add_argument('--coverage', default=False, action='store_true')
 
-  parser.add_argument('--out-dir', default='', type=str)
+  parser.add_argument('--out-dir', default='', type=str,
+                      help='Root out directory. Target specific gn files will be generated in ${out-dir}/')
+  parser.add_argument('--target-dir', default='', type=str,
+                      help='Use the specified name for target out directory. By default this tool determines one.')
 
   parser.add_argument('--full-dart-sdk', default=False, action='store_true',
                       help='include trained dart2js and dartdevc snapshots. Enable only on steps that create an SDK')
@@ -502,6 +590,9 @@ def parse_args(args):
   parser.add_argument('--ide', default='', type=str,
                       help='The IDE files to generate using GN. Use `gn gen help` and look for the --ide flag to' +
                       ' see supported IDEs. If this flag is not specified, a platform specific default is selected.')
+
+  parser.add_argument('--allow-deprecated-api-calls', action='store_true', default=False,
+                      help='Turns off warnings about the usage of deprecated APIs.')
 
   parser.add_argument('--disable-desktop-embeddings', default=False, action='store_true',
                       help='Do not include desktop embeddings in the build.')
@@ -528,9 +619,20 @@ def parse_args(args):
 
   parser.add_argument('--fuchsia-target-api-level', dest='fuchsia_target_api_level')
 
+  parser.add_argument('--support-fractional-translation', dest='support_fractional_translation', default=False,
+                      action='store_true', help='Whether to allow layers to render at fraction pixel '
+                      'boundaries.')
+
+  # Flags for Dart features.
+  parser.add_argument('--use-mallinfo2', dest='use_mallinfo2', default=False, action='store_true',
+                      help='Use mallinfo2 to collect malloc stats.')
+
   # Impeller flags.
   parser.add_argument('--enable-impeller-playground', default=False, action='store_true',
-                      help='Whether impeller unit tests run in playground mode')
+                      help='Whether impeller unit tests run in playground mode.')
+  parser.add_argument('--prebuilt-impellerc', default=None, type=str,
+                      help='Absolute path to a prebuilt impellerc. ' +
+                      'Do not use this outside of CI or with impellerc from a different engine version.')
 
   # Sanitizers.
   parser.add_argument('--asan', default=False, action='store_true')

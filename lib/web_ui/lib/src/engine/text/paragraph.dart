@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import '../util.dart';
 import 'layout_service.dart';
@@ -31,7 +31,8 @@ class EngineLineMetrics implements ui.LineMetrics {
         endIndexWithoutNewlines = -1,
         widthWithTrailingSpaces = width,
         boxes = <RangeBox>[],
-        spaceBoxCount = 0;
+        spaceBoxCount = 0,
+        trailingSpaceBoxCount = 0;
 
   EngineLineMetrics.rich(
     this.lineNumber, {
@@ -49,6 +50,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.descent,
     required this.boxes,
     required this.spaceBoxCount,
+    required this.trailingSpaceBoxCount,
   })  : displayText = null,
         unscaledAscent = double.infinity;
 
@@ -80,6 +82,12 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   /// The number of boxes that are space-only.
   final int spaceBoxCount;
+
+  /// The number of trailing boxes that are space-only.
+  final int trailingSpaceBoxCount;
+
+  /// The number of space-only boxes excluding trailing spaces.
+  int get nonTrailingSpaceBoxCount => spaceBoxCount - trailingSpaceBoxCount;
 
   @override
   final bool hardBreak;
@@ -325,6 +333,7 @@ class EngineTextStyle implements ui.TextStyle {
     required ui.Paint? foreground,
     required List<ui.Shadow>? shadows,
     required List<ui.FontFeature>? fontFeatures,
+    required List<ui.FontVariation>? fontVariations,
   }) = EngineTextStyle.only;
 
   /// Constructs an [EngineTextStyle] with only the given properties.
@@ -351,10 +360,11 @@ class EngineTextStyle implements ui.TextStyle {
     this.foreground,
     this.shadows,
     this.fontFeatures,
+    this.fontVariations,
   })  : assert(
             color == null || foreground == null,
             'Cannot provide both a color and a foreground\n'
-            'The color argument is just a shorthand for "foreground: new Paint()..color = color".'),
+            'The color argument is just a shorthand for "foreground: Paint()..color = color".'),
         isFontFamilyProvided = fontFamily != null,
         fontFamily = fontFamily ?? '';
 
@@ -385,6 +395,7 @@ class EngineTextStyle implements ui.TextStyle {
   final String fontFamily;
   final List<String>? fontFamilyFallback;
   final List<ui.FontFeature>? fontFeatures;
+  final List<ui.FontVariation>? fontVariations;
   final double? fontSize;
   final double? letterSpacing;
   final double? wordSpacing;
@@ -432,6 +443,7 @@ class EngineTextStyle implements ui.TextStyle {
       // TODO(mdebbar): Pass the actual value when font features become supported
       //                https://github.com/flutter/flutter/issues/64595
       fontFeatures: null,
+      fontVariations: null,
     );
   }
 
@@ -510,7 +522,8 @@ class EngineTextStyle implements ui.TextStyle {
           'background: ${background ?? "unspecified"}, '
           'foreground: ${foreground ?? "unspecified"}, '
           'shadows: ${shadows ?? "unspecified"}, '
-          'fontFeatures: ${fontFeatures ?? "unspecified"}'
+          'fontFeatures: ${fontFeatures ?? "unspecified"}, '
+          'fontVariations: ${fontVariations ?? "unspecified"}'
           ')';
     } else {
       return super.toString();
@@ -660,14 +673,14 @@ String fontWeightIndexToCss({int fontWeightIndex = 3}) {
 /// If [isSpan] is true, the text element is a span within richtext and
 /// should not assign effectiveFontFamily if fontFamily was not specified.
 void applyTextStyleToElement({
-  required html.HtmlElement element,
+  required DomHTMLElement element,
   required EngineTextStyle style,
   bool isSpan = false,
 }) {
   assert(element != null); // ignore: unnecessary_null_comparison
   assert(style != null); // ignore: unnecessary_null_comparison
   bool updateDecoration = false;
-  final html.CssStyleDeclaration cssStyle = element.style;
+  final DomCSSStyleDeclaration cssStyle = element.style;
 
   final ui.Color? color = style.foreground?.color ?? style.color;
   if (style.foreground?.style == ui.PaintingStyle.stroke) {
@@ -685,21 +698,18 @@ void applyTextStyleToElement({
         : 1.0 / ui.window.devicePixelRatio;
     cssStyle.textStroke = '${adaptedWidth}px ${colorToCssString(color)}';
   } else if (color != null) {
-    cssStyle.color = colorToCssString(color);
+    cssStyle.color = colorToCssString(color)!;
   }
   final ui.Color? background = style.background?.color;
   if (background != null) {
-    cssStyle.backgroundColor = colorToCssString(background);
-  }
-  if (style.height != null) {
-    cssStyle.lineHeight = '${style.height}';
+    cssStyle.backgroundColor = colorToCssString(background)!;
   }
   final double? fontSize = style.fontSize;
   if (fontSize != null) {
     cssStyle.fontSize = '${fontSize.floor()}px';
   }
   if (style.fontWeight != null) {
-    cssStyle.fontWeight = fontWeightToCss(style.fontWeight);
+    cssStyle.fontWeight = fontWeightToCss(style.fontWeight)!;
   }
   if (style.fontStyle != null) {
     cssStyle.fontStyle =
@@ -708,9 +718,9 @@ void applyTextStyleToElement({
   // For test environment use effectiveFontFamily since we need to
   // consistently use Ahem font.
   if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
-    cssStyle.fontFamily = canonicalizeFontFamily(style.fontFamily);
+    cssStyle.fontFamily = canonicalizeFontFamily(style.fontFamily)!;
   } else {
-    cssStyle.fontFamily = canonicalizeFontFamily(style.effectiveFontFamily);
+    cssStyle.fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)!;
   }
   if (style.letterSpacing != null) {
     cssStyle.letterSpacing = '${style.letterSpacing}px';
@@ -749,50 +759,10 @@ void applyTextStyleToElement({
   if (fontFeatures != null && fontFeatures.isNotEmpty) {
     cssStyle.fontFeatureSettings = _fontFeatureListToCss(fontFeatures);
   }
-}
 
-html.Element createPlaceholderElement({
-  required ParagraphPlaceholder placeholder,
-}) {
-  final html.Element element = html.document.createElement('span');
-  final html.CssStyleDeclaration style = element.style;
-  style
-    ..display = 'inline-block'
-    ..width = '${placeholder.width}px'
-    ..height = '${placeholder.height}px'
-    ..verticalAlign = _placeholderAlignmentToCssVerticalAlign(placeholder);
-
-  return element;
-}
-
-String _placeholderAlignmentToCssVerticalAlign(
-  ParagraphPlaceholder placeholder,
-) {
-  // For more details about the vertical-align CSS property, see:
-  // - https://developer.mozilla.org/en-US/docs/Web/CSS/vertical-align
-  switch (placeholder.alignment) {
-    case ui.PlaceholderAlignment.top:
-      return 'top';
-
-    case ui.PlaceholderAlignment.middle:
-      return 'middle';
-
-    case ui.PlaceholderAlignment.bottom:
-      return 'bottom';
-
-    case ui.PlaceholderAlignment.aboveBaseline:
-      return 'baseline';
-
-    case ui.PlaceholderAlignment.belowBaseline:
-      return '-${placeholder.height}px';
-
-    case ui.PlaceholderAlignment.baseline:
-      // In CSS, the placeholder is already placed above the baseline. But
-      // Flutter's `baselineOffset` assumes the placeholder is placed below the
-      // baseline. That's why we need to subtract the placeholder's height from
-      // `baselineOffset`.
-      final double offset = placeholder.baselineOffset - placeholder.height;
-      return '${offset}px';
+  final List<ui.FontVariation>? fontVariations = style.fontVariations;
+  if (fontVariations != null && fontVariations.isNotEmpty) {
+    cssStyle.setProperty('font-variation-settings', _fontVariationListToCss(fontVariations));
   }
 }
 
@@ -835,6 +805,21 @@ String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
   return sb.toString();
 }
 
+String _fontVariationListToCss(List<ui.FontVariation> fontVariations) {
+  assert(fontVariations.isNotEmpty);
+
+  final StringBuffer sb = StringBuffer();
+  final int len = fontVariations.length;
+  for (int i = 0; i < len; i++) {
+    if (i != 0) {
+      sb.write(',');
+    }
+    final ui.FontVariation fontVariation = fontVariations[i];
+    sb.write('"${fontVariation.axis}" ${fontVariation.value}');
+  }
+  return sb.toString();
+}
+
 /// Converts text decoration style to CSS text-decoration-style value.
 String? _textDecorationToCssString(
     ui.TextDecoration? decoration, ui.TextDecorationStyle? decorationStyle) {
@@ -871,37 +856,6 @@ String? _decorationStyleToCssString(ui.TextDecorationStyle decorationStyle) {
     default:
       return null;
   }
-}
-
-/// Converts [textDirection] to its corresponding CSS value.
-///
-/// This value is used for the "direction" CSS property, e.g.:
-///
-/// ```css
-/// direction: rtl;
-/// ```
-String? textDirectionToCss(ui.TextDirection? textDirection) {
-  if (textDirection == null) {
-    return null;
-  }
-  return textDirectionIndexToCss(textDirection.index);
-}
-
-String? textDirectionIndexToCss(int textDirectionIndex) {
-  switch (textDirectionIndex) {
-    case 0:
-      return 'rtl';
-    case 1:
-      return null; // ltr is the default
-  }
-
-  assert(() {
-    throw AssertionError(
-      'Failed to convert text direction $textDirectionIndex to CSS',
-    );
-  }());
-
-  return null;
 }
 
 /// Converts [align] to its corresponding CSS value.

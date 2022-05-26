@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/display_list/display_list_utils.h"
 #include "flutter/fml/math.h"
+#include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -22,16 +24,18 @@ constexpr SkPoint end_points[] = {
     {0, 0},
     {100, 100},
 };
-constexpr SkColor colors[] = {
-    SK_ColorGREEN,
-    SK_ColorYELLOW,
-    SK_ColorBLUE,
+const DlColor colors[] = {
+    DlColor::kGreen(),
+    DlColor::kYellow(),
+    DlColor::kBlue(),
 };
 constexpr float stops[] = {
     0.0,
     0.5,
     1.0,
 };
+std::vector<uint32_t> color_vector(colors, colors + 3);
+std::vector<float> stops_vector(stops, stops + 3);
 
 // clang-format off
 constexpr float rotate_color_matrix[20] = {
@@ -59,55 +63,121 @@ constexpr SkPoint TestPoints[] = {
 };
 #define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
 
+static const SkSamplingOptions NearestSampling =
+    SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
+static const SkSamplingOptions LinearSampling =
+    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
+
+static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
+  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
+  SkCanvas* canvas = surface->getCanvas();
+  SkPaint p0, p1;
+  p0.setStyle(SkPaint::kFill_Style);
+  p0.setColor(SK_ColorGREEN);
+  p1.setStyle(SkPaint::kFill_Style);
+  p1.setColor(SK_ColorBLUE);
+  p1.setAlpha(128);
+  for (int y = 0; y < w; y += checker_size) {
+    for (int x = 0; x < h; x += checker_size) {
+      SkPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
+      canvas->drawRect(SkRect::MakeXYWH(x, y, checker_size, checker_size),
+                       cellp);
+    }
+  }
+  return DlImage::Make(surface->makeImageSnapshot());
+}
+
+static auto TestImage1 = MakeTestImage(40, 40, 5);
+static auto TestImage2 = MakeTestImage(50, 50, 5);
+
 static const sk_sp<SkBlender> TestBlender1 =
     SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, false);
 static const sk_sp<SkBlender> TestBlender2 =
     SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
 static const sk_sp<SkBlender> TestBlender3 =
     SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
-static const sk_sp<SkShader> TestShader1 =
-    SkGradientShader::MakeLinear(end_points,
-                                 colors,
-                                 stops,
-                                 3,
-                                 SkTileMode::kMirror,
-                                 0,
-                                 nullptr);
-// TestShader2 is identical to TestShader1 and points out that we cannot
-// perform a deep compare over our various sk_sp objects because the
-// DisplayLists constructed with the two do not compare == below.
-static const sk_sp<SkShader> TestShader2 =
-    SkGradientShader::MakeLinear(end_points,
-                                 colors,
-                                 stops,
-                                 3,
-                                 SkTileMode::kMirror,
-                                 0,
-                                 nullptr);
-static const sk_sp<SkShader> TestShader3 =
-    SkGradientShader::MakeLinear(end_points,
-                                 colors,
-                                 stops,
-                                 3,
-                                 SkTileMode::kDecal,
-                                 0,
-                                 nullptr);
-static const sk_sp<SkImageFilter> TestImageFilter1 =
-    SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr, nullptr);
-static const sk_sp<SkImageFilter> TestImageFilter2 =
-    SkImageFilters::Blur(5.0, 5.0, SkTileMode::kClamp, nullptr, nullptr);
-static const DlBlendColorFilter TestBlendColorFilter1(SK_ColorRED,
-                                                      SkBlendMode::kDstATop);
-static const DlBlendColorFilter TestBlendColorFilter2(SK_ColorBLUE,
-                                                      SkBlendMode::kDstATop);
-static const DlBlendColorFilter TestBlendColorFilter3(SK_ColorRED,
-                                                      SkBlendMode::kDstIn);
+static const DlImageColorSource TestSource1(TestImage1->skia_image(),
+                                            DlTileMode::kClamp,
+                                            DlTileMode::kMirror,
+                                            LinearSampling);
+static const std::shared_ptr<DlColorSource> TestSource2 =
+    DlColorSource::MakeLinear(end_points[0],
+                              end_points[1],
+                              3,
+                              colors,
+                              stops,
+                              DlTileMode::kMirror);
+static const std::shared_ptr<DlColorSource> TestSource3 =
+    DlColorSource::MakeRadial(end_points[0],
+                              10.0,
+                              3,
+                              colors,
+                              stops,
+                              DlTileMode::kMirror);
+static const std::shared_ptr<DlColorSource> TestSource4 =
+    DlColorSource::MakeConical(end_points[0],
+                               10.0,
+                               end_points[1],
+                               200.0,
+                               3,
+                               colors,
+                               stops,
+                               DlTileMode::kDecal);
+static const std::shared_ptr<DlColorSource> TestSource5 =
+    DlColorSource::MakeSweep(end_points[0],
+                             0.0,
+                             360.0,
+                             3,
+                             colors,
+                             stops,
+                             DlTileMode::kDecal);
+static const DlBlendColorFilter TestBlendColorFilter1(DlColor::kRed(),
+                                                      DlBlendMode::kDstATop);
+static const DlBlendColorFilter TestBlendColorFilter2(DlColor::kBlue(),
+                                                      DlBlendMode::kDstATop);
+static const DlBlendColorFilter TestBlendColorFilter3(DlColor::kRed(),
+                                                      DlBlendMode::kDstIn);
 static const DlMatrixColorFilter TestMatrixColorFilter1(rotate_color_matrix);
 static const DlMatrixColorFilter TestMatrixColorFilter2(invert_color_matrix);
-static const sk_sp<SkPathEffect> TestPathEffect1 =
-    SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
-static const sk_sp<SkPathEffect> TestPathEffect2 =
-    SkDashPathEffect::Make(TestDashes2, 2, 0.0f);
+static const DlBlurImageFilter TestBlurImageFilter1(5.0,
+                                                    5.0,
+                                                    DlTileMode::kClamp);
+static const DlBlurImageFilter TestBlurImageFilter2(6.0,
+                                                    5.0,
+                                                    DlTileMode::kClamp);
+static const DlBlurImageFilter TestBlurImageFilter3(5.0,
+                                                    6.0,
+                                                    DlTileMode::kClamp);
+static const DlBlurImageFilter TestBlurImageFilter4(5.0,
+                                                    5.0,
+                                                    DlTileMode::kDecal);
+static const DlDilateImageFilter TestDilateImageFilter1(5.0, 5.0);
+static const DlDilateImageFilter TestDilateImageFilter2(6.0, 5.0);
+static const DlDilateImageFilter TestDilateImageFilter3(5.0, 6.0);
+static const DlErodeImageFilter TestErodeImageFilter1(5.0, 5.0);
+static const DlErodeImageFilter TestErodeImageFilter2(6.0, 5.0);
+static const DlErodeImageFilter TestErodeImageFilter3(5.0, 6.0);
+static const DlMatrixImageFilter TestMatrixImageFilter1(SkMatrix::RotateDeg(45),
+                                                        NearestSampling);
+static const DlMatrixImageFilter TestMatrixImageFilter2(SkMatrix::RotateDeg(85),
+                                                        NearestSampling);
+static const DlMatrixImageFilter TestMatrixImageFilter3(SkMatrix::RotateDeg(45),
+                                                        LinearSampling);
+static const DlComposeImageFilter TestComposeImageFilter1(
+    TestBlurImageFilter1,
+    TestMatrixImageFilter1);
+static const DlComposeImageFilter TestComposeImageFilter2(
+    TestBlurImageFilter2,
+    TestMatrixImageFilter1);
+static const DlComposeImageFilter TestComposeImageFilter3(
+    TestBlurImageFilter1,
+    TestMatrixImageFilter2);
+static const DlColorFilterImageFilter TestCFImageFilter1(TestBlendColorFilter1);
+static const DlColorFilterImageFilter TestCFImageFilter2(TestBlendColorFilter2);
+static const std::shared_ptr<DlPathEffect> TestPathEffect1 =
+    DlDashPathEffect::Make(TestDashes1, 2, 0.0f);
+static const std::shared_ptr<DlPathEffect> TestPathEffect2 =
+    DlDashPathEffect::Make(TestDashes2, 2, 0.0f);
 static const DlBlurMaskFilter TestMaskFilter1(kNormal_SkBlurStyle, 3.0);
 static const DlBlurMaskFilter TestMaskFilter2(kNormal_SkBlurStyle, 5.0);
 static const DlBlurMaskFilter TestMaskFilter3(kSolid_SkBlurStyle, 3.0);
@@ -129,39 +199,18 @@ static const SkPath TestPath3 =
 static const SkMatrix TestMatrix1 = SkMatrix::Scale(2, 2);
 static const SkMatrix TestMatrix2 = SkMatrix::RotateDeg(45);
 
-static sk_sp<SkImage> MakeTestImage(int w, int h, int checker_size) {
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
-  SkCanvas* canvas = surface->getCanvas();
-  SkPaint p0, p1;
-  p0.setStyle(SkPaint::kFill_Style);
-  p0.setColor(SK_ColorGREEN);
-  p1.setStyle(SkPaint::kFill_Style);
-  p1.setColor(SK_ColorBLUE);
-  p1.setAlpha(128);
-  for (int y = 0; y < w; y += checker_size) {
-    for (int x = 0; x < h; x += checker_size) {
-      SkPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
-      canvas->drawRect(SkRect::MakeXYWH(x, y, checker_size, checker_size),
-                       cellp);
-    }
-  }
-  return surface->makeImageSnapshot();
-}
-static sk_sp<SkImage> TestImage1 = MakeTestImage(40, 40, 5);
-static sk_sp<SkImage> TestImage2 = MakeTestImage(50, 50, 5);
-
-static sk_sp<SkVertices> TestVertices1 =
-    SkVertices::MakeCopy(SkVertices::kTriangles_VertexMode,
-                         3,
-                         TestPoints,
-                         nullptr,
-                         colors);
-static sk_sp<SkVertices> TestVertices2 =
-    SkVertices::MakeCopy(SkVertices::kTriangleFan_VertexMode,
-                         3,
-                         TestPoints,
-                         nullptr,
-                         colors);
+static std::shared_ptr<const DlVertices> TestVertices1 =
+    DlVertices::Make(DlVertexMode::kTriangles,  //
+                     3,
+                     TestPoints,
+                     nullptr,
+                     colors);
+static std::shared_ptr<const DlVertices> TestVertices2 =
+    DlVertices::Make(DlVertexMode::kTriangleFan,  //
+                     3,
+                     TestPoints,
+                     nullptr,
+                     colors);
 
 static constexpr int TestDivs1[] = {10, 20, 30};
 static constexpr int TestDivs2[] = {15, 20, 25};
@@ -291,21 +340,21 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetStrokeCap", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(SkPaint::kRound_Cap);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(SkPaint::kSquare_Cap);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(SkPaint::kButt_Cap);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(DlStrokeCap::kRound);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(DlStrokeCap::kSquare);}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(DlStrokeCap::kButt);}},
     }
   },
   { "SetStrokeJoin", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(SkPaint::kBevel_Join);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(SkPaint::kRound_Join);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(SkPaint::kMiter_Join);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(DlStrokeJoin::kBevel);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(DlStrokeJoin::kRound);}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(DlStrokeJoin::kMiter);}},
     }
   },
   { "SetStyle", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(SkPaint::kStroke_Style);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(SkPaint::kStrokeAndFill_Style);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStyle(SkPaint::kFill_Style);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(DlDrawStyle::kStroke);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(DlDrawStyle::kStrokeAndFill);}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStyle(DlDrawStyle::kFill);}},
     }
   },
   { "SetStrokeWidth", {
@@ -327,25 +376,44 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetBlendModeOrBlender", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kSrcIn);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kDstIn);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(DlBlendMode::kSrcIn);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(DlBlendMode::kDstIn);}},
       {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender1);}},
       {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender2);}},
       {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender3);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kSrcOver);}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(DlBlendMode::kSrcOver);}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setBlender(nullptr);}},
     }
   },
-  { "SetShader", {
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader2);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader3);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setShader(nullptr);}},
+  { "SetColorSource", {
+      {0, 112, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestSource1);}},
+      // stop_count * (sizeof(float) + sizeof(uint32_t)) = 80
+      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource2.get());}},
+      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource3.get());}},
+      {0, 88 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource4.get());}},
+      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource5.get());}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(nullptr);}},
     }
   },
   { "SetImageFilter", {
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(TestImageFilter1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(TestImageFilter2);}},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter1);}},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter2);}},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter3);}},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter4);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter1);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter2);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter3);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter1);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter2);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter3);}},
+      {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter1);}},
+      {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter2);}},
+      {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter3);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestComposeImageFilter1);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestComposeImageFilter2);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestComposeImageFilter3);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestCFImageFilter1);}},
+      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestCFImageFilter2);}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(nullptr);}},
     }
   },
@@ -361,8 +429,9 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetPathEffect", {
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2);}},
+      // sizeof(DlDashPathEffect) + 2 * sizeof(SkScalar)
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1.get());}},
+      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2.get());}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(nullptr);}},
     }
   },
@@ -511,9 +580,9 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   },
   { "DrawColor", {
       // cv.drawColor becomes cv.drawPaint(paint)
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, SkBlendMode::kSrcIn);}},
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, SkBlendMode::kDstIn);}},
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorCYAN, SkBlendMode::kSrcIn);}},
+      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, DlBlendMode::kSrcIn);}},
+      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, DlBlendMode::kDstIn);}},
+      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorCYAN, DlBlendMode::kSrcIn);}},
     }
   },
   { "DrawLine", {
@@ -592,51 +661,51 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "DrawVertices", {
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices1, SkBlendMode::kSrcIn);}},
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices1, SkBlendMode::kDstIn);}},
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices2, SkBlendMode::kSrcIn);}},
+      {1, 112, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices1, DlBlendMode::kSrcIn);}},
+      {1, 112, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices1, DlBlendMode::kDstIn);}},
+      {1, 112, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices2, DlBlendMode::kSrcIn);}},
     }
   },
   { "DrawImage", {
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::NearestSampling, false);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::NearestSampling, true);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {20, 10}, DisplayList::NearestSampling, false);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 20}, DisplayList::NearestSampling, false);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::LinearSampling, false);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage2, {10, 10}, DisplayList::NearestSampling, false);}},
+      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, NearestSampling, false);}},
+      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, NearestSampling, true);}},
+      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {20, 10}, NearestSampling, false);}},
+      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 20}, NearestSampling, false);}},
+      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, LinearSampling, false);}},
+      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage2, {10, 10}, NearestSampling, false);}},
     }
   },
   { "DrawImageRect", {
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling, false);}},
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling, true);}},
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling, false,
+      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                NearestSampling, false);}},
+      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                NearestSampling, true);}},
+      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                NearestSampling, false,
                                                                 SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);}},
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling, false);}},
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
-                                                                DisplayList::NearestSampling, false);}},
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                DisplayList::LinearSampling, false);}},
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling, false);}},
+      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
+                                                                NearestSampling, false);}},
+      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
+                                                                NearestSampling, false);}},
+      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                LinearSampling, false);}},
+      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
+                                                                NearestSampling, false);}},
     }
   },
   { "DrawImageNine", {
       // SkVanvas::drawImageNine is immediately converted to drawImageLattice
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                                                                 SkFilterMode::kNearest, false);}},
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                                                                 SkFilterMode::kNearest, true);}},
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
+      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
                                                                 SkFilterMode::kNearest, false);}},
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
+      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
                                                                 SkFilterMode::kNearest, false);}},
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                                                                 SkFilterMode::kLinear, false);}},
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
+      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
                                                                 SkFilterMode::kNearest, false);}},
     }
   },
@@ -651,88 +720,88 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       // const SkColor*  fColors;    //!< array of colors
       // size = 64 + fXCount * 4 + fYCount * 4
       // if fColors and fRectTypes are not null, add (fXCount + 1) * (fYCount + 1) * 5
-      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 45}, SkFilterMode::kNearest, false);}},
-      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                    {TestDivs2, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
       // One less yDiv does not change the allocation due to 8-byte alignment
-      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 2, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kLinear, false);}},
-      {1, 96, 1, 96, [](DisplayListBuilder& b) {b.setColor(SK_ColorMAGENTA);
+      {1, 96, -1, 96, [](DisplayListBuilder& b) {b.setColor(SK_ColorMAGENTA);
                                                 b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kNearest, true);}},
-      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage2,
+      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage2,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
       // Supplying fBounds does not change size because the Op record always includes it
-      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      {1, 128, 1, 128, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+      {1, 128, -1, 128, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                      {TestDivs3, TestDivs3, TestRTypes, 2, 2, nullptr, TestLatticeColors},
                                                                      {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
     }
   },
   { "DrawAtlas", {
-      {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
+      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr, false);}},
-      {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
+        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
+                    NearestSampling, nullptr, false);}},
+      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr, true);}},
-      {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
+        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
+                    NearestSampling, nullptr, true);}},
+      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {0, 1, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr, false);}},
-      {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
+        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
+                    NearestSampling, nullptr, false);}},
+      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 25, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr, false);}},
-      {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
+        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
+                    NearestSampling, nullptr, false);}},
+      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::LinearSampling, nullptr, false);}},
-      {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
+        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
+                    LinearSampling, nullptr, false);}},
+      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kDstIn,
-                    DisplayList::NearestSampling, nullptr, false);}},
-      {1, 56 + 32 + 32, 1, 56 + 32 + 32, [](DisplayListBuilder& b) {
+        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kDstIn,
+                    NearestSampling, nullptr, false);}},
+      {1, 64 + 32 + 32, -1, 64 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         static SkRect cullRect = { 0, 0, 200, 200 };
-        b.drawAtlas(TestImage2, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, &cullRect, false);}},
-      {1, 40 + 32 + 32 + 8, 1, 40 + 32 + 32 + 8, [](DisplayListBuilder& b) {
+        b.drawAtlas(TestImage2, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
+                    NearestSampling, &cullRect, false);}},
+      {1, 48 + 32 + 32 + 8, -1, 48 + 32 + 32 + 8, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        static SkColor colors[] = { SK_ColorBLUE, SK_ColorGREEN };
-        b.drawAtlas(TestImage1, xforms, texs, colors, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr, false);}},
-      {1, 56 + 32 + 32 + 8, 1, 56 + 32 + 32 + 8, [](DisplayListBuilder& b) {
+        static DlColor colors[] = { DlColor::kBlue(), DlColor::kGreen() };
+        b.drawAtlas(TestImage1, xforms, texs, colors, 2, DlBlendMode::kSrcIn,
+                    NearestSampling, nullptr, false);}},
+      {1, 64 + 32 + 32 + 8, -1, 64 + 32 + 32 + 8, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        static SkColor colors[] = { SK_ColorBLUE, SK_ColorGREEN };
+        static DlColor colors[] = { DlColor::kBlue(), DlColor::kGreen() };
         static SkRect cullRect = { 0, 0, 200, 200 };
-        b.drawAtlas(TestImage1, xforms, texs, colors, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, &cullRect, false);}},
+        b.drawAtlas(TestImage1, xforms, texs, colors, 2, DlBlendMode::kSrcIn,
+                    NearestSampling, &cullRect, false);}},
     }
   },
   { "DrawPicture", {
@@ -795,10 +864,10 @@ TEST(DisplayList, SingleOpDisplayListsNotEqualEmpty) {
       auto desc =
           group.op_name + "(variant " + std::to_string(i + 1) + " != empty)";
       if (group.variants[i].is_empty()) {
-        ASSERT_TRUE(dl->Equals(*empty)) << desc;
+        ASSERT_TRUE(DisplayListsEQ_Verbose(dl, empty));
         ASSERT_TRUE(empty->Equals(*dl)) << desc;
       } else {
-        ASSERT_FALSE(dl->Equals(*empty)) << desc;
+        ASSERT_TRUE(DisplayListsNE_Verbose(dl, empty));
         ASSERT_FALSE(empty->Equals(*dl)) << desc;
       }
     }
@@ -917,7 +986,7 @@ TEST(DisplayList, FullRotationsAreNop) {
 
 TEST(DisplayList, AllBlendModeNops) {
   DisplayListBuilder builder;
-  builder.setBlendMode(SkBlendMode::kSrcOver);
+  builder.setBlendMode(DlBlendMode::kSrcOver);
   builder.setBlender(nullptr);
   sk_sp<DisplayList> dl = builder.Build();
   ASSERT_EQ(dl->bytes(false), sizeof(DisplayList));
@@ -1085,8 +1154,8 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Making sure hiding a ColorFilter as an ImageFilter will
     // generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
-    builder.setImageFilter(
-        SkImageFilters::ColorFilter(base_color_filter.skia_object(), nullptr));
+    DlColorFilterImageFilter color_filter_image_filter(base_color_filter);
+    builder.setImageFilter(&color_filter_image_filter);
     builder.saveLayer(&save_bounds, true);
     builder.setImageFilter(nullptr);
     builder.drawRect(rect);
@@ -1099,8 +1168,8 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Making sure hiding a problematic ColorFilter as an ImageFilter
     // will generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
-    builder.setImageFilter(
-        SkImageFilters::ColorFilter(alpha_color_filter.skia_object(), nullptr));
+    DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
+    builder.setImageFilter(&color_filter_image_filter);
     builder.saveLayer(&save_bounds, true);
     builder.setImageFilter(nullptr);
     builder.drawRect(rect);
@@ -1112,8 +1181,8 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Same as above (ImageFilter hiding ColorFilter) with no save bounds
     DisplayListBuilder builder(build_bounds);
-    builder.setImageFilter(
-        SkImageFilters::ColorFilter(alpha_color_filter.skia_object(), nullptr));
+    DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
+    builder.setImageFilter(&color_filter_image_filter);
     builder.saveLayer(nullptr, true);
     builder.setImageFilter(nullptr);
     builder.drawRect(rect);
@@ -1125,9 +1194,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Testing behavior with an unboundable blend mode
     DisplayListBuilder builder(build_bounds);
-    builder.setBlendMode(SkBlendMode::kClear);
+    builder.setBlendMode(DlBlendMode::kClear);
     builder.saveLayer(&save_bounds, true);
-    builder.setBlendMode(SkBlendMode::kSrcOver);
+    builder.setBlendMode(DlBlendMode::kSrcOver);
     builder.drawRect(rect);
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
@@ -1137,9 +1206,9 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Same as previous with no save bounds
     DisplayListBuilder builder(build_bounds);
-    builder.setBlendMode(SkBlendMode::kClear);
+    builder.setBlendMode(DlBlendMode::kClear);
     builder.saveLayer(nullptr, true);
-    builder.setBlendMode(SkBlendMode::kSrcOver);
+    builder.setBlendMode(DlBlendMode::kSrcOver);
     builder.drawRect(rect);
     builder.restore();
     sk_sp<DisplayList> display_list = builder.Build();
@@ -1246,26 +1315,6 @@ class AttributeRefTester {
   }
 };
 
-TEST(DisplayList, DisplayListImageFilterRefHandling) {
-  class ImageFilterRefTester : public virtual AttributeRefTester {
-   public:
-    void setRefToPaint(SkPaint& paint) const override {
-      paint.setImageFilter(image_filter);
-    }
-    void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setImageFilter(image_filter);
-    }
-    bool ref_is_unique() const override { return image_filter->unique(); }
-
-   private:
-    sk_sp<SkImageFilter> image_filter = SkImageFilters::Blur(2.0, 2.0, nullptr);
-  };
-
-  ImageFilterRefTester tester;
-  tester.test();
-  ASSERT_TRUE(tester.ref_is_unique());
-}
-
 TEST(DisplayList, DisplayListBlenderRefHandling) {
   class BlenderRefTester : public virtual AttributeRefTester {
    public:
@@ -1283,47 +1332,6 @@ TEST(DisplayList, DisplayListBlenderRefHandling) {
   };
 
   BlenderRefTester tester;
-  tester.test();
-  ASSERT_TRUE(tester.ref_is_unique());
-}
-
-TEST(DisplayList, DisplayListShaderRefHandling) {
-  class ShaderRefTester : public virtual AttributeRefTester {
-   public:
-    void setRefToPaint(SkPaint& paint) const override {
-      paint.setShader(shader);
-    }
-    void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setShader(shader);
-    }
-    bool ref_is_unique() const override { return shader->unique(); }
-
-   private:
-    sk_sp<SkShader> shader = SkShaders::Color(SK_ColorBLUE);
-  };
-
-  ShaderRefTester tester;
-  tester.test();
-  ASSERT_TRUE(tester.ref_is_unique());
-}
-
-TEST(DisplayList, DisplayListPathEffectRefHandling) {
-  class PathEffectRefTester : public virtual AttributeRefTester {
-   public:
-    void setRefToPaint(SkPaint& paint) const override {
-      paint.setPathEffect(path_effect);
-    }
-    void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setPathEffect(path_effect);
-    }
-    bool ref_is_unique() const override { return path_effect->unique(); }
-
-   private:
-    sk_sp<SkPathEffect> path_effect =
-        SkDashPathEffect::Make(TestDashes1, 2, 0.0);
-  };
-
-  PathEffectRefTester tester;
   tester.test();
   ASSERT_TRUE(tester.ref_is_unique());
 }
@@ -1377,6 +1385,18 @@ TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
   }
 }
 
+TEST(DisplayList, DisplayListTransformResetHandling) {
+  DisplayListBuilder builder;
+  builder.scale(20.0, 20.0);
+  builder.transformReset();
+  auto list = builder.Build();
+  ASSERT_NE(list, nullptr);
+  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+  SkCanvas* canvas = surface->getCanvas();
+  list->RenderTo(canvas);
+  ASSERT_TRUE(canvas->getTotalMatrix().isIdentity());
+}
+
 TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
   auto run_tests = [](std::string name,
                       void build(DisplayListBuilder & builder),
@@ -1396,7 +1416,7 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
       // Second test i the draw op with kSrc,
       // (usually fails group opacity)
       DisplayListBuilder builder;
-      builder.setBlendMode(SkBlendMode::kSrc);
+      builder.setBlendMode(DlBlendMode::kSrc);
       build(builder);
       auto display_list = builder.Build();
       EXPECT_EQ(display_list->can_apply_group_opacity(), expect_with_kSrc)
@@ -1415,8 +1435,8 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
       #body, [](DisplayListBuilder& builder) { body }, expect, expect)
 
   RUN_TESTS(builder.drawPaint(););
-  RUN_TESTS2(builder.drawColor(SK_ColorRED, SkBlendMode::kSrcOver);, true);
-  RUN_TESTS2(builder.drawColor(SK_ColorRED, SkBlendMode::kSrc);, false);
+  RUN_TESTS2(builder.drawColor(SK_ColorRED, DlBlendMode::kSrcOver);, true);
+  RUN_TESTS2(builder.drawColor(SK_ColorRED, DlBlendMode::kSrc);, false);
   RUN_TESTS(builder.drawLine({0, 0}, {10, 10}););
   RUN_TESTS(builder.drawRect({0, 0, 10, 10}););
   RUN_TESTS(builder.drawOval({0, 0, 10, 10}););
@@ -1430,16 +1450,14 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
   RUN_TESTS2(builder.drawPoints(SkCanvas::kPoints_PointMode, TestPointCount,
                                 TestPoints);
              , false);
-  RUN_TESTS2(builder.drawVertices(TestVertices1, SkBlendMode::kSrc);, false);
-  RUN_TESTS(builder.drawImage(TestImage1, {0, 0}, DisplayList::LinearSampling,
-                              true););
-  RUN_TESTS2(
-      builder.drawImage(TestImage1, {0, 0}, DisplayList::LinearSampling, false);
-      , true);
+  RUN_TESTS2(builder.drawVertices(TestVertices1, DlBlendMode::kSrc);, false);
+  RUN_TESTS(builder.drawImage(TestImage1, {0, 0}, LinearSampling, true););
+  RUN_TESTS2(builder.drawImage(TestImage1, {0, 0}, LinearSampling, false);
+             , true);
   RUN_TESTS(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
-                                  DisplayList::NearestSampling, true););
+                                  NearestSampling, true););
   RUN_TESTS2(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
-                                   DisplayList::NearestSampling, false);
+                                   NearestSampling, false);
              , true);
   RUN_TESTS(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
                                   SkFilterMode::kLinear, true););
@@ -1457,14 +1475,14 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
              , true);
   static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
   static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
-  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                               SkBlendMode::kSrcIn,
-                               DisplayList::NearestSampling, nullptr, true);
-             , false);
-  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                               SkBlendMode::kSrcIn,
-                               DisplayList::NearestSampling, nullptr, false);
-             , false);
+  RUN_TESTS2(
+      builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
+                        DlBlendMode::kSrcIn, NearestSampling, nullptr, true);
+      , false);
+  RUN_TESTS2(
+      builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
+                        DlBlendMode::kSrcIn, NearestSampling, nullptr, false);
+      , false);
   RUN_TESTS(builder.drawPicture(TestPicture1, nullptr, true););
   RUN_TESTS2(builder.drawPicture(TestPicture1, nullptr, false);, true);
   EXPECT_TRUE(TestDisplayList1->can_apply_group_opacity());
@@ -1517,7 +1535,7 @@ TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithOverlappingChidren) {
 
 TEST(DisplayList, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
   DisplayListBuilder builder;
-  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.setBlendMode(DlBlendMode::kSrc);
   builder.saveLayer(nullptr, false);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
@@ -1527,7 +1545,7 @@ TEST(DisplayList, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
 
 TEST(DisplayList, SaveLayerTrueWithSrcBlendDoesNotSupportGroupOpacity) {
   DisplayListBuilder builder;
-  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.setBlendMode(DlBlendMode::kSrc);
   builder.saveLayer(nullptr, true);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
@@ -1538,7 +1556,7 @@ TEST(DisplayList, SaveLayerTrueWithSrcBlendDoesNotSupportGroupOpacity) {
 TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithChildSrcBlend) {
   DisplayListBuilder builder;
   builder.saveLayer(nullptr, false);
-  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.setBlendMode(DlBlendMode::kSrc);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
   auto display_list = builder.Build();
@@ -1548,7 +1566,7 @@ TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithChildSrcBlend) {
 TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithChildSrcBlend) {
   DisplayListBuilder builder;
   builder.saveLayer(nullptr, true);
-  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.setBlendMode(DlBlendMode::kSrc);
   builder.drawRect({0, 0, 10, 10});
   builder.restore();
   auto display_list = builder.Build();
@@ -1560,7 +1578,7 @@ TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
   builder.saveLayer(nullptr, true);
   builder.drawRect({50, 50, 100, 100});
   // This image filter should be ignored since it was not set before saveLayer
-  builder.setImageFilter(TestImageFilter1);
+  builder.setImageFilter(&TestBlurImageFilter1);
   builder.restore();
   SkRect bounds = builder.Build()->bounds();
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
@@ -1684,7 +1702,7 @@ TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
 
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setImageFilter(TestImageFilter1);
+  builder.setImageFilter(&TestBlurImageFilter1);
   builder.saveLayer(nullptr, true);
   builder.setImageFilter(nullptr);
   builder.drawRect({10, 10, 20, 20});
@@ -1716,9 +1734,9 @@ TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
 
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.setBlendMode(DlBlendMode::kSrc);
   builder.saveLayer(nullptr, true);
-  builder.setBlendMode(SkBlendMode::kSrcOver);
+  builder.setBlendMode(DlBlendMode::kSrcOver);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 
@@ -1734,7 +1752,7 @@ TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
   builder.saveLayer(nullptr, true);
-  builder.setImageFilter(TestImageFilter1);
+  builder.setImageFilter(&TestBlurImageFilter1);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 
@@ -1764,7 +1782,7 @@ TEST(DisplayList, SaveLayerSrcBlendOnChildPreventsOpacityOptimization) {
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
   builder.saveLayer(nullptr, true);
-  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.setBlendMode(DlBlendMode::kSrc);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 

@@ -15,15 +15,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.tracing.Trace;
 import io.flutter.BuildConfig;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.util.PathUtils;
+import io.flutter.util.TraceSection;
 import io.flutter.view.VsyncWaiter;
 import java.io.File;
 import java.util.*;
@@ -39,6 +40,8 @@ public class FlutterLoader {
       "io.flutter.embedding.android.OldGenHeapSize";
   private static final String ENABLE_SKPARAGRAPH_META_DATA_KEY =
       "io.flutter.embedding.android.EnableSkParagraph";
+  private static final String ENABLE_IMPELLER_META_DATA_KEY =
+      "io.flutter.embedding.android.EnableImpeller";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -149,8 +152,7 @@ public class FlutterLoader {
       throw new IllegalStateException("startInitialization must be called on the main thread");
     }
 
-    Trace.beginSection("FlutterLoader#startInitialization");
-
+    TraceSection.begin("FlutterLoader#startInitialization");
     try {
       // Ensure that the context is actually the application context.
       final Context appContext = applicationContext.getApplicationContext();
@@ -179,8 +181,7 @@ public class FlutterLoader {
           new Callable<InitResult>() {
             @Override
             public InitResult call() {
-              Trace.beginSection("FlutterLoader initTask");
-
+              TraceSection.begin("FlutterLoader initTask");
               try {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
@@ -200,13 +201,13 @@ public class FlutterLoader {
                     PathUtils.getCacheDirectory(appContext),
                     PathUtils.getDataDirectory(appContext));
               } finally {
-                Trace.endSection();
+                TraceSection.end();
               }
             }
           };
       initResultFuture = executorService.submit(initTask);
     } finally {
-      Trace.endSection();
+      TraceSection.end();
     }
   }
 
@@ -231,8 +232,8 @@ public class FlutterLoader {
       throw new IllegalStateException(
           "ensureInitializationComplete must be called after startInitialization");
     }
-    Trace.beginSection("FlutterLoader#ensureInitializationComplete");
 
+    TraceSection.begin("FlutterLoader#ensureInitializationComplete");
     try {
       InitResult result = initResultFuture.get();
 
@@ -304,14 +305,24 @@ public class FlutterLoader {
         activityManager.getMemoryInfo(memInfo);
         oldGenHeapSizeMegaBytes = (int) (memInfo.totalMem / 1e6 / 2);
       }
-
       shellArgs.add("--old-gen-heap-size=" + oldGenHeapSizeMegaBytes);
+
+      DisplayMetrics displayMetrics = applicationContext.getResources().getDisplayMetrics();
+      int screenWidth = displayMetrics.widthPixels;
+      int screenHeight = displayMetrics.heightPixels;
+      // This is the formula Android uses.
+      // https://android.googlesource.com/platform/frameworks/base/+/39ae5bac216757bc201490f4c7b8c0f63006c6cd/libs/hwui/renderthread/CacheManager.cpp#45
+      int resourceCacheMaxBytesThreshold = screenWidth * screenHeight * 12 * 4;
+      shellArgs.add("--resource-cache-max-bytes-threshold=" + resourceCacheMaxBytesThreshold);
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      if (metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true)) {
+      boolean enableSkParagraph =
+          metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true);
+      shellArgs.add("--enable-skparagraph=" + enableSkParagraph);
 
-        shellArgs.add("--enable-skparagraph");
+      if (metaData != null && metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
+        shellArgs.add("--enable-impeller");
       }
 
       final String leakVM = isLeakVM(metaData) ? "true" : "false";
@@ -332,7 +343,7 @@ public class FlutterLoader {
       Log.e(TAG, "Flutter initialization failed.", e);
       throw new RuntimeException(e);
     } finally {
-      Trace.endSection();
+      TraceSection.end();
     }
   }
 

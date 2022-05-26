@@ -24,10 +24,12 @@ import android.os.Build;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.FragmentActivity;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
@@ -41,12 +43,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
 public class PlatformPluginTest {
+  private final Context ctx = ApplicationProvider.getApplicationContext();
+
   @Config(sdk = 16)
   @Test
   public void itIgnoresNewHapticEventsOnOldAndroidPlatforms() {
@@ -68,8 +71,7 @@ public class PlatformPluginTest {
   @Config(sdk = 29)
   @Test
   public void platformPlugin_getClipboardData() throws IOException {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
 
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
@@ -86,7 +88,7 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
 
-    ContentResolver contentResolver = RuntimeEnvironment.application.getContentResolver();
+    ContentResolver contentResolver = ctx.getContentResolver();
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     clip = ClipData.newUri(contentResolver, "URI", uri);
@@ -97,8 +99,7 @@ public class PlatformPluginTest {
   @Config(sdk = 28)
   @Test
   public void platformPlugin_hasStrings() {
-    ClipboardManager clipboardManager =
-        spy(RuntimeEnvironment.application.getSystemService(ClipboardManager.class));
+    ClipboardManager clipboardManager = spy(ctx.getSystemService(ClipboardManager.class));
 
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
@@ -523,6 +524,29 @@ public class PlatformPluginTest {
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+  }
+
+  @Config(sdk = 29)
+  @Test
+  public void verifyWindowFlagsSetToStyleOverlays() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    SystemChromeStyle style =
+        new SystemChromeStyle(
+            0XFF000000, Brightness.LIGHT, true, 0XFFC70039, Brightness.LIGHT, 0XFF006DB3, true);
+
+    platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+    verify(fakeWindow).addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    verify(fakeWindow)
+        .clearFlags(
+            WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
   }
 
   @Test

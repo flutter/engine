@@ -87,6 +87,9 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterKeyboardViewDelegate.h",
     "framework/Source/FlutterMacOSExternalTexture.h",
     "framework/Source/FlutterMacOSExternalTexture.h",
+    "framework/Source/FlutterMenuPlugin.h",
+    "framework/Source/FlutterMenuPlugin.mm",
+    "framework/Source/FlutterMenuPlugin_Internal.h",
     "framework/Source/FlutterMetalCompositor.h",
     "framework/Source/FlutterMetalCompositor.mm",
     "framework/Source/FlutterMetalRenderer.h",
@@ -130,6 +133,7 @@ source_set("flutter_framework_source") {
     "//flutter/flow:flow",
     "//flutter/fml",
     "//flutter/shell/platform/common:common_cpp_accessibility",
+    "//flutter/shell/platform/common:common_cpp_enums",
     "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/common:common_cpp_switches",
     "//flutter/shell/platform/darwin/common:framework_shared",
@@ -148,6 +152,7 @@ source_set("flutter_framework_source") {
   cflags_objcc = flutter_cflags_objcc_arc
 
   frameworks = [
+    "Carbon.framework",
     "Cocoa.framework",
     "CoreVideo.framework",
     "IOSurface.framework",
@@ -185,6 +190,7 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterFrameBufferProviderUnittests.mm",
     "framework/Source/FlutterGLCompositorUnittests.mm",
     "framework/Source/FlutterKeyboardManagerUnittests.mm",
+    "framework/Source/FlutterMenuPluginTest.mm",
     "framework/Source/FlutterMetalCompositorUnittests.mm",
     "framework/Source/FlutterMetalRendererTest.mm",
     "framework/Source/FlutterMetalSurfaceManagerTest.mm",
@@ -208,6 +214,7 @@ executable("flutter_desktop_darwin_unittests") {
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
     "//flutter/shell/platform/common:common_cpp_accessibility",
+    "//flutter/shell/platform/common:common_cpp_enums",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/darwin/graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
@@ -301,17 +308,8 @@ action("_generate_symlinks") {
   ]
 }
 
-copy("copy_framework_podspec") {
-  visibility = [ ":*" ]
-  sources = [ "framework/FlutterMacOS.podspec" ]
-  outputs = [ "$root_out_dir/FlutterMacOS.podspec" ]
-}
-
 group("flutter_framework") {
-  deps = [
-    ":_generate_symlinks",
-    ":copy_framework_podspec",
-  ]
+  deps = [ ":_generate_symlinks" ]
 }
 
 if (build_glfw_shell) {
@@ -323,31 +321,28 @@ if (build_glfw_shell) {
 }
 
 zip_bundle("zip_macos_flutter_framework") {
-  output = "FlutterMacOS.framework.zip"
-  visibility = [ ":*" ]
   deps = [ ":_generate_symlinks" ]
+  output = "tmp/FlutterMacOS.framework.zip"
+  visibility = [ ":*" ]
   files = [
     {
       source = "$root_out_dir/FlutterMacOS.framework"
-      destination = "FlutterMacOS.framework.zip"
+      destination = "FlutterMacOS.framework"
     },
   ]
 }
 
 zip_bundle("macos_flutter_framework_archive") {
-  output = "$full_platform_name/FlutterMacOS.framework.zip"
-  deps = [
-    ":copy_framework_podspec",
-    ":zip_macos_flutter_framework",
-  ]
+  deps = [ ":zip_macos_flutter_framework" ]
+  prefix = "$full_platform_name-$flutter_runtime_mode/"
+  if (flutter_runtime_mode == "debug") {
+    prefix = "$full_platform_name/"
+  }
+  output = "${prefix}FlutterMacOS.framework.zip"
   files = [
     {
-      source = "$root_out_dir/zip_archives/FlutterMacOS.framework.zip"
+      source = "$root_out_dir/zip_archives/tmp/FlutterMacOS.framework.zip"
       destination = "FlutterMacOS.framework.zip"
-    },
-    {
-      source = "$root_out_dir/FlutterMacOS.podspec"
-      destination = "FlutterMacOS.podspec"
     },
   ]
 }

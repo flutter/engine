@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/color_filter_layer.h"
 
+#include "flutter/display_list/display_list_color_filter.h"
+#include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -22,6 +24,7 @@ TEST_F(ColorFilterLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -36,6 +39,7 @@ TEST_F(ColorFilterLayerTest, PaintBeforePrerollDies) {
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
 }
@@ -52,6 +56,7 @@ TEST_F(ColorFilterLayerTest, EmptyFilter) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -81,6 +86,7 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -119,6 +125,7 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), children_bounds);
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -166,7 +173,9 @@ TEST_F(ColorFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_bounds);
+  EXPECT_EQ(layer1->child_paint_bounds(), children_bounds);
   EXPECT_EQ(layer2->paint_bounds(), mock_layer2->paint_bounds());
+  EXPECT_EQ(layer2->child_paint_bounds(), mock_layer2->paint_bounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer1->needs_painting(paint_context()));
@@ -211,6 +220,167 @@ TEST_F(ColorFilterLayerTest, Readback) {
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
+}
+
+TEST_F(ColorFilterLayerTest, CacheChild) {
+  auto layer_filter =
+      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<ColorFilterLayer>(layer_filter);
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayerChildren));
+}
+
+TEST_F(ColorFilterLayerTest, CacheChildren) {
+  auto layer_filter =
+      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
+  auto layer = std::make_shared<ColorFilterLayer>(layer_filter);
+  layer->Add(mock_layer1);
+  layer->Add(mock_layer2);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayerChildren));
+}
+
+TEST_F(ColorFilterLayerTest, OpacityInheritance) {
+  // clang-format off
+  float matrix[20] = {
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    1, 0, 0, 0, 0,
+    0, 0, 0, 1, 0,
+  };
+  // clang-format on
+  auto layer_filter = DlMatrixColorFilter(matrix);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto color_filter_layer =
+      std::make_shared<ColorFilterLayer>(layer_filter.skia_object());
+  color_filter_layer->Add(mock_layer);
+
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+  color_filter_layer->Preroll(preroll_context(), initial_transform);
+  // ImageFilterLayers can always inherit opacity whether or not their
+  // children are compatible.
+  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+  int opacity_alpha = 0x7F;
+  SkPoint offset = SkPoint::Make(10, 10);
+  auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
+  opacity_layer->Add(color_filter_layer);
+  context->subtree_can_inherit_opacity = false;
+  opacity_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  auto opacity_integer_transform = RasterCache::GetIntegralTransCTM(
+      SkMatrix::Translate(offset.fX, offset.fY));
+#endif
+  DisplayListBuilder expected_builder;
+  /* opacity_layer::Paint() */ {
+    expected_builder.save();
+    {
+      expected_builder.translate(offset.fX, offset.fY);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+      expected_builder.transformReset();
+      expected_builder.transform(opacity_integer_transform);
+#endif
+      /* image_filter_layer::Paint() */ {
+        expected_builder.setColor(opacity_alpha << 24);
+        expected_builder.setColorFilter(&layer_filter);
+        expected_builder.saveLayer(&child_path.getBounds(), true);
+        /* mock_layer::Paint() */ {
+          expected_builder.setColor(0xFF000000);
+          expected_builder.setColorFilter(nullptr);
+          expected_builder.drawPath(child_path);
+        }
+        expected_builder.restore();
+      }
+    }
+    expected_builder.restore();
+  }
+
+  opacity_layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
 }
 
 }  // namespace testing

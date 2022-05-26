@@ -923,6 +923,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   ///   directory (a.k.a. buildroot).
   bool shouldRecurse(fs.IoNode entry) {
     return !entry.fullName.endsWith('third_party/gn') &&
+            !entry.fullName.endsWith('third_party/gradle') &&
             !entry.fullName.endsWith('third_party/imgui') &&
             entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
@@ -931,6 +932,8 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.gitignore' &&
             entry.name != '.vscode' &&
             entry.name != 'javatests' &&
+            entry.name != 'fixtures' &&
+            entry.name != 'playground' &&
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
             entry.name != 'test_runner' &&
@@ -1321,7 +1324,8 @@ class _RepositoryAngleDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'tools' // These are build-time tools, and aren't shipped.
+    return entry.name != 'tools'       // These are build-time tools, and aren't shipped.
+        && entry.name != 'third_party' // Unused by Flutter: BUILD files with forwarding targets (but no code).
         && super.shouldRecurse(entry);
   }
 }
@@ -1772,7 +1776,8 @@ class _RepositorySkiaDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'platform_tools' // contains nothing that ends up in the binary executable
+    return entry.name != 'bazel' // contains nothing that ends up in the binary executable
+        && entry.name != 'platform_tools' // contains nothing that ends up in the binary executable
         && entry.name != 'tools' // contains nothing that ends up in the binary executable
         && entry.name != 'resources' // contains nothing that ends up in the binary executable
         && super.shouldRecurse(entry);
@@ -1874,6 +1879,8 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
       return _RepositoryDartDirectory(this, entry);
     if (entry.name == 'expat')
       return _RepositoryExpatDirectory(this, entry);
+    if (entry.name == 'externals')
+      return _RepositoryThirdPartyExternalsDirectory(this, entry);
     if (entry.name == 'freetype-android')
       throw '//third_party/freetype-android is no longer part of this client: remove it';
     if (entry.name == 'freetype2')
@@ -1917,6 +1924,29 @@ class _RepositoryThirdPartyWebDependenciesDirectory extends _RepositoryDirectory
   @override
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'canvaskit' // redundant; covered by Skia dependencies
+        && super.shouldRecurse(entry);
+  }
+}
+
+/// Corresponds to the `src/third_party/externals` directory
+class _RepositoryThirdPartyExternalsDirectory extends _RepositoryDirectory {
+  _RepositoryThirdPartyExternalsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'vulkanmemoryallocator')
+      return _RepositoryVulkanMemoryAllocatorDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryVulkanMemoryAllocatorDirectory extends _RepositoryDirectory {
+  _RepositoryVulkanMemoryAllocatorDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    // Flutter only uses the headers in the include directory.
+    return entry.name == 'include'
         && super.shouldRecurse(entry);
   }
 }

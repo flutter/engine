@@ -25,7 +25,13 @@ Future<void> testMain() async {
   void appendToScene() {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
     final html.Element testScene = html.Element.tag('flt-scene');
-    testScene.append(canvas.rootElement);
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      testScene.style.position = 'absolute';
+      testScene.style.transformOrigin = '0 0 0';
+      testScene.style.transform = 'scale(0.3)';
+    }
+    testScene.append(canvas.rootElement as html.Node);
     flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
   }
 
@@ -171,7 +177,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
 
     expect(
-      canvas.rootElement.querySelectorAll('p').map<String>((html.Element e) => e.innerText).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((DomElement e) => e.innerText).toList(),
       <String>['Am I blurry?', 'Am I blurry?'],
       reason: 'Expected to render text using HTML',
     );
@@ -229,7 +235,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, const Offset(180, 50));
 
     expect(
-      canvas.rootElement.querySelectorAll('p').map<String?>((html.Element e) => e.text).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((DomElement e) => e.text).toList(),
       <String>[text],
       reason: 'Expected to render text using HTML',
     );
@@ -245,16 +251,44 @@ Future<void> testMain() async {
     sb.pop();
     sb.pop();
     final SurfaceScene scene = sb.build() as SurfaceScene;
-    final html.Element sceneElement = scene.webOnlyRootElement!;
+    final DomElement sceneElement = scene.webOnlyRootElement!;
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      sceneElement.style.position = 'absolute';
+      sceneElement.style.transformOrigin = '0 0 0';
+      sceneElement.style.transform = 'scale(0.3)';
+    }
 
     sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
-    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
+    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement as html.Node);
 
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',
       region: canvasSize,
       maxDiffRatePercent: 1.0,
       pixelComparison: PixelComparison.precise,
+    );
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/96498. When
+  // a picture is made of just text that can be rendered using plain HTML,
+  // BitmapCanvas should not create any <canvas> elements as they are expensive.
+  test('does not allocate bitmap canvas just for text', () async {
+    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50), RenderStrategy());
+
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'));
+    builder.addText('Hello');
+    final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+
+    canvas.drawParagraph(paragraph, const Offset(8.5, 8.5));
+    expect(
+      canvas.rootElement.querySelectorAll('canvas'),
+      isEmpty,
+    );
+    expect(
+      canvas.rootElement.querySelectorAll('flt-paragraph').single.innerText,
+      'Hello',
     );
   });
 }

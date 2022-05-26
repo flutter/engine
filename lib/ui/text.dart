@@ -933,6 +933,67 @@ class FontFeature {
   String toString() => "FontFeature('$feature', $value)";
 }
 
+/// An axis tag and value that can be used to customize variable fonts.
+///
+/// Some fonts are variable fonts that can generate a range of different
+/// font faces by altering the values of the font's design axes.
+///
+/// See https://docs.microsoft.com/en-us/typography/opentype/spec/otvaroverview
+///
+/// Example:
+/// `TextStyle(fontVariations: <FontVariation>[FontVariation('wght', 800.0)])`
+class FontVariation {
+  /// Creates a [FontVariation] object, which can be added to a [TextStyle] to
+  /// change the variable attributes of a font.
+  ///
+  /// `axis` is the four-character tag that identifies the design axis.
+  /// These tags are specified by font formats such as OpenType.
+  /// See https://docs.microsoft.com/en-us/typography/opentype/spec/dvaraxisreg
+  ///
+  /// `value` is the value that the axis will be set to. The behavior
+  /// depends on how the font implements the axis.
+  const FontVariation(
+    this.axis,
+    this.value,
+  ) : assert(axis != null),
+      assert(axis.length == 4, 'Axis tag must be exactly four characters long.'),
+      assert(value != null);
+
+  /// The tag that identifies the design axis.  Must consist of 4 ASCII
+  /// characters.
+  final String axis;
+
+  /// The value assigned to this design axis.
+  ///
+  /// The range of usable values depends on the specification of the axis.
+  final double value;
+
+  static const int _kEncodedSize = 8;
+
+  void _encode(ByteData byteData) {
+    assert(axis.codeUnits.every((int c) => c >= 0x20 && c <= 0x7F));
+    for (int i = 0; i < 4; i++) {
+      byteData.setUint8(i, axis.codeUnitAt(i));
+    }
+    byteData.setFloat32(4, value, _kFakeHostEndian);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is FontVariation
+        && other.axis == axis
+        && other.value == value;
+  }
+
+  @override
+  int get hashCode => hashValues(axis, value);
+
+  @override
+  String toString() => "FontVariation('$axis', $value)";
+}
+
 /// Whether and how to align text horizontally.
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
@@ -1255,6 +1316,7 @@ Int32List _encodeTextStyle(
   Paint? foreground,
   List<Shadow>? shadows,
   List<FontFeature>? fontFeatures,
+  List<FontVariation>? fontVariations,
 ) {
   final Int32List result = Int32List(9);
   // The 0th bit of result[0] is reserved for leadingDistribution.
@@ -1330,6 +1392,10 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 18;
     // Passed separately to native.
   }
+  if (fontVariations != null) {
+    result[0] |= 1 << 19;
+    // Passed separately to native.
+  }
 
   return result;
 }
@@ -1371,6 +1437,7 @@ class TextStyle {
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
   /// * `fontFeatures`: The font features that should be applied to the text.
+  /// * `fontVariations`: The font variations that should be applied to the text.
   TextStyle({
     Color? color,
     TextDecoration? decoration,
@@ -1392,6 +1459,7 @@ class TextStyle {
     Paint? foreground,
     List<Shadow>? shadows,
     List<FontFeature>? fontFeatures,
+    List<FontVariation>? fontVariations,
   }) : assert(color == null || foreground == null,
          'Cannot provide both a color and a foreground\n'
          'The color argument is just a shorthand for "foreground: Paint()..color = color".'
@@ -1416,6 +1484,7 @@ class TextStyle {
          foreground,
          shadows,
          fontFeatures,
+         fontVariations,
        ),
        _leadingDistribution = leadingDistribution,
        _fontFamily = fontFamily ?? '',
@@ -1429,7 +1498,8 @@ class TextStyle {
        _background = background,
        _foreground = foreground,
        _shadows = shadows,
-       _fontFeatures = fontFeatures;
+       _fontFeatures = fontFeatures,
+       _fontVariations = fontVariations;
 
   final Int32List _encoded;
   final String _fontFamily;
@@ -1444,6 +1514,7 @@ class TextStyle {
   final Paint? _foreground;
   final List<Shadow>? _shadows;
   final List<FontFeature>? _fontFeatures;
+  final List<FontVariation>? _fontVariations;
   final TextLeadingDistribution? _leadingDistribution;
 
   @override
@@ -1464,11 +1535,12 @@ class TextStyle {
         && _listEquals<int>(other._encoded, _encoded)
         && _listEquals<Shadow>(other._shadows, _shadows)
         && _listEquals<String>(other._fontFamilyFallback, _fontFamilyFallback)
-        && _listEquals<FontFeature>(other._fontFeatures, _fontFeatures);
+        && _listEquals<FontFeature>(other._fontFeatures, _fontFeatures)
+        && _listEquals<FontVariation>(other._fontVariations, _fontVariations);
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _leadingDistribution, _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, hashList(_shadows), _decorationThickness, hashList(_fontFeatures));
+  int get hashCode => hashValues(hashList(_encoded), _leadingDistribution, _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, hashList(_shadows), _decorationThickness, hashList(_fontFeatures), hashList(_fontVariations));
 
   @override
   String toString() {
@@ -1496,7 +1568,8 @@ class TextStyle {
              'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                                  : "unspecified"}, '
              'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                                  : "unspecified"}, '
              'shadows: ${            _encoded[0] & 0x20000 == 0x20000  ? _shadows                                     : "unspecified"}, '
-             'fontFeatures: ${       _encoded[0] & 0x40000 == 0x40000  ? _fontFeatures                                : "unspecified"}'
+             'fontFeatures: ${       _encoded[0] & 0x40000 == 0x40000  ? _fontFeatures                                : "unspecified"}, '
+             'fontVariations: ${     _encoded[0] & 0x80000 == 0x80000  ? _fontVariations                              : "unspecified"}'
            ')';
   }
 }
@@ -2810,11 +2883,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
       _constructor(
         style._encoded,
         encodedStrutStyle,
-        style._fontFamily,
+        style._fontFamily ?? '',
         strutFontFamilies,
-        style._fontSize,
-        style._height,
-        style._ellipsis,
+        style._fontSize ?? 0,
+        style._height ?? 0,
+        style._ellipsis ?? '',
         _encodeLocale(style._locale)
       );
   }
@@ -2822,11 +2895,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   void _constructor(
     Int32List encoded,
     ByteData? strutData,
-    String? fontFamily,
+    String fontFamily,
     List<Object?>? strutFontFamily,
-    double? fontSize,
-    double? height,
-    String? ellipsis,
+    double fontSize,
+    double height,
+    String ellipsis,
     String locale
   ) native 'ParagraphBuilder_constructor';
 
@@ -2868,14 +2941,25 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
       }
     }
 
+    ByteData? encodedFontVariations;
+    final List<FontVariation>? fontVariations = style._fontVariations;
+    if (fontVariations != null) {
+      encodedFontVariations = ByteData(fontVariations.length * FontVariation._kEncodedSize);
+      int byteOffset = 0;
+      for (final FontVariation variation in fontVariations) {
+        variation._encode(ByteData.view(encodedFontVariations.buffer, byteOffset, FontVariation._kEncodedSize));
+        byteOffset += FontVariation._kEncodedSize;
+      }
+    }
+
     _pushStyle(
       encoded,
       fullFontFamilies,
-      style._fontSize,
-      style._letterSpacing,
-      style._wordSpacing,
-      style._height,
-      style._decorationThickness,
+      style._fontSize ?? 0,
+      style._letterSpacing ?? 0,
+      style._wordSpacing ?? 0,
+      style._height ?? 0,
+      style._decorationThickness ?? 0,
       _encodeLocale(style._locale),
       style._background?._objects,
       style._background?._data,
@@ -2883,17 +2967,18 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
       style._foreground?._data,
       Shadow._encodeShadows(style._shadows),
       encodedFontFeatures,
+      encodedFontVariations,
     );
   }
 
   void _pushStyle(
     Int32List encoded,
     List<Object?> fontFamilies,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    double? decorationThickness,
+    double fontSize,
+    double letterSpacing,
+    double wordSpacing,
+    double height,
+    double decorationThickness,
     String locale,
     List<Object?>? backgroundObjects,
     ByteData? backgroundData,
@@ -2901,6 +2986,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     ByteData? foregroundData,
     ByteData shadowsData,
     ByteData? fontFeaturesData,
+    ByteData? fontVariationsData,
   ) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale? locale) => locale?.toString() ?? '';
@@ -2982,11 +3068,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline?.index);
+    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, (baseline ?? TextBaseline.alphabetic).index);
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
-  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline) native 'ParagraphBuilder_addPlaceholder';
+  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
@@ -3009,7 +3095,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   return _futurize(
     (_Callback<void> callback) {
-      _loadFontFromList(list, callback, fontFamily);
+      _loadFontFromList(list, callback, fontFamily ?? '');
     }
   ).then((_) => _sendFontChangeMessage());
 }
@@ -3033,4 +3119,4 @@ FutureOr<void> _sendFontChangeMessage() async {
   }
 }
 
-void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
+void _loadFontFromList(Uint8List list, _Callback<void> callback, String fontFamily) native 'loadFontFromList';

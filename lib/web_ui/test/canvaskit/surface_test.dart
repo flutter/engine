@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -26,7 +24,7 @@ void testMain() {
       final Surface surface = SurfaceFactory.instance.getSurface();
       final CkSurface originalSurface =
           surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
-      final html.CanvasElement original = surface.htmlCanvas!;
+      final DomCanvasElement original = surface.htmlCanvas!;
 
       // Expect exact requested dimensions.
       expect(original.width, 9);
@@ -39,7 +37,7 @@ void testMain() {
       // Shrinking reuses the existing canvas straight-up.
       final CkSurface shrunkSurface =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final html.CanvasElement shrunk = surface.htmlCanvas!;
+      final DomCanvasElement shrunk = surface.htmlCanvas!;
       expect(shrunk, same(original));
       expect(shrunk.style.width, '9px');
       expect(shrunk.style.height, '19px');
@@ -51,7 +49,7 @@ void testMain() {
       // by 40% to accommodate future increases.
       final CkSurface firstIncreaseSurface =
           surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
-      final html.CanvasElement firstIncrease = surface.htmlCanvas!;
+      final DomCanvasElement firstIncrease = surface.htmlCanvas!;
       expect(firstIncrease, isNot(same(original)));
       expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
@@ -66,7 +64,7 @@ void testMain() {
       // Subsequent increases within 40% reuse the old canvas.
       final CkSurface secondIncreaseSurface =
           surface.acquireFrame(const ui.Size(11, 22)).skiaSurface;
-      final html.CanvasElement secondIncrease = surface.htmlCanvas!;
+      final DomCanvasElement secondIncrease = surface.htmlCanvas!;
       expect(secondIncrease, same(firstIncrease));
       expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
       expect(secondIncreaseSurface.width(), 11);
@@ -74,7 +72,7 @@ void testMain() {
 
       // Increases beyond the 40% limit will cause a new allocation.
       final CkSurface hugeSurface = surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
-      final html.CanvasElement huge = surface.htmlCanvas!;
+      final DomCanvasElement huge = surface.htmlCanvas!;
       expect(huge, isNot(same(secondIncrease)));
       expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
@@ -89,7 +87,7 @@ void testMain() {
       // Shrink again. Reuse the last allocated surface.
       final CkSurface shrunkSurface2 =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final html.CanvasElement shrunk2 = surface.htmlCanvas!;
+      final DomCanvasElement shrunk2 = surface.htmlCanvas!;
       expect(shrunk2, same(huge));
       expect(shrunkSurface2, isNot(same(hugeSurface)));
       expect(shrunkSurface2.width(), 5);
@@ -118,8 +116,8 @@ void testMain() {
         expect(afterAcquireFrame, same(before));
 
         // Emulate WebGL context loss.
-        final html.CanvasElement canvas =
-            surface.htmlElement.children.single as html.CanvasElement;
+        final DomCanvasElement canvas =
+            surface.htmlElement.children.single as DomCanvasElement;
         final dynamic ctx = canvas.getContext('webgl2');
         expect(ctx, isNotNull);
         final dynamic loseContextExtension =
@@ -178,6 +176,15 @@ void testMain() {
       expect(lowDpr.height(), 16);
       expect(surface.htmlCanvas!.style.width, '20px');
       expect(surface.htmlCanvas!.style.height, '32px');
+
+      // See https://github.com/flutter/flutter/issues/77084#issuecomment-1120151172
+      window.debugOverrideDevicePixelRatio(2.0);
+      final CkSurface changeRatioAndSize =
+          surface.acquireFrame(const ui.Size(9.9, 15.9)).skiaSurface;
+      expect(changeRatioAndSize.width(), 10);
+      expect(changeRatioAndSize.height(), 16);
+      expect(surface.htmlCanvas!.style.width, '5px');
+      expect(surface.htmlCanvas!.style.height, '8px');
     });
   }, skip: isIosSafari);
 }

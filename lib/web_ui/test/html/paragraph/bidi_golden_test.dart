@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -92,7 +91,7 @@ Future<void> testMain() async {
 
   test('basic bidi starting with ltr (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 40;
 
@@ -196,7 +195,7 @@ Future<void> testMain() async {
 
   test('basic bidi starting with rtl (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 40;
 
@@ -304,7 +303,7 @@ Future<void> testMain() async {
 
   test('multiline bidi (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
@@ -418,7 +417,7 @@ Future<void> testMain() async {
 
   test('multi span bidi (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 900);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
@@ -487,11 +486,11 @@ Future<void> testMain() async {
     final Offset offset = Offset(bounds.left + 5, bounds.top + y + 5);
 
     // Range for "em 12 " and the first character of `_rtlWord1`.
-    paintBoxes(canvas, offset, paragraph.getBoxesForRange(3, 10), lightBlue);
+    fillBoxes(canvas, offset, paragraph.getBoxesForRange(3, 10), lightBlue);
     // Range for the second half of `_rtlWord1` and all of `_rtlWord2` and " 3".
-    paintBoxes(canvas, offset, paragraph.getBoxesForRange(11, 21), lightPurple);
+    fillBoxes(canvas, offset, paragraph.getBoxesForRange(11, 21), lightPurple);
     // Range for "psum dolo".
-    paintBoxes(canvas, offset, paragraph.getBoxesForRange(24, 33), green);
+    fillBoxes(canvas, offset, paragraph.getBoxesForRange(24, 33), green);
 
     canvas.drawParagraph(paragraph, offset);
   }
@@ -537,7 +536,7 @@ Future<void> testMain() async {
 
   test('bidi with selection (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
@@ -573,11 +572,4 @@ Future<void> testMain() async {
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_selection_dom');
   });
-}
-
-void paintBoxes(EngineCanvas canvas, Offset offset, List<TextBox> boxes, Color color) {
-  for (final TextBox box in boxes) {
-    final Rect rect = box.toRect().shift(offset);
-    canvas.drawRect(rect, SurfacePaintData()..color = color);
-  }
 }

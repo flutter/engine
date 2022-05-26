@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
@@ -104,7 +105,8 @@ class RuntimeController : public PlatformConfigurationClient {
       const fml::closure& isolate_shutdown_callback,
       std::shared_ptr<const fml::Mapping> persistent_isolate_data,
       fml::WeakPtr<IOManager> io_manager,
-      fml::WeakPtr<ImageDecoder> image_decoder) const;
+      fml::WeakPtr<ImageDecoder> image_decoder,
+      fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry) const;
 
   // |PlatformConfigurationClient|
   ~RuntimeController() override;
@@ -555,6 +557,10 @@ class RuntimeController : public PlatformConfigurationClient {
     return context_.snapshot_delegate;
   }
 
+  std::weak_ptr<const DartIsolate> GetRootIsolate() const {
+    return root_isolate_;
+  }
+
  protected:
   /// Constructor for Mocks.
   RuntimeController(RuntimeDelegate& p_client, TaskRunners task_runners);
@@ -608,6 +614,9 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   FontCollection& GetFontCollection() override;
+
+  // |PlatformConfigurationClient|
+  std::shared_ptr<AssetManager> GetAssetManager() override;
 
   // |PlatformConfigurationClient|
   void UpdateIsolateDescription(const std::string isolate_name,

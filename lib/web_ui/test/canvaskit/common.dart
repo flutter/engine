@@ -10,8 +10,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
-export '../common.dart';
-
 /// Used in tests instead of [ProductionCollector] to control Skia object
 /// collection explicitly, and to prevent leaks across tests.
 ///
@@ -25,7 +23,7 @@ void setUpCanvasKitTest() {
   setUpAll(() async {
     expect(useCanvasKit, true, reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
-    await ui.webOnlyInitializePlatform(assetManager: WebOnlyMockAssetManager());
+    await initializeEngine(assetManager: WebOnlyMockAssetManager());
   });
 
   setUp(() async {

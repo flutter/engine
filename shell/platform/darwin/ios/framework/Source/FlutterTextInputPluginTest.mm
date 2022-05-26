@@ -20,12 +20,13 @@ FLUTTER_ASSERT_ARC
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
 - (void)setEditableTransform:(NSArray*)matrix;
+- (void)setTextInputClient:(int)client;
 - (void)setTextInputState:(NSDictionary*)state;
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
 - (id<FlutterTextInputDelegate>)textInputDelegate;
-
+- (void)configureWithDictionary:(NSDictionary*)configuration;
 @end
 
 @interface FlutterTextInputViewSpy : FlutterTextInputView
@@ -139,7 +140,8 @@ FLUTTER_ASSERT_ARC
       @"inputAction" : @"TextInputAction.unspecified",
       @"smartDashesType" : @"0",
       @"smartQuotesType" : @"0",
-      @"autocorrect" : @YES
+      @"autocorrect" : @YES,
+      @"enableInteractiveSelection" : @YES,
     };
   }
 
@@ -267,6 +269,34 @@ FLUTTER_ASSERT_ARC
       showAutocorrectionPromptRectForStart:0
                                        end:1
                                 withClient:0]);
+}
+
+- (void)testIngoresSelectionChangeIfSelectionIsDisabled {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  __block int updateCount = 0;
+  OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+
+  [inputView.text setString:@"Some initial text"];
+  XCTAssertEqual(updateCount, 0);
+
+  FlutterTextRange* textRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  [inputView setSelectedTextRange:textRange];
+  XCTAssertEqual(updateCount, 1);
+
+  // Disable the interactive selection.
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@(NO) forKey:@"enableInteractiveSelection"];
+  [config setValue:@(NO) forKey:@"obscureText"];
+  [config setValue:@(NO) forKey:@"enableDeltaModel"];
+  [inputView configureWithDictionary:config];
+
+  textRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(2, 3)];
+  [inputView setSelectedTextRange:textRange];
+  // The update count does not change.
+  XCTAssertEqual(updateCount, 1);
 }
 
 - (void)testAutocorrectionPromptRectDoesNotAppearDuringScribble {
@@ -1042,6 +1072,41 @@ FLUTTER_ASSERT_ARC
                                }]]);
 }
 
+- (void)testInputViewsHasNonNilInputDelegate {
+  if (@available(iOS 13.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+    [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+
+    [inputView setTextInputClient:123];
+    [inputView reloadInputViews];
+    [inputView becomeFirstResponder];
+    NSAssert(inputView.isFirstResponder, @"inputView is not first responder");
+    inputView.inputDelegate = nil;
+
+    FlutterTextInputView* mockInputView = OCMPartialMock(inputView);
+    [mockInputView setTextInputState:@{
+      @"text" : @"COMPOSING",
+      @"composingBase" : @1,
+      @"composingExtent" : @3
+    }];
+    OCMVerify([mockInputView setInputDelegate:[OCMArg isNotNil]]);
+  }
+}
+
+- (void)testInputViewsDoNotHaveUITextInteractions {
+  if (@available(iOS 13.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+    BOOL hasTextInteraction = NO;
+    for (id interaction in inputView.interactions) {
+      hasTextInteraction = [interaction isKindOfClass:[UITextInteraction class]];
+      if (hasTextInteraction) {
+        break;
+      }
+    }
+    XCTAssertFalse(hasTextInteraction);
+  }
+}
+
 #pragma mark - UITextInput methods - Tests
 
 - (void)testUpdateFirstRectForRange {
@@ -1214,13 +1279,6 @@ FLUTTER_ASSERT_ARC
 }
 
 #pragma mark - Floating Cursor - Tests
-
-- (void)testInputViewsHaveUIInteractions {
-  if (@available(iOS 13.0, *)) {
-    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
-    XCTAssertGreaterThan(inputView.interactions.count, 0ul);
-  }
-}
 
 - (void)testFloatingCursorDoesNotThrow {
   // The keyboard implementation may send unbalanced calls to the input view.

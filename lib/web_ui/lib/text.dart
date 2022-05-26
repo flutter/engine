@@ -179,6 +179,33 @@ class FontFeature {
   String toString() => "FontFeature('$feature', $value)";
 }
 
+class FontVariation {
+  const FontVariation(
+    this.axis,
+    this.value,
+  ) : assert(axis != null),
+      assert(axis.length == 4, 'Axis tag must be exactly four characters long.'),
+      assert(value != null);
+
+  final String axis;
+  final double value;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is FontVariation
+        && other.axis == axis
+        && other.value == value;
+  }
+
+  @override
+  int get hashCode => hashValues(axis, value);
+
+  @override
+  String toString() => "FontVariation('$axis', $value)";
+}
+
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
   left,
@@ -312,6 +339,7 @@ abstract class TextStyle {
     Paint? foreground,
     List<Shadow>? shadows,
     List<FontFeature>? fontFeatures,
+    List<FontVariation>? fontVariations,
   }) {
     if (engine.useCanvasKit) {
       return engine.CkTextStyle(
@@ -357,6 +385,7 @@ abstract class TextStyle {
         foreground: foreground,
         shadows: shadows,
         fontFeatures: fontFeatures,
+        fontVariations: fontVariations,
       );
     }
   }
@@ -731,7 +760,7 @@ Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
         .loadFontFromList(list, fontFamily: fontFamily)
         .then((_) => engine.sendFontChangeMessage());
   } else {
-    return _fontCollection!
+    return engine.fontCollection
         .loadFontFromList(list, fontFamily: fontFamily!)
         .then((_) => engine.sendFontChangeMessage());
   }

@@ -8,6 +8,7 @@
 #include <optional>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -46,18 +47,18 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setAntiAlias(bool aa) override {}
   void setDither(bool dither) override {}
   void setInvertColors(bool invert) override {}
-  void setStrokeCap(SkPaint::Cap cap) override {}
-  void setStrokeJoin(SkPaint::Join join) override {}
-  void setStyle(SkPaint::Style style) override {}
-  void setStrokeWidth(SkScalar width) override {}
-  void setStrokeMiter(SkScalar limit) override {}
-  void setColor(SkColor color) override {}
-  void setBlendMode(SkBlendMode mode) override {}
+  void setStrokeCap(DlStrokeCap cap) override {}
+  void setStrokeJoin(DlStrokeJoin join) override {}
+  void setStyle(DlDrawStyle style) override {}
+  void setStrokeWidth(float width) override {}
+  void setStrokeMiter(float limit) override {}
+  void setColor(DlColor color) override {}
+  void setBlendMode(DlBlendMode mode) override {}
   void setBlender(sk_sp<SkBlender> blender) override {}
-  void setShader(sk_sp<SkShader> shader) override {}
-  void setImageFilter(sk_sp<SkImageFilter> filter) override {}
+  void setColorSource(const DlColorSource* source) override {}
+  void setImageFilter(const DlImageFilter* filter) override {}
   void setColorFilter(const DlColorFilter* filter) override {}
-  void setPathEffect(sk_sp<SkPathEffect> effect) override {}
+  void setPathEffect(const DlPathEffect* effect) override {}
   void setMaskFilter(const DlMaskFilter* filter) override {}
 };
 
@@ -88,6 +89,7 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {}
   // clang-format on
+  void transformReset() override {}
 };
 
 class IgnoreDrawDispatchHelper : public virtual Dispatcher {
@@ -96,7 +98,7 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
   void saveLayer(const SkRect* bounds,
                  const SaveLayerOptions options) override {}
   void restore() override {}
-  void drawColor(SkColor color, SkBlendMode mode) override {}
+  void drawColor(DlColor color, DlBlendMode mode) override {}
   void drawPaint() override {}
   void drawLine(const SkPoint& p0, const SkPoint& p1) override {}
   void drawRect(const SkRect& rect) override {}
@@ -112,34 +114,35 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
   void drawPoints(SkCanvas::PointMode mode,
                   uint32_t count,
                   const SkPoint points[]) override {}
-  void drawVertices(const sk_sp<SkVertices> vertices,
-                    SkBlendMode mode) override {}
-  void drawImage(const sk_sp<SkImage> image,
+  void drawSkVertices(const sk_sp<SkVertices> vertices,
+                      SkBlendMode mode) override {}
+  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override {}
+  void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  const SkSamplingOptions& sampling,
                  bool render_with_attributes) override {}
-  void drawImageRect(const sk_sp<SkImage> image,
+  void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      const SkSamplingOptions& sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override {}
-  void drawImageNine(const sk_sp<SkImage> image,
+  void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      SkFilterMode filter,
                      bool render_with_attributes) override {}
-  void drawImageLattice(const sk_sp<SkImage> image,
+  void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         SkFilterMode filter,
                         bool render_with_attributes) override {}
-  void drawAtlas(const sk_sp<SkImage> atlas,
+  void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
-                 const SkColor colors[],
+                 const DlColor colors[],
                  int count,
-                 SkBlendMode mode,
+                 DlBlendMode mode,
                  const SkSamplingOptions& sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override {}
@@ -151,7 +154,7 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                     SkScalar x,
                     SkScalar y) override {}
   void drawShadow(const SkPath& path,
-                  const SkColor color,
+                  const DlColor color,
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override {}
@@ -171,20 +174,20 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
 
   void setAntiAlias(bool aa) override;
   void setDither(bool dither) override;
-  void setStyle(SkPaint::Style style) override;
-  void setColor(SkColor color) override;
+  void setStyle(DlDrawStyle style) override;
+  void setColor(DlColor color) override;
   void setStrokeWidth(SkScalar width) override;
   void setStrokeMiter(SkScalar limit) override;
-  void setStrokeCap(SkPaint::Cap cap) override;
-  void setStrokeJoin(SkPaint::Join join) override;
-  void setShader(sk_sp<SkShader> shader) override;
+  void setStrokeCap(DlStrokeCap cap) override;
+  void setStrokeJoin(DlStrokeJoin join) override;
+  void setColorSource(const DlColorSource* source) override;
   void setColorFilter(const DlColorFilter* filter) override;
   void setInvertColors(bool invert) override;
-  void setBlendMode(SkBlendMode mode) override;
+  void setBlendMode(DlBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
-  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setPathEffect(const DlPathEffect* effect) override;
   void setMaskFilter(const DlMaskFilter* filter) override;
-  void setImageFilter(sk_sp<SkImageFilter> filter) override;
+  void setImageFilter(const DlImageFilter* filter) override;
 
   const SkPaint& paint() { return paint_; }
 
@@ -272,6 +275,8 @@ class SkMatrixDispatchHelper : public virtual Dispatcher,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
 
   // clang-format on
+
+  void transformReset() override;
 
   void save() override;
   void restore() override;
@@ -390,16 +395,16 @@ class DisplayListBoundsCalculator final
   // The flag should never be set if a cull_rect is provided.
   explicit DisplayListBoundsCalculator(const SkRect* cull_rect = nullptr);
 
-  void setStrokeCap(SkPaint::Cap cap) override;
-  void setStrokeJoin(SkPaint::Join join) override;
-  void setStyle(SkPaint::Style style) override;
+  void setStrokeCap(DlStrokeCap cap) override;
+  void setStrokeJoin(DlStrokeJoin join) override;
+  void setStyle(DlDrawStyle style) override;
   void setStrokeWidth(SkScalar width) override;
   void setStrokeMiter(SkScalar limit) override;
-  void setBlendMode(SkBlendMode mode) override;
+  void setBlendMode(DlBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
-  void setImageFilter(sk_sp<SkImageFilter> filter) override;
+  void setImageFilter(const DlImageFilter* filter) override;
   void setColorFilter(const DlColorFilter* filter) override;
-  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setPathEffect(const DlPathEffect* effect) override;
   void setMaskFilter(const DlMaskFilter* filter) override;
 
   void save() override;
@@ -407,7 +412,7 @@ class DisplayListBoundsCalculator final
   void restore() override;
 
   void drawPaint() override;
-  void drawColor(SkColor color, SkBlendMode mode) override;
+  void drawColor(DlColor color, DlBlendMode mode) override;
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
   void drawRect(const SkRect& rect) override;
   void drawOval(const SkRect& bounds) override;
@@ -422,34 +427,35 @@ class DisplayListBoundsCalculator final
   void drawPoints(SkCanvas::PointMode mode,
                   uint32_t count,
                   const SkPoint pts[]) override;
-  void drawVertices(const sk_sp<SkVertices> vertices,
-                    SkBlendMode mode) override;
-  void drawImage(const sk_sp<SkImage> image,
+  void drawSkVertices(const sk_sp<SkVertices> vertices,
+                      SkBlendMode mode) override;
+  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  const SkSamplingOptions& sampling,
                  bool render_with_attributes) override;
-  void drawImageRect(const sk_sp<SkImage> image,
+  void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      const SkSamplingOptions& sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override;
-  void drawImageNine(const sk_sp<SkImage> image,
+  void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      SkFilterMode filter,
                      bool render_with_attributes) override;
-  void drawImageLattice(const sk_sp<SkImage> image,
+  void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         SkFilterMode filter,
                         bool render_with_attributes) override;
-  void drawAtlas(const sk_sp<SkImage> atlas,
+  void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
-                 const SkColor colors[],
+                 const DlColor colors[],
                  int count,
-                 SkBlendMode mode,
+                 DlBlendMode mode,
                  const SkSamplingOptions& sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
@@ -461,7 +467,7 @@ class DisplayListBoundsCalculator final
                     SkScalar x,
                     SkScalar y) override;
   void drawShadow(const SkPath& path,
-                  const SkColor color,
+                  const DlColor color,
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override;
@@ -505,11 +511,11 @@ class DisplayListBoundsCalculator final
     // in use by the stream before this layer was pushed on the
     // stack and should be returned when this layer is popped off
     // the stack.
-    // Some saveLayer calls will process their bounds by an
-    // |SkImageFilter| when they are restored, but for most
+    // Some saveLayer calls will process their bounds by a
+    // |DlImageFilter| when they are restored, but for most
     // saveLayer (and all save) calls the filter will be null.
     explicit LayerData(BoundsAccumulator* outer,
-                       sk_sp<SkImageFilter> filter = nullptr)
+                       std::shared_ptr<DlImageFilter> filter = nullptr)
         : outer_(outer), filter_(filter), is_unbounded_(false) {}
     ~LayerData() = default;
 
@@ -522,7 +528,7 @@ class DisplayListBoundsCalculator final
     BoundsAccumulator* restore_accumulator() { return outer_; }
 
     // The filter to apply to the layer bounds when it is restored
-    sk_sp<SkImageFilter> filter() { return filter_; }
+    std::shared_ptr<DlImageFilter> filter() { return filter_; }
 
     // is_unbounded should be set to true if we ever encounter an operation
     // on a layer that either is unrestricted (|drawColor| or |drawPaint|)
@@ -557,7 +563,7 @@ class DisplayListBoundsCalculator final
    private:
     BoundsAccumulator layer_accumulator_;
     BoundsAccumulator* outer_;
-    sk_sp<SkImageFilter> filter_;
+    std::shared_ptr<DlImageFilter> filter_;
     bool is_unbounded_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(LayerData);
@@ -567,22 +573,22 @@ class DisplayListBoundsCalculator final
 
   static constexpr SkScalar kMinStrokeWidth = 0.01;
 
-  std::optional<SkBlendMode> blend_mode_ = SkBlendMode::kSrcOver;
+  std::optional<DlBlendMode> blend_mode_ = DlBlendMode::kSrcOver;
   std::shared_ptr<const DlColorFilter> color_filter_;
 
   SkScalar half_stroke_width_ = kMinStrokeWidth;
   SkScalar miter_limit_ = 4.0;
-  SkPaint::Style style_ = SkPaint::Style::kFill_Style;
+  DlDrawStyle style_ = DlDrawStyle::kFill;
   bool join_is_miter_ = true;
   bool cap_is_square_ = false;
-  sk_sp<SkImageFilter> image_filter_;
-  sk_sp<SkPathEffect> path_effect_;
+  std::shared_ptr<DlImageFilter> image_filter_;
+  std::shared_ptr<const DlPathEffect> path_effect_;
   std::shared_ptr<const DlMaskFilter> mask_filter_;
 
   bool paint_nops_on_transparency();
 
   // Computes the bounds of an operation adjusted for a given ImageFilter
-  static bool ComputeFilteredBounds(SkRect& bounds, SkImageFilter* filter);
+  static bool ComputeFilteredBounds(SkRect& bounds, DlImageFilter* filter);
 
   // Adjusts the indicated bounds for the given flags and returns true if
   // the calculation was possible, or false if it could not be estimated.

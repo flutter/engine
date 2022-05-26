@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'dom.dart';
 import 'safe_browser_api.dart';
 import 'vector_math.dart';
 
@@ -38,22 +39,32 @@ typedef Callbacker<T> = String? Function(Callback<T> callback);
 /// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
-///   new Timer(new Duration(seconds: 1), () { callback(1); });
+///   Timer(const Duration(seconds: 1), () { callback(1); });
 /// }
 ///
 /// Future<int> doSomething() {
-///   return _futurize(_doSomethingAndCallback);
+///   return futurize(_doSomethingAndCallback);
 /// }
 /// ```
+// Keep this in sync with _futurize in lib/ui/fixtures/ui_test.dart.
 Future<T> futurize<T>(Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
-  final String? error = callbacker((T t) {
+  // If the callback synchronously throws an error, then synchronously
+  // rethrow that error instead of adding it to the completer. This
+  // prevents the Zone from receiving an uncaught exception.
+  bool sync = true;
+  final String? error = callbacker((T? t) {
     if (t == null) {
-      completer.completeError(Exception('operation failed'));
+      if (sync) {
+        throw Exception('operation failed');
+      } else {
+        completer.completeError(Exception('operation failed'));
+      }
     } else {
       completer.complete(t);
     }
   });
+  sync = false;
   if (error != null) {
     throw Exception(error);
   }
@@ -68,7 +79,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float32List matrix4) {
+void setElementTransform(DomElement element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -483,28 +494,10 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element? containerElement) {
+void applyWebkitClipFix(DomElement? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
-}
-
-// Stores matrix in a form that allows zero allocation transforms.
-class FastMatrix32 {
-  final Float32List matrix;
-  double transformedX = 0, transformedY = 0;
-  FastMatrix32(this.matrix);
-
-  void transform(double x, double y) {
-    transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
-    transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
-  }
-
-  String debugToString() =>
-      '${matrix[0].toStringAsFixed(3)}, ${matrix[4].toStringAsFixed(3)}, ${matrix[8].toStringAsFixed(3)}, ${matrix[12].toStringAsFixed(3)}\n'
-      '${matrix[1].toStringAsFixed(3)}, ${matrix[5].toStringAsFixed(3)}, ${matrix[9].toStringAsFixed(3)}, ${matrix[13].toStringAsFixed(3)}\n'
-      '${matrix[2].toStringAsFixed(3)}, ${matrix[6].toStringAsFixed(3)}, ${matrix[10].toStringAsFixed(3)}, ${matrix[14].toStringAsFixed(3)}\n'
-      '${matrix[3].toStringAsFixed(3)}, ${matrix[7].toStringAsFixed(3)}, ${matrix[11].toStringAsFixed(3)}, ${matrix[15].toStringAsFixed(3)}\n';
 }
 
 /// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
@@ -566,9 +559,9 @@ bool unsafeIsNull(dynamic object) {
 }
 
 /// A typed variant of [html.Window.fetch].
-Future<html.Body> httpFetch(String url) async {
-  final dynamic result = await html.window.fetch(url);
-  return result as html.Body;
+Future<DomResponse> httpFetch(String url) async {
+  final Object? result = await html.window.fetch(url);
+  return result! as DomResponse;
 }
 
 /// Extensions to [Map] that make it easier to treat it as a JSON object. The
@@ -663,7 +656,7 @@ String bytesToHexString(List<int> data) {
 /// [name] is the name of the property. [value] is the value of the property.
 /// If [value] is null, removes the style property.
 void setElementStyle(
-    html.Element element, String name, String? value) {
+    DomElement element, String name, String? value) {
   if (value == null) {
     element.style.removeProperty(name);
   } else {
@@ -671,7 +664,7 @@ void setElementStyle(
   }
 }
 
-void setClipPath(html.Element element, String? value) {
+void setClipPath(DomElement element, String? value) {
   if (browserEngine == BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
@@ -726,8 +719,23 @@ void drawEllipse(
 }
 
 /// Removes all children of a DOM node.
-void removeAllChildren(html.Node node) {
+void removeAllChildren(DomNode node) {
   while (node.lastChild != null) {
     node.lastChild!.remove();
+  }
+}
+
+/// A helper that finds an element in an iterable that satisfy a predicate, or
+/// returns null otherwise.
+///
+/// This is mostly useful for iterables containing non-null elements.
+extension FirstWhereOrNull<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final T element in this) {
+      if (test(element)) {
+        return element;
+      }
+    }
+    return null;
   }
 }

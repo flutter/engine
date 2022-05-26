@@ -14,11 +14,6 @@
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 
-#ifdef WINUWP
-#include <third_party/cppwinrt/generated/winrt/Windows.ApplicationModel.Activation.h>
-#include <third_party/cppwinrt/generated/winrt/Windows.UI.Composition.h>
-#endif
-
 namespace flutter {
 
 class FlutterWindowsView;
@@ -29,24 +24,19 @@ struct PhysicalWindowBounds {
   size_t height;
 };
 
+// Structure containing the position of a mouse pointer in the coordinate system
+// specified by the function where it's used.
+struct PointerLocation {
+  size_t x;
+  size_t y;
+};
+
 // Type representing an underlying platform window.
-#ifdef WINUWP
-using PlatformWindow =
-    winrt::Windows::ApplicationModel::Core::CoreApplicationView;
-#else
 using PlatformWindow = HWND;
-#endif
 
 // Type representing a platform object that can be accepted by the Angle
 // rendering layer to bind to and render pixels into.
-#ifdef WINUWP
-using WindowsRenderTarget =
-    std::variant<winrt::Windows::UI::Composition::SpriteVisual,
-                 winrt::Windows::UI::Core::CoreWindow,
-                 HWND>;
-#else
 using WindowsRenderTarget = std::variant<HWND>;
-#endif
 
 // Abstract class for binding Windows platform windows to Flutter views.
 class WindowBindingHandler {
@@ -95,6 +85,10 @@ class WindowBindingHandler {
   // Invoked when the app ends IME composing, such when the active text input
   // client is cleared.
   virtual void OnResetImeComposing() = 0;
+
+  // Returns the last known position of the primary pointer in window
+  // coordinates.
+  virtual PointerLocation GetPrimaryPointerLocation() = 0;
 };
 
 }  // namespace flutter

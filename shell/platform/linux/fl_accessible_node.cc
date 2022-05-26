@@ -22,6 +22,7 @@ static struct {
      FALSE},
     {ATK_STATE_SELECTED, kFlutterSemanticsFlagIsSelected, FALSE},
     {ATK_STATE_ENABLED, kFlutterSemanticsFlagIsEnabled, FALSE},
+    {ATK_STATE_SENSITIVE, kFlutterSemanticsFlagIsEnabled, FALSE},
     {ATK_STATE_READ_ONLY, kFlutterSemanticsFlagIsReadOnly, FALSE},
     {ATK_STATE_INVALID, static_cast<FlutterSemanticsFlag>(0), FALSE},
 };
@@ -71,6 +72,7 @@ struct _FlAccessibleNode {
 
   int32_t id;
   gchar* name;
+  gint index;
   gint x, y, width, height;
   GPtrArray* actions;
   gsize actions_length;
@@ -164,6 +166,12 @@ static AtkObject* fl_accessible_node_get_parent(AtkObject* accessible) {
   return self->parent;
 }
 
+// Implements AtkObject::get_index_in_parent.
+static gint fl_accessible_node_get_index_in_parent(AtkObject* accessible) {
+  FlAccessibleNode* self = FL_ACCESSIBLE_NODE(accessible);
+  return self->index;
+}
+
 // Implements AtkObject::get_n_children.
 static gint fl_accessible_node_get_n_children(AtkObject* accessible) {
   FlAccessibleNode* self = FL_ACCESSIBLE_NODE(accessible);
@@ -187,12 +195,22 @@ static AtkRole fl_accessible_node_get_role(AtkObject* accessible) {
   if ((self->flags & kFlutterSemanticsFlagIsButton) != 0) {
     return ATK_ROLE_PUSH_BUTTON;
   }
-  if ((self->flags & (kFlutterSemanticsFlagHasCheckedState |
-                      kFlutterSemanticsFlagHasToggledState)) != 0) {
+  if ((self->flags & kFlutterSemanticsFlagIsInMutuallyExclusiveGroup) != 0 &&
+      (self->flags & kFlutterSemanticsFlagHasCheckedState) != 0) {
+    return ATK_ROLE_RADIO_BUTTON;
+  }
+  if ((self->flags & kFlutterSemanticsFlagHasCheckedState) != 0) {
     return ATK_ROLE_CHECK_BOX;
+  }
+  if ((self->flags & kFlutterSemanticsFlagHasToggledState) != 0) {
+    return ATK_ROLE_TOGGLE_BUTTON;
   }
   if ((self->flags & kFlutterSemanticsFlagIsSlider) != 0) {
     return ATK_ROLE_SLIDER;
+  }
+  if ((self->flags & kFlutterSemanticsFlagIsTextField) != 0 &&
+      (self->flags & kFlutterSemanticsFlagIsObscured) != 0) {
+    return ATK_ROLE_PASSWORD_TEXT;
   }
   if ((self->flags & kFlutterSemanticsFlagIsTextField) != 0) {
     return ATK_ROLE_TEXT;
@@ -303,6 +321,8 @@ static void fl_accessible_node_class_init(FlAccessibleNodeClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_accessible_node_dispose;
   ATK_OBJECT_CLASS(klass)->get_name = fl_accessible_node_get_name;
   ATK_OBJECT_CLASS(klass)->get_parent = fl_accessible_node_get_parent;
+  ATK_OBJECT_CLASS(klass)->get_index_in_parent =
+      fl_accessible_node_get_index_in_parent;
   ATK_OBJECT_CLASS(klass)->get_n_children = fl_accessible_node_get_n_children;
   ATK_OBJECT_CLASS(klass)->ref_child = fl_accessible_node_ref_child;
   ATK_OBJECT_CLASS(klass)->get_role = fl_accessible_node_get_role;
@@ -340,9 +360,12 @@ FlAccessibleNode* fl_accessible_node_new(FlEngine* engine, int32_t id) {
   return self;
 }
 
-void fl_accessible_node_set_parent(FlAccessibleNode* self, AtkObject* parent) {
+void fl_accessible_node_set_parent(FlAccessibleNode* self,
+                                   AtkObject* parent,
+                                   gint index) {
   g_return_if_fail(FL_IS_ACCESSIBLE_NODE(self));
   self->parent = parent;
+  self->index = index;
   g_object_add_weak_pointer(G_OBJECT(self),
                             reinterpret_cast<gpointer*>(&(self->parent)));
 }

@@ -136,6 +136,7 @@ struct Settings {
   std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
+  bool enable_timeline_event_handler = true;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
   bool purge_persistent_cache = false;
@@ -155,6 +156,10 @@ struct Settings {
   // Used as the script entrypoint in debug messages. Does not affect how the
   // Dart code is executed.
   std::string advisory_script_entrypoint = "main";
+
+  // The executable path associated with this process. This is returned by
+  // Platform.executable from dart:io. If unknown, defaults to "Flutter".
+  std::string executable_name = "Flutter";
 
   // Observatory settings
 
@@ -185,12 +190,18 @@ struct Settings {
   // Font settings
   bool use_test_fonts = false;
 
+  bool use_asset_fonts = true;
+
   // Indicates whether the embedding started a prefetch of the default font
   // manager before creating the engine.
   bool prefetched_default_font_manager = false;
 
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
+
+  // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
+  // not supported on the platform.
+  bool enable_impeller = false;
 
   // Selects the DisplayList for storage of rendering operations.
   bool enable_display_list = true;
@@ -290,12 +301,20 @@ struct Settings {
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t old_gen_heap_size = -1;
 
+  // Max bytes threshold of resource cache, or 0 for unlimited.
+  size_t resource_cache_max_bytes_threshold = 0;
+
   /// A timestamp representing when the engine started. The value is based
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
 
-  std::string ToString() const;
+  /// The minimum number of samples to require in multipsampled anti-aliasing.
+  ///
+  /// Setting this value to 0 or 1 disables MSAA.
+  /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
+  /// GPU does not support the requested sampling value, MSAA will be disabled.
+  uint8_t msaa_samples = 0;
 };
 
 }  // namespace flutter

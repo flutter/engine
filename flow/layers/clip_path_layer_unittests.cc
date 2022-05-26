@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/clip_path_layer.h"
 
+#include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -28,6 +29,7 @@ TEST_F(ClipPathLayerTest, PaintingEmptyLayerDies) {
   EXPECT_EQ(preroll_context()->cull_rect, kGiantRect);        // Untouched
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -39,6 +41,7 @@ TEST_F(ClipPathLayerTest, PaintBeforePrerollDies) {
   const SkPath layer_path = SkPath().addRect(layer_bounds);
   auto layer = std::make_shared<ClipPathLayer>(layer_path, Clip::hardEdge);
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -63,6 +66,7 @@ TEST_F(ClipPathLayerTest, PaintingCulledLayerDies) {
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), kEmptyRect);
@@ -100,6 +104,7 @@ TEST_F(ClipPathLayerTest, ChildOutsideBounds) {
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_intersect_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), intersect_bounds);
@@ -135,6 +140,7 @@ TEST_F(ClipPathLayerTest, FullyContainedChild) {
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), layer_bounds);
@@ -177,6 +183,7 @@ TEST_F(ClipPathLayerTest, PartiallyContainedChild) {
   EXPECT_TRUE(preroll_context()->mutators_stack.is_empty());  // Untouched
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
   EXPECT_EQ(layer->paint_bounds(), child_intersect_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), intersect_bounds);
@@ -254,6 +261,278 @@ TEST_F(ClipPathLayerTest, Readback) {
   EXPECT_TRUE(ReadbackResult(context, hard, reader, true));
   EXPECT_TRUE(ReadbackResult(context, soft, reader, true));
   EXPECT_TRUE(ReadbackResult(context, save_layer, reader, true));
+}
+
+TEST_F(ClipPathLayerTest, OpacityInheritance) {
+  auto path1 = SkPath().addRect({10, 10, 30, 30});
+  auto mock1 = MockLayer::MakeOpacityCompatible(path1);
+  auto layer_clip = SkPath()
+                        .addRect(SkRect::MakeLTRB(5, 5, 25, 25))
+                        .addOval(SkRect::MakeLTRB(20, 20, 40, 50));
+  auto clip_path_layer =
+      std::make_shared<ClipPathLayer>(layer_clip, Clip::hardEdge);
+  clip_path_layer->Add(mock1);
+
+  // ClipRectLayer will pass through compatibility from a compatible child
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+  clip_path_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+  auto path2 = SkPath().addRect({40, 40, 50, 50});
+  auto mock2 = MockLayer::MakeOpacityCompatible(path2);
+  clip_path_layer->Add(mock2);
+
+  // ClipRectLayer will pass through compatibility from multiple
+  // non-overlapping compatible children
+  context->subtree_can_inherit_opacity = false;
+  clip_path_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+  auto path3 = SkPath().addRect({20, 20, 40, 40});
+  auto mock3 = MockLayer::MakeOpacityCompatible(path3);
+  clip_path_layer->Add(mock3);
+
+  // ClipRectLayer will not pass through compatibility from multiple
+  // overlapping children even if they are individually compatible
+  context->subtree_can_inherit_opacity = false;
+  clip_path_layer->Preroll(context, SkMatrix::I());
+  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+
+  {
+    // ClipRectLayer(aa with saveLayer) will always be compatible
+    auto clip_path_saveLayer = std::make_shared<ClipPathLayer>(
+        layer_clip, Clip::antiAliasWithSaveLayer);
+    clip_path_saveLayer->Add(mock1);
+    clip_path_saveLayer->Add(mock2);
+
+    // Double check first two children are compatible and non-overlapping
+    context->subtree_can_inherit_opacity = false;
+    clip_path_saveLayer->Preroll(context, SkMatrix::I());
+    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+    // Now add the overlapping child and test again, should still be compatible
+    clip_path_saveLayer->Add(mock3);
+    context->subtree_can_inherit_opacity = false;
+    clip_path_saveLayer->Preroll(context, SkMatrix::I());
+    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  }
+
+  // An incompatible, but non-overlapping child for the following tests
+  auto path4 = SkPath().addRect({60, 60, 70, 70});
+  auto mock4 = MockLayer::Make(path4);
+
+  {
+    // ClipRectLayer with incompatible child will not be compatible
+    auto clip_path_bad_child =
+        std::make_shared<ClipPathLayer>(layer_clip, Clip::hardEdge);
+    clip_path_bad_child->Add(mock1);
+    clip_path_bad_child->Add(mock2);
+
+    // Double check first two children are compatible and non-overlapping
+    context->subtree_can_inherit_opacity = false;
+    clip_path_bad_child->Preroll(context, SkMatrix::I());
+    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+    clip_path_bad_child->Add(mock4);
+
+    // The third child is non-overlapping, but not compatible so the
+    // TransformLayer should end up incompatible
+    context->subtree_can_inherit_opacity = false;
+    clip_path_bad_child->Preroll(context, SkMatrix::I());
+    EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  }
+
+  {
+    // ClipRectLayer(aa with saveLayer) will always be compatible
+    auto clip_path_saveLayer_bad_child = std::make_shared<ClipPathLayer>(
+        layer_clip, Clip::antiAliasWithSaveLayer);
+    clip_path_saveLayer_bad_child->Add(mock1);
+    clip_path_saveLayer_bad_child->Add(mock2);
+
+    // Double check first two children are compatible and non-overlapping
+    context->subtree_can_inherit_opacity = false;
+    clip_path_saveLayer_bad_child->Preroll(context, SkMatrix::I());
+    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+    // Now add the incompatible child and test again, should still be compatible
+    clip_path_saveLayer_bad_child->Add(mock4);
+    context->subtree_can_inherit_opacity = false;
+    clip_path_saveLayer_bad_child->Preroll(context, SkMatrix::I());
+    EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  }
+}
+
+TEST_F(ClipPathLayerTest, OpacityInheritancePainting) {
+  auto path1 = SkPath().addRect({10, 10, 30, 30});
+  auto mock1 = MockLayer::MakeOpacityCompatible(path1);
+  auto path2 = SkPath().addRect({40, 40, 50, 50});
+  auto mock2 = MockLayer::MakeOpacityCompatible(path2);
+  auto layer_clip = SkPath()
+                        .addRect(SkRect::MakeLTRB(5, 5, 25, 25))
+                        .addOval(SkRect::MakeLTRB(20, 20, 40, 50));
+  auto clip_path_layer =
+      std::make_shared<ClipPathLayer>(layer_clip, Clip::antiAlias);
+  clip_path_layer->Add(mock1);
+  clip_path_layer->Add(mock2);
+
+  // ClipRectLayer will pass through compatibility from multiple
+  // non-overlapping compatible children
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+  clip_path_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+  int opacity_alpha = 0x7F;
+  SkPoint offset = SkPoint::Make(10, 10);
+  auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
+  opacity_layer->Add(clip_path_layer);
+  context->subtree_can_inherit_opacity = false;
+  opacity_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  auto opacity_integer_transform = SkM44::Translate(offset.fX, offset.fY);
+#endif
+  DisplayListBuilder expected_builder;
+  /* OpacityLayer::Paint() */ {
+    expected_builder.save();
+    {
+      expected_builder.translate(offset.fX, offset.fY);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+      expected_builder.transformReset();
+      expected_builder.transform(opacity_integer_transform);
+#endif
+      /* ClipRectLayer::Paint() */ {
+        expected_builder.save();
+        expected_builder.clipPath(layer_clip, SkClipOp::kIntersect, true);
+        /* child layer1 paint */ {
+          expected_builder.setColor(opacity_alpha << 24);
+          expected_builder.saveLayer(&path1.getBounds(), true);
+          {
+            expected_builder.setColor(0xFF000000);
+            expected_builder.drawPath(path1);
+          }
+          expected_builder.restore();
+        }
+        /* child layer2 paint */ {
+          expected_builder.setColor(opacity_alpha << 24);
+          expected_builder.saveLayer(&path2.getBounds(), true);
+          {
+            expected_builder.setColor(0xFF000000);
+            expected_builder.drawPath(path2);
+          }
+          expected_builder.restore();
+        }
+        expected_builder.restore();
+      }
+    }
+    expected_builder.restore();
+  }
+
+  opacity_layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+}
+
+TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
+  auto path1 = SkPath().addRect({10, 10, 30, 30});
+  auto mock1 = MockLayer::MakeOpacityCompatible(path1);
+  auto path2 = SkPath().addRect({20, 20, 40, 40});
+  auto mock2 = MockLayer::MakeOpacityCompatible(path2);
+  auto children_bounds = path1.getBounds();
+  children_bounds.join(path2.getBounds());
+  auto layer_clip = SkPath()
+                        .addRect(SkRect::MakeLTRB(5, 5, 25, 25))
+                        .addOval(SkRect::MakeLTRB(20, 20, 40, 50));
+  auto clip_path_layer =
+      std::make_shared<ClipPathLayer>(layer_clip, Clip::antiAliasWithSaveLayer);
+  clip_path_layer->Add(mock1);
+  clip_path_layer->Add(mock2);
+
+  // ClipRectLayer will pass through compatibility from multiple
+  // non-overlapping compatible children
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+  clip_path_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+  int opacity_alpha = 0x7F;
+  SkPoint offset = SkPoint::Make(10, 10);
+  auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
+  opacity_layer->Add(clip_path_layer);
+  context->subtree_can_inherit_opacity = false;
+  opacity_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  auto opacity_integer_transform = SkM44::Translate(offset.fX, offset.fY);
+#endif
+  DisplayListBuilder expected_builder;
+  /* OpacityLayer::Paint() */ {
+    expected_builder.save();
+    {
+      expected_builder.translate(offset.fX, offset.fY);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+      expected_builder.transformReset();
+      expected_builder.transform(opacity_integer_transform);
+#endif
+      /* ClipRectLayer::Paint() */ {
+        expected_builder.save();
+        expected_builder.clipPath(layer_clip, SkClipOp::kIntersect, true);
+        expected_builder.setColor(opacity_alpha << 24);
+        expected_builder.saveLayer(&children_bounds, true);
+        /* child layer1 paint */ {
+          expected_builder.setColor(0xFF000000);
+          expected_builder.drawPath(path1);
+        }
+        /* child layer2 paint */ {  //
+          expected_builder.drawPath(path2);
+        }
+        expected_builder.restore();
+      }
+    }
+    expected_builder.restore();
+  }
+
+  opacity_layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+}
+
+TEST_F(ClipPathLayerTest, LayerCached) {
+  auto path1 = SkPath().addRect({10, 10, 30, 30});
+  auto mock1 = MockLayer::MakeOpacityCompatible(path1);
+  auto layer_clip = SkPath()
+                        .addRect(SkRect::MakeLTRB(5, 5, 25, 25))
+                        .addOval(SkRect::MakeLTRB(20, 20, 40, 50));
+  auto layer =
+      std::make_shared<ClipPathLayer>(layer_clip, Clip::antiAliasWithSaveLayer);
+  layer->Add(mock1);
+
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayer));
 }
 
 }  // namespace testing

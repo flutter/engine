@@ -8,7 +8,7 @@
 
 namespace flutter {
 
-ContainerLayer::ContainerLayer() {}
+ContainerLayer::ContainerLayer() : child_paint_bounds_(SkRect::MakeEmpty()) {}
 
 void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto old_container = static_cast<const ContainerLayer*>(old_layer);
@@ -136,16 +136,16 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   FML_DCHECK(!context->has_platform_view);
   bool child_has_platform_view = false;
   bool child_has_texture_layer = false;
-  bool subtree_can_inherit_opacity = layer_can_inherit_opacity();
+  bool subtree_can_inherit_opacity = context->subtree_can_inherit_opacity;
 
   for (auto& layer : layers_) {
     // Reset context->has_platform_view to false so that layers aren't treated
     // as if they have a platform view based on one being previously found in a
     // sibling tree.
     context->has_platform_view = false;
-    // Initialize the "inherit opacity" flag to the value recorded in the layer
-    // and allow it to override the answer during its |Preroll|
-    context->subtree_can_inherit_opacity = layer->layer_can_inherit_opacity();
+    // Initialize the "inherit opacity" flag to false and allow the layer to
+    // override the answer during its |Preroll|
+    context->subtree_can_inherit_opacity = false;
 
     layer->Preroll(context, child_matrix);
 
@@ -170,6 +170,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   context->has_texture_layer = child_has_texture_layer;
   context->subtree_can_inherit_opacity = subtree_can_inherit_opacity;
   set_subtree_has_platform_view(child_has_platform_view);
+  child_paint_bounds_ = *child_paint_bounds;
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
@@ -188,71 +189,19 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   }
 }
 
-void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
-                                             Layer* layer,
-                                             const SkMatrix& matrix) {
+void ContainerLayer::TryToPrepareRasterCache(
+    PrerollContext* context,
+    Layer* layer,
+    const SkMatrix& matrix,
+    RasterCacheLayerStrategy strategy) {
   if (!context->has_platform_view && !context->has_texture_layer &&
       context->raster_cache &&
       SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
-    context->raster_cache->Prepare(context, layer, matrix);
+    context->raster_cache->Prepare(context, layer, matrix, strategy);
   } else if (context->raster_cache) {
     // Don't evict raster cache entry during partial repaint
-    context->raster_cache->Touch(layer, matrix);
+    context->raster_cache->Touch(layer, matrix, strategy);
   }
-}
-
-MergedContainerLayer::MergedContainerLayer() {
-  // Ensure the layer has only one direct child.
-  //
-  // Any children will actually be added as children of this empty
-  // ContainerLayer which can be accessed via ::GetContainerLayer().
-  // If only one child is ever added to this layer then that child
-  // will become the layer returned from ::GetCacheableChild().
-  // If multiple child layers are added, then this implicit container
-  // child becomes the cacheable child, but at the potential cost of
-  // not being as stable in the raster cache from frame to frame.
-  ContainerLayer::Add(std::make_shared<ContainerLayer>());
-
-  // The interposing Container only recurses to its children with no
-  // additional processing so, by default, it can pass an inherited
-  // opacity on to its children, subject only to the accumulation
-  // logic that happens during |PrerollChildren|.
-  GetChildContainer()->set_layer_can_inherit_opacity(true);
-}
-
-void MergedContainerLayer::DiffChildren(DiffContext* context,
-                                        const ContainerLayer* old_layer) {
-  if (context->IsSubtreeDirty()) {
-    GetChildContainer()->Diff(context, nullptr);
-    return;
-  }
-  FML_DCHECK(old_layer);
-
-  // For MergedContainerLayer we want to diff children of ChildContainer
-  // instead of the ChildContainer itself. This works around the fact
-  // that ChildContainerLayer is ephemeral and its original_layer_id_ is always
-  // different.
-  auto layer = static_cast<const MergedContainerLayer*>(old_layer);
-  GetChildContainer()->DiffChildren(context, layer->GetChildContainer());
-}
-
-void MergedContainerLayer::Add(std::shared_ptr<Layer> layer) {
-  GetChildContainer()->Add(std::move(layer));
-}
-
-ContainerLayer* MergedContainerLayer::GetChildContainer() const {
-  FML_DCHECK(layers().size() == 1);
-
-  return static_cast<ContainerLayer*>(layers()[0].get());
-}
-
-Layer* MergedContainerLayer::GetCacheableChild() const {
-  ContainerLayer* child_container = GetChildContainer();
-  if (child_container->layers().size() == 1) {
-    return child_container->layers()[0].get();
-  }
-
-  return child_container;
 }
 
 }  // namespace flutter

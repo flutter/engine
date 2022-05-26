@@ -10,7 +10,6 @@
 
 import 'dart:async';
 import 'dart:convert' show base64;
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -18,6 +17,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../alarm_clock.dart';
+import '../dom.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
@@ -202,8 +202,8 @@ class CkBrowserImageDecoder implements ui.Codec {
 
       return webDecoder;
     } catch (error) {
-      if (error is html.DomException) {
-        if (error.name == html.DomException.NOT_SUPPORTED) {
+      if (domInstanceOfString(error, 'DOMException')) {
+        if ((error as DomException).name == DomException.notSupported) {
           throw ImageCodecException(
             'Image file format ($contentType) is not supported by this browser\'s ImageDecoder API.\n'
             'Image source: $debugSource',
@@ -297,10 +297,7 @@ class ImageFileFormat {
     ImageFileFormat(<int?>[0x47, 0x49, 0x46, 0x38, 0x39, 0x61], 'image/gif'),
 
     // JPEG
-    ImageFileFormat(<int?>[0xFF, 0xD8, 0xFF, 0xDB], 'image/jpeg'),
-    ImageFileFormat(<int?>[0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01], 'image/jpeg'),
-    ImageFileFormat(<int?>[0xFF, 0xD8, 0xFF, 0xEE], 'image/jpeg'),
-    ImageFileFormat(<int?>[0xFF, 0xD8, 0xFF, 0xE1], 'image/jpeg'),
+    ImageFileFormat(<int?>[0xFF, 0xD8, 0xFF], 'image/jpeg'),
 
     // WebP
     ImageFileFormat(<int?>[0x52, 0x49, 0x46, 0x46, null, null, null, null, 0x57, 0x45, 0x42, 0x50], 'image/webp'),
@@ -458,11 +455,10 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
   final int width = videoFrame.displayWidth;
   final int height = videoFrame.displayHeight;
-  final html.CanvasElement canvas = html.CanvasElement()
-    ..width = width
-    ..height = height;
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
-  ctx.drawImage(videoFrame, 0, 0);
-  final String pngBase64 = canvas.toDataUrl().substring('data:image/png;base64,'.length);
+  final DomCanvasElement canvas = createDomCanvasElement(width: width, height:
+      height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  ctx.drawImage(videoFrame as DomCanvasImageSource, 0, 0);
+  final String pngBase64 = canvas.toDataURL().substring('data:image/png;base64,'.length);
   return base64.decode(pngBase64);
 }

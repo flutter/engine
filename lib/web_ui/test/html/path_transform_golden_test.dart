@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -31,10 +30,16 @@ Future<void> testMain() async {
     rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      sceneElement.style.position = 'absolute';
+      sceneElement.style.transformOrigin = '0 0 0';
+      sceneElement.style.transform = 'scale(0.3)';
+    }
     try {
       sceneElement.append(engineCanvas.rootElement);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       await matchGoldenFile('$fileName.png', region: region, maxDiffRatePercent: maxDiffRatePercent);
     } finally {
       // The page is reused across tests, so remove the element after taking the
@@ -43,11 +48,11 @@ Future<void> testMain() async {
     }
   }
 
-  setUp(() async {
+  setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   test('Should draw transformed line.', () async {

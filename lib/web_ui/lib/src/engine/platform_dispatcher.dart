@@ -54,8 +54,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The current platform configuration.
   @override
-  ui.PlatformConfiguration get configuration => _configuration;
-  ui.PlatformConfiguration _configuration = ui.PlatformConfiguration(
+  ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
   );
@@ -607,7 +606,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      flutterViewEmbedder.renderScene(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement as html.Element?);
     }
     frameTimingsOnRasterFinish();
   }
@@ -725,12 +724,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The empty list is not a valid value for locales. This is only used for
   /// testing locale update logic.
   void debugResetLocales() {
-    _configuration = _configuration.copyWith(locales: const <ui.Locale>[]);
+    configuration = configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
   // Called by FlutterViewEmbedder when browser languages change.
   void updateLocales() {
-    _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
+    configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
 
   static List<ui.Locale> parseBrowserLanguages() {
@@ -788,7 +787,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// [onPlatformConfigurationChanged] callbacks if [textScaleFactor] changed.
   void _updateTextScaleFactor(double value) {
     if (configuration.textScaleFactor != value) {
-      _configuration = configuration.copyWith(textScaleFactor: value);
+      configuration = configuration.copyWith(textScaleFactor: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnTextScaleFactorChanged();
     }
@@ -859,7 +858,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   void updateSemanticsEnabled(bool semanticsEnabled) {
     if (semanticsEnabled != this.semanticsEnabled) {
-      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled);
+      configuration = configuration.copyWith(semanticsEnabled: semanticsEnabled);
       if (_onSemanticsEnabledChanged != null) {
         invokeOnSemanticsEnabledChanged();
       }
@@ -875,7 +874,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// callback if [_platformBrightness] changed.
   void _updatePlatformBrightness(ui.Brightness value) {
     if (configuration.platformBrightness != value) {
-      _configuration = configuration.copyWith(platformBrightness: value);
+      configuration = configuration.copyWith(platformBrightness: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnPlatformBrightnessChanged();
     }
@@ -1022,6 +1021,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       int id, ui.SemanticsAction action, ByteData? args) {
     invoke3<int, ui.SemanticsAction, ByteData?>(
         _onSemanticsAction, _onSemanticsActionZone, id, action, args);
+  }
+
+  // TODO(dnfield): make this work on web.
+  // https://github.com/flutter/flutter/issues/100277
+  ui.ErrorCallback? _onError;
+  // ignore: unused_field
+  Zone? _onErrorZone;
+  @override
+  ui.ErrorCallback? get onError => _onError;
+  @override
+  set onError(ui.ErrorCallback? callback) {
+    _onError = callback;
+    _onErrorZone = Zone.current;
   }
 
   /// The route or path that the embedder requested when the application was

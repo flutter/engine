@@ -50,11 +50,12 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     const fml::closure& p_isolate_shutdown_callback,
     std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
     fml::WeakPtr<IOManager> io_manager,
-    fml::WeakPtr<ImageDecoder> image_decoder) const {
+    fml::WeakPtr<ImageDecoder> image_decoder,
+    fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry) const {
   UIDartState::Context spawned_context{
       context_.task_runners,         context_.snapshot_delegate,
       std::move(io_manager),         context_.unref_queue,
-      std::move(image_decoder),      context_.image_generator_registry,
+      std::move(image_decoder),      std::move(image_generator_registry),
       advisory_script_uri,           advisory_script_entrypoint,
       context_.volatile_path_tracker};
   auto result =
@@ -226,8 +227,7 @@ bool RuntimeController::NotifyIdle(fml::TimePoint deadline) {
 bool RuntimeController::DispatchPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
-                 "mode", "basic");
+    TRACE_EVENT0("flutter", "RuntimeController::DispatchPlatformMessage");
     platform_configuration->DispatchPlatformMessage(std::move(message));
     return true;
   }
@@ -238,8 +238,7 @@ bool RuntimeController::DispatchPlatformMessage(
 bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
-                 "mode", "basic");
+    TRACE_EVENT0("flutter", "RuntimeController::DispatchPointerDataPacket");
     platform_configuration->get_window(0)->DispatchPointerDataPacket(packet);
     return true;
   }
@@ -298,6 +297,11 @@ void RuntimeController::HandlePlatformMessage(
 // |PlatformConfigurationClient|
 FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
+}
+
+// |PlatfromConfigurationClient|
+std::shared_ptr<AssetManager> RuntimeController::GetAssetManager() {
+  return client_.GetAssetManager();
 }
 
 // |PlatformConfigurationClient|

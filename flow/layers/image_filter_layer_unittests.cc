@@ -37,6 +37,7 @@ TEST_F(ImageFilterLayerTest, PaintBeforePrerollDies) {
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
+  EXPECT_EQ(layer->child_paint_bounds(), kEmptyRect);
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
 }
@@ -53,6 +54,7 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -87,6 +89,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_rounded_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -121,6 +124,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), filter_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
@@ -163,6 +167,7 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_rounded_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), children_bounds);
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -217,7 +222,9 @@ TEST_F(ImageFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_rounded_bounds);
+  EXPECT_EQ(layer1->child_paint_bounds(), children_bounds);
   EXPECT_EQ(layer2->paint_bounds(), mock_layer2_rounded_bounds);
+  EXPECT_EQ(layer2->child_paint_bounds(), child_path2.getBounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer1->needs_painting(paint_context()));
@@ -267,7 +274,7 @@ TEST_F(ImageFilterLayerTest, Readback) {
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 
-TEST_F(ImageFilterLayerTest, ChildIsCached) {
+TEST_F(ImageFilterLayerTest, CacheChild) {
   auto layer_filter = SkImageFilters::MatrixTransform(
       SkMatrix(),
       SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
@@ -289,15 +296,31 @@ TEST_F(ImageFilterLayerTest, ChildIsCached) {
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
   EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
 
   layer->Preroll(preroll_context(), initial_transform);
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayerChildren));
 }
 
-TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
+TEST_F(ImageFilterLayerTest, CacheChildren) {
   auto layer_filter = SkImageFilters::MatrixTransform(
       SkMatrix(),
       SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
@@ -324,6 +347,14 @@ TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
   EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
 
   layer->Preroll(preroll_context(), initial_transform);
 
@@ -332,6 +363,75 @@ TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
   EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
+                                    RasterCacheLayerStrategy::kLayerChildren));
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayerChildren));
+}
+
+TEST_F(ImageFilterLayerTest, OpacityInheritance) {
+  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
+  // The mock_layer child will not be compatible with opacity
+  auto mock_layer = MockLayer::Make(child_path, child_paint);
+  auto image_filter_layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  image_filter_layer->Add(mock_layer);
+
+  PrerollContext* context = preroll_context();
+  context->subtree_can_inherit_opacity = false;
+  image_filter_layer->Preroll(preroll_context(), initial_transform);
+  // ImageFilterLayers can always inherit opacity whether or not their
+  // children are compatible.
+  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+
+  int opacity_alpha = 0x7F;
+  SkPoint offset = SkPoint::Make(10, 10);
+  auto opacity_layer = std::make_shared<OpacityLayer>(opacity_alpha, offset);
+  opacity_layer->Add(image_filter_layer);
+  context->subtree_can_inherit_opacity = false;
+  opacity_layer->Preroll(context, SkMatrix::I());
+  EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  auto opacity_integer_transform = RasterCache::GetIntegralTransCTM(
+      SkMatrix::Translate(offset.fX, offset.fY));
+#endif
+  auto dl_image_filter = DlImageFilter::From(layer_filter);
+  DisplayListBuilder expected_builder;
+  /* opacity_layer::Paint() */ {
+    expected_builder.save();
+    {
+      expected_builder.translate(offset.fX, offset.fY);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+      expected_builder.transformReset();
+      expected_builder.transform(opacity_integer_transform);
+#endif
+      /* image_filter_layer::Paint() */ {
+        expected_builder.setColor(opacity_alpha << 24);
+        expected_builder.setImageFilter(dl_image_filter.get());
+        expected_builder.saveLayer(&child_path.getBounds(), true);
+        /* mock_layer::Paint() */ {
+          expected_builder.setColor(child_paint.getColor());
+          expected_builder.setImageFilter(nullptr);
+          expected_builder.drawPath(child_path);
+        }
+        expected_builder.restore();
+      }
+    }
+    expected_builder.restore();
+  }
+
+  opacity_layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
 }
 
 using ImageFilterLayerDiffTest = DiffContextTest;

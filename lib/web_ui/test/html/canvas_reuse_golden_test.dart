@@ -27,8 +27,8 @@ Future<void> testMain() async {
   setUp(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/51514
@@ -48,11 +48,17 @@ Future<void> testMain() async {
     rc.apply(engineCanvas, screenRect);
     engineCanvas.endOfPaint();
 
-    html.Element sceneElement = html.Element.tag('flt-scene');
+    DomElement sceneElement = createDomElement('flt-scene');
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      sceneElement.style.position = 'absolute';
+      sceneElement.style.transformOrigin = '0 0 0';
+      sceneElement.style.transform = 'scale(0.3)';
+    }
     sceneElement.append(engineCanvas.rootElement);
-    html.document.body!.append(sceneElement);
+    domDocument.body!.append(sceneElement);
 
-    final html.CanvasElement canvas = html.document.querySelector('canvas')! as html.CanvasElement;
+    final DomCanvasElement canvas = domDocument.querySelector('canvas')! as DomCanvasElement;
     // ! Since canvas is first element, it should have zIndex = -1 for correct
     // paint order.
     expect(canvas.style.zIndex , '-1');
@@ -78,11 +84,17 @@ Future<void> testMain() async {
     rc2.endRecording();
     rc2.apply(engineCanvas, screenRect);
 
-    sceneElement = html.Element.tag('flt-scene');
+    sceneElement = createDomElement('flt-scene');
+    if (isIosSafari) {
+      // Shrink to fit on the iPhone screen.
+      sceneElement.style.position = 'absolute';
+      sceneElement.style.transformOrigin = '0 0 0';
+      sceneElement.style.transform = 'scale(0.3)';
+    }
     sceneElement.append(engineCanvas.rootElement);
-    html.document.body!.append(sceneElement);
+    domDocument.body!.append(sceneElement);
 
-    final html.CanvasElement canvas2 = html.document.querySelector('canvas')! as html.CanvasElement;
+    final DomCanvasElement canvas2 = domDocument.querySelector('canvas')! as DomCanvasElement;
     // ZIndex should have been cleared since we have image element preceding
     // canvas.
     expect(canvas.style.zIndex != '-1', isTrue);

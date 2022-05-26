@@ -20,14 +20,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
+import org.robolectric.annotation.Implements;
 
 @TargetApi(31)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
+  private final Context ctx = ApplicationProvider.getApplicationContext();
+
   @Test
   public void invalidateChildInParent_callsInvalidate() {
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper = spy(new PlatformViewWrapper(ctx));
 
     // Mock Android framework calls.
@@ -40,7 +42,6 @@ public class PlatformViewWrapperTest {
   @Test
   public void setTexture_writesToBuffer() {
     final Surface surface = mock(Surface.class);
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
           @Override
@@ -69,7 +70,6 @@ public class PlatformViewWrapperTest {
   @Test
   public void draw_writesToBuffer() {
     final Surface surface = mock(Surface.class);
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
           @Override
@@ -118,9 +118,29 @@ public class PlatformViewWrapperTest {
   }
 
   @Test
+  @Config(
+      shadows = {
+        ShadowView.class,
+      })
+  public void draw_withoutSurface() {
+    final PlatformViewWrapper wrapper =
+        new PlatformViewWrapper(ctx) {
+          @Override
+          public void onDraw(Canvas canvas) {
+            canvas.drawColor(Color.RED);
+          }
+        };
+    // Test.
+    final Canvas canvas = mock(Canvas.class);
+    wrapper.draw(canvas);
+
+    // Verify.
+    verify(canvas, times(1)).drawColor(Color.RED);
+  }
+
+  @Test
   public void release() {
     final Surface surface = mock(Surface.class);
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
           @Override
@@ -154,7 +174,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -183,7 +203,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -209,7 +229,7 @@ public class PlatformViewWrapperTest {
   @Test
   public void focusChangeListener_viewTreeObserverIsAliveFalseDoesNotThrow() {
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             final ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
@@ -226,7 +246,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -253,7 +273,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -274,4 +294,7 @@ public class PlatformViewWrapperTest {
     view.unsetOnDescendantFocusChangeListener();
     verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
   }
+
+  @Implements(View.class)
+  public static class ShadowView {}
 }

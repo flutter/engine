@@ -251,6 +251,7 @@ void debugResetBrowserSupportsImageDecoder() {
 /// [Future] API.
 @JS()
 @anonymous
+@staticInterop
 class JsPromise {}
 
 /// Corresponds to the browser's `ImageDecoder` type.
@@ -259,8 +260,12 @@ class JsPromise {}
 ///
 ///  * https://www.w3.org/TR/webcodecs/#imagedecoder-interface
 @JS('window.ImageDecoder')
+@staticInterop
 class ImageDecoder {
-  external ImageDecoder(ImageDecoderOptions options);
+  external factory ImageDecoder(ImageDecoderOptions options);
+}
+
+extension ImageDecoderExtension on ImageDecoder {
   external ImageTrackList get tracks;
   external bool get complete;
   external JsPromise decode(DecodeOptions options);
@@ -274,6 +279,7 @@ class ImageDecoder {
 ///  * https://www.w3.org/TR/webcodecs/#imagedecoderinit-interface
 @JS()
 @anonymous
+@staticInterop
 class ImageDecoderOptions {
   external factory ImageDecoderOptions({
     required String type,
@@ -293,7 +299,10 @@ class ImageDecoderOptions {
 ///  * https://www.w3.org/TR/webcodecs/#imagedecoderesult-interface
 @JS()
 @anonymous
-class DecodeResult {
+@staticInterop
+class DecodeResult {}
+
+extension DecodeResultExtension on DecodeResult {
   external VideoFrame get image;
   external bool get complete;
 }
@@ -305,6 +314,7 @@ class DecodeResult {
 ///  * https://www.w3.org/TR/webcodecs/#dictdef-imagedecodeoptions
 @JS()
 @anonymous
+@staticInterop
 class DecodeOptions {
   external factory DecodeOptions({
     required int frameIndex,
@@ -339,7 +349,10 @@ class VideoFrame implements html.CanvasImageSource {
 ///  * https://www.w3.org/TR/webcodecs/#imagetracklist-interface
 @JS()
 @anonymous
-class ImageTrackList {
+@staticInterop
+class ImageTrackList {}
+
+extension ImageTrackListExtension on ImageTrackList {
   external JsPromise get ready;
   external ImageTrack? get selectedTrack;
 }
@@ -351,7 +364,10 @@ class ImageTrackList {
 ///  * https://www.w3.org/TR/webcodecs/#imagetrack
 @JS()
 @anonymous
-class ImageTrack {
+@staticInterop
+class ImageTrack {}
+
+extension ImageTrackExtension on ImageTrack {
   external int get repetitionCount;
   external int get frameCount;
 }
@@ -950,12 +966,31 @@ class OffScreenCanvas {
         height: height,
       );
       canvasElement!.className = 'gl-canvas';
-      final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;
-      final double cssHeight = height / EnginePlatformDispatcher.browserDevicePixelRatio;
-      canvasElement!.style
-        ..position = 'absolute'
-        ..width = '${cssWidth}px'
-        ..height = '${cssHeight}px';
+      _updateCanvasCssSize(canvasElement!);
+    }
+  }
+
+  void _updateCanvasCssSize(html.CanvasElement element) {
+    final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;
+    final double cssHeight = height / EnginePlatformDispatcher.browserDevicePixelRatio;
+    element.style
+      ..position = 'absolute'
+      ..width = '${cssWidth}px'
+      ..height = '${cssHeight}px';
+  }
+
+  void resize(int requestedWidth, int requestedHeight) {
+    if(requestedWidth != width && requestedHeight != height) {
+      width = requestedWidth;
+      height = requestedHeight;
+      if(offScreenCanvas != null) {
+        offScreenCanvas!.width = requestedWidth;
+        offScreenCanvas!.height = requestedHeight;
+      } else if (canvasElement != null) {
+        canvasElement!.width = requestedWidth;
+        canvasElement!.height = requestedHeight;
+        _updateCanvasCssSize(canvasElement!);
+      }
     }
   }
 

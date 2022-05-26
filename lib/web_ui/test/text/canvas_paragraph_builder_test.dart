@@ -7,26 +7,27 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
-          operatingSystem == OperatingSystem.iOs;
+bool get isIosSafari =>
+    browserEngine == BrowserEngine.webkit &&
+    operatingSystem == OperatingSystem.iOs;
+
+/// Some text measurements are sensitive to browser implementations. Position
+/// info in the following tests only pass in Chrome, they are slightly different
+/// on each browser. So we need to ignore position info on non-Chrome browsers
+/// when comparing expectations with actual output.
+bool get isBlink => browserEngine == BrowserEngine.blink;
 
 String fontFamilyToAttribute(String fontFamily) {
   fontFamily = canonicalizeFontFamily(fontFamily)!;
   if (browserEngine == BrowserEngine.firefox) {
-    fontFamily = fontFamily.replaceAll('"', '&quot;');
+    return fontFamily.replaceAll('"', '&quot;');
   } else if (browserEngine == BrowserEngine.blink ||
       browserEngine == BrowserEngine.samsung ||
       browserEngine == BrowserEngine.webkit) {
-    fontFamily = fontFamily.replaceAll('"', '');
+    return fontFamily.replaceAll('"', '');
   }
-  return 'font-family: $fontFamily;';
+  return fontFamily;
 }
-
-final String defaultFontFamily = fontFamilyToAttribute('Ahem');
-const String defaultColor = 'color: rgb(255, 0, 0);';
-const String defaultFontSize = 'font-size: 14px;';
-const String paragraphStyle =
-    'position: absolute; white-space: pre;';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -47,24 +48,29 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(1));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13)}">'
       'Hello'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
     // Should break "Hello" into "Hel" and "lo".
     paragraph.layout(const ParagraphConstraints(width: 39.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
-      'Hel<br>lo'
-      '</span>'
-      '</p>',
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*3, fontSize: 13)}">'
+      'Hel'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*2, fontSize: 13)}">'
+      'lo'
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
     final ParagraphSpan span = paragraph.spans.single;
@@ -86,13 +92,14 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(1));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5)}">'
       'Hello'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan textSpan = paragraph.spans.single as FlatTextSpan;
@@ -109,19 +116,15 @@ Future<void> testMain() async {
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.toPlainText(), 'Hello');
 
-    double expectedHeight = 14.0;
-    if (isIosSafari) {
-      // On iOS Safari, the height measurement is one extra pixel.
-      expectedHeight++;
-    }
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle overflow-y: hidden; height: ${expectedHeight}px;">'
-      '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5)}">'
       'Hello'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
   });
 
@@ -135,19 +138,15 @@ Future<void> testMain() async {
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.toPlainText(), 'HelloWorld');
 
-    double expectedHeight = 14.0;
-    if (isIosSafari) {
-      // On iOS Safari, the height measurement is one extra pixel.
-      expectedHeight++;
-    }
     paragraph.layout(const ParagraphConstraints(width: 100.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle width: 100px; overflow-y: hidden; height: ${expectedHeight}px;">'
-      '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*4)}">'
       'Hell...'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
   });
 
@@ -169,13 +168,14 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(1));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="line-height: 1.5; font-size: 9px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor line-height: 1.5; font-size: 9px; font-weight: bold; font-style: italic; $defaultFontFamily letter-spacing: 2px;">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: (9+2)*5, lineHeight: 1.5*9, fontSize: 9, fontWeight: 'bold', fontStyle: 'italic', letterSpacing: 2)}">'
       'Hello'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan span = paragraph.spans.single as FlatTextSpan;
@@ -207,30 +207,38 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(2));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; font-weight: bold; $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
-      '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
-      ' world'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 0, left: 65, width: 13*1, fontSize: 13, fontStyle: 'italic')}">'
+      ' '
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 0, left: 78, width: 13*5, fontSize: 13, fontStyle: 'italic')}">'
+      'world'
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
-    // Should break "Hello world" into "Hello" and " world".
+    // Should break "Hello world" into 2 lines: "Hello " and "world".
     paragraph.layout(const ParagraphConstraints(width: 75.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle width: 75px;">'
-      '<span style="$defaultColor font-size: 13px; font-weight: bold; $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
-      '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
-      ' <br>world'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 0, left: 65, width: 0, fontSize: 13, fontStyle: 'italic')}">'
+      ' '
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*5, fontSize: 13, fontStyle: 'italic')}">'
+      'world'
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan hello = paragraph.spans.first as FlatTextSpan;
@@ -272,19 +280,23 @@ Future<void> testMain() async {
     expect(paragraph.spans, hasLength(3));
 
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor line-height: 2; font-size: 13px; font-weight: bold; $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, lineHeight: 2*13, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
-      '</span>'
-      '<span style="$defaultColor font-size: 13px; font-weight: bold; font-style: italic; $defaultFontFamily">'
-      ' world'
-      '</span>'
-      '<span style="$defaultColor font-size: 13px; font-weight: normal; font-style: italic; $defaultFontFamily">'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 6, left: 65, width: 13*1, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
+      ' '
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 6, left: 78, width: 13*5, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
+      'world'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 6, left: 143, width: 13*1, fontSize: 13, fontWeight: 'normal', fontStyle: 'italic')}">'
       '!'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
     final FlatTextSpan hello = paragraph.spans[0] as FlatTextSpan;
@@ -336,30 +348,45 @@ Future<void> testMain() async {
     // There's a new line between "First" and "Second", but "Second" and
     // "ThirdLongLine" remain together since constraints are infinite.
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
-      'First<br>Second '
-      '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13)}">'
+      'First'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*6, fontSize: 13)}">'
+      'Second'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 13, left: 78, width: 13*1, fontSize: 13)}">'
+      ' '
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 13, left: 91, width: 13*13, fontSize: 13, fontStyle: 'italic')}">'
       'ThirdLongLine'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
 
-    // Should break the paragraph into "First", "Second" and "ThirdLongLine".
+    // Should break the paragraph into "First", "Second " and "ThirdLongLine".
     paragraph.layout(const ParagraphConstraints(width: 180.0));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle width: 180px;">'
-      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
-      'First<br>Second <br>'
-      '</span>'
-      '<span style="$defaultColor font-size: 13px; font-style: italic; $defaultFontFamily">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13)}">'
+      'First'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*6, fontSize: 13)}">'
+      'Second'
+      '</flt-span>'
+      // Trailing space.
+      '<flt-span style="${spanStyle(top: 13, left: 78, width: 0, fontSize: 13)}">'
+      ' '
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: 26, left: 0, width: 13*13, fontSize: 13, fontStyle: 'italic')}">'
       'ThirdLongLine'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      ignorePositions: !isBlink,
     );
   });
 
@@ -384,22 +411,67 @@ Future<void> testMain() async {
     // The paragraph should take the font size and family from the span with the
     // greatest font size.
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(
-      paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 18px; ${fontFamilyToAttribute('second')} $paragraphStyle">'
-      '<span style="$defaultColor font-size: 12px; ${fontFamilyToAttribute('first')}">'
-      'First '
-      '</span>'
-      '<span style="$defaultColor font-size: 18px; ${fontFamilyToAttribute('second')}">'
-      'Second '
-      '</span>'
-      '<span style="$defaultColor font-size: 10px; ${fontFamilyToAttribute('third')}">'
+    expectOuterHtml(
+      paragraph,
+      '<flt-paragraph style="${paragraphStyle()}">'
+      '<flt-span style="${spanStyle(top: null, left: null, width: null, fontSize: 12, fontFamily: 'first')}">'
+      'First'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: null, left: null, width: null, fontSize: 12, fontFamily: 'first')}">'
+      ' '
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: null, left: null, width: null, fontSize: 18, fontFamily: 'second')}">'
+      'Second'
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: null, left: null, width: null, fontSize: 18, fontFamily: 'second')}">'
+      ' '
+      '</flt-span>'
+      '<flt-span style="${spanStyle(top: null, left: null, width: null, fontSize: 10, fontFamily: 'third')}">'
       'Third'
-      '</span>'
-      '</p>',
+      '</flt-span>'
+      '</flt-paragraph>',
+      // Since we are using unknown font families, we can't predict the text
+      // measurements.
+      ignorePositions: true,
     );
     debugEmulateFlutterTesterEnvironment = true;
   });
+}
+
+const String defaultFontFamily = 'Ahem';
+const num defaultFontSize = 14;
+
+String paragraphStyle() {
+  return <String>[
+    'position: absolute;',
+    'white-space: pre;',
+  ].join(' ');
+}
+
+String spanStyle({
+  required num? top,
+  required num? left,
+  required num? width,
+  String fontFamily = defaultFontFamily,
+  num fontSize = defaultFontSize,
+  String? fontWeight,
+  String? fontStyle,
+  num? lineHeight,
+  num? letterSpacing,
+}) {
+  return <String>[
+    'color: rgb(255, 0, 0);',
+    'font-size: ${fontSize}px;',
+    if (fontWeight != null) 'font-weight: $fontWeight;',
+    if (fontStyle != null) 'font-style: $fontStyle;',
+    'font-family: ${fontFamilyToAttribute(fontFamily)};',
+    if (letterSpacing != null) 'letter-spacing: ${letterSpacing}px;',
+    'position: absolute;',
+    if (top != null) 'top: ${top}px;',
+    if (left != null) 'left: ${left}px;',
+    if (width != null) 'width: ${width}px;',
+    'line-height: ${lineHeight ?? fontSize}px;',
+  ].join(' ');
 }
 
 TextStyle styleWithDefaults({
@@ -420,4 +492,29 @@ TextStyle styleWithDefaults({
     height: height,
     letterSpacing: letterSpacing,
   );
+}
+
+void expectOuterHtml(CanvasParagraph paragraph, String expected, {required bool ignorePositions}) {
+  String outerHtml = paragraph.toDomElement().outerHTML!;
+  if (ignorePositions) {
+    outerHtml = removeMeasurementInfo(outerHtml);
+    expected = removeMeasurementInfo(expected);
+  }
+
+  expect(outerHtml, expected);
+}
+
+/// Removes CSS styles that are based on text measurement from the given html
+/// string.
+///
+/// Examples: top, left, line-height, width.
+///
+/// This is needed when the measurement is unknown or could be different
+/// depending on browser and environment.
+String removeMeasurementInfo(String outerHtml) {
+  return outerHtml
+      .replaceAll(RegExp(r'\s*line-height:\s*[\d\.]+px\s*;\s*'), '')
+      .replaceAll(RegExp(r'\s*width:\s*[\d\.]+px\s*;\s*'), '')
+      .replaceAll(RegExp(r'\s*top:\s*[\d\.]+px\s*;\s*'), '')
+      .replaceAll(RegExp(r'\s*left:\s*[\d\.]+px\s*;\s*'), '');
 }

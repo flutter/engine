@@ -144,8 +144,8 @@ ComponentV1::ComponentV1(
       ParseProgramMetadata(startup_info.program_metadata);
 
   if (metadata.data_path.empty()) {
-    FML_DLOG(ERROR) << "Could not find a /pkg/data directory for "
-                    << package.resolved_url;
+    FML_LOG(ERROR) << "Could not find a /pkg/data directory for "
+                   << package.resolved_url;
     return;
   }
 
@@ -170,7 +170,7 @@ ComponentV1::ComponentV1(
 
     zx_handle_t dir_handle = dir.release();
     if (fdio_ns_bind(fdio_ns_.get(), path.data(), dir_handle) != ZX_OK) {
-      FML_DLOG(ERROR) << "Could not bind path to namespace: " << path;
+      FML_LOG(ERROR) << "Could not bind path to namespace: " << path;
       zx_handle_close(dir_handle);
     }
   }
@@ -196,9 +196,9 @@ ComponentV1::ComponentV1(
 
   // LaunchInfo::service_request optional.
   if (launch_info.directory_request) {
-    outgoing_dir_->Serve(fuchsia::io::OPEN_RIGHT_READABLE |
-                             fuchsia::io::OPEN_RIGHT_WRITABLE |
-                             fuchsia::io::OPEN_FLAG_DIRECTORY,
+    outgoing_dir_->Serve(fuchsia::io::OpenFlags::RIGHT_READABLE |
+                             fuchsia::io::OpenFlags::RIGHT_WRITABLE |
+                             fuchsia::io::OpenFlags::DIRECTORY,
                          std::move(launch_info.directory_request));
   }
 
@@ -216,9 +216,9 @@ ComponentV1::ComponentV1(
   composed_service_dir->set_fallback(std::move(flutter_public_dir));
 
   // Clone and check if client is servicing the directory.
-  directory_ptr_->Clone(fuchsia::io::OPEN_FLAG_DESCRIBE |
-                            fuchsia::io::OPEN_RIGHT_READABLE |
-                            fuchsia::io::OPEN_RIGHT_WRITABLE,
+  directory_ptr_->Clone(fuchsia::io::OpenFlags::DESCRIBE |
+                            fuchsia::io::OpenFlags::RIGHT_READABLE |
+                            fuchsia::io::OpenFlags::RIGHT_WRITABLE,
                         cloned_directory_ptr_.NewRequest());
 
   cloned_directory_ptr_.events().OnOpen =
@@ -418,7 +418,7 @@ ComponentV1::ComponentV1(
 
   settings_.log_message_callback = [](const std::string& tag,
                                       const std::string& message) {
-    if (tag.size() > 0) {
+    if (!tag.empty()) {
       std::cout << tag << ": ";
     }
     std::cout << message << std::endl;
@@ -519,7 +519,7 @@ void ComponentV1::OnEngineTerminate(const Engine* shell_holder) {
 
   shell_holders_.erase(found);
 
-  if (shell_holders_.size() == 0) {
+  if (shell_holders_.empty()) {
     FML_VLOG(-1) << "Killing component because all shell holders have been "
                     "terminated.";
     Kill();
@@ -543,7 +543,7 @@ void ComponentV1::CreateViewWithViewRef(
     fuchsia::ui::views::ViewRefControl control_ref,
     fuchsia::ui::views::ViewRef view_ref) {
   if (!svc_) {
-    FML_DLOG(ERROR)
+    FML_LOG(ERROR)
         << "Component incoming services was invalid when attempting to "
            "create a shell for a view provider request.";
     return;
@@ -570,7 +570,7 @@ void ComponentV1::CreateViewWithViewRef(
 
 void ComponentV1::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
   if (!svc_) {
-    FML_DLOG(ERROR)
+    FML_LOG(ERROR)
         << "Component incoming services was invalid when attempting to "
            "create a shell for a view provider request.";
     return;

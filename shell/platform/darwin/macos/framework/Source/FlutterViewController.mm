@@ -5,6 +5,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
+#include <Carbon/Carbon.h>
+
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
@@ -12,6 +14,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
@@ -21,6 +24,8 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 
 namespace {
+using flutter::LayoutClue;
+using flutter::KeyboardLayoutNotifier;
 
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
@@ -29,6 +34,11 @@ constexpr char kTextPlainFormat[] = "text/plain";
 static NSString* const EnhancedUserInterfaceNotification =
     @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
 static NSString* const EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
+
+// Use different device ID for mouse and pan/zoom events, since we can't differentiate the actual
+// device (mouse v.s. trackpad).
+static constexpr int32_t kMousePointerDeviceId = 0;
+static constexpr int32_t kPointerPanZoomDeviceId = 1;
 
 /**
  * State tracking for mouse events, to adapt between the events coming from the system and the
@@ -62,6 +72,47 @@ struct MouseState {
   int64_t buttons = 0;
 
   /**
+   * Pan gesture is currently sending us events.
+   */
+  bool pan_gesture_active = false;
+
+  /**
+   * The accumulated gesture pan.
+   */
+  CGFloat delta_x = 0;
+  CGFloat delta_y = 0;
+
+  /**
+   * Scale gesture is currently sending us events.
+   */
+  bool scale_gesture_active = false;
+
+  /**
+   * The accumulated gesture zoom scale.
+   */
+  CGFloat scale = 0;
+
+  /**
+   * Rotate gesture is currently sending use events.
+   */
+  bool rotate_gesture_active = false;
+
+  /**
+   * The accumulated gesture rotation.
+   */
+  CGFloat rotation = 0;
+
+  /**
+   * Resets all gesture state to default values.
+   */
+  void GestureReset() {
+    delta_x = 0;
+    delta_y = 0;
+    scale = 0;
+    rotation = 0;
+  }
+
+  /**
    * Resets all state to default values.
    */
   void Reset() {
@@ -69,8 +120,30 @@ struct MouseState {
     flutter_state_is_down = false;
     has_pending_exit = false;
     buttons = 0;
+    GestureReset();
   }
 };
+
+/**
+ * Returns the current Unicode layout data (kTISPropertyUnicodeKeyLayoutData).
+ *
+ * To use the returned data, convert it to CFDataRef first, finds its bytes
+ * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
+ * It's returned in NSData* to enable auto reference count.
+ */
+NSData* currentKeyboardLayoutData() {
+  TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
+  CFTypeRef layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
+  if (layout_data == nil) {
+    CFRelease(source);
+    // TISGetInputSourceProperty returns null with Japanese keyboard layout.
+    // Using TISCopyCurrentKeyboardLayoutInputSource to fix NULL return.
+    // https://github.com/microsoft/node-native-keymap/blob/5f0699ded00179410a14c0e1b0e089fe4df8e130/src/keyboard_mac.mm#L91
+    source = TISCopyCurrentKeyboardLayoutInputSource();
+    layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
+  }
+  return (__bridge_transfer NSData*)CFRetain(layout_data);
+}
 
 }  // namespace
 
@@ -120,6 +193,10 @@ struct MouseState {
  */
 @property(nonatomic) FlutterKeyboardManager* keyboardManager;
 
+@property(nonatomic) KeyboardLayoutNotifier keyboardLayoutNotifier;
+
+@property(nonatomic) NSData* keyboardLayoutData;
+
 /**
  * Starts running |engine|, including any initial setup.
  */
@@ -149,6 +226,11 @@ struct MouseState {
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event;
 
 /**
+ * Calls dispatchMouseEvent:phase: with a phase determined by event.phase.
+ */
+- (void)dispatchGestureEvent:(nonnull NSEvent*)event;
+
+/**
  * Converts |event| to a FlutterPointerEvent with the given phase, and sends it to the engine.
  */
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event phase:(FlutterPointerPhase)phase;
@@ -167,6 +249,9 @@ struct MouseState {
  * Responds to updates in accessibility.
  */
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification;
+
+// TODO
+- (void)onKeyboardLayoutChanged;
 
 /**
  * Handles messages received from the Flutter engine on the _*Channel channels.
@@ -197,6 +282,21 @@ struct MouseState {
 - (BOOL)clipboardHasStrings;
 
 @end
+
+#pragma mark - Private dependant functions
+
+namespace {
+void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
+                             void* observer,
+                             CFStringRef name,
+                             const void* object,
+                             CFDictionaryRef userInfo) {
+  FlutterViewController* controller = (__bridge FlutterViewController*)observer;
+  if (controller != nil) {
+    [controller onKeyboardLayoutChanged];
+  }
+}
+}  // namespace
 
 #pragma mark - FlutterViewWrapper implementation.
 
@@ -256,6 +356,12 @@ static void CommonInit(FlutterViewController* controller) {
              selector:@selector(applicationWillTerminate:)
                  name:NSApplicationWillTerminateNotification
                object:nil];
+  // macOS fires this message when changing IMEs.
+  CFNotificationCenterRef cfCenter = CFNotificationCenterGetDistributedCenter();
+  __weak FlutterViewController* weakSelf = controller;
+  CFNotificationCenterAddObserver(cfCenter, (__bridge void*)weakSelf, OnKeyboardLayoutChanged,
+                                  kTISNotifySelectedKeyboardInputSourceChanged, NULL,
+                                  CFNotificationSuspensionBehaviorDeliverImmediately);
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -353,6 +459,8 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)dealloc {
   _engine.viewController = nil;
+  CFNotificationCenterRef cfCenter = CFNotificationCenterGetDistributedCenter();
+  CFNotificationCenterRemoveEveryObserver(cfCenter, (__bridge void*)self);
 }
 
 #pragma mark - Public methods
@@ -452,6 +560,7 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)addInternalPlugins {
   __weak FlutterViewController* weakSelf = self;
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  [FlutterMenuPlugin registerWithRegistrar:[self registrarForPlugin:@"menu"]];
   [self initializeKeyboard];
   _settingsChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
@@ -473,6 +582,22 @@ static void CommonInit(FlutterViewController* controller) {
   [self dispatchMouseEvent:event phase:phase];
 }
 
+- (void)dispatchGestureEvent:(nonnull NSEvent*)event {
+  if (event.phase == NSEventPhaseBegan || event.phase == NSEventPhaseMayBegin) {
+    [self dispatchMouseEvent:event phase:kPanZoomStart];
+  } else if (event.phase == NSEventPhaseChanged) {
+    [self dispatchMouseEvent:event phase:kPanZoomUpdate];
+  } else if (event.phase == NSEventPhaseEnded || event.phase == NSEventPhaseCancelled) {
+    [self dispatchMouseEvent:event phase:kPanZoomEnd];
+  } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
+    [self dispatchMouseEvent:event phase:kHover];
+  } else {
+    // Skip momentum events, the framework will generate scroll momentum.
+    NSAssert(event.momentumPhase != NSEventPhaseNone,
+             @"Received gesture event with unexpected phase");
+  }
+}
+
 - (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase {
   NSAssert(self.viewLoaded, @"View must be loaded before it handles the mouse event");
   // There are edge cases where the system will deliver enter out of order relative to other
@@ -480,6 +605,36 @@ static void CommonInit(FlutterViewController* controller) {
   // mouseEntered:). Discard those events, since the add will already have been synthesized.
   if (_mouseState.flutter_state_is_added && phase == kAdd) {
     return;
+  }
+
+  // Multiple gesture recognizers could be active at once, we can't send multiple kPanZoomStart.
+  // For example: rotation and magnification.
+  if (phase == kPanZoomStart) {
+    bool gestureAlreadyDown = _mouseState.pan_gesture_active || _mouseState.scale_gesture_active ||
+                              _mouseState.rotate_gesture_active;
+    if (event.type == NSEventTypeScrollWheel) {
+      _mouseState.pan_gesture_active = true;
+    } else if (event.type == NSEventTypeMagnify) {
+      _mouseState.scale_gesture_active = true;
+    } else if (event.type == NSEventTypeRotate) {
+      _mouseState.rotate_gesture_active = true;
+    }
+    if (gestureAlreadyDown) {
+      return;
+    }
+  }
+  if (phase == kPanZoomEnd) {
+    if (event.type == NSEventTypeScrollWheel) {
+      _mouseState.pan_gesture_active = false;
+    } else if (event.type == NSEventTypeMagnify) {
+      _mouseState.scale_gesture_active = false;
+    } else if (event.type == NSEventTypeRotate) {
+      _mouseState.rotate_gesture_active = false;
+    }
+    if (_mouseState.pan_gesture_active || _mouseState.scale_gesture_active ||
+        _mouseState.rotate_gesture_active) {
+      return;
+    }
   }
 
   // If a pointer added event hasn't been sent, synthesize one using this event for the basic
@@ -500,27 +655,51 @@ static void CommonInit(FlutterViewController* controller) {
 
   NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
   NSPoint locationInBackingCoordinates = [self.flutterView convertPointToBacking:locationInView];
+  int32_t device = kMousePointerDeviceId;
+  FlutterPointerDeviceKind deviceKind = kFlutterPointerDeviceKindMouse;
+  if (phase == kPanZoomStart || phase == kPanZoomUpdate || phase == kPanZoomEnd) {
+    device = kPointerPanZoomDeviceId;
+    deviceKind = kFlutterPointerDeviceKindTrackpad;
+  }
   FlutterPointerEvent flutterEvent = {
       .struct_size = sizeof(flutterEvent),
       .phase = phase,
       .timestamp = static_cast<size_t>(event.timestamp * USEC_PER_SEC),
       .x = locationInBackingCoordinates.x,
       .y = -locationInBackingCoordinates.y,  // convertPointToBacking makes this negative.
-      .device_kind = kFlutterPointerDeviceKindMouse,
+      .device = device,
+      .device_kind = deviceKind,
       // If a click triggered a synthesized kAdd, don't pass the buttons in that event.
       .buttons = phase == kAdd ? 0 : _mouseState.buttons,
   };
 
-  if (event.type == NSEventTypeScrollWheel) {
+  if (phase == kPanZoomUpdate) {
+    if (event.type == NSEventTypeScrollWheel) {
+      _mouseState.delta_x += event.scrollingDeltaX * self.flutterView.layer.contentsScale;
+      _mouseState.delta_y += event.scrollingDeltaY * self.flutterView.layer.contentsScale;
+    } else if (event.type == NSEventTypeMagnify) {
+      _mouseState.scale += event.magnification;
+    } else if (event.type == NSEventTypeRotate) {
+      _mouseState.rotation += event.rotation * (M_PI / 180.0);
+    }
+    flutterEvent.pan_x = _mouseState.delta_x;
+    flutterEvent.pan_y = _mouseState.delta_y;
+    // Scale value needs to be normalized to range 0->infinity.
+    flutterEvent.scale = pow(2.0, _mouseState.scale);
+    flutterEvent.rotation = _mouseState.rotation;
+  } else if (phase == kPanZoomEnd) {
+    _mouseState.GestureReset();
+  } else if (phase != kPanZoomStart && event.type == NSEventTypeScrollWheel) {
     flutterEvent.signal_kind = kFlutterPointerSignalKindScroll;
 
     double pixelsPerLine = 1.0;
     if (!event.hasPreciseScrollingDeltas) {
-      CGEventSourceRef source = CGEventCreateSourceFromEvent(event.CGEvent);
-      pixelsPerLine = CGEventSourceGetPixelsPerLine(source);
-      if (source) {
-        CFRelease(source);
-      }
+      // The scrollingDelta needs to be multiplied by the line height.
+      // CGEventSourceGetPixelsPerLine() will return 10, which will result in
+      // scrolling that is noticeably slower than in other applications.
+      // Using 40.0 as the multiplier to match Chromium.
+      // See https://source.chromium.org/chromium/chromium/src/+/main:ui/events/cocoa/events_mac.mm
+      pixelsPerLine = 40.0;
     }
     double scaleFactor = self.flutterView.layer.contentsScale;
     flutterEvent.scroll_delta_x = -event.scrollingDeltaX * pixelsPerLine * scaleFactor;
@@ -581,6 +760,13 @@ static void CommonInit(FlutterViewController* controller) {
     @"textScaleFactor" : @1.0,
     @"alwaysUse24HourFormat" : @false
   }];
+}
+
+- (void)onKeyboardLayoutChanged {
+  _keyboardLayoutData = nil;
+  if (_keyboardLayoutNotifier != nil) {
+    _keyboardLayoutNotifier();
+  }
 }
 
 - (void)sendInitialSettings {
@@ -661,6 +847,10 @@ static void CommonInit(FlutterViewController* controller) {
 
 #pragma mark - FlutterKeyboardViewDelegate
 
+- (BOOL)isComposing {
+  return [_textInputPlugin isComposing];
+}
+
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData {
@@ -673,6 +863,42 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (BOOL)onTextInputKeyEvent:(nonnull NSEvent*)event {
   return [_textInputPlugin handleKeyEvent:event];
+}
+
+- (void)subscribeToKeyboardLayoutChange:(nullable KeyboardLayoutNotifier)callback {
+  _keyboardLayoutNotifier = callback;
+}
+
+- (LayoutClue)lookUpLayoutForKeyCode:(uint16_t)keyCode shift:(BOOL)shift {
+  if (_keyboardLayoutData == nil) {
+    _keyboardLayoutData = currentKeyboardLayoutData();
+  }
+  const UCKeyboardLayout* layout = reinterpret_cast<const UCKeyboardLayout*>(
+      CFDataGetBytePtr((__bridge CFDataRef)_keyboardLayoutData));
+
+  UInt32 deadKeyState = 0;
+  UniCharCount stringLength = 0;
+  UniChar resultChar;
+
+  UInt32 modifierState = ((shift ? shiftKey : 0) >> 8) & 0xFF;
+  UInt32 keyboardType = LMGetKbdLast();
+
+  bool isDeadKey = false;
+  OSStatus status =
+      UCKeyTranslate(layout, keyCode, kUCKeyActionDown, modifierState, keyboardType,
+                     kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 1, &stringLength, &resultChar);
+  // For dead keys, press the same key again to get the printable representation of the key.
+  if (status == noErr && stringLength == 0 && deadKeyState != 0) {
+    isDeadKey = true;
+    status =
+        UCKeyTranslate(layout, keyCode, kUCKeyActionDown, modifierState, keyboardType,
+                       kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 1, &stringLength, &resultChar);
+  }
+
+  if (status == noErr && stringLength == 1 && !std::iscntrl(resultChar)) {
+    return LayoutClue{resultChar, isDeadKey};
+  }
+  return LayoutClue{0, false};
 }
 
 #pragma mark - NSResponder
@@ -777,9 +1003,19 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)scrollWheel:(NSEvent*)event {
-  // TODO: Add gesture-based (trackpad) scroll support once it's supported by the engine rather
-  // than always using kHover.
-  [self dispatchMouseEvent:event phase:kHover];
+  [self dispatchGestureEvent:event];
+}
+
+- (void)magnifyWithEvent:(NSEvent*)event {
+  [self dispatchGestureEvent:event];
+}
+
+- (void)rotateWithEvent:(NSEvent*)event {
+  [self dispatchGestureEvent:event];
+}
+
+- (void)swipeWithEvent:(NSEvent*)event {
+  // Not needed, it's handled by scrollWheel.
 }
 
 @end

@@ -42,6 +42,8 @@ public class FlutterShellArgs {
   public static final String ARG_TRACE_SKIA_ALLOWLIST = "--trace-skia-allowlist=";
   public static final String ARG_KEY_TRACE_SYSTRACE = "trace-systrace";
   public static final String ARG_TRACE_SYSTRACE = "--trace-systrace";
+  public static final String ARG_KEY_ENABLE_IMPELLER = "enable-impeller";
+  public static final String ARG_ENABLE_IMPELLER = "--enable-impeller";
   public static final String ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION =
       "dump-skp-on-shader-compilation";
   public static final String ARG_DUMP_SHADER_SKP_ON_SHADER_COMPILATION =
@@ -56,6 +58,8 @@ public class FlutterShellArgs {
   public static final String ARG_OBSERVATORY_PORT = "--observatory-port=";
   public static final String ARG_KEY_DART_FLAGS = "dart-flags";
   public static final String ARG_DART_FLAGS = "--dart-flags";
+  public static final String ARG_KEY_MSAA_SAMPLES = "msaa-samples";
+  public static final String ARG_MSAA_SAMPLES = "--msaa-samples";
 
   @NonNull
   public static FlutterShellArgs fromIntent(@NonNull Intent intent) {
@@ -104,6 +108,9 @@ public class FlutterShellArgs {
     if (intent.getBooleanExtra(ARG_KEY_TRACE_SYSTRACE, false)) {
       args.add(ARG_TRACE_SYSTRACE);
     }
+    if (intent.getBooleanExtra(ARG_KEY_ENABLE_IMPELLER, false)) {
+      args.add(ARG_ENABLE_IMPELLER);
+    }
     if (intent.getBooleanExtra(ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION, false)) {
       args.add(ARG_DUMP_SHADER_SKP_ON_SHADER_COMPILATION);
     }
@@ -115,6 +122,10 @@ public class FlutterShellArgs {
     }
     if (intent.getBooleanExtra(ARG_KEY_VERBOSE_LOGGING, false)) {
       args.add(ARG_VERBOSE_LOGGING);
+    }
+    final int msaaSamples = intent.getIntExtra("msaa-samples", 0);
+    if (msaaSamples > 1) {
+      args.add("--msaa-samples=" + Integer.toString(msaaSamples));
     }
 
     // NOTE: all flags provided with this argument are subject to filtering

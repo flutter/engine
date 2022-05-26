@@ -98,21 +98,21 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
       Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
       auto sampling =
           ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-      paint.setShader(decoded->shader(sampling));
+      paint.setShader(decoded->shader(sampling)->skia_object());
     }
 
     Dart_Handle color_filter = values[kColorFilterIndex];
     if (!Dart_IsNull(color_filter)) {
-      ColorFilter* decoded_color_filter =
+      ColorFilter* decoded =
           tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
-      paint.setColorFilter(decoded_color_filter->filter()->skia_object());
+      paint.setColorFilter(decoded->filter()->skia_object());
     }
 
     Dart_Handle image_filter = values[kImageFilterIndex];
     if (!Dart_IsNull(image_filter)) {
       ImageFilter* decoded =
           tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
-      paint.setImageFilter(decoded->filter());
+      paint.setImageFilter(decoded->filter()->skia_object());
     }
   }
 
@@ -196,7 +196,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   Dart_Handle values[kObjectCount];
   if (Dart_IsNull(paint_objects_)) {
     if (flags.applies_shader()) {
-      builder->setShader(nullptr);
+      builder->setColorSource(nullptr);
     }
     if (flags.applies_color_filter()) {
       builder->setColorFilter(nullptr);
@@ -218,12 +218,12 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     if (flags.applies_shader()) {
       Dart_Handle shader = values[kShaderIndex];
       if (Dart_IsNull(shader)) {
-        builder->setShader(nullptr);
+        builder->setColorSource(nullptr);
       } else {
         Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
         auto sampling =
             ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-        builder->setShader(decoded->shader(sampling));
+        builder->setColorSource(decoded->shader(sampling).get());
       }
     }
 
@@ -232,9 +232,9 @@ bool Paint::sync_to(DisplayListBuilder* builder,
       if (Dart_IsNull(color_filter)) {
         builder->setColorFilter(nullptr);
       } else {
-        ColorFilter* decoded_color_filter =
+        ColorFilter* decoded =
             tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
-        builder->setColorFilter(decoded_color_filter->dl_filter());
+        builder->setColorFilter(decoded->dl_filter());
       }
     }
 
@@ -245,7 +245,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
       } else {
         ImageFilter* decoded =
             tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
-        builder->setImageFilter(decoded->filter());
+        builder->setImageFilter(decoded->dl_filter());
       }
     }
   }
@@ -262,12 +262,12 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   if (flags.applies_blend()) {
     uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
     uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
-    builder->setBlendMode(static_cast<SkBlendMode>(blend_mode));
+    builder->setBlendMode(static_cast<DlBlendMode>(blend_mode));
   }
 
   if (flags.applies_style()) {
     uint32_t style = uint_data[kStyleIndex];
-    builder->setStyle(static_cast<SkPaint::Style>(style));
+    builder->setStyle(static_cast<DlDrawStyle>(style));
   }
 
   if (flags.is_stroked(builder->getStyle())) {
@@ -278,10 +278,10 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     builder->setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
 
     uint32_t stroke_cap = uint_data[kStrokeCapIndex];
-    builder->setStrokeCap(static_cast<SkPaint::Cap>(stroke_cap));
+    builder->setStrokeCap(static_cast<DlStrokeCap>(stroke_cap));
 
     uint32_t stroke_join = uint_data[kStrokeJoinIndex];
-    builder->setStrokeJoin(static_cast<SkPaint::Join>(stroke_join));
+    builder->setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
   }
 
   if (flags.applies_color_filter()) {
@@ -290,6 +290,12 @@ bool Paint::sync_to(DisplayListBuilder* builder,
 
   if (flags.applies_dither()) {
     builder->setDither(uint_data[kDitherIndex] != 0);
+  }
+
+  if (flags.applies_path_effect()) {
+    // The paint API exposed to Dart does not support path effects.  But other
+    // operations such as text may set a path effect, which must be cleared.
+    builder->setPathEffect(nullptr);
   }
 
   if (flags.applies_mask_filter()) {
@@ -323,10 +329,10 @@ flutter::Paint DartConverter<flutter::Paint>::FromArguments(
     int index,
     Dart_Handle& exception) {
   Dart_Handle paint_objects = Dart_GetNativeArgument(args, index);
-  FML_DCHECK(!LogIfError(paint_objects));
+  FML_DCHECK(!CheckAndHandleError(paint_objects));
 
   Dart_Handle paint_data = Dart_GetNativeArgument(args, index + 1);
-  FML_DCHECK(!LogIfError(paint_data));
+  FML_DCHECK(!CheckAndHandleError(paint_data));
 
   return flutter::Paint(paint_objects, paint_data);
 }

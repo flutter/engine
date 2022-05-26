@@ -12,8 +12,6 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../../common.dart';
-
 /// To debug compositing failures on browsers, set this flag to true and run
 /// flutter run -d chrome --web-renderer=html
 ///        test/golden_tests/engine/shader_mask_golden_test.dart --profile
@@ -33,17 +31,20 @@ Future<void> main() async {
 // https://github.com/flutter/flutter/issues/86623
 
 Future<void> testMain() async {
-  setUp(() async {
+  setUpAll(() async {
     debugShowClipLayers = true;
+    await webOnlyInitializePlatform();
+  });
+
+  setUp(() async {
     SurfaceSceneBuilder.debugForgetFrameScene();
     for (final html.Node scene in
         flutterViewEmbedder.sceneHostElement!.querySelectorAll('flt-scene')) {
       scene.remove();
     }
     initWebGl();
-    await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
   });
 
   /// Should render the picture unmodified.
@@ -162,7 +163,8 @@ void _renderCirclesScene(BlendMode blendMode) {
   builder.addPicture(Offset.zero, circles2);
   builder.pop();
 
-  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!
+      as html.Element);
 }
 
 Picture _drawTestPictureWithText(
@@ -218,5 +220,6 @@ void _renderTextScene(BlendMode blendMode) {
   builder.addPicture(Offset.zero, textPicture2);
   builder.pop();
 
-  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!
+      as html.Element);
 }

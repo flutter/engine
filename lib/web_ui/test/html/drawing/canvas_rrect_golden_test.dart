@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -16,9 +14,19 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(8, 8, 500, 100); // Compensate for old scuba tester padding
-
   late BitmapCanvas canvas;
+
+  Future<void> _checkScreenshot(String goldenFileName, Rect region) async {
+    if (isIosSafari) {
+      canvas.rootElement.style
+        ..transformOrigin = '0 0 0'
+        ..transform = 'scale(0.3)';
+    }
+    domDocument.body!.append(canvas.rootElement);
+    await matchGoldenFile(goldenFileName, region: region);
+  }
+
+  const Rect region = Rect.fromLTWH(8, 8, 500, 100); // Compensate for old scuba tester padding
 
   final SurfacePaintData niceRRectPaint = SurfacePaintData()
     ..color = const Color.fromRGBO(250, 186, 218, 1.0) // #fabada
@@ -46,9 +54,7 @@ Future<void> testMain() async {
               Radius.circular(rRectRadii[i])),
           niceRRectPaint);
     }
-
-    html.document.body!.append(canvas.rootElement);
-    await matchGoldenFile('canvas_rrect_round_square.png', region: region);
+    await _checkScreenshot('canvas_rrect_round_square.png', region);
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/62631
@@ -60,9 +66,7 @@ Future<void> testMain() async {
           const Radius.circular(30)),
       niceRRectPaint);
     canvas.drawPath(Path()..moveTo(0, 0)..lineTo(20, 0), niceRRectPaint);
-    html.document.body!.append(canvas.rootElement);
-    await matchGoldenFile('canvas_rrect_flipped.png',
-        region: const Rect.fromLTWH(0, 0, 100, 200));
+    await _checkScreenshot('canvas_rrect_flipped.png', const Rect.fromLTWH(0, 0, 100, 200));
   });
 
   test('round rect with big radius scale down smaller radius', () async {
@@ -76,9 +80,7 @@ Future<void> testMain() async {
 
       canvas.drawRRect(rrect, niceRRectPaint);
     }
-
-    html.document.body!.append(canvas.rootElement);
-    await matchGoldenFile('canvas_rrect_overlapping_radius.png', region: region);
+    await _checkScreenshot('canvas_rrect_overlapping_radius.png', region);
   });
 
   test('diff round rect with big radius scale down smaller radius', () async {
@@ -100,7 +102,6 @@ Future<void> testMain() async {
       canvas.drawDRRect(outerRRect, innerRRect, niceRRectPaint);
     }
 
-    html.document.body!.append(canvas.rootElement);
-    await matchGoldenFile('canvas_drrect_overlapping_radius.png', region: region);
+    await _checkScreenshot('canvas_drrect_overlapping_radius.png', region);
   });
 }

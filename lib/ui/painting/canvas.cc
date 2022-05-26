@@ -7,6 +7,7 @@
 
 #include <cmath>
 
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
@@ -254,11 +255,11 @@ void Canvas::clipPath(const CanvasPath* path, bool doAntiAlias) {
   }
 }
 
-void Canvas::drawColor(SkColor color, SkBlendMode blend_mode) {
+void Canvas::drawColor(SkColor color, DlBlendMode blend_mode) {
   if (display_list_recorder_) {
     builder()->drawColor(color, blend_mode);
   } else if (canvas_) {
-    canvas_->drawColor(color, blend_mode);
+    canvas_->drawColor(color, ToSk(blend_mode));
   }
 }
 
@@ -282,8 +283,8 @@ void Canvas::drawPaint(const Paint& paint, const PaintData& paint_data) {
   FML_DCHECK(paint.isNotNull());
   if (display_list_recorder_) {
     paint.sync_to(builder(), kDrawPaintFlags);
-    sk_sp<SkImageFilter> filter = builder()->getImageFilter();
-    if (filter && !filter->asColorFilter(nullptr)) {
+    std::shared_ptr<const DlImageFilter> filter = builder()->getImageFilter();
+    if (filter && !filter->asColorFilter()) {
       // drawPaint does an implicit saveLayer if an SkImageFilter is
       // present that cannot be replaced by an SkColorFilter.
       TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
@@ -440,8 +441,16 @@ void Canvas::drawImage(const CanvasImage* image,
     builder()->drawImage(image->image(), SkPoint::Make(x, y), sampling,
                          with_attributes);
   } else if (canvas_) {
+    auto dl_image = image->image();
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawImage(image->image(), x, y, sampling, paint.paint(sk_paint));
+    canvas_->drawImage(sk_image, x, y, sampling, paint.paint(sk_paint));
   }
 }
 
@@ -473,9 +482,16 @@ void Canvas::drawImageRect(const CanvasImage* image,
                              with_attributes,
                              SkCanvas::kFast_SrcRectConstraint);
   } else if (canvas_) {
+    auto dl_image = image->image();
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawImageRect(image->image(), src, dst, sampling,
-                           paint.paint(sk_paint),
+    canvas_->drawImageRect(sk_image, src, dst, sampling, paint.paint(sk_paint),
                            SkCanvas::kFast_SrcRectConstraint);
   }
 }
@@ -510,8 +526,16 @@ void Canvas::drawImageNine(const CanvasImage* image,
     builder()->drawImageNine(image->image(), icenter, dst, filter,
                              with_attributes);
   } else if (canvas_) {
+    auto dl_image = image->image();
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawImageNine(image->image().get(), icenter, dst, filter,
+    canvas_->drawImageNine(sk_image.get(), icenter, dst, filter,
                            paint.paint(sk_paint));
   }
 }
@@ -572,7 +596,7 @@ void Canvas::drawPoints(const Paint& paint,
 }
 
 void Canvas::drawVertices(const Vertices* vertices,
-                          SkBlendMode blend_mode,
+                          DlBlendMode blend_mode,
                           const Paint& paint,
                           const PaintData& paint_data) {
   if (!vertices) {
@@ -586,7 +610,7 @@ void Canvas::drawVertices(const Vertices* vertices,
     builder()->drawVertices(vertices->vertices(), blend_mode);
   } else if (canvas_) {
     SkPaint sk_paint;
-    canvas_->drawVertices(vertices->vertices(), blend_mode,
+    canvas_->drawVertices(vertices->vertices()->skia_object(), ToSk(blend_mode),
                           *paint.paint(sk_paint));
   }
 }
@@ -598,7 +622,7 @@ void Canvas::drawAtlas(const Paint& paint,
                        const tonic::Float32List& transforms,
                        const tonic::Float32List& rects,
                        const tonic::Int32List& colors,
-                       SkBlendMode blend_mode,
+                       DlBlendMode blend_mode,
                        const tonic::Float32List& cull_rect) {
   if (!atlas) {
     Dart_ThrowException(
@@ -607,7 +631,7 @@ void Canvas::drawAtlas(const Paint& paint,
     return;
   }
 
-  sk_sp<SkImage> skImage = atlas->image();
+  auto dl_image = atlas->image();
 
   static_assert(sizeof(SkRSXform) == sizeof(float) * 4,
                 "SkRSXform doesn't use floats.");
@@ -620,21 +644,29 @@ void Canvas::drawAtlas(const Paint& paint,
   if (display_list_recorder_) {
     bool with_attributes = paint.sync_to(builder(), kDrawAtlasWithPaintFlags);
     builder()->drawAtlas(
-        skImage, reinterpret_cast<const SkRSXform*>(transforms.data()),
+        dl_image, reinterpret_cast<const SkRSXform*>(transforms.data()),
         reinterpret_cast<const SkRect*>(rects.data()),
-        reinterpret_cast<const SkColor*>(colors.data()),
+        reinterpret_cast<const DlColor*>(colors.data()),
         rects.num_elements() / 4,  // SkRect have four floats.
         blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
         with_attributes);
   } else if (canvas_) {
+    if (!dl_image) {
+      return;
+    }
+    auto sk_image = dl_image->skia_image();
+    if (!sk_image) {
+      return;
+    }
     SkPaint sk_paint;
-    canvas_->drawAtlas(
-        skImage.get(), reinterpret_cast<const SkRSXform*>(transforms.data()),
-        reinterpret_cast<const SkRect*>(rects.data()),
-        reinterpret_cast<const SkColor*>(colors.data()),
-        rects.num_elements() / 4,  // SkRect have four floats.
-        blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
-        paint.paint(sk_paint));
+    canvas_->drawAtlas(sk_image.get(),
+                       reinterpret_cast<const SkRSXform*>(transforms.data()),
+                       reinterpret_cast<const SkRect*>(rects.data()),
+                       reinterpret_cast<const SkColor*>(colors.data()),
+                       rects.num_elements() / 4,  // SkRect have four floats.
+                       ToSk(blend_mode), sampling,
+                       reinterpret_cast<const SkRect*>(cull_rect.data()),
+                       paint.paint(sk_paint));
   }
 }
 

@@ -53,6 +53,16 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 /// Signature for [PlatformDispatcher.onConfigurationChanged].
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 
+/// Signature for [PlatformDispatcher.onError].
+///
+/// If this method returns false, the engine may use some fallback method to
+/// provide information about the error.
+///
+/// After calling this method, the process or the VM may terminate. Some severe
+/// unhandled errors may not be able to call this method either, such as Dart
+/// compilation errors or process terminating errors.
+typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
+
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
@@ -832,6 +842,14 @@ class PlatformDispatcher {
     _onTextScaleFactorChangedZone = Zone.current;
   }
 
+  /// Whether the spell check service is supported on the current platform.
+  ///
+  /// This option is used by [EditableTextState] to define its
+  /// [SpellCheckConfiguration] when a default spell check service
+  /// is requested.
+  bool get nativeSpellCheckServiceDefined => _nativeSpellCheckServiceDefined;
+  bool _nativeSpellCheckServiceDefined = false;
+
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
   ///
@@ -893,6 +911,12 @@ class PlatformDispatcher {
 
     final double textScaleFactor = (data['textScaleFactor']! as num).toDouble();
     final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat']! as bool;
+    final bool? nativeSpellCheckServiceDefined = data['nativeSpellCheckServiceDefined'] as bool?;
+    if (nativeSpellCheckServiceDefined != null) {
+      _nativeSpellCheckServiceDefined = nativeSpellCheckServiceDefined;
+    } else {
+      _nativeSpellCheckServiceDefined = false;
+    }
     // This field is optional.
     final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
     if (brieflyShowPassword != null) {
@@ -1010,6 +1034,50 @@ class PlatformDispatcher {
       SemanticsAction.values[action]!,
       args,
     );
+  }
+
+  ErrorCallback? _onError;
+  Zone? _onErrorZone;
+
+  /// A callback that is invoked when an unhandled error occurs in the root
+  /// isolate.
+  ///
+  /// This callback must return `true` if it has handled the error. Otherwise,
+  /// it must return `false` and a fallback mechanism such as printing to stderr
+  /// will be used, as configured by the specific platform embedding via
+  /// `Settings::unhandled_exception_callback`.
+  ///
+  /// The VM or the process may exit or become unresponsive after calling this
+  /// callback. The callback will not be called for exceptions that cause the VM
+  /// or process to terminate or become unresponsive before the callback can be
+  /// invoked.
+  ///
+  /// This callback is not directly invoked by errors in child isolates of the
+  /// root isolate. Programs that create new isolates must listen for errors on
+  /// those isolates and forward the errors to the root isolate. An example of
+  /// this can be found in the Flutter framework's `compute` function.
+  ErrorCallback? get onError => _onError;
+  set onError(ErrorCallback? callback) {
+    _onError = callback;
+    _onErrorZone = Zone.current;
+  }
+
+  bool _dispatchError(Object error, StackTrace stackTrace) {
+    if (_onError == null) {
+      return false;
+    }
+    assert(_onErrorZone != null);
+
+    if (identical(_onErrorZone, Zone.current)) {
+      return _onError!(error, stackTrace);
+    } else {
+      try {
+        return _onErrorZone!.runBinary<bool, Object, StackTrace>(_onError!, error, stackTrace);
+      } catch (e, s) {
+        _onErrorZone!.handleUncaughtError(e, s);
+        return false;
+      }
+    }
   }
 
   /// The route or path that the embedder requested when the application was
@@ -1938,17 +2006,23 @@ class Locale {
     if (other is! Locale) {
       return false;
     }
-    final String? countryCode = _countryCode;
+    final String? thisCountryCode = countryCode;
     final String? otherCountryCode = other.countryCode;
     return other.languageCode == languageCode
         && other.scriptCode == scriptCode // scriptCode cannot be ''
-        && (other.countryCode == countryCode // Treat '' as equal to null.
-            || otherCountryCode != null && otherCountryCode.isEmpty && countryCode == null
-            || countryCode != null && countryCode.isEmpty && other.countryCode == null);
+        && (other.countryCode == thisCountryCode // Treat '' as equal to null.
+            || otherCountryCode != null && otherCountryCode.isEmpty && thisCountryCode == null
+            || thisCountryCode != null && thisCountryCode.isEmpty && other.countryCode == null);
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode == '' ? null : countryCode);
+  int get hashCode => _hashCode[this] ??= hashValues(
+        languageCode,
+        scriptCode,
+        countryCode == '' ? null : countryCode,
+      );
+  // Memoize hashCode since languageCode and countryCode require lookups.
+  static final Expando<int> _hashCode = Expando<int>();
 
   static Locale? _cachedLocale;
   static String? _cachedLocaleString;

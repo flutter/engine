@@ -20,13 +20,11 @@
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/settings_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
+#include "flutter/shell/platform/windows/window_proc_delegate_manager_win32.h"
 #include "flutter/shell/platform/windows/window_state.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
-
-#ifndef WINUWP
-#include "flutter/shell/platform/windows/window_proc_delegate_manager_win32.h"  // nogncheck
-#endif
 
 namespace flutter {
 
@@ -126,11 +124,9 @@ class FlutterWindowsEngine {
     return accessibility_bridge_;
   }
 
-#ifndef WINUWP
   WindowProcDelegateManagerWin32* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
   }
-#endif
 
   // Informs the engine that the window metrics have changed.
   void SendWindowMetricsEvent(const FlutterWindowMetricsEvent& event);
@@ -164,9 +160,6 @@ class FlutterWindowsEngine {
   // Informs the engine that the system font list has changed.
   void ReloadSystemFonts();
 
-  // Informs the engine that the platform brightness has changed.
-  void ReloadPlatformBrightness();
-
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
 
@@ -198,11 +191,11 @@ class FlutterWindowsEngine {
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
 
-  // Sends system settings (e.g., locale) to the engine.
+  // Sends system locales to the engine.
   //
   // Should be called just after the engine is run, and after any relevant
   // system changes.
-  void SendSystemSettings();
+  void SendSystemLocales();
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
@@ -243,8 +236,8 @@ class FlutterWindowsEngine {
   // May be nullptr if ANGLE failed to initialize.
   std::unique_ptr<AngleSurfaceManager> surface_manager_;
 
-  // The MethodChannel used for communication with the Flutter engine.
-  std::unique_ptr<BasicMessageChannel<rapidjson::Document>> settings_channel_;
+  // The settings plugin.
+  std::unique_ptr<SettingsPlugin> settings_plugin_;
 
   // Callbacks to be called when the engine (and thus the plugin registrar) is
   // being destroyed.
@@ -266,10 +259,8 @@ class FlutterWindowsEngine {
 
   std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
 
-#ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManagerWin32> window_proc_delegate_manager_;
-#endif
 };
 
 }  // namespace flutter

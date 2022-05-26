@@ -19,7 +19,9 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
+Future<void> testMain() async {
+  await webOnlyInitializePlatform();
+
   late PersistedPlatformView view;
 
   group('PersistedPlatformView', () {
@@ -68,7 +70,7 @@ void testMain() {
 
     group('createElement', () {
       test('creates slot element that can receive pointer events', () {
-        final html.Element element = view.createElement();
+        final DomElement element = view.createElement();
 
         expect(element.tagName, equalsIgnoringCase('flt-platform-view-slot'));
         expect(element.style.pointerEvents, 'auto');

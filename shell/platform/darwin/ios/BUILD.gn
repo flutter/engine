@@ -84,6 +84,9 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterTextInputPlugin.mm",
     "framework/Source/FlutterUIPressProxy.h",
     "framework/Source/FlutterUIPressProxy.mm",
+    "framework/Source/FlutterUndoManagerDelegate.h",
+    "framework/Source/FlutterUndoManagerPlugin.h",
+    "framework/Source/FlutterUndoManagerPlugin.mm",
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
@@ -138,12 +141,16 @@ source_set("flutter_framework_source") {
 
   if (shell_enable_metal) {
     sources += [
-      "ios_context_metal.h",
-      "ios_context_metal.mm",
+      "ios_context_metal_impeller.h",
+      "ios_context_metal_impeller.mm",
+      "ios_context_metal_skia.h",
+      "ios_context_metal_skia.mm",
       "ios_external_texture_metal.h",
       "ios_external_texture_metal.mm",
-      "ios_surface_metal.h",
-      "ios_surface_metal.mm",
+      "ios_surface_metal_impeller.h",
+      "ios_surface_metal_impeller.mm",
+      "ios_surface_metal_skia.h",
+      "ios_surface_metal_skia.mm",
     ]
 
     deps += [ "//flutter/shell/platform/darwin/graphics" ]
@@ -204,6 +211,7 @@ source_set("ios_test_flutter_mrc") {
     "framework/Source/FlutterPlatformPluginTest.mm",
     "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/FlutterViewTest.mm",
+    "framework/Source/VsyncWaiterIosTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
     "platform_message_handler_ios_test.mm",
   ]
@@ -257,6 +265,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
     "framework/Source/FlutterRestorationPluginTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
+    "framework/Source/FlutterUndoManagerPluginTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
     "framework/Source/connection_collection_test.mm",
@@ -371,12 +380,6 @@ copy("copy_framework_icu") {
   outputs = [ "$_flutter_framework_dir/{{source_file_part}}" ]
 }
 
-copy("copy_framework_podspec") {
-  visibility = [ ":*" ]
-  sources = [ "framework/Flutter.podspec" ]
-  outputs = [ "$root_out_dir/Flutter.podspec" ]
-}
-
 copy("copy_license") {
   visibility = [ ":*" ]
   sources = [ "//LICENSE" ]
@@ -408,7 +411,6 @@ group("universal_flutter_framework") {
     ":copy_framework_icu",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",
-    ":copy_framework_podspec",
     ":copy_license",
   ]
 

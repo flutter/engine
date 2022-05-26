@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart' show flutterViewEmbedder;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
 import 'package:ui/src/engine/text_editing/input_type.dart';
@@ -60,7 +61,9 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
+Future<void> testMain() async {
+  await initializeEngine();
+
   tearDown(() {
     lastEditingState = null;
     editingDeltaState = null;
@@ -350,7 +353,7 @@ void testMain() {
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
 
-    test('Does not trigger input action in multi-line mode', () {
+    test('Triggers input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
         inputType: EngineInputType.multiline,
         inputAction: 'TextInputAction.done',
@@ -370,8 +373,8 @@ void testMain() {
         keyCode: _kReturnKeyCode,
       );
 
-      // Still no input action.
-      expect(lastInputAction, isNull);
+      // Input action is triggered!
+      expect(lastInputAction, 'TextInputAction.done');
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
@@ -447,8 +450,8 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
     }
 
-    String getEditingInputMode() {
-      return textEditing!.strategy.domElement!.getAttribute('inputmode')!;
+    String? getEditingInputMode() {
+      return textEditing!.strategy.domElement!.getAttribute('inputmode');
     }
 
     setUp(() {
@@ -674,6 +677,55 @@ void testMain() {
     },
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
+
+    test('focus and disconnection with delaying blur in iOS', () async {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+      MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      // Editing shouldn't have started yet.
+      expect(defaultTextEditingRoot.activeElement, null);
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // The "setSizeAndTransform" message has to be here before we call
+      // checkInputEditingState, since on some platforms (e.g. Desktop Safari)
+      // we don't put the input element into the DOM until we get its correct
+      // dimensions from the framework.
+      final MethodCall setSizeAndTransform =
+      configureSetSizeAndTransformMethodCall(150, 50,
+          Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      checkInputEditingState(
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
+      expect(textEditing!.isEditing, isTrue);
+
+      // Delay for not to be a fast callback with blur.
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // DOM element is blurred.
+      textEditing!.strategy.domElement!.blur();
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(
+          spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
+      await Future<void>.delayed(Duration.zero);
+      // DOM element loses the focus.
+      expect(defaultTextEditingRoot.activeElement, null);
+    },
+        // Test on ios-safari only.
+        skip: browserEngine != BrowserEngine.webkit ||
+            operatingSystem != OperatingSystem.iOs);
 
     test('finishAutofillContext closes connection no autofill element',
         () async {
@@ -1763,7 +1815,7 @@ void testMain() {
       textEditing = HybridTextEditing();
 
       showKeyboard(inputType: 'text');
-      expect(getEditingInputMode(), 'text');
+      expect(getEditingInputMode(), null);
 
       showKeyboard(inputType: 'number');
       expect(getEditingInputMode(), 'numeric');
@@ -1798,7 +1850,7 @@ void testMain() {
         textEditing = HybridTextEditing();
 
         showKeyboard(inputType: 'text');
-        expect(getEditingInputMode(), 'text');
+        expect(getEditingInputMode(), null);
 
         showKeyboard(inputType: 'number');
         expect(getEditingInputMode(), 'numeric');
@@ -1851,7 +1903,7 @@ void testMain() {
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
 
-    test('does not send input action in multi-line mode', () {
+    test('sends input action in multi-line mode', () {
       showKeyboard(
         inputType: 'multiline',
         inputAction: 'TextInputAction.next',
@@ -1863,8 +1915,14 @@ void testMain() {
         keyCode: _kReturnKeyCode,
       );
 
-      // No input action and no platform message have been sent.
-      expect(spy.messages, isEmpty);
+      // Input action is sent as a platform message.
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.performAction');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[clientId, 'TextInputAction.next'],
+      );
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });

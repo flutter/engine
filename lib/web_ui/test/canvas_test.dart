@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -16,7 +14,9 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
+Future<void> testMain() async {
+  await initializeEngine();
+
   group('EngineCanvas', () {
     late MockEngineCanvas mockCanvas;
     late ui.Paragraph paragraph;
@@ -29,7 +29,7 @@ void testMain() {
     }) {
       test(description, () {
         testFn(BitmapCanvas(canvasSize, RenderStrategy()));
-        testFn(DomCanvas(html.document.createElement('flt-picture')));
+        testFn(DomCanvas(domDocument.createElement('flt-picture')));
         testFn(mockCanvas = MockEngineCanvas());
         whenDone?.call();
       });

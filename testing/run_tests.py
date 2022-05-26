@@ -106,7 +106,8 @@ def FindExecutablePath(path):
 
 
 def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
-                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False, coverage=False):
+                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False, coverage=False,
+                        extra_env={}):
   if filter is not None and executable_name not in filter:
     print('Skipping %s due to filter.' % executable_name)
     return
@@ -138,6 +139,8 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
   if not env:
     env = os.environ.copy()
   env['FLUTTER_BUILD_DIRECTORY'] = build_dir
+  for key, value in extra_env.items():
+    env[key] = value
 
   try:
     RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure, env=env)
@@ -198,6 +201,10 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
 
   RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
 
+  RunEngineExecutable(build_dir, 'display_list_unittests', filter, shuffle_flags)
+
+  RunEngineExecutable(build_dir, 'display_list_rendertests', filter, shuffle_flags)
+
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags, coverage=coverage)
 
   RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags, coverage=coverage)
@@ -234,7 +241,9 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
     RunEngineExecutable(build_dir, 'txt_unittests', filter, icu_flags + shuffle_flags, coverage=coverage)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags, coverage=coverage)
+    gtk_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
+    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags, coverage=coverage,
+                        extra_env={'G_DEBUG': 'fatal-criticals'})
     RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, shuffle_flags, coverage=coverage)
 
   # Impeller tests are only supported on macOS for now.
@@ -258,7 +267,7 @@ def RunEngineBenchmarks(build_dir, filter):
 
 
 def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, multithreaded,
-                enable_observatory=False, expect_failure=False):
+                enable_observatory=False, expect_failure=False, alternative_tester=False):
   kernel_file_name = os.path.basename(dart_file) + '.dill'
   kernel_file_output = os.path.join(build_dir, 'gen', kernel_file_name)
   error_message = "%s doesn't exist. Please run the build that populates %s" % (
@@ -277,6 +286,8 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
   command_args += [
     '--use-test-fonts',
     '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat'),
+    '--flutter-assets-dir=%s' % os.path.join(build_dir, 'gen', 'flutter', 'lib', 'ui', 'assets'),
+    '--disable-asset-fonts',
     kernel_file_output,
   ]
 
@@ -286,9 +297,12 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
   else:
     threading = 'single-threaded'
 
-  print("Running test '%s' using 'flutter_tester' (%s)" % (kernel_file_name, threading))
+  tester_name = 'flutter_tester'
+  if alternative_tester:
+    tester_name = 'flutter_tester_fractional_translation'
+  print("Running test '%s' using '%s' (%s)" % (kernel_file_name, tester_name, threading))
   forbidden_output = [] if 'unopt' in build_dir or expect_failure else ['[ERROR']
-  RunEngineExecutable(build_dir, 'flutter_tester', None, command_args,
+  RunEngineExecutable(build_dir, tester_name, None, command_args,
                       forbidden_output=forbidden_output, expect_failure=expect_failure)
 
 
@@ -337,7 +351,7 @@ def JavaBin():
 def RunJavaTests(filter, android_variant='android_debug_unopt'):
   """Runs the Java JUnit unit tests for the Android embedding"""
   test_runner_dir = os.path.join(buildroot_dir, 'flutter', 'shell', 'platform', 'android', 'test_runner')
-  gradle_bin = os.path.join(buildroot_dir, 'gradle', 'bin', 'gradle.bat' if IsWindows() else 'gradle')
+  gradle_bin = os.path.join(buildroot_dir, 'third_party', 'gradle', 'bin', 'gradle.bat' if IsWindows() else 'gradle')
   flutter_jar = os.path.join(out_dir, android_variant, 'flutter.jar')
   android_home = os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk')
   build_dir = os.path.join(out_dir, android_variant, 'robolectric_tests', 'build')
@@ -432,6 +446,8 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
         print("Testing dart file %s with observatory enabled" % dart_test_file)
         RunDartTest(build_dir, test_packages, dart_test_file, verbose_dart_snapshot, True, True)
         RunDartTest(build_dir, test_packages, dart_test_file, verbose_dart_snapshot, False, True)
+        # Smoke test with tester variant that has no raster cache and enabled fractional translation
+        RunDartTest(build_dir, test_packages, dart_test_file, verbose_dart_snapshot, False, True, True)
 
   for dart_test_file in dart_tests:
     if filter is not None and os.path.basename(dart_test_file) not in filter:
@@ -544,6 +560,22 @@ def RunClangTidyTests(build_dir):
       cwd=test_dir)
 
 
+def RunApiConsistencyTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'api_check')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file,
+      os.path.join(buildroot_dir, 'flutter')]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
+
 def main():
   parser = argparse.ArgumentParser()
   all_types = ['engine', 'dart', 'benchmarks', 'java', 'android', 'objc', 'font-subset']
@@ -611,6 +643,7 @@ def main():
     RunLitetestTests(build_dir)
     RunGithooksTests(build_dir)
     RunClangTidyTests(build_dir)
+    RunApiConsistencyTests(build_dir)
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)

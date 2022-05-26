@@ -233,6 +233,11 @@ std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
 Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   Settings settings = {};
 
+  // Set executable name.
+  if (command_line.has_argv0()) {
+    settings.executable_name = command_line.argv0();
+  }
+
   // Enable Observatory
   settings.enable_observatory =
       !command_line.HasOption(FlagForSwitch(Switch::DisableObservatory));
@@ -372,11 +377,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       FlagForSwitch(Switch::IsolateSnapshotInstructions),
       &isolate_snapshot_instr_filename);
 
-  if (aot_shared_library_name.size() > 0) {
+  if (!aot_shared_library_name.empty()) {
     for (std::string_view name : aot_shared_library_name) {
       settings.application_library_path.emplace_back(name);
     }
-  } else if (snapshot_asset_path.size() > 0) {
+  } else if (!snapshot_asset_path.empty()) {
     settings.vm_snapshot_data_path =
         fml::paths::JoinPaths({snapshot_asset_path, vm_snapshot_data_filename});
     settings.vm_snapshot_instr_path = fml::paths::JoinPaths(
@@ -416,10 +421,15 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
+  settings.use_asset_fonts =
+      !command_line.HasOption(FlagForSwitch(Switch::DisableAssetFonts));
 
   std::string enable_skparagraph = command_line.GetOptionValueWithDefault(
       FlagForSwitch(Switch::EnableSkParagraph), "");
   settings.enable_skparagraph = enable_skparagraph != "false";
+
+  settings.enable_impeller =
+      command_line.HasOption(FlagForSwitch(Switch::EnableImpeller));
 
   settings.prefetched_default_font_manager = command_line.HasOption(
       FlagForSwitch(Switch::PrefetchedDefaultFontManager));
@@ -465,6 +475,38 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     command_line.GetOptionValue(FlagForSwitch(Switch::OldGenHeapSize),
                                 &old_gen_heap_size);
     settings.old_gen_heap_size = std::stoi(old_gen_heap_size);
+  }
+
+  if (command_line.HasOption(
+          FlagForSwitch(Switch::ResourceCacheMaxBytesThreshold))) {
+    std::string resource_cache_max_bytes_threshold;
+    command_line.GetOptionValue(
+        FlagForSwitch(Switch::ResourceCacheMaxBytesThreshold),
+        &resource_cache_max_bytes_threshold);
+    settings.resource_cache_max_bytes_threshold =
+        std::stoi(resource_cache_max_bytes_threshold);
+  }
+
+  if (command_line.HasOption(FlagForSwitch(Switch::MsaaSamples))) {
+    std::string msaa_samples;
+    command_line.GetOptionValue(FlagForSwitch(Switch::MsaaSamples),
+                                &msaa_samples);
+    if (msaa_samples == "0") {
+      settings.msaa_samples = 0;
+    } else if (msaa_samples == "1") {
+      settings.msaa_samples = 1;
+    } else if (msaa_samples == "2") {
+      settings.msaa_samples = 2;
+    } else if (msaa_samples == "4") {
+      settings.msaa_samples = 4;
+    } else if (msaa_samples == "8") {
+      settings.msaa_samples = 8;
+    } else if (msaa_samples == "16") {
+      settings.msaa_samples = 16;
+    } else {
+      FML_DLOG(ERROR) << "Invalid value for --msaa-samples: '" << msaa_samples
+                      << "' (expected 0, 1, 2, 4, 8, or 16).";
+    }
   }
   return settings;
 }

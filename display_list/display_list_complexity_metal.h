@@ -54,13 +54,14 @@ class DisplayListMetalComplexityCalculator
     void drawPoints(SkCanvas::PointMode mode,
                     uint32_t count,
                     const SkPoint points[]) override;
-    void drawVertices(const sk_sp<SkVertices> vertices,
-                      SkBlendMode mode) override;
-    void drawImage(const sk_sp<SkImage> image,
+    void drawSkVertices(const sk_sp<SkVertices> vertices,
+                        SkBlendMode mode) override;
+    void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+    void drawImage(const sk_sp<DlImage> image,
                    const SkPoint point,
                    const SkSamplingOptions& sampling,
                    bool render_with_attributes) override;
-    void drawImageNine(const sk_sp<SkImage> image,
+    void drawImageNine(const sk_sp<DlImage> image,
                        const SkIRect& center,
                        const SkRect& dst,
                        SkFilterMode filter,
@@ -70,7 +71,7 @@ class DisplayListMetalComplexityCalculator
                       SkScalar x,
                       SkScalar y) override;
     void drawShadow(const SkPath& path,
-                    const SkColor color,
+                    const DlColor color,
                     const SkScalar elevation,
                     bool transparent_occluder,
                     SkScalar dpr) override;

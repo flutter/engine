@@ -147,15 +147,23 @@ using TraceIDArg = int64_t;
 
 void TraceSetAllowlist(const std::vector<std::string>& allowlist);
 
-using TimelineEventHandler = std::function<void(const char*,
-                                                int64_t,
-                                                int64_t,
-                                                Dart_Timeline_Event_Type,
-                                                intptr_t,
-                                                const char**,
-                                                const char**)>;
+typedef void (*TimelineEventHandler)(const char*,
+                                     int64_t,
+                                     int64_t,
+                                     Dart_Timeline_Event_Type,
+                                     intptr_t,
+                                     const char**,
+                                     const char**);
+
+using TimelineMicrosSource = int64_t (*)();
 
 void TraceSetTimelineEventHandler(TimelineEventHandler handler);
+
+bool TraceHasTimelineEventHandler();
+
+void TraceSetTimelineMicrosSource(TimelineMicrosSource source);
+
+int64_t TraceGetTimelineMicros();
 
 void TraceTimelineEvent(TraceArg category_group,
                         TraceArg name,

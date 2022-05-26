@@ -115,6 +115,23 @@ TEST(MockWin32Window, OnImeCompositionComposeAndResult) {
                              GCS_COMPSTR | GCS_RESULTSTR);
 }
 
+TEST(MockWin32Window, OnImeCompositionClearChange) {
+  MockTextInputManagerWin32* text_input_manager =
+      new MockTextInputManagerWin32();
+  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
+      text_input_manager);
+  MockWin32Window window(std::move(text_input_manager_ptr));
+  EXPECT_CALL(window, OnComposeChange(std::u16string(u""), 0)).Times(1);
+  EXPECT_CALL(window, OnComposeCommit()).Times(1);
+  ON_CALL(window, OnImeComposition)
+      .WillByDefault(Invoke(&window, &MockWin32Window::CallOnImeComposition));
+  EXPECT_CALL(window, OnImeComposition(_, _, _)).Times(1);
+
+  // send an IME_COMPOSITION event that contains both the result string and the
+  // composition string.
+  window.InjectWindowMessage(WM_IME_COMPOSITION, 0, 0);
+}
+
 TEST(MockWin32Window, HorizontalScroll) {
   MockWin32Window window;
   const int scroll_amount = 10;
@@ -124,6 +141,22 @@ TEST(MockWin32Window, HorizontalScroll) {
       .Times(1);
 
   window.InjectWindowMessage(WM_MOUSEHWHEEL, MAKEWPARAM(0, scroll_amount), 0);
+}
+
+TEST(MockWin32Window, MouseLeave) {
+  MockWin32Window window;
+  const double mouse_x = 10.0;
+  const double mouse_y = 20.0;
+
+  EXPECT_CALL(window, OnPointerMove(mouse_x, mouse_y,
+                                    kFlutterPointerDeviceKindMouse, 0))
+      .Times(1);
+  EXPECT_CALL(window, OnPointerLeave(mouse_x, mouse_y,
+                                     kFlutterPointerDeviceKindMouse, 0))
+      .Times(1);
+
+  window.InjectWindowMessage(WM_MOUSEMOVE, 0, MAKELPARAM(mouse_x, mouse_y));
+  window.InjectWindowMessage(WM_MOUSELEAVE, 0, 0);
 }
 
 TEST(MockWin32Window, KeyDown) {

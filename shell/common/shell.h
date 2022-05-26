@@ -38,6 +38,7 @@
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
+#include "flutter/shell/common/resource_cache_limit_calculator.h"
 #include "flutter/shell/common/shell_io_manager.h"
 
 namespace flutter {
@@ -108,7 +109,8 @@ class Shell final : public PlatformView::Delegate,
                     public Animator::Delegate,
                     public Engine::Delegate,
                     public Rasterizer::Delegate,
-                    public ServiceProtocol::Handler {
+                    public ServiceProtocol::Handler,
+                    public ResourceCacheLimitItem {
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
@@ -325,7 +327,7 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to reload the system fonts in
-  /// FontCollection.
+  ///             FontCollection.
   ///             It also clears the cached font families and send system
   ///             channel message to framework to rebuild affected widgets.
   ///
@@ -401,7 +403,7 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
       const;
 
-  const VsyncWaiter& GetVsyncWaiter() const;
+  const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
  private:
   using ServiceProtocolHandler =
@@ -410,6 +412,9 @@ class Shell final : public PlatformView::Delegate,
 
   const TaskRunners task_runners_;
   const fml::RefPtr<fml::RasterThreadMerger> parent_raster_thread_merger_;
+  std::shared_ptr<ResourceCacheLimitCalculator>
+      resource_cache_limit_calculator_;
+  size_t resource_cache_limit_;
   const Settings settings_;
   DartVMRef vm_;
   mutable std::mutex time_recorder_mutex_;
@@ -471,11 +476,11 @@ class Shell final : public PlatformView::Delegate,
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
-  sk_sp<GrDirectContext> shared_resource_context_;
-
   Shell(DartVMRef vm,
         TaskRunners task_runners,
         fml::RefPtr<fml::RasterThreadMerger> parent_merger,
+        const std::shared_ptr<ResourceCacheLimitCalculator>&
+            resource_cache_limit_calculator,
         Settings settings,
         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
         bool is_gpu_disabled);
@@ -484,6 +489,8 @@ class Shell final : public PlatformView::Delegate,
       DartVMRef vm,
       fml::RefPtr<fml::RasterThreadMerger> parent_merger,
       std::shared_ptr<ShellIOManager> parent_io_manager,
+      const std::shared_ptr<ResourceCacheLimitCalculator>&
+          resource_cache_limit_calculator,
       TaskRunners task_runners,
       const PlatformData& platform_data,
       Settings settings,
@@ -492,11 +499,14 @@ class Shell final : public PlatformView::Delegate,
       const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
       const EngineCreateCallback& on_create_engine,
       bool is_gpu_disabled);
+
   static std::unique_ptr<Shell> CreateWithSnapshot(
       const PlatformData& platform_data,
       TaskRunners task_runners,
       fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
       std::shared_ptr<ShellIOManager> parent_io_manager,
+      const std::shared_ptr<ResourceCacheLimitCalculator>&
+          resource_cache_limit_calculator,
       Settings settings,
       DartVMRef vm,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -558,6 +568,9 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |PlatformView::Delegate|
+  const Settings& OnPlatformViewGetSettings() const override;
+
+  // |PlatformView::Delegate|
   void LoadDartDeferredLibrary(
       intptr_t loading_unit_id,
       std::unique_ptr<const fml::Mapping> snapshot_data,
@@ -578,6 +591,10 @@ class Shell final : public PlatformView::Delegate,
 
   // |Animator::Delegate|
   void OnAnimatorNotifyIdle(fml::TimePoint deadline) override;
+
+  // |Animator::Delegate|
+  void OnAnimatorUpdateLatestFrameTargetTime(
+      fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
   void OnAnimatorDraw(
@@ -686,6 +703,18 @@ class Shell final : public PlatformView::Delegate,
   bool OnServiceProtocolEstimateRasterCacheMemory(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
+
+  // Service protocol handler
+  //
+  // Renders a frame and responds with various statistics pertaining to the
+  // raster call. These include time taken to raster every leaf layer and also
+  // leaf layer snapshots.
+  bool OnServiceProtocolRenderFrameWithRasterStats(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  // |ResourceCacheLimitItem|
+  size_t GetResourceCacheLimit() override { return resource_cache_limit_; };
 
   // Creates an asset bundle from the original settings asset path or
   // directory.

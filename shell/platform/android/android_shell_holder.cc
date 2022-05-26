@@ -113,7 +113,8 @@ AndroidShellHolder::AndroidShellHolder(
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
             shell.GetSettings()
-                .enable_software_rendering  // use software rendering
+                .enable_software_rendering,   // use software rendering
+            shell.GetSettings().msaa_samples  // msaa sample count
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
         std::vector<std::unique_ptr<Display>> displays;
@@ -336,13 +337,13 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
                           std::move(asset_manager));
 
   {
-    if ((entrypoint.size() > 0) && (libraryUrl.size() > 0)) {
+    if (!entrypoint.empty() && !libraryUrl.empty()) {
       config.SetEntrypointAndLibrary(std::move(entrypoint),
                                      std::move(libraryUrl));
-    } else if (entrypoint.size() > 0) {
+    } else if (!entrypoint.empty()) {
       config.SetEntrypoint(std::move(entrypoint));
     }
-    if (entrypoint_args.size() > 0) {
+    if (!entrypoint_args.empty()) {
       config.SetEntrypointArgs(std::move(entrypoint_args));
     }
   }

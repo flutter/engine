@@ -176,6 +176,11 @@ DEF_SWITCH(UseTestFonts,
            "will make font resolution default to the Ahem test font on all "
            "platforms (See https://www.w3.org/Style/CSS/Test/Fonts/Ahem/). "
            "This option is only available on the desktop test shells.")
+DEF_SWITCH(DisableAssetFonts,
+           "disable-asset-fonts",
+           "Prevents usage of any non-test fonts unless they were explicitly "
+           "Loaded via dart:ui font APIs. This option is only available on the "
+           "desktop test shells.")
 DEF_SWITCH(PrefetchedDefaultFontManager,
            "prefetched-default-font-manager",
            "Indicates whether the embedding started a prefetch of the "
@@ -220,15 +225,29 @@ DEF_SWITCH(
 DEF_SWITCH(OldGenHeapSize,
            "old-gen-heap-size",
            "The size limit in megabytes for the Dart VM old gen heap space.")
+
+DEF_SWITCH(ResourceCacheMaxBytesThreshold,
+           "resource-cache-max-bytes-threshold",
+           "The max bytes threshold of resource cache, or 0 for unlimited.")
 DEF_SWITCH(EnableSkParagraph,
            "enable-skparagraph",
            "Selects the SkParagraph implementation of the text layout engine.")
-
+DEF_SWITCH(EnableImpeller,
+           "enable-impeller",
+           "Enable the Impeller renderer on supported platforms. Ignored if "
+           "Impeller is not supported on the platform.")
 DEF_SWITCH(LeakVM,
            "leak-vm",
            "When the last shell shuts down, the shared VM is leaked by default "
            "(the leak_vm in VM settings is true). To clean up the leak VM, set "
            "this value to false.")
+DEF_SWITCH(
+    MsaaSamples,
+    "msaa-samples",
+    "The minimum number of samples to require for multisampled anti-aliasing.  "
+    "Setting this value to 0 or 1 disables MSAA. If it is not 0 or 1, it must "
+    "be one of 2, 4, 8, or 16. However, if the GPU does not support the "
+    "requested sampling value, MSAA will be disabled.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

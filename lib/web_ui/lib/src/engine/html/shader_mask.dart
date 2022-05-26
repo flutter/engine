@@ -7,6 +7,7 @@ import 'dart:html' as html;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import 'bitmap_canvas.dart';
 import 'color_filter.dart';
@@ -34,7 +35,7 @@ class PersistedShaderMask extends PersistedContainerSurface
     this.filterQuality,
   ) : super(oldLayer);
 
-  html.Element? _childContainer;
+  DomElement? _childContainer;
   final ui.Shader shader;
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
@@ -52,7 +53,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  html.Element? get childContainer => _childContainer;
+  DomElement? get childContainer => _childContainer;
 
   @override
   void discard() {
@@ -72,9 +73,9 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-shader-mask');
-    final html.Element container = html.Element.tag('flt-mask-interior');
+  DomElement createElement() {
+    final DomElement element = defaultCreateElement('flt-shader-mask');
+    final DomElement container = createDomElement('flt-mask-interior');
     container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
@@ -108,8 +109,13 @@ class PersistedShaderMask extends PersistedContainerSurface
   void _applyGradientShader() {
     if (shader is EngineGradient) {
       final EngineGradient gradientShader = shader as EngineGradient;
+
+      // The gradient shader's bounds are in the context of the element itself,
+      // rather than the global position, so translate it back to the origin.
+      final ui.Rect translatedRect =
+          maskRect.translate(-maskRect.left, -maskRect.top);
       final String imageUrl =
-          gradientShader.createImageBitmap(maskRect, 1, true) as String;
+          gradientShader.createImageBitmap(translatedRect, 1, true) as String;
       ui.BlendMode blendModeTemp = blendMode;
       switch (blendModeTemp) {
         case ui.BlendMode.clear:

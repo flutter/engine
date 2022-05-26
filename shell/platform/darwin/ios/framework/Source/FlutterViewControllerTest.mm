@@ -125,6 +125,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @end
 
 @interface FlutterViewController (Tests)
+
+@property(nonatomic, assign) double targetViewInsetBottom;
+
 - (void)surfaceUpdated:(BOOL)appeared;
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
@@ -135,6 +138,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)goToApplicationLifecycle:(nonnull NSString*)state;
 - (void)keyboardWillChangeFrame:(NSNotification*)notification;
+- (void)keyboardWillBeHidden:(NSNotification*)notification;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateDisplayLink;
@@ -196,6 +200,30 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [viewControllerMock keyboardWillChangeFrame:notification];
   OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testEnsureBottomInsetIsZeroWhenKeyboardDismissed {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  CGRect keyboardFrame = CGRectMake(0, 0, 0, 0);
+  BOOL isLocal = YES;
+  NSNotification* fakeNotification = [NSNotification
+      notificationWithName:@""
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  viewControllerMock.targetViewInsetBottom = 10;
+  [viewControllerMock keyboardWillBeHidden:fakeNotification];
+  XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 0);
 }
 
 - (void)testEnsureViewportMetricsWillInvokeAndDisplayLinkWillInvalidateInViewDidDisappear {
@@ -418,6 +446,17 @@ typedef enum UIAccessibilityContrast : NSInteger {
   if (sendEvent) {
     sendEvent({}, nil, nil);
   }
+}
+
+// Regression test for https://github.com/flutter/engine/pull/32098.
+- (void)testInternalPluginsInvokeInViewDidLoad {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController viewDidLoad];
+  OCMVerify([viewController addInternalPlugins]);
 }
 
 - (void)testBinaryMessenger {
@@ -900,6 +939,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
+  id flutterViewControllerClassMOCK = OCMClassMock([FlutterViewController class]);
+  [[[flutterViewControllerClassMOCK stub] andReturnValue:@YES] isUIAccessibilityIsVoiceOverRunning];
+
   XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationWillResignActiveNotification
@@ -910,6 +952,32 @@ typedef enum UIAccessibilityContrast : NSInteger {
                     object:nil];
   XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   engine.viewController = nil;
+
+  [flutterViewControllerClassMOCK stopMocking];
+}
+
+- (void)testDontHideA11yElementsWhenVoiceOverIsOff {
+  FlutterDartProject* project = [[FlutterDartProject alloc] init];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                        nibName:nil
+                                                                         bundle:nil];
+  id flutterViewControllerClassMOCK = OCMClassMock([FlutterViewController class]);
+  [[[flutterViewControllerClassMOCK stub] andReturnValue:@NO] isUIAccessibilityIsVoiceOverRunning];
+
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationWillResignActiveNotification
+                    object:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationDidBecomeActiveNotification
+                    object:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
+  engine.viewController = nil;
+
+  [flutterViewControllerClassMOCK stopMocking];
 }
 
 - (void)testNotifyLowMemory {

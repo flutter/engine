@@ -20,12 +20,15 @@ void main() {
 SurfacePaint makePaint() => Paint() as SurfacePaint;
 
 Future<void> testMain() async {
-  setUp(() async {
+  setUpAll(() async {
     debugShowClipLayers = true;
-    SurfaceSceneBuilder.debugForgetFrameScene();
     await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
+    fontCollection.debugRegisterTestFonts();
+    await fontCollection.ensureFontsLoaded();
+  });
+
+  setUp(() async {
+    SurfaceSceneBuilder.debugForgetFrameScene();
   });
 
   group('Add picture to scene', () {
@@ -38,10 +41,10 @@ Future<void> testMain() async {
       _drawTestPicture(builder, 100, false);
       builder.pop();
 
-      final html.Element elm1 = builder
+      final DomElement elm1 = builder
           .build()
           .webOnlyRootElement!;
-      html.document.body!.append(elm1);
+      domDocument.body!.append(elm1);
 
       // Now draw picture again but at larger size.
       final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
@@ -68,10 +71,10 @@ Future<void> testMain() async {
       _drawTestPicture(builder, 100, true);
       builder.pop();
 
-      final html.Element elm1 = builder
+      final DomElement elm1 = builder
           .build()
           .webOnlyRootElement!;
-      html.document.body!.append(elm1);
+      domDocument.body!.append(elm1);
 
       // Now draw picture again but at larger size.
       final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();

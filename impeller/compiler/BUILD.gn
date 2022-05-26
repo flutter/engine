@@ -1,0 +1,67 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("compiler_lib") {
+  sources = [
+    "code_gen_template.h",
+    "compiler.cc",
+    "compiler.h",
+    "compiler_backend.cc",
+    "compiler_backend.h",
+    "include_dir.h",
+    "includer.cc",
+    "includer.h",
+    "logger.h",
+    "reflector.cc",
+    "reflector.h",
+    "source_options.cc",
+    "source_options.h",
+    "switches.cc",
+    "switches.h",
+    "types.cc",
+    "types.h",
+    "utilities.cc",
+    "utilities.h",
+  ]
+
+  public_deps = [
+    "../base",
+    "../geometry",
+    "//flutter/fml",
+    "//third_party/inja",
+    "//third_party/shaderc_flutter",
+    "//third_party/spirv_cross_flutter",
+  ]
+}
+
+impeller_component("impellerc") {
+  target_type = "executable"
+
+  sources = [ "impellerc_main.cc" ]
+
+  deps = [ ":compiler_lib" ]
+}
+
+group("compiler") {
+  deps = [ ":impellerc" ]
+}
+
+impeller_component("compiler_unittests") {
+  testonly = true
+
+  output_name = "impellerc_unittests"
+
+  sources = [
+    "compiler_test.cc",
+    "compiler_test.h",
+    "compiler_unittests.cc",
+  ]
+
+  deps = [
+    ":compiler_lib",
+    "//flutter/testing:testing_lib",
+  ]
+}

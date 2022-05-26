@@ -25,6 +25,7 @@ ALL_PACKAGES = [
   os.path.join("src", "flutter", "testing", "scenario_app"),
   os.path.join("src", "flutter", "testing", "smoke_test_failure"),
   os.path.join("src", "flutter", "testing", "symbols"),
+  os.path.join("src", "flutter", "tools", "api_check"),
   os.path.join("src", "flutter", "tools", "android_lint"),
   os.path.join("src", "flutter", "tools", "clang_tidy"),
   os.path.join("src", "flutter", "tools", "const_finder"),
@@ -64,10 +65,10 @@ def CheckPackage(package):
 
 def Main():
   leading = os.path.join("src", "third_party", "dart", "tools", "sdks", "dart-sdk", "bin")
-  pub = "pub"
+  dart = "dart"
   if os.name == "nt":
-    pub = "pub.bat"
-  pubcmd = [os.path.abspath(os.path.join(leading, pub)), "get", "--offline"]
+    dart = "dart.exe"
+  pubcmd = [os.path.abspath(os.path.join(leading, dart)), "pub", "get", "--offline"]
 
   pub_count = 0
   for package in ALL_PACKAGES:

@@ -94,6 +94,10 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
     metrics_ = metrics;
   }
   // |flutter::PlatformView::Delegate|
+  const flutter::Settings& OnPlatformViewGetSettings() const {
+    return settings_;
+  }
+  // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message) {
     message_ = std::move(message);
@@ -164,6 +168,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   std::vector<std::unique_ptr<flutter::PointerDataPacket>> pointer_packets_;
   int32_t semantics_features_ = 0;
   bool semantics_enabled_ = false;
+  flutter::Settings settings_;
 };
 
 class MockResponse : public flutter::PlatformMessageResponse {
@@ -1380,7 +1385,8 @@ TEST_F(PlatformViewTests, OnShaderWarmup) {
   EXPECT_EQ(expected_result_string, response->result_string);
 }
 
-TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
+// TODO(fxbug.dev/85125): Enable when GFX converts to TouchSource.
+TEST_F(PlatformViewTests, DISABLED_TouchSourceLogicalToPhysicalConversion) {
   constexpr std::array<std::array<float, 2>, 2> kRect = {{{0, 0}, {20, 20}}};
   constexpr std::array<float, 9> kIdentity = {1, 0, 0, 0, 1, 0, 0, 0, 1};
   constexpr fuchsia::ui::pointer::TouchInteractionId kIxnOne = {

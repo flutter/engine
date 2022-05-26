@@ -2,16 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
-import 'dart:svg' as svg;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../engine_canvas.dart';
-import '../html_image_codec.dart';
+import '../svg.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -19,11 +18,12 @@ import 'painting.dart';
 import 'path/path.dart';
 import 'path/path_to_svg.dart';
 import 'shaders/image_shader.dart';
+import 'shaders/shader.dart';
 
 /// A canvas that renders to DOM elements and CSS properties.
 class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
-  final html.Element rootElement;
+  final DomElement rootElement;
 
   DomCanvas(this.rootElement);
 
@@ -52,14 +52,14 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     // TODO(yjbanov): implement blendMode
-    final html.Element box = html.Element.tag('draw-color');
+    final DomElement box = createDomElement('draw-color');
     box.style
       ..position = 'absolute'
       ..top = '0'
       ..right = '0'
       ..bottom = '0'
       ..left = '0'
-      ..backgroundColor = colorToCssString(color);
+      ..backgroundColor = colorToCssString(color)!;
     currentElement.append(box);
   }
 
@@ -81,7 +81,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    final html.Element element = buildDrawRectElement(
+    final DomElement element = buildDrawRectElement(
         rrect.outerRect, paint, 'draw-rrect', currentTransform);
     applyRRectBorderRadius(element.style, rrect);
     currentElement.append(element);
@@ -126,7 +126,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    final html.Element paragraphElement = drawParagraphElement(
+    final DomElement paragraphElement = drawParagraphElement(
         paragraph as CanvasParagraph, offset,
         transform: currentTransform);
     currentElement.append(paragraphElement);
@@ -160,11 +160,10 @@ ui.Color blurColor(ui.Color color, double sigma) {
   return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
 }
 
-html.HtmlElement buildDrawRectElement(
+DomHTMLElement buildDrawRectElement(
     ui.Rect rect, SurfacePaintData paint, String tagName, Matrix4 transform) {
-  assert(paint.shader == null);
-  final html.HtmlElement rectangle =
-      html.document.createElement(tagName) as html.HtmlElement;
+  final DomHTMLElement rectangle = domDocument.createElement(tagName) as
+      DomHTMLElement;
   assert(() {
     rectangle.setAttribute('flt-rect', '$rect');
     rectangle.setAttribute('flt-paint', '$paint');
@@ -195,7 +194,7 @@ html.HtmlElement buildDrawRectElement(
     }
     effectiveTransform = matrix4ToCssTransform(translated);
   }
-  final html.CssStyleDeclaration style = rectangle.style;
+  final DomCSSStyleDeclaration style = rectangle.style;
   style
     ..position = 'absolute'
     ..transformOrigin = '0 0 0'
@@ -226,22 +225,31 @@ html.HtmlElement buildDrawRectElement(
     style
       ..width = '${right - left}px'
       ..height = '${bottom - top}px'
-      ..backgroundColor = cssColor;
-
-    if (paint.shader != null && paint.shader is EngineImageShader) {
-      _applyImageShaderToElement(rectangle, paint.shader! as EngineImageShader);
-    }
+      ..backgroundColor = cssColor
+      ..backgroundImage = _getBackgroundImageCssValue(paint.shader, rect);
   }
   return rectangle;
 }
 
-void _applyImageShaderToElement(html.HtmlElement targetElement,
-    EngineImageShader imageShader) {
-  final HtmlImage image = imageShader.image;
-  targetElement.style.backgroundImage = image.imgElement.src;
+String _getBackgroundImageCssValue(ui.Shader? shader, ui.Rect bounds) {
+  final String url = _getBackgroundImageUrl(shader, bounds);
+  return (url != '') ? "url('$url'": '';
 }
 
-void applyRRectBorderRadius(html.CssStyleDeclaration style, ui.RRect rrect) {
+String _getBackgroundImageUrl(ui.Shader? shader, ui.Rect bounds) {
+  if(shader != null) {
+    if(shader is EngineImageShader) {
+      return shader.image.imgElement.src ?? '';
+    }
+
+    if(shader is EngineGradient) {
+      return shader.createImageBitmap(bounds, 1, true) as String;
+    }
+  }
+  return '';
+}
+
+void applyRRectBorderRadius(DomCSSStyleDeclaration style, ui.RRect rrect) {
   if (rrect.tlRadiusX == rrect.trRadiusX &&
       rrect.tlRadiusX == rrect.blRadiusX &&
       rrect.tlRadiusX == rrect.brRadiusX &&
@@ -271,16 +279,16 @@ String _borderStrokeToCssUnit(double value) {
   return '${value.toStringAsFixed(3)}px';
 }
 
-svg.SvgSvgElement pathToSvgElement(
+SVGSVGElement pathToSvgElement(
     SurfacePath path, SurfacePaintData paint, String width, String height) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
-  final svg.SvgSvgElement root = svg.SvgSvgElement()
+  final SVGSVGElement root = createSVGSVGElement()
     ..setAttribute('width', '${width}px')
     ..setAttribute('height', '${height}px')
     ..setAttribute('viewBox', '0 0 $width $height');
 
-  final svg.PathElement svgPath = svg.PathElement();
+  final SVGPathElement svgPath = createSVGPathElement();
   root.append(svgPath);
   final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
   if (paint.style == ui.PaintingStyle.stroke ||

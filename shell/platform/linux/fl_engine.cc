@@ -24,6 +24,11 @@
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 
+// Use different device ID for mouse and pan/zoom events, since we can't
+// differentiate the actual device (mouse v.s. trackpad)
+static constexpr int32_t kMousePointerDeviceId = 0;
+static constexpr int32_t kPointerPanZoomDeviceId = 1;
+
 struct _FlEngine {
   GObject parent_instance;
 
@@ -516,8 +521,9 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   setup_locales(self);
 
+  g_autoptr(FlSettings) settings = fl_settings_new();
   self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
-  fl_settings_plugin_start(self->settings_plugin);
+  fl_settings_plugin_start(self->settings_plugin, settings);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
@@ -728,6 +734,37 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.scroll_delta_y = scroll_delta_y;
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
+  fl_event.device = kMousePointerDeviceId;
+  self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
+}
+
+void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
+                                           size_t timestamp,
+                                           double x,
+                                           double y,
+                                           FlutterPointerPhase phase,
+                                           double pan_x,
+                                           double pan_y,
+                                           double scale,
+                                           double rotation) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent fl_event = {};
+  fl_event.struct_size = sizeof(fl_event);
+  fl_event.timestamp = timestamp;
+  fl_event.x = x;
+  fl_event.y = y;
+  fl_event.phase = phase;
+  fl_event.pan_x = pan_x;
+  fl_event.pan_y = pan_y;
+  fl_event.scale = scale;
+  fl_event.rotation = rotation;
+  fl_event.device = kPointerPanZoomDeviceId;
+  fl_event.device_kind = kFlutterPointerDeviceKindTrackpad;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 

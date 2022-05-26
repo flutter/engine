@@ -51,7 +51,10 @@ Engine::Engine(
       animator_(std::move(animator)),
       runtime_controller_(std::move(runtime_controller)),
       font_collection_(font_collection),
-      image_decoder_(task_runners, image_decoder_task_runner, io_manager),
+      image_decoder_(ImageDecoder::Make(settings_,
+                                        task_runners,
+                                        image_decoder_task_runner,
+                                        io_manager)),
       task_runners_(std::move(task_runners)),
       weak_factory_(this) {
   pointer_data_dispatcher_ = dispatcher_maker(*this);
@@ -92,7 +95,7 @@ Engine::Engine(Delegate& delegate,
           std::move(snapshot_delegate),            // snapshot delegate
           std::move(io_manager),                   // io manager
           std::move(unref_queue),                  // Skia unref queue
-          image_decoder_.GetWeakPtr(),             // image decoder
+          image_decoder_->GetWeakPtr(),            // image decoder
           image_generator_registry_.GetWeakPtr(),  // image generator registry
           settings_.advisory_script_uri,           // advisory script uri
           settings_.advisory_script_entrypoint,    // advisory script entrypoint
@@ -119,16 +122,16 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*font_collection=*/font_collection_,
       /*runtime_controller=*/nullptr);
   result->runtime_controller_ = runtime_controller_->Spawn(
-      *result,                              // runtime delegate
-      settings.advisory_script_uri,         // advisory script uri
-      settings.advisory_script_entrypoint,  // advisory script entrypoint
-      settings.idle_notification_callback,  // idle notification callback
-      settings.isolate_create_callback,     // isolate create callback
-      settings.isolate_shutdown_callback,   // isolate shutdown callback
-      settings.persistent_isolate_data,     // persistent isolate data
-      io_manager,                           // io_manager
-      result->GetImageDecoderWeakPtr()      // imageDecoder
-  );
+      /*p_client=*/*result,
+      /*advisory_script_uri=*/settings.advisory_script_uri,
+      /*advisory_script_entrypoint=*/settings.advisory_script_entrypoint,
+      /*idle_notification_callback=*/settings.idle_notification_callback,
+      /*isolate_create_callback=*/settings.isolate_create_callback,
+      /*isolate_shutdown_callback=*/settings.isolate_shutdown_callback,
+      /*persistent_isolate_data=*/settings.persistent_isolate_data,
+      /*io_manager=*/io_manager,
+      /*image_decoder=*/result->GetImageDecoderWeakPtr(),
+      /*image_generator_registry=*/result->GetImageGeneratorRegistry());
   result->initial_route_ = initial_route;
   return result;
 }
@@ -149,7 +152,7 @@ std::shared_ptr<AssetManager> Engine::GetAssetManager() {
 }
 
 fml::WeakPtr<ImageDecoder> Engine::GetImageDecoderWeakPtr() {
-  return image_decoder_.GetWeakPtr();
+  return image_decoder_->GetWeakPtr();
 }
 
 fml::WeakPtr<ImageGeneratorRegistry> Engine::GetImageGeneratorRegistry() {
@@ -169,7 +172,9 @@ bool Engine::UpdateAssetManager(
   }
 
   // Using libTXT as the text engine.
-  font_collection_->RegisterFonts(asset_manager_);
+  if (settings_.use_asset_fonts) {
+    font_collection_->RegisterFonts(asset_manager_);
+  }
 
   if (settings_.use_test_fonts) {
     font_collection_->RegisterTestFonts();
@@ -241,7 +246,6 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 }
 
 void Engine::BeginFrame(fml::TimePoint frame_time, uint64_t frame_number) {
-  TRACE_EVENT0("flutter", "Engine::BeginFrame");
   runtime_controller_->BeginFrame(frame_time, frame_number);
 }
 
@@ -557,7 +561,7 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
   }
 }
 
-const VsyncWaiter& Engine::GetVsyncWaiter() const {
+const std::weak_ptr<VsyncWaiter> Engine::GetVsyncWaiter() const {
   return animator_->GetVsyncWaiter();
 }
 

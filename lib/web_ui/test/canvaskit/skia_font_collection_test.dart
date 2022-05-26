@@ -9,8 +9,6 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 
-import 'common.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -21,6 +19,7 @@ void testMain() {
     late void Function(String) oldPrintWarning;
 
     setUpAll(() async {
+      ensureFlutterViewEmbedderInitialized();
       await initializeCanvasKit();
       oldPrintWarning = printWarning;
       printWarning = (String warning) {

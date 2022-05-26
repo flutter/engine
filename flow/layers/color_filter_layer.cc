@@ -7,7 +7,7 @@
 namespace flutter {
 
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
-    : filter_(std::move(filter)) {}
+    : filter_(std::move(filter)), render_count_(1) {}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -29,17 +29,46 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);
+
+  // We always use a saveLayer (or a cached rendering), so we
+  // can always apply opacity in those cases.
+  context->subtree_can_inherit_opacity = true;
+
+  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+    TryToPrepareRasterCache(context, this, matrix,
+                            RasterCacheLayerStrategy::kLayer);
+  } else {
+    render_count_++;
+    TryToPrepareRasterCache(context, this, matrix,
+                            RasterCacheLayerStrategy::kLayerChildren);
+  }
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  SkPaint paint;
-  paint.setColorFilter(filter_);
+  AutoCachePaint cache_paint(context);
 
-  Layer::AutoSaveLayer save =
-      Layer::AutoSaveLayer::Create(context, paint_bounds(), &paint);
+  if (context.raster_cache) {
+    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                   RasterCacheLayerStrategy::kLayer,
+                                   cache_paint.paint())) {
+      return;
+    }
+
+    cache_paint.setColorFilter(filter_);
+    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                   RasterCacheLayerStrategy::kLayerChildren,
+                                   cache_paint.paint())) {
+      return;
+    }
+  }
+
+  cache_paint.setColorFilter(filter_);
+
+  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+      context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);
 }
 

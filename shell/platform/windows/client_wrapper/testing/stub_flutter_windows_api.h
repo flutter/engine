@@ -16,7 +16,7 @@ namespace testing {
 // the headers in platform/windows/public/.
 
 // Linking this class into a test binary will provide dummy forwarding
-// implementantions of that C API, so that the wrapper can be tested separately
+// implementations of that C API, so that the wrapper can be tested separately
 // from the actual library.
 class StubFlutterWindowsApi {
  public:
@@ -24,7 +24,7 @@ class StubFlutterWindowsApi {
   // will be forwarded.
   static void SetTestStub(StubFlutterWindowsApi* stub);
 
-  // Returns the current stub, as last set by SetTestFluttterStub.
+  // Returns the current stub, as last set by SetTestFlutterStub.
   static StubFlutterWindowsApi* GetTestStub();
 
   virtual ~StubFlutterWindowsApi() {}
@@ -64,9 +64,6 @@ class StubFlutterWindowsApi {
 
   // Called for FlutterDesktopEngineReloadSystemFonts.
   virtual void EngineReloadSystemFonts() {}
-
-  // Called for FlutterDesktopEngineReloadPlatformBrightness.
-  virtual void EngineReloadPlatformBrightness() {}
 
   // Called for FlutterDesktopViewGetHWND.
   virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }

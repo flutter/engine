@@ -10,6 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'dom.dart';
 import 'engine_canvas.dart';
 import 'html/bitmap_canvas.dart';
 import 'html/painting.dart';
@@ -76,13 +77,6 @@ class CanvasPool extends _SaveStackTracking {
     translate(transform.dx, transform.dy);
   }
 
-  /// Returns true if no canvas has been allocated yet.
-  bool get isEmpty => _canvas == null;
-
-  /// Returns true if a canvas has been allocated for use.
-  bool get isNotEmpty => _canvas != null;
-
-
   /// Returns [CanvasRenderingContext2D] api to draw into this canvas.
   html.CanvasRenderingContext2D get context {
     html.CanvasRenderingContext2D? ctx = _context;
@@ -106,12 +100,28 @@ class CanvasPool extends _SaveStackTracking {
     return _contextHandle!;
   }
 
-  /// Prevents active canvas to be used for rendering and prepares a new
-  /// canvas allocation on next drawing request that will require one.
+  /// Returns true if a canvas is currently available for drawing.
   ///
-  /// Saves current canvas so we can dispose
-  /// and replay the clip/transform stack on top of new canvas.
-  void closeCurrentCanvas() {
+  /// Calling [contextHandle] or, transitively, any of the `draw*` methods while
+  /// this returns true will reuse the existing canvas. Otherwise, a new canvas
+  /// will be allocated.
+  ///
+  /// Previously allocated and closed canvases (see [closeCanvas]) are not
+  /// considered by this getter.
+  bool get hasCanvas => _canvas != null;
+
+  /// Stops the currently available canvas from receiving any further drawing
+  /// commands.
+  ///
+  /// After calling this method, a subsequent call to [contextHandle] or,
+  /// transitively, any of the `draw*` methods will cause a new canvas to be
+  /// allocated.
+  ///
+  /// The closed canvas becomes an "active" canvas, that is a canvas that's used
+  /// to render picture content in the current frame. Active canvases may be
+  /// reused in other pictures if their contents are no longer needed for this
+  /// picture.
+  void closeCanvas() {
     assert(_rootElement != null);
     // Place clean copy of current canvas with context stack restored and paint
     // reset into pool.
@@ -974,7 +984,8 @@ class ContextStateHandle {
       if (paint.shader is EngineGradient) {
         final EngineGradient engineShader = paint.shader! as EngineGradient;
         final Object paintStyle =
-            engineShader.createPaintStyle(_canvasPool.context, shaderBounds,
+            engineShader.createPaintStyle(_canvasPool.context as
+                DomCanvasRenderingContext2D, shaderBounds,
                 density);
         fillStyle = paintStyle;
         strokeStyle = paintStyle;
@@ -984,7 +995,8 @@ class ContextStateHandle {
       } else if (paint.shader is EngineImageShader) {
         final EngineImageShader imageShader = paint.shader! as EngineImageShader;
         final Object paintStyle =
-            imageShader.createPaintStyle(_canvasPool.context, shaderBounds,
+            imageShader.createPaintStyle(_canvasPool.context as
+                DomCanvasRenderingContext2D, shaderBounds,
                 density);
         fillStyle = paintStyle;
         strokeStyle = paintStyle;

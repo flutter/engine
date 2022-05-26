@@ -15,6 +15,10 @@ void main() {
 }
 
 void testMain() {
+  setUpAll(() async {
+    await initializeEngine();
+  });
+
   group('PlatformViewManager', () {
     const String viewType = 'forTest';
     const int viewId = 6;
@@ -117,8 +121,8 @@ void testMain() {
       test('slot property has the same value as createPlatformViewSlot', () async {
         final html.Element content =
             contentManager.renderContent(viewType, viewId, null);
-        final html.Element slot = createPlatformViewSlot(viewId);
-        final html.Element innerSlot = slot.querySelector('slot')!;
+        final DomElement slot = createPlatformViewSlot(viewId);
+        final DomElement innerSlot = slot.querySelector('slot')!;
 
         expect(content.getAttribute('slot'), innerSlot.getAttribute('name'),
             reason:

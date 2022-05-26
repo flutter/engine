@@ -156,7 +156,7 @@ abstract class FlutterView {
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
-  /// UI (such as the system notification area), or or physical intrusions in
+  /// UI (such as the system notification area), or physical intrusions in
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
@@ -199,7 +199,7 @@ abstract class FlutterView {
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
-  /// UI (such as the system notification area), or or physical intrusions in
+  /// UI (such as the system notification area), or physical intrusions in
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
@@ -424,6 +424,15 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   double get textScaleFactor => platformDispatcher.textScaleFactor;
+
+  /// Whether the spell check service is supported on the current platform.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// This option is used by [EditableTextState] to define its
+  /// [SpellCheckConfiguration] when spell check is enabled, but no spell check
+  /// service is specified.
+  bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
 
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
@@ -786,7 +795,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 class AccessibilityFeatures {
   const AccessibilityFeatures._(this._index);
 
-  static const int _kAccessibleNavigation = 1 << 0;
+  static const int _kAccessibleNavigationIndex = 1 << 0;
   static const int _kInvertColorsIndex = 1 << 1;
   static const int _kDisableAnimationsIndex = 1 << 2;
   static const int _kBoldTextIndex = 1 << 3;
@@ -801,7 +810,7 @@ class AccessibilityFeatures {
   /// interaction model of the device.
   ///
   /// For example, TalkBack on Android and VoiceOver on iOS enable this flag.
-  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
+  bool get accessibleNavigation => _kAccessibleNavigationIndex & _index != 0;
 
   /// The platform is inverting the colors of the application.
   bool get invertColors => _kInvertColorsIndex & _index != 0;

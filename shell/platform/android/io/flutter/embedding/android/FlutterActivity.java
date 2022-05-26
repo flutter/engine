@@ -11,6 +11,7 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_BACKGROUND_MODE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_CACHED_ENGINE_ID;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DART_ENTRYPOINT_ARGS;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_ENABLE_STATE_RESTORATION;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE;
@@ -50,6 +51,8 @@ import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.ViewUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * {@code Activity} which displays a fullscreen Flutter UI.
@@ -65,7 +68,7 @@ import io.flutter.util.ViewUtils;
  *   <li>Displays an Android launch screen.
  *   <li>Displays a Flutter splash screen.
  *   <li>Configures the status bar appearance.
- *   <li>Chooses the Dart execution app bundle path and entrypoint.
+ *   <li>Chooses the Dart execution app bundle path, entrypoint and entrypoint arguments.
  *   <li>Chooses Flutter's initial route.
  *   <li>Renders {@code Activity} transparently, if desired.
  *   <li>Offers hooks for subclasses to provide and configure a {@link
@@ -73,13 +76,17 @@ import io.flutter.util.ViewUtils;
  *   <li>Save and restore instance state, see {@code #shouldRestoreAndSaveState()};
  * </ul>
  *
- * <p><strong>Dart entrypoint, initial route, and app bundle path</strong>
+ * <p><strong>Dart entrypoint, entrypoint arguments, initial route, and app bundle path</strong>
  *
  * <p>The Dart entrypoint executed within this {@code Activity} is "main()" by default. To change
  * the entrypoint that a {@code FlutterActivity} executes, subclass {@code FlutterActivity} and
  * override {@link #getDartEntrypointFunctionName()}. For non-main Dart entrypoints to not be
  * tree-shaken away, you need to annotate those functions with {@code @pragma('vm:entry-point')} in
  * Dart.
+ *
+ * <p>The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint
+ * function. It can be passed using a {@link NewEngineIntentBuilder} via {@link
+ * NewEngineIntentBuilder#dartEntrypointArgs}.
  *
  * <p>The Flutter route that is initially loaded within this {@code Activity} is "/". The initial
  * route may be specified explicitly by passing the name of the route as a {@code String} in {@link
@@ -88,12 +95,13 @@ import io.flutter.util.ViewUtils;
  * <p>The initial route can each be controlled using a {@link NewEngineIntentBuilder} via {@link
  * NewEngineIntentBuilder#initialRoute}.
  *
- * <p>The app bundle path, Dart entrypoint, and initial route can also be controlled in a subclass
- * of {@code FlutterActivity} by overriding their respective methods:
+ * <p>The app bundle path, Dart entrypoint, Dart entrypoint arguments, and initial route can also be
+ * controlled in a subclass of {@code FlutterActivity} by overriding their respective methods:
  *
  * <ul>
  *   <li>{@link #getAppBundlePath()}
  *   <li>{@link #getDartEntrypointFunctionName()}
+ *   <li>{@link #getDartEntrypointArgs()}
  *   <li>{@link #getInitialRoute()}
  * </ul>
  *
@@ -255,6 +263,7 @@ public class FlutterActivity extends Activity
     private final Class<? extends FlutterActivity> activityClass;
     private String initialRoute = DEFAULT_INITIAL_ROUTE;
     private String backgroundMode = DEFAULT_BACKGROUND_MODE;
+    @Nullable private List<String> dartEntrypointArgs;
 
     /**
      * Constructor that allows this {@code NewEngineIntentBuilder} to be used by subclasses of
@@ -309,6 +318,21 @@ public class FlutterActivity extends Activity
     }
 
     /**
+     * The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint
+     * function.
+     *
+     * <p>A value of null means do not pass any arguments to Dart's entrypoint function.
+     *
+     * @param dartEntrypointArgs The Dart entrypoint arguments.
+     * @return The engine intent builder.
+     */
+    @NonNull
+    public NewEngineIntentBuilder dartEntrypointArgs(@Nullable List<String> dartEntrypointArgs) {
+      this.dartEntrypointArgs = dartEntrypointArgs;
+      return this;
+    }
+
+    /**
      * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity} with the
      * desired configuration.
      *
@@ -317,10 +341,15 @@ public class FlutterActivity extends Activity
      */
     @NonNull
     public Intent build(@NonNull Context context) {
-      return new Intent(context, activityClass)
-          .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
-          .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode)
-          .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
+      Intent intent =
+          new Intent(context, activityClass)
+              .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
+              .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode)
+              .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
+      if (dartEntrypointArgs != null) {
+        intent.putExtra(EXTRA_DART_ENTRYPOINT_ARGS, new ArrayList(dartEntrypointArgs));
+      }
+      return intent;
     }
   }
 
@@ -843,6 +872,18 @@ public class FlutterActivity extends Activity
   }
 
   /**
+   * The Dart entrypoint arguments will be passed as a list of string to Dart's entrypoint function.
+   *
+   * <p>A value of null means do not pass any arguments to Dart's entrypoint function.
+   *
+   * <p>Subclasses may override this method to directly control the Dart entrypoint arguments.
+   */
+  @Nullable
+  public List<String> getDartEntrypointArgs() {
+    return (List<String>) getIntent().getSerializableExtra(EXTRA_DART_ENTRYPOINT_ARGS);
+  }
+
+  /**
    * The Dart library URI for the entrypoint that will be executed as soon as the Dart snapshot is
    * loaded.
    *
@@ -1100,7 +1141,7 @@ public class FlutterActivity extends Activity
    * {@link io.flutter.embedding.engine.FlutterEngine} to outlive this {@code FlutterActivity} so
    * that it can be used later in a different {@code Activity}. To accomplish this, the {@link
    * io.flutter.embedding.engine.FlutterEngine} may need to be disconnected from this {@code
-   * FluttterActivity} at an unusual time, preventing this {@code FlutterActivity} from correctly
+   * FlutterActivity} at an unusual time, preventing this {@code FlutterActivity} from correctly
    * managing the relationship between the {@link io.flutter.embedding.engine.FlutterEngine} and
    * itself.
    */

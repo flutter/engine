@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import 'dom.dart';
 import 'text/font_collection.dart';
 import 'util.dart';
 
@@ -23,10 +24,13 @@ class AssetManager {
   const AssetManager({this.assetsDir = _defaultAssetsDir});
 
   String? get _baseUrl {
-    return html.window.document
+    return domWindow.document
         .querySelectorAll('meta')
-        .whereType<html.MetaElement?>()
-        .firstWhere((dynamic e) => e.name == 'assetBase', orElse: () => null)
+        .where((DomElement domNode) => domInstanceOfString(domNode,
+                'HTMLMetaElement'))
+        .map((DomElement domNode) => domNode as DomHTMLMetaElement)
+        .firstWhereOrNull(
+            (DomHTMLMetaElement element) => element.name == 'assetBase')
         ?.content;
   }
 
@@ -83,6 +87,7 @@ class AssetManager {
 class AssetManagerException implements Exception {
   /// Http request url for asset.
   final String url;
+
   /// Http status of response.
   final int httpStatus;
 
@@ -97,8 +102,10 @@ class AssetManagerException implements Exception {
 class WebOnlyMockAssetManager implements AssetManager {
   /// Mock asset directory relative to base url.
   String defaultAssetsDir = '';
+
   /// Mock empty asset manifest.
   String defaultAssetManifest = '{}';
+
   /// Mock font manifest overridable for unit testing.
   String defaultFontManifest = '''
   [
