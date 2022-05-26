@@ -987,7 +987,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView {
-  // Platform view's first responder detection logic
+  // Platform view's first responder detection logic:
   //
   // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view
   // in the TextInputPlugin. When this dummy UITextInput view resigns first responder,
