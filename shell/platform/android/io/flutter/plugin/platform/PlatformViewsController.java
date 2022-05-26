@@ -179,7 +179,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final PlatformView platformView = factory.create(context, viewId, createParams);
           platformView.getView().setLayoutDirection(request.direction);
           platformViews.put(viewId, platformView);
-          Log.v(TAG, "Using hybrid composition for platform view: " + viewId);
+          Log.i(TAG, "Using hybrid composition for platform view: " + viewId);
         }
 
         @TargetApi(20)
@@ -241,7 +241,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final boolean shouldUseVirtualDisplay =
               ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VD);
           if (!usesSoftwareRendering && shouldUseVirtualDisplay) {
-            Log.v(TAG, "Hosting view in a virtual display for platform view: " + viewId);
+            Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
             // API level 20 is required to use VirtualDisplay#setSurface.
             ensureValidAndroidVersion(20);
 
@@ -283,7 +283,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
           // API level 23 is required to use Surface#lockHardwareCanvas().
           ensureValidAndroidVersion(23);
-          Log.v(TAG, "Hosting view in view hierarchy for platform view: " + viewId);
+          Log.i(TAG, "Hosting view in view hierarchy for platform view: " + viewId);
 
           PlatformViewWrapper wrapperView;
           long txId;
