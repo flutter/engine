@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager.LayoutParams;
 import io.flutter.Log;
+import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.util.Preconditions;
 import io.flutter.view.FlutterMain;

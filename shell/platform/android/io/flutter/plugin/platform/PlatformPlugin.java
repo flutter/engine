@@ -30,6 +30,8 @@ import java.util.List;
 
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
+  @SuppressWarnings("deprecation")
+  public static final int DEFAULT_SYSTEM_UI = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
   private final Activity activity;
   private final PlatformChannel platformChannel;
@@ -303,6 +305,7 @@ public class PlatformPlugin {
     currentSystemUiMode = systemUiMode;
   }
 
+  @SuppressWarnings("deprecation")
   private void setSystemChromeEnabledSystemUIModeLegacy(PlatformChannel.SystemUiMode systemUiMode) {
     int enabledOverlays;
 
@@ -386,6 +389,7 @@ public class PlatformPlugin {
     currentOverlays = overlaysToShow;
   }
 
+  @SuppressWarnings("deprecation")
   private void setSystemChromeEnabledSystemUIOverlaysLegacy(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
     int enabledOverlays =
@@ -425,6 +429,7 @@ public class PlatformPlugin {
    * Window} associated with the {@link android.app.Activity} that was provided to this {@code
    * PlatformPlugin}.
    */
+  @SuppressWarnings("deprecation")
   public void updateSystemUiOverlays() {
     if (currentOverlays != null) {
       setSystemChromeEnabledSystemUIOverlays(currentOverlays);
