@@ -65,13 +65,13 @@ constexpr SkScalar kMiter4DiamondOffsetY = kRenderWidth * 0.14;
 // 0.0, 4.0 and 10.0
 // Center is biased by 0.5 to include more pixel centers in the
 // thin miters
-constexpr SkScalar kX_off_0 = kRenderCenterX + 0.5;
-constexpr SkScalar kX_off_l1 = kX_off_0 - kMiter4DiamondOffsetX;
-constexpr SkScalar kX_off_l2 = kX_off_l1 - kMiter10DiamondOffsetX;
-constexpr SkScalar kX_off_l3 = kX_off_l2 - kMiter10DiamondOffsetX;
-constexpr SkScalar kX_off_r1 = kX_off_0 + kMiter4DiamondOffsetX;
-constexpr SkScalar kX_off_r2 = kX_off_r1 + kMiterExtremeDiamondOffsetX;
-constexpr SkScalar kX_off_r3 = kX_off_r2 + kMiterExtremeDiamondOffsetX;
+constexpr SkScalar kXOffset0 = kRenderCenterX + 0.5;
+constexpr SkScalar kXOffsetL1 = kXOffset0 - kMiter4DiamondOffsetX;
+constexpr SkScalar kXOffsetL2 = kXOffsetL1 - kMiter10DiamondOffsetX;
+constexpr SkScalar kXOffsetL3 = kXOffsetL2 - kMiter10DiamondOffsetX;
+constexpr SkScalar kXOffsetR1 = kXOffset0 + kMiter4DiamondOffsetX;
+constexpr SkScalar kXOffsetR2 = kXOffsetR1 + kMiterExtremeDiamondOffsetX;
+constexpr SkScalar kXOffsetR3 = kXOffsetR2 + kMiterExtremeDiamondOffsetX;
 constexpr SkPoint kVerticalMiterDiamondPoints[] = {
     // Vertical diamonds:
     //  M10   M4  Mextreme
@@ -81,50 +81,50 @@ constexpr SkPoint kVerticalMiterDiamondPoints[] = {
     //  \  / \ | / \  /              to
     //   \/   \|/   \/      bottom of RenderBounds
     // clang-format off
-    SkPoint::Make(kX_off_l3, kRenderCenterY),
-    SkPoint::Make(kX_off_l2, kRenderTop),
-    SkPoint::Make(kX_off_l1, kRenderCenterY),
-    SkPoint::Make(kX_off_0,  kRenderTop),
-    SkPoint::Make(kX_off_r1, kRenderCenterY),
-    SkPoint::Make(kX_off_r2, kRenderTop),
-    SkPoint::Make(kX_off_r3, kRenderCenterY),
-    SkPoint::Make(kX_off_r2, kRenderBottom),
-    SkPoint::Make(kX_off_r1, kRenderCenterY),
-    SkPoint::Make(kX_off_0,  kRenderBottom),
-    SkPoint::Make(kX_off_l1, kRenderCenterY),
-    SkPoint::Make(kX_off_l2, kRenderBottom),
-    SkPoint::Make(kX_off_l3, kRenderCenterY),
+    SkPoint::Make(kXOffsetL3, kRenderCenterY),
+    SkPoint::Make(kXOffsetL2, kRenderTop),
+    SkPoint::Make(kXOffsetL1, kRenderCenterY),
+    SkPoint::Make(kXOffset0,  kRenderTop),
+    SkPoint::Make(kXOffsetR1, kRenderCenterY),
+    SkPoint::Make(kXOffsetR2, kRenderTop),
+    SkPoint::Make(kXOffsetR3, kRenderCenterY),
+    SkPoint::Make(kXOffsetR2, kRenderBottom),
+    SkPoint::Make(kXOffsetR1, kRenderCenterY),
+    SkPoint::Make(kXOffset0,  kRenderBottom),
+    SkPoint::Make(kXOffsetL1, kRenderCenterY),
+    SkPoint::Make(kXOffsetL2, kRenderBottom),
+    SkPoint::Make(kXOffsetL3, kRenderCenterY),
     // clang-format on
 };
 const int kVerticalMiterDiamondPointCount =
     sizeof(kVerticalMiterDiamondPoints) /
     sizeof(kVerticalMiterDiamondPoints[0]);
 
-constexpr SkScalar kY_off_0 = kRenderCenterY + 0.5;
-constexpr SkScalar kY_off_u1 = kX_off_0 - kMiter4DiamondOffsetY;
-constexpr SkScalar kY_off_u2 = kY_off_u1 - kMiter10DiamondOffsetY;
-constexpr SkScalar kY_off_u3 = kY_off_u2 - kMiter10DiamondOffsetY;
-constexpr SkScalar kY_off_d1 = kX_off_0 + kMiter4DiamondOffsetY;
-constexpr SkScalar kY_off_d2 = kY_off_d1 + kMiterExtremeDiamondOffsetY;
-constexpr SkScalar kY_off_d3 = kY_off_d2 + kMiterExtremeDiamondOffsetY;
+constexpr SkScalar kYOffset0 = kRenderCenterY + 0.5;
+constexpr SkScalar kYOffsetU1 = kXOffset0 - kMiter4DiamondOffsetY;
+constexpr SkScalar kYOffsetU2 = kYOffsetU1 - kMiter10DiamondOffsetY;
+constexpr SkScalar kYOffsetU3 = kYOffsetU2 - kMiter10DiamondOffsetY;
+constexpr SkScalar kYOffsetD1 = kXOffset0 + kMiter4DiamondOffsetY;
+constexpr SkScalar kYOffsetD2 = kYOffsetD1 + kMiterExtremeDiamondOffsetY;
+constexpr SkScalar kYOffsetD3 = kYOffsetD2 + kMiterExtremeDiamondOffsetY;
 const SkPoint kHorizontalMiterDiamondPoints[] = {
     // Horizontal diamonds
     // Same configuration as Vertical diamonds above but
     // rotated 90 degrees
     // clang-format off
-    SkPoint::Make(kRenderCenterX, kY_off_u3),
-    SkPoint::Make(kRenderLeft,    kY_off_u2),
-    SkPoint::Make(kRenderCenterX, kY_off_u1),
-    SkPoint::Make(kRenderLeft,    kY_off_0),
-    SkPoint::Make(kRenderCenterX, kY_off_d1),
-    SkPoint::Make(kRenderLeft,    kY_off_d2),
-    SkPoint::Make(kRenderCenterX, kY_off_d3),
-    SkPoint::Make(kRenderRight,   kY_off_d2),
-    SkPoint::Make(kRenderCenterX, kY_off_d1),
-    SkPoint::Make(kRenderRight,   kY_off_0),
-    SkPoint::Make(kRenderCenterX, kY_off_u1),
-    SkPoint::Make(kRenderRight,   kY_off_u2),
-    SkPoint::Make(kRenderCenterX, kY_off_u3),
+    SkPoint::Make(kRenderCenterX, kYOffsetU3),
+    SkPoint::Make(kRenderLeft,    kYOffsetU2),
+    SkPoint::Make(kRenderCenterX, kYOffsetU1),
+    SkPoint::Make(kRenderLeft,    kYOffset0),
+    SkPoint::Make(kRenderCenterX, kYOffsetD1),
+    SkPoint::Make(kRenderLeft,    kYOffsetD2),
+    SkPoint::Make(kRenderCenterX, kYOffsetD3),
+    SkPoint::Make(kRenderRight,   kYOffsetD2),
+    SkPoint::Make(kRenderCenterX, kYOffsetD1),
+    SkPoint::Make(kRenderRight,   kYOffset0),
+    SkPoint::Make(kRenderCenterX, kYOffsetU1),
+    SkPoint::Make(kRenderRight,   kYOffsetU2),
+    SkPoint::Make(kRenderCenterX, kYOffsetU3),
     // clang-format on
 };
 const int kHorizontalMiterDiamondPointCount =
