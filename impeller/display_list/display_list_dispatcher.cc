@@ -502,6 +502,7 @@ static Path ToPath(const SkPath& path) {
       break;
     case SkPathFillType::kInverseWinding:
     case SkPathFillType::kInverseEvenOdd:
+      // TODO(104848): Support the inverse winding modes.
       UNIMPLEMENTED;
       fill_type = FillType::kNonZero;
       break;
