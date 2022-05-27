@@ -140,7 +140,8 @@ void main(List<String> args) async {
     });
 
     await step('Killing logcat process...', () async {
-      logcatProcess.kill();
+      final bool delivered = logcatProcess.kill(ProcessSignal.sigkill);
+      assert(delivered);
     });
 
     await step('Dumping logcat (Errors only)...', () async {
