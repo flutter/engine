@@ -323,15 +323,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             view.setBufferSize(newWidth, newHeight);
           }
 
-          final FrameLayout.LayoutParams layoutParams =
-              (FrameLayout.LayoutParams) view.getLayoutParams();
-          layoutParams.width = newWidth;
-          layoutParams.height = newHeight;
-          view.setLayoutParams(layoutParams);
+          final ViewGroup.LayoutParams viewWrapperLayoutParams = view.getLayoutParams();
+          viewWrapperLayoutParams.width = newWidth;
+          viewWrapperLayoutParams.height = newHeight;
+          view.setLayoutParams(viewWrapperLayoutParams);
 
           final View embeddedView = platformView.getView();
           if (embeddedView != null) {
-            embeddedView.setLayoutParams(new FrameLayout.LayoutParams(newWidth, newHeight));
+            final ViewGroup.LayoutParams embeddedViewLayoutParams = embeddedView.getLayoutParams();
+            embeddedViewLayoutParams.width = newWidth;
+            embeddedViewLayoutParams.height = newHeight;
+            embeddedView.setLayoutParams(embeddedViewLayoutParams);
           }
           return new PlatformViewsChannel.PlatformViewBufferSize(
               toLogicalPixels(view.getBufferWidth()), toLogicalPixels(view.getBufferHeight()));
