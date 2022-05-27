@@ -31,8 +31,8 @@ Future<int> pipeProcessStreams(Process process, {StringSink? out}) async {
   await stdoutCompleter.future;
   await stderrCompleter.future;
 
-  stderrSub.cancel();
-  stdoutSub.cancel();
+  await stderrSub.cancel();
+  await stdoutSub.cancel();
   return exitCode;
 }
 
