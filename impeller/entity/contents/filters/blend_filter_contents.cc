@@ -4,9 +4,13 @@
 
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 
+#include <memory>
+#include <optional>
+
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
@@ -27,6 +31,7 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
                           const Entity& entity,
                           RenderPass& pass,
                           const Rect& coverage,
+                          std::optional<Color> foreground_color,
                           PipelineProc pipeline_proc) {
   using VS = typename TPipeline::VertexShader;
   using FS = typename TPipeline::FragmentShader;
@@ -97,7 +102,8 @@ static bool PipelineBlend(const FilterInput::Vector& inputs,
                           const Entity& entity,
                           RenderPass& pass,
                           const Rect& coverage,
-                          Entity::BlendMode pipeline_blend) {
+                          Entity::BlendMode pipeline_blend,
+                          std::optional<Color> foreground_color) {
   using VS = BlendPipeline::VertexShader;
   using FS = BlendPipeline::FragmentShader;
 
@@ -170,6 +176,21 @@ static bool PipelineBlend(const FilterInput::Vector& inputs,
     }
   }
 
+  // If a foreground color is set, blend it in.
+
+  if (foreground_color.has_value()) {
+    auto contents = std::make_shared<SolidColorContents>();
+    contents->SetCover(true);
+    contents->SetColor(foreground_color.value());
+
+    Entity foreground_entity;
+    foreground_entity.SetBlendMode(pipeline_blend);
+    foreground_entity.SetContents(contents);
+    if (!foreground_entity.Render(renderer, pass)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -190,20 +211,22 @@ void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
         advanced_blend_proc_ = [](const FilterInput::Vector& inputs,
                                   const ContentContext& renderer,
                                   const Entity& entity, RenderPass& pass,
-                                  const Rect& coverage) {
+                                  const Rect& coverage,
+                                  std::optional<Color> fg_color) {
           PipelineProc p = &ContentContext::GetBlendScreenPipeline;
-          return AdvancedBlend<BlendScreenPipeline>(inputs, renderer, entity,
-                                                    pass, coverage, p);
+          return AdvancedBlend<BlendScreenPipeline>(
+              inputs, renderer, entity, pass, coverage, fg_color, p);
         };
         break;
       case Entity::BlendMode::kColorBurn:
         advanced_blend_proc_ = [](const FilterInput::Vector& inputs,
                                   const ContentContext& renderer,
                                   const Entity& entity, RenderPass& pass,
-                                  const Rect& coverage) {
+                                  const Rect& coverage,
+                                  std::optional<Color> fg_color) {
           PipelineProc p = &ContentContext::GetBlendColorburnPipeline;
-          return AdvancedBlend<BlendColorburnPipeline>(inputs, renderer, entity,
-                                                       pass, coverage, p);
+          return AdvancedBlend<BlendColorburnPipeline>(
+              inputs, renderer, entity, pass, coverage, fg_color, p);
         };
         break;
       default:
@@ -225,18 +248,20 @@ bool BlendFilterContents::RenderFilter(const FilterInput::Vector& inputs,
     return true;
   }
 
-  if (inputs.size() == 1) {
+  if (inputs.size() == 1 && !foreground_color_.has_value()) {
     // Nothing to blend.
     return PipelineBlend(inputs, renderer, entity, pass, coverage,
-                         Entity::BlendMode::kSource);
+                         Entity::BlendMode::kSource, std::nullopt);
   }
 
   if (blend_mode_ <= Entity::BlendMode::kLastPipelineBlendMode) {
-    return PipelineBlend(inputs, renderer, entity, pass, coverage, blend_mode_);
+    return PipelineBlend(inputs, renderer, entity, pass, coverage, blend_mode_,
+                         foreground_color_);
   }
 
   if (blend_mode_ <= Entity::BlendMode::kLastAdvancedBlendMode) {
-    return advanced_blend_proc_(inputs, renderer, entity, pass, coverage);
+    return advanced_blend_proc_(inputs, renderer, entity, pass, coverage,
+                                foreground_color_);
   }
 
   FML_UNREACHABLE();

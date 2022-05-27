@@ -16,7 +16,8 @@ class BlendFilterContents : public FilterContents {
                          const ContentContext& renderer,
                          const Entity& entity,
                          RenderPass& pass,
-                         const Rect& coverage)>;
+                         const Rect& coverage,
+                         std::optional<Color> foreground_color)>;
 
   BlendFilterContents();
 
