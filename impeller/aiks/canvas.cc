@@ -233,6 +233,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
   contents->SetTexture(image->GetTexture());
   contents->SetSourceRect(source);
   contents->SetSamplerDescriptor(std::move(sampler));
+  contents->SetOpacity(paint.color.alpha);
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
@@ -265,7 +266,8 @@ size_t Canvas::GetStencilDepth() const {
 void Canvas::SaveLayer(Paint paint, std::optional<Rect> bounds) {
   Save(true, paint.blend_mode);
 
-  GetCurrentPass().SetDelegate(
+  auto& new_layer_pass = GetCurrentPass();
+  new_layer_pass.SetDelegate(
       std::make_unique<PaintPassDelegate>(paint, bounds));
 
   if (bounds.has_value()) {

@@ -384,8 +384,9 @@ TEST_F(ClipRectLayerTest, OpacityInheritancePainting) {
   context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
-
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
   auto opacity_integer_transform = SkM44::Translate(offset.fX, offset.fY);
+#endif
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
     expected_builder.save();
@@ -453,8 +454,9 @@ TEST_F(ClipRectLayerTest, OpacityInheritanceSaveLayerPainting) {
   context->subtree_can_inherit_opacity = false;
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
-
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
   auto opacity_integer_transform = SkM44::Translate(offset.fX, offset.fY);
+#endif
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
     expected_builder.save();
@@ -484,6 +486,41 @@ TEST_F(ClipRectLayerTest, OpacityInheritanceSaveLayerPainting) {
 
   opacity_layer->Paint(display_list_paint_context());
   EXPECT_TRUE(DisplayListsEQ_Verbose(expected_builder.Build(), display_list()));
+}
+
+TEST_F(ClipRectLayerTest, LayerCached) {
+  auto path1 = SkPath().addRect({10, 10, 30, 30});
+  auto mock1 = MockLayer::MakeOpacityCompatible(path1);
+  SkRect clip_rect = SkRect::MakeWH(500, 500);
+  auto layer =
+      std::make_shared<ClipRectLayer>(clip_rect, Clip::antiAliasWithSaveLayer);
+  layer->Add(mock1);
+
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                    RasterCacheLayerStrategy::kLayer));
+
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
+                                   RasterCacheLayerStrategy::kLayer));
 }
 
 }  // namespace testing

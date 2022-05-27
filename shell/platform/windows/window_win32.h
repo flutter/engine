@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/direct_manipulation.h"
 #include "flutter/shell/platform/windows/keyboard_manager_win32.h"
 #include "flutter/shell/platform/windows/sequential_id_generator.h"
 #include "flutter/shell/platform/windows/text_input_manager_win32.h"
@@ -118,7 +119,9 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
                            UINT button) = 0;
 
   // Called when the mouse leaves the window.
-  virtual void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+  virtual void OnPointerLeave(double x,
+                              double y,
+                              FlutterPointerDeviceKind device_kind,
                               int32_t device_id) = 0;
 
   // Called when the cursor should be set for the client area.
@@ -209,6 +212,10 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
+  // Handles running DirectManipulation on the window to receive trackpad
+  // gestures.
+  std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
+
  private:
   // Release OS resources associated with window.
   void Destroy();
@@ -243,6 +250,10 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   // message.
   int keycode_for_char_message_ = 0;
 
+  // Keeps track of the last mouse coordinates by a WM_MOUSEMOVE message.
+  double mouse_x_ = 0;
+  double mouse_y_ = 0;
+
   // Manages IME state.
   std::unique_ptr<TextInputManagerWin32> text_input_manager_;
 
@@ -254,6 +265,12 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
 
   // Generates touch point IDs for touch events.
   SequentialIdGenerator touch_id_generator_;
+
+  // Timer identifier for DirectManipulation gesture polling.
+  const static int kDirectManipulationTimer = 1;
+
+  // Frequency (Hz) to poll for DirectManipulation updates.
+  int directManipulationPollingRate_ = 60;
 };
 
 }  // namespace flutter

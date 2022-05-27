@@ -82,6 +82,8 @@ abstract class PlatformDispatcher {
 
   double get textScaleFactor => configuration.textScaleFactor;
 
+  bool get nativeSpellCheckServiceDefined => false;
+
   bool get brieflyShowPassword => true;
 
   VoidCallback? get onTextScaleFactorChanged;
@@ -118,7 +120,7 @@ abstract class PlatformDispatcher {
 
 class PlatformConfiguration {
   const PlatformConfiguration({
-    this.accessibilityFeatures = const AccessibilityFeatures._(0),
+    this.accessibilityFeatures = const engine.EngineAccessibilityFeatures(0),
     this.alwaysUse24HourFormat = false,
     this.semanticsEnabled = false,
     this.platformBrightness = Brightness.light,

@@ -10,13 +10,24 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
-#include "impeller/renderer/backend/gles/gles_handle.h"
+#include "impeller/base/thread.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
 
 class ReactorGLES {
  public:
+  using WorkerID = UniqueID;
+
+  class Worker {
+   public:
+    virtual ~Worker() = default;
+
+    virtual bool CanReactorReactOnCurrentThreadNow(
+        const ReactorGLES& reactor) const = 0;
+  };
+
   using Ref = std::shared_ptr<ReactorGLES>;
 
   ReactorGLES(std::unique_ptr<ProcTableGLES> gl);
@@ -25,17 +36,19 @@ class ReactorGLES {
 
   bool IsValid() const;
 
-  bool HasPendingOperations() const;
+  WorkerID AddWorker(std::weak_ptr<Worker> worker);
+
+  bool RemoveWorker(WorkerID);
 
   const ProcTableGLES& GetProcTable() const;
 
-  std::optional<GLuint> GetGLHandle(const GLESHandle& handle) const;
+  std::optional<GLuint> GetGLHandle(const HandleGLES& handle) const;
 
-  GLESHandle CreateHandle(HandleType type);
+  HandleGLES CreateHandle(HandleType type);
 
-  void CollectHandle(GLESHandle handle);
+  void CollectHandle(HandleGLES handle);
 
-  void SetDebugLabel(const GLESHandle& handle, std::string label);
+  void SetDebugLabel(const HandleGLES& handle, std::string label);
 
   using Operation = std::function<void(const ReactorGLES& reactor)>;
   [[nodiscard]] bool AddOperation(Operation operation);
@@ -43,17 +56,49 @@ class ReactorGLES {
   [[nodiscard]] bool React();
 
  private:
-  std::unique_ptr<ProcTableGLES> proc_table_;
-  std::vector<Operation> pending_operations_;
-  GLESHandleMap<std::optional<GLuint>> live_gl_handles_;
-  GLESHandleMap<GLuint> gl_handles_to_collect_;
-  GLESHandleMap<std::string> pending_debug_labels_;
-  bool in_reaction_ = false;
-  bool can_set_debug_labels_ = false;
+  struct LiveHandle {
+    std::optional<GLuint> name;
+    std::optional<std::string> pending_debug_label;
+    bool pending_collection = false;
 
+    LiveHandle() = default;
+
+    explicit LiveHandle(std::optional<GLuint> p_name)
+        : name(std::move(p_name)) {}
+
+    constexpr bool IsLive() const { return name.has_value(); }
+  };
+
+  std::unique_ptr<ProcTableGLES> proc_table_;
+
+  mutable Mutex ops_mutex_;
+  std::vector<Operation> ops_ IPLR_GUARDED_BY(ops_mutex_);
+
+  // Make sure the container is one where erasing items during iteration doesn't
+  // invalidate other iterators.
+  using LiveHandles = std::unordered_map<HandleGLES,
+                                         LiveHandle,
+                                         HandleGLES::Hash,
+                                         HandleGLES::Equal>;
+  mutable RWMutex handles_mutex_;
+  LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
+
+  mutable Mutex workers_mutex_;
+  mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_
+      IPLR_GUARDED_BY(workers_mutex_);
+
+  bool can_set_debug_labels_ = false;
   bool is_valid_ = false;
 
   bool ReactOnce();
+
+  bool HasPendingOperations() const;
+
+  bool CanReactOnCurrentThread() const;
+
+  bool ConsolidateHandles();
+
+  bool FlushOps();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ReactorGLES);
 };

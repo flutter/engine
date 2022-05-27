@@ -494,7 +494,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element? containerElement) {
+void applyWebkitClipFix(DomElement? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
@@ -656,7 +656,7 @@ String bytesToHexString(List<int> data) {
 /// [name] is the name of the property. [value] is the value of the property.
 /// If [value] is null, removes the style property.
 void setElementStyle(
-    html.Element element, String name, String? value) {
+    DomElement element, String name, String? value) {
   if (value == null) {
     element.style.removeProperty(name);
   } else {
@@ -664,7 +664,7 @@ void setElementStyle(
   }
 }
 
-void setClipPath(html.Element element, String? value) {
+void setClipPath(DomElement element, String? value) {
   if (browserEngine == BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
@@ -719,7 +719,7 @@ void drawEllipse(
 }
 
 /// Removes all children of a DOM node.
-void removeAllChildren(html.Node node) {
+void removeAllChildren(DomNode node) {
   while (node.lastChild != null) {
     node.lastChild!.remove();
   }
