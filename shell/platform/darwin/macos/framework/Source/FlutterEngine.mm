@@ -38,9 +38,9 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 }
 
 /// The private notification for voice over.
-static NSString* const EnhancedUserInterfaceNotification =
+static NSString* const kEnhancedUserInterfaceNotification =
     @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
-static const NSString* EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
+static NSString* const kEnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
@@ -730,7 +730,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // macOS fires this private message when VoiceOver turns on or off.
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
-                 name:EnhancedUserInterfaceNotification
+                 name:kEnhancedUserInterfaceNotification
                object:nil];
   [center addObserver:self
              selector:@selector(applicationWillTerminate:)
@@ -760,7 +760,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
-  BOOL enabled = [notification.userInfo[EnhancedUserInterfaceKey] boolValue];
+  BOOL enabled = [notification.userInfo[kEnhancedUserInterfaceKey] boolValue];
   [self.viewController onAccessibilityStatusChanged:enabled];
   self.semanticsEnabled = enabled;
 }
