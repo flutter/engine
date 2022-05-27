@@ -5,8 +5,11 @@
 #include "impeller/display_list/display_list_dispatcher.h"
 
 #include <optional>
+#include <unordered_map>
 
+#include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_path_effect.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
@@ -16,6 +19,7 @@
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vertices.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
+
 #include "third_party/skia/include/core/SkColor.h"
 
 namespace impeller {
@@ -28,56 +32,45 @@ DisplayListDispatcher::DisplayListDispatcher() = default;
 DisplayListDispatcher::~DisplayListDispatcher() = default;
 
 static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
-  switch (mode) {
-    case flutter::DlBlendMode::kClear:
-      return Entity::BlendMode::kClear;
-    case flutter::DlBlendMode::kSrc:
-      return Entity::BlendMode::kSource;
-    case flutter::DlBlendMode::kDst:
-      return Entity::BlendMode::kDestination;
-    case flutter::DlBlendMode::kSrcOver:
-      return Entity::BlendMode::kSourceOver;
-    case flutter::DlBlendMode::kDstOver:
-      return Entity::BlendMode::kDestinationOver;
-    case flutter::DlBlendMode::kSrcIn:
-      return Entity::BlendMode::kSourceIn;
-    case flutter::DlBlendMode::kDstIn:
-      return Entity::BlendMode::kDestinationIn;
-    case flutter::DlBlendMode::kSrcOut:
-      return Entity::BlendMode::kSourceOut;
-    case flutter::DlBlendMode::kDstOut:
-      return Entity::BlendMode::kDestinationOut;
-    case flutter::DlBlendMode::kSrcATop:
-      return Entity::BlendMode::kSourceATop;
-    case flutter::DlBlendMode::kDstATop:
-      return Entity::BlendMode::kDestinationATop;
-    case flutter::DlBlendMode::kXor:
-      return Entity::BlendMode::kXor;
-    case flutter::DlBlendMode::kPlus:
-      return Entity::BlendMode::kPlus;
-    case flutter::DlBlendMode::kModulate:
-      return Entity::BlendMode::kModulate;
-    case flutter::DlBlendMode::kScreen:
-      return Entity::BlendMode::kScreen;
-    case flutter::DlBlendMode::kColorBurn:
-      return Entity::BlendMode::kColorBurn;
-    case flutter::DlBlendMode::kOverlay:
-    case flutter::DlBlendMode::kDarken:
-    case flutter::DlBlendMode::kLighten:
-    case flutter::DlBlendMode::kColorDodge:
-    case flutter::DlBlendMode::kHardLight:
-    case flutter::DlBlendMode::kSoftLight:
-    case flutter::DlBlendMode::kDifference:
-    case flutter::DlBlendMode::kExclusion:
-    case flutter::DlBlendMode::kMultiply:
-    case flutter::DlBlendMode::kHue:
-    case flutter::DlBlendMode::kSaturation:
-    case flutter::DlBlendMode::kColor:
-    case flutter::DlBlendMode::kLuminosity:
-      return std::nullopt;
-  }
+  // TODO(100086): Implement remaining advanced blends.
+  static const std::unordered_map<flutter::DlBlendMode,
+                                  std::optional<Entity::BlendMode>>
+      blends = {
+          {flutter::DlBlendMode::kClear, Entity::BlendMode::kClear},
+          {flutter::DlBlendMode::kSrc, Entity::BlendMode::kSource},
+          {flutter::DlBlendMode::kDst, Entity::BlendMode::kDestination},
+          {flutter::DlBlendMode::kSrcOver, Entity::BlendMode::kSourceOver},
+          {flutter::DlBlendMode::kDstOver, Entity::BlendMode::kDestinationOver},
+          {flutter::DlBlendMode::kSrcIn, Entity::BlendMode::kSourceIn},
+          {flutter::DlBlendMode::kDstIn, Entity::BlendMode::kDestinationIn},
+          {flutter::DlBlendMode::kSrcOut, Entity::BlendMode::kSourceOut},
+          {flutter::DlBlendMode::kDstOut, Entity::BlendMode::kDestinationOut},
+          {flutter::DlBlendMode::kSrcATop, Entity::BlendMode::kSourceATop},
+          {flutter::DlBlendMode::kDstATop, Entity::BlendMode::kDestinationATop},
+          {flutter::DlBlendMode::kXor, Entity::BlendMode::kXor},
+          {flutter::DlBlendMode::kPlus, Entity::BlendMode::kPlus},
+          {flutter::DlBlendMode::kModulate, Entity::BlendMode::kModulate},
+          {flutter::DlBlendMode::kScreen, Entity::BlendMode::kScreen},
+          {flutter::DlBlendMode::kOverlay, std::nullopt},
+          {flutter::DlBlendMode::kDarken, std::nullopt},
+          {flutter::DlBlendMode::kLighten, std::nullopt},
+          {flutter::DlBlendMode::kColorDodge, std::nullopt},
+          {flutter::DlBlendMode::kColorBurn, Entity::BlendMode::kColorBurn},
+          {flutter::DlBlendMode::kHardLight, std::nullopt},
+          {flutter::DlBlendMode::kSoftLight, std::nullopt},
+          {flutter::DlBlendMode::kDifference, std::nullopt},
+          {flutter::DlBlendMode::kExclusion, std::nullopt},
+          {flutter::DlBlendMode::kMultiply, std::nullopt},
+          {flutter::DlBlendMode::kHue, std::nullopt},
+          {flutter::DlBlendMode::kSaturation, std::nullopt},
+          {flutter::DlBlendMode::kColor, std::nullopt},
+          {flutter::DlBlendMode::kLuminosity, std::nullopt},
+      };
+  FML_DCHECK(blends.size() ==
+             static_cast<size_t>(Entity::BlendMode::kLastAdvancedBlendMode) +
+                 1);
 
-  return std::nullopt;
+  return blends.at(mode);
 }
 
 // |flutter::Dispatcher|
@@ -228,6 +221,7 @@ void DisplayListDispatcher::setColorFilter(
 
       auto blend_mode = ToBlendMode(dl_blend->mode());
       if (!blend_mode.has_value()) {
+        // TODO(100086): Implement remaining advanced blends.
         UNIMPLEMENTED;
         blend_mode = Entity::BlendMode::kSourceOver;
       }
