@@ -144,7 +144,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)invalidateDisplayLink;
 - (void)addInternalPlugins;
 - (BOOL)captureTextFromCameraEnabled;
-- (UITextField*)textField;
 - (flutter::PointerData)generatePointerDataForFake;
 @end
 

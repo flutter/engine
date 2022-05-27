@@ -52,6 +52,8 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
 
   bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
 
+  bool get captureTextFromCameraEnabled => platformDispatcher.captureTextFromCameraEnabled;
+
   bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
 
   VoidCallback? get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
@@ -65,8 +67,6 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   set onPlatformBrightnessChanged(VoidCallback? callback) {
     platformDispatcher.onPlatformBrightnessChanged = callback;
   }
-
-  bool get captureTextFromCameraEnabled => platformDispatcher.captureTextFromCameraEnabled;
 
   String? get systemFontFamily => platformDispatcher.systemFontFamily;
 
