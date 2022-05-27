@@ -11,6 +11,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
@@ -171,20 +172,18 @@ static bool PipelineBlend(const FilterInput::Vector& inputs,
     return true;
   }
 
-  if (inputs.size() < 2) {
-    return true;
-  }
-
   // Write subsequent textures using the selected blend mode.
 
-  options.blend_mode = pipeline_blend;
-  cmd.pipeline = renderer.GetBlendPipeline(options);
+  if (inputs.size() >= 2) {
+    options.blend_mode = pipeline_blend;
+    cmd.pipeline = renderer.GetBlendPipeline(options);
 
-  for (auto texture_i = inputs.begin() + 1; texture_i < inputs.end();
-       texture_i++) {
-    auto input = texture_i->get()->GetSnapshot(renderer, entity);
-    if (!add_blend_command(input)) {
-      return true;
+    for (auto texture_i = inputs.begin() + 1; texture_i < inputs.end();
+         texture_i++) {
+      auto input = texture_i->get()->GetSnapshot(renderer, entity);
+      if (!add_blend_command(input)) {
+        return true;
+      }
     }
   }
 
@@ -192,7 +191,10 @@ static bool PipelineBlend(const FilterInput::Vector& inputs,
 
   if (foreground_color.has_value()) {
     auto contents = std::make_shared<SolidColorContents>();
-    contents->SetCover(true);
+    contents->SetPath(
+        PathBuilder{}
+            .AddRect(Rect::MakeSize(Size(pass.GetRenderTargetSize())))
+            .TakePath());
     contents->SetColor(foreground_color.value());
 
     Entity foreground_entity;

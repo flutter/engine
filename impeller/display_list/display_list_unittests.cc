@@ -216,7 +216,7 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
   // Color filtered image.
   {
     auto filter = flutter::DlBlendColorFilter(SK_ColorYELLOW,
-                                              flutter::DlBlendMode::kClear);
+                                              flutter::DlBlendMode::kModulate);
     builder.setColorFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
                       SkSamplingOptions{}, true);
