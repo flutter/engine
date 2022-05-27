@@ -118,6 +118,9 @@ public class ScreenshotUtil {
 
     final Bitmap bitmap =
         InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+    if (bitmap == null) {
+      throw new RuntimeException("failed to capture screenshot");
+    }
     final ByteArrayOutputStream out = new ByteArrayOutputStream();
     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
     ScreenshotUtil.writeFile(captureName, out.toByteArray());
