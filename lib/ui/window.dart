@@ -494,9 +494,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A property that indicates this device support capture text from camera (OCR) or not
   ///
-  /// {@macro dart.ui.window.accessorForwardWarning}
-  ///
-  /// If the device doesn't support OCR ,[captureTextFromCameraEnabled] defaults to false
+  /// If the device doesn't support OCR ,[captureTextFromCameraEnabled] is false
   bool get captureTextFromCameraEnabled => platformDispatcher.captureTextFromCameraEnabled;
 
   /// The setting indicating the system font of the host platform.

@@ -860,6 +860,10 @@ class PlatformDispatcher {
   bool get brieflyShowPassword => _brieflyShowPassword;
   bool _brieflyShowPassword = true;
 
+  /// Indicates this device supports capture text from camera or not
+  bool get captureTextFromCameraEnabled => _captureTextFromCameraEnabled;
+  bool _captureTextFromCameraEnabled = false;
+
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to
   /// [Brightness.light].
@@ -881,11 +885,6 @@ class PlatformDispatcher {
     _onPlatformBrightnessChanged = callback;
     _onPlatformBrightnessChangedZone = Zone.current;
   }
-
-  /// Indicates this device supports capture text from camera or not
-  bool get captureTextFromCameraEnabled => _captureTextFromCameraEnabled;
-  bool _captureTextFromCameraEnabled = false;
-
 
   /// The setting indicating the current system font of the host platform.
   String? get systemFontFamily => configuration.systemFontFamily;

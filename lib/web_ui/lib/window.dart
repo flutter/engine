@@ -66,6 +66,8 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onPlatformBrightnessChanged = callback;
   }
 
+  bool get captureTextFromCameraEnabled => platformDispatcher.captureTextFromCameraEnabled;
+
   String? get systemFontFamily => platformDispatcher.systemFontFamily;
 
   VoidCallback? get onSystemFontFamilyChanged => platformDispatcher.onSystemFontFamilyChanged;

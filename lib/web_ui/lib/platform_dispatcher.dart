@@ -86,6 +86,8 @@ abstract class PlatformDispatcher {
 
   bool get brieflyShowPassword => true;
 
+  bool get captureTextFromCameraEnabled => false;
+
   VoidCallback? get onTextScaleFactorChanged;
   set onTextScaleFactorChanged(VoidCallback? callback);
 
