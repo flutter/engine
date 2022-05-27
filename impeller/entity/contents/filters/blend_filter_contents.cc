@@ -92,51 +92,12 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
   return true;
 }
 
-void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
-  if (blend_mode > Entity::BlendMode::kLastAdvancedBlendMode) {
-    VALIDATION_LOG << "Invalid blend mode " << static_cast<int>(blend_mode)
-                   << " assigned to BlendFilterContents.";
-  }
-
-  blend_mode_ = blend_mode;
-
-  if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
-    static_assert(Entity::BlendMode::kLastAdvancedBlendMode ==
-                  Entity::BlendMode::kColorBurn);
-
-    switch (blend_mode) {
-      case Entity::BlendMode::kScreen:
-        advanced_blend_proc_ = [](const FilterInput::Vector& inputs,
-                                  const ContentContext& renderer,
-                                  const Entity& entity, RenderPass& pass,
-                                  const Rect& coverage) {
-          PipelineProc p = &ContentContext::GetBlendScreenPipeline;
-          return AdvancedBlend<BlendScreenPipeline>(inputs, renderer, entity,
-                                                    pass, coverage, p);
-        };
-        break;
-      case Entity::BlendMode::kColorBurn:
-        advanced_blend_proc_ = [](const FilterInput::Vector& inputs,
-                                  const ContentContext& renderer,
-                                  const Entity& entity, RenderPass& pass,
-                                  const Rect& coverage) {
-          PipelineProc p = &ContentContext::GetBlendColorburnPipeline;
-          return AdvancedBlend<BlendColorburnPipeline>(inputs, renderer, entity,
-                                                       pass, coverage, p);
-        };
-        break;
-      default:
-        FML_UNREACHABLE();
-    }
-  }
-}
-
-static bool BasicBlend(const FilterInput::Vector& inputs,
-                       const ContentContext& renderer,
-                       const Entity& entity,
-                       RenderPass& pass,
-                       const Rect& coverage,
-                       Entity::BlendMode basic_blend) {
+static bool PipelineBlend(const FilterInput::Vector& inputs,
+                          const ContentContext& renderer,
+                          const Entity& entity,
+                          RenderPass& pass,
+                          const Rect& coverage,
+                          Entity::BlendMode pipeline_blend) {
   using VS = BlendPipeline::VertexShader;
   using FS = BlendPipeline::FragmentShader;
 
@@ -145,7 +106,7 @@ static bool BasicBlend(const FilterInput::Vector& inputs,
   auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
 
   Command cmd;
-  cmd.label = "Basic Blend Filter";
+  cmd.label = "Pipeline Blend Filter";
   auto options = OptionsFromPass(pass);
 
   auto add_blend_command = [&](std::optional<Snapshot> input) {
@@ -198,7 +159,7 @@ static bool BasicBlend(const FilterInput::Vector& inputs,
 
   // Write subsequent textures using the selected blend mode.
 
-  options.blend_mode = basic_blend;
+  options.blend_mode = pipeline_blend;
   cmd.pipeline = renderer.GetBlendPipeline(options);
 
   for (auto texture_i = inputs.begin() + 1; texture_i < inputs.end();
@@ -212,6 +173,49 @@ static bool BasicBlend(const FilterInput::Vector& inputs,
   return true;
 }
 
+void BlendFilterContents::SetBlendMode(Entity::BlendMode blend_mode) {
+  if (blend_mode > Entity::BlendMode::kLastAdvancedBlendMode) {
+    VALIDATION_LOG << "Invalid blend mode " << static_cast<int>(blend_mode)
+                   << " assigned to BlendFilterContents.";
+  }
+
+  blend_mode_ = blend_mode;
+
+  if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
+    static_assert(Entity::BlendMode::kLastAdvancedBlendMode ==
+                  Entity::BlendMode::kColorBurn);
+
+    switch (blend_mode) {
+      case Entity::BlendMode::kScreen:
+        advanced_blend_proc_ = [](const FilterInput::Vector& inputs,
+                                  const ContentContext& renderer,
+                                  const Entity& entity, RenderPass& pass,
+                                  const Rect& coverage) {
+          PipelineProc p = &ContentContext::GetBlendScreenPipeline;
+          return AdvancedBlend<BlendScreenPipeline>(inputs, renderer, entity,
+                                                    pass, coverage, p);
+        };
+        break;
+      case Entity::BlendMode::kColorBurn:
+        advanced_blend_proc_ = [](const FilterInput::Vector& inputs,
+                                  const ContentContext& renderer,
+                                  const Entity& entity, RenderPass& pass,
+                                  const Rect& coverage) {
+          PipelineProc p = &ContentContext::GetBlendColorburnPipeline;
+          return AdvancedBlend<BlendColorburnPipeline>(inputs, renderer, entity,
+                                                       pass, coverage, p);
+        };
+        break;
+      default:
+        FML_UNREACHABLE();
+    }
+  }
+}
+
+void BlendFilterContents::SetForegroundColor(std::optional<Color> color) {
+  foreground_color_ = color;
+}
+
 bool BlendFilterContents::RenderFilter(const FilterInput::Vector& inputs,
                                        const ContentContext& renderer,
                                        const Entity& entity,
@@ -223,12 +227,12 @@ bool BlendFilterContents::RenderFilter(const FilterInput::Vector& inputs,
 
   if (inputs.size() == 1) {
     // Nothing to blend.
-    return BasicBlend(inputs, renderer, entity, pass, coverage,
-                      Entity::BlendMode::kSource);
+    return PipelineBlend(inputs, renderer, entity, pass, coverage,
+                         Entity::BlendMode::kSource);
   }
 
   if (blend_mode_ <= Entity::BlendMode::kLastPipelineBlendMode) {
-    return BasicBlend(inputs, renderer, entity, pass, coverage, blend_mode_);
+    return PipelineBlend(inputs, renderer, entity, pass, coverage, blend_mode_);
   }
 
   if (blend_mode_ <= Entity::BlendMode::kLastAdvancedBlendMode) {

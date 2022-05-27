@@ -24,6 +24,10 @@ class BlendFilterContents : public FilterContents {
 
   void SetBlendMode(Entity::BlendMode blend_mode);
 
+  /// @brief  Sets a source color which is blended after all of the inputs have
+  ///         been blended.
+  void SetForegroundColor(std::optional<Color> color);
+
  private:
   // |FilterContents|
   bool RenderFilter(const FilterInput::Vector& inputs,
@@ -32,8 +36,9 @@ class BlendFilterContents : public FilterContents {
                     RenderPass& pass,
                     const Rect& coverage) const override;
 
-  Entity::BlendMode blend_mode_;
+  Entity::BlendMode blend_mode_ = Entity::BlendMode::kSourceOver;
   AdvancedBlendProc advanced_blend_proc_;
+  std::optional<Color> foreground_color_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BlendFilterContents);
 };
