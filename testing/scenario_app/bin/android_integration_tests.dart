@@ -147,5 +147,7 @@ void main(List<String> args) async {
     await step('Dumping logcat (Errors only)...', () async {
       stdout.write(logcat);
     });
+
+    exit(0);
   }
 }
