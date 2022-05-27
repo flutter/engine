@@ -213,12 +213,21 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
 
-  // Color filtered image.
+  // Pipeline blended image.
   {
     auto filter = flutter::DlBlendColorFilter(SK_ColorYELLOW,
                                               flutter::DlBlendMode::kModulate);
     builder.setColorFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+                      SkSamplingOptions{}, true);
+  }
+
+  // Advanced blended image.
+  {
+    auto filter =
+        flutter::DlBlendColorFilter(SK_ColorRED, flutter::DlBlendMode::kScreen);
+    builder.setColorFilter(&filter);
+    builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(250, 250),
                       SkSamplingOptions{}, true);
   }
 

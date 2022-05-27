@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 
+#include <array>
 #include <memory>
 #include <optional>
 
@@ -43,7 +44,7 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
     return false;
   }
 
-  auto dst_snapshot = inputs[1]->GetSnapshot(renderer, entity);
+  auto dst_snapshot = inputs[0]->GetSnapshot(renderer, entity);
   if (!dst_snapshot.has_value()) {
     return true;
   }
@@ -53,15 +54,19 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
   }
   auto dst_uvs = maybe_dst_uvs.value();
 
-  auto src_snapshot = inputs[0]->GetSnapshot(renderer, entity);
-  if (!src_snapshot.has_value()) {
-    return true;
+  std::optional<Snapshot> src_snapshot;
+  std::array<Point, 4> src_uvs;
+  if (!foreground_color.has_value()) {
+    src_snapshot = inputs[1]->GetSnapshot(renderer, entity);
+    if (!src_snapshot.has_value()) {
+      return true;
+    }
+    auto maybe_src_uvs = src_snapshot->GetCoverageUVs(coverage);
+    if (!maybe_src_uvs.has_value()) {
+      return true;
+    }
+    src_uvs = maybe_src_uvs.value();
   }
-  auto maybe_src_uvs = src_snapshot->GetCoverageUVs(coverage);
-  if (!maybe_src_uvs.has_value()) {
-    return true;
-  }
-  auto src_uvs = maybe_src_uvs.value();
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
