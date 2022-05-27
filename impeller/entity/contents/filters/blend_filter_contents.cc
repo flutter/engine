@@ -36,7 +36,9 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
   using VS = typename TPipeline::VertexShader;
   using FS = typename TPipeline::FragmentShader;
 
-  if (inputs.size() < 2) {
+  const size_t total_inputs =
+      inputs.size() + (foreground_color.has_value() ? 1 : 0);
+  if (total_inputs < 2) {
     return false;
   }
 
@@ -85,7 +87,17 @@ static bool AdvancedBlend(const FilterInput::Vector& inputs,
 
   auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
   FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, sampler);
-  FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, sampler);
+
+  typename FS::BlendInfo blend_info;
+  if (foreground_color.has_value()) {
+    blend_info.color_factor = 1;
+    blend_info.color = foreground_color.value();
+  } else {
+    blend_info.color_factor = 0;
+    FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, sampler);
+  }
+  auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
+  FS::BindBlendInfo(cmd, blend_uniform);
 
   typename VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(size);
