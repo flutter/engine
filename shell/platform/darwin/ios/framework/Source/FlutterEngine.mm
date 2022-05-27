@@ -67,10 +67,10 @@ static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& confi
   }
 }
 
-NSString* const FlutterDefaultDartEntrypoint = nil;
-NSString* const FlutterDefaultInitialRoute = nil;
-NSString* const FlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
-NSString* const FlutterKeyDataChannel = @"flutter/keydata";
+NSString* const kFlutterDefaultDartEntrypoint = nil;
+NSString* const kFlutterDefaultInitialRoute = nil;
+NSString* const kFlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
+NSString* const kFlutterKeyDataChannel = @"flutter/keydata";
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -233,7 +233,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     }
   }];
 
-  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterEngineWillDealloc
+  [[NSNotificationCenter defaultCenter] postNotificationName:kFlutterEngineWillDealloc
                                                       object:self
                                                     userInfo:nil];
 
@@ -352,7 +352,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     callback(handled, userData);
   };
 
-  [self sendOnChannel:FlutterKeyDataChannel message:message binaryReply:response];
+  [self sendOnChannel:kFlutterKeyDataChannel message:message binaryReply:response];
 }
 
 - (void)ensureSemanticsEnabled {
@@ -794,19 +794,21 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (BOOL)run {
-  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint
+  return [self runWithEntrypoint:kFlutterDefaultDartEntrypoint
                       libraryURI:nil
-                    initialRoute:FlutterDefaultInitialRoute];
+                    initialRoute:kFlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   return [self runWithEntrypoint:entrypoint
                       libraryURI:libraryURI
-                    initialRoute:FlutterDefaultInitialRoute];
+                    initialRoute:kFlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
-  return [self runWithEntrypoint:entrypoint libraryURI:nil initialRoute:FlutterDefaultInitialRoute];
+  return [self runWithEntrypoint:entrypoint
+                      libraryURI:nil
+                    initialRoute:kFlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint initialRoute:(NSString*)initialRoute {
