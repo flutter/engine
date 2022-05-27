@@ -28,11 +28,11 @@ Future<int> pipeProcessStreams(Process process, {StringSink? out}) async {
     }, onDone: stderrCompleter.complete);
 
   final int exitCode = await process.exitCode;
-  await stdoutCompleter.future;
-  await stderrCompleter.future;
-
   await stderrSub.cancel();
   await stdoutSub.cancel();
+
+  await stdoutCompleter.future;
+  await stderrCompleter.future;
   return exitCode;
 }
 
