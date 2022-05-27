@@ -143,6 +143,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateDisplayLink;
 - (void)addInternalPlugins;
+- (BOOL)captureTextFromCameraEnabled;
+- (UITextField*)textField;
 - (flutter::PointerData)generatePointerDataForFake;
 @end
 
@@ -169,6 +171,18 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.mockEngine = nil;
   self.mockTextInputPlugin = nil;
   self.messageSent = nil;
+}
+
+- (void)testOnUserSettingsChangedWillInvokeCaptureTextFromCameraEnabled {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  NSNotification* fakeNotification = [NSNotification notificationWithName:@"" object:nil];
+  [viewControllerMock onUserSettingsChanged:fakeNotification];
+  OCMVerify([viewControllerMock captureTextFromCameraEnabled]);
 }
 
 - (void)testkeyboardWillChangeFrameWillStartKeyboardAnimation {

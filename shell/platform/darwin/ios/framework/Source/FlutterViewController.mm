@@ -1635,11 +1635,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (BOOL)captureTextFromCameraEnabled {
-  if (@available(iOS 15, *)) {
-    UITextField* textField = [self textField];
-    return [textField canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
-  }
-  return false;
+  UITextField* textField = [self textField];
+  return [textField canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
 }
 
 #pragma mark - Status bar style
