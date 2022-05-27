@@ -27,6 +27,59 @@ DisplayListDispatcher::DisplayListDispatcher() = default;
 
 DisplayListDispatcher::~DisplayListDispatcher() = default;
 
+static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
+  switch (mode) {
+    case flutter::DlBlendMode::kClear:
+      return Entity::BlendMode::kClear;
+    case flutter::DlBlendMode::kSrc:
+      return Entity::BlendMode::kSource;
+    case flutter::DlBlendMode::kDst:
+      return Entity::BlendMode::kDestination;
+    case flutter::DlBlendMode::kSrcOver:
+      return Entity::BlendMode::kSourceOver;
+    case flutter::DlBlendMode::kDstOver:
+      return Entity::BlendMode::kDestinationOver;
+    case flutter::DlBlendMode::kSrcIn:
+      return Entity::BlendMode::kSourceIn;
+    case flutter::DlBlendMode::kDstIn:
+      return Entity::BlendMode::kDestinationIn;
+    case flutter::DlBlendMode::kSrcOut:
+      return Entity::BlendMode::kSourceOut;
+    case flutter::DlBlendMode::kDstOut:
+      return Entity::BlendMode::kDestinationOut;
+    case flutter::DlBlendMode::kSrcATop:
+      return Entity::BlendMode::kSourceATop;
+    case flutter::DlBlendMode::kDstATop:
+      return Entity::BlendMode::kDestinationATop;
+    case flutter::DlBlendMode::kXor:
+      return Entity::BlendMode::kXor;
+    case flutter::DlBlendMode::kPlus:
+      return Entity::BlendMode::kPlus;
+    case flutter::DlBlendMode::kModulate:
+      return Entity::BlendMode::kModulate;
+    case flutter::DlBlendMode::kScreen:
+      return Entity::BlendMode::kScreen;
+    case flutter::DlBlendMode::kColorBurn:
+      return Entity::BlendMode::kColorBurn;
+    case flutter::DlBlendMode::kOverlay:
+    case flutter::DlBlendMode::kDarken:
+    case flutter::DlBlendMode::kLighten:
+    case flutter::DlBlendMode::kColorDodge:
+    case flutter::DlBlendMode::kHardLight:
+    case flutter::DlBlendMode::kSoftLight:
+    case flutter::DlBlendMode::kDifference:
+    case flutter::DlBlendMode::kExclusion:
+    case flutter::DlBlendMode::kMultiply:
+    case flutter::DlBlendMode::kHue:
+    case flutter::DlBlendMode::kSaturation:
+    case flutter::DlBlendMode::kColor:
+    case flutter::DlBlendMode::kLuminosity:
+      return std::nullopt;
+  }
+
+  return std::nullopt;
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setAntiAlias(bool aa) {
   // Nothing to do because AA is implicit.
@@ -166,10 +219,27 @@ void DisplayListDispatcher::setColorFilter(
   // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
     // Reset everything
+    paint_.color_filter = std::nullopt;
     return;
   }
   switch (filter->type()) {
-    case flutter::DlColorFilterType::kBlend:
+    case flutter::DlColorFilterType::kBlend: {
+      auto dl_blend = filter->asBlend();
+
+      auto blend_mode = ToBlendMode(dl_blend->mode());
+      if (!blend_mode.has_value()) {
+        UNIMPLEMENTED;
+        blend_mode = Entity::BlendMode::kSourceOver;
+      }
+
+      auto color = ToColor(dl_blend->color());
+
+      paint_.color_filter = [blend_mode = blend_mode.value(),
+                             color](FilterInput::Ref input) {
+        return FilterContents::MakeBlend(blend_mode, {input}, color);
+      };
+      return;
+    }
     case flutter::DlColorFilterType::kMatrix:
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
@@ -182,59 +252,6 @@ void DisplayListDispatcher::setColorFilter(
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setInvertColors(bool invert) {
   UNIMPLEMENTED;
-}
-
-static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
-  switch (mode) {
-    case flutter::DlBlendMode::kClear:
-      return Entity::BlendMode::kClear;
-    case flutter::DlBlendMode::kSrc:
-      return Entity::BlendMode::kSource;
-    case flutter::DlBlendMode::kDst:
-      return Entity::BlendMode::kDestination;
-    case flutter::DlBlendMode::kSrcOver:
-      return Entity::BlendMode::kSourceOver;
-    case flutter::DlBlendMode::kDstOver:
-      return Entity::BlendMode::kDestinationOver;
-    case flutter::DlBlendMode::kSrcIn:
-      return Entity::BlendMode::kSourceIn;
-    case flutter::DlBlendMode::kDstIn:
-      return Entity::BlendMode::kDestinationIn;
-    case flutter::DlBlendMode::kSrcOut:
-      return Entity::BlendMode::kSourceOut;
-    case flutter::DlBlendMode::kDstOut:
-      return Entity::BlendMode::kDestinationOut;
-    case flutter::DlBlendMode::kSrcATop:
-      return Entity::BlendMode::kSourceATop;
-    case flutter::DlBlendMode::kDstATop:
-      return Entity::BlendMode::kDestinationATop;
-    case flutter::DlBlendMode::kXor:
-      return Entity::BlendMode::kXor;
-    case flutter::DlBlendMode::kPlus:
-      return Entity::BlendMode::kPlus;
-    case flutter::DlBlendMode::kModulate:
-      return Entity::BlendMode::kModulate;
-    case flutter::DlBlendMode::kScreen:
-      return Entity::BlendMode::kScreen;
-    case flutter::DlBlendMode::kColorBurn:
-      return Entity::BlendMode::kColorBurn;
-    case flutter::DlBlendMode::kOverlay:
-    case flutter::DlBlendMode::kDarken:
-    case flutter::DlBlendMode::kLighten:
-    case flutter::DlBlendMode::kColorDodge:
-    case flutter::DlBlendMode::kHardLight:
-    case flutter::DlBlendMode::kSoftLight:
-    case flutter::DlBlendMode::kDifference:
-    case flutter::DlBlendMode::kExclusion:
-    case flutter::DlBlendMode::kMultiply:
-    case flutter::DlBlendMode::kHue:
-    case flutter::DlBlendMode::kSaturation:
-    case flutter::DlBlendMode::kColor:
-    case flutter::DlBlendMode::kLuminosity:
-      return std::nullopt;
-  }
-
-  return std::nullopt;
 }
 
 // |flutter::Dispatcher|
