@@ -4,7 +4,7 @@
 
 uniform BlendInfo {
   float color_factor;
-  vec4 color;
+  vec4 color;  // This color input is expected to be unpremultiplied.
 }
 blend_info;
 
@@ -32,10 +32,12 @@ vec4 Unpremultiply(vec4 color) {
 }
 
 void main() {
-  const vec4 dst = Unpremultiply(
+  vec4 dst = Unpremultiply(
       SampleWithBorder(texture_sampler_dst, v_dst_texture_coords));
-  const vec4 src = Unpremultiply(
-      SampleWithBorder(texture_sampler_src, v_src_texture_coords));
+  vec4 src = blend_info.color_factor > 0
+                 ? blend_info.color
+                 : Unpremultiply(SampleWithBorder(texture_sampler_src,
+                                                  v_src_texture_coords));
 
   vec3 blended = Blend(dst.rgb, src.rgb);
 
