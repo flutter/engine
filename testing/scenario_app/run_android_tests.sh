@@ -44,3 +44,5 @@ cd $SCRIPT_DIR
   "$SCRIPT_DIR/bin/android_integration_tests.dart" \
   --adb="$SRC_DIR"/third_party/android_tools/sdk/platform-tools/adb \
   --out-dir="$OUT_DIR"
+
+echo "=done"
