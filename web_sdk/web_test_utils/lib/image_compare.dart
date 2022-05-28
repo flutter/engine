@@ -37,12 +37,21 @@ Future<String> compareImage(
   await screenshotFile.create(recursive: true);
   await screenshotFile.writeAsBytes(encodePng(screenshot), flush: true);
 
-  if (isLuci) {
+  if (isLuciEnv) {
     // This is temporary to get started by uploading existing screenshots to
     // Skia Gold. The next step would be to actually use Skia Gold for
     // comparison.
     final int screenshotSize = screenshot.width * screenshot.height;
-    skiaClient.addImg(filename, screenshotFile, screenshotSize, isCanvaskitTest);
+
+    late int pixelDeltaThreshold;
+    if (isCanvaskitTest) {
+      pixelDeltaThreshold = 21;
+    } else if (skiaClient.dimensions != null && skiaClient.dimensions!['Browser'] == 'ios-safari') {
+      pixelDeltaThreshold = 15;
+    } else {
+      pixelDeltaThreshold = 3;
+    }
+    skiaClient.addImg(filename, screenshotFile, screenshotSize, pixelDeltaThreshold);
     return 'OK';
   }
 

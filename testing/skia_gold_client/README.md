@@ -26,24 +26,31 @@ dependencies:
 3. Use the client:
 
 ```dart
-final Directory tmpDirectory = Directory.current.createTempSync('skia_gold_wd');
-final SkiaGoldClient client = SkiaGoldClient(tmpDirectory);
+import 'package:skia_gold_client/skia_gold_client.dart';
 
-try {
-    if (SkiaGoldClient.isAvailable) {
-        await client.auth();
+Future<void> main() {
+    final Directory tmpDirectory = Directory.current.createTempSync('skia_gold_wd');
+    final SkiaGoldClient client = SkiaGoldClient(
+        tmpDirectory,
+        dimensions: <String, String> {'<attribute-name>': '<attribute-value>'},
+    );
 
-        await client.addImg(
-            '<file-name>',
-            File('gold-file.png'),
-            1024, // screenshotSize
-        );
+    try {
+        if (isSkiaGoldClientAvailable) {
+            await client.auth();
+
+            await client.addImg(
+                '<file-name>',
+                File('gold-file.png'),
+                1024, // screenshotSize
+            );
+        }
+    } catch (error) {
+        // Failed to authenticate or compare pixels.
+        stderr.write(error.toString());
+        rethrow;
+    } finally {
+        tmpDirectory.deleteSync(recursive: true);
     }
-} catch (error) {
-    // Failed to authenticate or compare pixels.
-    stderr.write(error.toString());
-    rethrow;
-} finally {
-    tmpDirectory.deleteSync(recursive: true);
 }
 ```

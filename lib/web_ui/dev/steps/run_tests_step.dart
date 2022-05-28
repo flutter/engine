@@ -86,7 +86,7 @@ class RunTestsStep implements PipelineStep {
   Future<SkiaGoldClient?> _createSkiaClient() async {
     final SkiaGoldClient skiaClient = SkiaGoldClient(
       environment.webUiSkiaGoldDirectory,
-      browserName: browserName,
+      dimensions: <String, String> {'Browser': browserName},
     );
 
     if (await _checkSkiaClient(skiaClient)) {
@@ -104,7 +104,7 @@ class RunTestsStep implements PipelineStep {
   Future<bool> _checkSkiaClient(SkiaGoldClient skiaClient) async {
     // Now let's check whether Skia Gold is reachable or not.
     if (isLuci) {
-      if (SkiaGoldClient.isAvailable) {
+      if (isSkiaGoldClientAvailable) {
         try {
           await skiaClient.auth();
           return true;

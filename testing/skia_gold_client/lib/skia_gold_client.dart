@@ -11,23 +11,23 @@ import 'package:process/process.dart';
 
 const String _kGoldctlKey = 'GOLDCTL';
 const String _kPresubmitEnvName = 'GOLD_TRYJOB';
-const String _kLuciEnvName = 'SWARMING_TASK_ID';
+const String _kLuciEnvName = 'LUCI_CONTEXT';
 
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
-
-/// Returns true if the current environment is a LUCI builder.
-bool get isLuci => Platform.environment.containsKey(_kLuciEnvName);
 
 /// Whether the Skia Gold client is available and can be used in this
 /// environment.
 bool get isSkiaGoldClientAvailable => Platform.environment.containsKey(_kGoldctlKey);
 
+/// Returns true if the current environment is a LUCI builder.
+bool get isLuciEnv => Platform.environment.containsKey(_kLuciEnvName);
+
 /// Whether the current task is run during a presubmit check.
-bool get isPresubmit => isLuci && isSkiaGoldClientAvailable && Platform.environment.containsKey(_kPresubmitEnvName);
+bool get _isPresubmit => isLuciEnv && isSkiaGoldClientAvailable && Platform.environment.containsKey(_kPresubmitEnvName);
 
 /// Whether the current task is run during a postsubmit check.
-bool get isPostsubmit => isLuci && isSkiaGoldClientAvailable && !Platform.environment.containsKey(_kPresubmitEnvName);
+bool get _isPostsubmit => isLuciEnv && isSkiaGoldClientAvailable && !Platform.environment.containsKey(_kPresubmitEnvName);
 
 /// The percentage of accepted pixels to be wrong.
 ///
@@ -41,12 +41,12 @@ const double kMaxDifferentPixelsRate = 0.1;
 class SkiaGoldClient {
   /// Creates a [SkiaGoldClient] with the given [workDirectory].
   ///
-  /// The [browserName] parameter is the name of the browser that generated the
-  /// screenshots.
-  SkiaGoldClient(this.workDirectory, { required this.browserName });
+  /// [dimensions] allows to add attributes about the environment
+  /// used to generate the screenshots.
+  SkiaGoldClient(this.workDirectory, { this.dimensions });
 
-  /// The name of the browser running the tests.
-  final String browserName;
+  /// Allows to add attributes about the environment used to generate the screenshots.
+  final Map<String, String>? dimensions;
 
   /// A controller for launching sub-processes.
   final ProcessManager process = const LocalProcessManager();
@@ -183,19 +183,26 @@ class SkiaGoldClient {
   ///
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
+  ///
+  /// [pixelDeltaThreshold] defines maximum acceptable difference in RGB channels of each pixel,
+  /// such that:
+  ///
+  /// ```
+  /// abs(r(image) - r(golden)) + abs(g(image) - g(golden)) + abs(b(image) - b(golden)) <= pixelDeltaThreshold
+  /// ```
   Future<void> addImg(
     String testName,
     File goldenFile,
     int screenshotSize,
-    bool isCanvaskitTest,
+    int pixelDeltaThreshold,
   ) async {
-    assert(isPresubmit || isPostsubmit);
+    assert(_isPresubmit || _isPostsubmit);
 
-    if (isPresubmit) {
-      await _tryjobAdd(testName, goldenFile, screenshotSize, isCanvaskitTest);
+    if (_isPresubmit) {
+      await _tryjobAdd(testName, goldenFile, screenshotSize, pixelDeltaThreshold);
     }
-    if (isPostsubmit) {
-      await _imgtestAdd(testName, goldenFile, screenshotSize, isCanvaskitTest);
+    if (_isPostsubmit) {
+      await _imgtestAdd(testName, goldenFile, screenshotSize, pixelDeltaThreshold);
     }
   }
 
@@ -212,7 +219,7 @@ class SkiaGoldClient {
     String testName,
     File goldenFile,
     int screenshotSize,
-    bool isCanvaskitTest,
+    int pixelDeltaThreshold,
   ) async {
     await _imgtestInit();
 
@@ -222,7 +229,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize, isCanvaskitTest),
+      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold),
     ];
 
     final ProcessResult result = await _runCommand(imgtestCommand);
@@ -304,7 +311,7 @@ class SkiaGoldClient {
     String testName,
     File goldenFile,
     int screenshotSize,
-    bool isCanvaskitTest,
+    int pixelDeltaThreshold,
   ) async {
     await _tryjobInit();
 
@@ -314,7 +321,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize, isCanvaskitTest),
+      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold),
     ];
 
     final ProcessResult result = await _runCommand(tryjobCommand);
@@ -338,7 +345,7 @@ class SkiaGoldClient {
   List<String> _getMatchingArguments(
     String testName,
     int screenshotSize,
-    bool isCanvaskitTest,
+    int pixelDeltaThreshold,
   ) {
     // The algorithm to be used when matching images. The available options are:
     // - "fuzzy": Allows for customizing the thresholds of pixel differences.
@@ -351,21 +358,6 @@ class SkiaGoldClient {
     // image size because those wrong pixels are constrained by
     // `pixelDeltaThreshold` below.
     final int maxDifferentPixels = (screenshotSize * kMaxDifferentPixelsRate).toInt();
-
-    // The maximum acceptable difference in RGB channels of each pixel.
-    //
-    // ```
-    // abs(r(image) - r(golden)) + abs(g(image) - g(golden)) + abs(b(image) - b(golden)) <= pixelDeltaThreshold
-    // ```
-    final String pixelDeltaThreshold;
-    if (isCanvaskitTest) {
-      pixelDeltaThreshold = '21';
-    } else if (browserName == 'ios-safari') {
-      pixelDeltaThreshold = '15';
-    } else {
-      pixelDeltaThreshold = '3';
-    }
-
     return <String>[
       '--add-test-optional-key', 'image_matching_algorithm:$algorithm',
       '--add-test-optional-key', 'fuzzy_max_different_pixels:$maxDifferentPixels',
@@ -445,11 +437,14 @@ class SkiaGoldClient {
   /// Currently, the only key value pairs being tracked are the platform and
   /// browser the image was rendered on.
   Map<String, dynamic> _getKeys() {
-    return <String, dynamic>{
-      'Browser': browserName,
+    final Map<String, dynamic> initialKeys = <String, dynamic>{
       'CI': 'luci',
       'Platform': Platform.operatingSystem,
     };
+    if (dimensions != null) {
+      initialKeys.addAll(dimensions!);
+    }
+    return initialKeys;
   }
 
   /// Same as [_getKeys] but encodes it in a JSON string.
