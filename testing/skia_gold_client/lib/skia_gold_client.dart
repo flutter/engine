@@ -10,28 +10,24 @@ import 'package:path/path.dart' as path;
 import 'package:process/process.dart';
 
 const String _kGoldctlKey = 'GOLDCTL';
-const String kPresubmitEnvName = 'GOLD_TRYJOB';
-const String kLuciEnvName = 'SWARMING_TASK_ID';
+const String _kPresubmitEnvName = 'GOLD_TRYJOB';
+const String _kLuciEnvName = 'SWARMING_TASK_ID';
 
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
 
-// bool _isLuci = Platform.environment.containsKey('SWARMING_TASK_ID') && Platform.environment.containsKey('GOLDCTL');
-// bool _isPreSubmit = _isLuci && Platform.environment.containsKey('GOLD_TRYJOB');
-// bool _isPostSubmit = _isLuci && !_isPreSubmit;
-
 /// Returns true if the current environment is a LUCI builder.
-bool get isLuci => Platform.environment.containsKey(kLuciEnvName);
+bool get isLuci => Platform.environment.containsKey(_kLuciEnvName);
 
 /// Whether the Skia Gold client is available and can be used in this
 /// environment.
 bool get isSkiaGoldClientAvailable => Platform.environment.containsKey(_kGoldctlKey);
 
-/// Whether the current task is run in a presubmit.
-bool get isPresubmit => isLuci && isSkiaGoldClientAvailable && Platform.environment.containsKey(kPresubmitEnvName);
+/// Whether the current task is run during a presubmit check.
+bool get isPresubmit => isLuci && isSkiaGoldClientAvailable && Platform.environment.containsKey(_kPresubmitEnvName);
 
-/// Whether the current task is run in a postsubmit.
-bool get isPostsubmit => isLuci && isSkiaGoldClientAvailable && !Platform.environment.containsKey(kPresubmitEnvName);
+/// Whether the current task is run during a postsubmit check.
+bool get isPostsubmit => isLuci && isSkiaGoldClientAvailable && !Platform.environment.containsKey(_kPresubmitEnvName);
 
 /// The percentage of accepted pixels to be wrong.
 ///
