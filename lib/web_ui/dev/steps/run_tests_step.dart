@@ -7,6 +7,7 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 // TODO(yjbanov): remove hacks when this is fixed:
 //                https://github.com/dart-lang/test/issues/1521
+import 'package:skia_gold_client/skia_gold_client.dart';
 import 'package:test_api/src/backend/group.dart' as hack;
 import 'package:test_api/src/backend/live_test.dart' as hack;
 import 'package:test_api/src/backend/runtime.dart' as hack;
@@ -15,7 +16,6 @@ import 'package:test_core/src/runner/configuration/reporters.dart' as hack;
 import 'package:test_core/src/runner/engine.dart' as hack;
 import 'package:test_core/src/runner/hack_register_platform.dart' as hack;
 import 'package:test_core/src/runner/reporter.dart' as hack;
-import 'package:web_test_utils/skia_client.dart';
 
 import '../browser.dart';
 import '../common.dart';

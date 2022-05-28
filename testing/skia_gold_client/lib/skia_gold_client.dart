@@ -9,12 +9,29 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
 import 'package:process/process.dart';
 
-import 'environment.dart';
-
 const String _kGoldctlKey = 'GOLDCTL';
+const String kPresubmitEnvName = 'GOLD_TRYJOB';
+const String kLuciEnvName = 'SWARMING_TASK_ID';
 
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
+
+// bool _isLuci = Platform.environment.containsKey('SWARMING_TASK_ID') && Platform.environment.containsKey('GOLDCTL');
+// bool _isPreSubmit = _isLuci && Platform.environment.containsKey('GOLD_TRYJOB');
+// bool _isPostSubmit = _isLuci && !_isPreSubmit;
+
+/// Returns true if the current environment is a LUCI builder.
+bool get isLuci => Platform.environment.containsKey(kLuciEnvName);
+
+/// Whether the Skia Gold client is available and can be used in this
+/// environment.
+bool get isSkiaGoldClientAvailable => Platform.environment.containsKey(_kGoldctlKey);
+
+/// Whether the current task is run in a presubmit.
+bool get isPresubmit => isLuci && isSkiaGoldClientAvailable && Platform.environment.containsKey(kPresubmitEnvName);
+
+/// Whether the current task is run in a postsubmit.
+bool get isPostsubmit => isLuci && isSkiaGoldClientAvailable && !Platform.environment.containsKey(kPresubmitEnvName);
 
 /// The percentage of accepted pixels to be wrong.
 ///
@@ -31,10 +48,6 @@ class SkiaGoldClient {
   /// The [browserName] parameter is the name of the browser that generated the
   /// screenshots.
   SkiaGoldClient(this.workDirectory, { required this.browserName });
-
-  /// Whether the Skia Gold client is available and can be used in this
-  /// environment.
-  static bool get isAvailable => Platform.environment.containsKey(_kGoldctlKey);
 
   /// The name of the browser running the tests.
   final String browserName;
@@ -73,7 +86,7 @@ class SkiaGoldClient {
   /// The path to the local [Directory] where the `goldctl` tool is hosted.
   String get _goldctl {
     assert(
-      isAvailable,
+      isSkiaGoldClientAvailable,
       'Trying to use `goldctl` in an environment where it is not available',
     );
     return Platform.environment[_kGoldctlKey]!;
@@ -168,13 +181,38 @@ class SkiaGoldClient {
   /// Executes the `imgtest add` command in the `goldctl` tool.
   ///
   /// The `imgtest` command collects and uploads test results to the Skia Gold
+  /// backend, the `add` argument uploads the current image test.
+  ///
+  /// Throws an exception for try jobs that failed to pass the pixel comparison.
+  ///
+  /// The [testName] and [goldenFile] parameters reference the current
+  /// comparison being evaluated.
+  Future<void> addImg(
+    String testName,
+    File goldenFile,
+    int screenshotSize,
+    bool isCanvaskitTest,
+  ) async {
+    assert(isPresubmit || isPostsubmit);
+
+    if (isPresubmit) {
+      await _tryjobAdd(testName, goldenFile, screenshotSize, isCanvaskitTest);
+    }
+    if (isPostsubmit) {
+      await _imgtestAdd(testName, goldenFile, screenshotSize, isCanvaskitTest);
+    }
+  }
+
+  /// Executes the `imgtest add` command in the `goldctl` tool.
+  ///
+  /// The `imgtest` command collects and uploads test results to the Skia Gold
   /// backend, the `add` argument uploads the current image test. A response is
   /// returned from the invocation of this command that indicates a pass or fail
   /// result.
   ///
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
-  Future<bool> imgtestAdd(
+  Future<void> _imgtestAdd(
     String testName,
     File goldenFile,
     int screenshotSize,
@@ -200,8 +238,6 @@ class SkiaGoldClient {
       print('goldctl imgtest add stdout: ${result.stdout}');
       print('goldctl imgtest add stderr: ${result.stderr}');
     }
-
-    return true;
   }
 
   /// Executes the `imgtest init` command in the `goldctl` tool for tryjobs.
@@ -268,7 +304,7 @@ class SkiaGoldClient {
   ///
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
-  Future<void> tryjobAdd(
+  Future<void> _tryjobAdd(
     String testName,
     File goldenFile,
     int screenshotSize,
@@ -396,19 +432,15 @@ class SkiaGoldClient {
 
   /// Returns the current commit hash of the engine repository.
   Future<String> _getCurrentCommit() async {
-    final Directory webUiRoot = environment.webUiRootDir;
-    if (!webUiRoot.existsSync()) {
-      throw Exception('Web Engine root could not be found: $webUiRoot\n');
-    } else {
-      final ProcessResult revParse = await process.run(
-        <String>['git', 'rev-parse', 'HEAD'],
-        workingDirectory: webUiRoot.path,
-      );
-      if (revParse.exitCode != 0) {
-        throw Exception('Current commit of Web Engine can not be found.');
-      }
-      return (revParse.stdout as String).trim();
+    final File currentScript = File.fromUri(Platform.script);
+    final ProcessResult revParse = await process.run(
+      <String>['git', 'rev-parse', 'HEAD'],
+      workingDirectory: currentScript.path,
+    );
+    if (revParse.exitCode != 0) {
+      throw Exception('Current commit of the engine can not be found from path ${currentScript.path}.');
     }
+    return (revParse.stdout as String).trim();
   }
 
   /// Returns a Map of key value pairs used to uniquely identify the
