@@ -67,8 +67,13 @@ static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& confi
   }
 }
 
-NSString* const kFlutterDefaultDartEntrypoint = nil;
-NSString* const kFlutterDefaultInitialRoute = nil;
+#pragma mark - Public exported constants
+
+NSString* const FlutterDefaultDartEntrypoint = nil;
+NSString* const FlutterDefaultInitialRoute = nil;
+
+#pragma mark - Internal constants
+
 NSString* const kFlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
 NSString* const kFlutterKeyDataChannel = @"flutter/keydata";
 static constexpr int kNumProfilerSamplesPerSec = 5;
@@ -794,21 +799,19 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (BOOL)run {
-  return [self runWithEntrypoint:kFlutterDefaultDartEntrypoint
+  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint
                       libraryURI:nil
-                    initialRoute:kFlutterDefaultInitialRoute];
+                    initialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   return [self runWithEntrypoint:entrypoint
                       libraryURI:libraryURI
-                    initialRoute:kFlutterDefaultInitialRoute];
+                    initialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
-  return [self runWithEntrypoint:entrypoint
-                      libraryURI:nil
-                    initialRoute:kFlutterDefaultInitialRoute];
+  return [self runWithEntrypoint:entrypoint libraryURI:nil initialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint initialRoute:(NSString*)initialRoute {
