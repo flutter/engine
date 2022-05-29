@@ -58,15 +58,27 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
   }
 
+  private static long keyOfPlane(long key, long plane) {
+    // Apply '& kValueMask' in case the key is a negative number before being converted to long.
+    return plane | (key & KeyboardMap.kValueMask);
+  }
+
   // Get the physical key for this event.
   //
   // The returned value is never null.
   private Long getPhysicalKey(@NonNull KeyEvent event) {
-    final Long byMapping = KeyboardMap.scanCodeToPhysical.get((long) event.getScanCode());
+    final long scancode = event.getScanCode();
+    // Scancode 0 can occur during emulation using `adb shell input keyevent`. Synthesize a physical
+    // key from the key code so that keys can be told apart.
+    if (scancode == 0) {
+      // The key code can't also be 0, since those events have been filtered.
+      return keyOfPlane(event.getKeyCode(), KeyboardMap.kLogicalPlane);
+    }
+    final Long byMapping = KeyboardMap.scanCodeToPhysical.get(scancode);
     if (byMapping != null) {
       return byMapping;
     }
-    return KeyboardMap.kAndroidPlane & event.getScanCode();
+    return keyOfPlane(event.getScanCode(), KeyboardMap.kAndroidPlane);
   }
 
   // Get the logical key for this event.
@@ -77,7 +89,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     if (byMapping != null) {
       return byMapping;
     }
-    return KeyboardMap.kAndroidPlane & event.getKeyCode();
+    return keyOfPlane(event.getKeyCode(), KeyboardMap.kAndroidPlane);
   }
 
   // Update `pressingRecords`.
@@ -241,6 +253,10 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   // Returns whether any events are dispatched.
   private boolean handleEventImpl(
       @NonNull KeyEvent event, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
+    // Events with no codes at all can not be recognized.
+    if (event.getScanCode() == 0 && event.getKeyCode() == 0) {
+      return false;
+    }
     final Long physicalKey = getPhysicalKey(event);
     final Long logicalKey = getLogicalKey(event);
 
@@ -324,7 +340,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     output.physicalKey = physicalKey;
     output.character = null;
     output.synthesized = true;
-    updatePressingState(physicalKey, isDown ? logicalKey : null);
+    if (physicalKey != 0 && logicalKey != 0) {
+      updatePressingState(physicalKey, isDown ? logicalKey : null);
+    }
     sendKeyEvent(output, null);
   }
 
