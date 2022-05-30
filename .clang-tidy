@@ -2,6 +2,7 @@
 Checks: "google-*,\
 clang-analyzer-*,\
 clang-diagnostic-*,\
+modernize-use-default-member-init,\
 readability-identifier-naming,\
 -google-objc-global-variable-declaration,\
 -google-objc-avoid-throwing-exception,\
@@ -30,3 +31,5 @@ CheckOptions:
     value:  'k'
   - key:    readability-identifier-naming.PrivateMemberSuffix
     value:  '_'
+  - key:    modernize-use-default-member-init.UseAssignment
+    value:  true
