@@ -11,6 +11,7 @@
 # for the given hash of the dependency
 
 import argparse
+import json
 import os
 import sys
 import requests
@@ -30,24 +31,29 @@ def ParseDepsFile(deps_flat_file):
     # Extract commit hash, call OSV with each hash
     for line in Lines:
         dep = line.strip().split('@')
-        data = {"commit" : dep[1]}
+        
+        # data = {"commit" : dep[1]}
+        data = {"commit" : "6879efc2c1596d11a6a6ad296f80063b558d5e0f"}
         response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
         print("Scanned " + dep[0].split('/')[-1].split('.')[0] + " at " + dep[1], end = '')
         if response.json() == {}:
             print(" and found no vulnerabilities")
         if response.json() != {} and response.json().get("vulns"):
-            vulns.append(response.text)
-            print(" and found " + len(response.json().get("vulns")) + " vulnerabilit(y/ies), adding to report")
+            vulns.append(response.json())
+            print(" and found " + str(len(response.json().get("vulns"))) + " vulnerabilit(y/ies), adding to report")
     return vulns
 
 
-def WriteManifest(vulns, manifest_file):
+def WriteSarif(vulns, manifest_file):
     if len(vulns) == 0:
         print('No vulnerabilities detected')
     else:
-        print('\n'.join(vulns))
+        f = open('results.sarif')
+        data = json.load(f)
+        data['runs'][0]['results'][0]['ruleId'] = vulns[0]['vulns'][0]['id']
+        print(data)
         with open(manifest_file, 'w') as manifest:
-            manifest.write('\n'.join(vulns))
+            json.dump(data, manifest)
 
 
 def ParseArgs(args):
@@ -65,8 +71,8 @@ def ParseArgs(args):
         '--output',
         '-o',
         type=str,
-        help='Output OSV report of vulnerabilities.',
-        default=os.path.join(CHECKOUT_ROOT, 'osv_report.txt'))
+        help='Output SARIF log of vulnerabilities found in OSV database.',
+        default=os.path.join(CHECKOUT_ROOT, 'osv_report.sarif'))
 
     return parser.parse_args(args)
 
@@ -74,7 +80,7 @@ def ParseArgs(args):
 def Main(argv):
     args = ParseArgs(argv)
     vulns = ParseDepsFile(args.flat_deps)
-    WriteManifest(vulns, args.output)
+    WriteSarif(vulns, args.output)
     return 0
 
 

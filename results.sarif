@@ -5,7 +5,7 @@
       {
         "tool": {
           "driver": {
-            "name": "OSV DB"
+            "name": "OSV Scan"
           }
         },
         "results": [
