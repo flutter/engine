@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>{@link io.flutter.embedding.android.FlutterSurfaceView} and {@link
  * io.flutter.embedding.android.FlutterTextureView} are implementations of {@link RenderSurface}.
  */
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FlutterRenderer implements TextureRegistry {
   private static final String TAG = "FlutterRenderer";
 

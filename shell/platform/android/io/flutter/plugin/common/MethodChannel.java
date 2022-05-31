@@ -144,7 +144,7 @@ public class MethodChannel {
     // See https://github.com/flutter/flutter/issues/92582.
     if (taskQueue != null) {
       messenger.setMessageHandler(
-          name, handler == null ? null : new IncomingMethodCallHandler(handler), taskQueue);
+          name, taskQueue, handler == null ? null : new IncomingMethodCallHandler(handler));
     } else {
       messenger.setMessageHandler(
           name, handler == null ? null : new IncomingMethodCallHandler(handler));

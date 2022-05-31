@@ -105,8 +105,8 @@ import java.util.Set;
             flutterEngine,
             flutterEngine.getDartExecutor(),
             flutterEngine.getRenderer(),
-            flutterEngine.getPlatformViewsController().getRegistry(),
-            new DefaultFlutterAssets(flutterLoader));
+            new DefaultFlutterAssets(flutterLoader),
+            flutterEngine.getPlatformViewsController().getRegistry());
   }
 
   public void destroy() {

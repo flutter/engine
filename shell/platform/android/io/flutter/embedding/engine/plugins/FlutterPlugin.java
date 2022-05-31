@@ -105,22 +105,22 @@ public interface FlutterPlugin {
     private final FlutterEngine flutterEngine;
     private final BinaryMessenger binaryMessenger;
     private final TextureRegistry textureRegistry;
-    private final PlatformViewRegistry platformViewRegistry;
     private final FlutterAssets flutterAssets;
+    private final PlatformViewRegistry platformViewRegistry;
 
     public FlutterPluginBinding(
         @NonNull Context applicationContext,
         @NonNull FlutterEngine flutterEngine,
         @NonNull BinaryMessenger binaryMessenger,
         @NonNull TextureRegistry textureRegistry,
-        @NonNull PlatformViewRegistry platformViewRegistry,
-        @NonNull FlutterAssets flutterAssets) {
+        @NonNull FlutterAssets flutterAssets,
+        @NonNull PlatformViewRegistry platformViewRegistry) {
       this.applicationContext = applicationContext;
       this.flutterEngine = flutterEngine;
       this.binaryMessenger = binaryMessenger;
       this.textureRegistry = textureRegistry;
-      this.platformViewRegistry = platformViewRegistry;
       this.flutterAssets = flutterAssets;
+      this.platformViewRegistry = platformViewRegistry;
     }
 
     @NonNull
