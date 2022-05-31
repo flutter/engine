@@ -238,9 +238,9 @@ public class DartExecutor implements BinaryMessenger {
   @UiThread
   public void setMessageHandler(
       @NonNull String channel,
-      @Nullable TaskQueue taskQueue,
-      @Nullable BinaryMessenger.BinaryMessageHandler handler) {
-    binaryMessenger.setMessageHandler(channel, taskQueue, handler);
+      @Nullable BinaryMessenger.BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
+    binaryMessenger.setMessageHandler(channel, handler, taskQueue);
   }
 
   /** @deprecated Use {@link #getBinaryMessenger()} instead. */
@@ -489,9 +489,9 @@ public class DartExecutor implements BinaryMessenger {
     @UiThread
     public void setMessageHandler(
         @NonNull String channel,
-        @Nullable TaskQueue taskQueue,
-        @Nullable BinaryMessenger.BinaryMessageHandler handler) {
-      messenger.setMessageHandler(channel, taskQueue, handler);
+        @Nullable BinaryMessenger.BinaryMessageHandler handler,
+        @Nullable TaskQueue taskQueue) {
+      messenger.setMessageHandler(channel, handler, taskQueue);
     }
 
     @Override

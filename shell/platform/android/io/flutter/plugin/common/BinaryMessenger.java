@@ -139,8 +139,8 @@ public interface BinaryMessenger {
   @UiThread
   default void setMessageHandler(
       @NonNull String channel,
-      @Nullable TaskQueue taskQueue,
-      @Nullable BinaryMessageHandler handler) {
+      @Nullable BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
     // TODO(92582): Remove default implementation when it is safe for Google Flutter users.
     if (taskQueue != null) {
       throw new UnsupportedOperationException(

@@ -56,10 +56,10 @@ public class InputConnectionAdaptor extends BaseInputConnection
       View view,
       int client,
       TextInputChannel textInputChannel,
+      KeyboardDelegate keyboardDelegate,
       ListenableEditingState editable,
       EditorInfo editorInfo,
-      FlutterJNI flutterJNI,
-      KeyboardDelegate keyboardDelegate) {
+      FlutterJNI flutterJNI) {
     super(view, true);
     mFlutterView = view;
     mClient = client;
@@ -87,10 +87,10 @@ public class InputConnectionAdaptor extends BaseInputConnection
       View view,
       int client,
       TextInputChannel textInputChannel,
+      KeyboardDelegate keyboardDelegate,
       ListenableEditingState editable,
-      EditorInfo editorInfo,
-      KeyboardDelegate keyboardDelegate) {
-    this(view, client, textInputChannel, editable, editorInfo, new FlutterJNI(), keyboardDelegate);
+      EditorInfo editorInfo) {
+    this(view, client, textInputChannel, keyboardDelegate, editable, editorInfo, new FlutterJNI());
   }
 
   private ExtractedText getExtractedText(ExtractedTextRequest request) {

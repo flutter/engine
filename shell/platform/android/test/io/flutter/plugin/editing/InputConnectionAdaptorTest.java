@@ -100,7 +100,7 @@ public class InputConnectionAdaptorTest {
 
     InputConnectionAdaptor inputConnectionAdaptor =
         new InputConnectionAdaptor(
-            testView, inputTargetId, textInputChannel, spyEditable, outAttrs, mockKeyboardManager);
+            testView, inputTargetId, textInputChannel, mockKeyboardManager, spyEditable, outAttrs);
 
     // Send an enter key and make sure the Editable received it.
     FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, '\n');
@@ -184,10 +184,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
     adaptor.performPrivateCommand("actionCommand", null);
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
@@ -213,10 +213,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     byte[] buffer = new byte[] {'a', 'b', 'c', 'd'};
@@ -248,10 +248,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     byte b = 3;
@@ -281,10 +281,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     char[] buffer = new char[] {'a', 'b', 'c', 'd'};
@@ -317,10 +317,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     char b = 'a';
@@ -350,10 +350,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     CharSequence charSequence1 = new StringBuffer("abc");
@@ -387,10 +387,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     CharSequence charSequence = new StringBuffer("abc");
@@ -422,10 +422,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     float value = 0.5f;
@@ -455,10 +455,10 @@ public class InputConnectionAdaptorTest {
             testView,
             client,
             textInputChannel,
+            mockKeyboardManager,
             editable,
             null,
-            mockFlutterJNI,
-            mockKeyboardManager);
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     float[] value = {0.5f, 0.6f};
@@ -984,9 +984,9 @@ public class InputConnectionAdaptorTest {
             testView,
             1,
             mock(TextInputChannel.class),
+            mockKeyboardManager,
             editable,
-            new EditorInfo(),
-            mockKeyboardManager);
+            new EditorInfo());
     TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
 
     testImm.resetStates();
@@ -1039,9 +1039,9 @@ public class InputConnectionAdaptorTest {
             testView,
             1,
             mock(TextInputChannel.class),
+            mockKeyboardManager,
             editable,
-            new EditorInfo(),
-            mockKeyboardManager);
+            new EditorInfo());
     TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
 
     testImm.resetStates();
@@ -1198,7 +1198,7 @@ public class InputConnectionAdaptorTest {
         .thenAnswer(
             (invocation) -> Emoji.isRegionalIndicatorSymbol((int) invocation.getArguments()[0]));
     return new InputConnectionAdaptor(
-        testView, client, textInputChannel, editable, null, mockFlutterJNI, mockKeyboardManager);
+        testView, client, textInputChannel, mockKeyboardManager, editable, null, mockFlutterJNI);
   }
 
   private static class Emoji {

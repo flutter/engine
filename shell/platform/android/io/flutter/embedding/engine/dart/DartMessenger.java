@@ -197,14 +197,14 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   @Override
   public void setMessageHandler(
       @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
-    setMessageHandler(channel, null, handler);
+    setMessageHandler(channel, handler, null);
   }
 
   @Override
   public void setMessageHandler(
       @NonNull String channel,
-      @Nullable TaskQueue taskQueue,
-      @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+      @Nullable BinaryMessenger.BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
     if (handler == null) {
       Log.v(TAG, "Removing handler for channel '" + channel + "'");
       synchronized (handlersLock) {

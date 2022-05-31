@@ -297,7 +297,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            view, inputTarget.id, textInputChannel, mEditable, outAttrs, keyboardManager);
+            view, inputTarget.id, textInputChannel, keyboardManager, mEditable, outAttrs);
     outAttrs.initialSelStart = mEditable.getSelectionStart();
     outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 
