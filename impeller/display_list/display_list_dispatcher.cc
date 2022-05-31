@@ -316,7 +316,27 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setImageFilter(
     const flutter::DlImageFilter* filter) {
-  UNIMPLEMENTED;
+  switch (filter->type()) {
+    case flutter::DlImageFilterType::kBlur: {
+      auto blur = filter->asBlur();
+      auto sigma_x = FilterContents::Sigma(blur->sigma_x());
+      auto sigma_y = FilterContents::Sigma(blur->sigma_y());
+
+      paint_.image_filter = [sigma_x, sigma_y](FilterInput::Ref input) {
+        return FilterContents::MakeGaussianBlur(input, sigma_x, sigma_y);
+      };
+
+      break;
+    }
+    case flutter::DlImageFilterType::kDilate:
+    case flutter::DlImageFilterType::kErode:
+    case flutter::DlImageFilterType::kMatrix:
+    case flutter::DlImageFilterType::kComposeFilter:
+    case flutter::DlImageFilterType::kColorFilter:
+    case flutter::DlImageFilterType::kUnknown:
+      UNIMPLEMENTED;
+      break;
+  }
 }
 
 // |flutter::Dispatcher|
