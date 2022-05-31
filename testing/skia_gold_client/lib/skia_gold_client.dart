@@ -29,13 +29,6 @@ bool get _isPresubmit => isLuciEnv && isSkiaGoldClientAvailable && Platform.envi
 /// Whether the current task is run during a postsubmit check.
 bool get _isPostsubmit => isLuciEnv && isSkiaGoldClientAvailable && !Platform.environment.containsKey(_kPresubmitEnvName);
 
-/// The percentage of accepted pixels to be wrong.
-///
-/// This should be a double between 0.0 and 1.0. A value of 0.0 means we don't
-/// accept any pixel to be different. A value of 1.0 means we accept 100% of
-/// pixels to be different.
-const double kMaxDifferentPixelsRate = 0.1;
-
 /// A client for uploading image tests and making baseline requests to the
 /// Flutter Gold Dashboard.
 class SkiaGoldClient {
