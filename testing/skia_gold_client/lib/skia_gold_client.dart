@@ -184,25 +184,29 @@ class SkiaGoldClient {
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
   ///
-  /// [pixelDeltaThreshold] defines maximum acceptable difference in RGB channels of each pixel,
+  /// [pixelColorDelta] defines maximum acceptable difference in RGB channels of each pixel,
   /// such that:
   ///
   /// ```
   /// abs(r(image) - r(golden)) + abs(g(image) - g(golden)) + abs(b(image) - b(golden)) <= pixelDeltaThreshold
   /// ```
+  ///
+  /// [differentPixelsRate] is the fraction of accepted pixels to be wrong in the range [0.0, 1.0].
+  /// Defaults to 0.1. A value of 0.1 means that 10% of the pixels are allowed to change.
   Future<void> addImg(
     String testName,
-    File goldenFile,
-    int screenshotSize,
-    int pixelDeltaThreshold,
-  ) async {
+    File goldenFile, {
+    double differentPixelsRate = 0.1,
+    int pixelColorDelta = 0,
+    required int screenshotSize,
+  }) async {
     assert(_isPresubmit || _isPostsubmit);
 
     if (_isPresubmit) {
-      await _tryjobAdd(testName, goldenFile, screenshotSize, pixelDeltaThreshold);
+      await _tryjobAdd(testName, goldenFile, screenshotSize, pixelColorDelta, differentPixelsRate);
     }
     if (_isPostsubmit) {
-      await _imgtestAdd(testName, goldenFile, screenshotSize, pixelDeltaThreshold);
+      await _imgtestAdd(testName, goldenFile, screenshotSize, pixelColorDelta, differentPixelsRate);
     }
   }
 
@@ -220,6 +224,7 @@ class SkiaGoldClient {
     File goldenFile,
     int screenshotSize,
     int pixelDeltaThreshold,
+    double maxDifferentPixelsRate,
   ) async {
     await _imgtestInit();
 
@@ -229,7 +234,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold),
+      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, maxDifferentPixelsRate),
     ];
 
     final ProcessResult result = await _runCommand(imgtestCommand);
@@ -312,6 +317,7 @@ class SkiaGoldClient {
     File goldenFile,
     int screenshotSize,
     int pixelDeltaThreshold,
+    double differentPixelsRate,
   ) async {
     await _tryjobInit();
 
@@ -321,7 +327,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold),
+      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, differentPixelsRate),
     ];
 
     final ProcessResult result = await _runCommand(tryjobCommand);
@@ -346,6 +352,7 @@ class SkiaGoldClient {
     String testName,
     int screenshotSize,
     int pixelDeltaThreshold,
+    double differentPixelsRate,
   ) {
     // The algorithm to be used when matching images. The available options are:
     // - "fuzzy": Allows for customizing the thresholds of pixel differences.
@@ -357,7 +364,7 @@ class SkiaGoldClient {
     // baseline. It's okay for this to be a slightly high number like 10% of the
     // image size because those wrong pixels are constrained by
     // `pixelDeltaThreshold` below.
-    final int maxDifferentPixels = (screenshotSize * kMaxDifferentPixelsRate).toInt();
+    final int maxDifferentPixels = (screenshotSize * differentPixelsRate).toInt();
     return <String>[
       '--add-test-optional-key', 'image_matching_algorithm:$algorithm',
       '--add-test-optional-key', 'fuzzy_max_different_pixels:$maxDifferentPixels',

@@ -43,15 +43,20 @@ Future<String> compareImage(
     // comparison.
     final int screenshotSize = screenshot.width * screenshot.height;
 
-    late int pixelDeltaThreshold;
+    late int pixelColorDelta;
     if (isCanvaskitTest) {
-      pixelDeltaThreshold = 21;
+      pixelColorDelta = 21;
     } else if (skiaClient.dimensions != null && skiaClient.dimensions!['Browser'] == 'ios-safari') {
-      pixelDeltaThreshold = 15;
+      pixelColorDelta = 15;
     } else {
-      pixelDeltaThreshold = 3;
+      pixelColorDelta = 3;
     }
-    skiaClient.addImg(filename, screenshotFile, screenshotSize, pixelDeltaThreshold);
+    skiaClient.addImg(
+      filename,
+      screenshotFile,
+      screenshotSize: screenshotSize,
+      pixelColorDelta: pixelColorDelta,
+    );
     return 'OK';
   }
 

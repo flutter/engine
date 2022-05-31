@@ -42,7 +42,7 @@ Future<void> main() {
             await client.addImg(
                 '<file-name>',
                 File('gold-file.png'),
-                1024, // screenshotSize
+                screenshotSize: 1024,
             );
         }
     } catch (error) {
