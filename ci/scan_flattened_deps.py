@@ -49,8 +49,8 @@ def WriteSarif(vulns, manifest_file):
     else:
         f = open('template.sarif')
         data = json.load(f)
-        data['runs'][0]['results'][0]['ruleId'] = vulns[0]['vulns'][0]['id']
-        data['runs'][0]['results'][0]['message']['text'] = vulns[0]['vulns'][0]['summary']
+        # data['runs'][0]['results'][0]['ruleId'] = vulns[0]['vulns'][0]['id']
+        # data['runs'][0]['results'][0]['message']['text'] = vulns[0]['vulns'][0]['summary']
         print(data)
 
         with open(manifest_file, 'w') as out:
