@@ -42,11 +42,11 @@ PlaygroundImpl::~PlaygroundImpl() = default;
 
 Vector2 PlaygroundImpl::GetContentScale() const {
   auto window = reinterpret_cast<GLFWwindow*>(GetWindowHandle());
-  TSize<int> window_size, framebuffer_size;
-  ::glfwGetWindowSize(window, &window_size.width, &window_size.height);
-  ::glfwGetFramebufferSize(window, &framebuffer_size.width,
-                           &framebuffer_size.height);
-  return Vector2(framebuffer_size)/window_size;
+
+  Vector2 scale(1, 1);
+  ::glfwGetWindowContentScale(window, &scale.x, &scale.y);
+
+  return scale;
 }
 
 }  // namespace impeller
