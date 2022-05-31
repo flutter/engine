@@ -5,7 +5,7 @@
 #include "impeller/playground/playground_impl.h"
 
 #define GLFW_INCLUDE_NONE
-#import "third_party/glfw/include/GLFW/glfw3.h"
+#include "third_party/glfw/include/GLFW/glfw3.h"
 
 #if IMPELLER_ENABLE_METAL
 #include "impeller/playground/backend/metal/playground_impl_mtl.h"
