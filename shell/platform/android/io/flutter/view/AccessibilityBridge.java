@@ -2758,7 +2758,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * @param eventOrigin the view in the embedded view's hierarchy that sent the event.
    * @return True if the event was sent.
    */
-  @SuppressLint("SwitchIntDef") // AccessibilityEvent has many irrelevant cases that would be confusing to list.
+  // AccessibilityEvent has many irrelevant cases that would be confusing to list.
+  @SuppressLint("SwitchIntDef")
   public boolean externalViewRequestSendAccessibilityEvent(
       View embeddedView, View eventOrigin, AccessibilityEvent event) {
     if (!accessibilityViewEmbedder.requestSendAccessibilityEvent(

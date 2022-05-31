@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.engine.renderer;
 
-import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
