@@ -47,7 +47,7 @@ def WriteSarif(vulns, manifest_file):
     if len(vulns) == 0:
         print('No vulnerabilities detected')
     else:
-        f = open('results.sarif')
+        f = open('template.sarif')
         data = json.load(f)
         data['runs'][0]['results'][0]['ruleId'] = vulns[0]['vulns'][0]['id']
         data['runs'][0]['results'][0]['message']['text'] = vulns[0]['vulns'][0]['summary']
