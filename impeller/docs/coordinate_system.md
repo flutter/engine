@@ -2,13 +2,22 @@
 
 **TL;DR, Impeller uses the Metal coordinate system.**
 
-This document describes the Impeller coordinate system. This is the coordinate system assumed by all Impeller sub-subsystems and users of Impeller itself.
+This document describes the Impeller coordinate system. This is the coordinate
+system assumed by all Impeller sub-subsystems and users of Impeller itself.
 
-All sub-systems that deal with interacting with backend client rendering APIs (like OpenGL, Metal, Direct3D, Dawn, etc..) must reconcile with Impellers coordinate system.
+All sub-systems that deal with interacting with backend client rendering APIs
+(like OpenGL, Metal, Direct3D, Dawn, etc..) must reconcile with Impellers
+coordinate system.
 
-While the readers familiarity with a particular coordinate system might make them think otherwise, there is no right or wrong coordinate system. However, having a consist notion of a coordinate system is essential. Since the Metal backend was the first Impeller backend, the Metal coordinate system was picked as the Impeller coordinate system with very little consideration of alternatives.
+While the readers familiarity with a particular coordinate system might make
+them think otherwise, there is no right or wrong coordinate system. However,
+having a consist notion of a coordinate system is essential. Since the Metal
+backend was the first Impeller backend, the Metal coordinate system was picked
+as the Impeller coordinate system with very little consideration of
+alternatives.
 
-The following table describes the Impeller coordinate system along with how it differs with that of popular client rendering APIs and backends.
+The following table describes the Impeller coordinate system along with how it
+differs with that of popular client rendering APIs and backends.
 
 | API           | Normalized Device Coordinate                          | Viewport / Framebuffer Coordinate     | Texture Coordinate                   |
 |---------------|-------------------------------------------------------|---------------------------------------|--------------------------------------|

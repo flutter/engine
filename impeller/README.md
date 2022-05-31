@@ -154,9 +154,11 @@ states of completion:
 
 ## Try Impeller in Flutter
 
-Impeller is available under the `--enable-impeller` flag on iOS and Android. This flag can be specified to `flutter run`.
+Impeller is available under the `--enable-impeller` flag on iOS and Android.
+This flag can be specified to `flutter run`.
 
-If the application needs to be launched with Impeller enabled without using the Flutter tool, follow the platform specific steps below.
+If the application needs to be launched with Impeller enabled without using the
+Flutter tool, follow the platform specific steps below.
 
 ### iOS
 
