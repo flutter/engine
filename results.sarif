@@ -19,8 +19,9 @@
               {
                 "physicalLocation": {
                   "artifactLocation": {
-                    "uri": "file:///C:/dev/sarif/sarif-tutorials/samples/Introduction/simple-example.js",
-                    "index": 0
+                      "description": {
+                          "text": "https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=12532"
+                      }
                   }
                 }
               }
