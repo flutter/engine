@@ -9,6 +9,7 @@ import 'package:test_api/src/backend/runtime.dart';
 
 import 'browser.dart';
 import 'browser_lock.dart';
+import 'browser_process.dart';
 import 'common.dart';
 import 'edge_installation.dart';
 
@@ -28,6 +29,9 @@ class EdgeEnvironment implements BrowserEnvironment {
   }
 
   @override
+  Future<void> cleanup() async {}
+
+  @override
   ScreenshotManager? getScreenshotManager() => null;
 
   @override
@@ -42,13 +46,15 @@ class EdgeEnvironment implements BrowserEnvironment {
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class Edge extends Browser {
+  final BrowserProcess _process;
+
   @override
   final String name = 'Edge';
 
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Edge(Uri url) {
-    return Edge._(() async {
+    return Edge._(BrowserProcess(() async {
       final BrowserInstallation installation = await getEdgeInstallation(
         browserLock.edgeLock.launcherVersion,
         infoLog: DevNull(),
@@ -67,8 +73,14 @@ class Edge extends Browser {
       );
 
       return process;
-    });
+    }));
   }
 
-  Edge._(Future<Process> Function() startBrowser) : super(startBrowser);
+  Edge._(this._process);
+  
+  @override
+  Future<void> get onExit => _process.onExit;
+  
+  @override
+  Future<void> close()  => _process.close();
 }

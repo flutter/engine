@@ -15,6 +15,7 @@ import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
 
 import 'browser.dart';
 import 'browser_lock.dart';
+import 'browser_process.dart';
 import 'chrome_installer.dart';
 import 'common.dart';
 import 'environment.dart';
@@ -41,6 +42,9 @@ class ChromeEnvironment implements BrowserEnvironment {
   }
 
   @override
+  Future<void> cleanup() async {}
+
+  @override
   ScreenshotManager? getScreenshotManager() {
     // Always compare screenshots when running tests locally. On CI only compare
     // on Linux.
@@ -62,6 +66,8 @@ class ChromeEnvironment implements BrowserEnvironment {
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class Chrome extends Browser {
+  final BrowserProcess _process;
+
   @override
   final String name = 'Chrome';
 
@@ -72,7 +78,7 @@ class Chrome extends Browser {
   /// [Uri] or a [String].
   factory Chrome(Uri url, BrowserInstallation installation, {bool debug = false}) {
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
-    return Chrome._(() async {
+    return Chrome._(BrowserProcess(() async {
       // A good source of various Chrome CLI options:
       // https://peter.sh/experiments/chromium-command-line-switches/
       //
@@ -122,11 +128,16 @@ class Chrome extends Browser {
           .then((_) => Directory(dir).deleteSync(recursive: true)));
 
       return process;
-    }, remoteDebuggerCompleter.future);
+    }), remoteDebuggerCompleter.future);
   }
 
-  Chrome._(Future<Process> Function() startBrowser, this.remoteDebuggerUrl)
-      : super(startBrowser);
+  Chrome._(this._process, this.remoteDebuggerUrl);
+
+  @override
+  Future<void> get onExit => _process.onExit;
+  
+  @override
+  Future<void> close() => _process.close();
 }
 
 /// Used by [Chrome] to detect a glibc bug and retry launching the

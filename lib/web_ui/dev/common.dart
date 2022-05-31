@@ -13,6 +13,7 @@ import 'edge.dart';
 import 'firefox.dart';
 import 'safari_ios.dart';
 import 'safari_macos.dart';
+import 'webdriver_browser.dart';
 
 /// The port number for debugging.
 const int kDevtoolsPort = 12345;
@@ -232,6 +233,7 @@ const String kEdge = 'edge';
 const String kFirefox = 'firefox';
 const String kSafari = 'safari';
 const String kSafariIos = 'ios-safari';
+const String kSafariWebDriver = 'safari-webdriver';
 
 const List<String> kAllBrowserNames = <String>[
   kChrome,
@@ -256,6 +258,8 @@ BrowserEnvironment getBrowserEnvironment(String browserName) {
       return SafariMacOsEnvironment();
     case kSafariIos:
       return SafariIosEnvironment();
+    case kSafariWebDriver:
+      return WebDriverBrowserEnvironment();
   }
   throw UnsupportedError('Browser $browserName is not supported.');
 }

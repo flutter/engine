@@ -12,6 +12,7 @@ import 'package:test_api/src/backend/runtime.dart';
 
 import 'browser.dart';
 import 'browser_lock.dart';
+import 'browser_process.dart';
 import 'environment.dart';
 import 'safari_installation.dart';
 import 'utils.dart';
@@ -33,6 +34,9 @@ class SafariIosEnvironment implements BrowserEnvironment {
   }
 
   @override
+  Future<void> cleanup() async {}
+
+  @override
   ScreenshotManager? getScreenshotManager() {
     return SafariIosScreenshotManager();
   }
@@ -49,13 +53,15 @@ class SafariIosEnvironment implements BrowserEnvironment {
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class SafariIos extends Browser {
+  final BrowserProcess _process;
+
   @override
   final String name = 'Safari iOS';
 
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri].
   factory SafariIos(Uri url) {
-    return SafariIos._(() async {
+    return SafariIos._(BrowserProcess(() async {
       // iOS-Safari
       // Uses `xcrun simctl`. It is a command line utility to control the
       // Simulator. For more details on interacting with the simulator:
@@ -68,10 +74,16 @@ class SafariIos extends Browser {
       ]);
 
       return process;
-    });
+    }));
   }
 
-  SafariIos._(Future<io.Process> Function() startBrowser) : super(startBrowser);
+  SafariIos._(this._process);
+  
+  @override
+  Future<void> get onExit => _process.onExit;
+  
+  @override
+  Future<void> close() => _process.close();
 }
 
 /// [ScreenshotManager] implementation for Safari.

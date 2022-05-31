@@ -10,6 +10,7 @@ import 'package:path/path.dart' as pathlib;
 import 'package:test_api/src/backend/runtime.dart';
 
 import 'browser.dart';
+import 'browser_process.dart';
 import 'utils.dart';
 
 /// Provides an environment for the desktop variant of Safari running on macOS.
@@ -27,6 +28,9 @@ class SafariMacOsEnvironment implements BrowserEnvironment {
     // Nothing extra to prepare for desktop Safari.
   }
 
+  @override
+  Future<void> cleanup() async {}
+
   // We do not yet support screenshots on desktop Safari.
   @override
   ScreenshotManager? getScreenshotManager() => null;
@@ -43,12 +47,14 @@ class SafariMacOsEnvironment implements BrowserEnvironment {
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class SafariMacOs extends Browser {
+  final BrowserProcess _process;
+  
   @override
   final String name = 'Safari macOS';
 
   /// Starts a new instance of Safari open to the given [url].
   factory SafariMacOs(Uri url) {
-    return SafariMacOs._(() async {
+    return SafariMacOs._(BrowserProcess(() async {
       // This hack to programmatically launch a test in Safari is borrowed from
       // Karma: https://github.com/karma-runner/karma-safari-launcher/issues/29
       //
@@ -86,8 +92,14 @@ class SafariMacOs extends Browser {
       );
 
       return process;
-    });
+    }));
   }
 
-  SafariMacOs._(Future<Process> Function() startBrowser) : super(startBrowser);
+  SafariMacOs._(this._process);
+  
+  @override
+  Future<void> get onExit => _process.onExit;
+  
+  @override
+  Future<void> close() => _process.close();
 }
