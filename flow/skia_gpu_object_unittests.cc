@@ -137,23 +137,27 @@ TEST_F(SkiaGpuObjectTest, ObjectResetTwice) {
 }
 
 TEST_F(SkiaGpuObjectTest, UnrefResourceContextInTaskRunnerThread) {
-  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch1 =
       std::make_shared<fml::AutoResetWaitableEvent>();
   fml::RefPtr<UnrefQueue<TestResourceContext>> unref_queue;
   fml::TaskQueueId dtor_task_queue_id(0);
   unref_task_runner()->PostTask([&]() {
     auto resource_context =
-        sk_make_sp<TestResourceContext>(latch, &dtor_task_queue_id);
+        sk_make_sp<TestResourceContext>(latch1, &dtor_task_queue_id);
     unref_queue = fml::MakeRefCounted<UnrefQueue<TestResourceContext>>(
         unref_task_runner(), fml::TimeDelta::FromSeconds(0), resource_context);
-    latch->Signal();
+    latch1->Signal();
   });
-  latch->Wait();
+  latch1->Wait();
 
   // Delete the unref queue, it will schedule a task to unref the resource
   // context in the task runner's thread.
   unref_queue = nullptr;
-  latch->Wait();
+  // Wait for all the existing tasks to flush.
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch2 =
+      std::make_shared<fml::AutoResetWaitableEvent>();
+  unref_task_runner()->PostTask([&latch2]() { latch2->Signal(); });
+  latch2->Wait();
   // Verify that the resource context was destroyed in the task runner's thread.
   ASSERT_EQ(dtor_task_queue_id, unref_task_runner()->GetTaskQueueId());
 }
