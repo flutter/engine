@@ -74,7 +74,7 @@ def ParseArgs(args):
         '-o',
         type=str,
         help='Output SARIF log of vulnerabilities found in OSV database.',
-        default=os.path.join(CHECKOUT_ROOT, 'osv_report.sarif'))
+        default=os.path.join(CHECKOUT_ROOT, 'osvReport.sarif'))
 
     return parser.parse_args(args)
 
