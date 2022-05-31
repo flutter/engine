@@ -4,6 +4,9 @@
 
 #include "impeller/playground/playground_impl.h"
 
+#define GLFW_INCLUDE_NONE
+#import "third_party/glfw/include/GLFW/glfw3.h"
+
 #if IMPELLER_ENABLE_METAL
 #include "impeller/playground/backend/metal/playground_impl_mtl.h"
 #endif  // IMPELLER_ENABLE_METAL
@@ -36,5 +39,14 @@ std::unique_ptr<PlaygroundImpl> PlaygroundImpl::Create(
 PlaygroundImpl::PlaygroundImpl() = default;
 
 PlaygroundImpl::~PlaygroundImpl() = default;
+
+Vector2 PlaygroundImpl::GetContentScale() const {
+  auto window = reinterpret_cast<GLFWwindow*>(GetWindowHandle());
+  TSize<int> window_size, framebuffer_size;
+  ::glfwGetWindowSize(window, &window_size.width, &window_size.height);
+  ::glfwGetFramebufferSize(window, &framebuffer_size.width,
+                           &framebuffer_size.height);
+  return Vector2(framebuffer_size)/window_size;
+}
 
 }  // namespace impeller
