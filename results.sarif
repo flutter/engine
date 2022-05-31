@@ -14,21 +14,7 @@
             "level": "error",
             "message": {
               "text": "'x' is assigned a value but never used."
-            },
-            "locations": [
-              {
-                "physicalLocation": {
-                  "artifactLocation": {
-                    "uri": "file:///C:/dev/sarif/sarif-tutorials/samples/Introduction/simple-example.js",
-                    "index": 0
-                  },
-                  "region": {
-                    "startLine": 1,
-                    "startColumn": 5
-                  }
-                }
-              }
-            ]
+            }
           }
         ]
       }

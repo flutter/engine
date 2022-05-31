@@ -67,8 +67,11 @@ def ParseDepsFile(deps_file):
 
 def WriteManifest(deps, manifest_file):
     print('\n'.join(sorted(deps)))
+    # TODO -- remove hardcode for this specific commit hash
+    # with open(manifest_file, 'w') as manifest:
+    #     manifest.write('\n'.join(sorted(deps)))
     with open(manifest_file, 'w') as manifest:
-        manifest.write('\n'.join(sorted(deps)))
+        manifest.write('https://swiftshader.googlesource.com/SwiftShader.git@6879efc2c1596d11a6a6ad296f80063b558d5e0f')
 
 
 def ParseArgs(args):

@@ -31,7 +31,6 @@ def ParseDepsFile(deps_flat_file):
     # Extract commit hash, call OSV with each hash
     for line in Lines:
         dep = line.strip().split('@')
-        
         # data = {"commit" : dep[1]}
         data = {"commit" : "6879efc2c1596d11a6a6ad296f80063b558d5e0f"}
         response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
@@ -51,9 +50,11 @@ def WriteSarif(vulns, manifest_file):
         f = open('results.sarif')
         data = json.load(f)
         data['runs'][0]['results'][0]['ruleId'] = vulns[0]['vulns'][0]['id']
+        data['runs'][0]['results'][0]['message'] = vulns[0]['vulns'][0]['summary']
         print(data)
-        with open(manifest_file, 'w') as manifest:
-            json.dump(data, manifest)
+
+        with open(manifest_file, 'w') as out:
+            json.dump(data, out)
 
 
 def ParseArgs(args):
