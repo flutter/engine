@@ -127,7 +127,7 @@ public final class BasicMessageChannel<T> {
     // See https://github.com/flutter/flutter/issues/92582.
     if (taskQueue != null) {
       messenger.setMessageHandler(
-          name, taskQueue, handler == null ? null : new IncomingMessageHandler(handler));
+          name, handler == null ? null : new IncomingMessageHandler(handler), taskQueue);
     } else {
       messenger.setMessageHandler(
           name, handler == null ? null : new IncomingMessageHandler(handler));

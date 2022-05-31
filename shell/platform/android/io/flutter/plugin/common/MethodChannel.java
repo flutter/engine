@@ -44,7 +44,7 @@ public class MethodChannel {
    * @param messenger a {@link BinaryMessenger}.
    * @param name a channel name String.
    */
-  public MethodChannel(@NonNull BinaryMessenger messenger, @NonNull String name) {
+  public MethodChannel(BinaryMessenger messenger, String name) {
     this(messenger, name, StandardMethodCodec.INSTANCE);
   }
 
@@ -56,8 +56,7 @@ public class MethodChannel {
    * @param name a channel name String.
    * @param codec a {@link MessageCodec}.
    */
-  public MethodChannel(
-      @NonNull BinaryMessenger messenger, @NonNull String name, @NonNull MethodCodec codec) {
+  public MethodChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
     this(messenger, name, codec, null);
   }
 
@@ -73,9 +72,9 @@ public class MethodChannel {
    *     BinaryMessenger#makeBackgroundTaskQueue()}.
    */
   public MethodChannel(
-      @NonNull BinaryMessenger messenger,
-      @NonNull String name,
-      @NonNull MethodCodec codec,
+      BinaryMessenger messenger,
+      String name,
+      MethodCodec codec,
       @Nullable BinaryMessenger.TaskQueue taskQueue) {
     if (BuildConfig.DEBUG) {
       if (messenger == null) {
@@ -115,8 +114,7 @@ public class MethodChannel {
    * @param callback a {@link Result} callback for the invocation result, or null.
    */
   @UiThread
-  public void invokeMethod(
-      @NonNull String method, @Nullable Object arguments, @Nullable Result callback) {
+  public void invokeMethod(String method, @Nullable Object arguments, @Nullable Result callback) {
     messenger.send(
         name,
         codec.encodeMethodCall(new MethodCall(method, arguments)),
@@ -144,7 +142,7 @@ public class MethodChannel {
     // See https://github.com/flutter/flutter/issues/92582.
     if (taskQueue != null) {
       messenger.setMessageHandler(
-          name, taskQueue, handler == null ? null : new IncomingMethodCallHandler(handler));
+          name, handler == null ? null : new IncomingMethodCallHandler(handler), taskQueue);
     } else {
       messenger.setMessageHandler(
           name, handler == null ? null : new IncomingMethodCallHandler(handler));
@@ -203,6 +201,7 @@ public class MethodChannel {
      *     codec. For instance, if you are using {@link StandardMessageCodec} (default), please see
      *     its documentation on what types are supported.
      */
+    @UiThread
     void success(@Nullable Object result);
 
     /**
@@ -214,10 +213,11 @@ public class MethodChannel {
      *     supported by the codec. For instance, if you are using {@link StandardMessageCodec}
      *     (default), please see its documentation on what types are supported.
      */
-    void error(
-        @NonNull String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
+    @UiThread
+    void error(String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
 
     /** Handles a call to an unimplemented method. */
+    @UiThread
     void notImplemented();
   }
 

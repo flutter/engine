@@ -159,8 +159,8 @@ public class FlutterNativeView implements BinaryMessenger {
 
   @Override
   @UiThread
-  public void setMessageHandler(String channel, TaskQueue taskQueue, BinaryMessageHandler handler) {
-    dartExecutor.getBinaryMessenger().setMessageHandler(channel, taskQueue, handler);
+  public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
+    dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler, taskQueue);
   }
 
   @Override

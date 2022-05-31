@@ -4,6 +4,7 @@
   <sdk dir="../../../third_party/android_tools/sdk" />
   <module name="FlutterEngine" android="true" library="true" compile-sdk-version="android-S">
   <manifest file="../../../flutter/shell/platform/android/AndroidManifest.xml" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/util/KeyCodes.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/FakeKeyEvent.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugins/GeneratedPluginRegistrant.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/SplashShadowResources.java" />
@@ -22,6 +23,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/util/Predicate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/TraceSection.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardMap.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardManager.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java" />
@@ -33,6 +35,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivityAndFragmentDelegate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSplashView.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyEmbedderResponder.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/MotionEventTracker.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreenProvider.java" />
@@ -44,6 +47,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/ExclusiveAppComponent.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterImageView.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyData.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivityLaunchConfigs.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreen.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java" />

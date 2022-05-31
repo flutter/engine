@@ -71,9 +71,8 @@ public interface BinaryMessenger {
   /**
    * Creates a TaskQueue that executes the tasks serially on a background thread.
    *
-   * <p>{@link TaskQueueOptions} can be used to configure the task queue to execute tasks
-   * concurrently. Doing so can be more performant, though users need to ensure that the task
-   * handlers are thread-safe.
+   * <p>There is no guarantee that the tasks will execute on the same thread, just that execution is
+   * serial.
    */
   @UiThread
   default TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
@@ -139,8 +138,8 @@ public interface BinaryMessenger {
   @UiThread
   default void setMessageHandler(
       @NonNull String channel,
-      @Nullable TaskQueue taskQueue,
-      @Nullable BinaryMessageHandler handler) {
+      @Nullable BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
     // TODO(92582): Remove default implementation when it is safe for Google Flutter users.
     if (taskQueue != null) {
       throw new UnsupportedOperationException(
