@@ -26,7 +26,6 @@ import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
@@ -43,13 +42,11 @@ import androidx.annotation.UiThread;
 import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidTouchProcessor;
-import io.flutter.embedding.android.KeyChannelResponder;
 import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
-import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -79,7 +76,10 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Deprecated
 public class FlutterView extends SurfaceView
-    implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
+    implements BinaryMessenger,
+        TextureRegistry,
+        MouseCursorPlugin.MouseCursorViewDelegate,
+        KeyboardManager.ViewDelegate {
   /**
    * Interface for those objects that maintain and expose a reference to a {@code FlutterView} (such
    * as a full-screen Flutter activity).
@@ -122,7 +122,6 @@ public class FlutterView extends SurfaceView
   private final DartExecutor dartExecutor;
   private final FlutterRenderer flutterRenderer;
   private final NavigationChannel navigationChannel;
-  private final KeyEventChannel keyEventChannel;
   private final LifecycleChannel lifecycleChannel;
   private final LocalizationChannel localizationChannel;
   private final PlatformChannel platformChannel;
@@ -213,7 +212,6 @@ public class FlutterView extends SurfaceView
 
     // Create all platform channels
     navigationChannel = new NavigationChannel(dartExecutor);
-    keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
@@ -234,11 +232,7 @@ public class FlutterView extends SurfaceView
         mNativeView.getPluginRegistry().getPlatformViewsController();
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
-    mKeyboardManager =
-        new KeyboardManager(
-            this,
-            mTextInputPlugin,
-            new KeyChannelResponder[] {new KeyChannelResponder(keyEventChannel)});
+    mKeyboardManager = new KeyboardManager(this);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
@@ -425,14 +419,6 @@ public class FlutterView extends SurfaceView
   @Override
   public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
     return mTextInputPlugin.createInputConnection(this, mKeyboardManager, outAttrs);
-  }
-
-  @Override
-  public boolean checkInputConnectionProxy(View view) {
-    return mNativeView
-        .getPluginRegistry()
-        .getPlatformViewsController()
-        .checkInputConnectionProxy(view);
   }
 
   @Override
@@ -823,6 +809,8 @@ public class FlutterView extends SurfaceView
     }
   }
 
+  // -------- Start: Mouse -------
+
   @Override
   @TargetApi(Build.VERSION_CODES.N)
   @RequiresApi(Build.VERSION_CODES.N)
@@ -830,6 +818,27 @@ public class FlutterView extends SurfaceView
   public PointerIcon getSystemPointerIcon(int type) {
     return PointerIcon.getSystemIcon(getContext(), type);
   }
+
+  // -------- End: Mouse -------
+
+  // -------- Start: Keyboard -------
+
+  @Override
+  public BinaryMessenger getBinaryMessenger() {
+    return this;
+  }
+
+  @Override
+  public boolean onTextInputKeyEvent(@NonNull KeyEvent keyEvent) {
+    return mTextInputPlugin.handleKeyEvent(keyEvent);
+  }
+
+  @Override
+  public void redispatch(@NonNull KeyEvent keyEvent) {
+    getRootView().dispatchKeyEvent(keyEvent);
+  }
+
+  // -------- End: Keyboard -------
 
   @Override
   @UiThread
@@ -855,14 +864,17 @@ public class FlutterView extends SurfaceView
 
   @Override
   @UiThread
-  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+  public void setMessageHandler(@NonNull String channel, @NonNull BinaryMessageHandler handler) {
     mNativeView.setMessageHandler(channel, handler);
   }
 
   @Override
   @UiThread
-  public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
-    mNativeView.setMessageHandler(channel, handler, taskQueue);
+  public void setMessageHandler(
+      @NonNull String channel,
+      @NonNull TaskQueue taskQueue,
+      @NonNull BinaryMessageHandler handler) {
+    mNativeView.setMessageHandler(channel, taskQueue, handler);
   }
 
   /** Listener will be called on the Android UI thread once when Flutter renders the first frame. */
@@ -871,12 +883,14 @@ public class FlutterView extends SurfaceView
   }
 
   @Override
+  @NonNull
   public TextureRegistry.SurfaceTextureEntry createSurfaceTexture() {
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
     return registerSurfaceTexture(surfaceTexture);
   }
 
   @Override
+  @NonNull
   public TextureRegistry.SurfaceTextureEntry registerSurfaceTexture(
       @NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
@@ -921,6 +935,7 @@ public class FlutterView extends SurfaceView
               // still be called by a stale reference after released==true and mNativeView==null.
               return;
             }
+
             mNativeView
                 .getFlutterJNI()
                 .markTextureFrameAvailable(SurfaceTextureRegistryEntry.this.id);

@@ -110,7 +110,7 @@ public final class EventChannel {
     // See https://github.com/flutter/flutter/issues/92582.
     if (taskQueue != null) {
       messenger.setMessageHandler(
-          name, handler == null ? null : new IncomingStreamRequestHandler(handler), taskQueue);
+          name, taskQueue, handler == null ? null : new IncomingStreamRequestHandler(handler));
     } else {
       messenger.setMessageHandler(
           name, handler == null ? null : new IncomingStreamRequestHandler(handler));

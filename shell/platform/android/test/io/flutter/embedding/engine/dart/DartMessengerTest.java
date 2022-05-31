@@ -5,15 +5,16 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartMessenger.DartMessengerTaskQueue;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -28,11 +29,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class DartMessengerTest {
   SynchronousTaskQueue synchronousTaskQueue = new SynchronousTaskQueue();
 
@@ -71,7 +71,7 @@ public class DartMessengerTest {
         .when(throwingHandler)
         .onMessage(any(ByteBuffer.class), any(DartMessenger.Reply.class));
     BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    messenger.setMessageHandler("test", throwingHandler, taskQueue);
+    messenger.setMessageHandler("test", taskQueue, throwingHandler);
     messenger.handleMessageFromDart("test", ByteBuffer.allocate(0), 0, 0);
     assertNotNull(reportingHandler.latestException);
     assertTrue(reportingHandler.latestException instanceof AssertionError);
@@ -91,7 +91,7 @@ public class DartMessengerTest {
           wasDirect[0] = message.isDirect();
         };
     BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, taskQueue, handler);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     message.rewind();
     message.putChar('a');
@@ -117,7 +117,7 @@ public class DartMessengerTest {
           assertEquals(bufferSize, byteBuffers[0].limit());
         };
     BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, taskQueue, handler);
     final ByteBuffer message = ByteBuffer.allocateDirect(bufferSize);
     message.rewind();
     message.putChar('a');
@@ -195,7 +195,7 @@ public class DartMessengerTest {
         (ByteBuffer message, BinaryMessenger.BinaryReply reply) -> {
           throw new RuntimeException("hello");
         };
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, taskQueue, handler);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     final int replyId = 1;
     final long messageData = 1234;
@@ -240,7 +240,7 @@ public class DartMessengerTest {
         (ByteBuffer msg, BinaryMessenger.BinaryReply reply) -> {
           reply.reply(ByteBuffer.wrap("done".getBytes()));
         };
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, taskQueue, handler);
 
     shadowOf(getMainLooper()).idle();
     verify(fakeFlutterJni, never()).invokePlatformMessageEmptyResponseCallback(eq(replyId));
@@ -293,7 +293,7 @@ public class DartMessengerTest {
         (ByteBuffer msg, BinaryMessenger.BinaryReply reply) -> {
           reply.reply(ByteBuffer.wrap("done".getBytes()));
         };
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, taskQueue, handler);
 
     shadowOf(getMainLooper()).idle();
     verify(fakeFlutterJni, never()).invokePlatformMessageEmptyResponseCallback(eq(replyId));
