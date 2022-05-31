@@ -192,7 +192,8 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     }
     ImGui::End();
 
-    auto render_path = [width = width, &context, &pass](
+    auto world_matrix = Matrix::MakeScale(GetContentScale());
+    auto render_path = [width = width, &context, &pass, &world_matrix](
                            Path path, SolidStrokeContents::Cap cap,
                            SolidStrokeContents::Join join) {
       auto contents = std::make_unique<SolidStrokeContents>();
@@ -204,6 +205,7 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
       contents->SetStrokeMiter(miter_limit);
 
       Entity entity;
+      entity.SetTransformation(world_matrix);
       entity.SetContents(std::move(contents));
 
       auto coverage = entity.GetCoverage();
