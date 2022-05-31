@@ -9,6 +9,7 @@
 
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_path_effect.h"
+#include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -321,6 +322,11 @@ void DisplayListDispatcher::setImageFilter(
       auto blur = filter->asBlur();
       auto sigma_x = FilterContents::Sigma(blur->sigma_x());
       auto sigma_y = FilterContents::Sigma(blur->sigma_y());
+
+      if (blur->tile_mode() != flutter::DlTileMode::kClamp) {
+        // TODO(105072): Implement tile mode for blur filter.
+        UNIMPLEMENTED;
+      }
 
       paint_.image_filter = [sigma_x, sigma_y](FilterInput::Ref input) {
         return FilterContents::MakeGaussianBlur(input, sigma_x, sigma_y);
