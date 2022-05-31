@@ -14,18 +14,7 @@
             "level": "error",
             "message": {
               "text": "'x' is assigned a value but never used."
-            },
-            "locations": [
-              {
-                "physicalLocation": {
-                  "artifactLocation": {
-                      "description": {
-                          "text": "https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=12532"
-                      }
-                  }
-                }
-              }
-            ]
+            }
           }
         ]
       }
