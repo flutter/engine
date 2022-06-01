@@ -25,6 +25,10 @@ dependencies:
 dependency_overrides:
   args:
     path: ../../../third_party/dart/third_party/pkg/args
+  collection:
+    path: ../../../third_party/dart/third_party/pkg/collection
+  crypto:
+    path: ../../../third_party/dart/third_party/pkg/crypto
   file:
     path: ../../../third_party/pkg/file/packages/file
   meta:
@@ -39,5 +43,7 @@ dependency_overrides:
     path: ../../testing/skia_gold_client
   sky_engine:
     path: ../../sky/packages/sky_engine
+  typed_data:
+    path: ../../../third_party/dart/third_party/pkg/typed_data
   vector_math:
     path: ../../../third_party/pkg/vector_math
