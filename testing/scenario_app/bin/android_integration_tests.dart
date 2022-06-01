@@ -55,6 +55,7 @@ void main(List<String> args) async {
   // On LUCI, the host uploads the screenshots to Skia Gold.
   SkiaGoldClient? skiaGoldClient;
   late  ServerSocket server;
+  final List<Future<void>> pendingComparisons = <Future<void>>[];
   await step('Starting server...', () async {
     server = await ServerSocket.bind(InternetAddress.anyIPv4, tcpPort);
     stdout.writeln('listening on host ${server.address.address}:${server.port}');
@@ -75,11 +76,12 @@ void main(List<String> args) async {
         }
         log('wrote ${goldenFile.absolute.path}');
         if (isSkiaGoldClientAvailable) {
-          skiaGoldClient!
+          final Future<void> comparison = skiaGoldClient!
             .addImg(fileName, goldenFile, screenshotSize: fileContent.lengthInBytes)
             .catchError((dynamic err) {
               panic(<String>['Skia gold comparison failed: ${err.toString()}']);
             });
+          pendingComparisons.add(comparison);
         }
       });
     });
@@ -189,6 +191,10 @@ void main(List<String> args) async {
     await step('Killing logcat process...', () async {
       final bool delivered = logcatProcess.kill(ProcessSignal.sigkill);
       assert(delivered);
+    });
+
+    await step('Wait for Skia gold comparisons...', () async {
+      await Future.wait(pendingComparisons);
     });
 
     await step('Dumping logcat (Errors only)...', () async {
