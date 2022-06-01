@@ -61,9 +61,8 @@ void main(List<String> args) async {
     stdout.writeln('listening on host ${server.address.address}:${server.port}');
     server.listen((Socket client) {
       stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
-
       client.listen((Uint8List data) {
-        final int fnameLen = data.buffer.asByteData().getInt32(0);
+        final int fnameLen = data.buffer.asByteData(0, 4).getInt32(0);
         final String fileName = utf8.decode(data.buffer.asUint8List(4, fnameLen));
         final Uint8List fileContent = data.buffer.asUint8List(4 + fnameLen);
         log('host received ${fileContent.lengthInBytes} bytes for screenshot `$fileName`');
@@ -79,11 +78,15 @@ void main(List<String> args) async {
           final Future<void> comparison = skiaGoldClient!
             .addImg(fileName, goldenFile, screenshotSize: fileContent.lengthInBytes)
             .catchError((dynamic err) {
-              panic(<String>['Skia gold comparison failed: ${err.toString()}']);
+              panic(<String>['skia gold comparison failed: ${err.toString()}']);
             });
           pendingComparisons.add(comparison);
         }
-      });
+      },
+      onError: (dynamic err) {
+        panic(<String>['error while receiving bytes: ${err.toString()}']);
+      },
+      cancelOnError: true);
     });
   });
 
@@ -121,9 +124,9 @@ void main(List<String> args) async {
     await step('Skia Gold auth...', () async {
       if (isSkiaGoldClientAvailable) {
         await skiaGoldClient!.auth();
-        log('Skia gold client is available');
+        log('skia gold client is available');
       } else {
-        log('Skia gold client is unavailable');
+        log('skia gold client is unavailable');
       }
     });
 
