@@ -33,28 +33,7 @@
           ]
         }
       },
-      "results": [
-        {
-          "ruleId": "R01",
-          "message": {
-            "text": "Result text. This result does not have a rule associated."
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "fileURI"
-                },
-                "region": {
-                  "startLine": 2,
-                  "startColumn": 7,
-                  "endColumn": 10
-                }
-              }
-            }
-          ]
-        }
-      ]
+      "results": []
     }
   ]
 }
