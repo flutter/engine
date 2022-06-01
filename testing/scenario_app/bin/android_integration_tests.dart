@@ -36,6 +36,7 @@ void main(List<String> args) async {
   }
 
   final String scenarioAppPath = join(outDir.path, 'scenario_app');
+  final String logcatPath = join(scenarioAppPath, 'logcat.txt');
   final String screenshotPath = join(scenarioAppPath, 'screenshots');
   final String apkOutPath = join(scenarioAppPath, 'app', 'outputs', 'apk');
   final File testApk = File(join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
@@ -91,7 +92,7 @@ void main(List<String> args) async {
   });
 
   late Process logcatProcess;
-  final StringBuffer logcat = StringBuffer();
+  final IOSink logcat = File(logcatPath).openWrite();
   try {
     await step('Creating screenshot directory...', () async {
       Directory(screenshotPath).createSync(recursive: true);
@@ -102,7 +103,7 @@ void main(List<String> args) async {
       if (exitCode != 0) {
         panic(<String>['could not clear logs']);
       }
-      logcatProcess = await pm.start(<String>[adb.path, 'logcat', '*:E', '-T', '1']);
+      logcatProcess = await pm.start(<String>[adb.path, 'logcat', '-T', '1']);
       unawaited(pipeProcessStreams(logcatProcess, out: logcat));
     });
 
@@ -200,8 +201,8 @@ void main(List<String> args) async {
       await Future.wait(pendingComparisons);
     });
 
-    await step('Dumping logcat (Errors only)...', () async {
-      stdout.write(logcat);
+    await step('Closing logcat...', () async {
+      await logcat.close();
     });
 
     exit(0);
