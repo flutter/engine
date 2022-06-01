@@ -11,10 +11,12 @@
 # for the given hash of the dependency
 
 import argparse
+from fileinput import close
 import json
 import os
 import sys
 import requests
+from typing import Any, Dict, Optional
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
@@ -38,7 +40,7 @@ def ParseDepsFile(deps_flat_file):
         if response.json() == {}:
             print(" and found no vulnerabilities")
         if response.json() != {} and response.json().get("vulns"):
-            vulns.append(response.json())
+            vulns = response.json().get("vulns")
             print(" and found " + str(len(response.json().get("vulns"))) + " vulnerabilit(y/ies), adding to report")
     return vulns
 
@@ -49,13 +51,23 @@ def WriteSarif(vulns, manifest_file):
     else:
         f = open('template.sarif')
         data = json.load(f)
-        data['runs'][0]['results'][0]['ruleId'] = vulns[0]['vulns'][0]['id']
-        data['runs'][0]['results'][0]['message']['text'] = vulns[0]['vulns'][0]['summary']
+        print("vulns: " + str(vulns))
+        for vuln in vulns:
+            data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
         print(data)
 
         with open(manifest_file, 'w') as out:
             json.dump(data, out)
 
+def CreateRuleEntry(vuln: Dict[str, Any]):
+    """
+    Creates a Sarif result entry from an OSV entry.
+    Vuln object follows OSV Schema and is required to have 'id' and 'modified'
+    """
+    f = open('rule_template.json')
+    rule = json.load(f)
+    rule['id'] = vuln['id']
+    return rule
 
 def ParseArgs(args):
     args = args[1:]

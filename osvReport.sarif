@@ -1,0 +1,42 @@
+{
+    "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+    "version": "2.1.0",
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "OSV Scan",
+                    "informationUri": "Submits DEPS file dependencies to OSV API https://osv.dev/",
+                    "rules": [
+                        {
+                            "id": "OSV-2020-484",
+                            "shortDescription": {
+                                "text": "Dependency Vulnerability Scan"
+                            },
+                            "fullDescription": {
+                                "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
+                            },
+                            "help": {
+                                "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
+                            },
+                            "defaultConfiguration": {
+                                "level": "error"
+                            },
+                            "properties": {
+                                "precision": "N/A",
+                                "problem.severity": "N/A",
+                                "security-severity": "N/A",
+                                "tags": [
+                                    "supply-chain",
+                                    "security",
+                                    "source-code"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            "results": []
+        }
+    ]
+}

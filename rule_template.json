@@ -1,0 +1,25 @@
+{
+    "id": "OSV Scan",
+    "shortDescription": {
+      "text": "Dependency Vulnerability Scan"
+    },
+    "fullDescription": {
+      "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
+    },
+    "help": {
+      "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
+    },
+    "defaultConfiguration": {
+      "level": "error"
+    },
+    "properties": {
+      "precision": "N/A",
+      "problem.severity": "N/A",
+      "security-severity": "N/A",
+      "tags": [
+        "supply-chain",
+        "security",
+        "source-code"
+      ]
+    }
+  }

@@ -6,57 +6,11 @@
       "tool": {
         "driver": {
           "name": "OSV Scan",
-          "rules": [
-            {
-              "id": "OSV Scan",
-              "shortDescription": {
-                "text": "Dependency Vulnerability Scan"
-              },
-              "fullDescription": {
-                "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
-              },
-              "help": {
-                "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
-              },
-              "defaultConfiguration": {
-                "level": "error"
-              },
-              "properties": {
-                "precision": "high",
-                "problem.severity": "error",
-                "security-severity": "7.0",
-                "tags": [
-                  "supply-chain",
-                  "security",
-                  "source-code"
-                ]
-              }
-            }
-          ]
+          "informationUri": "Submits DEPS file dependencies to OSV API https://osv.dev/",
+          "rules": []
         }
       },
-      "results": [
-        {
-          "ruleId": "N/A",
-          "message": {
-            "text": "N/A"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "N/A"
-                },
-                "region": {
-                  "startLine": 1,
-                  "startColumn": 1,
-                  "endColumn": 1
-                }
-              }
-            }
-          ]
-        }
-      ]
+      "results": []
     }
   ]
 }
