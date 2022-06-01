@@ -4,40 +4,33 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:image/image.dart';
-import 'package:test_api/src/backend/runtime.dart';
-import 'package:webdriver/io.dart' show createDriver, WebDriver, WebDriverSpec;
+import 'package:webdriver/io.dart' show createDriver, WebDriver;
 
 import 'browser.dart';
 
-class WebDriverBrowserEnvironment extends BrowserEnvironment {
+abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
   late final Process _driverProcess;
-  late final WebDriver _driver;
+
+  Future<Process> spawnDriverProcess();
+  Uri get driverUri;
 
   @override
   Future<void> prepare() async {
-    const int port = 4444;
-    _driverProcess =
-        await Process.start('safaridriver', <String>['-p', port.toString()]);
+    _driverProcess = await spawnDriverProcess();
 
     _driverProcess.stderr
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((String error) {
-      print('[Chromedriver] $error');
+      print('[Webdriver] $error');
     });
 
     _driverProcess.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((String log) {
-      print('[Chromedriver] $log');
+      print('[Webdriver] $log');
     });
- 
-    await Future.delayed(const Duration(seconds: 1));
-
-    final Uri driverUri = Uri(scheme: 'http', host: 'localhost', port: port);
-    _driver =
-        await createDriver(uri: driverUri, spec: WebDriverSpec.W3c, desired: <String, dynamic>{'browserName': 'safari'});
   }
 
   @override
@@ -46,41 +39,25 @@ class WebDriverBrowserEnvironment extends BrowserEnvironment {
   }
 
   @override
-  String get packageTestConfigurationYamlFile => 'dart_test_safari.yaml';
-
-  @override
-  Runtime get packageTestRuntime => Runtime.safari;
-
-  @override
-  Browser launchBrowserInstance(Uri url, {bool debug = false}) {
-    return WebDriverBrowser(_driver, url);
+  Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
+    for(;;) {
+      try {
+        final WebDriver driver = await createDriver(
+          uri: driverUri, desired: <String, dynamic>{'browserName': packageTestRuntime.identifier});
+        return WebDriverBrowser(driver, url);
+      } on SocketException {
+        // Sometimes we may try to connect before the web driver port is ready. Retry.
+        print('Failed to connect to webdriver process. Retrying in 100 ms');
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      } catch (exception) {
+        print('Exception while creating webdriver: $exception');
+        rethrow;
+      }
+    }
   }
-
-  @override
-  ScreenshotManager? getScreenshotManager() =>
-      WebDriverScreenshotManager(_driver);
-}
-
-class WebDriverScreenshotManager extends ScreenshotManager {
-  final WebDriver _driver;
-
-  WebDriverScreenshotManager(this._driver);
-
-  @override
-  Future<Image> capture(Rectangle<num> region) async {
-    final Image image = decodePng(await _driver.captureScreenshotAsList())!;
-    return copyCrop(image, region.left.round(), region.top.round(),
-        region.width.round(), region.height.round());
-  }
-
-  @override
-  String get filenameSuffix => '';
 }
 
 class WebDriverBrowser extends Browser {
-  @override
-  String get name => 'safaridriver';
-
   final WebDriver _driver;
   final Uri _url;
   final Completer<void> _onExitCompleter = Completer<void>();
@@ -99,4 +76,14 @@ class WebDriverBrowser extends Browser {
 
   @override
   Future<void> get onExit => _onExitCompleter.future;
+
+  @override
+  bool get supportsScreenshots => true;
+
+  @override
+  Future<Image> captureScreenshot(Rectangle<num> region) async {
+    final Image image = decodePng(await _driver.captureScreenshotAsList())!;
+    return copyCrop(image, region.left.round(), region.top.round(),
+        region.width.round(), region.height.round());
+  }
 }

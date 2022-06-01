@@ -22,7 +22,7 @@ class FirefoxEnvironment implements BrowserEnvironment {
   late final BrowserInstallation _installation;
 
   @override
-  Browser launchBrowserInstance(Uri url, {bool debug = false}) {
+  Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
     return Firefox(url, this, debug: debug);
   }
 
@@ -41,10 +41,10 @@ class FirefoxEnvironment implements BrowserEnvironment {
   Future<void> cleanup() async {}
 
   @override
-  String get packageTestConfigurationYamlFile => 'dart_test_firefox.yaml';
+  final String name = 'Firefox';
 
   @override
-  ScreenshotManager? getScreenshotManager() => null;
+  String get packageTestConfigurationYamlFile => 'dart_test_firefox.yaml';
 }
 
 /// Runs desktop Firefox.
@@ -56,9 +56,6 @@ class FirefoxEnvironment implements BrowserEnvironment {
 /// Any errors starting or running the process are reported through [onExit].
 class Firefox extends Browser {
   final BrowserProcess _process;
-
-  @override
-  final String name = 'Firefox';
 
   @override
   final Future<Uri> remoteDebuggerUrl;
@@ -119,10 +116,10 @@ user_pref("dom.max_script_run_time", 0);
   }
 
   Firefox._(this._process, this.remoteDebuggerUrl);
-  
+
   @override
   Future<void> get onExit => _process.onExit;
-  
+
   @override
   Future<void> close() => _process.close();
 }

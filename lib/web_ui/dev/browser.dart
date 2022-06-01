@@ -10,6 +10,9 @@ import 'package:test_api/src/backend/runtime.dart';
 
 /// Provides the environment for a specific web browser.
 abstract class BrowserEnvironment {
+  /// Name of the browser. Used in logging commands.
+  String get name;
+
   /// The [Runtime] used by `package:test` to identify this browser type.
   Runtime get packageTestRuntime;
 
@@ -39,12 +42,7 @@ abstract class BrowserEnvironment {
   /// browser in debug mode by pausing test execution after the code is loaded
   /// but before calling the `main()` function of the test, giving the
   /// developer a chance to set breakpoints.
-  Browser launchBrowserInstance(Uri url, {bool debug = false});
-
-  /// Returns the screenshot manager used by this browser.
-  ///
-  /// If the browser does not support screenshots, returns null.
-  ScreenshotManager? getScreenshotManager();
+  Future<Browser> launchBrowserInstance(Uri url, {bool debug = false});
 }
 
 /// An interface for running browser instances.
@@ -56,8 +54,6 @@ abstract class BrowserEnvironment {
 /// Any errors starting or running the browser process are reported through
 /// [onExit].
 abstract class Browser {
-  String get name;
-
   /// The Observatory URL for this browser.
   ///
   /// Returns `null` for browsers that aren't running the Dart VM, or
@@ -81,19 +77,14 @@ abstract class Browser {
   /// Returns the same [Future] as [onExit], except that it won't emit
   /// exceptions.
   Future<void> close();
-}
 
-/// Interface for capturing screenshots from a browser.
-abstract class ScreenshotManager {
+  /// Returns whether this browser supports taking screenshots
+  bool get supportsScreenshots => false;
+
   /// Capture a screenshot.
   ///
+  /// This will throw if the browser doesn't support screenshotting.
   /// Please read the details for the implementing classes.
-  Future<Image> capture(math.Rectangle<num> region);
-
-  /// Suffix to be added to the end of the filename.
-  ///
-  /// Example file names:
-  /// - Chrome, no-suffix: backdrop_filter_clip_moved.actual.png
-  /// - iOS Safari: backdrop_filter_clip_moved.iOS_Safari.actual.png
-  String get filenameSuffix;
+  Future<Image> captureScreenshot(math.Rectangle<num> region) =>
+      throw Exception('This browser does not support screenshots');
 }

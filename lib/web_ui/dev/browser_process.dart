@@ -27,10 +27,10 @@ class BrowserProcess {
 
   /// Creates a new browser.
   ///
-  /// This is intended to be called by subclasses. They pass in [startBrowser],
-  /// which asynchronously returns the browser process. Any errors in
-  /// [startBrowser] (even those raised asynchronously after it returns) are
-  /// piped to [onExit] and will cause the browser to be killed.
+  /// Clients pass in [startBrowser], which asynchronously returns the browser
+  /// process. Any errors in [startBrowser] (even those raised asynchronously
+  /// after it returns) are piped to [onExit] and will cause the browser to be
+  /// killed.
   BrowserProcess(Future<Process> Function() startBrowser) {
     // Don't return a Future here because there's no need for the caller to wait
     // for the process to actually start. They should just wait for the HTTP
