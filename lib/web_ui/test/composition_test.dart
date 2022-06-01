@@ -102,7 +102,7 @@ Future<void> testMain() async {
 
         expect(mockWithCompositionAwareMixin.composingText, fakeEventText);
       });
-    }, skip: true);
+    });
 
     group('determine composition state', () {
       test('should return new composition state if valid new composition', () {
@@ -128,7 +128,7 @@ Future<void> testMain() async {
                 composingExtentOffset: expectedComposingBase + composingText.length));
       });
     });
-  }, skip: true);
+  });
 
   group('composing range', () {
     late GloballyPositionedTextEditingStrategy editingStrategy;
@@ -185,7 +185,7 @@ Future<void> testMain() async {
               .having((EditingState editingState) => editingState.composingExtentOffset,
                   'composingExtentOffset', beforeComposingText.length));
     });
-  }, skip: true);
+  });
 
   group('Text Editing Delta Model', () {
     late GloballyPositionedTextEditingStrategy editingStrategy;
@@ -194,14 +194,16 @@ Future<void> testMain() async {
         StreamController<TextEditingDeltaState?>.broadcast();
 
     setUp(() {
-        editingStrategy = _enableEditingStrategy(deltaModel: true, onChange: (_, TextEditingDeltaState? deltaState) => deltaStream.add(deltaState));
+        editingStrategy = _enableEditingStrategy(
+          deltaModel: true,
+          onChange: (_, TextEditingDeltaState? deltaState) => deltaStream.add(deltaState)
+        );
     });
 
     tearDown(() {
       editingStrategy.disable();
     });
 
-    //ANCHOR here
     test('should have newly entered composing characters', () async {
       const String newComposingText = 'n';
 
@@ -212,8 +214,6 @@ Future<void> testMain() async {
           completion(isA<TextEditingDeltaState>()
             .having((TextEditingDeltaState deltaState) => deltaState.composingOffset, 'composingOffset', 0)
             .having((TextEditingDeltaState deltaState) => deltaState.composingExtent, 'composingExtent', newComposingText.length)
-            .having((TextEditingDeltaState deltaState) => deltaState.baseOffset, 'baseOffset', 0)
-            .having((TextEditingDeltaState deltaState) => deltaState.extentOffset, 'extentOffset', 0)
           ));
 
 
@@ -222,6 +222,31 @@ Future<void> testMain() async {
           data: newComposingText));
 
       await containExpect;
+    });
+
+    test('should emit changed composition', () async {
+      const String newComposingCharsInOrder = 'hiCompose';
+
+      for (int currCharIndex = 0; currCharIndex < newComposingCharsInOrder.length; currCharIndex++) {
+        final String currComposingSubstr = newComposingCharsInOrder.substring(0, currCharIndex + 1);
+
+        editingStrategy.setEditingState(
+          EditingState(text: currComposingSubstr, baseOffset: currCharIndex + 1, extentOffset: currCharIndex + 1)
+        );
+
+        final Future<dynamic> containExpect = expectLater(
+          deltaStream.stream.first,
+          completion(isA<TextEditingDeltaState>()
+            .having((TextEditingDeltaState deltaState) => deltaState.composingOffset, 'composingOffset', 0)
+            .having((TextEditingDeltaState deltaState) => deltaState.composingExtent, 'composingExtent', currCharIndex + 1)
+        ));
+
+        _inputElement.dispatchEvent(html.CompositionEvent(
+          _MockWithCompositionAwareMixin._kCompositionUpdate,
+          data: currComposingSubstr));
+
+        await containExpect;
+      }
     });
   });
 }

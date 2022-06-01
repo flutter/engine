@@ -1294,9 +1294,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     TextEditingDeltaState? newTextEditingDeltaState;
     if (inputConfiguration.enableDeltaModel) {
-      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);
       editingDeltaState.composingOffset = newEditingState.composingBaseOffset;
       editingDeltaState.composingExtent = newEditingState.composingExtentOffset;
+      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);
     }
 
     if (newEditingState != lastEditingState) {
