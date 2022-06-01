@@ -9,7 +9,26 @@
           "rules": []
         }
       },
-      "results": []
+      "results": [{
+        "ruleId": "N/A",
+        "message": {
+          "text": "Result text. This result does not have a rule associated."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "fileURI"
+              },
+              "region": {
+                "startLine": 1,
+                "startColumn": 1,
+                "endColumn": 1
+              }
+            }
+          }
+        ]
+      }]
     }
   ]
 }
