@@ -250,7 +250,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // After this function, all critical keys except for the target key will have
   // their toggled state and pressed state matched with their true states. The
   // target key's pressed state will be updated immediately after this.
-  SynchronizeCritialPressedStates(key, type != kFlutterKeyEventTypeRepeat);
+  SynchronizeCritialPressedStates(key, physical_key, type);
 
   if (eventual_logical_record != 0) {
     pressingRecords_[physical_key] = eventual_logical_record;
@@ -380,7 +380,10 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
     int this_virtual_key,
-    bool pressed_state_will_change) {
+    int this_physical_key,
+    FlutterKeyEventType this_event_type) {
+  auto this_key_pressed_iter = pressingRecords_.find(this_physical_key);
+  bool this_key_pressed = this_key_pressed_iter != pressingRecords_.end();
   for (auto& kv : critical_keys_) {
     UINT virtual_key = kv.first;
     CriticalKey& key_info = kv.second;
@@ -394,8 +397,15 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();
       bool should_pressed = state & kStateMaskPressed;
-      if (virtual_key == this_virtual_key && pressed_state_will_change) {
-        should_pressed = !should_pressed;
+      bool pressed_state_will_change = false;
+      if (this_event_type == kFlutterKeyEventTypeDown) {
+        if (virtual_key == this_virtual_key) {
+          should_pressed = !should_pressed;
+        }
+      } else if (this_event_type == kFlutterKeyEventTypeUp) {
+        if (this_physical_key == key_info.physical_key) {
+          should_pressed = !should_pressed;
+        }
       }
       if (recorded_pressed != should_pressed) {
         if (recorded_pressed) {
