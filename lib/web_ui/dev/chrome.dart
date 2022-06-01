@@ -143,7 +143,7 @@ class Chrome extends Browser {
   /// width of the area to capture.
   ///
   /// This method can be used for both macOS and Linux.
-  /// TODO(yjbanov): extends tests to Window, https://github.com/flutter/flutter/issues/65673
+  // TODO(yjbanov): extends tests to Window, https://github.com/flutter/flutter/issues/65673
   @override
   Future<Image> captureScreenshot(math.Rectangle<num>? region) async {
     final wip.ChromeConnection chromeConnection =
