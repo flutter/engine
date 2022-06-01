@@ -13,8 +13,6 @@ import 'package:ui/src/engine/text_editing/composition_aware_mixin.dart';
 import 'package:ui/src/engine/text_editing/input_type.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
 
-import 'text_editing_test.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -31,30 +29,39 @@ html.InputElement get _inputElement {
   return defaultTextEditingRoot.querySelectorAll('input').first as html.InputElement;
 }
 
+GloballyPositionedTextEditingStrategy _enableEditingStrategy({
+  required bool deltaModel,
+  void Function(EditingState?, TextEditingDeltaState?)? onChange,
+  }) {
+  final HybridTextEditing owner = HybridTextEditing();
+
+  owner.configuration = InputConfiguration(inputType: EngineInputType.text, enableDeltaModel: deltaModel);
+
+  final GloballyPositionedTextEditingStrategy editingStrategy =
+      GloballyPositionedTextEditingStrategy(owner);
+
+  owner.debugTextEditingStrategyOverride = editingStrategy;
+
+  editingStrategy.enable(owner.configuration!, onChange: onChange ?? (_, __) {}, onAction: (_) {});
+  return editingStrategy;
+}
+
 Future<void> testMain() async {
   await initializeEngine();
 
-  final GloballyPositionedTextEditingStrategy editingStrategy =
-      GloballyPositionedTextEditingStrategy(HybridTextEditing()
-        ..configuration = InputConfiguration(
-          inputType: EngineInputType.text,
-        ));
-  editingStrategy.owner.debugTextEditingStrategyOverride = editingStrategy;
   const String fakeComposingText = 'ImComposingText';
 
-  setUp(() {
-    editingStrategy.enable(
-      singlelineConfig,
-      onChange: (_, __) {},
-      onAction: (_) {},
-    );
-  });
-
-  tearDown(() {
-    editingStrategy.disable();
-  });
-
   group('$CompositionAwareMixin', () {
+    late TextEditingStrategy editingStrategy;
+
+    setUp(() {
+      editingStrategy = _enableEditingStrategy(deltaModel: false);
+    });
+
+    tearDown(() {
+      editingStrategy.disable();
+    });
+
     group('composition end', () {
       test('should reset composing text on handle composition end', () {
         final _MockWithCompositionAwareMixin mockWithCompositionAwareMixin =
@@ -89,7 +96,9 @@ Future<void> testMain() async {
         mockWithCompositionAwareMixin.composingText = fakeComposingText;
         mockWithCompositionAwareMixin.addCompositionEventHandlers(_inputElement);
 
-        _inputElement.dispatchEvent(html.CompositionEvent(_MockWithCompositionAwareMixin._kCompositionUpdate, data: fakeEventText));
+        _inputElement.dispatchEvent(html.CompositionEvent(
+            _MockWithCompositionAwareMixin._kCompositionUpdate,
+            data: fakeEventText));
 
         expect(mockWithCompositionAwareMixin.composingText, fakeEventText);
       });
@@ -116,14 +125,22 @@ Future<void> testMain() async {
             mockWithCompositionAwareMixin.determineCompositionState(editingState),
             editingState.copyWith(
                 composingBaseOffset: expectedComposingBase,
-                composingExtentOffset: expectedComposingBase + composingText.length
-              )
-          );
+                composingExtentOffset: expectedComposingBase + composingText.length));
       });
     });
   });
 
   group('composing range', () {
+    late GloballyPositionedTextEditingStrategy editingStrategy;
+
+    setUp(() {
+      editingStrategy = _enableEditingStrategy(deltaModel: false);
+    });
+
+    tearDown(() {
+      editingStrategy.disable();
+    });
+
     test('should be [0, compostionStrLength] on new composition', () {
       const String composingText = 'hi';
 
@@ -139,8 +156,7 @@ Future<void> testMain() async {
               .having((EditingState editingState) => editingState.composingBaseOffset,
                   'composingBaseOffset', 0)
               .having((EditingState editingState) => editingState.composingExtentOffset,
-                  'composingExtentOffset', composingText.length)
-          );
+                  'composingExtentOffset', composingText.length));
     });
 
     test(
@@ -154,8 +170,9 @@ Future<void> testMain() async {
       _inputElement.value = '$beforeComposingText$afterComposingText';
       _inputElement.setSelectionRange(beforeComposingText.length, beforeComposingText.length);
 
-      _inputElement.dispatchEvent(
-          html.CompositionEvent(_MockWithCompositionAwareMixin._kCompositionUpdate, data: composingText));
+      _inputElement.dispatchEvent(html.CompositionEvent(
+          _MockWithCompositionAwareMixin._kCompositionUpdate,
+          data: composingText));
 
       // Flush editing state (since we did not compositionend).
       _inputElement.dispatchEvent(html.Event.eventType('Event', 'input'));
@@ -166,8 +183,70 @@ Future<void> testMain() async {
               .having((EditingState editingState) => editingState.composingBaseOffset!,
                   'composingBaseOffset', beforeComposingText.length - composingText.length)
               .having((EditingState editingState) => editingState.composingExtentOffset,
-                  'composingExtentOffset', beforeComposingText.length)
+                  'composingExtentOffset', beforeComposingText.length));
+    });
+  });
+
+  group('Text Editing Delta Model', () {
+    late GloballyPositionedTextEditingStrategy editingStrategy;
+
+    final StreamController<TextEditingDeltaState?> deltaStream =
+        StreamController<TextEditingDeltaState?>.broadcast();
+
+    setUp(() {
+        editingStrategy = _enableEditingStrategy(
+          deltaModel: true,
+          onChange: (_, TextEditingDeltaState? deltaState) => deltaStream.add(deltaState)
         );
+    });
+
+    tearDown(() {
+      editingStrategy.disable();
+    });
+
+    test('should have newly entered composing characters', () async {
+      const String newComposingText = 'n';
+
+      editingStrategy.setEditingState(EditingState(text: newComposingText, baseOffset: 1, extentOffset: 1));
+
+      final Future<dynamic> containExpect = expectLater(
+          deltaStream.stream.first,
+          completion(isA<TextEditingDeltaState>()
+            .having((TextEditingDeltaState deltaState) => deltaState.composingOffset, 'composingOffset', 0)
+            .having((TextEditingDeltaState deltaState) => deltaState.composingExtent, 'composingExtent', newComposingText.length)
+          ));
+
+
+      _inputElement.dispatchEvent(html.CompositionEvent(
+          _MockWithCompositionAwareMixin._kCompositionUpdate,
+          data: newComposingText));
+
+      await containExpect;
+    });
+
+    test('should emit changed composition', () async {
+      const String newComposingCharsInOrder = 'hiCompose';
+
+      for (int currCharIndex = 0; currCharIndex < newComposingCharsInOrder.length; currCharIndex++) {
+        final String currComposingSubstr = newComposingCharsInOrder.substring(0, currCharIndex + 1);
+
+        editingStrategy.setEditingState(
+          EditingState(text: currComposingSubstr, baseOffset: currCharIndex + 1, extentOffset: currCharIndex + 1)
+        );
+
+        final Future<dynamic> containExpect = expectLater(
+          deltaStream.stream.first,
+          completion(isA<TextEditingDeltaState>()
+            .having((TextEditingDeltaState deltaState) => deltaState.composingOffset, 'composingOffset', 0)
+            .having((TextEditingDeltaState deltaState) => deltaState.composingExtent, 'composingExtent', currCharIndex + 1)
+        ));
+
+        _inputElement.dispatchEvent(html.CompositionEvent(
+          _MockWithCompositionAwareMixin._kCompositionUpdate,
+          data: currComposingSubstr));
+
+        await containExpect;
+      }
     });
   });
 }

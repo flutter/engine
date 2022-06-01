@@ -84,6 +84,7 @@ mixin CompositionAwareMixin {
     if (composingBase < 0) {
       return editingState;
     }
+
     return editingState.copyWith(
       composingBaseOffset: composingBase,
       composingExtentOffset: composingBase + composingText!.length,
