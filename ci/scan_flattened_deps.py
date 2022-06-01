@@ -52,8 +52,8 @@ def WriteSarif(vulns, manifest_file):
         f = open('template.sarif')
         data = json.load(f)
         print("vulns: " + str(vulns))
-        # for vuln in vulns:
-            # data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
+        for vuln in vulns:
+            data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
         print(data)
 
         with open(manifest_file, 'w') as out:
