@@ -6,7 +6,6 @@
       "tool": {
         "driver": {
           "name": "OSV Scan",
-          "informationUri": "Submits DEPS file dependencies to OSV API https://osv.dev/",
           "rules": []
         }
       },
