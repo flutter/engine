@@ -6,31 +6,7 @@
       "tool": {
         "driver": {
           "name": "Tool Name",
-          "rules": [
-            {
-              "id": "R01",
-              "name": "OSV Scan Finding",
-              "shortDescription": {
-                "text": "Dependency Vulnerability Scan"
-              },
-              "fullDescription": {
-                "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
-              },
-              "help": {
-                "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
-              },
-              "defaultConfiguration": {
-                "level": "error"
-              },
-              "properties": {
-                "id": "java/unsafe-deserialization",
-                "kind": "path-problem",
-                "name": "...",
-                "problem.severity": "error",
-                "security-severity": "9.8"
-              }
-            }
-          ]
+          "rules": []
         }
       },
       "results": []
