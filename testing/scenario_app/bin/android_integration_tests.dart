@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -14,6 +13,7 @@ import 'package:skia_gold_client/skia_gold_client.dart';
 
 import 'utils/logs.dart';
 import 'utils/process_manager_extension.dart';
+import 'utils/screenshot_transformer.dart';
 
 const int tcpPort = 3001;
 
@@ -36,6 +36,7 @@ void main(List<String> args) async {
   }
 
   final String scenarioAppPath = join(outDir.path, 'scenario_app');
+  final String logcatPath = join(scenarioAppPath, 'logcat.txt');
   final String screenshotPath = join(scenarioAppPath, 'screenshots');
   final String apkOutPath = join(scenarioAppPath, 'app', 'outputs', 'apk');
   final File testApk = File(join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
@@ -61,15 +62,14 @@ void main(List<String> args) async {
     stdout.writeln('listening on host ${server.address.address}:${server.port}');
     server.listen((Socket client) {
       stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
-      client.listen((Uint8List data) {
-        final int fnameLen = data.buffer.asByteData(0, 4).getInt32(0);
-        final String fileName = utf8.decode(data.buffer.asUint8List(4, fnameLen));
-        final Uint8List fileContent = data.buffer.asUint8List(4 + fnameLen);
+      client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) {
+        final String fileName = screenshot.filename;
+        final Uint8List fileContent = screenshot.fileContent;
         log('host received ${fileContent.lengthInBytes} bytes for screenshot `$fileName`');
         assert(skiaGoldClient != null, 'expected Skia Gold client');
         late File goldenFile;
         try {
-          goldenFile = File(join(screenshotPath, '$fileName.png'))..writeAsBytesSync(fileContent, flush: true);
+          goldenFile = File(join(screenshotPath, fileName))..writeAsBytesSync(fileContent, flush: true);
         } on FileSystemException catch (err) {
           panic(<String>['failed to create screenshot $fileName: ${err.toString()}']);
         }
@@ -91,7 +91,7 @@ void main(List<String> args) async {
   });
 
   late Process logcatProcess;
-  final StringBuffer logcat = StringBuffer();
+  final IOSink logcat = File(logcatPath).openWrite();
   try {
     await step('Creating screenshot directory...', () async {
       Directory(screenshotPath).createSync(recursive: true);
@@ -102,7 +102,7 @@ void main(List<String> args) async {
       if (exitCode != 0) {
         panic(<String>['could not clear logs']);
       }
-      logcatProcess = await pm.start(<String>[adb.path, 'logcat', '*:E', '-T', '1']);
+      logcatProcess = await pm.start(<String>[adb.path, 'logcat', '-T', '1']);
       unawaited(pipeProcessStreams(logcatProcess, out: logcat));
     });
 
@@ -200,8 +200,8 @@ void main(List<String> args) async {
       await Future.wait(pendingComparisons);
     });
 
-    await step('Dumping logcat (Errors only)...', () async {
-      stdout.write(logcat);
+    await step('Flush logcat...', () async {
+      await logcat.flush();
     });
 
     exit(0);
