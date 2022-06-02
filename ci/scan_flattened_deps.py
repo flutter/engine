@@ -34,7 +34,7 @@ def ParseDepsFile(deps_flat_file):
     for line in Lines:
         dep = line.strip().split('@')
         # data = {"commit" : dep[1]}
-        data = {"commit" : "6879efc2c1596d11a6a6ad296f80063b558d5e0f"}
+        data = {"commit" : "0cf697ed3f32dbf2df822a8a42974e50262b064d"}
         response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
         print("Scanned " + dep[0].split('/')[-1].split('.')[0] + " at " + dep[1], end = '')
         if response.json() == {}:
