@@ -322,6 +322,8 @@ targets:
         [
           {"dependency": "goldctl"}
         ]
+      os: Mac-10.15
+      xcode: 12c33 # xcode 12.3
     timeout: 60
     runIf:
       - DEPS
