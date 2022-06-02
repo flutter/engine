@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
@@ -21,7 +20,7 @@ Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
   rc.apply(engineCanvas, region);
 
   // Wrap in <flt-scene> so that our CSS selectors kick in.
-  final html.Element sceneElement = html.Element.tag('flt-scene');
+  final DomElement sceneElement = createDomElement('flt-scene');
   if (isIosSafari) {
     // Shrink to fit on the iPhone screen.
     sceneElement.style.position = 'absolute';
@@ -32,13 +31,12 @@ Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
     if (setupPerspective) {
       // iFrame disables perspective, set it explicitly for test.
       engineCanvas.rootElement.style.perspective = '400px';
-      for (final html.Element element in engineCanvas.rootElement.querySelectorAll(
-          'div')) {
+      for (final DomElement element in engineCanvas.rootElement.querySelectorAll('div')) {
         element.style.perspective = '400px';
       }
     }
     sceneElement.append(engineCanvas.rootElement);
-    html.document.body!.append(sceneElement);
+    domDocument.body!.append(sceneElement);
     await matchGoldenFile('$fileName.png',
         region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
   } finally {
@@ -51,12 +49,12 @@ Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
 Future<void> sceneScreenshot(SurfaceSceneBuilder sceneBuilder, String fileName,
     {ui.Rect region = const ui.Rect.fromLTWH(0, 0, 600, 800),
     double maxDiffRatePercent = 0.0, bool write = false}) async {
-  html.Element? sceneElement;
+  DomElement? sceneElement;
   try {
     sceneElement = sceneBuilder
         .build()
         .webOnlyRootElement;
-    html.document.body!.append(sceneElement!);
+    domDocument.body!.append(sceneElement!);
     await matchGoldenFile('$fileName.png',
         region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
   } finally {

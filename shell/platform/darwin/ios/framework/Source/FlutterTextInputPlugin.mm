@@ -10,8 +10,8 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
 
-static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
-static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
+static const char kTextAffinityDownstream[] = "TextAffinity.downstream";
+static const char kTextAffinityUpstream[] = "TextAffinity.upstream";
 // A delay before enabling the accessibility of FlutterTextInputView after
 // it is activated.
 static constexpr double kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
@@ -39,6 +39,7 @@ const CGRect kSpacePanBounds = {{-2500, -2500}, {5000, 5000}};
 static NSString* const kShowMethod = @"TextInput.show";
 static NSString* const kHideMethod = @"TextInput.hide";
 static NSString* const kSetClientMethod = @"TextInput.setClient";
+static NSString* const kSetPlatformViewClientMethod = @"TextInput.setPlatformViewClient";
 static NSString* const kSetEditingStateMethod = @"TextInput.setEditingState";
 static NSString* const kClearClientMethod = @"TextInput.clearClient";
 static NSString* const kSetEditableSizeAndTransformMethod =
@@ -744,7 +745,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (self) {
     _textInputPlugin = textInputPlugin.weakPtr;
     _textInputClient = 0;
-    _selectionAffinity = _kTextAffinityUpstream;
+    _selectionAffinity = kTextAffinityUpstream;
 
     // UITextInput
     _text = [[NSMutableString alloc] init];
@@ -952,9 +953,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
     [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
 
-    _selectionAffinity = _kTextAffinityDownstream;
-    if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)]) {
-      _selectionAffinity = _kTextAffinityUpstream;
+    _selectionAffinity = kTextAffinityDownstream;
+    if ([state[@"selectionAffinity"] isEqualToString:@(kTextAffinityUpstream)]) {
+      _selectionAffinity = kTextAffinityUpstream;
     }
     [self.inputDelegate selectionDidChange:self];
   }
@@ -1073,6 +1074,14 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // from changing focus by itself (the framework
   // focus will be out of sync if that happens).
   return _textInputClient != 0;
+}
+
+- (BOOL)resignFirstResponder {
+  BOOL success = [super resignFirstResponder];
+  if (success) {
+    [self.textInputDelegate flutterTextInputViewDidResignFirstResponder:self];
+  }
+  return success;
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
@@ -1848,7 +1857,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [self resetScribbleInteractionStatusIfEnding];
   self.selectionRects = copiedRects;
   [copiedRects release];
-  _selectionAffinity = _kTextAffinityDownstream;
+  _selectionAffinity = kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
 }
 
@@ -1866,7 +1875,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)deleteBackward {
-  _selectionAffinity = _kTextAffinityDownstream;
+  _selectionAffinity = kTextAffinityDownstream;
   _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
   [self resetScribbleInteractionStatusIfEnding];
 
@@ -2071,6 +2080,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kSetClientMethod]) {
     [self setTextInputClient:[args[0] intValue] withConfiguration:args[1]];
     result(nil);
+  } else if ([method isEqualToString:kSetPlatformViewClientMethod]) {
+    // This method call has a `platformViewId` argument, but we do not need it for iOS for now.
+    [self setPlatformViewTextInputClient];
+    result(nil);
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
     [self setTextInputEditingState:args];
     result(nil);
@@ -2185,6 +2198,16 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
   [self cleanUpViewHierarchy:YES clearText:!saveEntries delayRemoval:NO];
   [self addToInputParentViewIfNeeded:_activeView];
+}
+
+- (void)setPlatformViewTextInputClient {
+  // No need to track the platformViewID (unlike in Android). When a platform view
+  // becomes the first responder, simply hide this dummy text input view (`_activeView`)
+  // for the previously focused widget.
+  [self removeEnableFlutterTextInputViewAccessibilityTimer];
+  _activeView.accessibilityEnabled = NO;
+  [_activeView removeFromSuperview];
+  [_inputHider removeFromSuperview];
 }
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {

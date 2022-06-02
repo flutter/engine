@@ -950,6 +950,7 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
     expected_frame_size_ =
         SkISize::Make(metrics.physical_width, metrics.physical_height);
+    device_pixel_ratio_ = metrics.device_pixel_ratio;
   }
 }
 
@@ -1812,6 +1813,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 }
 
 static rapidjson::Value SerializeLayerSnapshot(
+    double device_pixel_ratio,
     const LayerSnapshotData& snapshot,
     rapidjson::Document* response) {
   auto& allocator = response->GetAllocator();
@@ -1820,6 +1822,13 @@ static rapidjson::Value SerializeLayerSnapshot(
   result.AddMember("layer_unique_id", snapshot.GetLayerUniqueId(), allocator);
   result.AddMember("duration_micros", snapshot.GetDuration().ToMicroseconds(),
                    allocator);
+
+  const SkRect bounds = snapshot.GetBounds();
+  result.AddMember("top", bounds.top() * device_pixel_ratio, allocator);
+  result.AddMember("left", bounds.left() * device_pixel_ratio, allocator);
+  result.AddMember("width", bounds.width() * device_pixel_ratio, allocator);
+  result.AddMember("height", bounds.height() * device_pixel_ratio, allocator);
+
   sk_sp<SkData> snapshot_bytes = snapshot.GetSnapshot();
   if (snapshot_bytes) {
     rapidjson::Value image;
@@ -1863,10 +1872,17 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     LayerSnapshotStore& store =
         rasterizer_->compositor_context()->snapshot_store();
     for (const LayerSnapshotData& data : store) {
-      snapshots.PushBack(SerializeLayerSnapshot(data, response), allocator);
+      snapshots.PushBack(
+          SerializeLayerSnapshot(device_pixel_ratio_, data, response),
+          allocator);
     }
 
     response->AddMember("snapshots", snapshots, allocator);
+
+    const auto& frame_size = expected_frame_size_;
+    response->AddMember("frame_width", frame_size.width(), allocator);
+    response->AddMember("frame_height", frame_size.height(), allocator);
+
     return true;
   } else {
     const char* error =

@@ -770,7 +770,7 @@ class EditingState {
   @override
   int get hashCode => ui.hashValues(
     text, baseOffset, extentOffset, composingBaseOffset, composingExtentOffset);
-
+  
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
@@ -1343,12 +1343,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   void maybeSendAction(html.Event event) {
-    if (event is html.KeyboardEvent) {
-      if (inputConfiguration.inputType.submitActionOnEnter &&
-          event.keyCode == _kReturnKeyCode) {
-        event.preventDefault();
-        onAction!(inputConfiguration.inputAction);
-      }
+    if (event is html.KeyboardEvent && event.keyCode == _kReturnKeyCode) {
+      onAction!(inputConfiguration.inputAction);
     }
   }
 
