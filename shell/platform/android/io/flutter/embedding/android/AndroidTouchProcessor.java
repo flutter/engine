@@ -6,6 +6,7 @@ import android.view.InputDevice;
 import android.view.MotionEvent;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -69,7 +70,7 @@ public class AndroidTouchProcessor {
 
   // Must match the unpacking code in hooks.dart.
   private static final int POINTER_DATA_FIELD_COUNT = 35;
-  public static final int BYTES_PER_FIELD = 8;
+  @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
   // This value must match the value in framework's platform_view.dart.
   // This flag indicates whether the original Android pointer events were batched together.
@@ -77,8 +78,6 @@ public class AndroidTouchProcessor {
 
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final MotionEventTracker motionEventTracker;
-
-  private static final int _POINTER_BUTTON_PRIMARY = 1;
 
   private static final Matrix IDENTITY_TRANSFORM = new Matrix();
 
