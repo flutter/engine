@@ -2,13 +2,13 @@
   "id": "OSV Scan",
   "name": "OSV Scan Finding",
   "shortDescription": {
-    "text": "Dependency Vulnerability Scan"
+    "text": "Insert OSV id"
   },
   "fullDescription": {
     "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
   },
   "help": {
-    "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
+    "text": ""
   },
   "defaultConfiguration": {
     "level": "error"

@@ -21,6 +21,9 @@ from typing import Any, Dict, Optional
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 
+HELP_STR = "To find complete information on this vulnerability, navigate to "
+OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
+
 
 def ParseDepsFile(deps_flat_file):
     deps = open(deps_flat_file, 'r')
@@ -33,7 +36,6 @@ def ParseDepsFile(deps_flat_file):
     # Extract commit hash, call OSV with each hash
     for line in Lines:
         dep = line.strip().split('@')
-        # data = {"commit" : dep[1]}
         data = {"commit" : "0cf697ed3f32dbf2df822a8a42974e50262b064d"}
         response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
         print("Scanned " + dep[0].split('/')[-1].split('.')[0] + " at " + dep[1], end = '')
@@ -68,6 +70,8 @@ def CreateRuleEntry(vuln: Dict[str, Any]):
     f = open('rule_template.json')
     rule = json.load(f)
     rule['id'] = vuln['id']
+    rule['shortDescription']['text'] = "Vulnerability found: " + vuln['id'] + " last modified: " + vuln['modified']
+    rule['help']['text'] = HELP_STR + OSV_VULN_DB_URL + vuln['id']
     return rule
 
 def CreateResultEntry(vuln: Dict[str, Any]):

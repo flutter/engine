@@ -9,9 +9,9 @@
             "uri": "No location associated with this finding"
           },
           "region": {
-            "startLine": 2,
-            "startColumn": 7,
-            "endColumn": 10
+            "startLine": 1,
+            "startColumn": 1,
+            "endColumn": 1
           }
         }
     }]
