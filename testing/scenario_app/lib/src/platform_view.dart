@@ -445,7 +445,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     builder.pushOffset(50, 0);
 
     await addPlatformView(
-      firstId,
+      secondId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
       text: 'platform view 2',
@@ -1058,7 +1058,7 @@ Future<void> addPlatformView(
     );
     return;
   }
-  final bool usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
+  final bool usesAndroidHybridComposition = false;
   const int _valueTrue = 1;
   const int _valueInt32 = 3;
   const int _valueFloat64 = 6;
@@ -1163,8 +1163,9 @@ Future<void> addPlatformViewToSceneBuilder(
   double width = 500,
   double height = 500,
 }) async {
-  final bool usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
+  final bool usesAndroidHybridComposition = false;
   if (Platform.isIOS) {
+    print('create ios platform view');
     sceneBuilder.addPlatformView(id, width: width, height: height);
   } else if (Platform.isAndroid) {
     if (usesAndroidHybridComposition) {
