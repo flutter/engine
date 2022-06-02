@@ -202,7 +202,12 @@ void main(List<String> args) async {
     });
 
     await step('Closing logcat...', () async {
-      await logcat.close();
+      try {
+        await logcat.flush();
+        await logcat.close();
+      } catch(_) {
+        // ignore.
+      }
     });
 
     exit(0);
