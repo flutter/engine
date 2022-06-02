@@ -36,9 +36,10 @@ def ParseDepsFile(deps_flat_file):
     # Extract commit hash, call OSV with each hash
     for line in Lines:
         dep = line.strip().split('@')
+        package = dep[0].split('/')[-1].split('.')[0]
         data = {"commit" : "0cf697ed3f32dbf2df822a8a42974e50262b064d"}
         response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
-        print("Scanned " + dep[0].split('/')[-1].split('.')[0] + " at " + dep[1], end = '')
+        print("Scanned " + package + " at " + dep[1], end = '')
         if response.json() == {}:
             print(" and found no vulnerabilities")
         if response.json() != {} and response.json().get("vulns"):
@@ -70,7 +71,8 @@ def CreateRuleEntry(vuln: Dict[str, Any]):
     f = open('rule_template.json')
     rule = json.load(f)
     rule['id'] = vuln['id']
-    rule['shortDescription']['text'] = "Vulnerability found: " + vuln['id'] + " last modified: " + vuln['modified']
+    rule['shortDescription']['text'] = vuln['id']
+    rule['fullDescription']['text'] = "Vulnerability found: " + vuln['id'] + " last modified: " + vuln['modified']
     rule['help']['text'] = HELP_STR + OSV_VULN_DB_URL + vuln['id']
     return rule
 
