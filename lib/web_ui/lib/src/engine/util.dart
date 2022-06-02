@@ -79,7 +79,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float32List matrix4) {
+void setElementTransform(DomElement element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -494,7 +494,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element? containerElement) {
+void applyWebkitClipFix(DomElement? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
@@ -664,7 +664,7 @@ void setElementStyle(
   }
 }
 
-void setClipPath(html.Element element, String? value) {
+void setClipPath(DomElement element, String? value) {
   if (browserEngine == BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
@@ -719,7 +719,7 @@ void drawEllipse(
 }
 
 /// Removes all children of a DOM node.
-void removeAllChildren(html.Node node) {
+void removeAllChildren(DomNode node) {
   while (node.lastChild != null) {
     node.lastChild!.remove();
   }

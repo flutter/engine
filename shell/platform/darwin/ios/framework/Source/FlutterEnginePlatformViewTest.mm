@@ -89,7 +89,7 @@ flutter::FakeDelegate fake_delegate;
 
 - (void)testMsaaSampleCount {
   // Default should be 1.
-  XCTAssertEqual(platform_view->GetIosContext()->GetMsaaSampleCount(), 1);
+  XCTAssertEqual(platform_view->GetIosContext()->GetMsaaSampleCount(), MsaaSampleCount::kNone);
 
   // Verify the platform view creates a new context with updated msaa_samples.
   // Need to use Metal, since this is ignored for Software/GL.
@@ -107,7 +107,8 @@ flutter::FakeDelegate fake_delegate;
       /*platform_views_controller=*/nil,
       /*task_runners=*/runners);
 
-  XCTAssertEqual(msaa_4x_platform_view->GetIosContext()->GetMsaaSampleCount(), 4);
+  XCTAssertEqual(msaa_4x_platform_view->GetIosContext()->GetMsaaSampleCount(),
+                 MsaaSampleCount::kFour);
 }
 
 - (void)testCallsNotifyLowMemory {

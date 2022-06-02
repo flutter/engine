@@ -55,7 +55,6 @@ class TextureGLES final : public Texture,
   HandleGLES handle_;
   mutable bool contents_initialized_ = false;
   const bool is_wrapped_;
-  std::string label_;
   bool is_valid_ = false;
 
   TextureGLES(std::shared_ptr<ReactorGLES> reactor,
@@ -63,7 +62,7 @@ class TextureGLES final : public Texture,
               bool is_wrapped);
 
   // |Texture|
-  void SetLabel(const std::string_view& label) override;
+  void SetLabel(std::string_view label) override;
 
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
@@ -79,6 +78,9 @@ class TextureGLES final : public Texture,
 
   // |Texture|
   ISize GetSize() const override;
+
+  // |Texture|
+  Scalar GetYCoordScale() const override;
 
   void InitializeContentsIfNecessary() const;
 

@@ -261,7 +261,7 @@ class HtmlViewEmbedder {
     DomElement headClipView,
   ) {
     int indexInFlutterView = -1;
-    if (headClipView.parentElement != null) {
+    if (headClipView.parent != null) {
       indexInFlutterView = skiaSceneHost!.children.indexOf(headClipView);
       headClipView.remove();
     }
@@ -269,7 +269,7 @@ class HtmlViewEmbedder {
     int clipIndex = 0;
     // Re-use as much existing clip views as needed.
     while (head != headClipView && clipIndex < numClips) {
-      head = head.parentElement!;
+      head = head.parent!;
       clipIndex++;
     }
     // If there weren't enough existing clip views, add more.
@@ -329,7 +329,7 @@ class HtmlViewEmbedder {
         case MutatorType.clipRect:
         case MutatorType.clipRRect:
         case MutatorType.clipPath:
-          final DomElement clipView = head.parentElement!;
+          final DomElement clipView = head.parent!;
           clipView.style.clip = '';
           clipView.style.clipPath = '';
           headTransform = Matrix4.identity();
@@ -807,7 +807,7 @@ class EmbeddedViewParams {
   }
 
   @override
-  int get hashCode => ui.hashValues(offset, size, mutators);
+  int get hashCode => Object.hash(offset, size, mutators);
 }
 
 enum MutatorType {
@@ -885,7 +885,7 @@ class Mutator {
   }
 
   @override
-  int get hashCode => ui.hashValues(type, rect, rrect, path, matrix, alpha);
+  int get hashCode => Object.hash(type, rect, rrect, path, matrix, alpha);
 }
 
 /// A stack of mutators that can be applied to an embedded view.
@@ -931,7 +931,7 @@ class MutatorsStack extends Iterable<Mutator> {
   }
 
   @override
-  int get hashCode => ui.hashList(_mutators);
+  int get hashCode => Object.hashAll(_mutators);
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;

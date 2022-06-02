@@ -33,32 +33,28 @@ namespace {
 sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
                                                id<MTLTexture> texture,
                                                GrSurfaceOrigin origin,
-                                               int sample_cnt,
+                                               MsaaSampleCount sample_cnt,
                                                SkColorType color_type,
                                                sk_sp<SkColorSpace> color_space,
                                                const SkSurfaceProps* props) {
   GrMtlTextureInfo info;
   info.fTexture.reset([texture retain]);
   GrBackendTexture backend_texture(texture.width, texture.height, GrMipmapped::kNo, info);
-  return SkSurface::MakeFromBackendTexture(context, backend_texture, origin, sample_cnt, color_type,
-                                           color_space, props);
+  return SkSurface::MakeFromBackendTexture(context, backend_texture, origin,
+                                           static_cast<int>(sample_cnt), color_type, color_space,
+                                           props);
 }
 }  // namespace
 
 GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
                                          sk_sp<GrDirectContext> context,
-                                         int msaa_samples,
+                                         MsaaSampleCount msaa_samples,
                                          bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
       msaa_samples_(msaa_samples),
-      render_to_surface_(render_to_surface) {
-  // Skia allows 0 and clamps it to 1.
-  FML_CHECK(msaa_samples_ == 0 || msaa_samples_ == 1 || msaa_samples_ == 2 || msaa_samples_ == 4 ||
-            msaa_samples_ == 8)
-      << "Invalid MSAA sample count value: " << msaa_samples_;
-}
+      render_to_surface_(render_to_surface) {}
 
 GPUSurfaceMetalSkia::~GPUSurfaceMetalSkia() = default;
 

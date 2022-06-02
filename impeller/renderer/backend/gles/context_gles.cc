@@ -9,10 +9,10 @@
 
 namespace impeller {
 
-std::shared_ptr<Context> ContextGLES::Create(
+std::shared_ptr<ContextGLES> ContextGLES::Create(
     std::unique_ptr<ProcTableGLES> gl,
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries) {
-  return std::shared_ptr<Context>(
+  return std::shared_ptr<ContextGLES>(
       new ContextGLES(std::move(gl), std::move(shader_libraries)));
 }
 
@@ -70,8 +70,23 @@ ContextGLES::ContextGLES(
 
 ContextGLES::~ContextGLES() = default;
 
-const ReactorGLES::Ref ContextGLES::GetReactor() const {
+const ReactorGLES::Ref& ContextGLES::GetReactor() const {
   return reactor_;
+}
+
+std::optional<ReactorGLES::WorkerID> ContextGLES::AddReactorWorker(
+    std::shared_ptr<ReactorGLES::Worker> worker) {
+  if (!IsValid()) {
+    return std::nullopt;
+  }
+  return reactor_->AddWorker(std::move(worker));
+}
+
+bool ContextGLES::RemoveReactorWorker(ReactorGLES::WorkerID id) {
+  if (!IsValid()) {
+    return false;
+  }
+  return reactor_->RemoveWorker(id);
 }
 
 bool ContextGLES::IsValid() const {
@@ -106,6 +121,11 @@ std::shared_ptr<CommandBuffer> ContextGLES::CreateTransferCommandBuffer()
     const {
   // There is no such concept. Just use a render command buffer.
   return CreateRenderCommandBuffer();
+}
+
+// |Context|
+bool ContextGLES::HasThreadingRestrictions() const {
+  return true;
 }
 
 }  // namespace impeller

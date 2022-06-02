@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "flutter/common/graphics/gl_context_switch.h"
+#include "flutter/common/graphics/msaa_sample_count.h"
 #include "flutter/common/graphics/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -20,9 +21,6 @@ class Context;
 }  // namespace impeller
 
 namespace flutter {
-
-// Supported MSAA sample count values for iOS.
-enum class MsaaSampleCount { kNone = 1, kTwo = 2, kFour = 4, kEight = 8 };
 
 //------------------------------------------------------------------------------
 /// @brief      Manages the lifetime of the on-screen and off-screen rendering
@@ -143,7 +141,7 @@ class IOSContext {
 
   virtual std::shared_ptr<impeller::Context> GetImpellerContext() const;
 
-  int GetMsaaSampleCount() const { return static_cast<int>(msaa_samples_); }
+  MsaaSampleCount GetMsaaSampleCount() const { return msaa_samples_; }
 
  protected:
   explicit IOSContext(MsaaSampleCount msaa_samples);

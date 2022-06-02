@@ -730,7 +730,7 @@ class EditingState {
   bool get isValid => baseOffset! >= 0 && extentOffset! >= 0;
 
   @override
-  int get hashCode => ui.hashValues(text, baseOffset, extentOffset);
+  int get hashCode => Object.hash(text, baseOffset, extentOffset);
 
   @override
   bool operator ==(Object other) {
@@ -1302,12 +1302,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }
 
   void maybeSendAction(html.Event event) {
-    if (event is html.KeyboardEvent) {
-      if (inputConfiguration.inputType.submitActionOnEnter &&
-          event.keyCode == _kReturnKeyCode) {
-        event.preventDefault();
-        onAction!(inputConfiguration.inputAction);
-      }
+    if (event is html.KeyboardEvent && event.keyCode == _kReturnKeyCode) {
+      onAction!(inputConfiguration.inputAction);
     }
   }
 

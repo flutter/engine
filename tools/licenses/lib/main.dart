@@ -923,6 +923,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   ///   directory (a.k.a. buildroot).
   bool shouldRecurse(fs.IoNode entry) {
     return !entry.fullName.endsWith('third_party/gn') &&
+            !entry.fullName.endsWith('third_party/gradle') &&
             !entry.fullName.endsWith('third_party/imgui') &&
             entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
@@ -931,6 +932,8 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.gitignore' &&
             entry.name != '.vscode' &&
             entry.name != 'javatests' &&
+            entry.name != 'fixtures' &&
+            entry.name != 'playground' &&
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
             entry.name != 'test_runner' &&
@@ -1773,7 +1776,8 @@ class _RepositorySkiaDirectory extends _RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'platform_tools' // contains nothing that ends up in the binary executable
+    return entry.name != 'bazel' // contains nothing that ends up in the binary executable
+        && entry.name != 'platform_tools' // contains nothing that ends up in the binary executable
         && entry.name != 'tools' // contains nothing that ends up in the binary executable
         && entry.name != 'resources' // contains nothing that ends up in the binary executable
         && super.shouldRecurse(entry);
