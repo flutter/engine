@@ -1,0 +1,18 @@
+{
+    "ruleId": "N/A",
+    "message": {
+        "text": "OSV Scan Finding"
+    },
+    "locations": [{
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "No location associated with this finding"
+          },
+          "region": {
+            "startLine": 2,
+            "startColumn": 7,
+            "endColumn": 10
+          }
+        }
+    }]
+}

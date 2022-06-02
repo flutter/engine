@@ -54,6 +54,7 @@ def WriteSarif(vulns, manifest_file):
         print("vulns: " + str(vulns))
         for vuln in vulns:
             data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
+            data['runs'][0]['results'].append(CreateResultEntry(vuln))
         print(data)
 
         with open(manifest_file, 'w') as out:
@@ -61,13 +62,23 @@ def WriteSarif(vulns, manifest_file):
 
 def CreateRuleEntry(vuln: Dict[str, Any]):
     """
-    Creates a Sarif result entry from an OSV entry.
+    Creates a Sarif rule entry from an OSV finding.
     Vuln object follows OSV Schema and is required to have 'id' and 'modified'
     """
     f = open('rule_template.json')
     rule = json.load(f)
     rule['id'] = vuln['id']
     return rule
+
+def CreateResultEntry(vuln: Dict[str, Any]):
+    """
+    Creates a Sarif res entry from an OSV entry.
+    Rule finding linked to the associated rule metadata via ruleId
+    """
+    f = open('result_template.json')
+    result = json.load(f)
+    result['ruleId'] = vuln['id']
+    return result
 
 def ParseArgs(args):
     args = args[1:]
