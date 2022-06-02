@@ -36,45 +36,12 @@
 
     <issue
         id="InlinedApi"
-        message="Field requires API level 21 (current min is 16): `android.view.WindowManager.LayoutParams#FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS`"
-        errorLine1="      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);"
-        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
-            line="377"
-            column="23"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 19 (current min is 16): `android.view.WindowManager.LayoutParams#FLAG_TRANSLUCENT_STATUS`"
-        errorLine1="          WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS"
-        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
-            line="383"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 19 (current min is 16): `android.view.WindowManager.LayoutParams#FLAG_TRANSLUCENT_NAVIGATION`"
-        errorLine1="              | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
-            line="384"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
         message="Field requires API level 17 (current min is 16): `android.view.View#LAYOUT_DIRECTION_LTR`"
         errorLine1="    return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="653"
+            line="661"
             column="25"/>
     </issue>
 
@@ -85,7 +52,7 @@
         errorLine2="                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="653"
+            line="661"
             column="67"/>
     </issue>
 

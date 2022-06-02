@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.platform;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
@@ -363,6 +364,7 @@ public class PlatformPlugin {
   }
 
   @SuppressWarnings("deprecation")
+  @TargetApi(21)
   private void setSystemChromeSystemUIOverlayStyle(
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();
