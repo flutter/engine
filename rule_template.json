@@ -14,10 +14,11 @@
     "level": "error"
   },
   "properties": {
-    "id": "java/unsafe-deserialization",
-    "kind": "path-problem",
-    "name": "...",
     "problem.severity": "error",
-    "security-severity": "9.8"
+    "security-severity": "9.8",
+    "tags": [
+      "supply-chain",
+      "dependency"
+    ]
   }
 }
