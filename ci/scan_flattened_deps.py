@@ -36,10 +36,11 @@ def ParseDepsFile(deps_flat_file):
     # Extract commit hash, call OSV with each hash
     for line in Lines:
         dep = line.strip().split('@')
+        commit_hash = line.strip().split('@')[1]
         package = dep[0].split('/')[-1].split('.')[0]
-        data = {"commit" : "0cf697ed3f32dbf2df822a8a42974e50262b064d"}
+        data = {"commit" : commit_hash}
         response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
-        # print("Scanned " + package + " at " + dep[1], end = '')
+        print("Scanned " + package + " at " + dep[1], end = '')
         if response.json() == {}:
             print(" and found no vulnerabilities")
         if response.json() != {} and response.json().get("vulns"):
