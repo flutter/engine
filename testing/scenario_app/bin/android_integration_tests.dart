@@ -77,7 +77,7 @@ void main(List<String> args) async {
         log('wrote ${goldenFile.absolute.path}');
         if (isSkiaGoldClientAvailable) {
           final Future<void> comparison = skiaGoldClient!
-            .addImg(fileName, goldenFile, screenshotSize: fileContent.lengthInBytes)
+            .addImg('$fileName.png', goldenFile, screenshotSize: fileContent.lengthInBytes)
             .catchError((dynamic err) {
               panic(<String>['skia gold comparison failed: ${err.toString()}']);
             });
