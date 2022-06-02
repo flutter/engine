@@ -2721,7 +2721,10 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// The [ParagraphConstraints] control how wide the text is allowed to be.
   void layout(ParagraphConstraints constraints) {
     _layout(constraints.width);
-    _needsLayout = false;
+    assert(() {
+      _needsLayout = false;
+      return true;
+    }());
   }
   void _layout(double width) native 'Paragraph_layout';
 
