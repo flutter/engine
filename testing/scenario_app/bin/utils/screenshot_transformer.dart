@@ -32,7 +32,7 @@ class ScreenshotBlobTransformer extends StreamTransformerBase<Uint8List, Screens
         continue;
       }
 
-      // See ScreenshotUtil#writeFile in ScreenshotUtil.java
+      // See ScreenshotUtil#writeFile in ScreenshotUtil.java for producer side.
       final Uint8List bytes = pending.toBytes();
       final ByteData byteData = bytes.buffer.asByteData();
 
