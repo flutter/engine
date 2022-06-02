@@ -77,8 +77,7 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
       static_cast<double>(target_size.height()) / source_size.height()));
 
   //----------------------------------------------------------------------------
-  /// 1. Decode the image into the closest size supported by the image
-  ///    generator.
+  /// 1. Decode the image into the image generator's closest supported size.
   ///
 
   const auto base_image_info = descriptor->image_info();
@@ -111,7 +110,7 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   }
 
   //----------------------------------------------------------------------------
-  /// 2. If the decoded image isn't the right target size, resize it.
+  /// 2. If the decoded image isn't the requested target size, resize it.
   ///
 
   TRACE_EVENT0("impeller", "DecodeScale");
