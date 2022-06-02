@@ -1058,7 +1058,11 @@ Future<void> addPlatformView(
     );
     return;
   }
-  final bool usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
+  bool usesAndroidHybridComposition = false;
+  if (scenarioParams['use_android_view'] != null) {
+    usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
+  }
+
   const int _valueTrue = 1;
   const int _valueInt32 = 3;
   const int _valueFloat64 = 6;
@@ -1163,11 +1167,11 @@ Future<void> addPlatformViewToSceneBuilder(
   double width = 500,
   double height = 500,
 }) async {
-  final bool usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
   if (Platform.isIOS) {
     sceneBuilder.addPlatformView(id, width: width, height: height);
   } else if (Platform.isAndroid) {
-    if (usesAndroidHybridComposition) {
+    final bool? usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool?;
+    if (usesAndroidHybridComposition != null && usesAndroidHybridComposition) {
       sceneBuilder.addPlatformView(id, width: width, height: height);
     } else if (textureId != -1) {
       sceneBuilder.addTexture(textureId, width: width, height: height);
