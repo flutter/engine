@@ -445,7 +445,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     builder.pushOffset(50, 0);
 
     await addPlatformView(
-      firstId,
+      secondId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
       text: 'platform view 2',
