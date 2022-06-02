@@ -1916,6 +1916,12 @@ TEST(KeyboardTest, ImeExtendedEventsAreIgnored) {
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
+// Ensures that synthesization works correctly when a Shift key is pressed and
+// (only) its up event is labeled as an IME event (VK_PROCESSKEY).
+//
+// Regression test for https://github.com/flutter/flutter/issues/104169. These
+// are real messages recorded when pressing Shift-2 using Microsoft Pinyin IME
+// on Win 10 Enterprise, which crashed the app before the fix.
 TEST(KeyboardTest, UpOnlyImeEventsAreCorrectlyHandled) {
   KeyboardTester tester;
   tester.Responding(true);
@@ -1936,12 +1942,13 @@ TEST(KeyboardTest, UpOnlyImeEventsAreCorrectlyHandled) {
           kWmResultZero)});
 
   EXPECT_EQ(key_calls.size(), 4);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalShiftLeft, kLogicalShiftLeft, "",
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalShiftLeft, kLogicalShiftLeft, "",
                        kNotSynthesized);
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown, 0, 0, "",
                        kNotSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[2], kFlutterKeyEventTypeUp, kPhysicalShiftLeft, kLogicalShiftLeft, "",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[2], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
+                       kLogicalShiftLeft, "", kNotSynthesized);
   EXPECT_CALL_IS_EVENT(key_calls[3], kFlutterKeyEventTypeDown, 0, 0, "",
                        kNotSynthesized);
   clear_key_calls();
