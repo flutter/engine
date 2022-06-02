@@ -23,6 +23,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import java.util.Arrays;
@@ -38,6 +39,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
 public class FlutterLoaderTest {
+  private final Context ctx = ApplicationProvider.getApplicationContext();
 
   @Test
   public void itReportsUninitializedAfterCreating() {
@@ -179,6 +181,44 @@ public class FlutterLoaderTest {
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(RuntimeEnvironment.application);
     verify(mockExecutorService, times(1)).submit(any(Callable.class));
+  }
+
+  @Test
+  public void itSetsEnableSkParagraphByDefault() {
+    // SkParagraph is enabled by default
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+    FlutterLoader.Settings settings = new FlutterLoader.Settings();
+    flutterLoader.startInitialization(ctx, settings);
+    flutterLoader.ensureInitializationComplete(ctx, null);
+    shadowOf(getMainLooper()).idle();
+
+    ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
+    verify(mockFlutterJNI, times(1))
+        .init(eq(ctx), shellArgsCaptor.capture(), anyString(), anyString(), anyString(), anyLong());
+    List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
+    assertTrue(arguments.contains("--enable-skparagraph=true"));
+  }
+
+  @Test
+  public void itSetsEnableSkParagraphFromMetaData() {
+    // SkParagraph can be disabled using metadata.
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+    Bundle metaData = new Bundle();
+    metaData.putBoolean("io.flutter.embedding.android.EnableSkParagraph", false);
+    ctx.getApplicationInfo().metaData = metaData;
+
+    FlutterLoader.Settings settings = new FlutterLoader.Settings();
+    flutterLoader.startInitialization(ctx, settings);
+    flutterLoader.ensureInitializationComplete(ctx, null);
+    shadowOf(getMainLooper()).idle();
+
+    ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
+    verify(mockFlutterJNI, times(1))
+        .init(eq(ctx), shellArgsCaptor.capture(), anyString(), anyString(), anyString(), anyLong());
+    List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
+    assertTrue(arguments.contains("--enable-skparagraph=false"));
   }
 
   @Test

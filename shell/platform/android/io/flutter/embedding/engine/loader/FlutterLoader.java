@@ -315,10 +315,9 @@ public class FlutterLoader {
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      if (metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true)) {
-
-        shellArgs.add("--enable-skparagraph");
-      }
+      boolean enableSkParagraph =
+          metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true);
+      shellArgs.add("--enable-skparagraph=" + enableSkParagraph);
 
       final String leakVM = isLeakVM(metaData) ? "true" : "false";
       shellArgs.add("--leak-vm=" + leakVM);
