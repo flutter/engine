@@ -56,8 +56,9 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
   return std::nullopt;
 }
 
-static std::shared_ptr<SkBitmap> DecompressTexture(ImageDescriptor* descriptor,
-                                                   SkISize target_size) {
+std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
+    ImageDescriptor* descriptor,
+    SkISize target_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
     FML_DLOG(ERROR) << "Invalid descriptor.";

@@ -17,6 +17,8 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
+#include "include/core/SkSize.h"
+#include "lib/ui/painting/image_decoder_impeller.h"
 
 namespace flutter {
 namespace testing {
@@ -584,6 +586,11 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
   ASSERT_EQ(ImageDecoderSkia::ImageFromCompressedData(
                 descriptor.get(), 6, 2, fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(6, 2));
+
+  ASSERT_EQ(ImageDecoderImpeller::DecompressTexture(descriptor.get(),
+                                                    SkISize::Make(6, 2))
                 ->dimensions(),
             SkISize::Make(6, 2));
 }
