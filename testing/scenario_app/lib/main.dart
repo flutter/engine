@@ -82,7 +82,7 @@ Future<Map<String, dynamic>> _getJson(Uri uri) async {
   return json.decode(data) as Map<String, dynamic>;
 }
 
-Future<void> _onBeginFrame(Duration duration) async {
+void _onBeginFrame(Duration duration) {
   // Render an empty frame to signal first frame in the platform side.
   if (currentScenario == null) {
     final SceneBuilder builder = SceneBuilder();
