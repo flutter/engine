@@ -411,6 +411,13 @@ void main() {
   }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
 
   test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
+    // Regression test for https://github.com/flutter/flutter/issues/97172
+    bool assertsEnabled = false;
+    assert(() {
+      assertsEnabled = true;
+      return true;
+    }());
+
     Object? error;
     try {
       await toImage((Canvas canvas) {
@@ -422,6 +429,10 @@ void main() {
     } catch (e) {
       error = e;
     }
-    expect(error, isNotNull);
+    if (assertsEnabled) {
+      expect(error, isNotNull);
+    } else {
+      expect(error, isNull);
+    }
   });
 }
