@@ -6,6 +6,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/runtime/dart_vm.h"
@@ -17,8 +18,6 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
-#include "include/core/SkSize.h"
-#include "lib/ui/painting/image_decoder_impeller.h"
 
 namespace flutter {
 namespace testing {
