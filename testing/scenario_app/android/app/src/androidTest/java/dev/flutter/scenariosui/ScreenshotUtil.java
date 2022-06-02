@@ -38,7 +38,7 @@ public class ScreenshotUtil {
 
     synchronized void writeFile(String name, byte[] fileContent) throws IOException {
       final ByteBuffer buffer = ByteBuffer.allocate(name.length() + fileContent.length + 8);
-      // See ScreenshotBlobTransformer#bind in screenshot_transformer.dart
+      // See ScreenshotBlobTransformer#bind in screenshot_transformer.dart for consumer side.
       buffer.putInt(name.length());
       buffer.putInt(fileContent.length);
       buffer.put(name.getBytes());
