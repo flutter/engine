@@ -114,6 +114,7 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   /// 2. If the decoded image isn't the right target size, resize it.
   ///
 
+  TRACE_EVENT0("impeller", "DecodeScale");
   const auto scaled_image_info = image_info.makeDimensions(target_size);
 
   auto scaled_bitmap = std::make_shared<SkBitmap>();
