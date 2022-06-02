@@ -18,9 +18,19 @@ namespace testing {
 using ShaderMaskLayerTest = LayerTest;
 
 #ifndef NDEBUG
-TEST_F(ShaderMaskLayerTest, PaintingEmptyLayerDies) {
+TEST_F(ShaderMaskLayerTest, LeafLayer) {
   auto layer =
       std::make_shared<ShaderMaskLayer>(nullptr, kEmptyRect, SkBlendMode::kSrc);
+
+  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()),
+                            "\\!layers\\(\\)\\.empty\\(\\)");
+}
+
+TEST_F(ShaderMaskLayerTest, PaintingEmptyLayerDies) {
+  auto mock_layer = std::make_shared<MockLayer>(SkPath());
+  auto layer =
+      std::make_shared<ShaderMaskLayer>(nullptr, kEmptyRect, SkBlendMode::kSrc);
+  layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -266,17 +276,20 @@ TEST_F(ShaderMaskLayerTest, Readback) {
   const SkRect layer_bounds = SkRect::MakeLTRB(2.0f, 4.0f, 20.5f, 20.5f);
   auto layer_filter =
       SkPerlinNoiseShader::MakeFractalNoise(1.0f, 1.0f, 1, 1.0f);
-  auto layer = std::make_shared<ShaderMaskLayer>(layer_filter, layer_bounds,
-                                                 SkBlendMode::kSrc);
 
   // ShaderMaskLayer does not read from surface
+  auto mock_layer = std::make_shared<MockLayer>(SkPath());
+  auto layer = std::make_shared<ShaderMaskLayer>(layer_filter, layer_bounds,
+                                                 SkBlendMode::kSrc);
+  layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // ShaderMaskLayer blocks child with readback
-  auto mock_layer =
-      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
+  mock_layer = std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
+  layer = std::make_shared<ShaderMaskLayer>(layer_filter, layer_bounds,
+                                            SkBlendMode::kSrc);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);

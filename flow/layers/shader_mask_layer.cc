@@ -31,6 +31,9 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  TRACE_EVENT0("flutter", "ShaderMaskLayer::Preroll");
+  FML_DCHECK(!layers().empty());  // We can't be a leaf.
+
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);

@@ -39,6 +39,8 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
+  FML_DCHECK(!layers().empty());  // We can't be a leaf.
+
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 

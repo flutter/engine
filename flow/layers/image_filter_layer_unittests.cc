@@ -18,8 +18,17 @@ namespace testing {
 using ImageFilterLayerTest = LayerTest;
 
 #ifndef NDEBUG
-TEST_F(ImageFilterLayerTest, PaintingEmptyLayerDies) {
+TEST_F(ImageFilterLayerTest, LeafLayer) {
   auto layer = std::make_shared<ImageFilterLayer>(sk_sp<SkImageFilter>());
+
+  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()),
+                            "\\!layers\\(\\)\\.empty\\(\\)");
+}
+
+TEST_F(ImageFilterLayerTest, PaintingEmptyLayerDies) {
+  auto mock_layer = std::make_shared<MockLayer>(SkPath());
+  auto layer = std::make_shared<ImageFilterLayer>(sk_sp<SkImageFilter>());
+  layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -260,14 +269,16 @@ TEST_F(ImageFilterLayerTest, Readback) {
   auto initial_transform = SkMatrix();
 
   // ImageFilterLayer does not read from surface
+  auto mock_layer = std::make_shared<MockLayer>(SkPath());
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // ImageFilterLayer blocks child with readback
-  auto mock_layer =
-      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
+  mock_layer = std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
+  layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
