@@ -5,7 +5,7 @@
     {
       "tool": {
         "driver": {
-          "name": "Tool Name",
+          "name": "OSV Scan",
           "rules": []
         }
       },
