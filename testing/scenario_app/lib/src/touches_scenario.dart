@@ -16,7 +16,7 @@ class TouchesScenario extends Scenario {
   TouchesScenario(PlatformDispatcher dispatcher) : super(dispatcher);
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     // It is necessary to render frames for touch events to work properly on iOS
     final Scene scene = SceneBuilder().build();
     window.render(scene);

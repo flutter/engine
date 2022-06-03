@@ -22,7 +22,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
   Rect? _buttonRect;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);

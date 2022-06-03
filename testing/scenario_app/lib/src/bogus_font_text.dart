@@ -21,7 +21,7 @@ class BogusFontText extends Scenario {
   double _screenWidth = 700;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);

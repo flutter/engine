@@ -91,7 +91,7 @@ void _onBeginFrame(Duration duration) {
     scene.dispose();
     return;
   }
-  unawaited(currentScenario!.onBeginFrame(duration));
+  currentScenario!.onBeginFrame(duration);
 }
 
 void _onDrawFrame() {

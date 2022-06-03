@@ -44,9 +44,9 @@ class PlatformViewScenario extends Scenario
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -71,9 +71,9 @@ class NonFullScreenFlutterViewPlatformViewScenario extends Scenario
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -98,10 +98,10 @@ class PlatformViewNoOverlayIntersectionScenario extends Scenario
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -130,10 +130,10 @@ class PlatformViewPartialIntersectionScenario extends Scenario
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -162,10 +162,10 @@ class PlatformViewTwoIntersectingOverlaysScenario extends Scenario
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -206,10 +206,10 @@ class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -260,12 +260,12 @@ class MultiPlatformViewWithoutOverlaysScenario extends Scenario
   final int secondId;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 600);
 
-    await addPlatformView(
+    addPlatformView(
       firstId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -274,7 +274,7 @@ class MultiPlatformViewWithoutOverlaysScenario extends Scenario
 
     builder.pop();
 
-    await addPlatformView(
+    addPlatformView(
       secondId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -313,10 +313,10 @@ class PlatformViewMaxOverlaysScenario extends Scenario
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -371,12 +371,12 @@ class MultiPlatformViewScenario extends Scenario
   final int secondId;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 600);
 
-    await addPlatformView(
+    addPlatformView(
       firstId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -385,7 +385,7 @@ class MultiPlatformViewScenario extends Scenario
 
     builder.pop();
 
-    await addPlatformView(
+    addPlatformView(
       secondId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -421,19 +421,19 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
   /// The platform view identifier to use for the second platform view.
   final int secondId;
 
-  late Future<void> Function() _nextFrame;
+  late void Function() _nextFrame;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
-    await _nextFrame();
+  void onBeginFrame(Duration duration) {
+    _nextFrame();
   }
 
-  Future<void> _firstFrame() async {
+  void _firstFrame() {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(50, 600);
 
-    await addPlatformView(
+    addPlatformView(
       firstId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -444,7 +444,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
 
     builder.pushOffset(50, 0);
 
-    await addPlatformView(
+    addPlatformView(
       secondId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -467,12 +467,12 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     scene.dispose();
   }
 
-  Future<void> _secondFrame() async {
+  void _secondFrame() {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 600);
 
-    await addPlatformView(
+    addPlatformView(
       firstId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -481,7 +481,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
 
     builder.pop();
 
-    await addPlatformView(
+    addPlatformView(
       secondId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -528,11 +528,11 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
   final int id;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder()
       ..pushClipRect(const Rect.fromLTRB(100, 100, 400, 400));
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -551,7 +551,7 @@ class PlatformViewClipRRectScenario extends PlatformViewScenario {
   }) : super(dispatcher, id: id);
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
     builder.pushClipRRect(
       RRect.fromLTRBAndCorners(
@@ -565,7 +565,7 @@ class PlatformViewClipRRectScenario extends PlatformViewScenario {
       ),
     );
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -584,7 +584,7 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
   }) : super(dispatcher, id: id);
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final Path path = Path()
       ..moveTo(100, 100)
       ..quadraticBezierTo(50, 250, 100, 400)
@@ -593,7 +593,7 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
       ..close();
 
     final SceneBuilder builder = SceneBuilder()..pushClipPath(path);
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -611,14 +611,14 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
   }) : super(dispatcher, id: id);
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final Matrix4 matrix4 = Matrix4.identity()
       ..rotateZ(1)
       ..scale(0.5, 0.5, 1.0)
       ..translate(1000.0, 100.0, 0.0);
 
     final SceneBuilder builder = SceneBuilder()..pushTransform(matrix4.storage);
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -636,9 +636,9 @@ class PlatformViewOpacityScenario extends PlatformViewScenario {
   }) : super(dispatcher, id: id);
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder()..pushOpacity(150);
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -663,15 +663,15 @@ class PlatformViewForTouchIOSScenario extends Scenario
     _nextFrame = _firstFrame;
   }
 
-  late Future<void>Function() _nextFrame;
+  late void Function() _nextFrame;
 
   final bool accept;
   final int id;
   final bool rejectUntilTouchesEnded;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
-    await _nextFrame();
+  void onBeginFrame(Duration duration) {
+    _nextFrame();
   }
 
   @override
@@ -716,18 +716,18 @@ class PlatformViewForTouchIOSScenario extends Scenario
     }
   }
 
-  Future<void> _firstFrame() async {
+  void _firstFrame() {
     final SceneBuilder builder = SceneBuilder();
 
     if (rejectUntilTouchesEnded) {
-      await addPlatformView(
+      addPlatformView(
         id,
         dispatcher: dispatcher,
         sceneBuilder: builder,
         viewType: 'scenarios/textPlatformView_blockPolicyUntilTouchesEnded',
       );
     } else {
-      await addPlatformView(
+      addPlatformView(
         id,
         dispatcher: dispatcher,
         sceneBuilder: builder,
@@ -736,17 +736,17 @@ class PlatformViewForTouchIOSScenario extends Scenario
     finishBuilder(builder);
   }
 
-  Future<void> _secondFrame() async {
+  void _secondFrame() {
     final SceneBuilder builder = SceneBuilder()..pushOffset(5, 5);
     if (rejectUntilTouchesEnded) {
-      await addPlatformView(
+      addPlatformView(
         id,
         dispatcher: dispatcher,
         sceneBuilder: builder,
         viewType: 'scenarios/textPlatformView_blockPolicyUntilTouchesEnded',
       );
     } else {
-      await addPlatformView(
+      addPlatformView(
         id,
         dispatcher: dispatcher,
         sceneBuilder: builder,
@@ -766,13 +766,13 @@ class PlatformViewWithContinuousTexture extends PlatformViewScenario {
   }) : super(dispatcher, id: id);
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     builder.addTexture(0,
         width: 300, height: 300, offset: const Offset(200, 200));
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -796,7 +796,7 @@ class PlatformViewWithOtherBackDropFilter extends PlatformViewScenario {
   }) : super(dispatcher, id: id);
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     final PictureRecorder recorder = PictureRecorder();
@@ -832,7 +832,7 @@ class PlatformViewWithOtherBackDropFilter extends PlatformViewScenario {
 
     builder.pushOffset(0, 600);
 
-    await addPlatformView(
+    addPlatformView(
       id,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -878,7 +878,7 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
   final int _secondId;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
+  void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     final PictureRecorder recorder = PictureRecorder();
@@ -898,7 +898,7 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
 
     builder.pushOffset(0, 200);
 
-    await addPlatformView(
+    addPlatformView(
       _firstId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -923,7 +923,7 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
 
     builder.pushOffset(0, 600);
 
-    await addPlatformView(
+    addPlatformView(
       _secondId,
       dispatcher: dispatcher,
       sceneBuilder: builder,
@@ -976,8 +976,8 @@ class PlatformViewScrollingUnderWidget extends Scenario
   bool _movingUp = true;
 
   @override
-  Future<void> onBeginFrame(Duration duration) async {
-    await _buildOneFrame(_offset);
+  void onBeginFrame(Duration duration) {
+    _buildOneFrame(_offset);
   }
 
   @override
@@ -1006,7 +1006,7 @@ class PlatformViewScrollingUnderWidget extends Scenario
     for (int i = _firstPlatformViewId; i <= _lastPlatformViewId; i++) {
       // Build a list view with platform views.
       builder.pushOffset(0, localOffset);
-      await addPlatformView(
+      addPlatformView(
         i,
         dispatcher: dispatcher,
         sceneBuilder: builder,
@@ -1036,9 +1036,11 @@ class PlatformViewScrollingUnderWidget extends Scenario
 
 final Map<String, int> _createdPlatformViews = <String, int> {};
 
-/// Adds the platform view to the scene, and ensures that the platform view has been
-/// created before it's added to the scene.
-Future<void> addPlatformView(
+/// Adds the platform view to the scene.
+///
+/// First, the platform view is created by calling the corresponding platform channel,
+/// then a new frame is scheduled, finally the platform view is added to the scene builder.
+void addPlatformView(
   int id, {
   required PlatformDispatcher dispatcher,
   required SceneBuilder sceneBuilder,
@@ -1046,7 +1048,7 @@ Future<void> addPlatformView(
   double width = 500,
   double height = 500,
   String viewType = 'scenarios/textPlatformView',
-}) async {
+}) {
   final String platformViewKey = '$viewType-$id';
   if (_createdPlatformViews.containsKey(platformViewKey)) {
     addPlatformViewToSceneBuilder(
@@ -1070,7 +1072,6 @@ Future<void> addPlatformView(
   const int _valueUint8List = 8;
   const int _valueMap = 13;
 
-  final Completer<void> created = Completer<void>();
   final Uint8List message = Uint8List.fromList(<int>[
     _valueString,
     'create'.length, // this won't work if we use multi-byte characters.
@@ -1146,16 +1147,8 @@ Future<void> addPlatformView(
         textureId = -1;
       }
       _createdPlatformViews[platformViewKey] = textureId;
-      created.complete();
+      dispatcher.scheduleFrame();
     },
-  );
-  await created.future;
-  addPlatformViewToSceneBuilder(
-    id,
-    sceneBuilder: sceneBuilder,
-    textureId: _createdPlatformViews[platformViewKey]!,
-    width: width,
-    height: height,
   );
 }
 
