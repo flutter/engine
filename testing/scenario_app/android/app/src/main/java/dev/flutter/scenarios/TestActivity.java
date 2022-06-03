@@ -13,12 +13,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Window;
-import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsAnimationControllerCompat;
-import androidx.core.view.WindowInsetsAnimationControlListenerCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
@@ -169,10 +166,10 @@ public abstract class TestActivity extends TestableFlutterActivity {
   }
 
   private static void hideSystemBars(Window window) {
-    final WindowInsetsControllerCompat insetController = WindowCompat.getInsetsController(window, window.getDecorView());
+    final WindowInsetsControllerCompat insetController =
+        WindowCompat.getInsetsController(window, window.getDecorView());
     insetController.setSystemBarsBehavior(
-      WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    );
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     insetController.hide(WindowInsetsCompat.Type.systemBars());
   }
 }
