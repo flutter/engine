@@ -215,10 +215,6 @@ void main(List<String> args) async {
       await Future.wait(pendingComparisons);
     });
 
-    await step('Flush logcat...', () async {
-      await logcat.flush();
-    });
-
     exit(0);
   }
 }
