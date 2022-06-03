@@ -36,7 +36,7 @@ def ParseDepsFile(deps_flat_file):
     # Extract commit hash, call OSV with each hash
     for line in Lines:
         dep = line.strip().split('@')
-        commit_hash = line.strip().split('@')[1]
+        commit_hash = dep[1]
         package = dep[0].split('/')[-1].split('.')[0]
         data = {"commit" : commit_hash}
         response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
