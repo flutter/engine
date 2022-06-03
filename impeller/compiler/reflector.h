@@ -11,8 +11,8 @@
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/compiler_backend.h"
 #include "inja/inja.hpp"
-#include "third_party/spirv_cross/spirv_msl.hpp"
-#include "third_party/spirv_cross/spirv_parser.hpp"
+#include "spirv_msl.hpp"
+#include "spirv_parser.hpp"
 
 namespace impeller {
 namespace compiler {

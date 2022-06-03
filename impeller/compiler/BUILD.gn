@@ -5,6 +5,8 @@
 import("//flutter/impeller/tools/impeller.gni")
 
 impeller_component("compiler_lib") {
+  include_dirs = [ "//third_party/vulkan-deps/spirv-cross/src/" ]
+
   sources = [
     "code_gen_template.h",
     "compiler.cc",

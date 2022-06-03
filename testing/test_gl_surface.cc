@@ -5,6 +5,8 @@
 #include "flutter/testing/test_gl_surface.h"
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <EGL/eglplatform.h>
 #include <GLES2/gl2.h>
 
 #include <sstream>
@@ -83,10 +85,26 @@ static std::string GetEGLError() {
 
 TestGLSurface::TestGLSurface(SkISize surface_size)
     : surface_size_(surface_size) {
-  display_ = ::eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT =
+      reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
+          eglGetProcAddress("eglGetPlatformDisplayEXT"));
+  FML_CHECK(egl_get_platform_display_EXT)
+      << "eglGetPlatformDisplayEXT not available.";
+
+  const EGLint display_config[] = {
+      EGL_PLATFORM_ANGLE_TYPE_ANGLE,
+      EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE,
+      EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE,
+      EGL_PLATFORM_ANGLE_DEVICE_TYPE_SWIFTSHADER_ANGLE,
+      EGL_NONE,
+  };
+
+  display_ = egl_get_platform_display_EXT(
+      EGL_PLATFORM_ANGLE_ANGLE, reinterpret_cast<void*>(EGL_DEFAULT_DISPLAY),
+      display_config);
   FML_CHECK(display_ != EGL_NO_DISPLAY);
 
-  auto result = ::eglInitialize(display_, NULL, NULL);
+  auto result = ::eglInitialize(display_, nullptr, nullptr);
   FML_CHECK(result == EGL_TRUE) << GetEGLError();
 
   EGLConfig config = {0};

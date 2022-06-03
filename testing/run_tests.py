@@ -126,35 +126,26 @@ def BuildEngineExecutableCommand(build_dir, executable_name, flags=[], coverage=
     test_command = [ executable ] + flags
     if gtest:
       gtest_parallel = os.path.join(buildroot_dir, 'third_party', 'gtest-parallel', 'gtest-parallel')
-      test_command = ['python', gtest_parallel] + test_command
+      test_command = ['python3', gtest_parallel] + test_command
 
   return test_command
 
 
 def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
-                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False, coverage=False,
+                        cwd=None, forbidden_output=[], expect_failure=False, coverage=False,
                         extra_env={}, gtest=False):
   if filter is not None and executable_name not in filter:
     print('Skipping %s due to filter.' % executable_name)
     return
 
-  unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
-  # We cannot run the unstripped binaries directly when coverage is enabled.
-  if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
-    # Some tests depend on the EGL/GLES libraries placed in the build directory.
-    env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
-  else:
-    env = None
-
+  cwd = cwd or build_dir
   print('Running %s in %s' % (executable_name, cwd))
 
   test_command = BuildEngineExecutableCommand(
     build_dir, executable_name, flags=flags, coverage=coverage, gtest=gtest,
   )
 
-  if not env:
-    env = os.environ.copy()
+  env = os.environ.copy()
   env['FLUTTER_BUILD_DIRECTORY'] = build_dir
   for key, value in extra_env.items():
     env[key] = value
@@ -181,13 +172,13 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
 
 class EngineExecutableTask(object):
   def __init__(self, build_dir, executable_name, filter, flags=[],
-               cwd=buildroot_dir, forbidden_output=[], expect_failure=False,
+               cwd=None, forbidden_output=[], expect_failure=False,
                coverage=False, extra_env={}):
     self.build_dir = build_dir
     self.executable_name = executable_name
     self.filter = filter
     self.flags = flags
-    self.cwd = cwd
+    self.cwd = cwd or build_dir
     self.forbidden_output = forbidden_output
     self.expect_failure = expect_failure
     self.coverage = coverage
@@ -761,7 +752,7 @@ def main():
 
   variants_to_skip = ['host_release', 'host_profile']
   if ('engine' in types or 'font-subset' in types) and args.variant not in variants_to_skip:
-    RunCmd(['python', 'test.py'], cwd=font_subset_dir)
+    RunCmd(['python3', 'test.py'], cwd=font_subset_dir)
 
 
 if __name__ == '__main__':
