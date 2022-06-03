@@ -1018,14 +1018,9 @@ def main():
     RunEngineBenchmarks(build_dir, engine_filter)
 
   variants_to_skip = ['host_release', 'host_profile']
-<<<<<<< HEAD
-  if ('engine' in types or 'font-subset' in types) and args.variant not in variants_to_skip:
-    RunCmd(['python3', 'test.py'], cwd=font_subset_dir)
-=======
   if ('engine' in types or
       'font-subset' in types) and args.variant not in variants_to_skip:
-    RunCmd(['python', 'test.py'], cwd=font_subset_dir)
->>>>>>> upstream/main
+    RunCmd(['python3', 'test.py'], cwd=font_subset_dir)
 
 
 if __name__ == '__main__':

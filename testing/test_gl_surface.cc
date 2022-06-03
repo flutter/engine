@@ -83,8 +83,26 @@ static std::string GetEGLError() {
   return stream.str();
 }
 
-TestGLSurface::TestGLSurface(SkISize surface_size)
-    : surface_size_(surface_size) {
+static bool HasExtension(const char* extensions, const char* name) {
+  const char* r = strstr(extensions, name);
+  auto len = strlen(name);
+  // check that the extension name is terminated by space or null terminator
+  return r != nullptr && (r[len] == ' ' || r[len] == 0);
+}
+
+static void ChecSwanglekExtensions() {
+  const char* extensions = ::eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
+  FML_CHECK(HasExtension(extensions, "EGL_EXT_platform_base"));
+  FML_CHECK(HasExtension(extensions, "EGL_ANGLE_platform_angle_vulkan"));
+  FML_CHECK(HasExtension(extensions,
+                         "EGL_ANGLE_platform_angle_device_type_swiftshader"));
+}
+
+static EGLDisplay CreateSwangleDisplay() {
+  ChecSwanglekExtensions();
+  EGLDisplay display = ::eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  FML_CHECK(display != EGL_NO_DISPLAY);
+
   PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT =
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
           eglGetProcAddress("eglGetPlatformDisplayEXT"));
@@ -99,9 +117,13 @@ TestGLSurface::TestGLSurface(SkISize surface_size)
       EGL_NONE,
   };
 
-  display_ = egl_get_platform_display_EXT(
-      EGL_PLATFORM_ANGLE_ANGLE, reinterpret_cast<void*>(EGL_DEFAULT_DISPLAY),
-      display_config);
+  return egl_get_platform_display_EXT(EGL_PLATFORM_ANGLE_ANGLE, display,
+                                      display_config);
+}
+
+TestGLSurface::TestGLSurface(SkISize surface_size)
+    : surface_size_(surface_size) {
+  display_ = CreateSwangleDisplay();
   FML_CHECK(display_ != EGL_NO_DISPLAY);
 
   auto result = ::eglInitialize(display_, nullptr, nullptr);
