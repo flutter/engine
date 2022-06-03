@@ -106,6 +106,21 @@ void main(List<String> args) async {
       unawaited(pipeProcessStreams(logcatProcess, out: logcat));
     });
 
+    await step('Configuring emulator...', () async {
+      final int exitCode = await pm.runAndForward(<String>[
+        adb.path,
+        'shell',
+        'settings',
+        'put',
+        'secure',
+        'immersive_mode_confirmations',
+        'confirmed',
+      ]);
+      if (exitCode != 0) {
+        panic(<String>['could not configure emulator']);
+      }
+    });
+
     await step('Get API level of connected device...', () async {
       final ProcessResult apiLevelProcessResult = await pm.run(<String>[adb.path, 'shell', 'getprop', 'ro.build.version.sdk']);
       if (apiLevelProcessResult.exitCode != 0) {
