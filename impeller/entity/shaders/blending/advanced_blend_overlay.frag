@@ -5,7 +5,8 @@
 #include "advanced_blend_utils.glsl"
 
 vec3 Blend(vec3 dst, vec3 src) {
-  return BlendScreen(dst, src);
+  // HardLight, but with reversed parameters.
+  return BlendHardLight(src, dst);
 }
 
 #include "advanced_blend.glsl"
