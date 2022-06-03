@@ -1552,8 +1552,8 @@ Future<void> testMain() async {
             'text': 'something',
             'selectionBase': 9,
             'selectionExtent': 9,
-            'composingBase': -1,
-            'composingExtent': -1
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1578,8 +1578,8 @@ Future<void> testMain() async {
             'text': 'something',
             'selectionBase': 2,
             'selectionExtent': 5,
-            'composingBase': -1,
-            'composingExtent': -1
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1716,8 +1716,8 @@ Future<void> testMain() async {
               'text': 'something',
               'selectionBase': 9,
               'selectionExtent': 9,
-              'composingBase': -1,
-              'composingExtent': -1
+              'composingBase': null,
+              'composingExtent': null
             }
           },
         ],
@@ -1756,8 +1756,8 @@ Future<void> testMain() async {
         'text': 'foo\nbar',
         'selectionBase': 2,
         'selectionExtent': 3,
-        'composingBase': -1,
-        'composingExtent': -1
+        'composingBase': null,
+        'composingExtent': null
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
       checkTextAreaEditingState(textarea, 'foo\nbar', 2, 3);
@@ -1787,8 +1787,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 14,
             'selectionExtent': 14,
-            'composingBase': -1,
-            'composingExtent': -1
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1803,8 +1803,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 2,
             'selectionExtent': 5,
-            'composingBase': -1,
-            'composingExtent': -1
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );

@@ -20,7 +20,7 @@ void main() {
 
 class _MockWithCompositionAwareMixin with CompositionAwareMixin {
   // These variables should be equal to their counterparts in CompositionAwareMixin.
-  // Seperate so the counterparts in CompositionAwareMixin can be private.
+  // Separate so the counterparts in CompositionAwareMixin can be private.
   static const String _kCompositionUpdate = 'compositionupdate';
   static const String _kCompositionStart = 'compositionstart';
   static const String _kCompositionEnd = 'compositionend';
@@ -31,8 +31,8 @@ html.InputElement get _inputElement {
 }
 
 GloballyPositionedTextEditingStrategy _enableEditingStrategy({
-  required bool deltaModel,
-  void Function(EditingState?, TextEditingDeltaState?)? onChange,
+    required bool deltaModel,
+    void Function(EditingState?, TextEditingDeltaState?)? onChange,
   }) {
   final HybridTextEditing owner = HybridTextEditing();
 
@@ -99,7 +99,8 @@ Future<void> testMain() async {
 
         _inputElement.dispatchEvent(html.CompositionEvent(
             _MockWithCompositionAwareMixin._kCompositionUpdate,
-            data: fakeEventText));
+            data: fakeEventText
+        ));
 
         expect(mockWithCompositionAwareMixin.composingText, fakeEventText);
       });
@@ -173,7 +174,8 @@ Future<void> testMain() async {
 
       _inputElement.dispatchEvent(html.CompositionEvent(
           _MockWithCompositionAwareMixin._kCompositionUpdate,
-          data: composingText));
+          data: composingText
+      ));
 
       // Flush editing state (since we did not compositionend).
       _inputElement.dispatchEvent(html.Event.eventType('Event', 'input'));

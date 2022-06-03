@@ -23,17 +23,17 @@ mixin CompositionAwareMixin {
   /// The name of the HTML composition event type that triggers on starting a composition.
   static const String _kCompositionStart = 'compositionstart';
 
-  /// The name of the HTML composition event type that triggers on updating a composition.
+  /// The name of the browser composition event type that triggers on updating a composition.
   static const String _kCompositionUpdate = 'compositionupdate';
 
-  /// The name of the HTML composition event type that triggers on ending a composition.
+  /// The name of the browser composition event type that triggers on ending a composition.
   static const String _kCompositionEnd = 'compositionend';
 
   late final html.EventListener _compositionStartListener = _handleCompositionStart;
   late final html.EventListener _compositionUpdateListener = _handleCompositionUpdate;
   late final html.EventListener _compositionEndListener = _handleCompositionEnd;
 
-  /// The currently composing text in the domElement.
+  /// The currently composing text in the `domElement`.
   ///
   /// Will be null if composing just started, ended, or no composing is being done.
   /// This member is kept up to date provided compositionEventHandlers are in place,
@@ -67,15 +67,7 @@ mixin CompositionAwareMixin {
   }
 
   EditingState determineCompositionState(EditingState editingState) {
-    if (editingState.baseOffset == null) {
-      return editingState;
-    }
-
-    if (composingText == null) {
-      return editingState;
-    }
-
-    if (editingState.text == null) {
+    if (editingState.baseOffset == null || composingText == null || editingState.text == null) {
       return editingState;
     }
 

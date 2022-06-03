@@ -745,8 +745,8 @@ class EditingState {
         'text': text,
         'selectionBase': baseOffset,
         'selectionExtent': extentOffset,
-        'composingBase': composingBaseOffset ?? -1,
-        'composingExtent': composingExtentOffset ?? -1,
+        'composingBase': composingBaseOffset,
+        'composingExtent': composingExtentOffset,
       };
 
   /// The current text being edited.
@@ -769,7 +769,8 @@ class EditingState {
 
   @override
   int get hashCode => Object.hash(
-    text, baseOffset, extentOffset, composingBaseOffset, composingExtentOffset);
+    text, baseOffset, extentOffset, composingBaseOffset, composingExtentOffset
+  );
 
   @override
   bool operator ==(Object other) {
