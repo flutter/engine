@@ -139,7 +139,7 @@ extension DomNodeExtension on DomNode {
   external DomNode? get parentNode;
   external DomNode? get firstChild;
   external DomNode? get lastChild;
-  external DomNode get nextSibling;
+  external DomNode? get nextSibling;
   external DomNode insertBefore(DomNode newNode, DomNode? referenceNode);
   void remove() {
     if (parentNode != null) {
