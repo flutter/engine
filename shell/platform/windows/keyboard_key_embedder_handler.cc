@@ -363,8 +363,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       //   Event       Down        Up        Down      Up
       // Pressed   0          1          0         1
       // Toggled   0          1          1         0
-      const bool true_toggled =
-          get_key_state_(virtual_key) & kStateMaskToggled;
+      const bool true_toggled = get_key_state_(virtual_key) & kStateMaskToggled;
       bool pre_event_toggled = true_toggled;
       // Check if the main event's key is the key being checked. If it's the
       // non-repeat down event, toggle the state.
@@ -382,9 +381,9 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
         }
         // Synchronizing toggle state always ends with the key being pressed.
         pressingRecords_[key_info.physical_key] = key_info.logical_key;
-        SendEvent(SynthesizeSimpleEvent(
-                      kFlutterKeyEventTypeDown, key_info.physical_key,
-                      key_info.logical_key, empty_character),
+        SendEvent(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
+                                        key_info.physical_key,
+                                        key_info.logical_key, empty_character),
                   nullptr, nullptr);
       }
       key_info.toggled_on = true_toggled;
