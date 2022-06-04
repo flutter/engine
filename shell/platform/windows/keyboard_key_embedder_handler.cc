@@ -343,19 +343,19 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
     bool event_is_down) {
   //    NowState ---------------->  PreEventState --------------> TrueState
   //              Synchronization                      Event
-  for (auto& target : critical_keys_) {
-    UINT target_virtual_key = target.first;
-    CriticalKey& target_info = target.second;
-    if (target_info.physical_key == 0) {
+  for (auto& kv : critical_keys_) {
+    UINT virtual_key = kv.first;
+    CriticalKey& key_info = kv.second;
+    if (key_info.physical_key == 0) {
       // Never seen this key.
       continue;
     }
-    assert(target_info.logical_key != 0);
+    assert(key_info.logical_key != 0);
 
     // Check toggling state first, because it might alter pressing state.
-    if (target_info.check_toggled) {
+    if (key_info.check_toggled) {
       const bool target_is_pressed =
-          pressingRecords_.find(target_info.physical_key) !=
+          pressingRecords_.find(key_info.physical_key) !=
           pressingRecords_.end();
       // The togglable keys observe a 4-phase cycle:
       //
@@ -364,30 +364,30 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       // Pressed   0          1          0         1
       // Toggled   0          1          1         0
       const bool true_toggled =
-          get_key_state_(target_virtual_key) & kStateMaskToggled;
+          get_key_state_(virtual_key) & kStateMaskToggled;
       bool pre_event_toggled = true_toggled;
       // Check if the main event's key is the key being checked. If it's the
       // non-repeat down event, toggle the state.
-      if (target_virtual_key == event_virtual_key && !target_is_pressed &&
+      if (virtual_key == event_virtual_key && !target_is_pressed &&
           event_is_down) {
         pre_event_toggled = !pre_event_toggled;
       }
-      if (target_info.toggled_on != pre_event_toggled) {
+      if (key_info.toggled_on != pre_event_toggled) {
         // If the key is pressed, release it first.
         if (target_is_pressed) {
           SendEvent(SynthesizeSimpleEvent(
-                        kFlutterKeyEventTypeUp, target_info.physical_key,
-                        target_info.logical_key, empty_character),
+                        kFlutterKeyEventTypeUp, key_info.physical_key,
+                        key_info.logical_key, empty_character),
                     nullptr, nullptr);
         }
         // Synchronizing toggle state always ends with the key being pressed.
-        pressingRecords_[target_info.physical_key] = target_info.logical_key;
+        pressingRecords_[key_info.physical_key] = key_info.logical_key;
         SendEvent(SynthesizeSimpleEvent(
-                      kFlutterKeyEventTypeDown, target_info.physical_key,
-                      target_info.logical_key, empty_character),
+                      kFlutterKeyEventTypeDown, key_info.physical_key,
+                      key_info.logical_key, empty_character),
                   nullptr, nullptr);
       }
-      target_info.toggled_on = true_toggled;
+      key_info.toggled_on = true_toggled;
     }
   }
 }
