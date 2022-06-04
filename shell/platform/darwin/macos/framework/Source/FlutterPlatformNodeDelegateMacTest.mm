@@ -295,7 +295,7 @@ TEST(FlutterPlatformNodeDelegateMac, TextFieldUsesFlutterTextField) {
             YES);
   // The text of TextInputPlugin only starts syncing editing state to the
   // native text field when it becomes the first responder.
-  [native_text_field becomeFirstResponder];
+  [native_text_field.window makeFirstResponder:native_text_field];
   EXPECT_EQ([native_text_field.stringValue isEqualToString:@"textfield"], YES);
 }
 

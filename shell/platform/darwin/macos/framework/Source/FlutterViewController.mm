@@ -176,13 +176,6 @@ NSData* currentKeyboardLayoutData() {
  */
 @property(nonatomic) id keyUpMonitor;
 
-/**
- * Pointer to a keyboard manager, a hub that manages how key events are
- * dispatched to various Flutter key responders, and whether the event is
- * propagated to the next NSResponder.
- */
-@property(nonatomic) FlutterKeyboardManager* keyboardManager;
-
 @property(nonatomic) KeyboardLayoutNotifier keyboardLayoutNotifier;
 
 @property(nonatomic) NSData* keyboardLayoutData;
@@ -431,10 +424,11 @@ static void CommonInit(FlutterViewController* controller) {
       addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
                                    handler:^NSEvent*(NSEvent* event) {
                                      // Intercept keyUp only for events triggered on the current
-                                     // view.
+                                     // view or textInputPlugin.
+                                     NSResponder* firstResponder = [[event window] firstResponder];
                                      if (weakSelf.viewLoaded && weakSelf.flutterView &&
-                                         ([[event window] firstResponder] ==
-                                          weakSelf.flutterView) &&
+                                         (firstResponder == weakSelf.flutterView ||
+                                          firstResponder == weakSelf.textInputPlugin) &&
                                          ([event modifierFlags] & NSEventModifierFlagCommand) &&
                                          ([event type] == NSEventTypeKeyUp)) {
                                        [weakSelf keyUp:event];
@@ -481,7 +475,6 @@ static void CommonInit(FlutterViewController* controller) {
   // TODO(goderbauer): Seperate keyboard/textinput stuff into ViewController specific and Engine
   // global parts. Move the global parts to FlutterEngine.
   __weak FlutterViewController* weakSelf = self;
-  _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
   _keyboardManager = [[FlutterKeyboardManager alloc] initWithViewDelegate:weakSelf];
 }
 
@@ -738,27 +731,6 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)keyUp:(NSEvent*)event {
   [_keyboardManager handleEvent:event];
-}
-
-- (BOOL)performKeyEquivalent:(NSEvent*)event {
-  [_keyboardManager handleEvent:event];
-  if (event.type == NSEventTypeKeyDown) {
-    // macOS only sends keydown for performKeyEquivalent, but the Flutter framework
-    // always expects a keyup for every keydown. Synthesizes a key up event so that
-    // the Flutter framework continues to work.
-    NSEvent* synthesizedUp = [NSEvent keyEventWithType:NSEventTypeKeyUp
-                                              location:event.locationInWindow
-                                         modifierFlags:event.modifierFlags
-                                             timestamp:event.timestamp
-                                          windowNumber:event.windowNumber
-                                               context:event.context
-                                            characters:event.characters
-                           charactersIgnoringModifiers:event.charactersIgnoringModifiers
-                                             isARepeat:event.isARepeat
-                                               keyCode:event.keyCode];
-    [_keyboardManager handleEvent:synthesizedUp];
-  }
-  return YES;
 }
 
 - (void)flagsChanged:(NSEvent*)event {

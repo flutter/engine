@@ -250,60 +250,6 @@
   return true;
 }
 
-- (bool)testInputContextIsKeptActive {
-  id engineMock = OCMClassMock([FlutterEngine class]);
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
-                                                                                nibName:@""
-                                                                                 bundle:nil];
-
-  FlutterTextInputPlugin* plugin =
-      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
-
-  [plugin handleMethodCall:[FlutterMethodCall
-                               methodCallWithMethodName:@"TextInput.setClient"
-                                              arguments:@[
-                                                @(1), @{
-                                                  @"inputAction" : @"action",
-                                                  @"inputType" : @{@"name" : @"inputName"},
-                                                }
-                                              ]]
-                    result:^(id){
-                    }];
-
-  [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditingState"
-                                                             arguments:@{
-                                                               @"text" : @"",
-                                                               @"selectionBase" : @(0),
-                                                               @"selectionExtent" : @(0),
-                                                               @"composingBase" : @(-1),
-                                                               @"composingExtent" : @(-1),
-                                                             }]
-                    result:^(id){
-                    }];
-
-  [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.show"
-                                                             arguments:@[]]
-                    result:^(id){
-                    }];
-
-  [plugin.inputContext deactivate];
-  EXPECT_EQ(plugin.inputContext.isActive, NO);
-  NSEvent* keyEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown
-                                       location:NSZeroPoint
-                                  modifierFlags:0x100
-                                      timestamp:0
-                                   windowNumber:0
-                                        context:nil
-                                     characters:@""
-                    charactersIgnoringModifiers:@""
-                                      isARepeat:NO
-                                        keyCode:0x50];
-
-  [plugin handleKeyEvent:keyEvent];
-  EXPECT_EQ(plugin.inputContext.isActive, YES);
-  return true;
-}
-
 - (bool)testClearClientDuringComposing {
   // Set up FlutterTextInputPlugin.
   id engineMock = OCMClassMock([FlutterEngine class]);
@@ -1003,10 +949,6 @@ TEST(FlutterTextInputPluginTest, TestSetMarkedTextWithSelectionChange) {
 
 TEST(FlutterTextInputPluginTest, TestComposingRegionRemovedByFramework) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testComposingRegionRemovedByFramework]);
-}
-
-TEST(FlutterTextInputPluginTest, TestTextInputContextIsKeptAlive) {
-  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testInputContextIsKeptActive]);
 }
 
 TEST(FlutterTextInputPluginTest, TestClearClientDuringComposing) {

@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
@@ -17,6 +18,13 @@
  * The text input plugin that handles text editing state for text fields.
  */
 @property(nonatomic, readonly, nonnull) FlutterTextInputPlugin* textInputPlugin;
+
+/**
+ * Pointer to a keyboard manager, a hub that manages how key events are
+ * dispatched to various Flutter key responders, and whether the event is
+ * propagated to the next NSResponder.
+ */
+@property(nonatomic, readonly, nonnull) FlutterKeyboardManager* keyboardManager;
 
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.

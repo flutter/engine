@@ -139,6 +139,12 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 @property(nonatomic) BOOL enableDeltaModel;
 
 /**
+ * When plugin becomes first responder it remembers previous responder,
+ * which will be restored after the plugin is hidden.
+ */
+@property(nonatomic, weak) NSResponder* previousResponder;
+
+/**
  * Handles a Flutter system message on the text input channel.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -262,11 +268,22 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }
   } else if ([method isEqualToString:kShowMethod]) {
+    // Ensure the plugin is in hierarchy.
+    // When accessibility text field becomes first responder AppKit sometimes
+    // removes the plugin from hierarchy.
+    if (_client == nil) {
+      [_flutterViewController.view addSubview:self];
+      if (_previousResponder == nil) {
+        _previousResponder = self.window.firstResponder;
+      }
+      [self.window makeFirstResponder:self];
+    }
     _shown = TRUE;
-    [_textInputContext activate];
   } else if ([method isEqualToString:kHideMethod]) {
+    [self.window makeFirstResponder:_previousResponder];
+    _previousResponder = nil;
+    [self removeFromSuperview];
     _shown = FALSE;
-    [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
     // If there's an active mark region, commit it, end composing, and clear the IME's mark text.
     if (_activeModel && _activeModel->composing()) {
@@ -362,7 +379,9 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (composing_range.collapsed() && wasComposing) {
     [_textInputContext discardMarkedText];
   }
-  [_client becomeFirstResponder];
+  if (_client != nil) {
+    [self.window makeFirstResponder:_client];
+  }
   [self updateTextAndSelection];
 }
 
@@ -464,12 +483,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     return NO;
   }
 
-  // NSTextInputContext sometimes deactivates itself without calling
-  // deactivate. One such example is when the composing region is deleted.
-  // TODO(LongCatIsLooong): put FlutterTextInputPlugin in the view hierarchy and
-  // request/resign first responder when needed. Activate/deactivate shouldn't
-  // be called by the application.
-  [_textInputContext activate];
   return [_textInputContext handleEvent:event];
 }
 
@@ -484,8 +497,18 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   [self.flutterViewController keyUp:event];
 }
 
+// Invoked through NSWindow processing of key down event. This can be either
+// regular event sent from NSApplication with CMD modifier, in which case the
+// event is processed as keyDown, or keyboard manager redispatching the event
+// if nextResponder is NSWindow, in which case the event needs to be ignored,
+// otherwise it will cause endless loop.
 - (BOOL)performKeyEquivalent:(NSEvent*)event {
-  return [self.flutterViewController performKeyEquivalent:event];
+  if (_flutterViewController.keyboardManager.eventBeingDispatched == event) {
+    // This happens with cmd+contorl+space (emoji picker)
+    return NO;
+  }
+  [self.flutterViewController keyDown:event];
+  return YES;
 }
 
 - (void)flagsChanged:(NSEvent*)event {

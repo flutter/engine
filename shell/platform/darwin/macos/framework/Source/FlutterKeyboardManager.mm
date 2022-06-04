@@ -230,6 +230,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
   if (nextResponder == nil) {
     return;
   }
+  _eventBeingDispatched = event;
   switch (event.type) {
     case NSEventTypeKeyDown:
       if ([nextResponder respondsToSelector:@selector(keyDown:)]) {
@@ -249,6 +250,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     default:
       NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
   }
+  _eventBeingDispatched = nil;
 }
 
 - (void)buildLayout {
