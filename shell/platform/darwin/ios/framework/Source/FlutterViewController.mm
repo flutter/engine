@@ -48,8 +48,8 @@ typedef struct MouseState {
 
   // True if flutter::PointerData::Change::kAdd has been sent to Flutter for the hover pointer.
   // Necessary because scroll events are sent using the same pointer identifier as the hover
-  // pointer, so synchronization is needed to ensure the pointer is added to Flutter before sending
-  // any events.
+  // pointer, so the state of the gesture recognizer in either scrollEvent: or hoverEvent: is not
+  // sufficient to tell whether an add event should be dispatched.
   BOOL hover_pointer_is_added = NO;
 
   // Last reported translation for an in-flight pan gesture in physical device pixels.
@@ -71,16 +71,21 @@ typedef struct MouseState {
 @property(nonatomic, retain) CADisplayLink* displayLink;
 
 /*
- * Trackpad gesture recognizers
+ * Mouse and trackpad gesture recognizers
  */
+// Mouse and trackpad hover
 @property(nonatomic, retain)
     UIHoverGestureRecognizer* hoverGestureRecognizer API_AVAILABLE(ios(13.4));
+// Mouse wheel scrolling
 @property(nonatomic, retain)
-    UIPanGestureRecognizer* discretePanGestureRecognizer API_AVAILABLE(ios(13.4));
+    UIPanGestureRecognizer* discreteScrollingPanGestureRecognizer API_AVAILABLE(ios(13.4));
+// Trackpad and Magic Mouse scrolling
 @property(nonatomic, retain)
-    UIPanGestureRecognizer* continuousPanGestureRecognizer API_AVAILABLE(ios(13.4));
+    UIPanGestureRecognizer* continuousScrollingPanGestureRecognizer API_AVAILABLE(ios(13.4));
+// Trackpad pinching
 @property(nonatomic, retain)
     UIPinchGestureRecognizer* pinchGestureRecognizer API_AVAILABLE(ios(13.4));
+// Trackpad rotating
 @property(nonatomic, retain)
     UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
 
@@ -692,26 +697,25 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     _hoverGestureRecognizer.delegate = self;
     [_flutterView.get() addGestureRecognizer:_hoverGestureRecognizer];
 
-    _discretePanGestureRecognizer =
+    _discreteScrollingPanGestureRecognizer =
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(scrollEvent:)];
-    _discretePanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskDiscrete;
-    _discretePanGestureRecognizer.allowedTouchTypes = @[];
-    _discretePanGestureRecognizer.delegate = self;
-    [_flutterView.get() addGestureRecognizer:_discretePanGestureRecognizer];
-    _continuousPanGestureRecognizer =
+    _discreteScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskDiscrete;
+    _discreteScrollingPanGestureRecognizer.allowedTouchTypes = @[];
+    _discreteScrollingPanGestureRecognizer.delegate = self;
+    [_flutterView.get() addGestureRecognizer:_discreteScrollingPanGestureRecognizer];
+    _continuousScrollingPanGestureRecognizer =
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panEvent:)];
-    _continuousPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskContinuous;
-    _continuousPanGestureRecognizer.allowedTouchTypes = @[];
-    _continuousPanGestureRecognizer.delegate = self;
-    [_flutterView.get() addGestureRecognizer:_continuousPanGestureRecognizer];
+    _continuousScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskContinuous;
+    _continuousScrollingPanGestureRecognizer.allowedTouchTypes = @[];
+    _continuousScrollingPanGestureRecognizer.delegate = self;
+    [_flutterView.get() addGestureRecognizer:_continuousScrollingPanGestureRecognizer];
     _pinchGestureRecognizer =
         [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchEvent:)];
-    _pinchGestureRecognizer.allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
+    _pinchGestureRecognizer.allowedTouchTypes = @[];
     _pinchGestureRecognizer.delegate = self;
     [_flutterView.get() addGestureRecognizer:_pinchGestureRecognizer];
-    _rotationGestureRecognizer =
-        [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(rotationEvent:)];
-    _rotationGestureRecognizer.allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
+    _rotationGestureRecognizer = [[UIRotationGestureRecognizer alloc] init];
+    _rotationGestureRecognizer.allowedTouchTypes = @[];
     _rotationGestureRecognizer.delegate = self;
     [_flutterView.get() addGestureRecognizer:_rotationGestureRecognizer];
   }
@@ -844,10 +848,10 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   _scrollView.get().delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   [_hoverGestureRecognizer release];
-  _discretePanGestureRecognizer.delegate = nil;
-  [_discretePanGestureRecognizer release];
-  _continuousPanGestureRecognizer.delegate = nil;
-  [_continuousPanGestureRecognizer release];
+  _discreteScrollingPanGestureRecognizer.delegate = nil;
+  [_discreteScrollingPanGestureRecognizer release];
+  _continuousScrollingPanGestureRecognizer.delegate = nil;
+  [_continuousScrollingPanGestureRecognizer release];
   _pinchGestureRecognizer.delegate = nil;
   [_pinchGestureRecognizer release];
   _rotationGestureRecognizer.delegate = nil;
@@ -1818,12 +1822,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
-- (flutter::PointerData)generateDataForHoverPointer API_AVAILABLE(ios(13.4)) {
+- (flutter::PointerData)generateDataForHoverPointerWithDeviceKind:
+    (flutter::PointerData::DeviceKind)deviceKind API_AVAILABLE(ios(13.4)) {
   flutter::PointerData pointer_data;
 
   pointer_data.Clear();
 
-  pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
+  pointer_data.kind = deviceKind;
   switch (_hoverGestureRecognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kAdd;
@@ -1862,7 +1867,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGFloat scale = [UIScreen mainScreen].scale;
   _mouseState.location = {location.x * scale, location.y * scale};
 
-  flutter::PointerData pointer_data = [self generateDataForHoverPointer];
+  flutter::PointerData pointer_data =
+      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kMouse];
 
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
   packet->SetPointerData(/*index=*/0, pointer_data);
@@ -1881,7 +1887,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   auto packet =
       std::make_unique<flutter::PointerDataPacket>(_mouseState.hover_pointer_is_added ? 1 : 2);
 
-  flutter::PointerData pointer_data = [self generateDataForHoverPointer];
+  flutter::PointerData pointer_data =
+      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kMouse];
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
   pointer_data.scroll_delta_x = (translation.x - _mouseState.last_translation.x);
   pointer_data.scroll_delta_y = -(translation.y - _mouseState.last_translation.y);
@@ -1917,8 +1924,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   translation.x *= scale;
   translation.y *= scale;
 
-  flutter::PointerData pointer_data = [self generateDataForHoverPointer];
-  pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  flutter::PointerData pointer_data =
+      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kTrackpad];
   // Ensure that different touches have different devices.
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   switch (recognizer.state) {
@@ -1953,8 +1960,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pinchEvent:(UIPinchGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
 
-  flutter::PointerData pointer_data = [self generateDataForHoverPointer];
-  pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  flutter::PointerData pointer_data =
+      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kMouse];
   switch (recognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
@@ -1978,11 +1985,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-}
-
-- (void)rotationEvent:(UIRotationGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  // UIKit requires an action selector, but the rotation data are already queried in
-  // pinchEvent:
 }
 
 #pragma mark - State Restoration
