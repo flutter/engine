@@ -5,26 +5,86 @@
 #include "impeller/display_list/display_list_dispatcher.h"
 
 #include <optional>
+#include <unordered_map>
 
+#include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_path_effect.h"
+#include "display_list/display_list_tile_mode.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/vertices.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
+
 #include "third_party/skia/include/core/SkColor.h"
 
 namespace impeller {
 
 #define UNIMPLEMENTED \
-  FML_LOG(ERROR) << "Unimplemented detail in " << __FUNCTION__;
+  FML_DLOG(ERROR) << "Unimplemented detail in " << __FUNCTION__;
 
 DisplayListDispatcher::DisplayListDispatcher() = default;
 
 DisplayListDispatcher::~DisplayListDispatcher() = default;
+
+static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
+  // TODO(100086): Implement remaining advanced blends.
+  switch (mode) {
+    case flutter::DlBlendMode::kClear:
+      return Entity::BlendMode::kClear;
+    case flutter::DlBlendMode::kSrc:
+      return Entity::BlendMode::kSource;
+    case flutter::DlBlendMode::kDst:
+      return Entity::BlendMode::kDestination;
+    case flutter::DlBlendMode::kSrcOver:
+      return Entity::BlendMode::kSourceOver;
+    case flutter::DlBlendMode::kDstOver:
+      return Entity::BlendMode::kDestinationOver;
+    case flutter::DlBlendMode::kSrcIn:
+      return Entity::BlendMode::kSourceIn;
+    case flutter::DlBlendMode::kDstIn:
+      return Entity::BlendMode::kDestinationIn;
+    case flutter::DlBlendMode::kSrcOut:
+      return Entity::BlendMode::kSourceOut;
+    case flutter::DlBlendMode::kDstOut:
+      return Entity::BlendMode::kDestinationOut;
+    case flutter::DlBlendMode::kSrcATop:
+      return Entity::BlendMode::kSourceATop;
+    case flutter::DlBlendMode::kDstATop:
+      return Entity::BlendMode::kDestinationATop;
+    case flutter::DlBlendMode::kXor:
+      return Entity::BlendMode::kXor;
+    case flutter::DlBlendMode::kPlus:
+      return Entity::BlendMode::kPlus;
+    case flutter::DlBlendMode::kModulate:
+      return Entity::BlendMode::kModulate;
+    case flutter::DlBlendMode::kScreen:
+      return Entity::BlendMode::kScreen;
+    case flutter::DlBlendMode::kColorBurn:
+      return Entity::BlendMode::kColorBurn;
+    case flutter::DlBlendMode::kOverlay:
+    case flutter::DlBlendMode::kDarken:
+    case flutter::DlBlendMode::kLighten:
+    case flutter::DlBlendMode::kColorDodge:
+    case flutter::DlBlendMode::kHardLight:
+    case flutter::DlBlendMode::kSoftLight:
+    case flutter::DlBlendMode::kDifference:
+    case flutter::DlBlendMode::kExclusion:
+    case flutter::DlBlendMode::kMultiply:
+    case flutter::DlBlendMode::kHue:
+    case flutter::DlBlendMode::kSaturation:
+    case flutter::DlBlendMode::kColor:
+    case flutter::DlBlendMode::kLuminosity:
+      return std::nullopt;
+  }
+  FML_UNREACHABLE();
+}
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setAntiAlias(bool aa) {
@@ -165,10 +225,28 @@ void DisplayListDispatcher::setColorFilter(
   // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
     // Reset everything
+    paint_.color_filter = std::nullopt;
     return;
   }
   switch (filter->type()) {
-    case flutter::DlColorFilterType::kBlend:
+    case flutter::DlColorFilterType::kBlend: {
+      auto dl_blend = filter->asBlend();
+
+      auto blend_mode = ToBlendMode(dl_blend->mode());
+      if (!blend_mode.has_value()) {
+        // TODO(100086): Implement remaining advanced blends.
+        UNIMPLEMENTED;
+        blend_mode = Entity::BlendMode::kSourceOver;
+      }
+
+      auto color = ToColor(dl_blend->color());
+
+      paint_.color_filter = [blend_mode = blend_mode.value(),
+                             color](FilterInput::Ref input) {
+        return FilterContents::MakeBlend(blend_mode, {input}, color);
+      };
+      return;
+    }
     case flutter::DlColorFilterType::kMatrix:
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
@@ -181,59 +259,6 @@ void DisplayListDispatcher::setColorFilter(
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setInvertColors(bool invert) {
   UNIMPLEMENTED;
-}
-
-static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
-  switch (mode) {
-    case flutter::DlBlendMode::kClear:
-      return Entity::BlendMode::kClear;
-    case flutter::DlBlendMode::kSrc:
-      return Entity::BlendMode::kSource;
-    case flutter::DlBlendMode::kDst:
-      return Entity::BlendMode::kDestination;
-    case flutter::DlBlendMode::kSrcOver:
-      return Entity::BlendMode::kSourceOver;
-    case flutter::DlBlendMode::kDstOver:
-      return Entity::BlendMode::kDestinationOver;
-    case flutter::DlBlendMode::kSrcIn:
-      return Entity::BlendMode::kSourceIn;
-    case flutter::DlBlendMode::kDstIn:
-      return Entity::BlendMode::kDestinationIn;
-    case flutter::DlBlendMode::kSrcOut:
-      return Entity::BlendMode::kSourceOut;
-    case flutter::DlBlendMode::kDstOut:
-      return Entity::BlendMode::kDestinationOut;
-    case flutter::DlBlendMode::kSrcATop:
-      return Entity::BlendMode::kSourceATop;
-    case flutter::DlBlendMode::kDstATop:
-      return Entity::BlendMode::kDestinationATop;
-    case flutter::DlBlendMode::kXor:
-      return Entity::BlendMode::kXor;
-    case flutter::DlBlendMode::kPlus:
-      return Entity::BlendMode::kPlus;
-    case flutter::DlBlendMode::kModulate:
-      return Entity::BlendMode::kModulate;
-    case flutter::DlBlendMode::kScreen:
-      return Entity::BlendMode::kScreen;
-    case flutter::DlBlendMode::kColorBurn:
-      return Entity::BlendMode::kColorBurn;
-    case flutter::DlBlendMode::kOverlay:
-    case flutter::DlBlendMode::kDarken:
-    case flutter::DlBlendMode::kLighten:
-    case flutter::DlBlendMode::kColorDodge:
-    case flutter::DlBlendMode::kHardLight:
-    case flutter::DlBlendMode::kSoftLight:
-    case flutter::DlBlendMode::kDifference:
-    case flutter::DlBlendMode::kExclusion:
-    case flutter::DlBlendMode::kMultiply:
-    case flutter::DlBlendMode::kHue:
-    case flutter::DlBlendMode::kSaturation:
-    case flutter::DlBlendMode::kColor:
-    case flutter::DlBlendMode::kLuminosity:
-      return std::nullopt;
-  }
-
-  return std::nullopt;
 }
 
 // |flutter::Dispatcher|
@@ -275,14 +300,23 @@ static FilterContents::BlurStyle ToBlurStyle(SkBlurStyle blur_style) {
 void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
   // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
-    paint_.mask_blur = std::nullopt;
+    paint_.mask_filter = std::nullopt;
     return;
   }
   switch (filter->type()) {
     case flutter::DlMaskFilterType::kBlur: {
       auto blur = filter->asBlur();
-      paint_.mask_blur = {.blur_style = ToBlurStyle(blur->style()),
-                          .sigma = FilterContents::Sigma(blur->sigma())};
+
+      auto style = ToBlurStyle(blur->style());
+      auto sigma = FilterContents::Sigma(blur->sigma());
+
+      paint_.mask_filter = [style, sigma](FilterInput::Ref input,
+                                          bool is_solid_color) {
+        if (is_solid_color) {
+          return FilterContents::MakeGaussianBlur(input, sigma, sigma, style);
+        }
+        return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style);
+      };
       break;
     }
     case flutter::DlMaskFilterType::kUnknown:
@@ -294,7 +328,32 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setImageFilter(
     const flutter::DlImageFilter* filter) {
-  UNIMPLEMENTED;
+  switch (filter->type()) {
+    case flutter::DlImageFilterType::kBlur: {
+      auto blur = filter->asBlur();
+      auto sigma_x = FilterContents::Sigma(blur->sigma_x());
+      auto sigma_y = FilterContents::Sigma(blur->sigma_y());
+
+      if (blur->tile_mode() != flutter::DlTileMode::kClamp) {
+        // TODO(105072): Implement tile mode for blur filter.
+        UNIMPLEMENTED;
+      }
+
+      paint_.image_filter = [sigma_x, sigma_y](FilterInput::Ref input) {
+        return FilterContents::MakeGaussianBlur(input, sigma_x, sigma_y);
+      };
+
+      break;
+    }
+    case flutter::DlImageFilterType::kDilate:
+    case flutter::DlImageFilterType::kErode:
+    case flutter::DlImageFilterType::kMatrix:
+    case flutter::DlImageFilterType::kComposeFilter:
+    case flutter::DlImageFilterType::kColorFilter:
+    case flutter::DlImageFilterType::kUnknown:
+      UNIMPLEMENTED;
+      break;
+  }
 }
 
 // |flutter::Dispatcher|
@@ -480,14 +539,76 @@ static Path ToPath(const SkPath& path) {
         break;
     }
   } while (verb != SkPath::Verb::kDone_Verb);
-  // TODO: Convert fill types.
-  return builder.TakePath();
+
+  FillType fill_type;
+  switch (path.getFillType()) {
+    case SkPathFillType::kWinding:
+      fill_type = FillType::kNonZero;
+      break;
+    case SkPathFillType::kEvenOdd:
+      fill_type = FillType::kOdd;
+      break;
+    case SkPathFillType::kInverseWinding:
+    case SkPathFillType::kInverseEvenOdd:
+      // TODO(104848): Support the inverse winding modes.
+      UNIMPLEMENTED;
+      fill_type = FillType::kNonZero;
+      break;
+  }
+  return builder.TakePath(fill_type);
 }
 
 static Path ToPath(const SkRRect& rrect) {
   return PathBuilder{}
       .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
       .TakePath();
+}
+
+static Vertices ToVertices(const flutter::DlVertices* vertices) {
+  std::vector<Point> points;
+  std::vector<uint16_t> indices;
+  std::vector<Color> colors;
+  for (int i = 0; i < vertices->vertex_count(); i++) {
+    auto point = vertices->vertices()[i];
+    points.push_back(Point(point.x(), point.y()));
+  }
+  for (int i = 0; i < vertices->index_count(); i++) {
+    auto index = vertices->indices()[i];
+    indices.push_back(index);
+  }
+
+  auto* dl_colors = vertices->colors();
+  if (dl_colors != nullptr) {
+    auto color_length = vertices->index_count() > 0 ? vertices->index_count()
+                                                    : vertices->vertex_count();
+    for (int i = 0; i < color_length; i++) {
+      auto dl_color = dl_colors[i];
+      colors.push_back({
+          dl_color.getRedF(),
+          dl_color.getGreenF(),
+          dl_color.getBlueF(),
+          dl_color.getAlphaF(),
+      });
+    }
+  }
+  VertexMode mode;
+  switch (vertices->mode()) {
+    case flutter::DlVertexMode::kTriangles:
+      mode = VertexMode::kTriangle;
+      break;
+    case flutter::DlVertexMode::kTriangleStrip:
+      mode = VertexMode::kTriangleStrip;
+      break;
+    case flutter::DlVertexMode::kTriangleFan:
+      FML_DLOG(ERROR) << "Unimplemented vertex mode TriangleFan in "
+                      << __FUNCTION__;
+      mode = VertexMode::kTriangle;
+      break;
+  }
+
+  auto bounds = vertices->bounds();
+  return Vertices(std::move(points), std::move(indices), std::move(colors),
+                  mode, ToRect(bounds));
 }
 
 // |flutter::Dispatcher|
@@ -501,7 +622,7 @@ void DisplayListDispatcher::clipRRect(const SkRRect& rrect,
 void DisplayListDispatcher::clipPath(const SkPath& path,
                                      SkClipOp clip_op,
                                      bool is_aa) {
-  canvas_.ClipPath(ToPath(path));
+  canvas_.ClipPath(ToPath(path), ToClipOperation(clip_op));
 }
 
 // |flutter::Dispatcher|
@@ -592,9 +713,12 @@ void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
-                                         flutter::DlBlendMode mode) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
+                                         flutter::DlBlendMode dl_mode) {
+  if (auto mode = ToBlendMode(dl_mode); mode.has_value()) {
+    canvas_.DrawVertices(ToVertices(vertices), mode.value(), paint_);
+  } else {
+    FML_DLOG(ERROR) << "Unimplemented blend mode in " << __FUNCTION__;
+  }
 }
 
 // |flutter::Dispatcher|

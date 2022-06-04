@@ -9,44 +9,60 @@ import errno
 import os
 import struct
 
+
 def MakeDirectories(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
+  try:
+    os.makedirs(path)
+  except OSError as exc:
+    if exc.errno == errno.EEXIST and os.path.isdir(path):
+      pass
+    else:
+      raise
+
 
 # Dump the bytes of file into a C translation unit.
 # This can be used to embed the file contents into a binary.
 def Main():
   parser = argparse.ArgumentParser()
-  parser.add_argument("--symbol-name",
-                    type=str, required=True,
-                    help="The name of the symbol referencing the data.")
-  parser.add_argument("--output-header",
-                    type=str, required=True,
-                    help="The header file containing the symbol reference.")
-  parser.add_argument("--output-source",
-                    type=str, required=True,
-                    help="The source file containing the file bytes.")
-  parser.add_argument("--source",
-                    type=str, required=True,
-                    help="The source file whose contents to embed in the output source file.")
+  parser.add_argument(
+      "--symbol-name",
+      type=str,
+      required=True,
+      help="The name of the symbol referencing the data."
+  )
+  parser.add_argument(
+      "--output-header",
+      type=str,
+      required=True,
+      help="The header file containing the symbol reference."
+  )
+  parser.add_argument(
+      "--output-source",
+      type=str,
+      required=True,
+      help="The source file containing the file bytes."
+  )
+  parser.add_argument(
+      "--source",
+      type=str,
+      required=True,
+      help="The source file whose contents to embed in the output source file."
+  )
 
   args = parser.parse_args()
 
-  assert(os.path.exists(args.source))
+  assert (os.path.exists(args.source))
 
   output_header = os.path.abspath(args.output_header)
   output_source = os.path.abspath(args.output_source)
+  output_header_basename = output_header[output_header.rfind('/') + 1:]
 
   MakeDirectories(os.path.dirname(output_header))
   MakeDirectories(os.path.dirname(output_source))
 
   with open(args.source, "rb") as source, open(output_source, "w") as output:
     data_len = 0
+    output.write(f"#include \"{output_header_basename}\"\n")
     output.write(f"const unsigned char impeller_{args.symbol_name}_data[] =\n")
     output.write("{\n")
     while True:
@@ -56,7 +72,9 @@ def Main():
       data_len += 1
       output.write(f"{ord(byte)},")
     output.write("};\n")
-    output.write(f"const unsigned long impeller_{args.symbol_name}_length = {data_len};\n")
+    output.write(
+        f"const unsigned long impeller_{args.symbol_name}_length = {data_len};\n"
+    )
 
   with open(output_header, "w") as output:
     output.write("#pragma once\n")
@@ -64,12 +82,17 @@ def Main():
     output.write("extern \"C\" {\n")
     output.write("#endif\n\n")
 
-    output.write(f"extern unsigned char impeller_{args.symbol_name}_data[];\n")
-    output.write(f"extern unsigned long impeller_{args.symbol_name}_length;\n\n")
+    output.write(
+        f"extern const unsigned char impeller_{args.symbol_name}_data[];\n"
+    )
+    output.write(
+        f"extern const unsigned long impeller_{args.symbol_name}_length;\n\n"
+    )
 
     output.write("#ifdef __cplusplus\n")
     output.write("}\n")
     output.write("#endif\n")
+
 
 if __name__ == '__main__':
   Main()

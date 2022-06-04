@@ -51,7 +51,18 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
       handle_(reactor_->CreateHandle(ToHandleType(type_))),
       is_wrapped_(is_wrapped) {
+  // Ensure the texture descriptor itself is valid.
   if (!GetTextureDescriptor().IsValid()) {
+    VALIDATION_LOG << "Invalid texture descriptor.";
+    return;
+  }
+  // Ensure the texture doesn't exceed device capabilities.
+  const auto tex_size = GetTextureDescriptor().size;
+  const auto max_size =
+      reactor_->GetProcTable().GetCapabilities()->max_texture_size;
+  if (tex_size.Max(max_size) != max_size) {
+    VALIDATION_LOG << "Texture of size " << tex_size
+                   << " would exceed max supported size of " << max_size << ".";
     return;
   }
   is_valid_ = true;
@@ -68,11 +79,8 @@ bool TextureGLES::IsValid() const {
 }
 
 // |Texture|
-void TextureGLES::SetLabel(const std::string_view& label) {
-  label_ = std::string{label.data(), label.size()};
-  if (contents_initialized_) {
-    reactor_->SetDebugLabel(handle_, label_);
-  }
+void TextureGLES::SetLabel(std::string_view label) {
+  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
 }
 
 struct TexImage2DData {
@@ -247,9 +255,6 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
   };
 
   contents_initialized_ = reactor_->AddOperation(texture_upload);
-  if (contents_initialized_) {
-    reactor_->SetDebugLabel(handle_, label_);
-  }
   return contents_initialized_;
 }
 
@@ -339,10 +344,20 @@ void TextureGLES::InitializeContentsIfNecessary() const {
                                size.height                    // height
         );
       }
-
       break;
   }
-  reactor_->SetDebugLabel(handle_, label_);
+}
+
+static std::optional<GLenum> ToTextureTarget(TextureType type) {
+  switch (type) {
+    case TextureType::kTexture2D:
+      return GL_TEXTURE_2D;
+    case TextureType::kTexture2DMultisample:
+      return std::nullopt;
+    case TextureType::kTextureCube:
+      return GL_TEXTURE_CUBE_MAP;
+  }
+  FML_UNREACHABLE();
 }
 
 bool TextureGLES::Bind() const {
@@ -355,9 +370,14 @@ bool TextureGLES::Bind() const {
   }
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
-    case Type::kTexture:
-      gl.BindTexture(GL_TEXTURE_2D, handle.value());
-      break;
+    case Type::kTexture: {
+      const auto target = ToTextureTarget(GetTextureDescriptor().type);
+      if (!target.has_value()) {
+        VALIDATION_LOG << "Could not bind texture of this type.";
+        return false;
+      }
+      gl.BindTexture(target.value(), handle.value());
+    } break;
     case Type::kRenderBuffer:
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
       break;
@@ -410,6 +430,17 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
       break;
   }
   return true;
+}
+
+// |Texture|
+Scalar TextureGLES::GetYCoordScale() const {
+  switch (GetIntent()) {
+    case TextureIntent::kUploadFromHost:
+      return 1.0;
+    case TextureIntent::kRenderToTexture:
+      return -1.0;
+  }
+  FML_UNREACHABLE();
 }
 
 }  // namespace impeller

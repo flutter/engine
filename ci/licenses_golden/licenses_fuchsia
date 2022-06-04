@@ -1,4 +1,4 @@
-Signature: 3894957145231c8129129920751d023c
+Signature: 5a6727cd91feca90b9e8ff50e611f23e
 
 UNUSED LICENSES:
 
@@ -421,6 +421,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
@@ -456,7 +457,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
@@ -1176,6 +1176,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
@@ -1211,7 +1212,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
@@ -1828,6 +1828,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
@@ -1863,7 +1864,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
@@ -2489,7 +2489,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/central.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/camera.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/manager.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/cobalt.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.data/data.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.developer.tiles/tiles.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/encoded_image.fidl
@@ -3095,7 +3094,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/client.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/server.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/peripheral.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/types_deprecated.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/cobalt_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/presentation_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio_capturer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/buffer.fidl
@@ -3611,6 +3609,12 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/optional_nullable.dart + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/optional_nullable.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/realm_builder.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/error.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/internal/local_component.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/internal/local_component_runner.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/local_component_handles.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/realm_builder.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/overview.fidl
@@ -3625,7 +3629,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/overview.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/resolved.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/overview.fidl

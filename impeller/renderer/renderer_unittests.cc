@@ -76,7 +76,8 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     cmd.BindVertices(vertex_buffer);
 
     VS::UniformBuffer uniforms;
-    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   Matrix::MakeScale(GetContentScale());
     VS::BindUniformBuffer(cmd,
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
@@ -158,6 +159,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
       for (size_t j = 0; j < 1; j++) {
         VS::UniformBuffer uniforms;
         uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                       Matrix::MakeScale(GetContentScale()) *
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
         VS::BindUniformBuffer(
             cmd, pass.GetTransientsBuffer().EmplaceUniform(uniforms));
@@ -324,7 +326,8 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     VS::BindInstanceInfo(
@@ -338,12 +341,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
 }
 #endif  // IMPELLER_ENABLE_METAL
 
-#if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, TheImpeller) {
-  if (GetBackend() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_(
-        "The shader fails to link in the GLES backend for some reason.");
-  }
   using VS = ImpellerVertexShader;
   using FS = ImpellerFragmentShader;
 
@@ -391,11 +389,11 @@ TEST_P(RendererTest, TheImpeller) {
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
 
-    FS::FrameInfo fs_uniform;
+    FS::FragInfo fs_uniform;
     fs_uniform.texture_size = Point(size);
     fs_uniform.time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
-    FS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
     FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
 
@@ -404,7 +402,6 @@ TEST_P(RendererTest, TheImpeller) {
   };
   OpenPlaygroundHere(callback);
 }
-#endif
 
 }  // namespace testing
 }  // namespace impeller

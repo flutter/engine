@@ -932,6 +932,8 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.gitignore' &&
             entry.name != '.vscode' &&
             entry.name != 'javatests' &&
+            entry.name != 'fixtures' &&
+            entry.name != 'playground' &&
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
             entry.name != 'test_runner' &&
@@ -1842,6 +1844,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'mockito' // only used by tests
         && entry.name != 'pymock' // presumably only used by tests
         && entry.name != 'pyyaml' // build-time dependency only
+        && entry.name != 'yapf'  // only used for code formatting
         && entry.name != 'android_embedding_dependencies' // testing framework for android
         && entry.name != 'yasm' // build-time dependency only
         && entry.name != 'binutils' // build-time dependency only

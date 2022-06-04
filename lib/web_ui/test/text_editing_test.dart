@@ -353,7 +353,7 @@ Future<void> testMain() async {
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
 
-    test('Does not trigger input action in multi-line mode', () {
+    test('Triggers input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
         inputType: EngineInputType.multiline,
         inputAction: 'TextInputAction.done',
@@ -373,8 +373,8 @@ Future<void> testMain() async {
         keyCode: _kReturnKeyCode,
       );
 
-      // Still no input action.
-      expect(lastInputAction, isNull);
+      // Input action is triggered!
+      expect(lastInputAction, 'TextInputAction.done');
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
@@ -1551,7 +1551,9 @@ Future<void> testMain() async {
           <String, dynamic>{
             'text': 'something',
             'selectionBase': 9,
-            'selectionExtent': 9
+            'selectionExtent': 9,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1575,7 +1577,9 @@ Future<void> testMain() async {
           <String, dynamic>{
             'text': 'something',
             'selectionBase': 2,
-            'selectionExtent': 5
+            'selectionExtent': 5,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1631,6 +1635,8 @@ Future<void> testMain() async {
                 'deltaEnd': -1,
                 'selectionBase': 2,
                 'selectionExtent': 5,
+                'composingBase': null,
+                'composingExtent': null
               }
             ],
           }
@@ -1709,7 +1715,9 @@ Future<void> testMain() async {
             hintForFirstElement: <String, dynamic>{
               'text': 'something',
               'selectionBase': 9,
-              'selectionExtent': 9
+              'selectionExtent': 9,
+              'composingBase': null,
+              'composingExtent': null
             }
           },
         ],
@@ -1748,6 +1756,8 @@ Future<void> testMain() async {
         'text': 'foo\nbar',
         'selectionBase': 2,
         'selectionExtent': 3,
+        'composingBase': null,
+        'composingExtent': null
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
       checkTextAreaEditingState(textarea, 'foo\nbar', 2, 3);
@@ -1777,6 +1787,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 14,
             'selectionExtent': 14,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1791,6 +1803,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 2,
             'selectionExtent': 5,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1903,7 +1917,7 @@ Future<void> testMain() async {
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
 
-    test('does not send input action in multi-line mode', () {
+    test('sends input action in multi-line mode', () {
       showKeyboard(
         inputType: 'multiline',
         inputAction: 'TextInputAction.next',
@@ -1915,8 +1929,14 @@ Future<void> testMain() async {
         keyCode: _kReturnKeyCode,
       );
 
-      // No input action and no platform message have been sent.
-      expect(spy.messages, isEmpty);
+      // Input action is sent as a platform message.
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.performAction');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[clientId, 'TextInputAction.next'],
+      );
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
@@ -2269,21 +2289,32 @@ Future<void> testMain() async {
       expect(_editingState.extentOffset, 2);
     });
 
-    test('Compare two editing states', () {
-      final InputElement input = defaultTextEditingRoot.querySelector('input')! as InputElement;
-      input.value = 'Test';
-      input.selectionStart = 1;
-      input.selectionEnd = 2;
+    group('comparing editing states', () {
+      test('From dom element', () {
+        final InputElement input = defaultTextEditingRoot.querySelector('input')! as InputElement;
+        input.value = 'Test';
+        input.selectionStart = 1;
+        input.selectionEnd = 2;
 
-      final EditingState editingState1 = EditingState.fromDomElement(input);
-      final EditingState editingState2 = EditingState.fromDomElement(input);
+        final EditingState editingState1 = EditingState.fromDomElement(input);
+        final EditingState editingState2 = EditingState.fromDomElement(input);
 
-      input.setSelectionRange(1, 3);
+        input.setSelectionRange(1, 3);
 
-      final EditingState editingState3 = EditingState.fromDomElement(input);
+        final EditingState editingState3 = EditingState.fromDomElement(input);
 
-      expect(editingState1 == editingState2, isTrue);
-      expect(editingState1 != editingState3, isTrue);
+        expect(editingState1 == editingState2, isTrue);
+        expect(editingState1 != editingState3, isTrue);
+      });
+
+      test('takes composition range into account', () {
+          final EditingState editingState1 = EditingState(composingBaseOffset: 1, composingExtentOffset: 2);
+          final EditingState editingState2 = EditingState(composingBaseOffset: 1, composingExtentOffset: 2);
+          final EditingState editingState3 = EditingState(composingBaseOffset: 4, composingExtentOffset: 8);
+
+          expect(editingState1, editingState2);
+          expect(editingState1, isNot(editingState3));
+      });
     });
   });
 

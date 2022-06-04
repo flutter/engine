@@ -37,6 +37,15 @@ static std::string GLESShaderNameToShaderKeyName(const std::string& name,
     case ShaderStage::kFragment:
       stream << "_fragment_";
       break;
+    case ShaderStage::kTessellationControl:
+      stream << "_tessellation_control_";
+      break;
+    case ShaderStage::kTessellationEvaluation:
+      stream << "_tessellation_evaluation_";
+      break;
+    case ShaderStage::kCompute:
+      stream << "_compute_";
+      break;
   }
   stream << "main";
   return stream.str();
@@ -85,7 +94,7 @@ bool ShaderLibraryGLES::IsValid() const {
 
 // |ShaderLibrary|
 std::shared_ptr<const ShaderFunction> ShaderLibraryGLES::GetFunction(
-    const std::string_view& name,
+    std::string_view name,
     ShaderStage stage) {
   const auto key = ShaderKey{name, stage};
   if (auto found = functions_.find(key); found != functions_.end()) {
