@@ -50,6 +50,15 @@ NSResponder* mockResponder() {
 }
 }  // namespace
 
+TEST(FlutterViewController, SetsEngine) {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  EXPECT_EQ(viewController.engine, engineMock);
+}
+
 TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   FlutterViewController* viewControllerMock = CreateMockViewController();
 
