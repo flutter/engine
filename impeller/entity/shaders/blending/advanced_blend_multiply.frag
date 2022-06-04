@@ -2,13 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "advanced_blend_utils.glsl"
-
 vec3 Blend(vec3 dst, vec3 src) {
-  vec3 color = min(vec3(1), dst / (1 - src));
-  color = mix(color, vec3(0), ComponentIsValue(dst, 0.0));
-  color = mix(color, vec3(1), ComponentIsValue(src, 1.0));
-  return color;
+  return dst * src;
 }
 
 #include "advanced_blend.glsl"

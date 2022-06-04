@@ -16,6 +16,7 @@ impeller_shaders("entity_shaders") {
     "shaders/blending/advanced_blend_exclusion.frag",
     "shaders/blending/advanced_blend_hardlight.frag",
     "shaders/blending/advanced_blend_lighten.frag",
+    "shaders/blending/advanced_blend_multiply.frag",
     "shaders/blending/advanced_blend_overlay.frag",
     "shaders/blending/advanced_blend_screen.frag",
     "shaders/blending/advanced_blend_softlight.frag",

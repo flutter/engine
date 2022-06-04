@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 vec3 ComponentIsValue(vec3 n, float value) {
-  return vec3(n.r == value, n.g == value, n.b == value);
+  vec3 diff = abs(n - value);
+  return vec3(diff.r < 0.0001, diff.g < 0.0001, diff.b < 0.0001);
 }
 
 vec3 MixComponents(vec3 a, vec3 b, vec3 weight, float cutoff) {
