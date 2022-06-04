@@ -172,7 +172,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   //
   // Key events are formed in tap sequences: down, repeats, up. The logical key
   // stays consistent throughout a tap sequence, which is this value.
-  uint64_t sequence_logical_key = had_record ? last_logical_record : logical_key;
+  uint64_t sequence_logical_key =
+      had_record ? last_logical_record : logical_key;
 
   if (sequence_logical_key == VK_PROCESSKEY) {
     // VK_PROCESSKEY means that the key press is used by an IME. These key
@@ -362,7 +363,8 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       //   Event       Down        Up        Down      Up
       // Pressed   0          1          0         1
       // Toggled   0          1          1         0
-      const bool true_toggled = get_key_state_(target_virtual_key) & kStateMaskToggled;
+      const bool true_toggled =
+          get_key_state_(target_virtual_key) & kStateMaskToggled;
       bool pre_event_toggled = true_toggled;
       // Check if the main event's key is the key being checked. If it's the
       // non-repeat down event, toggle the state.
@@ -380,9 +382,9 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
         }
         // Synchronizing toggle state always ends with the key being pressed.
         pressingRecords_[target_info.physical_key] = target_info.logical_key;
-        SendEvent(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
-                                        target_info.physical_key,
-                                        target_info.logical_key, empty_character),
+        SendEvent(SynthesizeSimpleEvent(
+                      kFlutterKeyEventTypeDown, target_info.physical_key,
+                      target_info.logical_key, empty_character),
                   nullptr, nullptr);
       }
       target_info.toggled_on = true_toggled;
@@ -447,10 +449,9 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
         }
         const char* empty_character = "";
         SendEvent(
-            SynthesizeSimpleEvent(now_pressed ? kFlutterKeyEventTypeUp
-                                                   : kFlutterKeyEventTypeDown,
-                                  key_info.physical_key, key_info.logical_key,
-                                  empty_character),
+            SynthesizeSimpleEvent(
+                now_pressed ? kFlutterKeyEventTypeUp : kFlutterKeyEventTypeDown,
+                key_info.physical_key, key_info.logical_key, empty_character),
             nullptr, nullptr);
       }
     }
