@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 vec3 Blend(vec3 dst, vec3 src) {
+  // https://www.w3.org/TR/compositing-1/#blendingexclusion
   return dst + src - 2 * dst * src;
 }
 

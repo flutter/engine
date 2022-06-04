@@ -5,6 +5,8 @@
 #include "advanced_blend_utils.glsl"
 
 vec3 Blend(vec3 dst, vec3 src) {
+  // https://www.w3.org/TR/compositing-1/#blendingsoftlight
+
   vec3 D = MixComponents(((16 * dst - 12) * dst + 4) * dst,  //
                          sqrt(dst),                          //
                          dst,                                //
