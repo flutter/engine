@@ -497,14 +497,17 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   [self.flutterViewController keyUp:event];
 }
 
-// Invoked through NSWindow processing of key down event. This can be either
-// regular event sent from NSApplication with CMD modifier, in which case the
-// event is processed as keyDown, or keyboard manager redispatching the event
-// if nextResponder is NSWindow, in which case the event needs to be ignored,
-// otherwise it will cause endless loop.
 - (BOOL)performKeyEquivalent:(NSEvent*)event {
   if (_flutterViewController.keyboardManager.eventBeingDispatched == event) {
-    // This happens with cmd+contorl+space (emoji picker)
+    // When NSWindow is nextResponder, keyboard manager will send to it
+    // unhandled events (through [NSWindow keyDown:]). If event has has both
+    // control and cmd modifiers set (i.e. cmd+control+space - emoji picker)
+    // NSWindow will then send this event as performKeyEquivalent: to first
+    // responder, which is FlutterTextInputPlugin. If that's the case, the
+    // plugin must not handle the event, otherwise the emoji picker would not
+    // work (due to first responder returning YES from performKeyEquivalent:)
+    // and there would be endless loop, because FlutterViewController will
+    // send the event back to [keyboardManager handleEvent:].
     return NO;
   }
   [self.flutterViewController keyDown:event];
