@@ -504,10 +504,6 @@ static char markerKey;
                                                              : kTextAffinityDownstream;
 }
 
-- (BOOL)isComposing {
-  return _activeModel && !_activeModel->composing_range().collapsed();
-}
-
 - (BOOL)handleKeyEvent:(NSEvent*)event {
   if (event.type == NSEventTypeKeyUp ||
       (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
