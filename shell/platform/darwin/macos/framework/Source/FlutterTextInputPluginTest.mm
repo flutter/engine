@@ -863,6 +863,61 @@
   return true;
 }
 
+- (bool)testPerformKeyEquivalent {
+  __block NSEvent* eventBeingDispatchedByKeyboardManager = nil;
+  id keyboardManagerMock = OCMClassMock([FlutterKeyboardManager class]);
+  OCMStub([keyboardManagerMock eventBeingDispatched]).andDo(^(NSInvocation* invocation) {
+    [invocation setReturnValue:&eventBeingDispatchedByKeyboardManager];
+  });
+  FlutterViewController* viewControllerMock = OCMClassMock([FlutterViewController class]);
+  OCMStub([viewControllerMock keyboardManager]).andReturn(keyboardManagerMock);
+
+  NSEvent* event = [NSEvent keyEventWithType:NSEventTypeKeyDown
+                                    location:NSZeroPoint
+                               modifierFlags:0x100
+                                   timestamp:0
+                                windowNumber:0
+                                     context:nil
+                                  characters:@""
+                 charactersIgnoringModifiers:@""
+                                   isARepeat:NO
+                                     keyCode:0x50];
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewControllerMock];
+
+  OCMExpect([viewControllerMock keyDown:event]);
+
+  // Require that event is handled (returns YES)
+  if (![plugin performKeyEquivalent:event]) {
+    return false;
+  };
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        [viewControllerMock keyDown:event]);
+  } @catch (...) {
+    return false;
+  }
+
+  // performKeyEquivalent must not forward event if it is being
+  // dispatched by keyboard manager
+  eventBeingDispatchedByKeyboardManager = event;
+
+  OCMReject([viewControllerMock keyDown:event]);
+  @try {
+    // Require that event is not handled (returns NO) and not
+    // forwarded to controller
+    if ([plugin performKeyEquivalent:event]) {
+      return false;
+    };
+  } @catch (...) {
+    return false;
+  }
+
+  return true;
+}
+
 - (bool)testLocalTextAndSelectionUpdateAfterDelta {
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
@@ -977,6 +1032,10 @@ TEST(FlutterTextInputPluginTest, testComposingWithDeltasWhenSelectionIsActive) {
 
 TEST(FlutterTextInputPluginTest, TestLocalTextAndSelectionUpdateAfterDelta) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testLocalTextAndSelectionUpdateAfterDelta]);
+}
+
+TEST(FlutterTextInputPluginTest, TestPerformKeyEquivalent) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testPerformKeyEquivalent]);
 }
 
 TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
