@@ -230,6 +230,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
   if (nextResponder == nil) {
     return;
   }
+  NSAssert(_eventBeingDispatched == nil, @"An event is already being dispached.");
   _eventBeingDispatched = event;
   switch (event.type) {
     case NSEventTypeKeyDown:
@@ -250,6 +251,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     default:
       NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
   }
+  NSAssert(_eventBeingDispatched != nil, @"_eventBeingDispatched was cleared unexpectedly.");
   _eventBeingDispatched = nil;
 }
 
