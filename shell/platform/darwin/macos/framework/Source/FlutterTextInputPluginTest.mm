@@ -1075,4 +1075,40 @@ TEST(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
   EXPECT_EQ([textField becomeFirstResponder], NO);
 }
 
+TEST(FlutterTextInputPluginTest, IsAddedAndRemovedFromViewHierarchy) {
+  FlutterEngine* engine = CreateTestEngine();
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  [engine setViewController:viewController];
+
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+
+  ASSERT_EQ(viewController.textInputPlugin.superview, nil);
+  ASSERT_FALSE(window.firstResponder == viewController.textInputPlugin);
+
+  [viewController.textInputPlugin
+      handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.show" arguments:@[]]
+                result:^(id){
+                }];
+
+  ASSERT_EQ(viewController.textInputPlugin.superview, viewController.view);
+  ASSERT_TRUE(window.firstResponder == viewController.textInputPlugin);
+
+  [viewController.textInputPlugin
+      handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.hide" arguments:@[]]
+                result:^(id){
+                }];
+
+  ASSERT_EQ(viewController.textInputPlugin.superview, nil);
+  ASSERT_FALSE(window.firstResponder == viewController.textInputPlugin);
+}
+
 }  // namespace flutter::testing
