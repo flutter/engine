@@ -262,7 +262,7 @@ class HtmlViewEmbedder {
   ) {
     DomNode? headClipViewNextSibling;
     bool headClipViewWasAttached = false;
-    if (headClipView.parentElement != null) {
+    if (headClipView.parentNode != null) {
       headClipViewWasAttached = true;
       headClipViewNextSibling = headClipView.nextSibling;
       headClipView.remove();
