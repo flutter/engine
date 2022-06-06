@@ -488,4 +488,30 @@ void main() {
     // The tester is using a mock GrDirectContext, so the actual image color
     // data returned is not real and cannot be tested here.
   });
+
+  test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
+    // Regression test for https://github.com/flutter/flutter/issues/97172
+    bool assertsEnabled = false;
+    assert(() {
+      assertsEnabled = true;
+      return true;
+    }());
+
+    Object? error;
+    try {
+      await toImage((Canvas canvas) {
+        final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+        builder.addText('Woodstock!');
+        final Paragraph woodstock = builder.build();
+        canvas.drawParagraph(woodstock, const Offset(0, 50));
+      }, 100, 100);
+    } catch (e) {
+      error = e;
+    }
+    if (assertsEnabled) {
+      expect(error, isNotNull);
+    } else {
+      expect(error, isNull);
+    }
+  });
 }
