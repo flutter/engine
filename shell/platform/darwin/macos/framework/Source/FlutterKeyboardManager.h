@@ -42,7 +42,7 @@
 /**
  * The event currently being redispatched.
  *
- * In some instances (i.e. emoji shortcut) the event may redelivered by cocoa
+ * In some instances (i.e. emoji shortcut) the event may be redelivered by cocoa
  * as key equivalent to FlutterTextInput, in which case it shouldn't be
  * processed again.
  */
