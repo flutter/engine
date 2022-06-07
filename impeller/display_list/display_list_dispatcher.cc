@@ -380,11 +380,8 @@ void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::SaveLayerOptions options,
                                       const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
-  if (backdrop) {
-    canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
-  } else {
-    canvas_.SaveLayer(paint, ToRect(bounds));
-  }
+  canvas_.SaveLayer(paint, ToRect(bounds),
+                    backdrop ? ToImageFilterProc(backdrop) : std::nullopt);
 }
 
 // |flutter::Dispatcher|
