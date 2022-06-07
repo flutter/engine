@@ -595,6 +595,8 @@ TEST_P(AiksTest, ColorWheel) {
     }
   };
 
+  std::shared_ptr<Image> color_wheel;
+
   bool first_frame = true;
   auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
     if (first_frame) {
@@ -621,22 +623,42 @@ TEST_P(AiksTest, ColorWheel) {
     }
     ImGui::End();
 
-    Canvas canvas;
-    canvas.Scale(GetContentScale());
-    Paint paint;
-    // Default blend is kSourceOver.
-    paint.color = Color::White();
-    canvas.DrawPaint(paint);
+    static Point content_scale;
+    Point new_content_scale = GetContentScale();
 
+    if (new_content_scale != content_scale) {
+      content_scale = new_content_scale;
+
+      // Render the color wheel to an image.
+
+      Canvas canvas;
+      canvas.Scale(content_scale);
+
+      canvas.Translate(Vector2(500, 400));
+      canvas.Scale(Vector2(3, 3));
+
+      draw_color_wheel(canvas);
+      auto color_wheel_picture = canvas.EndRecordingAsPicture();
+      color_wheel = color_wheel_picture.RenderToImage(renderer);
+
+      if (!color_wheel) {
+        return false;
+      }
+    }
+
+    Canvas canvas;
+    canvas.DrawPaint({.color = Color::White()});
+    canvas.DrawImage(color_wheel, Point(), Paint());
+
+    canvas.Scale(content_scale);
     canvas.Translate(Vector2(500, 400));
     canvas.Scale(Vector2(3, 3));
-
-    draw_color_wheel(canvas);
 
     // Draw 3 circles to a subpass and blend it in.
     canvas.SaveLayer({.color = Color::White().WithAlpha(alpha),
                       .blend_mode = blend_mode_values[current_blend_index]});
     {
+      Paint paint;
       paint.blend_mode = Entity::BlendMode::kPlus;
       const Scalar x = std::sin(k2Pi / 3);
       const Scalar y = -std::cos(k2Pi / 3);
