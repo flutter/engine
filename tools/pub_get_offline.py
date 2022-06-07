@@ -15,9 +15,7 @@ import subprocess
 import sys
 
 SRC_ROOT = os.path.dirname(
-    os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))
-    )
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 ENGINE_DIR = os.path.join(SRC_ROOT, 'flutter')
 
@@ -78,21 +76,19 @@ def CheckPackage(package):
 
 
 def Main():
-  dart_sdk_bin = os.path.join(SRC_ROOT,
-      "third_party", "dart", "tools", "sdks", "dart-sdk", "bin")
+  dart_sdk_bin = os.path.join(
+      SRC_ROOT, "third_party", "dart", "tools", "sdks", "dart-sdk", "bin"
+  )
   dart = "dart"
   if os.name == "nt":
     dart = "dart.exe"
-  pubcmd = [
-      os.path.join(dart_sdk_bin, dart), "pub", "get", "--offline"
-  ]
+  pubcmd = [os.path.join(dart_sdk_bin, dart), "pub", "get", "--offline"]
 
   pub_count = 0
   for package in ALL_PACKAGES:
-    package_path = os.path.join(engine_src, ".." , package)
-    if FetchPackage(pubcmd, package_path) != 0:
+    if FetchPackage(pubcmd, package) != 0:
       return 1
-    pub_count = pub_count + CheckPackage(package_path)
+    pub_count = pub_count + CheckPackage(package)
 
   if pub_count > 0:
     return 1
