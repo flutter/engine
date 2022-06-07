@@ -38,5 +38,6 @@ part 'platform_dispatcher.dart';
 part 'plugins.dart';
 part 'pointer.dart';
 part 'semantics.dart';
+part 'services.dart';
 part 'text.dart';
 part 'window.dart';

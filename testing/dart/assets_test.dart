@@ -4,14 +4,13 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 
 void main() {
-  test('Loading an asset that does not exist returns null', () async {
+  test('Loading an asset that does not exist from ImmutableBuffer throws an exception', () async {
     Object? error;
     try {
       await ImmutableBuffer.fromAsset('ThisDoesNotExist');
@@ -22,7 +21,24 @@ void main() {
     expect(error is Exception, true);
   });
 
-  test('returns the bytes of a bundled asset', () async {
+  test('Loading an asset that does not exist from AssetManager throws an exception', () async {
+    Object? error;
+    try {
+      await loadAsset('ThisDoesNotExist');
+    } catch (err) {
+      error = err;
+    }
+    expect(error, isNotNull);
+    expect(error is Exception, true);
+  });
+
+  test('Returns the bytes of a bundled asset from AssetManager', () async {
+    final ByteData buffer = await loadAsset('DashInNooglerHat.jpg');
+
+    expect(buffer.lengthInBytes == 354679, true);
+  });
+
+  test('returns the bytes of a bundled asset from ImmutableBuffer', () async {
     final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
 
     expect(buffer.length == 354679, true);

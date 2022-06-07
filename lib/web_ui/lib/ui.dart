@@ -32,6 +32,7 @@ part 'path_metrics.dart';
 part 'platform_dispatcher.dart';
 part 'pointer.dart';
 part 'semantics.dart';
+part 'services.dart';
 part 'text.dart';
 part 'tile_mode.dart';
 part 'window.dart';
