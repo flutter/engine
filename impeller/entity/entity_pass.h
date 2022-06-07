@@ -14,6 +14,7 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
+#include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -64,28 +65,6 @@ class EntityPass {
   std::optional<Rect> GetElementsCoverage() const;
 
  private:
-  class EntityPassContext {
-   public:
-    EntityPassContext(std::shared_ptr<Context> context, RenderTarget render_target);
-    ~EntityPassContext();
-
-    bool IsValid() const;
-    bool IsActive() const;
-    std::shared_ptr<Texture> GetTexture();
-    bool EndPass();
-    RenderTarget GetRenderTarget() const;
-    std::shared_ptr<RenderPass> GetRenderPass(uint32_t pass_depth);
-
-   private:
-    std::shared_ptr<Context> context_;
-    RenderTarget render_target_;
-    std::shared_ptr<CommandBuffer> command_buffer_;
-    std::shared_ptr<RenderPass> pass_;
-    uint32_t pass_count_ = 0;
-
-    FML_DISALLOW_COPY_AND_ASSIGN(EntityPassContext);
-  };
-
   struct EntityResult {
     /// @brief  The resulting entity that should be rendered. If `std::nullopt`,
     ///         there is nothing to render.
@@ -101,7 +80,7 @@ class EntityPass {
 
   EntityResult GetElementEntity(const EntityPass::Element& element,
                                 ContentContext& renderer,
-                                EntityPassContext& pass_context,
+                                InlinePassContext& pass_context,
                                 Point position,
                                 uint32_t pass_depth,
                                 size_t stencil_depth_floor) const;

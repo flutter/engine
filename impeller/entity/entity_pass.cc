@@ -15,6 +15,7 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/inline_pass_context.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/allocator.h"
 #include "impeller/renderer/command.h"
@@ -179,101 +180,10 @@ bool EntityPass::Render(ContentContext& renderer,
   return OnRender(renderer, render_target, Point(), 0);
 }
 
-EntityPass::EntityPassContext::EntityPassContext(
-    std::shared_ptr<Context> context,
-    RenderTarget render_target)
-    : context_(context), render_target_(render_target) {}
-
-EntityPass::EntityPassContext::~EntityPassContext() {
-  EndPass();
-}
-
-bool EntityPass::EntityPassContext::IsValid() const {
-  return !render_target_.GetColorAttachments().empty();
-}
-
-bool EntityPass::EntityPassContext::IsActive() const {
-  return pass_ != nullptr;
-}
-
-std::shared_ptr<Texture> EntityPass::EntityPassContext::GetTexture() {
-  if (!IsValid()) {
-    return nullptr;
-  }
-  auto color0 = render_target_.GetColorAttachments().find(0)->second;
-  return color0.resolve_texture ? color0.resolve_texture : color0.texture;
-}
-
-bool EntityPass::EntityPassContext::EndPass() {
-  if (!IsActive()) {
-    return true;
-  }
-
-  if (!pass_->EncodeCommands(context_->GetTransientsAllocator())) {
-    return false;
-  }
-
-  if (!command_buffer_->SubmitCommands()) {
-    return false;
-  }
-
-  pass_ = nullptr;
-  command_buffer_ = nullptr;
-
-  return true;
-}
-
-RenderTarget EntityPass::EntityPassContext::GetRenderTarget() const {
-  return render_target_;
-}
-
-std::shared_ptr<RenderPass> EntityPass::EntityPassContext::GetRenderPass(
-    uint32_t pass_depth) {
-  // Create a new render pass if one isn't active.
-  if (!IsActive()) {
-    command_buffer_ = context_->CreateRenderCommandBuffer();
-    if (!command_buffer_) {
-      return nullptr;
-    }
-
-    command_buffer_->SetLabel(
-        "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
-        " Count=" + std::to_string(pass_count_));
-
-    // Never clear the texture for subsequent passes.
-    if (pass_count_ > 0) {
-      if (!render_target_.GetColorAttachments().empty()) {
-        auto color0 = render_target_.GetColorAttachments().find(0)->second;
-        color0.load_action = LoadAction::kLoad;
-        render_target_.SetColorAttachment(color0, 0);
-      }
-
-      if (auto stencil = render_target_.GetStencilAttachment();
-          stencil.has_value()) {
-        stencil->load_action = LoadAction::kLoad;
-        render_target_.SetStencilAttachment(stencil.value());
-      }
-    }
-
-    pass_ = command_buffer_->CreateRenderPass(render_target_);
-    if (!pass_) {
-      return nullptr;
-    }
-
-    pass_->SetLabel(
-        "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
-        " Count=" + std::to_string(pass_count_));
-
-    ++pass_count_;
-  }
-
-  return pass_;
-}
-
 EntityPass::EntityResult EntityPass::GetElementEntity(
     const EntityPass::Element& element,
     ContentContext& renderer,
-    EntityPassContext& pass_context,
+    InlinePassContext& pass_context,
     Point position,
     uint32_t pass_depth,
     size_t stencil_depth_floor) const {
@@ -395,7 +305,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  EntityPassContext pass_context(context, render_target);
+  InlinePassContext pass_context(context, render_target);
   if (!pass_context.IsValid()) {
     return false;
   }
