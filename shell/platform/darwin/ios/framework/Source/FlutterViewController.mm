@@ -46,11 +46,9 @@ typedef struct MouseState {
   // Current coordinate of the mouse cursor in physical device pixels.
   CGPoint location = CGPointZero;
 
-  // True if flutter::PointerData::Change::kAdd has been sent to Flutter for the hover pointer.
-  // Necessary because scroll events are sent using the same pointer identifier as the hover
-  // pointer, so the state of the gesture recognizer in either scrollEvent: or hoverEvent: is not
-  // sufficient to tell whether an add event should be dispatched.
-  BOOL hover_pointer_is_added = NO;
+  // True if flutter::PointerData::Change::kAdd has been sent to Flutter for the discrete scrolling
+  // pointer.
+  BOOL discrete_scroll_pointer_added = NO;
 
   // Last reported translation for an in-flight pan gesture in physical device pixels.
   CGPoint last_translation = CGPointZero;
@@ -698,13 +696,14 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     [_flutterView.get() addGestureRecognizer:_hoverGestureRecognizer];
 
     _discreteScrollingPanGestureRecognizer =
-        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(scrollEvent:)];
+        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(discreteScrollEvent:)];
     _discreteScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskDiscrete;
     _discreteScrollingPanGestureRecognizer.allowedTouchTypes = @[];
     _discreteScrollingPanGestureRecognizer.delegate = self;
     [_flutterView.get() addGestureRecognizer:_discreteScrollingPanGestureRecognizer];
     _continuousScrollingPanGestureRecognizer =
-        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panEvent:)];
+        [[UIPanGestureRecognizer alloc] initWithTarget:self
+                                                action:@selector(continuousScrollEvent:)];
     _continuousScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskContinuous;
     _continuousScrollingPanGestureRecognizer.allowedTouchTypes = @[];
     _continuousScrollingPanGestureRecognizer.delegate = self;
@@ -1822,13 +1821,30 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
-- (flutter::PointerData)generateDataForHoverPointerWithDeviceKind:
-    (flutter::PointerData::DeviceKind)deviceKind API_AVAILABLE(ios(13.4)) {
+- (flutter::PointerData)generatePointerDataAtLastMouseLocation API_AVAILABLE(ios(13.4)) {
   flutter::PointerData pointer_data;
-
   pointer_data.Clear();
+  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
+  pointer_data.physical_x = _mouseState.location.x;
+  pointer_data.physical_y = _mouseState.location.y;
+  return pointer_data;
+}
 
-  pointer_data.kind = deviceKind;
+- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
+    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer
+    API_AVAILABLE(ios(13.4)) {
+  return YES;
+}
+
+- (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+  CGPoint location = [recognizer locationInView:self.view];
+  CGFloat scale = [UIScreen mainScreen].scale;
+  _mouseState.location = {location.x * scale, location.y * scale};
+
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
+
   switch (_hoverGestureRecognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kAdd;
@@ -1846,49 +1862,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       pointer_data.change = flutter::PointerData::Change::kHover;
       break;
   }
-  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
-  pointer_data.device = reinterpret_cast<int64_t>(_hoverGestureRecognizer);
 
-  pointer_data.physical_x = _mouseState.location.x;
-  pointer_data.physical_y = _mouseState.location.y;
-
-  return pointer_data;
-}
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
-    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer
-    API_AVAILABLE(ios(13.4)) {
-  return YES;
-}
-
-- (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  CGPoint location = [recognizer locationInView:self.view];
-  CGFloat scale = [UIScreen mainScreen].scale;
-  _mouseState.location = {location.x * scale, location.y * scale};
-
-  flutter::PointerData pointer_data =
-      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kMouse];
-
-  pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
   packet->SetPointerData(/*index=*/0, pointer_data);
-
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-  _mouseState.hover_pointer_is_added = pointer_data.change != flutter::PointerData::Change::kRemove;
 }
 
-- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+- (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   CGPoint translation = [recognizer translationInView:self.view];
   const CGFloat scale = [UIScreen mainScreen].scale;
 
   translation.x *= scale;
   translation.y *= scale;
 
-  auto packet =
-      std::make_unique<flutter::PointerDataPacket>(_mouseState.hover_pointer_is_added ? 1 : 2);
-
-  flutter::PointerData pointer_data =
-      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kMouse];
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
   pointer_data.scroll_delta_x = (translation.x - _mouseState.last_translation.x);
   pointer_data.scroll_delta_y = -(translation.y - _mouseState.last_translation.y);
@@ -1903,39 +1892,36 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     _mouseState.last_translation = CGPointZero;
   }
 
-  if (_mouseState.hover_pointer_is_added) {
+  auto packet = std::make_unique<flutter::PointerDataPacket>(
+      _mouseState.discrete_scroll_pointer_added ? 1 : 2);
+  if (_mouseState.discrete_scroll_pointer_added) {
     packet->SetPointerData(/*index=*/0, pointer_data);
   } else {
     flutter::PointerData add_pointer_data = pointer_data;
     add_pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
     add_pointer_data.change = flutter::PointerData::Change::kAdd;
-    _mouseState.hover_pointer_is_added = true;
     packet->SetPointerData(/*index=*/0, add_pointer_data);
     packet->SetPointerData(/*index=*/1, pointer_data);
+    _mouseState.discrete_scroll_pointer_added = YES;
   }
-
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
-- (void)panEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+- (void)continuousScrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   CGPoint translation = [recognizer translationInView:self.view];
   const CGFloat scale = [UIScreen mainScreen].scale;
 
-  translation.x *= scale;
-  translation.y *= scale;
-
-  flutter::PointerData pointer_data =
-      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kTrackpad];
-  // Ensure that different touches have different devices.
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
   switch (recognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
       break;
     case UIGestureRecognizerStateChanged:
       pointer_data.change = flutter::PointerData::Change::kPanZoomUpdate;
-      pointer_data.pan_x = translation.x;
-      pointer_data.pan_y = translation.y;
+      pointer_data.pan_x = translation.x * scale;
+      pointer_data.pan_y = translation.y * scale;
       pointer_data.pan_delta_x = 0;  // Delta will be generated in pointer_data_packet_converter.cc.
       pointer_data.pan_delta_y = 0;  // Delta will be generated in pointer_data_packet_converter.cc.
       pointer_data.scale = 1;
@@ -1945,7 +1931,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       pointer_data.change = flutter::PointerData::Change::kPanZoomEnd;
       break;
     default:
-      // panEvent: should only ever be triggered with the above phases
+      // continuousScrollEvent: should only ever be triggered with the above phases
       NSAssert(false, @"Trackpad pan event occured with unexpected phase 0x%lx",
                (long)recognizer.state);
       break;
@@ -1953,15 +1939,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
   packet->SetPointerData(/*index=*/0, pointer_data);
-
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
 - (void)pinchEvent:(UIPinchGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-
-  flutter::PointerData pointer_data =
-      [self generateDataForHoverPointerWithDeviceKind:flutter::PointerData::DeviceKind::kMouse];
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
   switch (recognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
@@ -1982,8 +1966,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       break;
   }
 
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
   packet->SetPointerData(/*index=*/0, pointer_data);
-
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
