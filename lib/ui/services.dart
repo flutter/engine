@@ -5,7 +5,8 @@
 // @dart = 2.12
 part of dart.ui;
 
-/// Create a buffer from the asset with key [assetKey].
+/// Create a [ByteData] containing the contents of the asset with key
+/// [assetKey].
 ///
 /// Throws an [Exception] if the asset does not exist.
 Future<ByteData> loadAsset(String assetKey) {

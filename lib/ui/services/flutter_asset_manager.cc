@@ -43,6 +43,10 @@ void FlutterAssetManager::loadAsset(Dart_NativeArguments args) {
                                                     ->client()
                                                     ->GetAssetManager();
   std::unique_ptr<fml::Mapping> data = asset_manager->GetAsMapping(asset_name);
+  if (data == nullptr) {
+    Dart_SetReturnValue(args, tonic::ToDart("Asset not found"));
+    return;
+  }
 
   Dart_Handle byte_buffer =
       tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
