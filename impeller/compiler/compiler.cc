@@ -138,8 +138,14 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
     case TargetPlatform::kFlutterSPIRV:
+      // With any optimization level above 'zero' enabled, shaderc will emit
+      // ops that are not supported by the Engine's SPIR-V -> SkSL transpiler.
+      // In particular, with 'shaderc_optimization_level_size' enabled, it will
+      // generate OpPhi (opcode 245) for test 246_OpLoopMerge.frag instead of
+      // the OpLoopMerge op expected by that test.
+      // See: https://github.com/flutter/flutter/issues/105396.
       spirv_options.SetOptimizationLevel(
-          shaderc_optimization_level::shaderc_optimization_level_size);
+          shaderc_optimization_level::shaderc_optimization_level_zero);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_opengl,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
@@ -204,7 +210,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
     return;
   }
 
-  // MSL Generation.
+  // SL Generation.
   spirv_cross::Parser parser(spv_result_->cbegin(),
                              spv_result_->cend() - spv_result_->cbegin());
   // The parser and compiler must be run separately because the parser contains
@@ -225,7 +231,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
       std::make_shared<std::string>(sl_compiler.GetCompiler()->compile());
 
   if (!sl_string_) {
-    COMPILER_ERROR << "Could not generate MSL from SPIRV";
+    COMPILER_ERROR << "Could not generate SL from SPIRV";
     return;
   }
 

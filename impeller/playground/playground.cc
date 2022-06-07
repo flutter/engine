@@ -11,7 +11,7 @@
 #include "impeller/renderer/command_buffer.h"
 
 #define GLFW_INCLUDE_NONE
-#import "third_party/glfw/include/GLFW/glfw3.h"
+#include "third_party/glfw/include/GLFW/glfw3.h"
 
 #include "flutter/fml/paths.h"
 #include "flutter/testing/testing.h"
@@ -148,6 +148,10 @@ Point Playground::GetCursorPosition() const {
 
 ISize Playground::GetWindowSize() const {
   return window_size_;
+}
+
+Point Playground::GetContentScale() const {
+  return impl_->GetContentScale();
 }
 
 void Playground::SetCursorPosition(Point pos) {
@@ -342,8 +346,7 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   }
   texture->SetLabel(fixture_name);
 
-  auto uploaded = texture->SetContents(image->GetAllocation()->GetMapping(),
-                                       image->GetAllocation()->GetSize());
+  auto uploaded = texture->SetContents(image->GetAllocation());
   if (!uploaded) {
     VALIDATION_LOG << "Could not upload texture to device memory for fixture "
                    << fixture_name;

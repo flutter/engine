@@ -1,4 +1,4 @@
-Signature: 418a1c95b72a139a5bff997a84758fa4
+Signature: 11b568dda316906c42684b9f87a94126
 
 UNUSED LICENSES:
 
@@ -1182,6 +1182,9 @@ FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_xlib.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_xlib_xrandr.h
 FILE: ../../../third_party/fuchsia-vulkan/registry/validusage.json
 FILE: ../../../third_party/fuchsia-vulkan/registry/vk.xml
+FILE: ../../../third_party/khronos/EGL/egl.h
+FILE: ../../../third_party/khronos/EGL/eglext.h
+FILE: ../../../third_party/khronos/EGL/eglplatform.h
 FILE: ../../../third_party/khronos/GLES2/gl2platform.h
 FILE: ../../../third_party/khronos/GLES3/gl3platform.h
 FILE: ../../../third_party/libwebp/gradlew
@@ -2116,37 +2119,6 @@ FILE: ../../../third_party/khronos/GLES2/gl2ext.h
 FILE: ../../../third_party/khronos/GLES3/gl3.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013-2018 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-LIBRARY: khronos
-ORIGIN: ../../../third_party/angle/include/GLES/glext.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/GLES/glext.h
-FILE: ../../../third_party/khronos/EGL/egl.h
-FILE: ../../../third_party/khronos/EGL/eglext.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013-2017 The Khronos Group Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and/or associated documentation files (the
@@ -3376,6 +3348,34 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
+ORIGIN: ../../../third_party/angle/include/GLES/glext.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/angle/include/GLES/glext.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2013-2017 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 ====================================================================================================
 
 ====================================================================================================
@@ -9982,6 +9982,10 @@ ORIGIN: ../../../third_party/dart/benchmarks/AsyncLiveVars/dart/AsyncLiveVars.da
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/AsyncLiveVars/dart/AsyncLiveVars.dart
 FILE: ../../../third_party/dart/benchmarks/AsyncLiveVars/dart2/AsyncLiveVars.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateBaseOverhead/dart/IsolateBaseOverhead.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateBaseOverhead/dart2/IsolateBaseOverhead.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSendExit/dart/IsolateSendExitLatency.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSendExit/dart2/IsolateSendExitLatency.dart
 FILE: ../../../third_party/dart/benchmarks/Iterators/dart/Iterators.dart
 FILE: ../../../third_party/dart/benchmarks/Iterators/dart/data.dart
 FILE: ../../../third_party/dart/benchmarks/Iterators/dart2/Iterators.dart
@@ -10000,7 +10004,10 @@ FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.h
 FILE: ../../../third_party/dart/runtime/vm/instructions.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_names.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/runtime_metrics.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_util_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/synced/embedded_names.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart
@@ -10252,8 +10259,8 @@ FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/bindings/types.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/collections/closable_iterator.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/database.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/rti.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/recipe_syntax.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/rti.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/synced/recipe_syntax.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_dynamic_library_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_type_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_patch.dart
@@ -10435,6 +10442,8 @@ FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson350KB/dart2/laten
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart/latency.dart
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart2/EventLoopLatencyRegexp.dart
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart2/latency.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSendExit/dart/latency.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSendExit/dart2/latency.dart
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart2/ListCopy.dart
 FILE: ../../../third_party/dart/benchmarks/MD5/dart/md5.dart
@@ -10681,7 +10690,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/debugge
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/developer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/d8.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/jsshell.js
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/async_await_error_codes.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/async_await_error_codes.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/async_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/compact_hash.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/developer.dart
@@ -12511,7 +12520,7 @@ FILE: ../../../third_party/dart/runtime/vm/unibrow.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/d8.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/jsshell.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/linked_hash_map.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/embedded_names.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/embedded_names.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/convert_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/lib_prefix.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/profiler.dart
@@ -18507,11 +18516,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -18520,6 +18536,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18634,11 +18652,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -18647,6 +18672,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18771,11 +18798,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -18784,6 +18818,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -18903,11 +18939,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -18916,6 +18959,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19034,11 +19079,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -19047,6 +19099,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19170,11 +19224,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -19183,6 +19244,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19302,11 +19365,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -19315,6 +19385,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19433,11 +19505,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -19446,6 +19525,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19535,11 +19616,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -19548,6 +19636,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19639,11 +19729,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -19652,6 +19749,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -19810,11 +19909,18 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/AliasDataBuilder-readAlias.patch
+FILE: ../../../third_party/icu/patches/DateIntervalFormatnormalizeHourMetacharacters.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound.patch
+FILE: ../../../third_party/icu/patches/calendar-get-out-of-bound2.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/collationdatabuilder.patch
 FILE: ../../../third_party/icu/patches/configure.patch
+FILE: ../../../third_party/icu/patches/cxx20enum.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
 FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
@@ -19823,6 +19929,8 @@ FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/rmATOMIC_VAR_INIT.patch
+FILE: ../../../third_party/icu/patches/timezone-rawoffset.patch
 FILE: ../../../third_party/icu/patches/unused-var-unary-operators.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -21742,34 +21850,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: khronos
-ORIGIN: ../../../third_party/khronos/EGL/eglplatform.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/khronos/EGL/eglplatform.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2007-2016 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: khronos
 ORIGIN: ../../../third_party/khronos/GLES3/gl31.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/khronos/GLES3/gl31.h
@@ -21830,6 +21910,7 @@ LIBRARY: khronos
 ORIGIN: ../../../third_party/khronos/LICENSE
 TYPE: LicenseType.mit
 FILE: ../../../third_party/khronos/DEPS
+FILE: ../../../third_party/khronos/DIR_METADATA
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2007-2010 The Khronos Group Inc.
 
@@ -26497,4 +26578,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 417
+Total license count: 416

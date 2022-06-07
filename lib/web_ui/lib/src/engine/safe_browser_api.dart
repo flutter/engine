@@ -103,12 +103,13 @@ void addJsEventListener(Object target, String type, Function listener, Object ev
 }
 
 /// Removes an event listener that was added using [addJsEventListener].
-void removeJsEventListener(Object target, String type, Function listener) {
+void removeJsEventListener(Object target, String type, Function listener, Object eventOptions) {
   js_util.callMethod<void>(
     target,
     'removeEventListener', <dynamic>[
       type,
       listener,
+      eventOptions,
     ]
   );
 }
@@ -162,7 +163,7 @@ num? parseFontSize(html.Element element) {
   if (hasJsProperty(element, 'computedStyleMap')) {
     // Use the newer `computedStyleMap` API available on some browsers.
     final Object? computedStyleMap =
-        js_util.callMethod<Object?>(element, 'computedStyleMap', <Object?>[]);
+        js_util.callMethod<Object?>(element, 'computedStyleMap', const <Object?>[]);
     if (computedStyleMap is Object) {
       final Object? fontSizeObject =
           js_util.callMethod<Object?>(computedStyleMap, 'get', <Object?>['font-size']);

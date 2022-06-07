@@ -11,7 +11,9 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
@@ -233,6 +235,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
   contents->SetTexture(image->GetTexture());
   contents->SetSourceRect(source);
   contents->SetSamplerDescriptor(std::move(sampler));
+  contents->SetOpacity(paint.color.alpha);
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
@@ -265,7 +268,8 @@ size_t Canvas::GetStencilDepth() const {
 void Canvas::SaveLayer(Paint paint, std::optional<Rect> bounds) {
   Save(true, paint.blend_mode);
 
-  GetCurrentPass().SetDelegate(
+  auto& new_layer_pass = GetCurrentPass();
+  new_layer_pass.SetDelegate(
       std::make_unique<PaintPassDelegate>(paint, bounds));
 
   if (bounds.has_value()) {
@@ -294,6 +298,21 @@ void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
+
+  GetCurrentPass().AddEntity(std::move(entity));
+}
+
+void Canvas::DrawVertices(Vertices vertices,
+                          Entity::BlendMode mode,
+                          Paint paint) {
+  std::shared_ptr<VerticesContents> contents =
+      std::make_shared<VerticesContents>(std::move(vertices));
+  contents->SetColor(paint.color);
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(std::move(contents), true));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }

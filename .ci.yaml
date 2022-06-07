@@ -28,10 +28,10 @@ platform_properties:
       dependencies: >-
         [
           {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"},
-          {"dependency": "gradle_cache"}
+          {"dependency": "gradle_cache", "version": "none"}
         ]
       device_type: none
-      os: Linux
+      os: Ubuntu
       cores: "8"
   mac:
     properties:
@@ -223,7 +223,7 @@ targets:
       gcs_goldens_bucket: flutter_logs
       dependencies: >-
         [
-          {"dependency": "goldctl"}
+          {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
         ]
       gclient_custom_vars: >-
         {"download_emsdk": true}
@@ -322,7 +322,7 @@ targets:
       gcs_goldens_bucket: flutter_logs
       dependencies: >-
         [
-          {"dependency": "goldctl"}
+          {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
         ]
       gclient_custom_vars: >-
         {"download_emsdk": true}

@@ -120,7 +120,7 @@ abstract class PlatformDispatcher {
 
 class PlatformConfiguration {
   const PlatformConfiguration({
-    this.accessibilityFeatures = const AccessibilityFeatures._(0),
+    this.accessibilityFeatures = const engine.EngineAccessibilityFeatures(0),
     this.alwaysUse24HourFormat = false,
     this.semanticsEnabled = false,
     this.platformBrightness = Brightness.light,
@@ -368,7 +368,7 @@ class DisplayFeature {
   }
 
   @override
-  int get hashCode => hashValues(bounds, type, state);
+  int get hashCode => Object.hash(bounds, type, state);
 
   @override
   String toString() {
@@ -523,7 +523,7 @@ class Locale {
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+  int get hashCode => Object.hash(languageCode, scriptCode, countryCode);
 
   @override
   String toString() => _rawToString('_');

@@ -45,9 +45,8 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool EmbedderSurfaceGL::GLContextPresent(uint32_t fbo_id,
-                                         const std::optional<SkIRect>& damage) {
-  return gl_dispatch_table_.gl_present_callback(fbo_id);
+bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
+  return gl_dispatch_table_.gl_present_callback(present_info.fbo_id);
 }
 
 // |GPUSurfaceGLDelegate|
@@ -79,8 +78,9 @@ EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
   const bool render_to_surface = !external_view_embedder_;
-  return std::make_unique<GPUSurfaceGL>(this,  // GPU surface GL delegate
-                                        render_to_surface  // render to surface
+  return std::make_unique<GPUSurfaceGLSkia>(
+      this,              // GPU surface GL delegate
+      render_to_surface  // render to surface
   );
 }
 

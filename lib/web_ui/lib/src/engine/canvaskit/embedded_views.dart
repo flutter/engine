@@ -260,16 +260,18 @@ class HtmlViewEmbedder {
     DomElement platformView,
     DomElement headClipView,
   ) {
-    int indexInFlutterView = -1;
-    if (headClipView.parentElement != null) {
-      indexInFlutterView = skiaSceneHost!.children.indexOf(headClipView);
+    DomNode? headClipViewNextSibling;
+    bool headClipViewWasAttached = false;
+    if (headClipView.parentNode != null) {
+      headClipViewWasAttached = true;
+      headClipViewNextSibling = headClipView.nextSibling;
       headClipView.remove();
     }
     DomElement head = platformView;
     int clipIndex = 0;
     // Re-use as much existing clip views as needed.
     while (head != headClipView && clipIndex < numClips) {
-      head = head.parentElement!;
+      head = head.parent!;
       clipIndex++;
     }
     // If there weren't enough existing clip views, add more.
@@ -282,8 +284,8 @@ class HtmlViewEmbedder {
     head.remove();
 
     // If the chain was previously attached, attach it to the same position.
-    if (indexInFlutterView > -1) {
-      skiaSceneHost!.children.insert(indexInFlutterView, head);
+    if (headClipViewWasAttached) {
+      skiaSceneHost!.insertBefore(head, headClipViewNextSibling);
     }
     return head;
   }
@@ -296,7 +298,7 @@ class HtmlViewEmbedder {
           _svgPathDefs!.querySelector('#sk_path_defs')!;
       final List<DomElement> nodesToRemove = <DomElement>[];
       final Set<String> oldDefs = _svgClipDefs[viewId]!;
-      for (final DomElement child in clipDefs.children.cast<DomElement>()) {
+      for (final DomElement child in clipDefs.children) {
         if (oldDefs.contains(child.id)) {
           nodesToRemove.add(child);
         }
@@ -329,7 +331,7 @@ class HtmlViewEmbedder {
         case MutatorType.clipRect:
         case MutatorType.clipRRect:
         case MutatorType.clipPath:
-          final DomElement clipView = head.parentElement!;
+          final DomElement clipView = head.parent!;
           clipView.style.clip = '';
           clipView.style.clipPath = '';
           headTransform = Matrix4.identity();
@@ -732,8 +734,12 @@ class HtmlViewEmbedder {
 
   /// Deletes SVG clip paths, useful for tests.
   void debugCleanupSvgClipPaths() {
-    _svgPathDefs?.children.cast<DomElement>().single
-        .children.cast<DomElement>().forEach(removeElement);
+    final DomElement? parent = _svgPathDefs?.children.single;
+    if (parent != null) {
+      for (DomNode? child = parent.lastChild; child != null; child = parent.lastChild) {
+        parent.removeChild(child);
+      }
+    }
     _svgClipDefs.clear();
   }
 
@@ -808,7 +814,7 @@ class EmbeddedViewParams {
   }
 
   @override
-  int get hashCode => ui.hashValues(offset, size, mutators);
+  int get hashCode => Object.hash(offset, size, mutators);
 }
 
 enum MutatorType {
@@ -886,7 +892,7 @@ class Mutator {
   }
 
   @override
-  int get hashCode => ui.hashValues(type, rect, rrect, path, matrix, alpha);
+  int get hashCode => Object.hash(type, rect, rrect, path, matrix, alpha);
 }
 
 /// A stack of mutators that can be applied to an embedded view.
@@ -932,7 +938,7 @@ class MutatorsStack extends Iterable<Mutator> {
   }
 
   @override
-  int get hashCode => ui.hashList(_mutators);
+  int get hashCode => Object.hashAll(_mutators);
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;

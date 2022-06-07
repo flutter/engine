@@ -6,7 +6,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/backend/gles/gles_handle.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/texture.h"
 
@@ -52,10 +52,9 @@ class TextureGLES final : public Texture,
 
   ReactorGLES::Ref reactor_;
   const Type type_;
-  GLESHandle handle_;
+  HandleGLES handle_;
   mutable bool contents_initialized_ = false;
   const bool is_wrapped_;
-  std::string label_;
   bool is_valid_ = false;
 
   TextureGLES(std::shared_ptr<ReactorGLES> reactor,
@@ -63,7 +62,7 @@ class TextureGLES final : public Texture,
               bool is_wrapped);
 
   // |Texture|
-  void SetLabel(const std::string_view& label) override;
+  void SetLabel(std::string_view label) override;
 
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
@@ -71,10 +70,17 @@ class TextureGLES final : public Texture,
                      size_t slice) override;
 
   // |Texture|
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) override;
+
+  // |Texture|
   bool IsValid() const override;
 
   // |Texture|
   ISize GetSize() const override;
+
+  // |Texture|
+  Scalar GetYCoordScale() const override;
 
   void InitializeContentsIfNecessary() const;
 

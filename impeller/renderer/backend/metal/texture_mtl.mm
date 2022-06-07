@@ -26,10 +26,19 @@ TextureMTL::TextureMTL(TextureDescriptor p_desc, id<MTLTexture> texture)
 
 TextureMTL::~TextureMTL() = default;
 
-void TextureMTL::SetLabel(const std::string_view& label) {
+void TextureMTL::SetLabel(std::string_view label) {
   [texture_ setLabel:@(label.data())];
 }
 
+// |Texture|
+bool TextureMTL::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                               size_t slice) {
+  // Metal has no threading restrictions. So we can pass this data along to the
+  // client rendering API immediately.
+  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), slice);
+}
+
+// |Texture|
 bool TextureMTL::OnSetContents(const uint8_t* contents,
                                size_t length,
                                size_t slice) {

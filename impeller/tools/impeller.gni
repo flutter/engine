@@ -17,12 +17,19 @@ declare_args() {
   impeller_enable_metal = is_mac || is_ios
 
   # Whether the OpenGLES backend is enabled.
-  impeller_enable_opengles = is_mac || is_linux
+  impeller_enable_opengles = is_mac || is_linux || is_android || is_win
 
   # Whether to use a prebuilt impellerc.
   # If this is the empty string, impellerc will be built.
   # If it is non-empty, it should be the absolute path to impellerc.
   impeller_use_prebuilt_impellerc = ""
+
+  # If enabled, all OpenGL calls will be traced. Because additional trace
+  # overhead may be substantial, this is not enabled by default.
+  impeller_trace_all_gl_calls = false
+
+  # Call glGetError after each OpenGL call and log failures.
+  impeller_error_check_all_gl_calls = is_debug
 }
 
 declare_args() {
@@ -140,7 +147,11 @@ template("metal_library") {
     }
 
     if (is_ios) {
-      args += [ "--platform=ios" ]
+      if (use_ios_simulator) {
+        args += [ "--platform=ios-simulator" ]
+      } else {
+        args += [ "--platform=ios" ]
+      }
     } else if (is_mac) {
       args += [ "--platform=mac" ]
     } else {
