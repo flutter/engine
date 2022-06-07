@@ -89,9 +89,10 @@ def Main():
 
   pub_count = 0
   for package in ALL_PACKAGES:
-    if FetchPackage(pubcmd, package) != 0:
+    package_path = os.path.join(engine_src, ".." , package)
+    if FetchPackage(pubcmd, package_path) != 0:
       return 1
-    pub_count = pub_count + CheckPackage(package)
+    pub_count = pub_count + CheckPackage(package_path)
 
   if pub_count > 0:
     return 1
