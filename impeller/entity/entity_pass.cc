@@ -179,97 +179,212 @@ bool EntityPass::Render(ContentContext& renderer,
   return OnRender(renderer, render_target, Point(), 0);
 }
 
-class PassContext {
- public:
-  PassContext(std::shared_ptr<Context> context, RenderTarget render_target)
-      : context_(context), render_target_(render_target) {}
+EntityPass::EntityPassContext::EntityPassContext(
+    std::shared_ptr<Context> context,
+    RenderTarget render_target)
+    : context_(context), render_target_(render_target) {}
 
-  ~PassContext() { EndPass(); }
+EntityPass::EntityPassContext::~EntityPassContext() {
+  EndPass();
+}
 
-  bool IsValid() { return !render_target_.GetColorAttachments().empty(); }
+bool EntityPass::EntityPassContext::IsValid() const {
+  return !render_target_.GetColorAttachments().empty();
+}
 
-  bool IsActive() { return pass_ != nullptr; }
+bool EntityPass::EntityPassContext::IsActive() const {
+  return pass_ != nullptr;
+}
 
-  std::shared_ptr<Texture> GetTexture() {
-    if (!IsValid()) {
-      return nullptr;
-    }
-    auto color0 = render_target_.GetColorAttachments().find(0)->second;
-    return color0.resolve_texture ? color0.resolve_texture : color0.texture;
+std::shared_ptr<Texture> EntityPass::EntityPassContext::GetTexture() {
+  if (!IsValid()) {
+    return nullptr;
   }
+  auto color0 = render_target_.GetColorAttachments().find(0)->second;
+  return color0.resolve_texture ? color0.resolve_texture : color0.texture;
+}
 
-  bool EndPass() {
-    if (!IsActive()) {
-      return true;
-    }
-
-    if (!pass_->EncodeCommands(context_->GetTransientsAllocator())) {
-      return false;
-    }
-
-    if (!command_buffer_->SubmitCommands()) {
-      return false;
-    }
-
-    pass_ = nullptr;
-    command_buffer_ = nullptr;
-
+bool EntityPass::EntityPassContext::EndPass() {
+  if (!IsActive()) {
     return true;
   }
 
-  RenderTarget GetRenderTarget() { return render_target_; }
-
-  std::shared_ptr<RenderPass> GetRenderPass(uint32_t pass_depth) {
-    // Create a new render pass if one isn't active.
-    if (!IsActive()) {
-      command_buffer_ = context_->CreateRenderCommandBuffer();
-      if (!command_buffer_) {
-        return nullptr;
-      }
-
-      command_buffer_->SetLabel(
-          "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
-          " Count=" + std::to_string(pass_count_));
-
-      // Never clear the texture for subsequent passes.
-      if (pass_count_ > 0) {
-        if (!render_target_.GetColorAttachments().empty()) {
-          auto color0 = render_target_.GetColorAttachments().find(0)->second;
-          color0.load_action = LoadAction::kLoad;
-          render_target_.SetColorAttachment(color0, 0);
-        }
-
-        if (auto stencil = render_target_.GetStencilAttachment();
-            stencil.has_value()) {
-          stencil->load_action = LoadAction::kLoad;
-          render_target_.SetStencilAttachment(stencil.value());
-        }
-      }
-
-      pass_ = command_buffer_->CreateRenderPass(render_target_);
-      if (!pass_) {
-        return nullptr;
-      }
-
-      pass_->SetLabel(
-          "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
-          " Count=" + std::to_string(pass_count_));
-
-      ++pass_count_;
-    }
-
-    return pass_;
+  if (!pass_->EncodeCommands(context_->GetTransientsAllocator())) {
+    return false;
   }
 
- private:
-  std::shared_ptr<Context> context_;
-  RenderTarget render_target_;
-  std::shared_ptr<CommandBuffer> command_buffer_;
-  std::shared_ptr<RenderPass> pass_;
-  uint32_t pass_count_ = 0;
+  if (!command_buffer_->SubmitCommands()) {
+    return false;
+  }
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PassContext);
-};
+  pass_ = nullptr;
+  command_buffer_ = nullptr;
+
+  return true;
+}
+
+RenderTarget EntityPass::EntityPassContext::GetRenderTarget() const {
+  return render_target_;
+}
+
+std::shared_ptr<RenderPass> EntityPass::EntityPassContext::GetRenderPass(
+    uint32_t pass_depth) {
+  // Create a new render pass if one isn't active.
+  if (!IsActive()) {
+    command_buffer_ = context_->CreateRenderCommandBuffer();
+    if (!command_buffer_) {
+      return nullptr;
+    }
+
+    command_buffer_->SetLabel(
+        "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
+        " Count=" + std::to_string(pass_count_));
+
+    // Never clear the texture for subsequent passes.
+    if (pass_count_ > 0) {
+      if (!render_target_.GetColorAttachments().empty()) {
+        auto color0 = render_target_.GetColorAttachments().find(0)->second;
+        color0.load_action = LoadAction::kLoad;
+        render_target_.SetColorAttachment(color0, 0);
+      }
+
+      if (auto stencil = render_target_.GetStencilAttachment();
+          stencil.has_value()) {
+        stencil->load_action = LoadAction::kLoad;
+        render_target_.SetStencilAttachment(stencil.value());
+      }
+    }
+
+    pass_ = command_buffer_->CreateRenderPass(render_target_);
+    if (!pass_) {
+      return nullptr;
+    }
+
+    pass_->SetLabel(
+        "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
+        " Count=" + std::to_string(pass_count_));
+
+    ++pass_count_;
+  }
+
+  return pass_;
+}
+
+EntityPass::EntityResult EntityPass::GetElementEntity(
+    const EntityPass::Element& element,
+    ContentContext& renderer,
+    EntityPassContext& pass_context,
+    Point position,
+    uint32_t pass_depth,
+    size_t stencil_depth_floor) const {
+  Entity element_entity;
+
+  //--------------------------------------------------------------------------
+  /// Setup entity element.
+  ///
+
+  if (const auto& entity = std::get_if<Entity>(&element)) {
+    element_entity = *entity;
+    if (!position.IsZero()) {
+      // If the pass image is going to be rendered with a non-zero position,
+      // apply the negative translation to entity copies before rendering them
+      // so that they'll end up rendering to the correct on-screen position.
+      element_entity.SetTransformation(
+          Matrix::MakeTranslation(Vector3(-position)) *
+          element_entity.GetTransformation());
+    }
+  }
+
+  //--------------------------------------------------------------------------
+  /// Setup subpass element.
+  ///
+
+  else if (const auto& subpass_ptr =
+               std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+    auto subpass = subpass_ptr->get();
+
+    if (subpass->delegate_->CanElide()) {
+      EntityPass::EntityResult::Empty();
+    }
+
+    if (subpass->delegate_->CanCollapseIntoParentPass()) {
+      // Directly render into the parent target and move on.
+      if (!subpass->OnRender(renderer, pass_context.GetRenderTarget(), position,
+                             pass_depth, stencil_depth_floor)) {
+        return EntityPass::EntityResult::Failure();
+      }
+      EntityPass::EntityResult::Empty();
+    }
+
+    const auto subpass_coverage = GetSubpassCoverage(*subpass);
+    if (!subpass_coverage.has_value()) {
+      EntityPass::EntityResult::Empty();
+    }
+
+    if (subpass_coverage->size.IsEmpty()) {
+      // It is not an error to have an empty subpass. But subpasses that can't
+      // create their intermediates must trip errors.
+      EntityPass::EntityResult::Empty();
+    }
+
+    RenderTarget subpass_target;
+    if (subpass->contains_advanced_blends_) {
+      subpass_target = RenderTarget::CreateOffscreen(
+          *renderer.GetContext(), ISize::Ceil(subpass_coverage->size),
+          "EntityPass", StorageMode::kDevicePrivate, LoadAction::kClear,
+          StoreAction::kStore, StorageMode::kDevicePrivate, LoadAction::kClear,
+          StoreAction::kStore);
+    } else {
+      subpass_target = RenderTarget::CreateOffscreen(
+          *renderer.GetContext(), ISize::Ceil(subpass_coverage->size),
+          "EntityPass", StorageMode::kDevicePrivate, LoadAction::kClear,
+          StoreAction::kStore, StorageMode::kDeviceTransient,
+          LoadAction::kClear, StoreAction::kDontCare);
+    }
+
+    auto subpass_texture = subpass_target.GetRenderTargetTexture();
+
+    if (!subpass_texture) {
+      return EntityPass::EntityResult::Failure();
+    }
+
+    auto offscreen_texture_contents =
+        subpass->delegate_->CreateContentsForSubpassTarget(subpass_texture);
+
+    if (!offscreen_texture_contents) {
+      // This is an error because the subpass delegate said the pass couldn't
+      // be collapsed into its parent. Yet, when asked how it want's to
+      // postprocess the offscreen texture, it couldn't give us an answer.
+      //
+      // Theoretically, we could collapse the pass now. But that would be
+      // wasteful as we already have the offscreen texture and we don't want
+      // to discard it without ever using it. Just make the delegate do the
+      // right thing.
+      return EntityPass::EntityResult::Failure();
+    }
+
+    // Stencil textures aren't shared between EntityPasses (as much of the
+    // time they are transient).
+    if (!subpass->OnRender(renderer, subpass_target, subpass_coverage->origin,
+                           ++pass_depth, subpass->stencil_depth_)) {
+      return EntityPass::EntityResult::Failure();
+    }
+
+    element_entity.SetContents(std::move(offscreen_texture_contents));
+    element_entity.SetStencilDepth(subpass->stencil_depth_);
+    element_entity.SetBlendMode(subpass->blend_mode_);
+    // Once we have filters being applied for SaveLayer, some special sauce
+    // may be needed here (or in PaintPassDelegate) to ensure the filter
+    // parameters are transformed by the `xformation_` matrix, while
+    // continuing to apply only the subpass offset to the offscreen texture.
+    element_entity.SetTransformation(
+        Matrix::MakeTranslation(Vector3(subpass_coverage->origin - position)));
+  } else {
+    FML_UNREACHABLE();
+  }
+
+  return EntityPass::EntityResult::Success(element_entity);
+}
 
 bool EntityPass::OnRender(ContentContext& renderer,
                           RenderTarget render_target,
@@ -280,117 +395,26 @@ bool EntityPass::OnRender(ContentContext& renderer,
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  PassContext pass_context(context, render_target);
+  EntityPassContext pass_context(context, render_target);
   if (!pass_context.IsValid()) {
     return false;
   }
 
   for (const auto& element : elements_) {
-    Entity element_entity;
+    EntityResult result =
+        GetElementEntity(element, renderer, pass_context, position, pass_depth,
+                         stencil_depth_floor);
 
-    //--------------------------------------------------------------------------
-    /// Setup entity element for rendering.
-    ///
-
-    if (const auto& entity = std::get_if<Entity>(&element)) {
-      element_entity = *entity;
-      if (!position.IsZero()) {
-        // If the pass image is going to be rendered with a non-zero position,
-        // apply the negative translation to entity copies before rendering them
-        // so that they'll end up rendering to the correct on-screen position.
-        element_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-position)) *
-            element_entity.GetTransformation());
-      }
+    if (!result.success) {
+      return false;
     }
 
-    //--------------------------------------------------------------------------
-    /// Setup subpass element for rendering
-    ///
-
-    else if (const auto& subpass_ptr =
-                 std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      auto subpass = subpass_ptr->get();
-
-      if (subpass->delegate_->CanElide()) {
-        continue;
-      }
-
-      if (subpass->delegate_->CanCollapseIntoParentPass()) {
-        // Directly render into the parent target and move on.
-        if (!subpass->OnRender(renderer, pass_context.GetRenderTarget(),
-                               position, pass_depth, stencil_depth_floor)) {
-          return false;
-        }
-        continue;
-      }
-
-      const auto subpass_coverage = GetSubpassCoverage(*subpass);
-      if (!subpass_coverage.has_value()) {
-        continue;
-      }
-
-      if (subpass_coverage->size.IsEmpty()) {
-        // It is not an error to have an empty subpass. But subpasses that can't
-        // create their intermediates must trip errors.
-        continue;
-      }
-
-      RenderTarget subpass_target;
-      if (subpass->contains_advanced_blends_) {
-        subpass_target = RenderTarget::CreateOffscreen(
-            *context, ISize::Ceil(subpass_coverage->size), "EntityPass",
-            StorageMode::kDevicePrivate, LoadAction::kClear,
-            StoreAction::kStore, StorageMode::kDevicePrivate,
-            LoadAction::kClear, StoreAction::kStore);
-      } else {
-        subpass_target = RenderTarget::CreateOffscreen(
-            *context, ISize::Ceil(subpass_coverage->size), "EntityPass",
-            StorageMode::kDevicePrivate, LoadAction::kClear,
-            StoreAction::kStore, StorageMode::kDeviceTransient,
-            LoadAction::kClear, StoreAction::kDontCare);
-      }
-
-      auto subpass_texture = subpass_target.GetRenderTargetTexture();
-
-      if (!subpass_texture) {
-        return false;
-      }
-
-      auto offscreen_texture_contents =
-          subpass->delegate_->CreateContentsForSubpassTarget(subpass_texture);
-
-      if (!offscreen_texture_contents) {
-        // This is an error because the subpass delegate said the pass couldn't
-        // be collapsed into its parent. Yet, when asked how it want's to
-        // postprocess the offscreen texture, it couldn't give us an answer.
-        //
-        // Theoretically, we could collapse the pass now. But that would be
-        // wasteful as we already have the offscreen texture and we don't want
-        // to discard it without ever using it. Just make the delegate do the
-        // right thing.
-        return false;
-      }
-
-      // Stencil textures aren't shared between EntityPasses (as much of the
-      // time they are transient).
-      if (!subpass->OnRender(renderer, subpass_target, subpass_coverage->origin,
-                             ++pass_depth, subpass->stencil_depth_)) {
-        return false;
-      }
-
-      element_entity.SetContents(std::move(offscreen_texture_contents));
-      element_entity.SetStencilDepth(subpass->stencil_depth_);
-      element_entity.SetBlendMode(subpass->blend_mode_);
-      // Once we have filters being applied for SaveLayer, some special sauce
-      // may be needed here (or in PaintPassDelegate) to ensure the filter
-      // parameters are transformed by the `xformation_` matrix, while
-      // continuing to apply only the subpass offset to the offscreen texture.
-      element_entity.SetTransformation(Matrix::MakeTranslation(
-          Vector3(subpass_coverage->origin - position)));
-    } else {
-      FML_UNREACHABLE();
+    if (!result.entity.has_value()) {
+      // Nothing to render.
+      continue;
     }
+
+    Entity element_entity = result.entity.value();
 
     //--------------------------------------------------------------------------
     /// Setup advanced blends.
