@@ -372,9 +372,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (composing_range.collapsed() && wasComposing) {
     [_textInputContext discardMarkedText];
   }
-  if (_client != nil) {
-    [_client startEditing];
-  }
+  [_client startEditing];
+
   [self updateTextAndSelection];
 }
 
