@@ -628,16 +628,11 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)onAccessibilityStatusChanged:(BOOL)enabled {
   if (!enabled && self.viewLoaded && [_textInputPlugin isFirstResponder]) {
-    // The client (i.e. the FlutterTextField) of the textInputPlugin is a sibling
-    // of the FlutterView. macOS will pick the ancestor to be the next responder
-    // when the client is removed from the view hierarchy, which is the result of
-    // turning off semantics. This will cause the keyboard focus to stick at the
-    // NSWindow.
-    //
-    // Since the view controller creates the illustion that the FlutterTextField is
-    // below the FlutterView in accessibility (See FlutterViewWrapper), it has to
-    // manually pick the next responder.
-    [self.view.window makeFirstResponder:_flutterView];
+    // Normally TextInputPlugin, when editing, is child of FlutterViewWrapper.
+    // When accessiblity is enabled the TextInputPlugin gets added as an indirect
+    // child to FlutterTextField. When disabling the plugin needs to be reparented
+    // back.
+    [self.view addSubview:_textInputPlugin];
   }
 }
 
