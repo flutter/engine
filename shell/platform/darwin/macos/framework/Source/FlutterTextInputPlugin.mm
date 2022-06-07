@@ -139,12 +139,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 @property(nonatomic) BOOL enableDeltaModel;
 
 /**
- * When plugin becomes first responder it remembers previous responder,
- * which will be restored after the plugin is hidden.
- */
-@property(nonatomic, weak) NSResponder* previousResponder;
-
-/**
  * Handles a Flutter system message on the text input channel.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -268,20 +262,19 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }
   } else if ([method isEqualToString:kShowMethod]) {
-    // Ensure the plugin is in hierarchy.
-    // When accessibility text field becomes first responder AppKit sometimes
-    // removes the plugin from hierarchy.
+    // Ensure the plugin is in hierarchy. Only do this with accessibility disabled.
+    // When accessibility is enabled cocoa will reparent the plugin inside
+    // FlutterTextField in [FlutterTextField startEditing].
     if (_client == nil) {
       [_flutterViewController.view addSubview:self];
-      if (_previousResponder == nil) {
-        _previousResponder = self.window.firstResponder;
-      }
-      [self.window makeFirstResponder:self];
     }
+    [self.window makeFirstResponder:self];
     _shown = TRUE;
   } else if ([method isEqualToString:kHideMethod]) {
-    [self.window makeFirstResponder:_previousResponder];
-    _previousResponder = nil;
+    // With accessiblity enabled TextInputPlugin is inside _client, so take the
+    // nextResponder from the _client.
+    NSResponder* nextResponder = _client != nil ? _client.nextResponder : self.nextResponder;
+    [self.window makeFirstResponder:nextResponder];
     [self removeFromSuperview];
     _shown = FALSE;
   } else if ([method isEqualToString:kClearClientMethod]) {
