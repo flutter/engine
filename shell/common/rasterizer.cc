@@ -93,6 +93,12 @@ void Rasterizer::Teardown() {
     compositor_context_->OnGrContextDestroyed();
   }
 
+  if (auto* context = surface_->GetContext()) {
+    auto context_switch = surface_->MakeRenderContextCurrent();
+    if (context_switch->GetResult()) {
+      context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+    }
+  }
   surface_.reset();
   last_layer_tree_.reset();
 
