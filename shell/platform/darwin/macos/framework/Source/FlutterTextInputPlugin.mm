@@ -32,7 +32,7 @@ static NSString* const kUpdateEditStateResponseMethod = @"TextInputClient.update
 static NSString* const kUpdateEditStateWithDeltasResponseMethod =
     @"TextInputClient.updateEditingStateWithDeltas";
 static NSString* const kPerformAction = @"TextInputClient.performAction";
-static NSString* const kPerformIntent = @"TextInputClient.performIntent";
+static NSString* const kPerformSelector = @"TextInputClient.performSelector";
 static NSString* const kMultilineInputType = @"TextInputType.multiline";
 
 static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
@@ -667,16 +667,9 @@ static char markerKey;
     void (*func)(id, SEL, id) = reinterpret_cast<void (*)(id, SEL, id)>(imp);
     func(self, selector, nil);
   }
-  // All NSStandardKeyBindingResponding method have single trailing space.
-  // For now forward all selectors to framework
+  // Forward all selectors to framework
   NSString* name = NSStringFromSelector(selector);
-
-  if ([name hasSuffix:@":"]) {
-    name = [name substringToIndex:name.length - 1];
-    if (![name containsString:@":"]) {
-      [_channel invokeMethod:kPerformIntent arguments:@[ self.clientID, name ]];
-    }
-  }
+  [_channel invokeMethod:kPerformSelector arguments:@[ self.clientID, name ]];
 }
 
 - (void)insertNewline:(id)sender {
