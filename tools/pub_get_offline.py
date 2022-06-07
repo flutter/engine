@@ -71,21 +71,24 @@ def CheckPackage(package):
 
 
 def Main():
-  leading = os.path.join(
-      "src", "third_party", "dart", "tools", "sdks", "dart-sdk", "bin"
-  )
+  script = os.path.realpath(__file__)
+  engine_src = os.path.normpath(os.path.join(
+      os.path.dirname(script), "..", ".."))
+  dart_sdk_bin = os.path.join(engine_src,
+      "third_party", "dart", "tools", "sdks", "dart-sdk", "bin")
   dart = "dart"
   if os.name == "nt":
     dart = "dart.exe"
   pubcmd = [
-      os.path.abspath(os.path.join(leading, dart)), "pub", "get", "--offline"
+      os.path.join(dart_sdk_bin, dart), "pub", "get", "--offline"
   ]
 
   pub_count = 0
   for package in ALL_PACKAGES:
-    if FetchPackage(pubcmd, package) != 0:
+    package_path = os.path.join(engine_src, ".." , package)
+    if FetchPackage(pubcmd, package_path) != 0:
       return 1
-    pub_count = pub_count + CheckPackage(package)
+    pub_count = pub_count + CheckPackage(package_path)
 
   if pub_count > 0:
     return 1
