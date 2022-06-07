@@ -20,7 +20,8 @@ class InlinePassContext {
   bool IsActive() const;
   std::shared_ptr<Texture> GetTexture();
   bool EndPass();
-  RenderTarget GetRenderTarget() const;
+  const RenderTarget& GetRenderTarget() const;
+
   std::shared_ptr<RenderPass> GetRenderPass(uint32_t pass_depth);
 
  private:

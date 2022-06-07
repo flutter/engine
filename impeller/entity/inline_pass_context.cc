@@ -8,9 +8,8 @@
 
 namespace impeller {
 
-InlinePassContext::InlinePassContext(
-    std::shared_ptr<Context> context,
-    RenderTarget render_target)
+InlinePassContext::InlinePassContext(std::shared_ptr<Context> context,
+                                     RenderTarget render_target)
     : context_(context), render_target_(render_target) {}
 
 InlinePassContext::~InlinePassContext() {
@@ -52,7 +51,7 @@ bool InlinePassContext::EndPass() {
   return true;
 }
 
-RenderTarget InlinePassContext::GetRenderTarget() const {
+const RenderTarget& InlinePassContext::GetRenderTarget() const {
   return render_target_;
 }
 
@@ -99,4 +98,4 @@ std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
   return pass_;
 }
 
-}
+}  // namespace impeller

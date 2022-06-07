@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "display_list/display_list_blend_mode.h"
+#include "display_list/display_list_color.h"
 #include "display_list/display_list_color_filter.h"
 #include "display_list/display_list_image_filter.h"
 #include "display_list/display_list_tile_mode.h"
@@ -275,6 +276,44 @@ TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
 
     auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
                                              flutter::DlTileMode::kClamp);
+    builder.setImageFilter(&filter);
+    builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
+                      SkSamplingOptions{}, true);
+
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(DisplayListTest, CanDrawBackdropFilter) {
+  auto texture = CreateTextureForFixture("embarcadero.jpg");
+
+  bool first_frame = true;
+  auto callback = [&]() {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowSize({400, 100});
+      ImGui::SetNextWindowPos({300, 550});
+    }
+
+    static float sigma[] = {10, 10};
+
+    ImGui::Begin("Controls");
+    ImGui::SliderFloat2("Sigma", sigma, 0, 100);
+    ImGui::End();
+
+    flutter::DisplayListBuilder builder;
+
+    auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
+                                             flutter::DlTileMode::kClamp);
+
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kRed());
+    builder.drawCircle({100, 100}, 100, paint);
+
+    auto bounds = SkRect::MakeXYWH(100, 100, 100, 100);
+    builder.saveLayer(&bounds, &paint, &filter);
     builder.setImageFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
                       SkSamplingOptions{}, true);
