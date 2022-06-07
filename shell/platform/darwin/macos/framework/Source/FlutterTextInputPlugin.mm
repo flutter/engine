@@ -373,7 +373,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     [_textInputContext discardMarkedText];
   }
   if (_client != nil) {
-    [self.window makeFirstResponder:_client];
+    [_client startEditing];
   }
   [self updateTextAndSelection];
 }

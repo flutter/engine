@@ -1070,7 +1070,7 @@ TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
       [[FlutterTextFieldMock alloc] initWithPlatformNode:&text_platform_node
                                              fieldEditor:viewController.textInputPlugin];
   [viewController.view addSubview:mockTextField];
-  [mockTextField becomeFirstResponder];
+  [mockTextField startEditing];
 
   NSDictionary* arguments = @{
     @"inputAction" : @"action",
