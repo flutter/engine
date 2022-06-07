@@ -41,14 +41,10 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
-// Struct holding the mouse state.
+// Struct holding data to help adapt system mouse/trackpad events to embedder events.
 typedef struct MouseState {
   // Current coordinate of the mouse cursor in physical device pixels.
   CGPoint location = CGPointZero;
-
-  // True if flutter::PointerData::Change::kAdd has been sent to Flutter for the discrete scrolling
-  // pointer.
-  BOOL discrete_scroll_pointer_added = NO;
 
   // Last reported translation for an in-flight pan gesture in physical device pixels.
   CGPoint last_translation = CGPointZero;
@@ -1892,18 +1888,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     _mouseState.last_translation = CGPointZero;
   }
 
-  auto packet = std::make_unique<flutter::PointerDataPacket>(
-      _mouseState.discrete_scroll_pointer_added ? 1 : 2);
-  if (_mouseState.discrete_scroll_pointer_added) {
-    packet->SetPointerData(/*index=*/0, pointer_data);
-  } else {
-    flutter::PointerData add_pointer_data = pointer_data;
-    add_pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
-    add_pointer_data.change = flutter::PointerData::Change::kAdd;
-    packet->SetPointerData(/*index=*/0, add_pointer_data);
-    packet->SetPointerData(/*index=*/1, pointer_data);
-    _mouseState.discrete_scroll_pointer_added = YES;
-  }
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
