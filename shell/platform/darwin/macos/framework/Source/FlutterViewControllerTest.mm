@@ -71,7 +71,7 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
 }
 
-TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabled) {
+TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -86,14 +86,17 @@ TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabl
                                                    backing:NSBackingStoreBuffered
                                                      defer:NO];
   window.contentView = viewController.view;
+  NSView* dummyView = [[NSView alloc] initWithFrame:CGRectZero];
+  [viewController.view addSubview:dummyView];
   // Attaches FlutterTextInputPlugin to the view;
-  [viewController.view addSubview:viewController.textInputPlugin];
+  [dummyView addSubview:viewController.textInputPlugin];
   // Makes sure the textInputPlugin can be the first responder.
   EXPECT_TRUE([window makeFirstResponder:viewController.textInputPlugin]);
   EXPECT_EQ([window firstResponder], viewController.textInputPlugin);
+  EXPECT_FALSE(viewController.textInputPlugin.superview == viewController.view);
   [viewController onAccessibilityStatusChanged:NO];
-  // FlutterView becomes the first responder.
-  EXPECT_EQ([window firstResponder], viewController.flutterView);
+  // FlutterView becomes child of view controller
+  EXPECT_TRUE(viewController.textInputPlugin.superview == viewController.view);
 }
 
 TEST(FlutterViewController, CanSetMouseTrackingModeBeforeViewLoaded) {
