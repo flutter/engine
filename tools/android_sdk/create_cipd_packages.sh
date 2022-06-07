@@ -99,8 +99,11 @@ for platform in "${platforms[@]}"; do
   done
 
   # Special treatment for NDK to move to expected directory.
-  mv $upload_dir/sdk/ndk-bundle $upload_dir
-  mv $upload_dir/ndk-bundle $upload_dir/ndk
+  mv $upload_dir/sdk/ndk $upload_dir/ndk-bundle
+  ndk_sub_paths=`find $upload_dir/ndk-bundle -maxdepth 1 -type d`
+  ndk_sub_paths_arr=($ndk_sub_paths)
+  mv ${ndk_sub_paths_arr[1]} $upload_dir/ndk
+  rm -rf $upload_dir/ndk-bundle
 
   # Accept all licenses to ensure they are generated and uploaded.
   yes "y" | $sdkmanager_path --licenses --sdk_root=$sdk_root
