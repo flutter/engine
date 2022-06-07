@@ -604,6 +604,9 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     SurfaceFrame::SubmitInfo submit_info;
+    // TODO (kaushikiska): this can be in the past and might need to get snapped
+    // to future as this frame could have been resubmitted.
+    submit_info.presentation_time = frame_timings_recorder.GetVsyncTargetTime();
     if (damage) {
       submit_info.frame_damage = damage->GetFrameDamage();
       submit_info.buffer_damage = damage->GetBufferDamage();
