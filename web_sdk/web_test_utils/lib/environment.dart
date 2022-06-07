@@ -42,8 +42,6 @@ class Environment {
         io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
     final io.Directory outDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
-    final io.Directory flutterWebSdkOutDir =
-        io.Directory(pathlib.join(outDir.path, 'web_debug'));
     final io.Directory dartSdkDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(
@@ -52,7 +50,6 @@ class Environment {
     for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
       outDir,
-      flutterWebSdkOutDir,
       dartSdkDir,
       webUiRootDir
     ]) {

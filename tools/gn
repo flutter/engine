@@ -295,7 +295,7 @@ def to_gn_args(args):
   # Set OS, CPU arch for host or target build.
   if is_host_build(args):
     gn_args['host_os'] = get_host_os()
-    gn_args['host_cpu'] = get_host_cpu(args)
+    gn_args['host_cpu'] = get_host_cpu()
     gn_args['target_os'] = gn_args['host_os']
     gn_args['target_cpu'] = get_target_cpu(args)
     gn_args['dart_target_arch'] = gn_args['target_cpu']
@@ -594,7 +594,7 @@ def to_gn_args(args):
   # Enable Vulkan on all platforms except for Android and iOS. This is just
   # to save on mobile binary size, as there's no reason the Vulkan embedder
   # features can't work on these platforms.
-  if args.target_os not in ['android', 'ios', 'wasm']:
+  if args.target_os not in ['android', 'ios'] and not args.web_sdk:
     gn_args['skia_use_vulkan'] = True
     gn_args['shell_enable_vulkan'] = True
     # Disable VMA's use of std::shared_mutex in environments where the
@@ -904,6 +904,19 @@ def parse_args(args):
   )
   parser.add_argument(
       '--no-full-dart-sdk', dest='full_dart_sdk', action='store_false'
+  )
+
+  # The reason this is its own flag and not with the rest of the "target_os" flags
+  # is that setting the "target_os" to "web" or "wasm" or anything that the Dart
+  # SDK doesn't explicitly support will cause the Dart SDK build to throw an
+  # exception. The Web SDK must build the Dart SDK in order to generate kernel
+  # snapshots.
+  parser.add_argument(
+      '--web',
+      dest='web_sdk',
+      action='store_true',
+      default=False,
+      help='Build the Flutter Web SDK.'
   )
 
   parser.add_argument(
