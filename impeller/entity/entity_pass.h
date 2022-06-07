@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/renderer/render_target.h"
@@ -22,6 +24,8 @@ class ContentContext;
 class EntityPass {
  public:
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
+  using BackdropFilterProc =
+      std::function<std::shared_ptr<FilterContents>(FilterInput::Ref)>;
 
   EntityPass();
 
@@ -53,16 +57,19 @@ class EntityPass {
 
   void SetBlendMode(Entity::BlendMode blend_mode);
 
+  void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
+
   std::optional<Rect> GetSubpassCoverage(const EntityPass& subpass) const;
 
   std::optional<Rect> GetElementsCoverage() const;
 
  private:
-  bool RenderInternal(ContentContext& renderer,
-                      RenderTarget render_target,
-                      Point position,
-                      uint32_t pass_depth,
-                      size_t stencil_depth_floor = 0) const;
+  bool OnRender(ContentContext& renderer,
+                RenderTarget render_target,
+                Point position,
+                uint32_t pass_depth,
+                size_t stencil_depth_floor = 0,
+                std::shared_ptr<Texture> backdrop_texture = nullptr) const;
 
   std::vector<Element> elements_;
 
@@ -71,6 +78,9 @@ class EntityPass {
   size_t stencil_depth_ = 0u;
   Entity::BlendMode blend_mode_ = Entity::BlendMode::kSourceOver;
   bool contains_advanced_blends_ = false;
+
+  std::optional<BackdropFilterProc> backdrop_filter_proc_ = std::nullopt;
+
   std::unique_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_ =

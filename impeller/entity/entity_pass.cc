@@ -4,10 +4,12 @@
 
 #include "impeller/entity/entity_pass.h"
 
+#include <memory>
 #include <variant>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -139,7 +141,7 @@ bool EntityPass::Render(ContentContext& renderer,
         "EntityPass",  //
         StorageMode::kDevicePrivate, LoadAction::kClear, StoreAction::kStore,
         StorageMode::kDevicePrivate, LoadAction::kClear, StoreAction::kStore);
-    if (!RenderInternal(renderer, offscreen_target, Point(), 0)) {
+    if (!OnRender(renderer, offscreen_target, Point(), 0)) {
       return false;
     }
 
@@ -174,40 +176,122 @@ bool EntityPass::Render(ContentContext& renderer,
     return true;
   }
 
-  return RenderInternal(renderer, render_target, Point(), 0);
+  return OnRender(renderer, render_target, Point(), 0);
 }
 
-bool EntityPass::RenderInternal(ContentContext& renderer,
-                                RenderTarget render_target,
-                                Point position,
-                                uint32_t pass_depth,
-                                size_t stencil_depth_floor) const {
-  TRACE_EVENT0("impeller", "EntityPass::Render");
+class PassContext {
+ public:
+  PassContext(std::shared_ptr<Context> context, RenderTarget render_target)
+      : context_(context), render_target_(render_target) {}
 
-  auto context = renderer.GetContext();
+  ~PassContext() { EndPass(); }
 
-  std::shared_ptr<CommandBuffer> command_buffer;
-  std::shared_ptr<RenderPass> pass;
-  uint32_t pass_count = 0;
+  bool IsValid() { return !render_target_.GetColorAttachments().empty(); }
 
-  auto end_pass = [&command_buffer, &pass, &context]() {
-    if (!pass->EncodeCommands(context->GetTransientsAllocator())) {
+  bool IsActive() { return pass_ != nullptr; }
+
+  std::shared_ptr<Texture> GetTexture() {
+    if (!IsValid()) {
+      return nullptr;
+    }
+    auto color0 = render_target_.GetColorAttachments().find(0)->second;
+    return color0.resolve_texture ? color0.resolve_texture : color0.texture;
+  }
+
+  bool EndPass() {
+    if (!IsActive()) {
+      return true;
+    }
+
+    if (!pass_->EncodeCommands(context_->GetTransientsAllocator())) {
       return false;
     }
 
-    if (!command_buffer->SubmitCommands()) {
+    if (!command_buffer_->SubmitCommands()) {
       return false;
     }
+
+    pass_ = nullptr;
+    command_buffer_ = nullptr;
 
     return true;
-  };
+  }
+
+  RenderTarget GetRenderTarget() { return render_target_; }
+
+  std::shared_ptr<RenderPass> GetRenderPass(uint32_t pass_depth) {
+    // Create a new render pass if one isn't active.
+    if (!IsActive()) {
+      command_buffer_ = context_->CreateRenderCommandBuffer();
+      if (!command_buffer_) {
+        return nullptr;
+      }
+
+      command_buffer_->SetLabel(
+          "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
+          " Count=" + std::to_string(pass_count_));
+
+      // Never clear the texture for subsequent passes.
+      if (pass_count_ > 0) {
+        if (!render_target_.GetColorAttachments().empty()) {
+          auto color0 = render_target_.GetColorAttachments().find(0)->second;
+          color0.load_action = LoadAction::kLoad;
+          render_target_.SetColorAttachment(color0, 0);
+        }
+
+        if (auto stencil = render_target_.GetStencilAttachment();
+            stencil.has_value()) {
+          stencil->load_action = LoadAction::kLoad;
+          render_target_.SetStencilAttachment(stencil.value());
+        }
+      }
+
+      pass_ = command_buffer_->CreateRenderPass(render_target_);
+      if (!pass_) {
+        return nullptr;
+      }
+
+      pass_->SetLabel(
+          "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
+          " Count=" + std::to_string(pass_count_));
+
+      ++pass_count_;
+    }
+
+    return pass_;
+  }
+
+ private:
+  std::shared_ptr<Context> context_;
+  RenderTarget render_target_;
+  std::shared_ptr<CommandBuffer> command_buffer_;
+  std::shared_ptr<RenderPass> pass_;
+  uint32_t pass_count_ = 0;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(PassContext);
+};
+
+bool EntityPass::OnRender(ContentContext& renderer,
+                          RenderTarget render_target,
+                          Point position,
+                          uint32_t pass_depth,
+                          size_t stencil_depth_floor,
+                          std::shared_ptr<Texture> backdrop_texture) const {
+  TRACE_EVENT0("impeller", "EntityPass::OnRender");
+
+  auto context = renderer.GetContext();
+  PassContext pass_context(context, render_target);
+  if (!pass_context.IsValid()) {
+    return false;
+  }
 
   for (const auto& element : elements_) {
     Entity element_entity;
 
-    // =========================================================================
-    // Setup entity element for rendering ======================================
-    // =========================================================================
+    //--------------------------------------------------------------------------
+    /// Setup entity element for rendering.
+    ///
+
     if (const auto& entity = std::get_if<Entity>(&element)) {
       element_entity = *entity;
       if (!position.IsZero()) {
@@ -220,9 +304,10 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
       }
     }
 
-    // =========================================================================
-    // Setup subpass element for rendering =====================================
-    // =========================================================================
+    //--------------------------------------------------------------------------
+    /// Setup subpass element for rendering
+    ///
+
     else if (const auto& subpass_ptr =
                  std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       auto subpass = subpass_ptr->get();
@@ -233,8 +318,8 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
 
       if (subpass->delegate_->CanCollapseIntoParentPass()) {
         // Directly render into the parent target and move on.
-        if (!subpass->RenderInternal(renderer, render_target, position,
-                                     pass_depth, stencil_depth_floor)) {
+        if (!subpass->OnRender(renderer, pass_context.GetRenderTarget(),
+                               position, pass_depth, stencil_depth_floor)) {
           return false;
         }
         continue;
@@ -289,9 +374,8 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
 
       // Stencil textures aren't shared between EntityPasses (as much of the
       // time they are transient).
-      if (!subpass->RenderInternal(renderer, subpass_target,
-                                   subpass_coverage->origin, ++pass_depth,
-                                   subpass->stencil_depth_)) {
+      if (!subpass->OnRender(renderer, subpass_target, subpass_coverage->origin,
+                             ++pass_depth, subpass->stencil_depth_)) {
         return false;
       }
 
@@ -308,12 +392,12 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
       FML_UNREACHABLE();
     }
 
-    // =========================================================================
-    // Configure the RenderPass ================================================
-    // =========================================================================
+    //--------------------------------------------------------------------------
+    /// Setup advanced blends.
+    ///
 
-    if (pass && element_entity.GetBlendMode() >
-                    Entity::BlendMode::kLastPipelineBlendMode) {
+    if (element_entity.GetBlendMode() >
+        Entity::BlendMode::kLastPipelineBlendMode) {
       // End the active pass and flush the buffer before rendering "advanced"
       // blends. Advanced blends work by binding the current render target
       // texture as an input ("destination"), blending with a second texture
@@ -323,82 +407,39 @@ bool EntityPass::RenderInternal(ContentContext& renderer,
       // the render target texture so far need to execute before it's bound for
       // blending (otherwise the blend pass will end up executing before all the
       // previous commands in the active pass).
-      if (!end_pass()) {
+      if (!pass_context.EndPass()) {
         return false;
       }
-      // Resetting these handles triggers a new pass to get created below
-      pass = nullptr;
-      command_buffer = nullptr;
 
-      // Amend an advanced blend to the contents.
-      if (render_target.GetColorAttachments().empty()) {
+      // Amend an advanced blend filter to the contents, attaching the pass
+      // texture.
+      auto texture = pass_context.GetTexture();
+      if (!texture) {
         return false;
       }
-      auto color0 = render_target.GetColorAttachments().find(0)->second;
 
       FilterInput::Vector inputs = {
           FilterInput::Make(element_entity.GetContents()),
-          FilterInput::Make(
-              color0.resolve_texture ? color0.resolve_texture : color0.texture,
-              element_entity.GetTransformation().Invert())};
+          FilterInput::Make(texture,
+                            element_entity.GetTransformation().Invert())};
       element_entity.SetContents(
           FilterContents::MakeBlend(element_entity.GetBlendMode(), inputs));
       element_entity.SetBlendMode(Entity::BlendMode::kSourceOver);
     }
 
-    // Create a new render pass to render the element if one isn't active.
-    if (!pass) {
-      command_buffer = context->CreateRenderCommandBuffer();
-      if (!command_buffer) {
-        return false;
-      }
-
-      command_buffer->SetLabel(
-          "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
-          " Count=" + std::to_string(pass_count));
-
-      // Never clear the texture for subsequent passes.
-      if (pass_count > 0) {
-        if (!render_target.GetColorAttachments().empty()) {
-          auto color0 = render_target.GetColorAttachments().find(0)->second;
-          color0.load_action = LoadAction::kLoad;
-          render_target.SetColorAttachment(color0, 0);
-        }
-
-        if (auto stencil = render_target.GetStencilAttachment();
-            stencil.has_value()) {
-          stencil->load_action = LoadAction::kLoad;
-          render_target.SetStencilAttachment(stencil.value());
-        }
-      }
-
-      pass = command_buffer->CreateRenderPass(render_target);
-      if (!pass) {
-        return false;
-      }
-
-      pass->SetLabel(
-          "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
-          " Count=" + std::to_string(pass_count));
-
-      ++pass_count;
-    }
-
-    // =========================================================================
-    // Render the element ======================================================
-    // =========================================================================
+    //--------------------------------------------------------------------------
+    /// Render the Element.
+    ///
 
     element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
                                    stencil_depth_floor);
 
+    auto pass = pass_context.GetRenderPass(pass_depth);
     if (!element_entity.Render(renderer, *pass)) {
       return false;
     }
   }
 
-  if (pass) {
-    return end_pass();
-  }
   return true;
 }
 
@@ -453,6 +494,10 @@ void EntityPass::SetStencilDepth(size_t stencil_depth) {
 
 void EntityPass::SetBlendMode(Entity::BlendMode blend_mode) {
   blend_mode_ = blend_mode;
+}
+
+void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
+  backdrop_filter_proc_ = proc;
 }
 
 }  // namespace impeller
