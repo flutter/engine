@@ -18,7 +18,7 @@ namespace impeller {
 struct Picture {
   std::unique_ptr<EntityPass> pass;
 
-  std::shared_ptr<Image> RenderToImage(AiksContext& renderer);
+  std::shared_ptr<Image> RenderToImage(AiksContext& context);
 };
 
 }  // namespace impeller

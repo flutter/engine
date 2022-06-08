@@ -24,6 +24,8 @@ class AiksContext {
 
   bool IsValid() const;
 
+  std::shared_ptr<Context> GetContext() const;
+
   bool Render(const Picture& picture, RenderTarget& render_target);
 
  private:
@@ -31,7 +33,6 @@ class AiksContext {
   std::unique_ptr<ContentContext> content_context_;
   bool is_valid_ = false;
 
-  friend Picture;
   FML_DISALLOW_COPY_AND_ASSIGN(AiksContext);
 };
 
