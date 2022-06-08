@@ -615,6 +615,12 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
 }
 
 TEST_F(ShellTest, ReportTimingsIsCalled) {
+  // This test times out on FEMU.
+  // https://github.com/flutter/flutter/issues/105642
+#if OS_FUCHSIA
+  GTEST_SKIP();
+#endif
+
   fml::TimePoint start = fml::TimePoint::Now();
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
