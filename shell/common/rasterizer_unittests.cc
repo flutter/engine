@@ -891,4 +891,24 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
   EXPECT_EQ(context->getResourceCachePurgeableBytes(), 0ul);
 }
 
+TEST(RasterizerTest, TeardownNoSurface) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  NiceMock<MockDelegate> delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+
+  EXPECT_TRUE(rasterizer);
+  rasterizer->Teardown();
+}
+
 }  // namespace flutter
