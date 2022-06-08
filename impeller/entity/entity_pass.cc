@@ -228,11 +228,23 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    std::optional<Rect> subpass_coverage;
-
+    std::shared_ptr<Contents> backdrop_contents = nullptr;
     if (subpass->backdrop_filter_proc_.has_value()) {
-      subpass_coverage = Rect(
-          position, Size(pass_context.GetRenderTarget().GetRenderTargetSize()));
+      auto texture = pass_context.GetTexture();
+      // Render the backdrop texture before any of the pass elements.
+      const auto& proc = subpass->backdrop_filter_proc_.value();
+      backdrop_contents = proc(FilterInput::Make(std::move(texture)));
+
+      // The subpass will need to read from the current pass texture when
+      // rendering the backdrop, so if there's an active pass, end it prior to
+      // rendering the subpass.
+      pass_context.EndPass();
+    }
+
+    std::optional<Rect> subpass_coverage;
+    if (backdrop_contents) {
+      subpass_coverage = backdrop_contents->GetCoverage(Entity{});
+      subpass_coverage->origin += position;
     } else {
       subpass_coverage = GetSubpassCoverage(*subpass);
 
@@ -283,21 +295,11 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Failure();
     }
 
-    std::shared_ptr<Texture> backdrop_texture = nullptr;
-    if (subpass->backdrop_filter_proc_.has_value()) {
-      backdrop_texture = pass_context.GetTexture();
-
-      // The subpass will need to read from the current pass texture when
-      // rendering the backdrop, so if there's an active pass, end it prior to
-      // rendering the subpass.
-      pass_context.EndPass();
-    }
-
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
     if (!subpass->OnRender(renderer, subpass_target, subpass_coverage->origin,
                            position, ++pass_depth, subpass->stencil_depth_,
-                           backdrop_texture)) {
+                           backdrop_contents)) {
       return EntityPass::EntityResult::Failure();
     }
 
@@ -323,7 +325,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
                           Point parent_position,
                           uint32_t pass_depth,
                           size_t stencil_depth_floor,
-                          std::shared_ptr<Texture> backdrop_texture) const {
+                          std::shared_ptr<Contents> backdrop_contents) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
@@ -345,16 +347,12 @@ bool EntityPass::OnRender(ContentContext& renderer,
   };
 
   if (backdrop_filter_proc_.has_value()) {
-    if (!backdrop_texture) {
+    if (!backdrop_contents) {
       return false;
     }
 
-    // Render the backdrop texture before any of the pass elements.
-    const auto& proc = backdrop_filter_proc_.value();
-    auto contents = proc(FilterInput::Make(std::move(backdrop_texture)));
-
     Entity backdrop_entity;
-    backdrop_entity.SetContents(std::move(contents));
+    backdrop_entity.SetContents(std::move(backdrop_contents));
     backdrop_entity.SetTransformation(
         Matrix::MakeTranslation(Vector3(parent_position - position)));
 

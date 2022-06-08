@@ -91,7 +91,7 @@ class EntityPass {
                 Point parent_position,
                 uint32_t pass_depth,
                 size_t stencil_depth_floor = 0,
-                std::shared_ptr<Texture> backdrop_texture = nullptr) const;
+                std::shared_ptr<Contents> backdrop_contents = nullptr) const;
 
   std::vector<Element> elements_;
 
