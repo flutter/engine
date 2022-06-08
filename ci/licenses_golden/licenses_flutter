@@ -940,6 +940,9 @@ FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.h
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder_unittests.cc
 FILE: ../../../flutter/lib/ui/semantics/string_attribute.cc
 FILE: ../../../flutter/lib/ui/semantics/string_attribute.h
+FILE: ../../../flutter/lib/ui/services.dart
+FILE: ../../../flutter/lib/ui/services/flutter_asset_manager.cc
+FILE: ../../../flutter/lib/ui/services/flutter_asset_manager.h
 FILE: ../../../flutter/lib/ui/snapshot_delegate.h
 FILE: ../../../flutter/lib/ui/text.dart
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
@@ -999,6 +1002,7 @@ FILE: ../../../flutter/lib/web_ui/lib/path_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/pointer.dart
 FILE: ../../../flutter/lib/web_ui/lib/semantics.dart
+FILE: ../../../flutter/lib/web_ui/lib/services.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/alarm_clock.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/app_bootstrap.dart
