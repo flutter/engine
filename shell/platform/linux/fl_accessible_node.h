@@ -16,11 +16,12 @@ G_BEGIN_DECLS
 // https://gitlab.gnome.org/GNOME/atk/-/issues/10
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(AtkObject, g_object_unref)
 
-G_DECLARE_FINAL_TYPE(FlAccessibleNode,
-                     fl_accessible_node,
-                     FL,
-                     ACCESSIBLE_NODE,
-                     AtkObject);
+#define FL_TYPE_ACCESSIBLE_NODE fl_accessible_node_get_type()
+G_DECLARE_DERIVABLE_TYPE(FlAccessibleNode,
+                         fl_accessible_node,
+                         FL,
+                         ACCESSIBLE_NODE,
+                         AtkObject);
 
 /**
  * FlAccessibleNode:
@@ -28,6 +29,18 @@ G_DECLARE_FINAL_TYPE(FlAccessibleNode,
  * #FlAccessibleNode is an object that exposes a Flutter accessibility node to
  * ATK.
  */
+struct _FlAccessibleNodeClass {
+  AtkObjectClass parent_class;
+
+  void (*set_name)(FlAccessibleNode* node, const gchar* name);
+  void (*set_extents)(FlAccessibleNode* node,
+                      gint x,
+                      gint y,
+                      gint width,
+                      gint height);
+  void (*set_flags)(FlAccessibleNode* node, FlutterSemanticsFlag flags);
+  void (*set_actions)(FlAccessibleNode* node, FlutterSemanticsAction actions);
+};
 
 /**
  * fl_accessible_node_new:
