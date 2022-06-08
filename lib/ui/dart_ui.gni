@@ -18,6 +18,7 @@ dart_ui_files = [
   "//flutter/lib/ui/plugins.dart",
   "//flutter/lib/ui/pointer.dart",
   "//flutter/lib/ui/semantics.dart",
+  "//flutter/lib/ui/services.dart",
   "//flutter/lib/ui/text.dart",
   "//flutter/lib/ui/ui.dart",
   "//flutter/lib/ui/window.dart",
