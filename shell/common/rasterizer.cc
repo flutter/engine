@@ -95,9 +95,9 @@ void Rasterizer::Teardown() {
         context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
       }
     }
+    surface_.reset();
   }
 
-  surface_.reset();
   last_layer_tree_.reset();
 
   if (raster_thread_merger_.get() != nullptr &&
