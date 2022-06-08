@@ -612,11 +612,10 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   DeleteSimulator(new_simulator_name)
 
   create_simulator = [
-      'xcrun',
-      'simctl',
-      'create',
-      new_simulator_name,
-      'com.apple.CoreSimulator.SimDeviceType.iPhone-11',
+      'xcrun '
+      'simctl '
+      'create '
+      '%s com.apple.CoreSimulator.SimDeviceType.iPhone-11' % new_simulator_name
   ]
   RunCmd(create_simulator, shell=True)
 
@@ -624,18 +623,17 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
     ios_unit_test_dir = os.path.join(
         buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests'
     )
-
     # Avoid using xcpretty unless the following can be addressed:
     # - Make sure all relevant failure output is printed on a failure.
     # - Make sure that a failing exit code is set for CI.
     # See https://github.com/flutter/flutter/issues/63742
     test_command = [
-        'xcodebuild',
-        '-sdk iphonesimulator',
-        '-scheme IosUnitTests',
-        "-destination name='%s'" % new_simulator_name,
-        'test',
-        'FLUTTER_ENGINE=%s' % ios_variant,
+        'xcodebuild '
+        '-sdk iphonesimulator '
+        '-scheme IosUnitTests '
+        "-destination platform='iOS Simulator,name=iPhone 11' "
+        'test '
+        'FLUTTER_ENGINE=' + ios_variant
     ]
     if test_filter != None:
       test_command[0] = test_command[0] + " -only-testing:%s" % test_filter
@@ -652,7 +650,8 @@ def DeleteSimulator(simulator_name):
       'delete',
       simulator_name,
   ]
-  RunCmd(delete_simulator, shell=True)
+  # Let this fail if the simulator was never created.
+  RunCmd(delete_simulator, expect_failure=True)
 
 
 def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
