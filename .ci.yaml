@@ -268,6 +268,7 @@ targets:
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
       build_android_aot: "true"
       jazzy_version: "0.14.1"
+      clobber: "true"
     timeout: 60
 
   - name: Mac Host Engine
