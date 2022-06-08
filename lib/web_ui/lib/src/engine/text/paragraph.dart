@@ -114,6 +114,8 @@ class ParagraphLine {
     required double left,
     required double baseline,
     required int lineNumber,
+    required this.textAscent,
+    required this.textDescent,
     required this.ellipsis,
     required this.startIndex,
     required this.endIndex,
@@ -137,6 +139,9 @@ class ParagraphLine {
 
   /// Metrics for this line of the paragraph.
   final EngineLineMetrics lineMetrics;
+
+  final double textAscent;
+  final double textDescent;
 
   /// The string to be displayed as an overflow indicator.
   ///
@@ -204,6 +209,8 @@ class ParagraphLine {
   @override
   int get hashCode => Object.hash(
         lineMetrics,
+        textAscent,
+        textDescent,
         ellipsis,
         startIndex,
         endIndex,
@@ -225,6 +232,8 @@ class ParagraphLine {
     }
     return other is ParagraphLine &&
         other.lineMetrics == lineMetrics &&
+        other.textAscent == textAscent &&
+        other.textDescent == textDescent &&
         other.ellipsis == ellipsis &&
         other.startIndex == startIndex &&
         other.endIndex == endIndex &&

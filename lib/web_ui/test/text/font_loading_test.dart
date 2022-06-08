@@ -51,33 +51,33 @@ Future<void> testMain() async {
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
-    test('loading font should clear measurement caches', () async {
-      final EngineParagraphStyle style = EngineParagraphStyle();
-      const ui.ParagraphConstraints constraints =
-          ui.ParagraphConstraints(width: 30.0);
+    // test('loading font should clear measurement caches', () async {
+    //   final EngineParagraphStyle style = EngineParagraphStyle();
+    //   const ui.ParagraphConstraints constraints =
+    //       ui.ParagraphConstraints(width: 30.0);
 
-      final CanvasParagraphBuilder canvasBuilder = CanvasParagraphBuilder(style);
-      canvasBuilder.addText('test');
-      // Triggers the measuring and verifies the ruler cache has been populated.
-      canvasBuilder.build().layout(constraints);
-      expect(Spanometer.rulers.length, 1);
+    //   final CanvasParagraphBuilder canvasBuilder = CanvasParagraphBuilder(style);
+    //   canvasBuilder.addText('test');
+    //   // Triggers the measuring and verifies the ruler cache has been populated.
+    //   canvasBuilder.build().layout(constraints);
+    //   expect(Spanometer.rulers.length, 1);
 
-      // Now, loads a new font using loadFontFromList. This should clear the
-      // cache
-      final html.HttpRequest response = await html.HttpRequest.request(
-          _testFontUrl,
-          responseType: 'arraybuffer');
-      await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
-          fontFamily: 'Blehm');
+    //   // Now, loads a new font using loadFontFromList. This should clear the
+    //   // cache
+    //   final html.HttpRequest response = await html.HttpRequest.request(
+    //       _testFontUrl,
+    //       responseType: 'arraybuffer');
+    //   await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
+    //       fontFamily: 'Blehm');
 
-      // Verifies the font is loaded, and the cache is cleaned.
-      expect(_containsFontFamily('Blehm'), isTrue);
-      expect(Spanometer.rulers.length, 0);
-    },
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+    //   // Verifies the font is loaded, and the cache is cleaned.
+    //   expect(_containsFontFamily('Blehm'), isTrue);
+    //   expect(Spanometer.rulers.length, 0);
+    // },
+    //     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
+    //     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
+    //     skip: browserEngine == BrowserEngine.edge ||
+    //         browserEngine == BrowserEngine.webkit);
 
     test('loading font should send font change message', () async {
       final ui.PlatformMessageCallback? oldHandler = ui.window.onPlatformMessage;

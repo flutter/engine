@@ -205,10 +205,10 @@ class FontManager {
     final DomFontFace fontFace = createDomFontFace(family, list);
     return fontFace.load().then((_) {
       domDocument.fonts!.add(fontFace);
-      // There might be paragraph measurements for this new font before it is
-      // loaded. They were measured using fallback font, so we should clear the
-      // cache.
-      Spanometer.clearRulersCache();
+      // // There might be paragraph measurements for this new font before it is
+      // // loaded. They were measured using fallback font, so we should clear the
+      // // cache.
+      // Spanometer.clearRulersCache();
     }, onError: (dynamic exception) {
       // Failures here will throw an DomException which confusingly
       // does not implement Exception or Error. Rethrow an Exception so it can

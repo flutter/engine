@@ -256,7 +256,7 @@ class CanvasParagraph implements ui.Paragraph {
   }
 }
 
-void _positionSpanElement(DomElement element, ParagraphLine line, RangeBox box) {
+void _positionSpanElement(DomElement element, ParagraphLine line, SpanBox box) {
   final ui.Rect boxRect = box.toTextBox(line, forPainting: true).toRect();
   element.style
     ..position = 'absolute'

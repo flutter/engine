@@ -656,6 +656,10 @@ DomText createDomText(String data) => domDocument.createTextNode(data);
 class DomTextMetrics {}
 
 extension DomTextMetricsExtension on DomTextMetrics {
+  external num? get actualBoundingBoxAscent;
+  external num? get actualBoundingBoxDescent;
+  external num? get fontBoundingBoxAscent;
+  external num? get fontBoundingBoxDescent;
   external num? get width;
 }
 

@@ -4,7 +4,7 @@
 
 import 'dart:math' as math;
 
-import 'package:meta/meta.dart';
+// import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
@@ -12,7 +12,7 @@ import 'canvas_paragraph.dart';
 import 'line_breaker.dart';
 import 'measurement.dart';
 import 'paragraph.dart';
-import 'ruler.dart';
+// import 'ruler.dart';
 import 'text_direction.dart';
 
 /// Performs layout on a [CanvasParagraph].
@@ -114,7 +114,8 @@ class TextLayoutService {
         //
         // 2. We haven't reached `LineBreakType.endOfText` yet. This could
         //    happen when the last character is a new line.
-        if (currentLine.isNotEmpty || currentLine.end.type != LineBreakType.endOfText) {
+        if (currentLine.isNotEmpty ||
+            currentLine.end.type != LineBreakType.endOfText) {
           currentLine.extendToEndOfText();
           lines.add(currentLine.build());
         }
@@ -292,7 +293,8 @@ class TextLayoutService {
         }
       }
 
-      final double widthOfLastSegment = currentLine.lastSegment.width;
+      final double widthOfLastSegment =
+          currentLine.lastSegment.metrics.widthExcludingTrailingSpaces;
       if (minIntrinsicWidth < widthOfLastSegment) {
         minIntrinsicWidth = widthOfLastSegment;
       }
@@ -708,16 +710,17 @@ class SpanBox extends RangeBox {
     required LineBreakResult start,
     required LineBreakResult end,
     required double width,
+    required double ascent,
+    required double descent,
     required ui.TextDirection paragraphDirection,
     required ui.TextDirection boxDirection,
     required this.contentDirection,
     required this.isSpaceOnly,
   })  : span = spanometer.currentSpan,
-        height = spanometer.height,
-        baseline = spanometer.ascent,
+        height = ascent + descent,
+        baseline = ascent,
         _width = width,
         super(start, end, paragraphDirection, boxDirection);
-
 
   final Spanometer spanometer;
   final FlatTextSpan span;
@@ -801,7 +804,9 @@ class SpanBox extends RangeBox {
       before = 0.0;
     } else {
       spanometer.currentSpan = span;
-      before = spanometer._measure(this.start.index, start);
+      before = spanometer
+          .rawMeasure(this.start.index, start)
+          .widthExcludingTrailingSpaces;
     }
 
     final double after;
@@ -809,7 +814,9 @@ class SpanBox extends RangeBox {
       after = 0.0;
     } else {
       spanometer.currentSpan = span;
-      after = spanometer._measure(end, this.end.indexWithoutTrailingNewlines);
+      after = spanometer
+          .rawMeasure(end, this.end.indexWithoutTrailingNewlines)
+          .widthExcludingTrailingSpaces;
     }
 
     double left, right;
@@ -938,8 +945,11 @@ class SpanBox extends RangeBox {
       );
     }
 
-    final double lowWidth = spanometer._measure(startIndex, cutoff);
-    final double highWidth = spanometer._measure(startIndex, cutoff + 1);
+    final double lowWidth =
+        spanometer.rawMeasure(startIndex, cutoff).widthExcludingTrailingSpaces;
+    final double highWidth = spanometer
+        .rawMeasure(startIndex, cutoff + 1)
+        .widthExcludingTrailingSpaces;
 
     // See if `x` is closer to `cutoff` or `cutoff + 1`.
     if (x - lowWidth < highWidth - x) {
@@ -972,8 +982,9 @@ class LineSegment {
     required this.span,
     required this.start,
     required this.end,
-    required this.width,
-    required this.widthIncludingSpace,
+    required this.metrics,
+    // required this.width,
+    // required this.widthIncludingSpace,
   });
 
   /// The span that this segment belongs to.
@@ -985,20 +996,25 @@ class LineSegment {
   /// The index of the end of the segment in the paragraph.
   final LineBreakResult end;
 
-  /// The width of the segment excluding any trailing white space.
-  final double width;
+  /// Metrics of the text represented by this segment.
+  final TextMetrics metrics;
 
-  /// The width of the segment including any trailing white space.
-  final double widthIncludingSpace;
+  // /// The width of the segment excluding any trailing white space.
+  // final double width;
 
-  /// The width of the trailing white space in the segment.
-  double get widthOfTrailingSpace => widthIncludingSpace - width;
+  // /// The width of the segment including any trailing white space.
+  // final double widthIncludingSpace;
+
+  // /// The width of the trailing white space in the segment.
+  // double get widthOfTrailingSpace =>
+  //     metrics.widthIncludingTrailingSpaces -
+  //     metrics.widthExcludingTrailingSpaces;
 
   /// Whether this segment is made of only white space.
   ///
   /// We rely on the [width] to determine this because relying on incides
   /// doesn't work well for placeholders (they are zero-length strings).
-  bool get isSpaceOnly => width == 0;
+  bool get isSpaceOnly => metrics.widthExcludingTrailingSpaces == 0;
 }
 
 /// Builds instances of [ParagraphLine] for the given [paragraph].
@@ -1079,6 +1095,11 @@ class LineBuilder {
   /// The height of the line so far.
   double get height => ascent + descent;
 
+  double textAscent = 0.0;
+  double textDescent = 0.0;
+
+  double get textHeight => textAscent + textDescent;
+
   /// The last segment in this line.
   LineSegment get lastSegment => _segments.last;
 
@@ -1123,7 +1144,8 @@ class LineBuilder {
       return 0.0;
     }
 
-    return widthOfTrailingSpace + spanometer.measure(end, newEnd);
+    return widthOfTrailingSpace +
+        spanometer.measureRange(end, newEnd).widthExcludingTrailingSpaces;
   }
 
   bool get _isLastBoxAPlaceholder {
@@ -1148,9 +1170,6 @@ class LineBuilder {
 
   /// Extends the line by setting a [newEnd].
   void extendTo(DirectionalPosition newEnd) {
-    ascent = math.max(ascent, spanometer.ascent);
-    descent = math.max(descent, spanometer.descent);
-
     // When the direction changes, we need to make sure to put them in separate
     // boxes.
     if (_shouldCreateBoxBeforeExtendingTo(newEnd)) {
@@ -1180,8 +1199,6 @@ class LineBuilder {
     // The spanometer may not be ready in some cases. E.g. when the paragraph
     // is made up of only placeholders and no text.
     if (spanometer.isReady) {
-      ascent = math.max(ascent, spanometer.ascent);
-      descent = math.max(descent, spanometer.descent);
       _addSegment(_createSegment(endOfText));
     } else {
       end = endOfText;
@@ -1238,8 +1255,11 @@ class LineBuilder {
       span: placeholder,
       start: end,
       end: end,
-      width: placeholder.width,
-      widthIncludingSpace: placeholder.width,
+      metrics: TextMetrics.forPlaceholder(
+        placeholder: placeholder,
+        ascent: ascent,
+        descent: descent,
+      ),
     ));
 
     // Add the placeholder box.
@@ -1258,13 +1278,13 @@ class LineBuilder {
   LineSegment _createSegment(LineBreakResult segmentEnd) {
     // The segment starts at the end of the line.
     final LineBreakResult segmentStart = end;
+    final TextMetrics metrics =
+        spanometer.measureRange(segmentStart, segmentEnd);
     return LineSegment(
       span: spanometer.currentSpan,
       start: segmentStart,
       end: segmentEnd,
-      width: spanometer.measure(segmentStart, segmentEnd),
-      widthIncludingSpace:
-          spanometer.measureIncludingSpace(segmentStart, segmentEnd),
+      metrics: metrics,
     );
   }
 
@@ -1279,9 +1299,16 @@ class LineBuilder {
     // include trailing white space.
     if (!segment.isSpaceOnly) {
       // Add the width of previous trailing space.
-      width += widthOfTrailingSpace + segment.width;
+      width +=
+          widthOfTrailingSpace + segment.metrics.widthExcludingTrailingSpaces;
     }
-    widthIncludingSpace += segment.widthIncludingSpace;
+    widthIncludingSpace += segment.metrics.widthIncludingTrailingSpaces;
+
+    ascent = math.max(ascent, segment.metrics.ascent);
+    descent = math.max(descent, segment.metrics.descent);
+    textAscent = math.max(textAscent, segment.metrics.textAscent);
+    textDescent = math.max(textDescent, segment.metrics.textDescent);
+
     end = segment.end;
   }
 
@@ -1296,7 +1323,7 @@ class LineBuilder {
       widthIncludingSpace = 0.0;
       end = start;
     } else {
-      widthIncludingSpace -= poppedSegment.widthIncludingSpace;
+      widthIncludingSpace -= poppedSegment.metrics.widthIncludingTrailingSpaces;
       end = lastSegment.end;
 
       // Now, let's figure out what to do with `width`.
@@ -1304,7 +1331,7 @@ class LineBuilder {
       // Popping a space-only segment has no effect on `width`.
       if (!poppedSegment.isSpaceOnly) {
         // First, we subtract the width of the popped segment.
-        width -= poppedSegment.width;
+        width -= poppedSegment.metrics.widthExcludingTrailingSpaces;
 
         // Second, we subtract all trailing spaces from `width`. There could be
         // multiple trailing segments that are space-only.
@@ -1313,13 +1340,14 @@ class LineBuilder {
         while (i >= 0 && _segments[i].isSpaceOnly) {
           // Since the segment is space-only, `widthIncludingSpace` contains
           // the width of the space and nothing else.
-          widthOfTrailingSpace += _segments[i].widthIncludingSpace;
+          widthOfTrailingSpace +=
+              _segments[i].metrics.widthIncludingTrailingSpaces;
           i--;
         }
         if (i >= 0) {
           // Having `i >= 0` means in the above loop we stopped at a
           // non-space-only segment. We should also subtract its trailing spaces.
-          widthOfTrailingSpace += _segments[i].widthOfTrailingSpace;
+          widthOfTrailingSpace += _segments[i].metrics.widthOfTrailingSpaces;
         }
         width -= widthOfTrailingSpace;
       }
@@ -1386,7 +1414,7 @@ class LineBuilder {
     // We need to keep popping segments until we are able to fit the "..."
     // without overflowing. In this example, that would be: "foo ba..."
 
-    final double ellipsisWidth = spanometer.measureText(ellipsis);
+    final double ellipsisWidth = spanometer.measureText(ellipsis).widthExcludingTrailingSpaces;
     final double availableWidth = maxWidth - ellipsisWidth;
 
     // First, we create the new segment until `nextBreak`.
@@ -1472,6 +1500,8 @@ class LineBuilder {
       start: boxStart,
       end: boxEnd,
       width: _currentBoxWidth,
+      ascent: lastSegment.metrics.ascent,
+      descent: lastSegment.metrics.descent,
       paragraphDirection: _paragraphDirection,
       boxDirection: _currentBoxDirection,
       contentDirection: _currentContentDirection,
@@ -1490,8 +1520,9 @@ class LineBuilder {
     // At the end of each line, we cut the last box of the line.
     createBox();
 
+    // TODO(mdebbar): Should we create a new segment/box for the ellipsis?
     final double ellipsisWidth =
-        ellipsis == null ? 0.0 : spanometer.measureText(ellipsis);
+        ellipsis == null ? 0.0 : spanometer.measureText(ellipsis).widthExcludingTrailingSpaces;
 
     final int endIndexWithoutNewlines = math.max(start.index, end.indexWithoutTrailingNewlines);
     final bool hardBreak;
@@ -1513,10 +1544,12 @@ class LineBuilder {
       width: width + ellipsisWidth,
       widthWithTrailingSpaces: widthIncludingSpace + ellipsisWidth,
       left: alignOffset,
-      height: height,
+      height: height.ceilToDouble(),
       baseline: accumulatedHeight + ascent,
       ascent: ascent,
       descent: descent,
+      textAscent: textAscent,
+      textDescent: textDescent,
       boxes: _boxes,
       spaceBoxCount: _spaceBoxCount,
       trailingSpaceBoxCount: _trailingSpaceBoxCount,
@@ -1584,28 +1617,31 @@ class Spanometer {
   final CanvasParagraph paragraph;
   final DomCanvasRenderingContext2D context;
 
-  static RulerHost _rulerHost = RulerHost();
+  late final CachedMeasurements measurements = CachedMeasurements(context);
 
-  static Map<TextHeightStyle, TextHeightRuler> _rulers =
-      <TextHeightStyle, TextHeightRuler>{};
+  // static RulerHost _rulerHost = RulerHost();
 
-  @visibleForTesting
-  static Map<TextHeightStyle, TextHeightRuler> get rulers => _rulers;
+  // static Map<TextHeightStyle, TextHeightRuler> _rulers =
+  //     <TextHeightStyle, TextHeightRuler>{};
 
-  /// Clears the cache of rulers that are used for measuring text height and
-  /// baseline metrics.
-  static void clearRulersCache() {
-    _rulers.forEach((TextHeightStyle style, TextHeightRuler ruler) {
-      ruler.dispose();
-    });
-    _rulers.clear();
-  }
+  // @visibleForTesting
+  // static Map<TextHeightStyle, TextHeightRuler> get rulers => _rulers;
 
-  String _cssFontString = '';
+  // /// Clears the cache of rulers that are used for measuring text height and
+  // /// baseline metrics.
+  // static void clearRulersCache() {
+  //   _rulers.forEach((TextHeightStyle style, TextHeightRuler ruler) {
+  //     ruler.dispose();
+  //   });
+  //   _rulers.clear();
+  // }
 
-  double? get letterSpacing => currentSpan.style.letterSpacing;
+  // String _cssFontString = '';
 
-  TextHeightRuler? _currentRuler;
+  double? get letterSpacing => currentStyle.letterSpacing;
+  EngineTextStyle get currentStyle => currentSpan.style;
+
+  // TextHeightRuler? _currentRuler;
   FlatTextSpan? _currentSpan;
 
   FlatTextSpan get currentSpan => _currentSpan!;
@@ -1615,58 +1651,56 @@ class Spanometer {
     }
     _currentSpan = span;
 
-    // No need to update css font string when `span` is null.
-    if (span == null) {
-      _currentRuler = null;
-      return;
-    }
+    // // No need to update css font string when `span` is null.
+    // if (span == null) {
+    //   _currentRuler = null;
+    //   return;
+    // }
 
-    // Update the height ruler.
-    // If the ruler doesn't exist in the cache, create a new one and cache it.
-    final TextHeightStyle heightStyle = span.style.heightStyle;
-    TextHeightRuler? ruler = _rulers[heightStyle];
-    if (ruler == null) {
-      ruler = TextHeightRuler(heightStyle, _rulerHost);
-      _rulers[heightStyle] = ruler;
-    }
-    _currentRuler = ruler;
+    // // Update the height ruler.
+    // // If the ruler doesn't exist in the cache, create a new one and cache it.
+    // final TextHeightStyle heightStyle = span.style.heightStyle;
+    // TextHeightRuler? ruler = _rulers[heightStyle];
+    // if (ruler == null) {
+    //   ruler = TextHeightRuler(heightStyle, _rulerHost);
+    //   _rulers[heightStyle] = ruler;
+    // }
+    // _currentRuler = ruler;
 
-    // Update the font string if it's different from the previous span.
-    final String cssFontString = span.style.cssFontString;
-    if (_cssFontString != cssFontString) {
-      _cssFontString = cssFontString;
-      context.font = cssFontString;
-    }
+    // // Update the font string if it's different from the previous span.
+    // final String cssFontString = span.style.cssFontString;
+    // if (_cssFontString != cssFontString) {
+    //   _cssFontString = cssFontString;
+    //   context.font = cssFontString;
+    // }
   }
 
   /// Whether the spanometer is ready to take measurements.
   bool get isReady => _currentSpan != null;
 
-  /// The distance from the top of the current span to the alphabetic baseline.
-  double get ascent => _currentRuler!.alphabeticBaseline;
+  // /// The distance from the top of the current span to the alphabetic baseline.
+  // double get ascent => _currentRuler!.alphabeticBaseline;
 
-  /// The distance from the bottom of the current span to the alphabetic baseline.
-  double get descent => height - ascent;
+  // /// The distance from the bottom of the current span to the alphabetic baseline.
+  // double get descent => height - ascent;
 
-  /// The line height of the current span.
-  double get height => _currentRuler!.height;
+  // /// The line height of the current span.
+  // double get height => _currentRuler!.height;
 
-  /// Measures the width of text between two line breaks.
-  ///
-  /// Doesn't include the width of any trailing white space.
-  double measure(LineBreakResult start, LineBreakResult end) {
-    return _measure(start.index, end.indexWithoutTrailingSpaces);
+  /// Measures the range of text between two line breaks.
+  TextMetrics measureRange(LineBreakResult start, LineBreakResult end) {
+    final String text = paragraph.toPlainText();
+    final FlatTextSpan span = currentSpan;
+
+    // Make sure the range is within the current span.
+    assert(start.index >= span.start && start.index <= span.end);
+    assert(end.index >= span.start && end.index <= span.end);
+
+    return measurements.measureRange(text, currentStyle, start, end);
   }
 
-  /// Measures the width of text between two line breaks.
-  ///
-  /// Includes the width of trailing white space, if any.
-  double measureIncludingSpace(LineBreakResult start, LineBreakResult end) {
-    return _measure(start.index, end.indexWithoutTrailingNewlines);
-  }
-
-  double measureText(String text) {
-    return measureSubstring(context, text, 0, text.length);
+  TextMetrics measureText(String text) {
+    return measurements.measureText(text, currentSpan.style);
   }
 
   /// In a continuous, unbreakable block of text from [start] to [end], finds
@@ -1703,7 +1737,7 @@ class Spanometer {
     int high = end;
     do {
       final int mid = (low + high) ~/ 2;
-      final double width = _measure(start, mid);
+      final double width = rawMeasure(start, mid).widthExcludingTrailingSpaces;
       if (width < availableWidth) {
         low = mid;
       } else if (width > availableWidth) {
@@ -1719,21 +1753,20 @@ class Spanometer {
     return low;
   }
 
-  double _measure(int start, int end) {
-    assert(_currentSpan != null);
+  TextMetrics rawMeasure(int start, int end) {
+    final String text = paragraph.toPlainText();
     final FlatTextSpan span = currentSpan;
 
     // Make sure the range is within the current span.
     assert(start >= span.start && start <= span.end);
     assert(end >= span.start && end <= span.end);
 
-    final String text = paragraph.toPlainText();
-    return measureSubstring(
-      context,
-      text,
-      start,
-      end,
-      letterSpacing: letterSpacing,
+    return measurements.rawMeasure(
+      text: text,
+      style: currentStyle,
+      start: start,
+      endExcludingTrailingSpaces: end,
+      endIncludingTrailingSpaces: end,
     );
   }
 }
