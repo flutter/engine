@@ -66,6 +66,10 @@ class CkCanvas {
     );
   }
 
+  ui.Rect getDeviceClipBounds() {
+    return fromSkRect(skCanvas.getDeviceClipBounds());
+  }
+
   void drawArc(
     ui.Rect oval,
     double startAngle,
@@ -311,6 +315,10 @@ class CkCanvas {
 
   void translate(double dx, double dy) {
     skCanvas.translate(dx, dy);
+  }
+
+  Float32List getLocalToDevice() {
+    return skCanvas.getLocalToDevice();
   }
 
   CkPictureSnapshot? get pictureSnapshot => null;

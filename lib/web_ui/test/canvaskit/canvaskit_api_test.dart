@@ -1053,6 +1053,7 @@ void _canvasTests() {
       canvasKit.ClipOp.Intersect,
       true,
     );
+    expect(canvas.getDeviceClipBounds(), ui.Rect.fromLTRB(0, 0, 100, 100));
   });
 
   test('drawArc', () {

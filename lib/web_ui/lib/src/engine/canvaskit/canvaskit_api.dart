@@ -1683,6 +1683,7 @@ extension SkCanvasExtension on SkCanvas {
     SkClipOp clipOp,
     bool doAntiAlias,
   );
+  external Float32List getDeviceClipBounds();
   external void drawArc(
     Float32List oval,
     double startAngleDegrees,
@@ -1816,6 +1817,7 @@ extension SkCanvasExtension on SkCanvas {
   external void skew(double x, double y);
   external void concat(Float32List matrix);
   external void translate(double x, double y);
+  external Float32List getLocalToDevice();
   external void drawPicture(SkPicture picture);
   external void drawParagraph(
     SkParagraph paragraph,

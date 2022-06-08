@@ -434,6 +434,7 @@ void main() {
     } else {
       expect(error, isNull);
     }
+  });
 
   Matcher closeToTransform(Float64List expected) => (dynamic v) {
     Expect.type<Float64List>(v);

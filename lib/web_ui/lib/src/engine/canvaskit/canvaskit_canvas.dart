@@ -106,7 +106,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   @override
   Float64List getTransform() {
-    throw UnimplementedError('getTransform not implemented on CanvasKit back end');
+    return toMatrix64(_canvas.getLocalToDevice());
   }
 
   @override
@@ -141,15 +141,48 @@ class CanvasKitCanvas implements ui.Canvas {
     _canvas.clipPath(path as CkPath, doAntiAlias);
   }
 
-
   @override
   ui.Rect getLocalClipBounds() {
-    throw UnimplementedError('getLocalClipBounds not implemented on CanvasKit back end');
+    Matrix4 transform = Matrix4.fromFloat32List(_canvas.getLocalToDevice());
+    if (transform.invert() == 0) {
+      return ui.Rect.largest;
+    }
+    final ui.Rect destBounds = getDestinationClipBounds();
+    final Float32List corners = Float32List(2);
+    double left = 0;
+    double top = 0;
+    double right = 0;
+    double bottom = 0;
+    for (int i = 0; i < 4; i++) {
+      corners[0] = (i & 1) == 0 ? destBounds.left : destBounds.right;
+      corners[1] = i < 2 ? destBounds.top : destBounds.bottom;
+      transform.transform2(corners);
+      if (i == 0) {
+        left = corners[0];
+        right = corners[0];
+        top = corners[1];
+        bottom = corners[1];
+      } else {
+        if (left > corners[0]) {
+          left = corners[0];
+        }
+        if (right < corners[0]) {
+          right = corners[0];
+        }
+        if (top > corners[1]) {
+          top = corners[1];
+        }
+        if (bottom < corners[1]) {
+          bottom = corners[1];
+        }
+      }
+    }
+    return ui.Rect.fromLTRB(left, top, right, bottom);
   }
 
   @override
   ui.Rect getDestinationClipBounds() {
-    throw UnimplementedError('getDestinationClipBounds not implemented on CanvasKit back end');
+    return _canvas.getDeviceClipBounds();
   }
 
   @override
