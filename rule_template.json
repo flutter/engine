@@ -5,10 +5,10 @@
     "text": "Insert OSV id"
   },
   "fullDescription": {
-    "text": "Determines if vulnerabilities have been found by scanning against the OSV API"
+    "text": "Vulnerability found by scanning against the OSV API"
   },
   "help": {
-    "text": ""
+    "text": "Search OSV database using ID of the vulnerability"
   },
   "defaultConfiguration": {
     "level": "error"

@@ -22,12 +22,13 @@ SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 
 HELP_STR = "To find complete information on this vulnerability, navigate to "
+# TODO -- use prefix matching for this rather than always to OSV
 OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
 
 
 def ParseDepsFile(deps_flat_file):
     queries = [] # list of queries to submit in bulk request to OSV API
-    deps = open(deps_flat_file, 'r') 
+    deps = open(deps_flat_file, 'r')
     Lines = deps.readlines()
 
     headers = { 'Content-Type': 'application/json',}
@@ -41,41 +42,30 @@ def ParseDepsFile(deps_flat_file):
 
     json = {"queries": queries}
     print(json)
-    print("data as string: " + str(json))
     responses = requests.post(osv_url, headers=headers, json=json, allow_redirects=True)
-    print("http response: " + str(responses))
     if responses.json() == {}:
         print("Found no vulnerabilities")
-        return {}
-    if responses.status_code != 200:
+    elif responses.status_code != 200:
         print("Request error")
-        return {}
-    if responses.json() != {} and responses.status_code==200 and responses.json().get("results"):
+    elif responses.json() != {} and responses.status_code==200 and responses.json().get("results"):
         results = responses.json().get("results")
-        print("results:"+str(results))
         filtered_results = list(filter(lambda vuln: vuln != {}, results))
-        print("results:"+str(filtered_results))
-        print(len(filtered_results))
         if len(filtered_results)==0:
             print("Found no vulnerabilities")
             return {}
         else:
             print("Found " + str(len(filtered_results)) + " vulnerabilit(y/ies), adding to report")
             return filtered_results
-    return responses.json()
+    return {}
 
 def WriteSarif(responses, manifest_file):
     f = open('template.sarif')
     data = json.load(f)
     print("before WriteSarif: " + str(responses))
     for response in responses:
-        print("response: " + str(response))
         for vuln in response['vulns']:
-            print("vuln: " + str(vuln))
-            print(vuln['id'])
             data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
             data['runs'][0]['results'].append(CreateResultEntry(vuln))
-            print(data)
 
     with open(manifest_file, 'w') as out:
         json.dump(data, out)
@@ -89,8 +79,6 @@ def CreateRuleEntry(vuln: Dict[str, Any]):
     rule = json.load(f)
     rule['id'] = vuln['id']
     rule['shortDescription']['text'] = vuln['id']
-    rule['fullDescription']['text'] = "Vulnerability found: " + vuln['id']
-    rule['help']['text'] = HELP_STR + OSV_VULN_DB_URL + vuln['id']
     return rule
 
 def CreateResultEntry(vuln: Dict[str, Any]):
@@ -101,7 +89,6 @@ def CreateResultEntry(vuln: Dict[str, Any]):
     f = open('result_template.json')
     result = json.load(f)
     result['ruleId'] = vuln['id']
-    result['message']['text'] = vuln['id']
     return result
 
 def ParseArgs(args):
