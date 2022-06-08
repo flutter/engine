@@ -162,8 +162,7 @@ class SafariIos extends Browser {
         environment.webUiSimulatorScreenshotsDirectory.path, filename));
     List<int> imageBytes;
     if (!file.existsSync()) {
-      throw Exception('Failed to read the screenshot '
-          'screenshot$screenshotTag.png.');
+      throw Exception('Failed to read the screenshot $filename.');
     }
     imageBytes = await file.readAsBytes();
     file.deleteSync();

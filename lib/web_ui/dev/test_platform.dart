@@ -321,7 +321,7 @@ class BrowserPlatform extends PlatformPlugin {
         json.decode(payload) as Map<String, dynamic>;
     final String filename = requestData['filename'] as String;
 
-    if (!(await _browserManager!)!.supportsScreenshots) {
+    if (!(await browserManager).supportsScreenshots) {
       print(
         'INFO: Skipping screenshot check for $filename. Current browser/OS '
         'combination does not support screenshots.',
@@ -366,7 +366,7 @@ class BrowserPlatform extends PlatformPlugin {
 
     // Take screenshot.
     final Image screenshot =
-        await (await _browserManager!)!.captureScreenshot(regionAsRectange);
+        await (await browserManager).captureScreenshot(regionAsRectange);
 
     return compareImage(
       screenshot,
@@ -511,6 +511,7 @@ class BrowserPlatform extends PlatformPlugin {
       throw UnimplementedError();
 
   Future<BrowserManager?>? _browserManager;
+  Future<BrowserManager> get browserManager async => (await _browserManager!)!;
 
   /// Starts a browser manager for the browser provided by [browserEnvironment];
   ///

@@ -26,7 +26,7 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((String error) {
-      print('[Webdriver] $error');
+      print('[Webdriver][Error] $error');
     });
 
     _driverProcess.stdout
@@ -44,13 +44,16 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
 
   @override
   Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
-    for(;;) {
+    for (;;) {
       try {
         final WebDriver driver = await createDriver(
           uri: driverUri, desired: <String, dynamic>{'browserName': packageTestRuntime.identifier});
         return WebDriverBrowser(driver, url);
       } on SocketException {
-        // Sometimes we may try to connect before the web driver port is ready. Retry.
+        // Sometimes we may try to connect before the web driver port is ready.
+        // So we should here. Note that if there was some issue with the
+        // webdriver process, we may loop infinitely here, so we're relying on
+        // the test timeout to kill us if it takes too long to connect.
         print('Failed to connect to webdriver process. Retrying in 100 ms');
         await Future<void>.delayed(const Duration(milliseconds: 100));
       } catch (exception) {
