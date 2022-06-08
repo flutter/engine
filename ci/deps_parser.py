@@ -20,7 +20,7 @@ SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 
 CHROMIUM_README_FILE = 'third_party/accessibility/README.md'
-CHROMIUM_README_COMMIT_LINE = 4 # the fifth line will always contain the commit hash 
+CHROMIUM_README_COMMIT_LINE = 4 # the fifth line will always contain the commit hash
 CHROMIUM_PKG_NAME = 'chromium'
 
 # Used in parsing the DEPS file.

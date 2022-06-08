@@ -26,45 +26,59 @@ OSV_VULN_DB_URL = "https://osv.dev/vulnerability/"
 
 
 def ParseDepsFile(deps_flat_file):
-    deps = open(deps_flat_file, 'r')
+    queries = [] # list of queries to submit in bulk request to OSV API
+    deps = open(deps_flat_file, 'r') 
     Lines = deps.readlines()
 
-    headers = { 'Content-Type': 'application/x-www-form-urlencoded',}
-    osv_url = 'https://api.osv.dev/v1/query'
-    osv_scans = []
+    headers = { 'Content-Type': 'application/json',}
+    osv_url = 'https://api.osv.dev/v1/querybatch'
 
-    # Extract commit hash, call OSV with each hash
+    # Extract commit hash, save in dictionary
     for line in Lines:
         dep = line.strip().split('@')
         commit_hash = dep[1]
-        package = dep[0].split('/')[-1].split('.')[0]
-        data = {"commit" : commit_hash}
-        response = requests.post(osv_url, headers=headers, data=str(data), allow_redirects=True)
-        print("Scanned " + package + " at " + dep[1], end = '')
-        if response.json() == {}:
-            print(" and found no vulnerabilities")
-        if response.json() != {} and response.json().get("vulns"):
-            osv_scans.append({"vulns": response.json().get("vulns"), "package": package})
-            print(" and found " + str(len(response.json().get("vulns"))) + " vulnerabilit(y/ies), adding to report")
-    return osv_scans
+        queries.append({"commit" : commit_hash})
 
+    json = {"queries": queries}
+    print(json)
+    print("data as string: " + str(json))
+    responses = requests.post(osv_url, headers=headers, json=json, allow_redirects=True)
+    print("http response: " + str(responses))
+    if responses.json() == {}:
+        print("Found no vulnerabilities")
+        return {}
+    if responses.status_code != 200:
+        print("Request error")
+        return {}
+    if responses.json() != {} and responses.status_code==200 and responses.json().get("results"):
+        results = responses.json().get("results")
+        print("results:"+str(results))
+        filtered_results = list(filter(lambda vuln: vuln != {}, results))
+        print("results:"+str(filtered_results))
+        print(len(filtered_results))
+        if len(filtered_results)==0:
+            print("Found no vulnerabilities")
+            return {}
+        else:
+            print("Found " + str(len(filtered_results)) + " vulnerabilit(y/ies), adding to report")
+            return filtered_results
+    return responses.json()
 
-def WriteSarif(osv_scans, manifest_file):
-    if len(osv_scans) == 0:
-        print('No vulnerabilities detected')
-    else:
-        f = open('template.sarif')
-        data = json.load(f)
-        for scan in osv_scans:
-            package = scan["package"]
-            vulns = scan["vulns"]
-            for vuln in vulns:
-                data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
-                data['runs'][0]['results'].append(CreateResultEntry(vuln, package))
-        print(data)
+def WriteSarif(responses, manifest_file):
+    f = open('template.sarif')
+    data = json.load(f)
+    print("before WriteSarif: " + str(responses))
+    for response in responses:
+        print("response: " + str(response))
+        for vuln in response['vulns']:
+            print("vuln: " + str(vuln))
+            print(vuln['id'])
+            data['runs'][0]['tool']['driver']['rules'].append(CreateRuleEntry(vuln))
+            data['runs'][0]['results'].append(CreateResultEntry(vuln))
+            print(data)
 
-        with open(manifest_file, 'w') as out:
-            json.dump(data, out)
+    with open(manifest_file, 'w') as out:
+        json.dump(data, out)
 
 def CreateRuleEntry(vuln: Dict[str, Any]):
     """
@@ -75,11 +89,11 @@ def CreateRuleEntry(vuln: Dict[str, Any]):
     rule = json.load(f)
     rule['id'] = vuln['id']
     rule['shortDescription']['text'] = vuln['id']
-    rule['fullDescription']['text'] = "Vulnerability found: " + vuln['id'] + " last modified: " + vuln['modified']
+    rule['fullDescription']['text'] = "Vulnerability found: " + vuln['id']
     rule['help']['text'] = HELP_STR + OSV_VULN_DB_URL + vuln['id']
     return rule
 
-def CreateResultEntry(vuln: Dict[str, Any], package: str):
+def CreateResultEntry(vuln: Dict[str, Any]):
     """
     Creates a Sarif res entry from an OSV entry.
     Rule finding linked to the associated rule metadata via ruleId
@@ -87,7 +101,7 @@ def CreateResultEntry(vuln: Dict[str, Any], package: str):
     f = open('result_template.json')
     result = json.load(f)
     result['ruleId'] = vuln['id']
-    result['message']['text'] = package
+    result['message']['text'] = vuln['id']
     return result
 
 def ParseArgs(args):
