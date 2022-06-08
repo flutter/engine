@@ -1057,6 +1057,49 @@
   return localTextAndSelectionUpdated;
 }
 
+- (bool)testSelectorsAreForwardedToFramework {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
+  [plugin handleMethodCall:[FlutterMethodCall
+                               methodCallWithMethodName:@"TextInput.setClient"
+                                              arguments:@[
+                                                @(1), @{
+                                                  @"inputAction" : @"action",
+                                                  @"enableDeltaModel" : @"true",
+                                                  @"inputType" : @{@"name" : @"inputName"},
+                                                }
+                                              ]]
+                    result:^(id){
+                    }];
+
+  [plugin doCommandBySelector:@selector(moveRightAndModifySelection:)];
+
+  NSData* performSelectorCall = [[FlutterJSONMethodCodec sharedInstance]
+      encodeMethodCall:[FlutterMethodCall
+                           methodCallWithMethodName:@"TextInputClient.performSelector"
+                                          arguments:@[ @(1), @"moveRightAndModifySelection:" ]]];
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:performSelectorCall]);
+  } @catch (...) {
+    return false;
+  }
+
+  return true;
+}
+
 @end
 
 namespace flutter::testing {
@@ -1118,6 +1161,10 @@ TEST(FlutterTextInputPluginTest, TestPerformKeyEquivalent) {
 
 TEST(FlutterTextInputPluginTest, UnhandledKeyEquivalent) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] unhandledKeyEquivalent]);
+}
+
+TEST(FlutterTextInputPluginTest, TestSelectorsAreForwardedToFramework) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSelectorsAreForwardedToFramework]);
 }
 
 TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
