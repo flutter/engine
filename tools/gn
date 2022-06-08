@@ -14,7 +14,8 @@ import os
 import platform
 
 SRC_ROOT = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 
 
 def get_out_dir(args):
@@ -88,10 +89,8 @@ def to_command_line(gn_args):
 
 
 def cpu_for_target_arch(arch):
-  if arch in [
-      'ia32', 'x86', 'arm', 'armv6', 'armv5te', 'mips', 'simarm', 'simarmv6',
-      'simarmv5te', 'simmips', 'simdbc', 'armsimdbc'
-  ]:
+  if arch in ['ia32', 'x86', 'arm', 'armv6', 'armv5te', 'mips', 'simarm',
+              'simarmv6', 'simarmv5te', 'simmips', 'simdbc', 'armsimdbc']:
     return 'x86'
   if arch in ['x64', 'arm64', 'simarm64', 'simdbc64', 'armsimdbc64']:
     return 'x64'
@@ -102,8 +101,9 @@ def is_host_build(args):
   # If target_os == None, then this is a host build.
   # However, for linux arm64 builds, we cross compile from x64 hosts, so the
   # target_os='linux' and linux-cpu='arm64'
-  return args.target_os is None or (args.target_os == 'linux' and
-                                    args.linux_cpu == 'arm64')
+  return args.target_os is None or (
+      args.target_os == 'linux' and args.linux_cpu == 'arm64'
+  )
 
 
 # Determines whether a prebuilt Dart SDK can be used instead of building one.
@@ -223,13 +223,13 @@ def to_gn_args(args):
       gn_args['enable_unittests'] = False
 
   # Skia GN args.
-  gn_args[
-      'skia_enable_flutter_defines'] = True  # Enable Flutter API guards in Skia.
+  gn_args['skia_enable_flutter_defines'
+         ] = True  # Enable Flutter API guards in Skia.
   gn_args['skia_use_dng_sdk'] = False  # RAW image handling.
   gn_args['skia_use_sfntly'] = False  # PDF handling dependency.
   gn_args['skia_enable_pdf'] = False  # PDF handling.
-  gn_args[
-      'skia_use_x11'] = False  # Never add the X11 dependency (only takes effect on Linux).
+  gn_args['skia_use_x11'
+         ] = False  # Never add the X11 dependency (only takes effect on Linux).
   gn_args['skia_use_wuffs'] = True
   gn_args['skia_use_expat'] = args.target_os == 'android'
   gn_args['skia_use_fontconfig'] = args.enable_fontconfig
@@ -247,8 +247,8 @@ def to_gn_args(args):
     gn_args['skia_use_icu'] = True
     gn_args['icu_use_data_file'] = False
     gn_args['skia_use_harfbuzz'] = True
-    gn_args[
-        'skia_canvaskit_profile_build'] = not args.unoptimized and runtime_mode == 'profile'
+    gn_args['skia_canvaskit_profile_build'
+           ] = not args.unoptimized and runtime_mode == 'profile'
 
   if args.enable_skshaper:
     gn_args['skia_use_icu'] = True
@@ -261,8 +261,8 @@ def to_gn_args(args):
       gn_args['icu_use_data_file'] = False
   gn_args['is_official_build'] = True  # Disable Skia test utilities.
   gn_args['is_debug'] = args.unoptimized
-  gn_args[
-      'android_full_debug'] = args.target_os == 'android' and args.unoptimized
+  gn_args['android_full_debug'
+         ] = args.target_os == 'android' and args.unoptimized
   if args.clang is None:
     gn_args['is_clang'] = True
   else:
@@ -340,8 +340,8 @@ def to_gn_args(args):
   if not args.web_sdk:
     gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
     gn_args['flutter_enable_skshaper'] = args.enable_skshaper
-    gn_args[
-        'dart_component_kind'] = 'static_library'  # Always link Dart in statically.
+    gn_args['dart_component_kind'
+           ] = 'static_library'  # Always link Dart in statically.
     gn_args['embedder_for_target'] = args.embedder_for_target
     gn_args['dart_lib_export_symbols'] = False
     gn_args['flutter_runtime_mode'] = runtime_mode
@@ -369,13 +369,14 @@ def to_gn_args(args):
     gn_args['allow_deprecated_api_calls'] = args.allow_deprecated_api_calls
 
   if args.support_fractional_translation:
-    gn_args[
-        'support_fractional_translation'] = args.support_fractional_translation
+    gn_args['support_fractional_translation'
+           ] = args.support_fractional_translation
 
   # DBC is not supported anymore.
   if args.interpreter:
     raise Exception(
-        '--interpreter is no longer needed on any supported platform.')
+        '--interpreter is no longer needed on any supported platform.'
+    )
 
   if args.target_os is None:
     if sys.platform.startswith(('cygwin', 'win')):
@@ -414,8 +415,8 @@ def to_gn_args(args):
     gn_args['icu_use_data_file'] = False
   gn_args['is_official_build'] = True  # Disable Skia test utilities.
   gn_args['is_debug'] = args.unoptimized
-  gn_args[
-      'android_full_debug'] = args.target_os == 'android' and args.unoptimized
+  gn_args['android_full_debug'
+         ] = args.target_os == 'android' and args.unoptimized
   if args.clang is None:
     gn_args['is_clang'] = True
   else:
@@ -492,8 +493,8 @@ def to_gn_args(args):
   if args.target_os != 'wasm':
     gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
     gn_args['flutter_enable_skshaper'] = args.enable_skshaper
-    gn_args[
-        'dart_component_kind'] = 'static_library'  # Always link Dart in statically.
+    gn_args['dart_component_kind'
+           ] = 'static_library'  # Always link Dart in statically.
     gn_args['embedder_for_target'] = args.embedder_for_target
     gn_args['dart_lib_export_symbols'] = False
     gn_args['flutter_runtime_mode'] = runtime_mode
@@ -523,13 +524,14 @@ def to_gn_args(args):
     gn_args['allow_deprecated_api_calls'] = args.allow_deprecated_api_calls
 
   if args.support_fractional_translation:
-    gn_args[
-        'support_fractional_translation'] = args.support_fractional_translation
+    gn_args['support_fractional_translation'
+           ] = args.support_fractional_translation
 
   # DBC is not supported anymore.
   if args.interpreter:
     raise Exception(
-        '--interpreter is no longer needed on any supported platform.')
+        '--interpreter is no longer needed on any supported platform.'
+    )
 
   if args.target_os is None:
     if sys.platform.startswith(('cygwin', 'win')):
@@ -567,7 +569,8 @@ def to_gn_args(args):
     if args.goma:
       print(
           "GOMA usage was specified but can't be found, falling back to local "
-          'builds. Set the GOMA_DIR environment variable to fix GOMA.')
+          'builds. Set the GOMA_DIR environment variable to fix GOMA.'
+      )
     gn_args['use_goma'] = False
     gn_args['goma_dir'] = None
 
@@ -585,9 +588,8 @@ def to_gn_args(args):
     # attributes in release modes till the toolchain is updated.
     gn_args['skia_enable_api_available_macro'] = args.runtime_mode != 'release'
 
-  if sys.platform == 'darwin' and args.target_os not in [
-      'android', 'fuchsia', 'wasm'
-  ]:
+  if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia',
+                                                         'wasm']:
     # OpenGL is deprecated on macOS > 10.11.
     # This is not necessarily needed but enabling this until we have a way to
     # build a macOS metal only shell and a gl only shell.
@@ -618,8 +620,8 @@ def to_gn_args(args):
   # gn_args['enable_profiling'] = args.runtime_mode != 'release' and args.android_cpu != 'x86'
 
   # Make symbols visible in order to enable symbolization of unit test crash backtraces on Linux
-  gn_args[
-      'disable_hidden_visibility'] = args.target_os == 'linux' and args.unoptimized
+  gn_args['disable_hidden_visibility'
+         ] = args.target_os == 'linux' and args.unoptimized
 
   if args.arm_float_abi:
     gn_args['arm_float_abi'] = args.arm_float_abi
@@ -628,16 +630,22 @@ def to_gn_args(args):
   # use it instead of building a new one.
   if args.prebuilt_dart_sdk:
     if can_use_prebuilt_dart(args):
-      print('Using prebuilt Dart SDK binary. If you are editing Dart sources '
-            'and wish to compile the Dart SDK, set `--no-prebuilt-dart-sdk`.')
+      print(
+          'Using prebuilt Dart SDK binary. If you are editing Dart sources '
+          'and wish to compile the Dart SDK, set `--no-prebuilt-dart-sdk`.'
+      )
       gn_args['flutter_prebuilt_dart_sdk'] = True
       gn_args['dart_sdk_output'] = 'built-dart-sdk'
     elif is_host_build(args):
-      print('Tried to download prebuilt Dart SDK but an appropriate version '
-            'could not be found!')
-      print('Either retry by running '
-            'flutter/tools/download_dart_sdk.py manually or compile from '
-            'source by setting `--no-prebuilt-dart-sdk` flag to tools/gn')
+      print(
+          'Tried to download prebuilt Dart SDK but an appropriate version '
+          'could not be found!'
+      )
+      print(
+          'Either retry by running '
+          'flutter/tools/download_dart_sdk.py manually or compile from '
+          'source by setting `--no-prebuilt-dart-sdk` flag to tools/gn'
+      )
   elif is_host_build(args):
     # dart_platform_sdk is only defined for host builds, linux arm host builds
     # specify target_os=linux.
@@ -688,9 +696,8 @@ def to_gn_args(args):
     gn_args['fuchsia_target_api_level'] = args.fuchsia_target_api_level
   elif args.target_os == 'fuchsia':
     # Read the default target api level from a file so we can update it with a roller
-    with open(
-        os.path.join(os.path.dirname(__file__),
-                     'fuchsia/target_api_level')) as file:
+    with open(os.path.join(os.path.dirname(__file__),
+                           'fuchsia/target_api_level')) as file:
       gn_args['fuchsia_target_api_level'] = int(file.read().strip())
 
   # Flags for Dart features:
@@ -721,7 +728,8 @@ def parse_args(args):
       '--runtime-mode',
       type=str,
       choices=['debug', 'profile', 'release', 'jit_release'],
-      default='debug')
+      default='debug'
+  )
   parser.add_argument('--interpreter', default=False, action='store_true')
   parser.add_argument(
       '--dart-debug',
@@ -729,58 +737,77 @@ def parse_args(args):
       action='store_true',
       help='Enables assertions in the Dart VM. Does not affect optimization '
       'levels. If you need to disable optimizations in Dart, use '
-      '--full-dart-debug')
+      '--full-dart-debug'
+  )
   parser.add_argument(
       '--no-dart-version-git-info',
       default=False,
       action='store_true',
-      help='Set by default; if unset, turns off the dart SDK git hash check')
+      help='Set by default; if unset, turns off the dart SDK git hash check'
+  )
   parser.add_argument(
       '--full-dart-debug',
       default=False,
       action='store_true',
       help='Implies --dart-debug and also disables optimizations in the Dart '
-      'VM making it easier to step through VM code in the debugger.')
+      'VM making it easier to step through VM code in the debugger.'
+  )
 
   parser.add_argument(
       '--target-os',
       type=str,
-      choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'wasm', 'win'])
+      choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'wasm', 'win']
+  )
   parser.add_argument(
-      '--android', dest='target_os', action='store_const', const='android')
+      '--android', dest='target_os', action='store_const', const='android'
+  )
   parser.add_argument(
       '--android-cpu',
       type=str,
       choices=['arm', 'x64', 'x86', 'arm64'],
-      default='arm')
+      default='arm'
+  )
   parser.add_argument(
-      '--ios', dest='target_os', action='store_const', const='ios')
+      '--ios', dest='target_os', action='store_const', const='ios'
+  )
   parser.add_argument(
-      '--ios-cpu', type=str, choices=['arm', 'arm64'], default='arm64')
+      '--ios-cpu', type=str, choices=['arm', 'arm64'], default='arm64'
+  )
   parser.add_argument(
-      '--mac', dest='target_os', action='store_const', const='mac')
+      '--mac', dest='target_os', action='store_const', const='mac'
+  )
   parser.add_argument(
-      '--mac-cpu', type=str, choices=['x64', 'arm64'], default='x64')
+      '--mac-cpu', type=str, choices=['x64', 'arm64'], default='x64'
+  )
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument(
-      '--linux', dest='target_os', action='store_const', const='linux')
+      '--linux', dest='target_os', action='store_const', const='linux'
+  )
   parser.add_argument(
-      '--fuchsia', dest='target_os', action='store_const', const='fuchsia')
+      '--fuchsia', dest='target_os', action='store_const', const='fuchsia'
+  )
   parser.add_argument(
-      '--wasm', dest='target_os', action='store_const', const='wasm')
+      '--wasm', dest='target_os', action='store_const', const='wasm'
+  )
   parser.add_argument(
-      '--windows', dest='target_os', action='store_const', const='win')
+      '--windows', dest='target_os', action='store_const', const='win'
+  )
 
   parser.add_argument(
-      '--linux-cpu', type=str, choices=['x64', 'x86', 'arm64', 'arm'])
+      '--linux-cpu', type=str, choices=['x64', 'x86', 'arm64', 'arm']
+  )
   parser.add_argument(
-      '--fuchsia-cpu', type=str, choices=['x64', 'arm64'], default='x64')
+      '--fuchsia-cpu', type=str, choices=['x64', 'arm64'], default='x64'
+  )
   parser.add_argument(
-      '--windows-cpu', type=str, choices=['x64', 'arm64', 'x86'], default='x64')
+      '--windows-cpu', type=str, choices=['x64', 'arm64', 'x86'], default='x64'
+  )
   parser.add_argument(
-      '--simulator-cpu', type=str, choices=['x64', 'arm64'], default='x64')
+      '--simulator-cpu', type=str, choices=['x64', 'arm64'], default='x64'
+  )
   parser.add_argument(
-      '--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp'])
+      '--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp']
+  )
 
   parser.add_argument('--goma', default=True, action='store_true')
   parser.add_argument('--no-goma', dest='goma', action='store_false')
@@ -792,32 +819,38 @@ def parse_args(args):
       'created in a generated folder, which will avoid potential backend '
       'errors in Fuchsia RBE. Instead of specifying the flag on each '
       'invocation the FLUTTER_GOMA_CREATE_XCODE_SYMLINKS environment '
-      'variable may be set to 1 to achieve the same effect.')
+      'variable may be set to 1 to achieve the same effect.'
+  )
   parser.add_argument(
       '--no-xcode-symlinks',
       dest='xcode_symlinks',
       default=False,
-      action='store_false')
+      action='store_false'
+  )
   parser.add_argument(
       '--depot-tools',
       default='~/depot_tools',
       type=str,
       help='Depot tools provides an alternative location for gomacc in ' +
-      '/path/to/depot_tools/.cipd_bin')
+      '/path/to/depot_tools/.cipd_bin'
+  )
 
   parser.add_argument('--lto', default=True, action='store_true')
   parser.add_argument('--no-lto', dest='lto', action='store_false')
 
   parser.add_argument('--clang', action='store_const', const=True)
   parser.add_argument(
-      '--no-clang', dest='clang', action='store_const', const=False)
+      '--no-clang', dest='clang', action='store_const', const=False
+  )
 
   parser.add_argument(
-      '--clang-static-analyzer', default=False, action='store_true')
+      '--clang-static-analyzer', default=False, action='store_true'
+  )
   parser.add_argument(
       '--no-clang-static-analyzer',
       dest='clang_static_analyzer',
-      action='store_false')
+      action='store_false'
+  )
 
   parser.add_argument('--target-sysroot', type=str)
   parser.add_argument('--target-toolchain', type=str)
@@ -826,27 +859,33 @@ def parse_args(args):
       '--operator-new-alignment',
       dest='operator_new_alignment',
       type=str,
-      default=None)
+      default=None
+  )
 
   parser.add_argument(
-      '--macos-enable-metal', action='store_true', default=False)
+      '--macos-enable-metal', action='store_true', default=False
+  )
   parser.add_argument('--enable-vulkan', action='store_true', default=False)
 
   parser.add_argument('--enable-fontconfig', action='store_true', default=False)
   parser.add_argument(
-      '--enable-vulkan-validation-layers', action='store_true', default=False)
+      '--enable-vulkan-validation-layers', action='store_true', default=False
+  )
 
   parser.add_argument('--enable-skshaper', action='store_true', default=True)
   parser.add_argument(
-      '--no-enable-skshaper', dest='enable_skshaper', action='store_false')
+      '--no-enable-skshaper', dest='enable_skshaper', action='store_false'
+  )
   parser.add_argument(
-      '--always-use-skshaper', action='store_true', default=False)
+      '--always-use-skshaper', action='store_true', default=False
+  )
 
   parser.add_argument(
       '--embedder-for-target',
       dest='embedder_for_target',
       action='store_true',
-      default=False)
+      default=False
+  )
 
   parser.add_argument('--coverage', default=False, action='store_true')
 
@@ -867,9 +906,11 @@ def parse_args(args):
       '--full-dart-sdk',
       default=False,
       action='store_true',
-      help='DEPRECATED: This flag has no effect.')
+      help='DEPRECATED: This flag has no effect.'
+  )
   parser.add_argument(
-      '--no-full-dart-sdk', dest='full_dart_sdk', action='store_false')
+      '--no-full-dart-sdk', dest='full_dart_sdk', action='store_false'
+  )
 
   # The reason this is its own flag and not with the rest of the "target_os" flags
   # is that setting the "target_os" to "web" or "wasm" or anything that the Dart
@@ -881,7 +922,8 @@ def parse_args(args):
       dest='web_sdk',
       action='store_true',
       default=False,
-      help='Build the Flutter Web SDK.')
+      help='Build the Flutter Web SDK.'
+  )
 
   parser.add_argument(
       '--ide',
@@ -896,13 +938,15 @@ def parse_args(args):
       '--allow-deprecated-api-calls',
       action='store_true',
       default=False,
-      help='Turns off warnings about the usage of deprecated APIs.')
+      help='Turns off warnings about the usage of deprecated APIs.'
+  )
 
   parser.add_argument(
       '--disable-desktop-embeddings',
       default=False,
       action='store_true',
-      help='Do not include desktop embeddings in the build.')
+      help='Do not include desktop embeddings in the build.'
+  )
   parser.add_argument(
       '--build-glfw-shell',
       action='store_const',
@@ -920,13 +964,15 @@ def parse_args(args):
       '--build-embedder-examples',
       action='store_const',
       const=True,
-      help='Build the example embedders using the Embedder API.')
+      help='Build the example embedders using the Embedder API.'
+  )
   parser.add_argument(
       '--no-build-embedder-examples',
       dest='build_embedder_examples',
       action='store_const',
       const=False,
-      help='Do not build the example embedders using the Embedder API.')
+      help='Do not build the example embedders using the Embedder API.'
+  )
 
   parser.add_argument(
       '--bitcode',
@@ -948,12 +994,15 @@ def parse_args(args):
       default=True,
       action='store_true',
       help='Whether to use a prebuilt Dart SDK instead of building one. This defaults to '
-      + 'true and is enabled on CI.')
+      + 'true and is enabled on CI.'
+  )
   parser.add_argument(
-      '--no-prebuilt-dart-sdk', dest='prebuilt_dart_sdk', action='store_false')
+      '--no-prebuilt-dart-sdk', dest='prebuilt_dart_sdk', action='store_false'
+  )
 
   parser.add_argument(
-      '--fuchsia-target-api-level', dest='fuchsia_target_api_level')
+      '--fuchsia-target-api-level', dest='fuchsia_target_api_level'
+  )
 
   parser.add_argument(
       '--support-fractional-translation',
@@ -961,7 +1010,8 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Whether to allow layers to render at fraction pixel '
-      'boundaries.')
+      'boundaries.'
+  )
 
   # Flags for Dart features.
   parser.add_argument(
@@ -969,14 +1019,16 @@ def parse_args(args):
       dest='use_mallinfo2',
       default=False,
       action='store_true',
-      help='Use mallinfo2 to collect malloc stats.')
+      help='Use mallinfo2 to collect malloc stats.'
+  )
 
   # Impeller flags.
   parser.add_argument(
       '--enable-impeller-playground',
       default=False,
       action='store_true',
-      help='Whether impeller unit tests run in playground mode.')
+      help='Whether impeller unit tests run in playground mode.'
+  )
   parser.add_argument(
       '--prebuilt-impellerc',
       default=None,
@@ -997,7 +1049,8 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Write a GN trace log (gn_trace.json) in the Chromium tracing '
-      'format in the build directory.')
+      'format in the build directory.'
+  )
 
   # Verbose output.
   parser.add_argument('--verbose', default=False, action='store_true')
