@@ -87,18 +87,16 @@ void Rasterizer::TeardownExternalViewEmbedder() {
 }
 
 void Rasterizer::Teardown() {
-  auto context_switch =
-      surface_ ? surface_->MakeRenderContextCurrent() : nullptr;
-  if (context_switch && context_switch->GetResult()) {
-    compositor_context_->OnGrContextDestroyed();
-  }
-
-  if (auto* context = surface_->GetContext()) {
+  if (surface_) {
     auto context_switch = surface_->MakeRenderContextCurrent();
     if (context_switch->GetResult()) {
-      context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+      compositor_context_->OnGrContextDestroyed();
+      if (auto* context = surface_->GetContext()) {
+        context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+      }
     }
   }
+
   surface_.reset();
   last_layer_tree_.reset();
 
