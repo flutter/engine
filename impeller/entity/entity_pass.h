@@ -60,9 +60,7 @@ class EntityPass {
 
   void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
 
-  std::optional<Rect> GetSubpassCoverage(
-      const EntityPass& subpass,
-      std::optional<Rect> backdrop_coverage = std::nullopt) const;
+  std::optional<Rect> GetSubpassCoverage(const EntityPass& subpass) const;
 
   std::optional<Rect> GetElementsCoverage() const;
 

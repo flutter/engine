@@ -91,12 +91,8 @@ std::optional<Rect> EntityPass::GetElementsCoverage() const {
 }
 
 std::optional<Rect> EntityPass::GetSubpassCoverage(
-    const EntityPass& subpass,
-    std::optional<Rect> backdrop_coverage) const {
-  auto entities_coverage = backdrop_coverage.has_value()
-                               ? backdrop_coverage
-                               : subpass.GetElementsCoverage();
-
+    const EntityPass& subpass) const {
+  auto entities_coverage = subpass.GetElementsCoverage();
   // The entities don't cover anything. There is nothing to do.
   if (!entities_coverage.has_value()) {
     return std::nullopt;
@@ -232,23 +228,23 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    std::optional<Rect> backdrop_coverage;
+    std::optional<Rect> subpass_coverage;
+
     if (subpass->backdrop_filter_proc_.has_value()) {
-      backdrop_coverage = Rect(
+      subpass_coverage = Rect(
           position, Size(pass_context.GetRenderTarget().GetRenderTargetSize()));
-    }
+    } else {
+      subpass_coverage = GetSubpassCoverage(*subpass);
 
-    std::optional<Rect> subpass_coverage =
-        GetSubpassCoverage(*subpass, backdrop_coverage);
+      if (!subpass_coverage.has_value()) {
+        return EntityPass::EntityResult::Skip();
+      }
 
-    if (!subpass_coverage.has_value()) {
-      return EntityPass::EntityResult::Skip();
-    }
-
-    if (subpass_coverage->size.IsEmpty()) {
-      // It is not an error to have an empty subpass. But subpasses that can't
-      // create their intermediates must trip errors.
-      return EntityPass::EntityResult::Skip();
+      if (subpass_coverage->size.IsEmpty()) {
+        // It is not an error to have an empty subpass. But subpasses that can't
+        // create their intermediates must trip errors.
+        return EntityPass::EntityResult::Skip();
+      }
     }
 
     RenderTarget subpass_target;
