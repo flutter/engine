@@ -671,6 +671,11 @@ TEST_F(ShellTest, ReportTimingsIsCalled) {
 }
 
 TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
+  // This test times out on FEMU.
+  // https://github.com/flutter/flutter/issues/105642
+#if OS_FUCHSIA
+  GTEST_SKIP();
+#endif
   fml::TimePoint start = fml::TimePoint::Now();
 
   auto settings = CreateSettingsForFixture();
