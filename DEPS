@@ -111,7 +111,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/dnfield/flutter_buildroot.git' + '@' + 'a1e8eaabb5b874364d9f502171a81ea1f075943d',
+  'src': 'https://github.com/dnfield/flutter_buildroot.git' + '@' + 'c60c7563b913c061ebe666c668f2925f5f7b18e2',
 
    # Fuchsia compatibility
    #
@@ -468,7 +468,7 @@ deps = {
 
    'src/third_party/angle':
   #  Var('github_git') + '/google/angle.git' + '@' + 'bbf67e2e41d8acdcb72b8c1a154032f378b13b39',
-   Var('github_git') + '/dnfield/angle.git' + '@' + '906c9cf5f96f022f2d983bc3ff64bb9cd5ea2c2a',
+   Var('github_git') + '/dnfield/angle.git' + '@' + '3e695a83b51cd901550303f67015f428f3d30417',
 
    'src/third_party/vulkan_memory_allocator':
    Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',

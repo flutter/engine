@@ -76,7 +76,7 @@ generated_file("impellerc_license") {
     "",
     "### spirv_cross",
     "",
-    read_file("//third_party/spirv_cross/LICENSE", "string"),
+    read_file("//third_party/vulkan-deps/spirv-cross/src/LICENSE", "string"),
   ]
 }
 
