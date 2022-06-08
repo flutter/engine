@@ -15,6 +15,7 @@ import 'canvaskit/initialization.dart';
 import 'canvaskit/layer_scene_builder.dart';
 import 'canvaskit/rasterizer.dart';
 import 'clipboard.dart';
+import 'dom.dart';
 import 'embedder.dart';
 import 'html/scene.dart';
 import 'mouse_cursor.dart';
@@ -54,8 +55,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The current platform configuration.
   @override
-  ui.PlatformConfiguration get configuration => _configuration;
-  ui.PlatformConfiguration _configuration = ui.PlatformConfiguration(
+  ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
   );
@@ -483,8 +483,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/platform_views':
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
-          contentHandler: (html.Element content) {
-            flutterViewEmbedder.glassPaneElement!.append(content);
+          contentHandler: (DomElement content) {
+            // Remove cast to [html.Element] after migration.
+            flutterViewEmbedder.glassPaneElement!.append(content as html.Element);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
@@ -607,7 +608,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement as html.Element?);
     }
     frameTimingsOnRasterFinish();
   }
@@ -725,12 +726,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The empty list is not a valid value for locales. This is only used for
   /// testing locale update logic.
   void debugResetLocales() {
-    _configuration = _configuration.copyWith(locales: const <ui.Locale>[]);
+    configuration = configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
   // Called by FlutterViewEmbedder when browser languages change.
   void updateLocales() {
-    _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
+    configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
 
   static List<ui.Locale> parseBrowserLanguages() {
@@ -788,7 +789,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// [onPlatformConfigurationChanged] callbacks if [textScaleFactor] changed.
   void _updateTextScaleFactor(double value) {
     if (configuration.textScaleFactor != value) {
-      _configuration = configuration.copyWith(textScaleFactor: value);
+      configuration = configuration.copyWith(textScaleFactor: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnTextScaleFactorChanged();
     }
@@ -859,7 +860,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   void updateSemanticsEnabled(bool semanticsEnabled) {
     if (semanticsEnabled != this.semanticsEnabled) {
-      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled);
+      configuration = configuration.copyWith(semanticsEnabled: semanticsEnabled);
       if (_onSemanticsEnabledChanged != null) {
         invokeOnSemanticsEnabledChanged();
       }
@@ -875,7 +876,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// callback if [_platformBrightness] changed.
   void _updatePlatformBrightness(ui.Brightness value) {
     if (configuration.platformBrightness != value) {
-      _configuration = configuration.copyWith(platformBrightness: value);
+      configuration = configuration.copyWith(platformBrightness: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnPlatformBrightnessChanged();
     }

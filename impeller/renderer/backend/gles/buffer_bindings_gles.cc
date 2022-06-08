@@ -64,7 +64,7 @@ static std::string NormalizeUniformKey(const std::string& key) {
     if (ch == '_') {
       continue;
     }
-    stream << static_cast<char>(std::toupper(ch));
+    stream << static_cast<char>(toupper(ch));
   }
   return stream.str();
 }
@@ -157,11 +157,11 @@ bool BufferBindingsGLES::BindUniformData(
     }
   }
 
-  if (!BindTextures(gl, vertex_bindings)) {
+  if (!BindTextures(gl, vertex_bindings, ShaderStage::kVertex)) {
     return false;
   }
 
-  if (!BindTextures(gl, fragment_bindings)) {
+  if (!BindTextures(gl, fragment_bindings, ShaderStage::kFragment)) {
     return false;
   }
 
@@ -192,8 +192,8 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     return false;
   }
   const auto& device_buffer_gles = DeviceBufferGLES::Cast(*device_buffer);
-  const uint8_t* buffer_ptr = device_buffer_gles.GetBufferData()->GetMapping() +
-                              buffer.resource.range.offset;
+  const uint8_t* buffer_ptr =
+      device_buffer_gles.GetBufferData() + buffer.resource.range.offset;
 
   if (metadata->members.empty()) {
     VALIDATION_LOG << "Uniform buffer had no members. This is currently "
@@ -276,7 +276,8 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 }
 
 bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
-                                      const Bindings& bindings) const {
+                                      const Bindings& bindings,
+                                      ShaderStage stage) const {
   size_t active_index = 0;
   for (const auto& texture : bindings.textures) {
     const auto& texture_gles = TextureGLES::Cast(*texture.second.resource);
@@ -295,12 +296,12 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
     //--------------------------------------------------------------------------
     /// Set the active texture unit.
     ///
-    const auto texture_index = GL_TEXTURE0 + active_index;
-    if (texture_index >= GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
-      VALIDATION_LOG << "Active texture index was out of bounds.";
+    if (active_index >= gl.GetCapabilities()->GetMaxTextureUnits(stage)) {
+      VALIDATION_LOG << "Texture units specified exceed the capabilities for "
+                        "this shader stage.";
       return false;
     }
-    gl.ActiveTexture(texture_index);
+    gl.ActiveTexture(GL_TEXTURE0 + active_index);
 
     //--------------------------------------------------------------------------
     /// Bind the texture.
@@ -316,7 +317,7 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
     auto sampler = bindings.samplers.find(texture.first);
     if (sampler != bindings.samplers.end()) {
       const auto& sampler_gles = SamplerGLES::Cast(*sampler->second.resource);
-      if (!sampler_gles.ConfigureBoundTexture(gl)) {
+      if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
         return false;
       }
     }

@@ -75,7 +75,8 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
 
   // |flutter::Dispatcher|
   void saveLayer(const SkRect* bounds,
-                 const flutter::SaveLayerOptions options) override;
+                 const flutter::SaveLayerOptions options,
+                 const flutter::DlImageFilter* backdrop) override;
 
   // |flutter::Dispatcher|
   void restore() override;
@@ -174,7 +175,7 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
 
   // |flutter::Dispatcher|
   void drawVertices(const flutter::DlVertices* vertices,
-                    flutter::DlBlendMode mode) override;
+                    flutter::DlBlendMode dl_mode) override;
 
   // |flutter::Dispatcher|
   void drawImage(const sk_sp<flutter::DlImage> image,

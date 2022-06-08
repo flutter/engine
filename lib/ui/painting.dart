@@ -2129,8 +2129,9 @@ Future<void> _decodeImageFromListAsync(Uint8List list,
 
 /// Convert an array of pixel values into an [Image] object.
 ///
-/// The `pixels` parameter is the pixel data in the encoding described by
-/// `format`.
+/// The `pixels` parameter is the pixel data. They are packed in bytes in the
+/// order described by `format`, then grouped in rows, from left to right,
+/// then top to bottom.
 ///
 /// The `rowBytes` parameter is the number of bytes consumed by each row of
 /// pixels in the data buffer. If unspecified, it defaults to `width` multiplied
@@ -3008,7 +3009,7 @@ class MaskFilter {
   }
 
   @override
-  int get hashCode => hashValues(_style, _sigma);
+  int get hashCode => Object.hash(_style, _sigma);
 
   @override
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
@@ -3167,7 +3168,7 @@ class ColorFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => hashValues(_color, _blendMode, hashList(_matrix), _type);
+  int get hashCode => Object.hash(_color, _blendMode, _matrix == null ? null : Object.hashAll(_matrix!), _type);
 
   @override
   String get _shortDescription {
@@ -3341,7 +3342,7 @@ class _MatrixImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => hashValues(filterQuality, hashList(data));
+  int get hashCode => Object.hash(filterQuality, Object.hashAll(data));
 }
 
 class _GaussianBlurImageFilter implements ImageFilter {
@@ -3382,7 +3383,7 @@ class _GaussianBlurImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => hashValues(sigmaX, sigmaY);
+  int get hashCode => Object.hash(sigmaX, sigmaY);
 }
 
 class _DilateImageFilter implements ImageFilter {
@@ -3411,7 +3412,7 @@ class _DilateImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => hashValues(radiusX, radiusY);
+  int get hashCode => Object.hash(radiusX, radiusY);
 }
 
 class _ErodeImageFilter implements ImageFilter {
@@ -3470,7 +3471,7 @@ class _ComposeImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => hashValues(innerFilter, outerFilter);
+  int get hashCode => Object.hash(innerFilter, outerFilter);
 }
 
 /// An [ImageFilter] that is backed by a native SkImageFilter.
@@ -3530,9 +3531,9 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
       creator = filter {    // ignore: prefer_initializing_formals
     _constructor();
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
-    _initColorFilter(nativeFilter);
+    _initColorFilter(nativeFilter!);
   }
-  void _initColorFilter(_ColorFilter? colorFilter) native 'ImageFilter_initColorFilter';
+  void _initColorFilter(_ColorFilter colorFilter) native 'ImageFilter_initColorFilter';
 
   /// Composes `_innerFilter` with `_outerFilter`.
   _ImageFilter.composed(_ComposeImageFilter filter)
@@ -4047,7 +4048,7 @@ class _FragmentShader extends Shader {
   }
 
   @override
-  int get hashCode => hashValues(_builder, hashList(_floatUniforms), hashList(_samplerUniforms));
+  int get hashCode => Object.hash(_builder, Object.hashAll(_floatUniforms), Object.hashAll(_samplerUniforms));
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
@@ -4783,6 +4784,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawParagraph(Paragraph paragraph, Offset offset) {
     assert(paragraph != null);
     assert(_offsetIsValid(offset));
+    assert(!paragraph._needsLayout);
     paragraph._paint(this, offset.dx, offset.dy);
   }
 
@@ -5507,7 +5509,7 @@ class Shadow {
   }
 
   @override
-  int get hashCode => hashValues(color, offset, blurRadius);
+  int get hashCode => Object.hash(color, offset, blurRadius);
 
   // Serialize [shadows] into ByteData. The format is a single uint_32_t at
   // the beginning indicating the number of shadows, followed by _kBytesPerShadow
@@ -5637,8 +5639,9 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
 
   /// Creates an image descriptor from raw image pixels.
   ///
-  /// The `pixels` parameter is the pixel data in the encoding described by
-  /// `format`.
+  /// The `pixels` parameter is the pixel data. They are packed in bytes in the
+  /// order described by `pixelFormat`, then grouped in rows, from left to right,
+  /// then top to bottom.
   ///
   /// The `rowBytes` parameter is the number of bytes consumed by each row of
   /// pixels in the data buffer. If unspecified, it defaults to `width` multiplied

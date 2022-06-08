@@ -20,7 +20,7 @@
 namespace flutter {
 
 // clang-format off
-constexpr float invert_color_matrix[20] = {
+constexpr float kInvertColorMatrix[20] = {
   -1.0,    0,    0, 1.0, 0,
      0, -1.0,    0, 1.0, 0,
      0,    0, -1.0, 1.0, 0,
@@ -97,7 +97,7 @@ sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
     return color_filter_ ? color_filter_->skia_object() : nullptr;
   }
   sk_sp<SkColorFilter> invert_filter =
-      SkColorFilters::Matrix(invert_color_matrix);
+      SkColorFilters::Matrix(kInvertColorMatrix);
   if (color_filter_) {
     invert_filter = invert_filter->makeComposed(color_filter_->skia_object());
   }
@@ -290,7 +290,8 @@ void DisplayListBoundsCalculator::save() {
   accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options) {
+                                            const SaveLayerOptions options,
+                                            const DlImageFilter* backdrop) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   if (options.renders_with_attributes()) {
@@ -317,6 +318,10 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   // we set them as if a clip operation were performed.
   if (bounds) {
     clipRect(*bounds, SkClipOp::kIntersect, false);
+  }
+  if (backdrop) {
+    // A backdrop will affect up to the entire surface, bounded by the clip
+    AccumulateUnbounded();
   }
 }
 void DisplayListBoundsCalculator::restore() {

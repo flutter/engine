@@ -1,4 +1,4 @@
-Signature: 3894957145231c8129129920751d023c
+Signature: 74c172def2ebca3dfe6a62e0701c12ab
 
 UNUSED LICENSES:
 
@@ -421,6 +421,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
@@ -456,7 +457,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
@@ -592,7 +592,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/inspect.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
@@ -611,9 +610,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_inspect_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cmx
-FILE: ../../../fuchsia/sdk/linux/pkg/syslog/elf_stdio.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/syslog.json
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/meta.json
@@ -622,7 +619,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_compact_image.json
@@ -1176,6 +1172,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
@@ -1211,7 +1208,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
@@ -1347,7 +1343,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/inspect.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
@@ -1366,9 +1361,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_inspect_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cmx
-FILE: ../../../fuchsia/sdk/linux/pkg/syslog/elf_stdio.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/syslog.json
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/meta.json
@@ -1377,7 +1370,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_compact_image.json
@@ -1828,6 +1820,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/meta.json
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
@@ -1863,7 +1856,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
@@ -1999,7 +1991,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/inspect.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
@@ -2018,9 +2009,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_cpp_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_inspect_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cmx
-FILE: ../../../fuchsia/sdk/linux/pkg/syslog/elf_stdio.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/syslog.json
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/meta.json
@@ -2029,7 +2018,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d/VkLayer_compact_image.json
@@ -2489,7 +2477,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/central.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/camera.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/manager.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/cobalt.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.data/data.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.developer.tiles/tiles.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/encoded_image.fidl
@@ -2571,7 +2558,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/internal/prox
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/internal/stub.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/internal/stub_controller.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/internal/weak_stub_controller.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/thread_safe_binding_set.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/type_converter.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/internal/message_handler.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/internal/message_reader.cc
@@ -3095,7 +3081,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/client.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/server.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/peripheral.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/types_deprecated.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/cobalt_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/presentation_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio_capturer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/buffer.fidl
@@ -3611,6 +3596,12 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/optional_nullable.dart + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/optional_nullable.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/realm_builder.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/error.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/internal/local_component.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/internal/local_component_runner.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/local_component_handles.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/realm_builder.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/overview.fidl
@@ -3625,7 +3616,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/overview.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/resolved.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/overview.fidl
@@ -3721,9 +3711,13 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/transaction_
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/wire_format_metadata.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any_internal.h
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_absolute.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_base.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/internal/convert.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/syslog/elf_stdio.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 The Fuchsia Authors. All rights reserved.
 

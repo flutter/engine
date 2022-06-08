@@ -8,11 +8,24 @@ impeller_shaders("entity_shaders") {
   name = "entity"
 
   shaders = [
-    "shaders/advanced_blend.vert",
-    "shaders/advanced_blend_colorburn.frag",
-    "shaders/advanced_blend_screen.frag",
-    "shaders/blend.frag",
-    "shaders/blend.vert",
+    "shaders/blending/advanced_blend.vert",
+    "shaders/blending/advanced_blend_color.frag",
+    "shaders/blending/advanced_blend_colorburn.frag",
+    "shaders/blending/advanced_blend_colordodge.frag",
+    "shaders/blending/advanced_blend_darken.frag",
+    "shaders/blending/advanced_blend_difference.frag",
+    "shaders/blending/advanced_blend_exclusion.frag",
+    "shaders/blending/advanced_blend_hardlight.frag",
+    "shaders/blending/advanced_blend_hue.frag",
+    "shaders/blending/advanced_blend_lighten.frag",
+    "shaders/blending/advanced_blend_luminosity.frag",
+    "shaders/blending/advanced_blend_multiply.frag",
+    "shaders/blending/advanced_blend_overlay.frag",
+    "shaders/blending/advanced_blend_saturation.frag",
+    "shaders/blending/advanced_blend_screen.frag",
+    "shaders/blending/advanced_blend_softlight.frag",
+    "shaders/blending/blend.frag",
+    "shaders/blending/blend.vert",
     "shaders/border_mask_blur.frag",
     "shaders/border_mask_blur.vert",
     "shaders/gaussian_blur.frag",
@@ -27,6 +40,8 @@ impeller_shaders("entity_shaders") {
     "shaders/solid_stroke.vert",
     "shaders/texture_fill.frag",
     "shaders/texture_fill.vert",
+    "shaders/vertices.vert",
+    "shaders/vertices.frag",
   ]
 }
 
@@ -66,6 +81,8 @@ impeller_component("entity") {
     "contents/text_contents.h",
     "contents/texture_contents.cc",
     "contents/texture_contents.h",
+    "contents/vertices_contents.cc",
+    "contents/vertices_contents.h",
     "entity.cc",
     "entity.h",
     "entity_pass.cc",
