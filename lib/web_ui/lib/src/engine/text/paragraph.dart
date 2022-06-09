@@ -104,17 +104,16 @@ class EngineLineMetrics implements ui.LineMetrics {
   }
 }
 
-class RichEngineLineMetrics extends EngineLineMetrics {
-  const RichEngineLineMetrics({
-    required super.hardBreak,
-    required super.ascent,
-    required super.descent,
-    required super.unscaledAscent,
-    required super.height,
-    required super.width,
-    required super.left,
-    required super.baseline,
-    required super.lineNumber,
+class ParagraphLine {
+  ParagraphLine({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
     required this.ellipsis,
     required this.startIndex,
     required this.endIndex,
@@ -124,10 +123,20 @@ class RichEngineLineMetrics extends EngineLineMetrics {
     required this.spaceBoxCount,
     required this.trailingSpaceBoxCount,
     this.displayText,
-  });
+  }) : lineMetrics = EngineLineMetrics(
+          hardBreak: hardBreak,
+          ascent: ascent,
+          descent: descent,
+          unscaledAscent: ascent,
+          height: height,
+          width: width,
+          left: left,
+          baseline: baseline,
+          lineNumber: lineNumber,
+        );
 
-  /// The text to be rendered on the screen representing this line.
-  final String? displayText;
+  /// Metrics for this line of the paragraph.
+  final EngineLineMetrics lineMetrics;
 
   /// The string to be displayed as an overflow indicator.
   ///
@@ -170,8 +179,23 @@ class RichEngineLineMetrics extends EngineLineMetrics {
   /// The number of trailing boxes that are space-only.
   final int trailingSpaceBoxCount;
 
+  /// The text to be rendered on the screen representing this line.
+  final String? displayText;
+
   /// The number of space-only boxes excluding trailing spaces.
   int get nonTrailingSpaceBoxCount => spaceBoxCount - trailingSpaceBoxCount;
+
+  // Convenient getters for line metrics properties.
+
+  bool get hardBreak => lineMetrics.hardBreak;
+  double get ascent => lineMetrics.ascent;
+  double get descent => lineMetrics.descent;
+  double get unscaledAscent => lineMetrics.unscaledAscent;
+  double get height => lineMetrics.height;
+  double get width => lineMetrics.width;
+  double get left => lineMetrics.left;
+  double get baseline => lineMetrics.baseline;
+  int get lineNumber => lineMetrics.lineNumber;
 
   bool overlapsWith(int startIndex, int endIndex) {
     return startIndex < this.endIndex && this.startIndex < endIndex;
@@ -179,7 +203,7 @@ class RichEngineLineMetrics extends EngineLineMetrics {
 
   @override
   int get hashCode => Object.hash(
-        super.hashCode,
+        lineMetrics,
         ellipsis,
         startIndex,
         endIndex,
@@ -199,10 +223,8 @@ class RichEngineLineMetrics extends EngineLineMetrics {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    if (super != other) {
-      return false;
-    }
-    return other is RichEngineLineMetrics &&
+    return other is ParagraphLine &&
+        other.lineMetrics == lineMetrics &&
         other.ellipsis == ellipsis &&
         other.startIndex == startIndex &&
         other.endIndex == endIndex &&
