@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/fl_accessible_node.h"
+#include "flutter/shell/platform/linux/fl_accessible_text_field.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
@@ -40,6 +41,19 @@ static FlEngine* get_engine(FlViewAccessible* self) {
   return self->engine;
 }
 
+static FlAccessibleNode* create_node(FlViewAccessible* self,
+                                     const FlutterSemanticsNode* semantics) {
+  FlAccessibleNode* node = nullptr;
+  FlEngine* engine = get_engine(self);
+  if (semantics->flags & kFlutterSemanticsFlagIsTextField) {
+    node = fl_accessible_text_field_new(engine, semantics->id);
+  } else {
+    node = fl_accessible_node_new(engine, semantics->id);
+  }
+
+  return node;
+}
+
 static FlAccessibleNode* lookup_node(FlViewAccessible* self, int32_t id) {
   return FL_ACCESSIBLE_NODE(
       g_hash_table_lookup(self->semantics_nodes_by_id, GINT_TO_POINTER(id)));
@@ -47,19 +61,20 @@ static FlAccessibleNode* lookup_node(FlViewAccessible* self, int32_t id) {
 
 // Gets the ATK node for the given id.
 // If the node doesn't exist it will be created.
-static FlAccessibleNode* get_node(FlViewAccessible* self, int32_t id) {
-  FlAccessibleNode* node = lookup_node(self, id);
+static FlAccessibleNode* get_node(FlViewAccessible* self,
+                                  const FlutterSemanticsNode* semantics) {
+  FlAccessibleNode* node = lookup_node(self, semantics->id);
   if (node != nullptr) {
     return node;
   }
 
-  FlEngine* engine = get_engine(self);
-  node = fl_accessible_node_new(engine, id);
-  if (id == 0) {
+  node = create_node(self, semantics);
+  if (semantics->id == 0) {
     fl_accessible_node_set_parent(node, ATK_OBJECT(self), 0);
     g_signal_emit_by_name(self, "children-changed::add", 0, node, nullptr);
   }
-  g_hash_table_insert(self->semantics_nodes_by_id, GINT_TO_POINTER(id),
+  g_hash_table_insert(self->semantics_nodes_by_id,
+                      GINT_TO_POINTER(semantics->id),
                       reinterpret_cast<gpointer>(node));
 
   return node;
@@ -184,7 +199,7 @@ void fl_view_accessible_handle_update_semantics_node(
     return;
   }
 
-  FlAccessibleNode* atk_node = get_node(self, node->id);
+  FlAccessibleNode* atk_node = get_node(self, node);
 
   fl_accessible_node_set_flags(atk_node, node->flags);
   fl_accessible_node_set_actions(atk_node, node->actions);
