@@ -368,7 +368,6 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
                     << GetLastErrorMessage();
     return false;
   }
-  FML_DLOG(ERROR) << "WORKED " << file_path.c_str();
 
   if (!TruncateFile(temp_file, mapping.GetSize())) {
     FML_DLOG(ERROR) << "Could not truncate the file to the correct size. "
