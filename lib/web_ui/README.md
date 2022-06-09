@@ -209,8 +209,9 @@ directly), follow these steps to roll to the new version:
 - Make sure you have `depot_tools` installed (if you are regularly hacking on
   the engine code, you probably do).
 - If not already authenticated with CIPD, run `cipd auth-login` and follow
-  instructions (this step requires sufficient privileges; contact
-  #hackers-infra-🌡 on Flutter's Discord server).
+  instructions (this step requires sufficient privileges; file a github
+  infra ticket queue issue: https://github.com/flutter/flutter/wiki/Infra-Ticket-Queue
+  to get access)
 - Edit `dev/canvaskit_lock.yaml` and update the value of `canvaskit_version`
   to the new version.
 - Run `dart dev/canvaskit_roller.dart` and make sure it completes successfully.
