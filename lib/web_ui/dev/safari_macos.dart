@@ -7,7 +7,6 @@ import 'dart:io';
 
 import 'package:test_api/src/backend/runtime.dart';
 
-import 'common.dart';
 import 'webdriver_browser.dart';
 
 /// Provides an environment for the desktop variant of Safari running on macOS.
