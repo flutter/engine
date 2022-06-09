@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert' show utf8, LineSplitter;
 import 'dart:io' as io;
-import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
