@@ -363,9 +363,12 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
 
   if (!temp_file.is_valid()) {
     FML_DLOG(ERROR) << "Could not create temporary file: "
+                    << file_path.c_str() << " "
+                    << GetLastError() << " "
                     << GetLastErrorMessage();
     return false;
   }
+  FML_DLOG(ERROR) << "WORKED " << file_path.c_str();
 
   if (!TruncateFile(temp_file, mapping.GetSize())) {
     FML_DLOG(ERROR) << "Could not truncate the file to the correct size. "
