@@ -362,10 +362,8 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
       OpenFile(file_path.c_str(), true, FilePermission::kReadWrite);
 
   if (!temp_file.is_valid()) {
-    FML_DLOG(ERROR) << "Could not create file: "
-                    << file_path.c_str() << " "
-                    << GetLastError() << " "
-                    << GetLastErrorMessage();
+    FML_DLOG(ERROR) << "Could not create file: " << file_path.c_str() << " "
+                    << GetLastError() << " " << GetLastErrorMessage();
     return false;
   }
 
