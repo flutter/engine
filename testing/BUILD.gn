@@ -213,7 +213,7 @@ if (is_mac || is_ios) {
 }
 
 # We only use SwiftShader on unittests
-use_swiftshader = enable_unittests
+use_swiftshader = enable_unittests && !is_fuchsia
 
 source_set("opengl") {
   testonly = true
