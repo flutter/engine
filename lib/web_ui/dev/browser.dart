@@ -31,7 +31,7 @@ abstract class BrowserEnvironment {
   /// browser instances.
   Future<void> prepare();
 
-  // Perform any necessary teardown steps
+  /// Perform any necessary teardown steps
   Future<void> cleanup();
 
   /// Launches a browser instance.

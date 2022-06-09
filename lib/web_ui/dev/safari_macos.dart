@@ -22,8 +22,8 @@ class SafariMacOsEnvironment extends WebDriverBrowserEnvironment {
   String get packageTestConfigurationYamlFile => 'dart_test_safari.yaml';
 
   @override
-  Uri get driverUri => Uri(scheme: 'http', host: 'localhost', port: kWebDriverPort);
+  Uri get driverUri => Uri(scheme: 'http', host: 'localhost', port: portNumber);
 
   @override
-  Future<Process> spawnDriverProcess() => Process.start('safaridriver', <String>['-p', kWebDriverPort.toString()]);
+  Future<Process> spawnDriverProcess() => Process.start('safaridriver', <String>['-p', portNumber.toString()]);
 }
