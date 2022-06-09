@@ -104,8 +104,8 @@ class EngineLineMetrics implements ui.LineMetrics {
   }
 }
 
-class RichLineMetrics extends EngineLineMetrics {
-  const RichLineMetrics({
+class RichEngineLineMetrics extends EngineLineMetrics {
+  const RichEngineLineMetrics({
     required super.hardBreak,
     required super.ascent,
     required super.descent,
@@ -202,7 +202,7 @@ class RichLineMetrics extends EngineLineMetrics {
     if (super != other) {
       return false;
     }
-    return other is RichLineMetrics &&
+    return other is RichEngineLineMetrics &&
         other.ellipsis == ellipsis &&
         other.startIndex == startIndex &&
         other.endIndex == endIndex &&

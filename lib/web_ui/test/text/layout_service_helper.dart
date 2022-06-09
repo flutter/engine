@@ -34,10 +34,10 @@ TestLine l(
 
 void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
   final String text = paragraph.toPlainText();
-  final List<RichLineMetrics> lines = paragraph.computeLineMetrics();
+  final List<RichEngineLineMetrics> lines = paragraph.computeLineMetrics();
   expect(lines, hasLength(expectedLines.length));
   for (int i = 0; i < lines.length; i++) {
-    final RichLineMetrics line = lines[i];
+    final RichEngineLineMetrics line = lines[i];
     final TestLine expectedLine = expectedLines[i];
 
     expect(

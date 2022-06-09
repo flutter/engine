@@ -20,13 +20,13 @@ class TextPaintService {
     // Loop through all the lines, for each line, loop through all the boxes and
     // paint them. The boxes have enough information so they can be painted
     // individually.
-    final List<RichLineMetrics> lines = paragraph.computeLineMetrics();
+    final List<RichEngineLineMetrics> lines = paragraph.computeLineMetrics();
 
     if (lines.isEmpty) {
       return;
     }
 
-    for (final RichLineMetrics line in lines) {
+    for (final RichEngineLineMetrics line in lines) {
       if (line.boxes.isEmpty) {
         continue;
       }
@@ -67,7 +67,7 @@ class TextPaintService {
   void _paintText(
     BitmapCanvas canvas,
     ui.Offset offset,
-    RichLineMetrics line,
+    RichEngineLineMetrics line,
     RangeBox box,
   ) {
     // There's no text to paint in placeholder spans.
