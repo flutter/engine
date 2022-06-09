@@ -169,7 +169,7 @@ def RunEngineExecutable(
     executable_name,
     filter,
     flags=[],
-    cwd=None,
+    cwd=buildroot_dir,
     forbidden_output=[],
     expect_failure=False,
     coverage=False,
@@ -180,7 +180,17 @@ def RunEngineExecutable(
     print('Skipping %s due to filter.' % executable_name)
     return
 
-  cwd = cwd or build_dir
+  unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
+  env = os.environ.copy()
+  # We cannot run the unstripped binaries directly when coverage is enabled.
+  if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
+    # Some tests depend on the EGL/GLES libraries placed in the build directory.
+    env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
+  elif IsMac():
+    env['DYLD_LIBRARY_PATH'] = build_dir
+  else:
+    env['PATH'] = build_dir + ":" + env['PATH']
+
   print('Running %s in %s' % (executable_name, cwd))
 
   test_command = BuildEngineExecutableCommand(
@@ -191,7 +201,6 @@ def RunEngineExecutable(
       gtest=gtest,
   )
 
-  env = os.environ.copy()
   env['FLUTTER_BUILD_DIRECTORY'] = build_dir
   for key, value in extra_env.items():
     env[key] = value
@@ -238,7 +247,7 @@ class EngineExecutableTask(object):
       executable_name,
       filter,
       flags=[],
-      cwd=None,
+      cwd=buildroot_dir,
       forbidden_output=[],
       expect_failure=False,
       coverage=False,
@@ -248,7 +257,7 @@ class EngineExecutableTask(object):
     self.executable_name = executable_name
     self.filter = filter
     self.flags = flags
-    self.cwd = cwd or build_dir
+    self.cwd = cwd
     self.forbidden_output = forbidden_output
     self.expect_failure = expect_failure
     self.coverage = coverage
