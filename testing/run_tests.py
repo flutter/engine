@@ -186,6 +186,7 @@ def RunEngineExecutable(
   if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
     # Some tests depend on the EGL/GLES libraries placed in the build directory.
     env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
+    env['VK_LOADER_DEBUG'] = 'all'
   elif IsMac():
     env['DYLD_LIBRARY_PATH'] = build_dir
   else:
