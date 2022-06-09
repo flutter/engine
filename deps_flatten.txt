@@ -1,2 +1,1 @@
-chromium@6879efc2c1596d11a6a6ad296f80063b558d5e0f
-https://boringssl.googlesource.com/boringssl.git@87f316d7748268eb56f2dc147bd593254ae93198
+chromium@4579d5538f06c5ef615a15bc67ebb9ac0523a973
