@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert' show utf8, LineSplitter;
 import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
@@ -367,6 +368,9 @@ Future<void> cleanup() async {
   for (final AsyncCallback callback in cleanupCallbacks) {
     await callback();
   }
+
+  stdin.lineMode = true;
+  stdin.echoMode = true;
 }
 
 /// Scans the test/ directory for test files and returns them.
