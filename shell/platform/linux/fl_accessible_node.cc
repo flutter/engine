@@ -315,8 +315,8 @@ static gboolean fl_accessible_node_do_action(AtkAction* action, gint i) {
     return FALSE;
   }
 
-  fl_engine_dispatch_semantics_action(priv->engine, priv->id, data->action,
-                                      nullptr);
+  fl_accessible_node_perform_action(FL_ACCESSIBLE_NODE(action), data->action,
+                                    nullptr);
   return TRUE;
 }
 
@@ -406,6 +406,24 @@ static void fl_accessible_node_set_actions_impl(
   }
 }
 
+// Implements FlAccessibleNode::set_value.
+static void fl_accessible_node_set_value_impl(FlAccessibleNode* self,
+                                              const gchar* value) {}
+
+// Implements FlAccessibleNode::set_text_selection.
+static void fl_accessible_node_set_text_selection_impl(FlAccessibleNode* self,
+                                                       gint base,
+                                                       gint extent) {}
+
+// Implements FlAccessibleNode::perform_action.
+static void fl_accessible_node_perform_action_impl(
+    FlAccessibleNode* self,
+    FlutterSemanticsAction action,
+    GBytes* data) {
+  FlAccessibleNodePrivate* priv = FL_ACCESSIBLE_NODE_GET_PRIVATE(self);
+  fl_engine_dispatch_semantics_action(priv->engine, priv->id, action, data);
+}
+
 static void fl_accessible_node_class_init(FlAccessibleNodeClass* klass) {
   G_OBJECT_CLASS(klass)->set_property = fl_accessible_node_set_property;
   G_OBJECT_CLASS(klass)->dispose = fl_accessible_node_dispose;
@@ -424,6 +442,12 @@ static void fl_accessible_node_class_init(FlAccessibleNodeClass* klass) {
       fl_accessible_node_set_flags_impl;
   FL_ACCESSIBLE_NODE_CLASS(klass)->set_actions =
       fl_accessible_node_set_actions_impl;
+  FL_ACCESSIBLE_NODE_CLASS(klass)->set_value =
+      fl_accessible_node_set_value_impl;
+  FL_ACCESSIBLE_NODE_CLASS(klass)->set_text_selection =
+      fl_accessible_node_set_text_selection_impl;
+  FL_ACCESSIBLE_NODE_CLASS(klass)->perform_action =
+      fl_accessible_node_perform_action_impl;
 
   g_object_class_install_property(
       G_OBJECT_CLASS(klass), PROP_ENGINE,
@@ -534,4 +558,27 @@ void fl_accessible_node_set_actions(FlAccessibleNode* self,
   g_return_if_fail(FL_IS_ACCESSIBLE_NODE(self));
 
   return FL_ACCESSIBLE_NODE_GET_CLASS(self)->set_actions(self, actions);
+}
+
+void fl_accessible_node_set_value(FlAccessibleNode* self, const gchar* value) {
+  g_return_if_fail(FL_IS_ACCESSIBLE_NODE(self));
+
+  return FL_ACCESSIBLE_NODE_GET_CLASS(self)->set_value(self, value);
+}
+
+void fl_accessible_node_set_text_selection(FlAccessibleNode* self,
+                                           gint base,
+                                           gint extent) {
+  g_return_if_fail(FL_IS_ACCESSIBLE_NODE(self));
+
+  return FL_ACCESSIBLE_NODE_GET_CLASS(self)->set_text_selection(self, base,
+                                                                extent);
+}
+
+void fl_accessible_node_perform_action(FlAccessibleNode* self,
+                                       FlutterSemanticsAction action,
+                                       GBytes* data) {
+  g_return_if_fail(FL_IS_ACCESSIBLE_NODE(self));
+
+  return FL_ACCESSIBLE_NODE_GET_CLASS(self)->perform_action(self, action, data);
 }

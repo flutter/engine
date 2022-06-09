@@ -143,6 +143,9 @@ void fl_view_accessible_handle_update_semantics_node(
       atk_node, node->rect.left + node->transform.transX,
       node->rect.top + node->transform.transY,
       node->rect.right - node->rect.left, node->rect.bottom - node->rect.top);
+  fl_accessible_node_set_value(atk_node, node->value);
+  fl_accessible_node_set_text_selection(atk_node, node->text_selection_base,
+                                        node->text_selection_extent);
 
   g_autoptr(GPtrArray) children = g_ptr_array_new();
   for (size_t i = 0; i < node->child_count; i++) {

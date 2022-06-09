@@ -40,6 +40,12 @@ struct _FlAccessibleNodeClass {
                       gint height);
   void (*set_flags)(FlAccessibleNode* node, FlutterSemanticsFlag flags);
   void (*set_actions)(FlAccessibleNode* node, FlutterSemanticsAction actions);
+  void (*set_value)(FlAccessibleNode* node, const gchar* value);
+  void (*set_text_selection)(FlAccessibleNode* node, gint base, gint extent);
+
+  void (*perform_action)(FlAccessibleNode* node,
+                         FlutterSemanticsAction action,
+                         GBytes* data);
 };
 
 /**
@@ -120,6 +126,39 @@ void fl_accessible_node_set_flags(FlAccessibleNode* node,
  */
 void fl_accessible_node_set_actions(FlAccessibleNode* node,
                                     FlutterSemanticsAction actions);
+
+/**
+ * fl_accessible_node_set_value:
+ * @node: an #FlAccessibleNode.
+ * @value: a node value.
+ *
+ * Sets the value of this node.
+ */
+void fl_accessible_node_set_value(FlAccessibleNode* node, const gchar* value);
+
+/**
+ * fl_accessible_node_set_text_selection:
+ * @node: an #FlAccessibleNode.
+ * @base: the position at which the text selection originates.
+ * @extent: the position at which the text selection terminates.
+ *
+ * Sets the text selection of this node.
+ */
+void fl_accessible_node_set_text_selection(FlAccessibleNode* node,
+                                           gint base,
+                                           gint extent);
+
+/**
+ * fl_accessible_node_dispatch_action:
+ * @node: an #FlAccessibleNode.
+ * @action: the action being dispatched.
+ * @data: (allow-none): data associated with the action.
+ *
+ * Performs a semantic action for this node.
+ */
+void fl_accessible_node_perform_action(FlAccessibleNode* node,
+                                       FlutterSemanticsAction action,
+                                       GBytes* data);
 
 G_END_DECLS
 
