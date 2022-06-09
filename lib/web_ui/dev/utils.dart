@@ -368,9 +368,6 @@ Future<void> cleanup() async {
   for (final AsyncCallback callback in cleanupCallbacks) {
     await callback();
   }
-
-  stdin.lineMode = true;
-  stdin.echoMode = true;
 }
 
 /// Scans the test/ directory for test files and returns them.
