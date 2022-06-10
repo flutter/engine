@@ -862,7 +862,7 @@ def RunEngineTasksInParallel(tasks):
   if len(failures) > 0:
     print("The following commands failed:")
     for task, exn in failures:
-      print("%s\n" % str(task))
+      print("%s\n%s\n" % (str(task), str(exn)))
     raise Exception()
 
 
