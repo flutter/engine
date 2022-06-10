@@ -48,25 +48,13 @@ static FlValue* build_list(std::vector<FlValue*> args) {
   return value;
 }
 
-static GdkWindow* build_window() {
-  GdkWindowAttr attributes = {
-      .width = 1280,
-      .height = 720,
-      .wclass = GDK_INPUT_OUTPUT,
-      .window_type = GDK_WINDOW_OFFSCREEN,
-  };
-  gint attributes_mask = GDK_WA_X | GDK_WA_Y;
-  return gdk_window_new(nullptr, &attributes, attributes_mask);
-}
-
 TEST(FlTextInputPluginTest, SetClient) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> mock;
   g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new_mock(&mock);
-  g_autoptr(GdkWindow) window = build_window();
   auto filter =
       +[](GtkIMContext* im_context, gpointer gdk_event) { return false; };
 
-  fl_text_input_plugin_new(messenger, window,
+  fl_text_input_plugin_new(messenger, nullptr,
                            FlTextInputPluginImFilter(filter));
 
   EXPECT_TRUE(mock.HasMessageHandler("flutter/textinput"));
