@@ -862,7 +862,7 @@ def RunEngineTasksInParallel(tasks):
   if len(failures) > 0:
     print("The following commands failed:")
     for task, exn in failures:
-      print("%s\n" % str(task))
+      print("%s\n%s\n" % (str(task), str(exn)))
     raise Exception()
 
 
@@ -983,7 +983,7 @@ def main():
     ]
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in process.stdout:
-      key, _, value = line.decode('ascii').strip().partition("=")
+      key, _, value = line.decode('utf8').strip().partition("=")
       os.environ[key] = value
     process.communicate()  # Avoid pipe deadlock while waiting for termination.
 
