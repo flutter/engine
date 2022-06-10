@@ -144,10 +144,12 @@ if (enable_unittests) {
       "//flutter/fml",
       "//flutter/shell/common",
       "//flutter/vulkan",
-      "//third_party/swiftshader",
     ]
 
-    configs += [ "//third_party/swiftshader:swiftshader_config" ]
+    if (!is_fuchsia) {
+      deps += [ "//third_party/swiftshader" ]
+      configs += [ "//third_party/swiftshader:swiftshader_config" ]
+    }
   }
 
   test_fixtures("testing_fixtures") {
