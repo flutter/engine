@@ -1905,13 +1905,24 @@ class _RepositoryVulkanDepsDirectory extends _RepositoryDirectory {
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'vulkan-headers') {
-      return _RepositoryVulkanDirectory(
-        _RepositoryDirectory(
-          this,
-          fs.FileSystemDirectory.fromPath(path.join(entry.fullName, 'src')),
-        ),
-        entry,
-      );
+      return _RepositoryVulkanDepsSubDirectory(this, entry);
+    }
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryVulkanDepsSubDirectory extends _RepositoryDirectory {
+  _RepositoryVulkanDepsSubDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name == 'src';
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'src') {
+      return _RepositoryVulkanDirectory(this, entry);
     }
     return super.createSubdirectory(entry);
   }
