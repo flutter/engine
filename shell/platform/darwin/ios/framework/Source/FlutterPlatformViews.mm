@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import <UIKit/UIGestureRecognizerSubclass.h>
+#import <UIKit/UIGestureRecognizerSubclass.h>
 
 #include <list>
 #include <map>
@@ -384,6 +385,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   if (flutter_view_ == nullptr) {
     return;
   }
+
   FML_DCHECK(CATransform3DEqualToTransform(embedded_view.layer.transform, CATransform3DIdentity));
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
@@ -408,6 +410,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case kTransform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
+        [clipView applyBackdropFilterWithRadius:@(5)];
         break;
       }
       case kClipRect:

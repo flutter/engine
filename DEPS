@@ -17,7 +17,11 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
+<<<<<<< HEAD
   'skia_revision': '2910d7bf6c04d951d149dc15af165bb1afe78804',
+=======
+  'skia_revision': 'c83c3459715c4bfae757f1bad5805f6f6423052a',
+>>>>>>> d80dd7bfa3 (# This is a combination of 23 commits.)
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
