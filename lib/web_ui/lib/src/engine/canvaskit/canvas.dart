@@ -319,11 +319,13 @@ class CkCanvas {
 
   Float32List getLocalToDevice() {
     final List<dynamic> list = skCanvas.getLocalToDevice();
-    final Float32List matrix = Float32List(16);
-    for (int i = 0; i < 16; i++) {
-      matrix[i] = list[i];
+    final Float32List matrix4 = Float32List(16);
+    for (int r = 0; r < 4; r++) {
+      for (int c = 0; c < 4; c++) {
+        matrix4[c * 4 + r] = list[r * 4 + c].toDouble();
+      }
     }
-    return matrix;
+    return matrix4;
   }
 
   CkPictureSnapshot? get pictureSnapshot => null;

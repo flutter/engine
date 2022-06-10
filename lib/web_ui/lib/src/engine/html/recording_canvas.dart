@@ -1722,7 +1722,7 @@ class _PaintBounds {
     if (sx != 1.0 || sy != 1.0) {
       _currentMatrixIsIdentity = false;
     }
-    _currentMatrix.scale(sx, sy);
+    _currentMatrix.scale(sx, sy, 1.0);
   }
 
   void rotateZ(double radians) {

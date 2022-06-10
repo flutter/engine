@@ -149,7 +149,7 @@ class CanvasKitCanvas implements ui.Canvas {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
     }
-    return transformRect(transform, getDestinationClipBounds());
+    return transformRect(transform, _canvas.getDeviceClipBounds());
   }
 
   @override

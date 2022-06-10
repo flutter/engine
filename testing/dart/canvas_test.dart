@@ -489,7 +489,7 @@ void main() {
     final Float64List matrix = Matrix4.diagonal3Values(12, 14.5, 1).storage;
     final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
-    canvas.translate(10, 10);
+    canvas.scale(10, 10);
     final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));
@@ -502,7 +502,7 @@ void main() {
     final Float64List matrix = Matrix4.rotationZ(pi).storage;
     final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
-    canvas.translate(10, 10);
+    canvas.rotate(pi / 2);
     final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));
@@ -515,7 +515,7 @@ void main() {
     final Float64List matrix = (Matrix4.identity()..setEntry(0, 1, 12)..setEntry(1, 0, 14.5)).storage;
     final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
-    canvas.translate(10, 10);
+    canvas.skew(10, 10);
     final Float64List newCurMatrix = canvas.getTransform();
     expect(newCurMatrix, notCloseToTransform(matrix));
     expect(curMatrix, closeToTransform(matrix));

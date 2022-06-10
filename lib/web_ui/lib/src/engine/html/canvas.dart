@@ -142,6 +142,15 @@ class SurfaceCanvas implements ui.Canvas {
     return _canvas.getDestinationClipBounds() ?? ui.Rect.largest;
   }
 
+  ui.Rect _roundOut(ui.Rect rect) {
+    return ui.Rect.fromLTRB(
+      rect.left.floorToDouble(),
+      rect.top.floorToDouble(),
+      rect.right.ceilToDouble(),
+      rect.bottom.ceilToDouble(),
+    );
+  }
+
   @override
   ui.Rect getLocalClipBounds() {
     final ui.Rect? destBounds = _canvas.getDestinationClipBounds();
@@ -153,7 +162,7 @@ class SurfaceCanvas implements ui.Canvas {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
     }
-    return transformRect(transform, destBounds);
+    return transformRect(transform, _roundOut(destBounds));
   }
 
   @override

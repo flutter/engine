@@ -1033,7 +1033,11 @@ void _canvasTests() {
 
   test('clipPath', () {
     canvas.clipPath(
-      _testClosedSkPath(),
+      SkPath()
+        ..moveTo(10.9, 10.9)
+        ..lineTo(19.1, 10.9)
+        ..lineTo(19.1, 19.1)
+        ..lineTo(10.9, 19.1),
       canvasKit.ClipOp.Intersect,
       true,
     );
@@ -1042,7 +1046,7 @@ void _canvasTests() {
 
   test('clipRRect', () {
     canvas.clipRRect(
-      Float32List.fromList(<double>[0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8]),
+      Float32List.fromList(<double>[0.9, 0.9, 99.1, 99.1, 1, 2, 3, 4, 5, 6, 7, 8]),
       canvasKit.ClipOp.Intersect,
       true,
     );
@@ -1051,7 +1055,7 @@ void _canvasTests() {
 
   test('clipRect', () {
     canvas.clipRect(
-      Float32List.fromList(<double>[0, 0, 100, 100]),
+      Float32List.fromList(<double>[0.9, 0.9, 99.1, 99.1]),
       canvasKit.ClipOp.Intersect,
       true,
     );
