@@ -236,7 +236,7 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
   [invocation setArgument:&deltaY atIndex:3];
   [invocation invokeWithTarget:flutterView];
 
-  // The hover pointer is observed to be by the system after ~3.5 seconds of inactivity.
+  // The hover pointer is observed to be removed by the system after ~3.5 seconds of inactivity.
   // While this is not a documented behavior, it is the only way to test for the removal of the
   // hover pointer. Waiting for 5 seconds will ensure that all events are received before
   // processing.
