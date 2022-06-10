@@ -1037,6 +1037,7 @@ void _canvasTests() {
       canvasKit.ClipOp.Intersect,
       true,
     );
+    expect(canvas.getDeviceClipBounds(), <int>[10, 10, 20, 20]);
   });
 
   test('clipRRect', () {
@@ -1045,6 +1046,7 @@ void _canvasTests() {
       canvasKit.ClipOp.Intersect,
       true,
     );
+    expect(canvas.getDeviceClipBounds(), <int>[0, 0, 100, 100]);
   });
 
   test('clipRect', () {
@@ -1053,7 +1055,7 @@ void _canvasTests() {
       canvasKit.ClipOp.Intersect,
       true,
     );
-    expect(canvas.getDeviceClipBounds(), ui.Rect.fromLTRB(0, 0, 100, 100));
+    expect(canvas.getDeviceClipBounds(), <int>[0, 0, 100, 100]);
   });
 
   test('drawArc', () {
@@ -1250,23 +1252,65 @@ void _canvasTests() {
   });
 
   test('rotate', () {
-    canvas.rotate(5, 10, 20);
+    canvas.rotate(90, 10, 20);
+    expect(canvas.getLocalToDevice(), <double>[
+      0, -1, 0, 30, // tx = 10 - (-20) == 30
+      1, 0, 0, 10,  // ty = 20 - 10 == 10
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('scale', () {
     canvas.scale(2, 3);
+    expect(canvas.getLocalToDevice(), <double>[
+      2, 0, 0, 0,
+      0, 3, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('skew', () {
     canvas.skew(4, 5);
+    expect(canvas.getLocalToDevice(), <double>[
+      1, 4, 0, 0,
+      5, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('concat', () {
-    canvas.concat(toSkMatrixFromFloat32(Matrix4.identity().storage));
+    canvas.concat(toSkM44FromFloat32(Matrix4.identity().storage));
+    expect(canvas.getLocalToDevice(), <double>[
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
+    canvas.concat(Float32List.fromList(<double>[
+      11, 12, 13, 14,
+      21, 22, 23, 24,
+      31, 32, 33, 34,
+      41, 42, 43, 44,
+    ]));
+    expect(canvas.getLocalToDevice(), <double>[
+      11, 12, 13, 14,
+      21, 22, 23, 24,
+      31, 32, 33, 34,
+      41, 42, 43, 44,
+    ]);
   });
 
   test('translate', () {
     canvas.translate(4, 5);
+    expect(canvas.getLocalToDevice(), <double>[
+      1, 0, 0, 4,
+      0, 1, 0, 5,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 
   test('drawPicture', () {

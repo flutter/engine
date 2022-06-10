@@ -98,7 +98,7 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   Float64List getTransform() {
-    throw UnimplementedError('getTransform not implemented on HTML back end');
+    return Float64List.fromList(_canvas.getCurrentMatrixUnsafe());
   }
 
   @override
@@ -138,13 +138,22 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   @override
-  ui.Rect getLocalClipBounds() {
-    throw UnimplementedError('getLocalClipBounds not implemented on HTML back end');
+  ui.Rect getDestinationClipBounds() {
+    return _canvas.getDestinationClipBounds() ?? ui.Rect.largest;
   }
 
   @override
-  ui.Rect getDestinationClipBounds() {
-    throw UnimplementedError('getDestinationClipBounds not implemented on HTML back end');
+  ui.Rect getLocalClipBounds() {
+    final ui.Rect? destBounds = _canvas.getDestinationClipBounds();
+    if (destBounds == null) {
+      return ui.Rect.largest;
+    }
+    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getCurrentMatrixUnsafe());
+    if (transform.invert() == 0) {
+      // non-invertible transforms collapse space to a line or point
+      return ui.Rect.zero;
+    }
+    return transformRect(transform, destBounds);
   }
 
   @override

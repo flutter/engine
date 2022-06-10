@@ -67,7 +67,7 @@ class CkCanvas {
   }
 
   ui.Rect getDeviceClipBounds() {
-    return fromSkRect(skCanvas.getDeviceClipBounds());
+    return rectFromSkIRect(skCanvas.getDeviceClipBounds());
   }
 
   void drawArc(
@@ -318,7 +318,12 @@ class CkCanvas {
   }
 
   Float32List getLocalToDevice() {
-    return skCanvas.getLocalToDevice();
+    final List<dynamic> list = skCanvas.getLocalToDevice();
+    final Float32List matrix = Float32List(16);
+    for (int i = 0; i < 16; i++) {
+      matrix[i] = list[i];
+    }
+    return matrix;
   }
 
   CkPictureSnapshot? get pictureSnapshot => null;

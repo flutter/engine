@@ -293,6 +293,8 @@ class RecordingCanvas {
     _commands.add(PaintTransform(matrix4));
   }
 
+  Float32List getCurrentMatrixUnsafe() => _paintBounds._currentMatrix.storage;
+
   void skew(double sx, double sy) {
     assert(!_recordingEnded);
     renderStrategy.hasArbitraryPaint = true;
@@ -330,6 +332,8 @@ class RecordingCanvas {
     renderStrategy.hasArbitraryPaint = true;
     _commands.add(command);
   }
+
+  ui.Rect? getDestinationClipBounds() => _paintBounds.getDestinationClipBounds();
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     assert(!_recordingEnded);
@@ -1797,6 +1801,19 @@ class _PaintBounds {
       command.topBound = _currentClipTop;
       command.rightBound = _currentClipRight;
       command.bottomBound = _currentClipBottom;
+    }
+  }
+
+  ui.Rect? getDestinationClipBounds() {
+    if (!_clipRectInitialized) {
+      return null;
+    } else {
+      return ui.Rect.fromLTRB(
+        _currentClipLeft,
+        _currentClipTop,
+        _currentClipRight,
+        _currentClipBottom,
+      );
     }
   }
 

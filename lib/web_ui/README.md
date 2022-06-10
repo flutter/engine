@@ -218,6 +218,8 @@ directly), follow these steps to roll to the new version:
   The script uploads the new version of CanvasKit to the
   `flutter/web/canvaskit_bundle` CIPD package, and writes the CIPD package
   instance ID to the DEPS file.
+- Rerun `gclient sync` and do a clean build to test that the new version is
+  picked up.
 - Send a pull request containing the above file changes. If the new version
   contains breaking changes, the PR must also contain corresponding fixes.
 
