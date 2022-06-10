@@ -25,6 +25,17 @@ G_DEFINE_TYPE_WITH_CODE(
         G_IMPLEMENT_INTERFACE(ATK_TYPE_EDITABLE_TEXT,
                               fl_accessible_editable_text_iface_init))
 
+static gchar* get_substring(FlAccessibleTextField* self,
+                            glong start,
+                            glong end) {
+  const gchar* value = gtk_entry_buffer_get_text(self->buffer);
+  if (end == -1) {
+    // g_utf8_substring() accepts -1 since 2.72
+    end = g_utf8_strlen(value, -1);
+  }
+  return g_utf8_substring(value, start, end);
+}
+
 static void perform_set_text_action(FlAccessibleTextField* self,
                                     const char* text) {
   g_autoptr(FlValue) value = fl_value_new_string(text);
@@ -136,8 +147,7 @@ static gchar* fl_accessible_text_field_get_text(AtkText* text,
   g_return_val_if_fail(FL_IS_ACCESSIBLE_TEXT_FIELD(text), nullptr);
   FlAccessibleTextField* self = FL_ACCESSIBLE_TEXT_FIELD(text);
 
-  const gchar* value = gtk_entry_buffer_get_text(self->buffer);
-  return g_utf8_substring(value, start_offset, end_offset);
+  return get_substring(self, start_offset, end_offset);
 }
 
 // Implements AtkText::get_caret_offset.
@@ -192,8 +202,7 @@ static gchar* fl_accessible_text_field_get_selection(AtkText* text,
     *end_offset = end;
   }
 
-  const gchar* value = gtk_entry_buffer_get_text(self->buffer);
-  return g_utf8_substring(value, start, end);
+  return get_substring(self, start, end);
 }
 
 // Implements AtkText::add_selection.
