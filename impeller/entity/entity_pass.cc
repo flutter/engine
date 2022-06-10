@@ -241,22 +241,29 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       pass_context.EndPass();
     }
 
-    std::optional<Rect> subpass_coverage;
+    auto subpass_coverage = GetSubpassCoverage(*subpass);
+
     if (backdrop_contents) {
-      subpass_coverage = backdrop_contents->GetCoverage(Entity{});
-      subpass_coverage->origin += position;
-    } else {
-      subpass_coverage = GetSubpassCoverage(*subpass);
+      auto backdrop_coverage = backdrop_contents->GetCoverage(Entity{});
+      if (backdrop_coverage.has_value()) {
+        backdrop_coverage->origin += position;
 
-      if (!subpass_coverage.has_value()) {
-        return EntityPass::EntityResult::Skip();
+        if (subpass_coverage.has_value()) {
+          subpass_coverage = subpass_coverage->Union(backdrop_coverage.value());
+        } else {
+          subpass_coverage = backdrop_coverage;
+        }
       }
+    }
 
-      if (subpass_coverage->size.IsEmpty()) {
-        // It is not an error to have an empty subpass. But subpasses that can't
-        // create their intermediates must trip errors.
-        return EntityPass::EntityResult::Skip();
-      }
+    if (!subpass_coverage.has_value()) {
+      return EntityPass::EntityResult::Skip();
+    }
+
+    if (subpass_coverage->size.IsEmpty()) {
+      // It is not an error to have an empty subpass. But subpasses that can't
+      // create their intermediates must trip errors.
+      return EntityPass::EntityResult::Skip();
     }
 
     RenderTarget subpass_target;
