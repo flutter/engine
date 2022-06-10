@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_TESTING_MOCK_BINARY_MESSENGER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_TESTING_MOCK_BINARY_MESSENGER_H_
 
-#include <map>
+#include <unordered_map>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 
@@ -54,9 +54,11 @@ class MockBinaryMessenger {
                       GBytes* message);
 
  private:
-  std::map<std::string, FlBinaryMessengerMessageHandler> message_handlers;
-  std::map<std::string, FlBinaryMessengerResponseHandle*> response_handles;
-  std::map<std::string, gpointer> user_datas;
+  std::unordered_map<std::string, FlBinaryMessengerMessageHandler>
+      message_handlers;
+  std::unordered_map<std::string, FlBinaryMessengerResponseHandle*>
+      response_handles;
+  std::unordered_map<std::string, gpointer> user_datas;
 };
 
 }  // namespace testing
