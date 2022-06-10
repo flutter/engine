@@ -17,8 +17,10 @@ dev_dependencies:
   path: 1.8.0
   quiver: 3.0.0
   test: 1.17.7
+  uuid: 3.0.6
   yaml: 3.0.0
   watcher: 1.0.0
+  webdriver: 3.0.0
   web_test_utils:
     path: ../../web_sdk/web_test_utils
   web_engine_tester:
@@ -28,3 +30,5 @@ dev_dependencies:
       url: https://github.com/flutter/web_installers.git
       path: packages/simulators/
       ref: 9afed28b771da1c4e82a3382c4a2b31344c04522
+  skia_gold_client:
+    path: ../../testing/skia_gold_client

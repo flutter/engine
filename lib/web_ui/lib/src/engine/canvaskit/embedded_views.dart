@@ -260,9 +260,11 @@ class HtmlViewEmbedder {
     DomElement platformView,
     DomElement headClipView,
   ) {
-    int indexInFlutterView = -1;
-    if (headClipView.parent != null) {
-      indexInFlutterView = skiaSceneHost!.children.indexOf(headClipView);
+    DomNode? headClipViewNextSibling;
+    bool headClipViewWasAttached = false;
+    if (headClipView.parentNode != null) {
+      headClipViewWasAttached = true;
+      headClipViewNextSibling = headClipView.nextSibling;
       headClipView.remove();
     }
     DomElement head = platformView;
@@ -282,8 +284,8 @@ class HtmlViewEmbedder {
     head.remove();
 
     // If the chain was previously attached, attach it to the same position.
-    if (indexInFlutterView > -1) {
-      skiaSceneHost!.children.insert(indexInFlutterView, head);
+    if (headClipViewWasAttached) {
+      skiaSceneHost!.insertBefore(head, headClipViewNextSibling);
     }
     return head;
   }
@@ -732,7 +734,12 @@ class HtmlViewEmbedder {
 
   /// Deletes SVG clip paths, useful for tests.
   void debugCleanupSvgClipPaths() {
-    _svgPathDefs?.children.single.children.forEach(removeElement);
+    final DomElement? parent = _svgPathDefs?.children.single;
+    if (parent != null) {
+      for (DomNode? child = parent.lastChild; child != null; child = parent.lastChild) {
+        parent.removeChild(child);
+      }
+    }
     _svgClipDefs.clear();
   }
 
@@ -807,7 +814,7 @@ class EmbeddedViewParams {
   }
 
   @override
-  int get hashCode => ui.hashValues(offset, size, mutators);
+  int get hashCode => Object.hash(offset, size, mutators);
 }
 
 enum MutatorType {
@@ -885,7 +892,7 @@ class Mutator {
   }
 
   @override
-  int get hashCode => ui.hashValues(type, rect, rrect, path, matrix, alpha);
+  int get hashCode => Object.hash(type, rect, rrect, path, matrix, alpha);
 }
 
 /// A stack of mutators that can be applied to an embedded view.
@@ -931,7 +938,7 @@ class MutatorsStack extends Iterable<Mutator> {
   }
 
   @override
-  int get hashCode => ui.hashList(_mutators);
+  int get hashCode => Object.hashAll(_mutators);
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;

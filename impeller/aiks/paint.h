@@ -17,6 +17,9 @@
 namespace impeller {
 
 struct Paint {
+  using ImageFilterProc =
+      std::function<std::shared_ptr<FilterContents>(FilterInput::Ref)>;
+  using ColorFilterProc = ImageFilterProc;
   using MaskFilterProc =
       std::function<std::shared_ptr<FilterContents>(FilterInput::Ref,
                                                     bool is_solid_color)>;
@@ -36,6 +39,8 @@ struct Paint {
   Style style = Style::kFill;
   Entity::BlendMode blend_mode = Entity::BlendMode::kSourceOver;
 
+  std::optional<ImageFilterProc> image_filter;
+  std::optional<ColorFilterProc> color_filter;
   std::optional<MaskFilterProc> mask_filter;
 
   /// @brief      Wrap this paint's configured filters to the given contents.

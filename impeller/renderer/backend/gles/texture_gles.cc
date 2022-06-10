@@ -11,6 +11,7 @@
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/formats_gles.h"
 
 namespace impeller {
 
@@ -79,7 +80,7 @@ bool TextureGLES::IsValid() const {
 }
 
 // |Texture|
-void TextureGLES::SetLabel(const std::string_view& label) {
+void TextureGLES::SetLabel(std::string_view label) {
   reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
 }
 
@@ -344,21 +345,8 @@ void TextureGLES::InitializeContentsIfNecessary() const {
                                size.height                    // height
         );
       }
-
       break;
   }
-}
-
-static std::optional<GLenum> ToTextureTarget(TextureType type) {
-  switch (type) {
-    case TextureType::kTexture2D:
-      return GL_TEXTURE_2D;
-    case TextureType::kTexture2DMultisample:
-      return std::nullopt;
-    case TextureType::kTextureCube:
-      return GL_TEXTURE_CUBE_MAP;
-  }
-  FML_UNREACHABLE();
 }
 
 bool TextureGLES::Bind() const {
@@ -431,6 +419,17 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
       break;
   }
   return true;
+}
+
+// |Texture|
+Scalar TextureGLES::GetYCoordScale() const {
+  switch (GetIntent()) {
+    case TextureIntent::kUploadFromHost:
+      return 1.0;
+    case TextureIntent::kRenderToTexture:
+      return -1.0;
+  }
+  FML_UNREACHABLE();
 }
 
 }  // namespace impeller

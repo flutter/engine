@@ -216,8 +216,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _textInputContext = [[NSTextInputContext alloc] initWithClient:unsafeSelf];
     _previouslyPressedFlags = 0;
 
-    _flutterViewController = viewController;
-
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
@@ -715,7 +713,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (NSUInteger)characterIndexForPoint:(NSPoint)point {
-  // TODO: Implement.
+  // TODO(cbracken): Implement.
   // Note: This function can't easily be implemented under the system-message architecture.
   return 0;
 }

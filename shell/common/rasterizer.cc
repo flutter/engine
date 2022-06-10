@@ -87,13 +87,17 @@ void Rasterizer::TeardownExternalViewEmbedder() {
 }
 
 void Rasterizer::Teardown() {
-  auto context_switch =
-      surface_ ? surface_->MakeRenderContextCurrent() : nullptr;
-  if (context_switch && context_switch->GetResult()) {
-    compositor_context_->OnGrContextDestroyed();
+  if (surface_) {
+    auto context_switch = surface_->MakeRenderContextCurrent();
+    if (context_switch->GetResult()) {
+      compositor_context_->OnGrContextDestroyed();
+      if (auto* context = surface_->GetContext()) {
+        context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+      }
+    }
+    surface_.reset();
   }
 
-  surface_.reset();
   last_layer_tree_.reset();
 
   if (raster_thread_merger_.get() != nullptr &&
@@ -160,12 +164,9 @@ void Rasterizer::DrawLastLayerTree(
   }
 }
 
-RasterStatus Rasterizer::Draw(
-    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-    LayerTreeDiscardCallback discard_callback) {
-  TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
-                                "GPURasterizer::Draw");
+RasterStatus Rasterizer::Draw(std::shared_ptr<LayerTreePipeline> pipeline,
+                              LayerTreeDiscardCallback discard_callback) {
+  TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
@@ -175,13 +176,12 @@ RasterStatus Rasterizer::Draw(
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
-  std::unique_ptr<FrameTimingsRecorder> resubmit_recorder =
-      frame_timings_recorder->CloneUntil(
-          FrameTimingsRecorder::State::kBuildEnd);
-
   RasterStatus raster_status = RasterStatus::kFailed;
-  Pipeline<flutter::LayerTree>::Consumer consumer =
-      [&](std::unique_ptr<LayerTree> layer_tree) {
+  LayerTreePipeline::Consumer consumer =
+      [&](std::unique_ptr<LayerTreeItem> item) {
+        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
+        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+            std::move(item->frame_timings_recorder);
         if (discard_callback(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
@@ -199,9 +199,11 @@ RasterStatus Rasterizer::Draw(
 
   bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
   if (should_resubmit_frame) {
+    auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
+        std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_));
     auto front_continuation = pipeline->ProduceIfEmpty();
     PipelineProduceResult result =
-        front_continuation.Complete(std::move(resubmitted_layer_tree_));
+        front_continuation.Complete(std::move(resubmitted_layer_tree_item));
     if (result.success) {
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
@@ -224,11 +226,9 @@ RasterStatus Rasterizer::Draw(
       delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
           fml::MakeCopyable(
               [weak_this = weak_factory_.GetWeakPtr(), pipeline,
-               resubmit_recorder = std::move(resubmit_recorder),
                discard_callback = std::move(discard_callback)]() mutable {
                 if (weak_this) {
-                  weak_this->Draw(std::move(resubmit_recorder), pipeline,
-                                  std::move(discard_callback));
+                  weak_this->Draw(pipeline, std::move(discard_callback));
                 }
               }));
       break;
@@ -395,6 +395,8 @@ fml::Milliseconds Rasterizer::GetFrameBudget() const {
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::unique_ptr<flutter::LayerTree> layer_tree) {
+  TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
+                                "Rasterizer::DoDraw");
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
@@ -412,6 +414,8 @@ RasterStatus Rasterizer::DoDraw(
     last_layer_tree_ = std::move(layer_tree);
   } else if (ShouldResubmitFrame(raster_status)) {
     resubmitted_layer_tree_ = std::move(layer_tree);
+    resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
+        FrameTimingsRecorder::State::kBuildEnd);
     return raster_status;
   } else if (raster_status == RasterStatus::kDiscarded) {
     return raster_status;
@@ -604,6 +608,14 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     SurfaceFrame::SubmitInfo submit_info;
+    // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
+    // the past and might need to get snapped to future as this frame could have
+    // been resubmitted. `presentation_time` on `submit_info` is not set in this
+    // case.
+    const auto presentation_time = frame_timings_recorder.GetVsyncTargetTime();
+    if (presentation_time > fml::TimePoint::Now()) {
+      submit_info.presentation_time = presentation_time;
+    }
     if (damage) {
       submit_info.frame_damage = damage->GetFrameDamage();
       submit_info.buffer_damage = damage->GetBufferDamage();

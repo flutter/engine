@@ -64,7 +64,7 @@ static std::string NormalizeUniformKey(const std::string& key) {
     if (ch == '_') {
       continue;
     }
-    stream << static_cast<char>(std::toupper(ch));
+    stream << static_cast<char>(toupper(ch));
   }
   return stream.str();
 }
@@ -317,7 +317,7 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
     auto sampler = bindings.samplers.find(texture.first);
     if (sampler != bindings.samplers.end()) {
       const auto& sampler_gles = SamplerGLES::Cast(*sampler->second.resource);
-      if (!sampler_gles.ConfigureBoundTexture(gl)) {
+      if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
         return false;
       }
     }
