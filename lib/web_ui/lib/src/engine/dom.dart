@@ -658,7 +658,7 @@ extension DomClipboardExtension on DomClipboard {
       js_util.promiseToFuture<String>(js_util.callMethod(this, 'readText', <Object>[]));
 
   Future<dynamic> writeText(String data) =>
-      js_util.promiseToFuture(js_util.callMethod(this, 'readText', <Object>[data]));
+      js_util.promiseToFuture(js_util.callMethod(this, 'writeText', <Object>[data]));
 }
 
 extension DomResponseExtension on DomResponse {
