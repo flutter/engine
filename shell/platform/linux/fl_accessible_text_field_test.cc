@@ -444,6 +444,7 @@ TEST(FlAccessibleTextFieldTest, InsertDeleteText) {
               g_autoptr(FlValue) value =
                   decode_semantic_data(data, data_length);
               EXPECT_EQ(fl_value_get_type(value), FL_VALUE_TYPE_STRING);
+              g_free(text);
               text = g_strdup(fl_value_get_string(value));
             } else {
               g_autoptr(FlValue) value =
