@@ -182,10 +182,17 @@ def RunEngineExecutable(
 
   unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
   env = os.environ.copy()
-  # We cannot run the unstripped binaries directly when coverage is enabled.
-  if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
-    # Some tests depend on the EGL/GLES libraries placed in the build directory.
-    env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
+  if IsLinux():
+    env['LD_LIBRARY_PATH'] = build_dir
+    env['VK_DRIVER_FILES'] = os.path.join(build_dir, 'vk_swiftshader_icd.json')
+    if os.path.exists(unstripped_exe):
+      try:
+        os.symlink(
+            os.path.join(build_dir, 'lib.unstripped', 'libvulkan.so.1'),
+            os.path.join(build_dir, 'exe.unstripped', 'libvulkan.so.1')
+        )
+      except FileExistsError:
+        pass
   elif IsMac():
     env['DYLD_LIBRARY_PATH'] = build_dir
   else:
