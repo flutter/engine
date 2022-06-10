@@ -1904,8 +1904,15 @@ class _RepositoryVulkanDepsDirectory extends _RepositoryDirectory {
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'vulkan-headers')
-      return _RepositoryVulkanDirectory(this, entry);
+    if (entry.name == 'vulkan-headers') {
+      return _RepositoryVulkanDirectory(
+        _RepositoryDirectory(
+          this,
+          fs.FileSystemDirectory.fromPath(path.join(entry.fullName, 'src')),
+        ),
+        entry,
+      );
+    }
     return super.createSubdirectory(entry);
   }
 }
