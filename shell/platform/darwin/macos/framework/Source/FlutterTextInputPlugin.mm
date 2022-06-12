@@ -612,6 +612,11 @@ static char markerKey;
 #pragma mark -
 #pragma mark NSTextInputClient
 
+- (void)insertTab:(id)sender {
+  // Implementing insertTab: makes AppKit send tab as command, instead of
+  // insertText with '\t'.
+}
+
 - (void)insertText:(id)string replacementRange:(NSRange)range {
   if (_activeModel == nullptr) {
     return;
