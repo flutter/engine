@@ -427,7 +427,7 @@ def to_gn_args(args):
   if args.target_os not in ['android', 'ios', 'wasm']:
     gn_args['skia_use_vulkan'] = True
     gn_args['skia_vulkan_memory_allocator_dir'
-           ] = "//third_party/vulkan_memory_allocator"
+           ] = '//third_party/vulkan_memory_allocator'
     gn_args['shell_enable_vulkan'] = True
     # Disable VMA's use of std::shared_mutex in environments where the
     # standard library doesn't support it.
@@ -540,13 +540,13 @@ def to_gn_args(args):
   # for now.
   gn_args['angle_enable_vulkan_validation_layers'] = False
   gn_args['vma_vulkan_headers_dir'
-         ] = "//third_party/vulkan-deps/vulkan-headers/src"
+         ] = '//third_party/vulkan-deps/vulkan-headers/src'
   gn_args['angle_vulkan_headers_dir'
-         ] = "//third_party/vulkan-deps/vulkan-headers/src"
+         ] = '//third_party/vulkan-deps/vulkan-headers/src'
   gn_args['angle_vulkan_loader_dir'
-         ] = "//third_party/vulkan-deps/vulkan-loader/src"
+         ] = '//third_party/vulkan-deps/vulkan-loader/src'
   gn_args['angle_vulkan_tools_dir'
-         ] = "//third_party/vulkan-deps/vulkan-tools/src"
+         ] = '//third_party/vulkan-deps/vulkan-tools/src'
 
   return gn_args
 
