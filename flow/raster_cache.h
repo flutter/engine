@@ -153,13 +153,9 @@ class RasterCache {
     SkRect device_rect;
     ctm.mapRect(&device_rect, rect);
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    SkIRect bounds;
-    device_rect.roundOut(&bounds);
-    return SkRect::MakeLTRB(bounds.fLeft, bounds.fTop, bounds.fRight,
-                            bounds.fBottom);
-#else
-    return device_rect;
+    device_rect.roundOut(&device_rect);
 #endif
+    return device_rect;
   }
 
   /**
