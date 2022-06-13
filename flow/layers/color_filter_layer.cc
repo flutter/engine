@@ -25,20 +25,21 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 #endif
 
   DiffChildren(context, prev);
+
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
-  auto child_matrix = matrix;
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, child_matrix);
+  ContainerLayer::Preroll(context, matrix);
 
   // We always use a saveLayer (or a cached rendering), so we
   // can always apply opacity in those cases.
   context->subtree_can_inherit_opacity = true;
 
+  SkMatrix child_matrix(matrix);
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
 #endif
