@@ -149,12 +149,19 @@ class RasterCache {
       const SkMatrix& ctm,
       bool checkerboard) const;
 
-  static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
+  static SkRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
     SkRect device_rect;
     ctm.mapRect(&device_rect, rect);
     SkIRect bounds;
     device_rect.roundOut(&bounds);
-    return bounds;
+    return SkRect::MakeLTRB(bounds.fLeft, bounds.fTop, bounds.fRight,
+                            bounds.fBottom);
+#else
+    SkRect device_rect;
+    ctm.mapRect(&device_rect, rect);
+    return device_rect;
+#endif
   }
 
   /**
@@ -249,8 +256,12 @@ class RasterCache {
 
   void SetCheckboardCacheImages(bool checkerboard);
 
-  const RasterCacheMetrics& picture_metrics() const { return picture_metrics_; }
-  const RasterCacheMetrics& layer_metrics() const { return layer_metrics_; }
+  const RasterCacheMetrics& picture_metrics() const {
+    return picture_metrics_;
+  }
+  const RasterCacheMetrics& layer_metrics() const {
+    return layer_metrics_;
+  }
 
   size_t GetCachedEntriesCount() const;
 
@@ -296,7 +307,9 @@ class RasterCache {
    * If the number is one, then it must be prepared and drawn on 1 frame
    * and it will then be cached on the next frame if it is prepared.
    */
-  int access_threshold() const { return access_threshold_; }
+  int access_threshold() const {
+    return access_threshold_;
+  }
 
  private:
   struct Entry {

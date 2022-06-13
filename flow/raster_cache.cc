@@ -29,11 +29,11 @@ RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
-  SkIRect bounds =
+
+  SkRect bounds =
       RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
-  FML_DCHECK(
-      std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
-      std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
+  FML_DCHECK(std::abs(bounds.width() - image_->dimensions().width()) <= 1 &&
+             std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
   flow_.Step();
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
@@ -125,7 +125,8 @@ static std::unique_ptr<RasterCacheResult> Rasterize(
     const char* type,
     const std::function<void(SkCanvas*)>& draw_function) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
-  SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
+
+  SkRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       cache_rect.width(), cache_rect.height(), sk_ref_sp(dst_color_space));

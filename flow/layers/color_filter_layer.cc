@@ -19,27 +19,35 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
   DiffChildren(context, prev);
-
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
+  auto child_matrix = matrix;
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, matrix);
+  ContainerLayer::Preroll(context, child_matrix);
 
   // We always use a saveLayer (or a cached rendering), so we
   // can always apply opacity in those cases.
   context->subtree_can_inherit_opacity = true;
 
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
+#endif
+
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, matrix,
+    TryToPrepareRasterCache(context, this, child_matrix,
                             RasterCacheLayerStrategy::kLayer);
   } else {
     render_count_++;
-    TryToPrepareRasterCache(context, this, matrix,
+    TryToPrepareRasterCache(context, this, child_matrix,
                             RasterCacheLayerStrategy::kLayerChildren);
   }
 }
@@ -49,6 +57,11 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
 
   if (context.raster_cache) {
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
