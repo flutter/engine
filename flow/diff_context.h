@@ -67,7 +67,7 @@ class DiffContext {
    private:
     DiffContext* context_;
   };
-  
+
   void MarkDirty();
 
   // Pushes additional transform for current subtree

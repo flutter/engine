@@ -61,33 +61,37 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   storage_.realloc(bytes);
   virtual_layer_indexes_.clear();
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
-                                            nested_bytes, nested_count,
-                                            cull_rect_, compatible, std::move(indexes)
-                                            )
-                            );
+  return sk_sp<DisplayList>(new DisplayList(
+      storage_.release(), bytes, count, nested_bytes, nested_count, cull_rect_,
+      compatible, std::move(indexes)));
 }
 
 void DisplayListBuilder::startRecordVirtualLayer(std::string type) {
-  if(!virtual_layer_indexes_.empty() && storage_op_count_ == virtual_layer_indexes_.back().index && virtual_layer_indexes_.back().isStart) {
+  if (!virtual_layer_indexes_.empty() &&
+      storage_op_count_ == virtual_layer_indexes_.back().index &&
+      virtual_layer_indexes_.back().isStart) {
     virtual_layer_indexes_.back().type = type;
-  }else{
-    virtual_layer_indexes_.push_back(DisplayVirtualLayerInfo{storage_op_count_,type,true});
+  } else {
+    virtual_layer_indexes_.push_back(
+        DisplayVirtualLayerInfo{storage_op_count_, type, true});
   }
 }
 
 void DisplayListBuilder::saveVirtualLayer(std::string type) {
-  if(virtual_layer_indexes_.empty()) {
+  if (virtual_layer_indexes_.empty()) {
     return;
   }
-  
-  if(storage_op_count_ == virtual_layer_indexes_.back().index && type == virtual_layer_indexes_.back().type) {
+
+  if (storage_op_count_ == virtual_layer_indexes_.back().index &&
+      type == virtual_layer_indexes_.back().type) {
     virtual_layer_indexes_.pop_back();
     return;
   }
-  
-  if(storage_op_count_ != virtual_layer_indexes_.back().index && virtual_layer_indexes_.back().isStart) {
-    virtual_layer_indexes_.push_back(DisplayVirtualLayerInfo{storage_op_count_,type,false});
+
+  if (storage_op_count_ != virtual_layer_indexes_.back().index &&
+      virtual_layer_indexes_.back().isStart) {
+    virtual_layer_indexes_.push_back(
+        DisplayVirtualLayerInfo{storage_op_count_, type, false});
     return;
   }
 }

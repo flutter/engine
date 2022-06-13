@@ -35,39 +35,39 @@ static void Canvas_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
 
-#define FOR_EACH_BINDING(V)         \
-  V(Canvas, save)                   \
-  V(Canvas, saveLayerWithoutBounds) \
-  V(Canvas, saveLayer)              \
-  V(Canvas, startRecordVirtualLayer)\
-  V(Canvas, saveVirtualLayer)       \
-  V(Canvas, restore)                \
-  V(Canvas, getSaveCount)           \
-  V(Canvas, translate)              \
-  V(Canvas, scale)                  \
-  V(Canvas, rotate)                 \
-  V(Canvas, skew)                   \
-  V(Canvas, transform)              \
-  V(Canvas, clipRect)               \
-  V(Canvas, clipRRect)              \
-  V(Canvas, clipPath)               \
-  V(Canvas, drawColor)              \
-  V(Canvas, drawLine)               \
-  V(Canvas, drawPaint)              \
-  V(Canvas, drawRect)               \
-  V(Canvas, drawRRect)              \
-  V(Canvas, drawDRRect)             \
-  V(Canvas, drawOval)               \
-  V(Canvas, drawCircle)             \
-  V(Canvas, drawArc)                \
-  V(Canvas, drawPath)               \
-  V(Canvas, drawImage)              \
-  V(Canvas, drawImageRect)          \
-  V(Canvas, drawImageNine)          \
-  V(Canvas, drawPicture)            \
-  V(Canvas, drawPoints)             \
-  V(Canvas, drawVertices)           \
-  V(Canvas, drawAtlas)              \
+#define FOR_EACH_BINDING(V)          \
+  V(Canvas, save)                    \
+  V(Canvas, saveLayerWithoutBounds)  \
+  V(Canvas, saveLayer)               \
+  V(Canvas, startRecordVirtualLayer) \
+  V(Canvas, saveVirtualLayer)        \
+  V(Canvas, restore)                 \
+  V(Canvas, getSaveCount)            \
+  V(Canvas, translate)               \
+  V(Canvas, scale)                   \
+  V(Canvas, rotate)                  \
+  V(Canvas, skew)                    \
+  V(Canvas, transform)               \
+  V(Canvas, clipRect)                \
+  V(Canvas, clipRRect)               \
+  V(Canvas, clipPath)                \
+  V(Canvas, drawColor)               \
+  V(Canvas, drawLine)                \
+  V(Canvas, drawPaint)               \
+  V(Canvas, drawRect)                \
+  V(Canvas, drawRRect)               \
+  V(Canvas, drawDRRect)              \
+  V(Canvas, drawOval)                \
+  V(Canvas, drawCircle)              \
+  V(Canvas, drawArc)                 \
+  V(Canvas, drawPath)                \
+  V(Canvas, drawImage)               \
+  V(Canvas, drawImageRect)           \
+  V(Canvas, drawImageNine)           \
+  V(Canvas, drawPicture)             \
+  V(Canvas, drawPoints)              \
+  V(Canvas, drawVertices)            \
+  V(Canvas, drawAtlas)               \
   V(Canvas, drawShadow)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)

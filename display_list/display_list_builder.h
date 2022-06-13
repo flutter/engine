@@ -171,7 +171,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
   void restoreToCount(int restore_count);
-                                   
+
   void startRecordVirtualLayer(std::string type);
   void saveVirtualLayer(std::string type);
 
@@ -331,7 +331,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   size_t used_ = 0;
   size_t allocated_ = 0;
   int op_count_ = 0;
-                                   
+
   int storage_op_count_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|

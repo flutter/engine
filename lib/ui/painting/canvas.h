@@ -47,7 +47,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                  const PaintData& paint_data);
   void restore();
   int getSaveCount();
-  
+
   void startRecordVirtualLayer(std::string type);
   void saveVirtualLayer(std::string type);
 

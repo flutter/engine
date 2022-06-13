@@ -213,11 +213,12 @@ class SaveLayerOptions {
 };
 
 struct DisplayVirtualLayerInfo {
-//public:
+  // public:
   int index;
   std::string type;
   bool isStart;
-//  DisplayVirtualLayerInfo(int index, std::string type, bool isStart) : index(index), type(type), isStart(isStart) {}
+  //  DisplayVirtualLayerInfo(int index, std::string type, bool isStart) :
+  //  index(index), type(type), isStart(isStart) {}
 };
 
 // The base class that contains a sequence of rendering operations
@@ -238,7 +239,7 @@ class DisplayList : public SkRefCnt {
     uint8_t* ptr = storage_.get();
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
-  
+
   void DispatchPart(Dispatcher& ctx, int start, int end) const;
 
   void RenderTo(DisplayListBuilder* builder,
@@ -272,11 +273,13 @@ class DisplayList : public SkRefCnt {
   bool can_apply_group_opacity() { return can_apply_group_opacity_; }
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
-  
-  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes() { return virtual_layer_indexes_; }
-  
+
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes() {
+    return virtual_layer_indexes_;
+  }
+
   void setVirtualBounds(SkRect rect) { virtual_bounds_ = rect; }
-  
+
   void Compare(DisplayList* dl);
 
  private:
@@ -286,10 +289,11 @@ class DisplayList : public SkRefCnt {
               size_t nested_byte_count,
               unsigned int nested_op_count,
               const SkRect& cull_rect,
-              bool can_apply_group_opacity, std::vector<DisplayVirtualLayerInfo> indexes);
+              bool can_apply_group_opacity,
+              std::vector<DisplayVirtualLayerInfo> indexes);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
-  
+
   size_t byte_count_;
   unsigned int op_count_;
 
@@ -303,13 +307,13 @@ class DisplayList : public SkRefCnt {
   SkRect bounds_cull_;
 
   bool can_apply_group_opacity_;
-  
+
   bool virtual_bounds_valid_;
 
   std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes_;
-  
+
   SkRect virtual_bounds_;
-  
+
   void ComputeBounds();
   void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
 

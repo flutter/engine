@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <type_traits>
 #include <set>
+#include <type_traits>
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_canvas_dispatcher.h"
@@ -53,7 +53,7 @@ DisplayList::DisplayList(uint8_t* ptr,
       bounds_cull_(cull_rect),
       can_apply_group_opacity_(can_apply_group_opacity),
       virtual_layer_indexes_(indexes) {
-        virtual_bounds_valid_ = false;
+  virtual_bounds_valid_ = false;
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);
@@ -133,18 +133,18 @@ static bool CompareOps(uint8_t* ptrA,
 
 void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
   uint8_t* ptr = storage_.get();
-  
+
   uint8_t* opEnd = ptr + byte_count_;
-  
+
   uint8_t* targetStartPtr = nullptr;
   uint8_t* targetEndPtr = nullptr;
-  
+
   int count = 0;
   while (ptr < opEnd) {
-    if(count == start && targetStartPtr == nullptr) {
+    if (count == start && targetStartPtr == nullptr) {
       targetStartPtr = ptr;
     }
-    if(count == end) {
+    if (count == end) {
       targetEndPtr = ptr;
       break;
     }
@@ -152,27 +152,26 @@ void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
     ptr += op->size;
     count += 1;
   }
-  
-  if(targetEndPtr == nullptr) {
+
+  if (targetEndPtr == nullptr) {
     targetEndPtr = opEnd;
   }
-  
+
   Dispatch(ctx, targetStartPtr, targetEndPtr);
 }
 
 const SkRect& DisplayList::bounds() {
-  
-    if(!virtual_layer_indexes_.empty() && virtual_bounds_valid_) {
-      virtual_bounds_valid_ = false;
-      return virtual_bounds_;
-    }
-  
-    if (bounds_.width() < 0.0) {
-      // ComputeBounds() will leave the variable with a
-      // non-negative width and height
-      ComputeBounds();
-    }
-    return bounds_;
+  if (!virtual_layer_indexes_.empty() && virtual_bounds_valid_) {
+    virtual_bounds_valid_ = false;
+    return virtual_bounds_;
+  }
+
+  if (bounds_.width() < 0.0) {
+    // ComputeBounds() will leave the variable with a
+    // non-negative width and height
+    ComputeBounds();
+  }
+  return bounds_;
 }
 
 uint8_t* getNPtr(uint8_t* ptr, int n) {
@@ -184,52 +183,52 @@ uint8_t* getNPtr(uint8_t* ptr, int n) {
 }
 
 void DisplayList::Compare(DisplayList* dl) {
-  
-  if(storage_ == nullptr) {
+  if (storage_ == nullptr) {
     return;
   }
-  
+
   // 0. Diff alg.
   SkRect damage;
-  
+
   const auto current = virtual_layer_indexes();
   const auto old = dl->virtual_layer_indexes();
-  
+
   uint8_t* currentOpHead = storage_.get();
   uint8_t* oldOpHead = dl->storage_.get();
-  
+
   // 1. 算法实现1 简易的深搜.
   std::set<int> oldUsage;
-  for(unsigned long i = 0; i < current.size(); i+=2) {
-    for(unsigned long j = 0; j < old.size(); j+=2) {
-      if(oldUsage.find(i) == oldUsage.end() && current[i].type == old[j].type) {
+  for (unsigned long i = 0; i < current.size(); i += 2) {
+    for (unsigned long j = 0; j < old.size(); j += 2) {
+      if (oldUsage.find(i) == oldUsage.end() &&
+          current[i].type == old[j].type) {
         auto curH = getNPtr(currentOpHead, current[i].index);
-        auto curE = getNPtr(currentOpHead, current[i+1].index);
+        auto curE = getNPtr(currentOpHead, current[i + 1].index);
         auto oldH = getNPtr(oldOpHead, old[j].index);
-        auto oldE = getNPtr(oldOpHead, old[j+1].index);
-        if(curE-curH == oldE-oldH && CompareOps(curH, curE, oldH, oldE)) {
+        auto oldE = getNPtr(oldOpHead, old[j + 1].index);
+        if (curE - curH == oldE - oldH && CompareOps(curH, curE, oldH, oldE)) {
           oldUsage.insert(j);
           break;
-        }else{
-          auto rect = partBounds(current[i].index, current[i+1].index);
+        } else {
+          auto rect = partBounds(current[i].index, current[i + 1].index);
           damage.join(rect);
           break;
         }
       }
     }
   }
-  
+
   for(unsigned long i = 0; i < old.size(); i += 2) {
     if(oldUsage.find(i) == oldUsage.end()) {
       auto rect = partBounds(old[i].index, current[i+1].index);
       damage.join(rect);
     }
   }
-  
+
   // 3. Fake
 //  damage = partBounds(current[0].index, current[current.size()-1].index);
-  
-  
+
+
   // 2. 算法实现2 树状结构下的深层diff.
 //  // 1. preroll 找到具有op的有效indexes.
 ////  vector<int> trash;
