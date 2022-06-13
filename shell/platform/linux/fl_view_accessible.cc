@@ -43,15 +43,13 @@ static FlEngine* get_engine(FlViewAccessible* self) {
 
 static FlAccessibleNode* create_node(FlViewAccessible* self,
                                      const FlutterSemanticsNode* semantics) {
-  FlAccessibleNode* node = nullptr;
   FlEngine* engine = get_engine(self);
+
   if (semantics->flags & kFlutterSemanticsFlagIsTextField) {
-    node = fl_accessible_text_field_new(engine, semantics->id);
-  } else {
-    node = fl_accessible_node_new(engine, semantics->id);
+    return fl_accessible_text_field_new(engine, semantics->id);
   }
 
-  return node;
+  return fl_accessible_node_new(engine, semantics->id);
 }
 
 static FlAccessibleNode* lookup_node(FlViewAccessible* self, int32_t id) {

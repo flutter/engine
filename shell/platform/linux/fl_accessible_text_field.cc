@@ -113,23 +113,27 @@ static void fl_accessible_text_field_set_text_selection(FlAccessibleNode* node,
 void fl_accessible_text_field_perform_action(FlAccessibleNode* self,
                                              FlutterSemanticsAction action,
                                              GBytes* data) {
+  FlAccessibleNodeClass* parent_class =
+      FL_ACCESSIBLE_NODE_CLASS(fl_accessible_text_field_parent_class);
+
   switch (action) {
     case kFlutterSemanticsActionMoveCursorForwardByCharacter:
     case kFlutterSemanticsActionMoveCursorBackwardByCharacter:
     case kFlutterSemanticsActionMoveCursorForwardByWord:
     case kFlutterSemanticsActionMoveCursorBackwardByWord: {
+      // These actions require a boolean argument that indicates whether the
+      // selection should be extended or collapsed when moving the cursor.
       g_autoptr(FlValue) extend_selection = fl_value_new_bool(false);
       g_autoptr(FlStandardMessageCodec) codec = fl_standard_message_codec_new();
-      data = fl_message_codec_encode_message(FL_MESSAGE_CODEC(codec),
-                                             extend_selection, nullptr);
+      g_autoptr(GBytes) message = fl_message_codec_encode_message(
+          FL_MESSAGE_CODEC(codec), extend_selection, nullptr);
+      parent_class->perform_action(self, action, message);
       break;
     }
     default:
+      parent_class->perform_action(self, action, data);
       break;
   }
-
-  FL_ACCESSIBLE_NODE_CLASS(fl_accessible_text_field_parent_class)
-      ->perform_action(self, action, data);
 }
 
 // Implements AtkText::get_character_count.
@@ -391,8 +395,6 @@ static void fl_accessible_text_field_init(FlAccessibleTextField* self) {
 }
 
 FlAccessibleNode* fl_accessible_text_field_new(FlEngine* engine, int32_t id) {
-  FlAccessibleNode* self =
-      FL_ACCESSIBLE_NODE(g_object_new(fl_accessible_text_field_get_type(),
-                                      "engine", engine, "id", id, nullptr));
-  return self;
+  return FL_ACCESSIBLE_NODE(g_object_new(fl_accessible_text_field_get_type(),
+                                         "engine", engine, "id", id, nullptr));
 }
