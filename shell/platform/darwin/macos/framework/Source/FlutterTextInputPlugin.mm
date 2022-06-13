@@ -685,8 +685,8 @@ static char markerKey;
     func(self, selector, nil);
   }
 
-  // Group multiple selector within single run loop turn so that framework can
-  // process them in single microtask
+  // Group multiple selectors received within a single run loop turn so that
+  // framework can process them in single microtask.
   NSString* name = NSStringFromSelector(selector);
   if (_pendingSelectors == nil) {
     _pendingSelectors = [NSMutableArray array];
