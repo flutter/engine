@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <set>
 #include <type_traits>
 
 #include "flutter/display_list/display_list.h"
@@ -41,7 +42,8 @@ DisplayList::DisplayList(uint8_t* ptr,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
                          const SkRect& cull_rect,
-                         bool can_apply_group_opacity)
+                         bool can_apply_group_opacity,
+                         std::vector<DisplayVirtualLayerInfo> indexes)
     : storage_(ptr),
       byte_count_(byte_count),
       op_count_(op_count),
@@ -49,7 +51,9 @@ DisplayList::DisplayList(uint8_t* ptr,
       nested_op_count_(nested_op_count),
       bounds_({0, 0, -1, -1}),
       bounds_cull_(cull_rect),
-      can_apply_group_opacity_(can_apply_group_opacity) {
+      can_apply_group_opacity_(can_apply_group_opacity),
+      virtual_layer_indexes_(indexes) {
+  virtual_bounds_valid_ = false;
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);
@@ -209,6 +213,96 @@ bool DisplayList::Equals(const DisplayList* other) const {
     return true;
   }
   return CompareOps(ptr, ptr + byte_count_, o_ptr, o_ptr + other->byte_count_);
+}
+
+static uint8_t* getNPtr(uint8_t* ptr, uint8_t* end,int n) {
+  int i = 0;
+  while(ptr < end) {
+    if(n == i) {
+      return ptr;
+    }
+    auto op = reinterpret_cast<const DLOp*>(ptr);
+    ptr += op->size;
+    i += 1;
+  }
+  return end;
+}
+
+void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
+  uint8_t* ptr = storage_.get();
+  uint8_t* opEnd = ptr + byte_count_;
+  Dispatch(ctx, getNPtr(ptr, opEnd, start), getNPtr(ptr, opEnd, end));
+}
+
+const SkRect& DisplayList::bounds() {
+  if(!virtual_layer_indexes_.empty() && virtual_bounds_valid_) {
+    virtual_bounds_valid_ = false;
+    return virtual_bounds_;
+  }
+  if (bounds_.width() < 0.0) {
+    // ComputeBounds() will leave the variable with a
+    // non-negative width and height
+    ComputeBounds();
+  }
+  return bounds_;
+}
+
+const SkRect DisplayList::partBounds(int start, int end) {
+  DisplayListBoundsCalculator calculator(&bounds_cull_);
+  DispatchPart(calculator, start, end);
+  return calculator.bounds();
+}
+
+void DisplayList::Compare(DisplayList* dl) {
+  if(storage_ == nullptr) {
+    return;
+  }
+
+  // 0. Diff alg.
+  SkRect damage;
+
+  const auto current = virtual_layer_indexes();
+  const auto old = dl->virtual_layer_indexes();
+
+  uint8_t* currentOpHead = storage_.get();
+  uint8_t* currentOpTail = currentOpHead + byte_count_;
+  uint8_t* oldOpHead = dl->storage_.get();
+  uint8_t* oldOpTail = dl->storage_.get() + dl->byte_count_;
+
+  // 1. 算法实现1 简易的深搜.
+  std::set<int> oldUsage;
+  for(unsigned long i = 0; i < current.size(); i+=2) {
+    for(unsigned long j = 0; j < old.size(); j+=2) {
+      if(oldUsage.find(i) == oldUsage.end() && current[i].type == old[j].type) {
+        auto curH = getNPtr(currentOpHead, currentOpTail, current[i].index);
+        auto curE = getNPtr(currentOpHead, currentOpTail, current[i+1].index);
+        auto oldH = getNPtr(oldOpHead, oldOpTail, old[j].index);
+        auto oldE = getNPtr(oldOpHead, oldOpTail, old[j+1].index);
+        if(curE-curH == oldE-oldH && CompareOps(curH, curE, oldH, oldE)) {
+          oldUsage.insert(j);
+          break;
+        }else{
+          auto rect = partBounds(current[i].index, current[i+1].index);
+          damage.join(rect);
+          break;
+        }
+      }
+    }
+  }
+
+  for(unsigned long i = 0; i < old.size(); i += 2) {
+    if(oldUsage.find(i) == oldUsage.end()) {
+      auto rect = partBounds(old[i].index, current[i+1].index);
+      damage.join(rect);
+    }
+  }
+
+  // 3. Fake
+  //  damage = partBounds(current[0].index, current[current.size()-1].index);
+
+  // 2. Add damage.
+  setVirtualBounds(damage);
+  virtual_bounds_valid_ = true;
 }
 
 }  // namespace flutter
