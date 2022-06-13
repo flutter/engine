@@ -128,11 +128,11 @@ static std::unique_ptr<RasterCacheResult> Rasterize(
 
   SkRect dest_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
   // we always round out here so that the texture is integer sized.
-  SkIRect cache_rect;
-  dest_rect.roundOut(&cache_rect);
+  int width = SkScalarCeilToInt(dest_rect.width());
+  int height = SkScalarCeilToInt(dest_rect.height());
 
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      cache_rect.width(), cache_rect.height(), sk_ref_sp(dst_color_space));
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(width, height, sk_ref_sp(dst_color_space));
 
   sk_sp<SkSurface> surface =
       context
