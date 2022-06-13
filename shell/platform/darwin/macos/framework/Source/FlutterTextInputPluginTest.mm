@@ -1156,7 +1156,7 @@
   NSString* runLoopMode = @"FlutterTestRunLoopMode";
   plugin.customRunLoopMode = runLoopMode;
 
-  // Ensure both selectors are grouped in one platform channel call
+  // Ensure both selectors are grouped in one platform channel call.
   [plugin doCommandBySelector:@selector(moveUp:)];
   [plugin doCommandBySelector:@selector(moveRightAndModifySelection:)];
 
@@ -1166,7 +1166,7 @@
   });
 
   while (!done) {
-    // Each invocation will handle one source
+    // Each invocation will handle one source.
     CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
   }
 
