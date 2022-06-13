@@ -4,7 +4,7 @@
             "archives": [
                 {
                     "name": "linux_profile_arm64",
-		    "type": "gcs",
+                    "type": "gcs",
                     "base_path": "out/linux_profile_arm64/zip_archives/",
                     "include_paths": [
                         "out/linux_profile_arm64/zip_archives/linux-arm64-profile/linux-arm64-flutter-gtk.zip"
@@ -39,7 +39,7 @@
             "archives": [
                 {
                     "name": "linux_debug_arm64",
-		    "type": "gcs",
+                    "type": "gcs",
                     "base_path": "out/linux_debug_arm64/zip_archives/",
                     "include_paths": [
                         "out/linux_debug_arm64/zip_archives/linux-arm64/artifacts.zip",
@@ -80,7 +80,7 @@
             "archives": [
                 {
                     "name": "linux_release_arm64",
-		    "type": "gcs",
+                    "type": "gcs",
                     "base_path": "out/linux_release_arm64/zip_archives/",
                     "include_paths": [
                         "out/linux_release_arm64/zip_archives/linux-arm64-release/linux-arm64-flutter-gtk.zip"
