@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "impeller/base/validation.h"
-#include "impeller/entity/contents/snapshot.h"
+#include "impeller/renderer/snapshot.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_target.h"
 
