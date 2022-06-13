@@ -353,7 +353,7 @@ struct Matrix {
                                           TSize<T> size,
                                           Scalar z_near,
                                           Scalar z_far) {
-    return MakePerspective(fov_y, static_cast<Scalar>(size.width / size.height),
+    return MakePerspective(fov_y, static_cast<Scalar>(size.width) / size.height,
                            z_near, z_far);
   }
 };
