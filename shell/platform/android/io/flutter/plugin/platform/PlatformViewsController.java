@@ -235,8 +235,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           embeddedView.setLayoutDirection(request.direction);
 
           // Accessibility is initially disabled, and it's e-enabled by AccessibilityBridge after
-          // the
-          // framework populates the SemanticsNode.
+          // the framework populates the SemanticsNode.
           // If there's no SemanticsNode for a platform view, then the platform view remains
           // inaccessible to TalkBack.
           // For example, if you wrap a platform view widget with a ExcludeSemantics widget, no
