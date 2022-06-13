@@ -10,6 +10,7 @@
 #include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
+#include "impeller/entity/contents/snapshot.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/path_builder.h"
@@ -596,6 +597,7 @@ TEST_P(AiksTest, ColorWheel) {
   };
 
   std::shared_ptr<Image> color_wheel;
+  Matrix color_wheel_transform;
 
   bool first_frame = true;
   auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
@@ -639,16 +641,21 @@ TEST_P(AiksTest, ColorWheel) {
 
       draw_color_wheel(canvas);
       auto color_wheel_picture = canvas.EndRecordingAsPicture();
-      color_wheel = color_wheel_picture.RenderToImage(renderer);
-
-      if (!color_wheel) {
+      auto snapshot = color_wheel_picture.Snapshot(renderer);
+      if (!snapshot.has_value() || !snapshot->texture) {
         return false;
       }
+      color_wheel = std::make_shared<Image>(snapshot->texture);
+      color_wheel_transform = snapshot->transform;
     }
 
     Canvas canvas;
     canvas.DrawPaint({.color = Color::White()});
+
+    canvas.Save();
+    canvas.Transform(color_wheel_transform);
     canvas.DrawImage(color_wheel, Point(), Paint());
+    canvas.Restore();
 
     canvas.Scale(content_scale);
     canvas.Translate(Vector2(500, 400));

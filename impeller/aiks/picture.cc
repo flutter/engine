@@ -6,38 +6,48 @@
 #include <memory>
 
 #include "impeller/base/validation.h"
+#include "impeller/entity/contents/snapshot.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
 
-std::shared_ptr<Image> Picture::RenderToImage(AiksContext& context) {
+std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
   auto coverage = pass->GetElementsCoverage();
   if (!coverage.has_value() || coverage->IsEmpty()) {
-    return nullptr;
+    return std::nullopt;
   }
+
+  const auto translate = Matrix::MakeTranslation(-coverage->origin);
+  pass->IterateAllEntities([&translate](auto& entity) -> bool {
+    entity.SetTransformation(translate * entity.GetTransformation());
+    return true;
+  });
 
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
   auto target = RenderTarget::CreateOffscreen(
       *context.GetContext(),
-      ISize(coverage->GetRight(), coverage->GetBottom()));
+      ISize(coverage->size.width, coverage->size.height));
   if (!target.IsValid()) {
     VALIDATION_LOG << "Could not create valid RenderTarget.";
-    return nullptr;
+    return std::nullopt;
   }
 
   if (!context.Render(*this, target)) {
     VALIDATION_LOG << "Could not render Picture to Texture.";
-    return nullptr;
+    return std::nullopt;
   }
 
   auto texture = target.GetRenderTargetTexture();
   if (!texture) {
     VALIDATION_LOG << "RenderTarget has no target texture.";
-    return nullptr;
+    return std::nullopt;
   }
-  return std::make_shared<Image>(std::move(texture));
-}
+
+  return impeller::Snapshot{
+      .texture = std::move(texture),
+      .transform = translate.MakeTranslation(coverage->origin)};
+};
 
 }  // namespace impeller
