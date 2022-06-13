@@ -10,6 +10,7 @@ A top level harness to run all unit-tests in a specific engine build.
 
 import argparse
 import glob
+import errno
 import multiprocessing
 import os
 import re
@@ -191,8 +192,11 @@ def RunEngineExecutable(
             os.path.join(build_dir, 'lib.unstripped', 'libvulkan.so.1'),
             os.path.join(build_dir, 'exe.unstripped', 'libvulkan.so.1')
         )
-      except FileExistsError:
-        pass
+      except OSError as e:
+        if e.errno == errno.EEXIST:
+          pass
+        else
+          raise
   elif IsMac():
     env['DYLD_LIBRARY_PATH'] = build_dir
   else:
