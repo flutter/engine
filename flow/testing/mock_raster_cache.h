@@ -32,7 +32,7 @@ class MockRasterCacheResult : public RasterCacheResult {
 
   SkISize image_dimensions() const override {
     return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
-};
+  };
 
   int64_t image_bytes() const override {
     return image_dimensions().area() *
