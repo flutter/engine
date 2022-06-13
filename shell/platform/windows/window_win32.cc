@@ -572,7 +572,7 @@ void WindowWin32::UpdateScrollOffsetMultiplier() {
     lines_per_scroll = 3;
   }
 
-  // This logic is based off Chromiums implementation
+  // This logic is based off Chromium's implementation
   // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/blink/web_input_event_builders_win.cc;l=319-331
   scroll_offset_multiplier_ = static_cast<float>(lines_per_scroll) * 100.0 / 3.0;
 }

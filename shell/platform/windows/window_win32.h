@@ -199,7 +199,7 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
 
   UINT GetCurrentHeight();
 
-  float GetScrollOffsetMultiplier();
+  virtual float GetScrollOffsetMultiplier();
 
  protected:
   // Win32's DefWindowProc.
