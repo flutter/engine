@@ -1,4 +1,4 @@
-Signature: b2f6ce55ec7fcde2e15952cfaf7dccd6
+Signature: f1fbf6b469d40da0e29ccd67d669ccd9
 
 UNUSED LICENSES:
 
@@ -5561,7 +5561,7 @@ FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.h
 FILE: ../../../third_party/skia/modules/androidkit/src/Text.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.h
-FILE: ../../../third_party/skia/modules/skottie/src/effects/BuldgeEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/BulgeEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/CCTonerEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/DirectionalBlur.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
