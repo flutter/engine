@@ -256,12 +256,8 @@ class RasterCache {
 
   void SetCheckboardCacheImages(bool checkerboard);
 
-  const RasterCacheMetrics& picture_metrics() const {
-    return picture_metrics_;
-  }
-  const RasterCacheMetrics& layer_metrics() const {
-    return layer_metrics_;
-  }
+  const RasterCacheMetrics& picture_metrics() const { return picture_metrics_; }
+  const RasterCacheMetrics& layer_metrics() const { return layer_metrics_; }
 
   size_t GetCachedEntriesCount() const;
 
@@ -307,9 +303,7 @@ class RasterCache {
    * If the number is one, then it must be prepared and drawn on 1 frame
    * and it will then be cached on the next frame if it is prepared.
    */
-  int access_threshold() const {
-    return access_threshold_;
-  }
+  int access_threshold() const { return access_threshold_; }
 
  private:
   struct Entry {
