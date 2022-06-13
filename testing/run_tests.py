@@ -195,7 +195,7 @@ def RunEngineExecutable(
       except OSError as e:
         if e.errno == errno.EEXIST:
           pass
-        else
+        else:
           raise
   elif IsMac():
     env['DYLD_LIBRARY_PATH'] = build_dir
