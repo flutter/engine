@@ -40,12 +40,12 @@
 - (void)handleEvent:(nonnull NSEvent*)event;
 
 /**
- * The event currently being redispatched.
+ * Returns yes if is event currently being redispatched.
  *
  * In some instances (i.e. emoji shortcut) the event may be redelivered by cocoa
  * as key equivalent to FlutterTextInput, in which case it shouldn't be
  * processed again.
  */
-@property(nonatomic, nullable) NSEvent* eventBeingDispatched;
+- (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
 
 @end

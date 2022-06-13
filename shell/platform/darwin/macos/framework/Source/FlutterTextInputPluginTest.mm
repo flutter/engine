@@ -865,12 +865,14 @@
 
 - (bool)testPerformKeyEquivalent {
   __block NSEvent* eventBeingDispatchedByKeyboardManager = nil;
-  id keyboardManagerMock = OCMClassMock([FlutterKeyboardManager class]);
-  OCMStub([keyboardManagerMock eventBeingDispatched]).andDo(^(NSInvocation* invocation) {
-    [invocation setReturnValue:&eventBeingDispatchedByKeyboardManager];
-  });
   FlutterViewController* viewControllerMock = OCMClassMock([FlutterViewController class]);
-  OCMStub([viewControllerMock keyboardManager]).andReturn(keyboardManagerMock);
+  OCMStub([viewControllerMock isDispatchingKeyEvent:[OCMArg any]])
+      .andDo(^(NSInvocation* invocation) {
+        NSEvent* event;
+        [invocation getArgument:(void*)&event atIndex:2];
+        BOOL result = event == eventBeingDispatchedByKeyboardManager;
+        [invocation setReturnValue:&result];
+      });
 
   NSEvent* event = [NSEvent keyEventWithType:NSEventTypeKeyDown
                                     location:NSZeroPoint

@@ -176,6 +176,13 @@ NSData* currentKeyboardLayoutData() {
  */
 @property(nonatomic) id keyUpMonitor;
 
+/**
+ * Pointer to a keyboard manager, a hub that manages how key events are
+ * dispatched to various Flutter key responders, and whether the event is
+ * propagated to the next NSResponder.
+ */
+@property(nonatomic, readonly, nonnull) FlutterKeyboardManager* keyboardManager;
+
 @property(nonatomic) KeyboardLayoutNotifier keyboardLayoutNotifier;
 
 @property(nonatomic) NSData* keyboardLayoutData;
@@ -332,6 +339,10 @@ static void CommonInit(FlutterViewController* controller) {
   }
 
   return self;
+}
+
+- (BOOL)isDispatchingKeyEvent:(NSEvent*)event {
+  return [_keyboardManager isDispatchingKeyEvent:event];
 }
 
 - (void)loadView {

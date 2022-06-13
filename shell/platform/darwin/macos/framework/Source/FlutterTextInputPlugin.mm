@@ -490,7 +490,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (BOOL)performKeyEquivalent:(NSEvent*)event {
-  if (_flutterViewController.keyboardManager.eventBeingDispatched == event) {
+  if ([_flutterViewController isDispatchingKeyEvent:event]) {
     // When NSWindow is nextResponder, keyboard manager will send to it
     // unhandled events (through [NSWindow keyDown:]). If event has has both
     // control and cmd modifiers set (i.e. cmd+control+space - emoji picker)

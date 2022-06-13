@@ -20,13 +20,6 @@
 @property(nonatomic, readonly, nonnull) FlutterTextInputPlugin* textInputPlugin;
 
 /**
- * Pointer to a keyboard manager, a hub that manages how key events are
- * dispatched to various Flutter key responders, and whether the event is
- * propagated to the next NSResponder.
- */
-@property(nonatomic, readonly, nonnull) FlutterKeyboardManager* keyboardManager;
-
-/**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
  *
  * The initialized viewcontroller will attach itself to the engine as part of this process.
@@ -38,6 +31,11 @@
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
                                nibName:(nullable NSString*)nibName
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Returns YES if provided event is being currently redispatched by keyboard manager.
+ */
+- (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
 
 @end
 

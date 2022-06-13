@@ -70,6 +70,8 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
 @property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* layoutMap;
 
+@property(nonatomic, nullable) NSEvent* eventBeingDispatched;
+
 /**
  * Add a primary responder, which asynchronously decides whether to handle an
  * event.
@@ -166,6 +168,10 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
   [_pendingEvents addObject:event];
   [self processNextEvent];
+}
+
+- (BOOL)isDispatchingKeyEvent:(NSEvent*)event {
+  return _eventBeingDispatched == event;
 }
 
 #pragma mark - Private
