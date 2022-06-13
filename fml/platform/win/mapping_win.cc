@@ -40,8 +40,19 @@ static bool IsExecutable(
   return false;
 }
 
+static bool IsCopyOnWrite(
+    const std::initializer_list<FileMapping::Flags>& flags) {
+  for (auto flag : flags) {
+    if (flag == FileMapping::Flags::kCopyOnWrite) {
+      return true;
+    }
+  }
+  return false;
+}
+
 FileMapping::FileMapping(const fml::UniqueFD& fd,
-                         std::initializer_list<Protection> protections)
+                         std::initializer_list<Protection> protections,
+                         std::initializer_list<Flags> flags)
     : size_(0), mapping_(nullptr) {
   if (!fd.is_valid()) {
     return;
@@ -82,6 +93,9 @@ FileMapping::FileMapping(const fml::UniqueFD& fd,
     return;
   }
 
+  // TODO(tbd): Implement copy-on-write semantics for Windows.  It should
+  // involve using the `FILE_MAP_COPY` flag with [MapViewOfFile].
+  FML_DCHECK(!IsCopyOnWrite(flags));
   const DWORD desired_access = read_only ? FILE_MAP_READ : FILE_MAP_WRITE;
 
   auto mapping = reinterpret_cast<uint8_t*>(

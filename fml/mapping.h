@@ -28,6 +28,10 @@ class Mapping {
 
   virtual const uint8_t* GetMapping() const = 0;
 
+  /// Returns a non-const pointer to the data if one is available, otherwise it
+  /// returns nullptr.
+  virtual uint8_t* GetMutableMapping() const = 0;
+
   // Whether calling madvise(DONTNEED) on the mapping is non-destructive.
   // Generally true for file-mapped memory and false for anonymous memory.
   virtual bool IsDontNeedSafe() const = 0;
@@ -44,9 +48,15 @@ class FileMapping final : public Mapping {
     kExecute,
   };
 
-  explicit FileMapping(const fml::UniqueFD& fd,
-                       std::initializer_list<Protection> protection = {
-                           Protection::kRead});
+  enum class Flags {
+    kNone,
+    kCopyOnWrite,
+  };
+
+  explicit FileMapping(
+      const fml::UniqueFD& fd,
+      std::initializer_list<Protection> protection = {Protection::kRead},
+      std::initializer_list<Flags> flags = {Flags::kNone});
 
   ~FileMapping() override;
 
@@ -72,7 +82,8 @@ class FileMapping final : public Mapping {
   // |Mapping|
   bool IsDontNeedSafe() const override;
 
-  uint8_t* GetMutableMapping();
+  // |Mapping|
+  uint8_t* GetMutableMapping() const override;
 
   bool IsValid() const;
 
@@ -104,6 +115,9 @@ class DataMapping final : public Mapping {
   const uint8_t* GetMapping() const override;
 
   // |Mapping|
+  uint8_t* GetMutableMapping() const override { return nullptr; }
+
+  // |Mapping|
   bool IsDontNeedSafe() const override;
 
  private:
@@ -127,6 +141,9 @@ class NonOwnedMapping final : public Mapping {
 
   // |Mapping|
   const uint8_t* GetMapping() const override;
+
+  // |Mapping|
+  uint8_t* GetMutableMapping() const override { return nullptr; }
 
   // |Mapping|
   bool IsDontNeedSafe() const override;
@@ -178,6 +195,9 @@ class MallocMapping final : public Mapping {
   const uint8_t* GetMapping() const override;
 
   // |Mapping|
+  uint8_t* GetMutableMapping() const override;
+
+  // |Mapping|
   bool IsDontNeedSafe() const override;
 
   /// Removes ownership of the data buffer.
@@ -203,6 +223,9 @@ class SymbolMapping final : public Mapping {
 
   // |Mapping|
   const uint8_t* GetMapping() const override;
+
+  // |Mapping|
+  uint8_t* GetMutableMapping() const override { return nullptr; }
 
   // |Mapping|
   bool IsDontNeedSafe() const override;

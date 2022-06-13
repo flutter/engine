@@ -25,6 +25,8 @@ class APKAssetMapping : public fml::Mapping {
     return reinterpret_cast<const uint8_t*>(AAsset_getBuffer(asset_));
   }
 
+  uint8_t* GetMutableMapping() const override { return nullptr; }
+
   bool IsDontNeedSafe() const override { return !AAsset_isAllocated(asset_); }
 
  private:

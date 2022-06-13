@@ -18,6 +18,15 @@ class NSDataMapping : public fml::Mapping {
     return static_cast<const uint8_t*>([data_.get() bytes]);
   }
 
+  uint8_t* GetMutableMapping() const override {
+    // This is safe because the NSData instances we are wrapping all live in RAM
+    // and are short lived objects that live for the purpose of responding to
+    // messages.  We could convert the API to use NSMutableData but that is a
+    // breaking change and allocating a NSMutableData is much slower than NSData
+    // unfortunately.
+    return const_cast<uint8_t*>(static_cast<const uint8_t*>([data_.get() bytes]));
+  }
+
   bool IsDontNeedSafe() const override { return false; }
 
  private:

@@ -23,6 +23,9 @@ class FileInNamespaceBuffer final : public fml::Mapping {
   const uint8_t* GetMapping() const override;
 
   // |fml::Mapping|
+  uint8_t* GetMutableMapping() const override { return nullptr; }
+
+  // |fml::Mapping|
   size_t GetSize() const override;
 
   // |fml::Mapping|

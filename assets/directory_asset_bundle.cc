@@ -50,8 +50,27 @@ std::unique_ptr<fml::Mapping> DirectoryAssetBundle::GetAsMapping(
     return nullptr;
   }
 
-  auto mapping = std::make_unique<fml::FileMapping>(fml::OpenFile(
-      descriptor_, asset_name.c_str(), false, fml::FilePermission::kRead));
+// TODO(tbd): Implement this optimization for Fuchsia.
+// TODO(tbd): Implement this optimization for Windows.
+#if defined(OS_FUCHSIA) || defined(FML_OS_WIN)
+  auto mapping = std::make_unique<fml::FileMapping>(
+      fml::OpenFile(descriptor_, asset_name.c_str(), false,
+                    fml::FilePermission::kRead),
+      std::initializer_list<fml::FileMapping::Protection>(
+          {fml::FileMapping::Protection::kRead}),
+      std::initializer_list<fml::FileMapping::Flags>());
+#else
+  // We use a copy-on-write mapping so we can safely pass ownership to Dart
+  // which currently lacks immutable data buffers.
+  auto mapping = std::make_unique<fml::FileMapping>(
+      fml::OpenFile(descriptor_, asset_name.c_str(), false,
+                    fml::FilePermission::kRead),
+      std::initializer_list<fml::FileMapping::Protection>(
+          {fml::FileMapping::Protection::kRead,
+           fml::FileMapping::Protection::kWrite}),
+      std::initializer_list<fml::FileMapping::Flags>(
+          {fml::FileMapping::Flags::kCopyOnWrite}));
+#endif
 
   if (!mapping->IsValid()) {
     return nullptr;

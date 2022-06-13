@@ -46,12 +46,23 @@ static bool IsWritable(
   return false;
 }
 
+static bool IsCopyOnWrite(
+    const std::initializer_list<FileMapping::Flags>& flags) {
+  for (auto flag : flags) {
+    if (flag == FileMapping::Flags::kCopyOnWrite) {
+      return true;
+    }
+  }
+  return false;
+}
+
 Mapping::Mapping() = default;
 
 Mapping::~Mapping() = default;
 
 FileMapping::FileMapping(const fml::UniqueFD& handle,
-                         std::initializer_list<Protection> protection) {
+                         std::initializer_list<Protection> protection,
+                         std::initializer_list<Flags> flags) {
   if (!handle.is_valid()) {
     return;
   }
@@ -71,7 +82,8 @@ FileMapping::FileMapping(const fml::UniqueFD& handle,
 
   auto* mapping =
       ::mmap(nullptr, stat_buffer.st_size, ToPosixProtectionFlags(protection),
-             is_writable ? MAP_SHARED : MAP_PRIVATE, handle.get(), 0);
+             is_writable && !IsCopyOnWrite(flags) ? MAP_SHARED : MAP_PRIVATE,
+             handle.get(), 0);
 
   if (mapping == MAP_FAILED) {
     return;

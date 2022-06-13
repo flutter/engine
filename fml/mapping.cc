@@ -11,7 +11,7 @@ namespace fml {
 
 // FileMapping
 
-uint8_t* FileMapping::GetMutableMapping() {
+uint8_t* FileMapping::GetMutableMapping() const {
   return mutable_mapping_;
 }
 
@@ -143,6 +143,10 @@ size_t MallocMapping::GetSize() const {
 }
 
 const uint8_t* MallocMapping::GetMapping() const {
+  return data_;
+}
+
+uint8_t* MallocMapping::GetMutableMapping() const {
   return data_;
 }
 

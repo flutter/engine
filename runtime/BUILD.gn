@@ -142,6 +142,7 @@ if (enable_unittests) {
       ":libdart",
       ":runtime",
       ":runtime_fixtures",
+      "//flutter/assets:assets_unittests",
       "//flutter/common",
       "//flutter/fml",
       "//flutter/lib/snapshot",

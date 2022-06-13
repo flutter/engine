@@ -18,3 +18,15 @@ source_set("assets") {
 
   public_configs = [ "//flutter:config" ]
 }
+
+source_set("assets_unittests") {
+  sources = [ "directory_asset_bundle_unittests.cc" ]
+
+  deps = [
+    ":assets",
+    "//flutter/testing",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+  testonly = true
+}
