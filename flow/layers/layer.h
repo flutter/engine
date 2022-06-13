@@ -187,6 +187,22 @@ class Layer {
       }
     }
 
+    void setImageFilter(sk_sp<SkImageFilter> filter) {
+      paint_.setImageFilter(filter);
+      update_needs_paint();
+    }
+
+    void setColorFilter(sk_sp<SkColorFilter> filter) {
+      paint_.setColorFilter(filter);
+      update_needs_paint();
+    }
+
+    void update_needs_paint() {
+      needs_paint_ = paint_.getImageFilter() != nullptr ||
+                     paint_.getColorFilter() != nullptr ||
+                     paint_.getAlphaf() < SK_Scalar1;
+    }
+
     ~AutoCachePaint() { context_.inherited_opacity = paint_.getAlphaf(); }
 
     const SkPaint* paint() { return needs_paint_ ? &paint_ : nullptr; }

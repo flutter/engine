@@ -19,6 +19,11 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
+
   DiffChildren(context, prev);
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -30,11 +35,16 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
       Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);
 
+  SkMatrix child_matrix(matrix);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
+#endif
+
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, matrix);
+    TryToPrepareRasterCache(context, this, child_matrix);
   } else {
     render_count_++;
-    TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
+    TryToPrepareRasterCache(context, GetCacheableChild(), child_matrix);
   }
 }
 
@@ -42,24 +52,31 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
+  AutoCachePaint cache_paint(context);
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
+
   if (context.raster_cache) {
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                   cache_paint.paint())) {
       return;
     }
-    SkPaint paint;
-    paint.setColorFilter(filter_);
+    cache_paint.setColorFilter(filter_);
 
     if (context.raster_cache->Draw(GetCacheableChild(),
-                                   *context.leaf_nodes_canvas, &paint)) {
+                                   *context.leaf_nodes_canvas,
+                                   cache_paint.paint())) {
       return;
     }
   }
 
-  SkPaint paint;
-  paint.setColorFilter(filter_);
+  cache_paint.setColorFilter(filter_);
 
-  Layer::AutoSaveLayer save =
-      Layer::AutoSaveLayer::Create(context, paint_bounds(), &paint);
+  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+      context, paint_bounds(), cache_paint.paint());
   PaintChildren(context);
 }
 

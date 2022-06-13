@@ -58,14 +58,17 @@ TEST_F(ColorFilterLayerTest, EmptyFilter) {
   SkPaint filter_paint;
   filter_paint.setColorFilter(nullptr);
   layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                    nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector({
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
+#endif
+                MockCanvas::DrawCall{
+                    0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
+                                                 nullptr, 1}},
+                MockCanvas::DrawCall{
+                    1, MockCanvas::DrawPathData{child_path, child_paint}},
+                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(ColorFilterLayerTest, SimpleFilter) {
@@ -87,14 +90,17 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   SkPaint filter_paint;
   filter_paint.setColorFilter(layer_filter);
   layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                    nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector({
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
+#endif
+                MockCanvas::DrawCall{
+                    0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
+                                                 nullptr, 1}},
+                MockCanvas::DrawCall{
+                    1, MockCanvas::DrawPathData{child_path, child_paint}},
+                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(ColorFilterLayerTest, MultipleChildren) {
@@ -128,16 +134,19 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
   SkPaint filter_paint;
   filter_paint.setColorFilter(layer_filter);
   layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{children_bounds,
-                                                    filter_paint, nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector({
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
+#endif
+                MockCanvas::DrawCall{
+                    0, MockCanvas::SaveLayerData{children_bounds, filter_paint,
+                                                 nullptr, 1}},
+                MockCanvas::DrawCall{
+                    1, MockCanvas::DrawPathData{child_path1, child_paint1}},
+                MockCanvas::DrawCall{
+                    1, MockCanvas::DrawPathData{child_path2, child_paint2}},
+                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(ColorFilterLayerTest, Nested) {
@@ -178,20 +187,26 @@ TEST_F(ColorFilterLayerTest, Nested) {
   filter_paint1.setColorFilter(layer_filter1);
   filter_paint2.setColorFilter(layer_filter2);
   layer1->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{children_bounds,
-                                                    filter_paint1, nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::SaveLayerData{child_path2.getBounds(),
-                                                    filter_paint2, nullptr, 2}},
-                   MockCanvas::DrawCall{
-                       2, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                   MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector({
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
+#endif
+                MockCanvas::DrawCall{
+                    0, MockCanvas::SaveLayerData{children_bounds, filter_paint1,
+                                                 nullptr, 1}},
+                MockCanvas::DrawCall{
+                    1, MockCanvas::DrawPathData{child_path1, child_paint1}},
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
+#endif
+                MockCanvas::DrawCall{
+                    1, MockCanvas::SaveLayerData{child_path2.getBounds(),
+                                                 filter_paint2, nullptr, 2}},
+                MockCanvas::DrawCall{
+                    2, MockCanvas::DrawPathData{child_path2, child_paint2}},
+                MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(ColorFilterLayerTest, Readback) {
