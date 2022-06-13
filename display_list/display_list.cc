@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <set>
 #include <type_traits>
 
 #include "flutter/display_list/display_list.h"
@@ -42,8 +41,7 @@ DisplayList::DisplayList(uint8_t* ptr,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
                          const SkRect& cull_rect,
-                         bool can_apply_group_opacity,
-                         std::vector<DisplayVirtualLayerInfo> indexes)
+                         bool can_apply_group_opacity)
     : storage_(ptr),
       byte_count_(byte_count),
       op_count_(op_count),
@@ -51,9 +49,7 @@ DisplayList::DisplayList(uint8_t* ptr,
       nested_op_count_(nested_op_count),
       bounds_({0, 0, -1, -1}),
       bounds_cull_(cull_rect),
-      can_apply_group_opacity_(can_apply_group_opacity),
-      virtual_layer_indexes_(indexes) {
-  virtual_bounds_valid_ = false;
+      can_apply_group_opacity_(can_apply_group_opacity) {
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);
@@ -63,6 +59,61 @@ DisplayList::DisplayList(uint8_t* ptr,
 DisplayList::~DisplayList() {
   uint8_t* ptr = storage_.get();
   DisposeOps(ptr, ptr + byte_count_);
+}
+
+void DisplayList::ComputeBounds() {
+  DisplayListBoundsCalculator calculator(&bounds_cull_);
+  Dispatch(calculator);
+  bounds_ = calculator.bounds();
+}
+
+void DisplayList::Dispatch(Dispatcher& dispatcher,
+                           uint8_t* ptr,
+                           uint8_t* end) const {
+  TRACE_EVENT0("flutter", "DisplayList::Dispatch");
+  while (ptr < end) {
+    auto op = reinterpret_cast<const DLOp*>(ptr);
+    ptr += op->size;
+    FML_DCHECK(ptr <= end);
+    switch (op->type) {
+#define DL_OP_DISPATCH(name)                                \
+  case DisplayListOpType::k##name:                          \
+    static_cast<const name##Op*>(op)->dispatch(dispatcher); \
+    break;
+
+      FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPATCH)
+
+#undef DL_OP_DISPATCH
+
+      default:
+        FML_DCHECK(false);
+        return;
+    }
+  }
+}
+
+void DisplayList::DisposeOps(uint8_t* ptr, uint8_t* end) {
+  while (ptr < end) {
+    auto op = reinterpret_cast<const DLOp*>(ptr);
+    ptr += op->size;
+    FML_DCHECK(ptr <= end);
+    switch (op->type) {
+#define DL_OP_DISPOSE(name)                            \
+  case DisplayListOpType::k##name:                     \
+    if (!std::is_trivially_destructible_v<name##Op>) { \
+      static_cast<const name##Op*>(op)->~name##Op();   \
+    }                                                  \
+    break;
+
+      FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPOSE)
+
+#undef DL_OP_DISPOSE
+
+      default:
+        FML_DCHECK(false);
+        return;
+    }
+  }
 }
 
 static bool CompareOps(uint8_t* ptrA,
@@ -129,239 +180,6 @@ static bool CompareOps(uint8_t* ptrA,
     }
   }
   return true;
-}
-
-void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
-  uint8_t* ptr = storage_.get();
-
-  uint8_t* opEnd = ptr + byte_count_;
-
-  uint8_t* targetStartPtr = nullptr;
-  uint8_t* targetEndPtr = nullptr;
-
-  int count = 0;
-  while (ptr < opEnd) {
-    if (count == start && targetStartPtr == nullptr) {
-      targetStartPtr = ptr;
-    }
-    if (count == end) {
-      targetEndPtr = ptr;
-      break;
-    }
-    auto op = reinterpret_cast<const DLOp*>(ptr);
-    ptr += op->size;
-    count += 1;
-  }
-
-  if (targetEndPtr == nullptr) {
-    targetEndPtr = opEnd;
-  }
-
-  Dispatch(ctx, targetStartPtr, targetEndPtr);
-}
-
-const SkRect& DisplayList::bounds() {
-  if (!virtual_layer_indexes_.empty() && virtual_bounds_valid_) {
-    virtual_bounds_valid_ = false;
-    return virtual_bounds_;
-  }
-
-  if (bounds_.width() < 0.0) {
-    // ComputeBounds() will leave the variable with a
-    // non-negative width and height
-    ComputeBounds();
-  }
-  return bounds_;
-}
-
-uint8_t* getNPtr(uint8_t* ptr, int n) {
-  for (int i = 0; i < n; i++) {
-    auto op = reinterpret_cast<const DLOp*>(ptr);
-    ptr += op->size;
-  }
-  return ptr;
-}
-
-void DisplayList::Compare(DisplayList* dl) {
-  if (storage_ == nullptr) {
-    return;
-  }
-
-  // 0. Diff alg.
-  SkRect damage;
-
-  const auto current = virtual_layer_indexes();
-  const auto old = dl->virtual_layer_indexes();
-
-  uint8_t* currentOpHead = storage_.get();
-  uint8_t* oldOpHead = dl->storage_.get();
-
-  // 1. 算法实现1 简易的深搜.
-  std::set<int> oldUsage;
-  for (unsigned long i = 0; i < current.size(); i += 2) {
-    for (unsigned long j = 0; j < old.size(); j += 2) {
-      if (oldUsage.find(i) == oldUsage.end() &&
-          current[i].type == old[j].type) {
-        auto curH = getNPtr(currentOpHead, current[i].index);
-        auto curE = getNPtr(currentOpHead, current[i + 1].index);
-        auto oldH = getNPtr(oldOpHead, old[j].index);
-        auto oldE = getNPtr(oldOpHead, old[j + 1].index);
-        if (curE - curH == oldE - oldH && CompareOps(curH, curE, oldH, oldE)) {
-          oldUsage.insert(j);
-          break;
-        } else {
-          auto rect = partBounds(current[i].index, current[i + 1].index);
-          damage.join(rect);
-          break;
-        }
-      }
-    }
-  }
-
-  for(unsigned long i = 0; i < old.size(); i += 2) {
-    if(oldUsage.find(i) == oldUsage.end()) {
-      auto rect = partBounds(old[i].index, current[i+1].index);
-      damage.join(rect);
-    }
-  }
-
-  // 3. Fake
-//  damage = partBounds(current[0].index, current[current.size()-1].index);
-
-
-  // 2. 算法实现2 树状结构下的深层diff.
-//  // 1. preroll 找到具有op的有效indexes.
-////  vector<int> trash;
-////  std::set<std::string> trashNames;
-//
-//  std::function<void()> diffNode = [&] (int currentStart, int currentEnd, int oldStart, int oldEnd) -> void {
-//    // currS - currE 之间是一个子树，// oldStart - oldEnd 之间是一个子树
-//
-//    auto currT = current[currentStart].type;
-//
-//    for(int i = oldStart; i < oldEnd; i++) {
-//      bool res;
-//      if(res) {
-//      // diff 成功则删除 old
-//      // oldgarbage.push_back
-//        return;
-//      }
-//    }
-//
-//    // 否则把自己删掉
-//    damage.add
-//  }
-//
-//  // 遍历每个新的indexes，old里面有相同就删掉，最后把old中剩下的都标为dirty.
-//  std::function<void()> diffTree = [&] (int currentStart, int currentEnd, int oldStart, int oldEnd) -> void {
-//
-//    // end > start
-//
-//    // 0. 找到最初有效的 start
-//    int i = currentStart;
-//    while (i < currentEnd-1) {
-//      if(current[i].index == current[i+1].index) {
-//        i++;
-//      }else{
-//        break
-//      }
-//    }
-//
-//    int j = oldStart;
-//    while(j<oldEnd-1) {
-//      if(old[i].index == old[i+1].index) {
-//        j++;
-//      }else{
-//        break;
-//      }
-//    }
-//
-//    // 1. 父节点比较
-//    if(current[i].type == old[j].type) {
-//
-////      // 看看是不是叶子节点
-////    if(current[i].index = current[currentEnd].index-1) {
-////      // 把这个叶子节点拿去跟 old里面的所有同级节点比较.
-////    }
-//
-//      // 1.1 看看op，不相同也是都寄了, old里面留着不动.
-//      // compare(op)
-//      // damage add current(currentStart, currentEnd);
-//
-//      // 把所有子节点找出去比较old的所有子节点.
-//      // stack find end -> diff -> bool
-//
-//
-//    }else{
-//      // 1.2 父节点类型不相同直接寄
-//      // damage add current(currentStart, currentEnd);
-//    }
-//  }
-
-  // 2. Add damage.
-  setVirtualBounds(damage);
-  virtual_bounds_valid_ = true;
-}
-
-void DisplayList::ComputeBounds() {
-  DisplayListBoundsCalculator calculator(&bounds_cull_);
-  Dispatch(calculator);
-  bounds_ = calculator.bounds();
-}
-
-const SkRect DisplayList::partBounds(int start, int end) {
-  DisplayListBoundsCalculator calculator(&bounds_cull_);
-  DispatchPart(calculator, start, end);
-  return calculator.bounds();
-}
-
-void DisplayList::Dispatch(Dispatcher& dispatcher,
-                           uint8_t* ptr,
-                           uint8_t* end) const {
-  TRACE_EVENT0("flutter", "DisplayList::Dispatch");
-  while (ptr < end) {
-    auto op = reinterpret_cast<const DLOp*>(ptr);
-    ptr += op->size;
-    FML_DCHECK(ptr <= end);
-    switch (op->type) {
-#define DL_OP_DISPATCH(name)                                \
-  case DisplayListOpType::k##name:                          \
-    static_cast<const name##Op*>(op)->dispatch(dispatcher); \
-    break;
-
-      FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPATCH)
-
-#undef DL_OP_DISPATCH
-
-      default:
-        FML_DCHECK(false);
-        return;
-    }
-  }
-}
-
-void DisplayList::DisposeOps(uint8_t* ptr, uint8_t* end) {
-  while (ptr < end) {
-    auto op = reinterpret_cast<const DLOp*>(ptr);
-    ptr += op->size;
-    FML_DCHECK(ptr <= end);
-    switch (op->type) {
-#define DL_OP_DISPOSE(name)                            \
-  case DisplayListOpType::k##name:                     \
-    if (!std::is_trivially_destructible_v<name##Op>) { \
-      static_cast<const name##Op*>(op)->~name##Op();   \
-    }                                                  \
-    break;
-
-      FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPOSE)
-
-#undef DL_OP_DISPOSE
-
-      default:
-        FML_DCHECK(false);
-        return;
-    }
-  }
 }
 
 void DisplayList::RenderTo(DisplayListBuilder* builder,
