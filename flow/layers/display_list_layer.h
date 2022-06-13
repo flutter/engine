@@ -42,7 +42,7 @@ class DisplayListLayer : public Layer {
   bool is_complex_ = false;
   bool will_change_ = false;
 
-  static bool Compare(DiffContext::Statistics& statistics,
+  static bool Compare(DiffContext* statistics,
                       const DisplayListLayer* l1,
                       const DisplayListLayer* l2);
 

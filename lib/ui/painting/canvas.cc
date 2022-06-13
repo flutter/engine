@@ -39,6 +39,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, save)                   \
   V(Canvas, saveLayerWithoutBounds) \
   V(Canvas, saveLayer)              \
+  V(Canvas, startRecordVirtualLayer)\
+  V(Canvas, saveVirtualLayer)       \
   V(Canvas, restore)                \
   V(Canvas, getSaveCount)           \
   V(Canvas, translate)              \
@@ -148,6 +150,14 @@ void Canvas::saveLayer(double left,
     TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
     canvas_->saveLayer(&bounds, paint.paint(sk_paint));
   }
+}
+
+void Canvas::startRecordVirtualLayer(std::string type) {
+  builder()->startRecordVirtualLayer(type);
+}
+
+void Canvas::saveVirtualLayer(std::string type) {
+  builder()->saveVirtualLayer(type);
 }
 
 void Canvas::restore() {

@@ -171,6 +171,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
   void restoreToCount(int restore_count);
+                                   
+  void startRecordVirtualLayer(std::string type);
+  void saveVirtualLayer(std::string type);
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
@@ -328,6 +331,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   size_t used_ = 0;
   size_t allocated_ = 0;
   int op_count_ = 0;
+                                   
+  int storage_op_count_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
@@ -389,6 +394,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   };
 
   std::vector<LayerInfo> layer_stack_;
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes_;
   LayerInfo* current_layer_;
 
   // This flag indicates whether or not the current rendering attributes

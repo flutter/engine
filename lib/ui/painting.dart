@@ -3009,7 +3009,7 @@ class MaskFilter {
   }
 
   @override
-  int get hashCode => Object.hash(_style, _sigma);
+  int get hashCode => hashValues(_style, _sigma);
 
   @override
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
@@ -3168,7 +3168,7 @@ class ColorFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => Object.hash(_color, _blendMode, _matrix == null ? null : Object.hashAll(_matrix!), _type);
+  int get hashCode => hashValues(_color, _blendMode, hashList(_matrix), _type);
 
   @override
   String get _shortDescription {
@@ -3342,7 +3342,7 @@ class _MatrixImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => Object.hash(filterQuality, Object.hashAll(data));
+  int get hashCode => hashValues(filterQuality, hashList(data));
 }
 
 class _GaussianBlurImageFilter implements ImageFilter {
@@ -3383,7 +3383,7 @@ class _GaussianBlurImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => Object.hash(sigmaX, sigmaY);
+  int get hashCode => hashValues(sigmaX, sigmaY);
 }
 
 class _DilateImageFilter implements ImageFilter {
@@ -3412,7 +3412,7 @@ class _DilateImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => Object.hash(radiusX, radiusY);
+  int get hashCode => hashValues(radiusX, radiusY);
 }
 
 class _ErodeImageFilter implements ImageFilter {
@@ -3471,7 +3471,7 @@ class _ComposeImageFilter implements ImageFilter {
   }
 
   @override
-  int get hashCode => Object.hash(innerFilter, outerFilter);
+  int get hashCode => hashValues(innerFilter, outerFilter);
 }
 
 /// An [ImageFilter] that is backed by a native SkImageFilter.
@@ -3531,9 +3531,9 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
       creator = filter {    // ignore: prefer_initializing_formals
     _constructor();
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
-    _initColorFilter(nativeFilter!);
+    _initColorFilter(nativeFilter);
   }
-  void _initColorFilter(_ColorFilter colorFilter) native 'ImageFilter_initColorFilter';
+  void _initColorFilter(_ColorFilter? colorFilter) native 'ImageFilter_initColorFilter';
 
   /// Composes `_innerFilter` with `_outerFilter`.
   _ImageFilter.composed(_ComposeImageFilter filter)
@@ -4048,7 +4048,7 @@ class _FragmentShader extends Shader {
   }
 
   @override
-  int get hashCode => Object.hash(_builder, Object.hashAll(_floatUniforms), Object.hashAll(_samplerUniforms));
+  int get hashCode => hashValues(_builder, hashList(_floatUniforms), hashList(_samplerUniforms));
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
@@ -4390,6 +4390,8 @@ class Canvas extends NativeFieldWrapperClass1 {
                  paint._objects, paint._data);
     }
   }
+  void startRecordVirtualLayer(String type) native 'Canvas_startRecordVirtualLayer';
+  void saveVirtualLayer(String type) native 'Canvas_saveVirtualLayer';
   void _saveLayerWithoutBounds(List<Object?>? paintObjects, ByteData paintData)
       native 'Canvas_saveLayerWithoutBounds';
   void _saveLayer(double left,
@@ -4784,7 +4786,6 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawParagraph(Paragraph paragraph, Offset offset) {
     assert(paragraph != null);
     assert(_offsetIsValid(offset));
-    assert(!paragraph._needsLayout);
     paragraph._paint(this, offset.dx, offset.dy);
   }
 
@@ -5509,7 +5510,7 @@ class Shadow {
   }
 
   @override
-  int get hashCode => Object.hash(color, offset, blurRadius);
+  int get hashCode => hashValues(color, offset, blurRadius);
 
   // Serialize [shadows] into ByteData. The format is a single uint_32_t at
   // the beginning indicating the number of shadows, followed by _kBytesPerShadow

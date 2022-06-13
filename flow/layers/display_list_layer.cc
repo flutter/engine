@@ -28,19 +28,19 @@ bool DisplayListLayer::IsReplacing(DiffContext* context,
   // got inserted between other display list layers
   auto old_layer = layer->as_display_list_layer();
   return old_layer != nullptr && offset_ == old_layer->offset_ &&
-         Compare(context->statistics(), this, old_layer);
+         Compare(context, this, old_layer);
 }
 
 void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   if (!context->IsSubtreeDirty()) {
 #ifndef NDEBUG
-    FML_DCHECK(old_layer);
-    auto prev = old_layer->as_display_list_layer();
-    DiffContext::Statistics dummy_statistics;
+//    FML_DCHECK(old_layer);
+//    auto prev = old_layer->as_display_list_layer();
+//    DiffContext::Statistics dummy_statistics;
     // IsReplacing has already determined that the display list is same
-    FML_DCHECK(prev->offset_ == offset_ &&
-               Compare(dummy_statistics, this, prev));
+//    FML_DCHECK(prev->offset_ == offset_ &&
+//               Compare(nullptr, this, prev));
 #endif
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
@@ -52,9 +52,12 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
+bool DisplayListLayer::Compare(DiffContext* context,
                                const DisplayListLayer* l1,
                                const DisplayListLayer* l2) {
+  
+  
+  auto statistics = context->statistics();
   const auto& dl1 = l1->display_list_.skia_object();
   const auto& dl2 = l2->display_list_.skia_object();
   if (dl1.get() == dl2.get()) {
@@ -65,6 +68,16 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
   const auto op_cnt_2 = dl2->op_count();
   const auto op_bytes_1 = dl1->bytes();
   const auto op_bytes_2 = dl2->bytes();
+  
+  const auto i1 = dl1->virtual_layer_indexes();
+  const auto i2 = dl2->virtual_layer_indexes();
+  
+  // compare virtual layers
+  if (!i1.empty() || !i2.empty()) {
+    dl1->Compare(dl2.get());
+    return false;
+  }
+  
   if (op_cnt_1 != op_cnt_2 || op_bytes_1 != op_bytes_2 ||
       dl1->bounds() != dl2->bounds()) {
     statistics.AddNewPicture();

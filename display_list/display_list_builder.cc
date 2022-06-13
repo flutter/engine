@@ -43,6 +43,7 @@ void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   op->type = T::kType;
   op->size = size;
   op_count_ += op_inc;
+  storage_op_count_ += 1;
   return op + 1;
 }
 
@@ -50,6 +51,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
+  auto indexes = virtual_layer_indexes_;
   size_t bytes = used_;
   int count = op_count_;
   size_t nested_bytes = nested_bytes_;
@@ -57,10 +59,37 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   used_ = allocated_ = op_count_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
+  virtual_layer_indexes_.clear();
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
   return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
                                             nested_bytes, nested_count,
-                                            cull_rect_, compatible));
+                                            cull_rect_, compatible, std::move(indexes)
+                                            )
+                            );
+}
+
+void DisplayListBuilder::startRecordVirtualLayer(std::string type) {
+  if(!virtual_layer_indexes_.empty() && storage_op_count_ == virtual_layer_indexes_.back().index && virtual_layer_indexes_.back().isStart) {
+    virtual_layer_indexes_.back().type = type;
+  }else{
+    virtual_layer_indexes_.push_back(DisplayVirtualLayerInfo{storage_op_count_,type,true});
+  }
+}
+
+void DisplayListBuilder::saveVirtualLayer(std::string type) {
+  if(virtual_layer_indexes_.empty()) {
+    return;
+  }
+  
+  if(storage_op_count_ == virtual_layer_indexes_.back().index && type == virtual_layer_indexes_.back().type) {
+    virtual_layer_indexes_.pop_back();
+    return;
+  }
+  
+  if(storage_op_count_ != virtual_layer_indexes_.back().index && virtual_layer_indexes_.back().isStart) {
+    virtual_layer_indexes_.push_back(DisplayVirtualLayerInfo{storage_op_count_,type,false});
+    return;
+  }
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)

@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_H_
 
 #include <optional>
+#include <vector>
 
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
@@ -211,6 +212,14 @@ class SaveLayerOptions {
   };
 };
 
+struct DisplayVirtualLayerInfo {
+//public:
+  int index;
+  std::string type;
+  bool isStart;
+//  DisplayVirtualLayerInfo(int index, std::string type, bool isStart) : index(index), type(type), isStart(isStart) {}
+};
+
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().
@@ -229,6 +238,8 @@ class DisplayList : public SkRefCnt {
     uint8_t* ptr = storage_.get();
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
+  
+  void DispatchPart(Dispatcher& ctx, int start, int end) const;
 
   void RenderTo(DisplayListBuilder* builder,
                 SkScalar opacity = SK_Scalar1) const;
@@ -249,14 +260,8 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id() const { return unique_id_; }
 
-  const SkRect& bounds() {
-    if (bounds_.width() < 0.0) {
-      // ComputeBounds() will leave the variable with a
-      // non-negative width and height
-      ComputeBounds();
-    }
-    return bounds_;
-  }
+  const SkRect& bounds();
+  const SkRect partBounds(int start, int end);
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
@@ -267,6 +272,12 @@ class DisplayList : public SkRefCnt {
   bool can_apply_group_opacity() { return can_apply_group_opacity_; }
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
+  
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes() { return virtual_layer_indexes_; }
+  
+  void setVirtualBounds(SkRect rect) { virtual_bounds_ = rect; }
+  
+  void Compare(DisplayList* dl);
 
  private:
   DisplayList(uint8_t* ptr,
@@ -275,9 +286,10 @@ class DisplayList : public SkRefCnt {
               size_t nested_byte_count,
               unsigned int nested_op_count,
               const SkRect& cull_rect,
-              bool can_apply_group_opacity);
+              bool can_apply_group_opacity, std::vector<DisplayVirtualLayerInfo> indexes);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
+  
   size_t byte_count_;
   unsigned int op_count_;
 
@@ -291,7 +303,13 @@ class DisplayList : public SkRefCnt {
   SkRect bounds_cull_;
 
   bool can_apply_group_opacity_;
+  
+  bool virtual_bounds_valid_;
 
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes_;
+  
+  SkRect virtual_bounds_;
+  
   void ComputeBounds();
   void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
 
