@@ -562,7 +562,7 @@ HWND WindowWin32::GetWindowHandle() {
 
 float WindowWin32::GetScrollOffsetMultiplier() { 
   return scroll_offset_multiplier_; 
- }
+}
 
 void WindowWin32::UpdateScrollOffsetMultiplier() {
   UINT lines_per_scroll;
