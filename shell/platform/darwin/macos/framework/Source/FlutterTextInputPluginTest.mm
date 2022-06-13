@@ -1151,12 +1151,26 @@
                     result:^(id){
                     }];
 
+  // Ensure both selectors are grouped in one platform channel call
+  [plugin doCommandBySelector:@selector(moveUp:)];
   [plugin doCommandBySelector:@selector(moveRightAndModifySelection:)];
+
+  __block bool done = false;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    done = true;
+  });
+
+  while (!done) {
+    // Each invocation will handle one source
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0, true);
+  }
 
   NSData* performSelectorCall = [[FlutterJSONMethodCodec sharedInstance]
       encodeMethodCall:[FlutterMethodCall
-                           methodCallWithMethodName:@"TextInputClient.performSelector"
-                                          arguments:@[ @(1), @"moveRightAndModifySelection:" ]]];
+                           methodCallWithMethodName:@"TextInputClient.performSelectors"
+                                          arguments:@[
+                                            @(1), @[ @"moveUp:", @"moveRightAndModifySelection:" ]
+                                          ]]];
 
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)

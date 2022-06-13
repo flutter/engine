@@ -32,7 +32,7 @@ static NSString* const kUpdateEditStateResponseMethod = @"TextInputClient.update
 static NSString* const kUpdateEditStateWithDeltasResponseMethod =
     @"TextInputClient.updateEditingStateWithDeltas";
 static NSString* const kPerformAction = @"TextInputClient.performAction";
-static NSString* const kPerformSelector = @"TextInputClient.performSelector";
+static NSString* const kPerformSelector = @"TextInputClient.performSelectors";
 static NSString* const kMultilineInputType = @"TextInputType.multiline";
 
 static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
@@ -174,6 +174,13 @@ static char markerKey;
  * https://master-api.flutter.dev/flutter/services/TextInputConfiguration/enableDeltaModel.html
  */
 @property(nonatomic) BOOL enableDeltaModel;
+
+/**
+ * Used to gather multiple selectors performed in one run loop turn. These
+ * will be all send in one platform channel call so that framework can process
+ * them in single microtask.
+ */
+@property(nonatomic) NSMutableArray* pendingSelectors;
 
 /**
  * Handles a Flutter system message on the text input channel.
@@ -672,9 +679,23 @@ static char markerKey;
     void (*func)(id, SEL, id) = reinterpret_cast<void (*)(id, SEL, id)>(imp);
     func(self, selector, nil);
   }
-  // Forward all selectors to framework
+
+  // Group multiple selector within single run loop turn so that framework can
+  // process them in single microtask
   NSString* name = NSStringFromSelector(selector);
-  [_channel invokeMethod:kPerformSelector arguments:@[ self.clientID, name ]];
+  if (_pendingSelectors == nil) {
+    _pendingSelectors = [NSMutableArray array];
+  }
+  [_pendingSelectors addObject:name];
+  __weak NSMutableArray* selectors = _pendingSelectors;
+  __weak FlutterMethodChannel* channel = _channel;
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (selectors.count > 0) {
+      [channel invokeMethod:kPerformSelector arguments:@[ self.clientID, selectors ]];
+      [selectors removeAllObjects];
+    }
+  });
 }
 
 - (void)insertNewline:(id)sender {
