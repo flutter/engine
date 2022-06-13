@@ -150,16 +150,14 @@ class RasterCache {
       bool checkerboard) const;
 
   static SkRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
     SkRect device_rect;
     ctm.mapRect(&device_rect, rect);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
     SkIRect bounds;
     device_rect.roundOut(&bounds);
     return SkRect::MakeLTRB(bounds.fLeft, bounds.fTop, bounds.fRight,
                             bounds.fBottom);
 #else
-    SkRect device_rect;
-    ctm.mapRect(&device_rect, rect);
     return device_rect;
 #endif
   }

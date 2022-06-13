@@ -126,7 +126,10 @@ static std::unique_ptr<RasterCacheResult> Rasterize(
     const std::function<void(SkCanvas*)>& draw_function) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-  SkRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
+  SkRect dest_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
+  // we always round out here so that the texture is integer sized.
+  SkIRect cache_rect;
+  dest_rect.roundOut(&cache_rect);
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       cache_rect.width(), cache_rect.height(), sk_ref_sp(dst_color_space));
@@ -142,7 +145,7 @@ static std::unique_ptr<RasterCacheResult> Rasterize(
 
   SkCanvas* canvas = surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
-  canvas->translate(-cache_rect.left(), -cache_rect.top());
+  canvas->translate(-dest_rect.left(), -dest_rect.top());
   canvas->concat(ctm);
   draw_function(canvas);
 
