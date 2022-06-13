@@ -102,10 +102,6 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
       !context->raster_cached_entries) {
     return;
   }
-  if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
-    cache_state_ = CacheState::kNone;
-    return;
-  }
   auto* raster_cache = context->raster_cache;
   SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
   // We've marked the cache entry that we would like to cache so it stays
@@ -149,7 +145,14 @@ static const auto* flow_type = "RasterCacheFlow::DisplayList";
 bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
     const PaintContext& context,
     bool parent_cached) const {
-  if (!context.raster_cache || parent_cached) {
+  // If we don't have raster_cache we should not cache the current display_list.
+  // If the current node's ancestor has been cached we also should not cache the
+  // current node. In the current frame, the raster_cache will collect all
+  // display_list or picture_list to calculate the memory they used, we
+  // shouldn't cache the current node if the memory is more significant than the
+  // limit.
+  if (!context.raster_cache || parent_cached ||
+      !context.raster_cache->GenerateNewCacheInThisFrame()) {
     return false;
   }
   auto* raster_cache = context.raster_cache;

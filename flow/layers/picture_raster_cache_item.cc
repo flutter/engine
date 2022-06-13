@@ -93,10 +93,6 @@ void SkPictureRasterCacheItem::PrerollFinalize(PrerollContext* context,
       !context->raster_cached_entries) {
     return;
   }
-  if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
-    cache_state_ = CacheState::kNone;
-    return;
-  }
   auto* raster_cache = context->raster_cache;
   SkRect bounds = sk_picture_->cullRect().makeOffset(offset_.x(), offset_.y());
   // We've marked the cache entry that we would like to cache so it stays
@@ -141,7 +137,8 @@ static const auto* flow_type = "RasterCacheFlow::Picture";
 bool SkPictureRasterCacheItem::TryToPrepareRasterCache(
     const PaintContext& context,
     bool parent_cached) const {
-  if (!context.raster_cache || parent_cached) {
+  if (!context.raster_cache || parent_cached ||
+      !context.raster_cache->GenerateNewCacheInThisFrame()) {
     return false;
   }
   if (cache_state_ != kNone &&

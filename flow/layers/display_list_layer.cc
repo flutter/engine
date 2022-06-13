@@ -9,9 +9,10 @@
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/flow/layer_snapshot_store.h"
+#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/raster_cache_item.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
