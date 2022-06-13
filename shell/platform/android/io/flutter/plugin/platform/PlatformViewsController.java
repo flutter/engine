@@ -233,6 +233,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           view.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
           view.setLayoutDirection(request.direction);
+
+          // Accessibility is initially disabled, and it's e-enabled by AccessibilityBridge after
+          // the
+          // framework populates the SemanticsNode.
+          // If there's no SemanticsNode for a platform view, then the platform view remains
+          // inaccessible to TalkBack.
+          // For example, if you wrap a platform view widget with a ExcludeSemantics widget, no
+          // SemanticsNode is populated.
+          // To prevent races, the framework populate the SemanticsNode after the platform view has
+          // been created.
+          view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+
           wrapperView.addView(view);
           wrapperView.setOnDescendantFocusChangeListener(
               (v, hasFocus) -> {
@@ -747,11 +759,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (platformViewParent.get(viewId) != null) {
       return;
     }
-    if (platformView.getView() == null) {
+    final View embeddedView = platformView.getView();
+    if (embeddedView == null) {
       throw new IllegalStateException(
           "PlatformView#getView() returned null, but an Android view reference was expected.");
     }
-    if (platformView.getView().getParent() != null) {
+    if (embeddedView.getParent() != null) {
       throw new IllegalStateException(
           "The Android view returned from PlatformView#getView() was already added to a parent view.");
     }
@@ -769,7 +782,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         });
 
     platformViewParent.put(viewId, parentView);
-    parentView.addView(platformView.getView());
+
+    // Accessibility is initially disabled, and it's e-enabled by AccessibilityBridge after the
+    // framework populates the SemanticsNode.
+    // If there's no SemanticsNode for a platform view, then the platform view remains inaccessible
+    // to TalkBack.
+    // For example, if you wrap a platform view widget with a ExcludeSemantics widget, no
+    // SemanticsNode is populated.
+    // To prevent races, the framework populate the SemanticsNode after the platform view has been
+    // created.
+    embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+
+    parentView.addView(embeddedView);
     flutterView.addView(parentView);
   }
 

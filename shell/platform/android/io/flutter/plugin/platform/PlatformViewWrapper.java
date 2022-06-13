@@ -21,6 +21,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -240,6 +241,14 @@ class PlatformViewWrapper extends FrameLayout {
   @Override
   public boolean onInterceptTouchEvent(@NonNull MotionEvent event) {
     return true;
+  }
+
+  @Override
+  public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+    if (getChildCount() == 1 && getChildAt(0).isImportantForAccessibility()) {
+      return super.requestSendAccessibilityEvent(child, event);
+    }
+    return false;
   }
 
   /** Used on Android O+, {@link invalidateChildInParent} used for previous versions. */
