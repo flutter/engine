@@ -177,7 +177,7 @@ static char markerKey;
 
 /**
  * Used to gather multiple selectors performed in one run loop turn. These
- * will be all send in one platform channel call so that framework can process
+ * will be all sent in one platform channel call so that framework can process
  * them in single microtask.
  */
 @property(nonatomic) NSMutableArray* pendingSelectors;
