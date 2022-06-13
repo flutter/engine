@@ -223,16 +223,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           layoutParams.leftMargin = physicalLeft;
           wrapperView.setLayoutParams(layoutParams);
 
-          final View view = platformView.getView();
-          if (view == null) {
+          final View embeddedView = platformView.getView();
+          if (embeddedView == null) {
             throw new IllegalStateException(
                 "PlatformView#getView() returned null, but an Android view reference was expected.");
           } else if (view.getParent() != null) {
             throw new IllegalStateException(
                 "The Android view returned from PlatformView#getView() was already added to a parent view.");
           }
-          view.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
-          view.setLayoutDirection(request.direction);
+          embeddedView.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
+          embeddedView.setLayoutDirection(request.direction);
 
           // Accessibility is initially disabled, and it's e-enabled by AccessibilityBridge after
           // the
@@ -243,9 +243,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // SemanticsNode is populated.
           // To prevent races, the framework populate the SemanticsNode after the platform view has
           // been created.
-          view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+          embeddedView.setImportantForAccessibility(
+              View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
 
-          wrapperView.addView(view);
+          wrapperView.addView(embeddedView);
           wrapperView.setOnDescendantFocusChangeListener(
               (v, hasFocus) -> {
                 if (hasFocus) {
