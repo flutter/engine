@@ -23,6 +23,7 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetTransform(
       RasterCache::GetIntegralTransCTM(context->GetTransform()));
 #endif
+
   DiffChildren(context, prev);
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
