@@ -220,6 +220,11 @@ static char markerKey;
  */
 - (NSString*)textAffinityString;
 
+/**
+ * Allow overriding run loop mode for test.
+ */
+@property(readwrite, nonatomic) NSString* customRunLoopMode;
+
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -689,10 +694,15 @@ static char markerKey;
   [_pendingSelectors addObject:name];
   __weak NSMutableArray* selectors = _pendingSelectors;
   __weak FlutterMethodChannel* channel = _channel;
+  __weak NSNumber* clientID = self.clientID;
 
-  dispatch_async(dispatch_get_main_queue(), ^{
+  CFStringRef runLoopMode = self.customRunLoopMode != nil
+                                ? (__bridge CFStringRef)self.customRunLoopMode
+                                : kCFRunLoopCommonModes;
+
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), runLoopMode, ^{
     if (selectors.count > 0) {
-      [channel invokeMethod:kPerformSelector arguments:@[ self.clientID, selectors ]];
+      [channel invokeMethod:kPerformSelector arguments:@[ clientID, selectors ]];
       [selectors removeAllObjects];
     }
   });

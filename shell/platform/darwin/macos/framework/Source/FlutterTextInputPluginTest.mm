@@ -1151,18 +1151,23 @@
                     result:^(id){
                     }];
 
+  // Can't run CFRunLoop in default mode because it causes crashes from scheduled
+  // sources from other tests.
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  plugin.customRunLoopMode = runLoopMode;
+
   // Ensure both selectors are grouped in one platform channel call
   [plugin doCommandBySelector:@selector(moveUp:)];
   [plugin doCommandBySelector:@selector(moveRightAndModifySelection:)];
 
   __block bool done = false;
-  dispatch_async(dispatch_get_main_queue(), ^{
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
     done = true;
   });
 
   while (!done) {
     // Each invocation will handle one source
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0, true);
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
   }
 
   NSData* performSelectorCall = [[FlutterJSONMethodCodec sharedInstance]
