@@ -300,6 +300,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterProjectArgs flutterArguments = {};
   flutterArguments.struct_size = sizeof(FlutterProjectArgs);
   flutterArguments.assets_path = _project.assetsPath.UTF8String;
+  flutterArguments.application_library_path = _project.applicationLibraryPath.UTF8String;
   flutterArguments.icu_data_path = _project.ICUDataPath.UTF8String;
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
