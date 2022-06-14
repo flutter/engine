@@ -246,11 +246,6 @@ class PlatformViewWrapper extends FrameLayout {
   @Override
   public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
     final View embeddedView = getChildAt(0);
-    if (embeddedView != null) {
-      io.flutter.Log.e(
-          "flutter", "getImportantForAccessibility=" + embeddedView.getImportantForAccessibility());
-    }
-
     if (embeddedView != null
         && embeddedView.getImportantForAccessibility()
             == View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS) {
