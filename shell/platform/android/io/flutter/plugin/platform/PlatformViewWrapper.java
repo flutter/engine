@@ -245,14 +245,22 @@ class PlatformViewWrapper extends FrameLayout {
 
   @Override
   public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
-    if (child != null && child.isImportantForAccessibility()) {
-      // Forward the request only if the child view is in the Flutter accessibility tree.
-      // The embedded view may be ignored when the framework doesn't populate a SemanticNode
-      // for the current platform view.
-      // See AccessibilityBridge for more.
-      return super.requestSendAccessibilityEvent(child, event);
+    final View embeddedView = getChildAt(0);
+    if (embeddedView != null) {
+      io.flutter.Log.e(
+          "flutter", "getImportantForAccessibility=" + embeddedView.getImportantForAccessibility());
     }
-    return false;
+
+    if (embeddedView != null
+        && embeddedView.getImportantForAccessibility()
+            == View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS) {
+      return false;
+    }
+    // Forward the request only if the embedded view is in the Flutter accessibility tree.
+    // The embedded view may be ignored when the framework doesn't populate a SemanticNode
+    // for the current platform view.
+    // See AccessibilityBridge for more.
+    return super.requestSendAccessibilityEvent(child, event);
   }
 
   /** Used on Android O+, {@link invalidateChildInParent} used for previous versions. */

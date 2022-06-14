@@ -750,6 +750,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     testing.
    */
   @VisibleForTesting
+  @TargetApi(Build.VERSION_CODES.KITKAT)
   void initializePlatformViewIfNeeded(int viewId) {
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
