@@ -23,6 +23,7 @@ import io.flutter.util.ViewUtils;
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack} to
  * its children.
  */
+@TargetApi(19)
 public class FlutterMutatorView extends FrameLayout {
   private FlutterMutatorsStack mutatorsStack;
   private float screenDensity;
@@ -163,7 +164,6 @@ public class FlutterMutatorView extends FrameLayout {
   }
 
   @Override
-  @TargetApi(21)
   public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
     final View embeddedView = getChildAt(0);
     if (embeddedView != null
