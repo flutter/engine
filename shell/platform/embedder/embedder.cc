@@ -1056,7 +1056,8 @@ void PopulateSnapshotMappingCallbacks(
     }
 
     if (SAFE_ACCESS(args, application_library_path, nullptr) != nullptr) {
-      settings.application_library_path.push_back(SAFE_ACCESS(args, application_library_path, nullptr));
+      settings.application_library_path.push_back(
+          SAFE_ACCESS(args, application_library_path, nullptr));
     }
   }
 
@@ -1162,7 +1163,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       return LOG_EMBEDDER_ERROR(
           kInvalidArguments,
           "Multiple AOT sources specified. Embedders should provide either "
-          "*_snapshot_* buffers or aot_data or application_library_path, not multiple.");
+          "*_snapshot_* buffers or aot_data or application_library_path, not "
+          "multiple.");
     }
   }
 
