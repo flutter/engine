@@ -91,6 +91,8 @@ void main(List<String> args) async {
   });
 
   late Process logcatProcess;
+  late Future<int> logcatProcessExitCode;
+
   final IOSink logcat = File(logcatPath).openWrite();
   try {
     await step('Creating screenshot directory...', () async {
@@ -103,7 +105,7 @@ void main(List<String> args) async {
         panic(<String>['could not clear logs']);
       }
       logcatProcess = await pm.start(<String>[adb.path, 'logcat', '-T', '1']);
-      unawaited(pipeProcessStreams(logcatProcess, out: logcat));
+      logcatProcessExitCode = pipeProcessStreams(logcatProcess, out: logcat);
     });
 
     await step('Configuring emulator...', () async {
@@ -209,6 +211,7 @@ void main(List<String> args) async {
     await step('Killing logcat process...', () async {
       final bool delivered = logcatProcess.kill(ProcessSignal.sigkill);
       assert(delivered);
+      await logcatProcessExitCode;
     });
 
     await step('Wait for Skia gold comparisons...', () async {
