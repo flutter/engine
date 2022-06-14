@@ -1154,18 +1154,19 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
-  if (SAFE_ACCESS(args, aot_data, nullptr)) {
-    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) ||
-        SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) ||
-        SAFE_ACCESS(args, isolate_snapshot_data, nullptr) ||
-        SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) ||
-        SAFE_ACCESS(args, application_library_path, nullptr)) {
-      return LOG_EMBEDDER_ERROR(
-          kInvalidArguments,
-          "Multiple AOT sources specified. Embedders should provide either "
-          "*_snapshot_* buffers or aot_data or application_library_path, not "
-          "multiple.");
-    }
+  if ((SAFE_ACCESS(args, vm_snapshot_data, nullptr) ||
+       SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) ||
+       SAFE_ACCESS(args, isolate_snapshot_data, nullptr) ||
+       SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr))
+          ? SAFE_ACCESS(args, aot_data, nullptr) ||
+                SAFE_ACCESS(args, application_library_path, nullptr)
+          : SAFE_ACCESS(args, aot_data, nullptr) &&
+                SAFE_ACCESS(args, application_library_path, nullptr)) {
+    return LOG_EMBEDDER_ERROR(
+        kInvalidArguments,
+        "Multiple AOT sources specified. Embedders should provide either "
+        "*_snapshot_* buffers or aot_data or application_library_path, not "
+        "multiple.");
   }
 
   PopulateSnapshotMappingCallbacks(args, settings);
