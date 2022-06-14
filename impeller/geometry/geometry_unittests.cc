@@ -1120,6 +1120,31 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
   ASSERT_EQ(polyline.points[6], Point(0, 100));
 }
 
+TEST(GeometryTest, PathIsRectangle) {
+  {
+    Rect rect = Rect::MakeLTRB(100, 110, 210, 230);
+    Path path = PathBuilder{}.AddRect(rect).TakePath();
+    ASSERT_TRUE(path.IsRectangle());
+
+    auto bounds = path.GetBoundingBox();
+    ASSERT_TRUE(bounds.has_value());
+    ASSERT_RECT_NEAR(bounds.value(), rect);
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddRect(Rect::MakeLTRB(100, 110, 210, 230))
+                    .AddRect(Rect::MakeLTRB(10, 10, 20, 20))
+                    .TakePath();
+    ASSERT_FALSE(path.IsRectangle());
+  }
+
+  {
+    Path path = PathBuilder{}.AddCircle(Point(), 10).TakePath();
+    ASSERT_FALSE(path.IsRectangle());
+  }
+}
+
 TEST(GeometryTest, VerticesConstructorAndGetters) {
   std::vector<Point> points = {Point(1, 2), Point(2, 3), Point(3, 4)};
   std::vector<uint16_t> indices = {0, 1, 2};

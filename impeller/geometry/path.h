@@ -119,6 +119,8 @@ class Path {
   Polyline CreatePolyline(
       const SmoothingApproximation& approximation = {}) const;
 
+  bool IsRectangle() const;
+
   std::optional<Rect> GetBoundingBox() const;
 
   std::optional<Rect> GetTransformedBoundingBox(const Matrix& transform) const;

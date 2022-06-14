@@ -274,6 +274,26 @@ Path::Polyline Path::CreatePolyline(
   }
   return polyline;
 }
+bool Path::IsRectangle() const {
+  // Typically, closed paths have a second, empty contour. Empty contours are
+  // not included in the generated polyline.
+  if (linears_.size() != 4 || contours_.size() > 2 || components_.size() > 6) {
+    return false;
+  }
+
+  auto polyline = CreatePolyline();
+  std::vector<Point>& points = polyline.points;
+  if (polyline.contours.size() != 1 || points.size() != 5 ||
+      points[0] != points[4]) {
+    return false;
+  }
+
+  Point diag = points[2] - points[0];
+  Point a = points[0] + Point(diag.x, 0);
+  Point b = points[0] + Point(0, diag.y);
+  return (points[1] == a && points[3] == b) ||
+         (points[1] == b && points[3] == a);
+}
 
 std::optional<Rect> Path::GetBoundingBox() const {
   auto min_max = GetMinMaxCoveragePoints();
