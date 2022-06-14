@@ -163,7 +163,11 @@ public class FlutterMutatorView extends FrameLayout {
 
   @Override
   public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
-    if (getChildCount() == 1 && getChildAt(0).isImportantForAccessibility()) {
+    if (child != null && child.isImportantForAccessibility()) {
+      // Forward the request only if the child view is in the Flutter accessibility tree.
+      // The embedded view may be ignored when the framework doesn't populate a SemanticNode
+      // for the current platform view.
+      // See AccessibilityBridge for more.
       return super.requestSendAccessibilityEvent(child, event);
     }
     return false;

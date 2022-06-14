@@ -227,7 +227,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           if (embeddedView == null) {
             throw new IllegalStateException(
                 "PlatformView#getView() returned null, but an Android view reference was expected.");
-          } else if (view.getParent() != null) {
+          } else if (embeddedView.getParent() != null) {
             throw new IllegalStateException(
                 "The Android view returned from PlatformView#getView() was already added to a parent view.");
           }
