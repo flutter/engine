@@ -215,10 +215,10 @@ bool DisplayList::Equals(const DisplayList* other) const {
   return CompareOps(ptr, ptr + byte_count_, o_ptr, o_ptr + other->byte_count_);
 }
 
-static uint8_t* getNPtr(uint8_t* ptr, uint8_t* end,int n) {
+static uint8_t* getNPtr(uint8_t* ptr, uint8_t* end, int n) {
   int i = 0;
-  while(ptr < end) {
-    if(n == i) {
+  while (ptr < end) {
+    if (n == i) {
       return ptr;
     }
     auto op = reinterpret_cast<const DLOp*>(ptr);
@@ -235,7 +235,7 @@ void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
 }
 
 const SkRect& DisplayList::bounds() {
-  if(!virtual_layer_indexes_.empty() && virtual_bounds_valid_) {
+  if (!virtual_layer_indexes_.empty() && virtual_bounds_valid_) {
     virtual_bounds_valid_ = false;
     return virtual_bounds_;
   }
@@ -254,7 +254,7 @@ const SkRect DisplayList::partBounds(int start, int end) {
 }
 
 void DisplayList::Compare(DisplayList* dl) {
-  if(storage_ == nullptr) {
+  if (storage_ == nullptr) {
     return;
   }
 
@@ -271,18 +271,19 @@ void DisplayList::Compare(DisplayList* dl) {
 
   // 1. 算法实现1 简易的深搜.
   std::set<int> oldUsage;
-  for(unsigned long i = 0; i < current.size(); i+=2) {
-    for(unsigned long j = 0; j < old.size(); j+=2) {
-      if(oldUsage.find(i) == oldUsage.end() && current[i].type == old[j].type) {
+  for (unsigned long i = 0; i < current.size(); i += 2) {
+    for (unsigned long j = 0; j < old.size(); j += 2) {
+      if (oldUsage.find(i) == oldUsage.end() &&
+          current[i].type == old[j].type) {
         auto curH = getNPtr(currentOpHead, currentOpTail, current[i].index);
-        auto curE = getNPtr(currentOpHead, currentOpTail, current[i+1].index);
+        auto curE = getNPtr(currentOpHead, currentOpTail, current[i + 1].index);
         auto oldH = getNPtr(oldOpHead, oldOpTail, old[j].index);
-        auto oldE = getNPtr(oldOpHead, oldOpTail, old[j+1].index);
-        if(curE-curH == oldE-oldH && CompareOps(curH, curE, oldH, oldE)) {
+        auto oldE = getNPtr(oldOpHead, oldOpTail, old[j + 1].index);
+        if (curE - curH == oldE - oldH && CompareOps(curH, curE, oldH, oldE)) {
           oldUsage.insert(j);
           break;
-        }else{
-          auto rect = partBounds(current[i].index, current[i+1].index);
+        } else {
+          auto rect = partBounds(current[i].index, current[i + 1].index);
           damage.join(rect);
           break;
         }
@@ -290,9 +291,9 @@ void DisplayList::Compare(DisplayList* dl) {
     }
   }
 
-  for(unsigned long i = 0; i < old.size(); i += 2) {
-    if(oldUsage.find(i) == oldUsage.end()) {
-      auto rect = partBounds(old[i].index, current[i+1].index);
+  for (unsigned long i = 0; i < old.size(); i += 2) {
+    if (oldUsage.find(i) == oldUsage.end()) {
+      auto rect = partBounds(old[i].index, current[i + 1].index);
       damage.join(rect);
     }
   }
