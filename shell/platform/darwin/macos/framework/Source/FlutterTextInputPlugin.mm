@@ -32,7 +32,7 @@ static NSString* const kUpdateEditStateResponseMethod = @"TextInputClient.update
 static NSString* const kUpdateEditStateWithDeltasResponseMethod =
     @"TextInputClient.updateEditingStateWithDeltas";
 static NSString* const kPerformAction = @"TextInputClient.performAction";
-static NSString* const kPerformSelector = @"TextInputClient.performSelectors";
+static NSString* const kPerformSelectors = @"TextInputClient.performSelectors";
 static NSString* const kMultilineInputType = @"TextInputType.multiline";
 
 static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
@@ -702,7 +702,7 @@ static char markerKey;
 
   CFRunLoopPerformBlock(CFRunLoopGetMain(), runLoopMode, ^{
     if (selectors.count > 0) {
-      [channel invokeMethod:kPerformSelector arguments:@[ clientID, selectors ]];
+      [channel invokeMethod:kPerformSelectors arguments:@[ clientID, selectors ]];
       [selectors removeAllObjects];
     }
   });
