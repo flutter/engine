@@ -237,6 +237,16 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
 #pragma mark - Private
 
+- (void)resignAndRemoveFromSuperview {
+  if (self.superview != nil) {
+    // With accessiblity enabled TextInputPlugin is inside _client, so take the
+    // nextResponder from the _client.
+    NSResponder* nextResponder = _client != nil ? _client.nextResponder : self.nextResponder;
+    [self.window makeFirstResponder:nextResponder];
+    [self removeFromSuperview];
+  }
+}
+
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   BOOL handled = YES;
   NSString* method = call.method;
@@ -271,13 +281,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     [self.window makeFirstResponder:self];
     _shown = TRUE;
   } else if ([method isEqualToString:kHideMethod]) {
-    // With accessiblity enabled TextInputPlugin is inside _client, so take the
-    // nextResponder from the _client.
-    NSResponder* nextResponder = _client != nil ? _client.nextResponder : self.nextResponder;
-    [self.window makeFirstResponder:nextResponder];
-    [self removeFromSuperview];
+    [self resignAndRemoveFromSuperview];
     _shown = FALSE;
   } else if ([method isEqualToString:kClearClientMethod]) {
+    [self resignAndRemoveFromSuperview];
     // If there's an active mark region, commit it, end composing, and clear the IME's mark text.
     if (_activeModel && _activeModel->composing()) {
       _activeModel->CommitComposing();
