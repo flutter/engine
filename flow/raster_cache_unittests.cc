@@ -415,7 +415,7 @@ TEST(RasterCache, DeviceRectRoundOutForSkPicture) {
 TEST(RasterCache, ComputeDeviceRectBasedOnFractionalTranslation) {
   SkRect logical_rect = SkRect::MakeLTRB(0, 0, 300.2, 300.3);
   SkMatrix ctm = SkMatrix::MakeAll(2.0, 0, 0, 0, 2.0, 0, 0, 0, 1);
-  auto result = RasterCache::GetDeviceBounds(logical_rect, ctm);
+  auto result = RasterCacheUtil::GetDeviceBounds(logical_rect, ctm);
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   ASSERT_EQ(result, SkRect::MakeLTRB(0.0, 0.0, 601.0, 601.0));
 #else

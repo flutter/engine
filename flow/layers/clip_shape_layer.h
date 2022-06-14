@@ -35,7 +35,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     if (UsesSaveLayer()) {
       context->SetTransform(
-          RasterCache::GetIntegralTransCTM(context->GetTransform()));
+          RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
     }
 #endif
     if (context->PushCullRect(clip_shape_bounds())) {
@@ -94,8 +94,9 @@ class ClipShapeLayer : public CacheableContainerLayer {
     }
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-        context.leaf_nodes_canvas->getTotalMatrix()));
+    context.internal_nodes_canvas->setMatrix(
+        RasterCacheUtil::GetIntegralTransCTM(
+            context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
     AutoCachePaint cache_paint(context);

@@ -23,7 +23,11 @@ void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
   if (context->raster_cache && context->raster_cached_entries) {
     context->raster_cached_entries->push_back(this);
     child_items_ = context->raster_cached_entries->size();
-    matrix_ = matrix;
+    auto child_matrix = matrix;
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    child_matrix = RasterCacheUtil::GetIntegralTransCTM(matrix);
+#endif
+    matrix_ = child_matrix;
   }
 }
 
@@ -52,7 +56,7 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
   if (num_cache_attempts_ >= layer_cached_threshold_) {
     // the layer can be cached
     cache_state_ = CacheState::kCurrent;
-    context->raster_cache->MarkSeen(key_id_, matrix);
+    context->raster_cache->MarkSeen(key_id_, matrix_);
   } else {
     num_cache_attempts_++;
     // access current layer
@@ -66,7 +70,7 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
                                    RasterCacheKeyType::kLayerChildren);
       }
       cache_state_ = CacheState::kChildren;
-      context->raster_cache->MarkSeen(layer_children_id_.value(), matrix);
+      context->raster_cache->MarkSeen(layer_children_id_.value(), matrix_);
     }
   }
 }

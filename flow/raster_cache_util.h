@@ -48,7 +48,6 @@ struct RasterCacheUtil {
 
     return true;
   }
-
   /**
    * @brief Snap the translation components of the matrix to integers.
    *
@@ -70,12 +69,13 @@ struct RasterCacheUtil {
     return result;
   }
 
-  static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
+  static SkRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
     SkRect device_rect;
     ctm.mapRect(&device_rect, rect);
-    SkIRect bounds;
-    device_rect.roundOut(&bounds);
-    return bounds;
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    device_rect.roundOut(&device_rect);
+#endif
+    return device_rect;
   }
 };
 

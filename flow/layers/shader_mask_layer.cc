@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/shader_mask_layer.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
@@ -28,7 +29,7 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context->SetTransform(
-      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+      RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
 #endif
 
   DiffChildren(context, prev);
@@ -53,6 +54,11 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.internal_nodes_canvas->setMatrix(RasterCacheUtil::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
 
   if (context.raster_cache) {
     if (layer_raster_cache_item_->Draw(context, cache_paint.paint())) {

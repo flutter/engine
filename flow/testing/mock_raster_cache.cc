@@ -40,7 +40,7 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   UpdateCacheEntry(
       RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer),
       r_context, [&](SkCanvas* canvas) {
-        SkIRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+        SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
             r_context.logical_rect, r_context.matrix);
         return std::make_unique<MockRasterCacheResult>(cache_rect);
       });
@@ -79,7 +79,7 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   UpdateCacheEntry(
       RasterCacheKeyID(picture->uniqueID(), RasterCacheKeyType::kPicture),
       r_context, [&](SkCanvas* canvas) {
-        SkIRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+        SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
             r_context.logical_rect, r_context.matrix);
         return std::make_unique<MockRasterCacheResult>(cache_rect);
       });

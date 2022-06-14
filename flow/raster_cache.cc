@@ -33,7 +33,7 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   SkAutoCanvasRestore auto_restore(&canvas, true);
 
   SkRect bounds =
-      RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+      RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
   FML_DCHECK(std::abs(bounds.width() - image_->dimensions().width()) <= 1 &&
              std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
@@ -55,13 +55,14 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const std::function<void(SkCanvas*)>& draw_function) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-  SkRect dest_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
+  SkRect dest_rect =
+      RasterCacheUtil::GetDeviceBounds(context.logical_rect, context.matrix);
   // we always round out here so that the texture is integer sized.
   int width = SkScalarCeilToInt(dest_rect.width());
   int height = SkScalarCeilToInt(dest_rect.height());
 
-  const SkImageInfo image_info =
-      SkImageInfo::MakeN32Premul(width, height, sk_ref_sp(dst_color_space));
+  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
+      width, height, sk_ref_sp(context.dst_color_space));
 
   sk_sp<SkSurface> surface =
       context.gr_context ? SkSurface::MakeRenderTarget(
@@ -75,7 +76,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   SkCanvas* canvas = surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
   canvas->translate(-dest_rect.left(), -dest_rect.top());
-  canvas->concat(ctm);
+  canvas->concat(context.matrix);
   draw_function(canvas);
 
   if (context.checkerboard) {

@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/color_filter_layer.h"
 #include "flutter/flow/raster_cache_item.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
@@ -25,7 +26,7 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context->SetTransform(
-      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+      RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
 #endif
 
   DiffChildren(context, prev);
@@ -50,6 +51,12 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.internal_nodes_canvas->setMatrix(RasterCacheUtil::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
+
   if (context.raster_cache) {
     if (layer_raster_cache_item_->IsCacheChildren()) {
       cache_paint.setColorFilter(filter_);

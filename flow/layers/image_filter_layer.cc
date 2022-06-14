@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/image_filter_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
@@ -25,7 +26,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context->SetTransform(
-      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+      RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
 #endif
 
   if (filter_) {
@@ -84,6 +85,11 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.internal_nodes_canvas->setMatrix(RasterCacheUtil::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
 
   if (layer_raster_cache_item_->IsCacheChildren()) {
     cache_paint.setImageFilter(transformed_filter_);
