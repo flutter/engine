@@ -26,6 +26,11 @@
 @property(nonatomic, readonly, nullable) NSString* ICUDataPath;
 
 /**
+ * The path to the Application library executable.
+ */
+@property(nonatomic, readonly, nullable) NSString* applicationLibraryPath;
+
+/**
  * The command line arguments array for the engine.
  */
 @property(nonatomic, readonly) std::vector<std::string> switches;

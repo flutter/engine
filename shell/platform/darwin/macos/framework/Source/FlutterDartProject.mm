@@ -81,6 +81,13 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
   return path;
 }
 
+- (NSString*)applicationLibraryPath {
+  if (_dartBundle == nil) {
+    return nil;
+  }
+  return [_dartBundle executablePath];
+}
+
 - (std::vector<std::string>)switches {
   std::vector<std::string> arguments = flutter::GetSwitchesFromEnvironment();
   if (self.enableMirrors) {

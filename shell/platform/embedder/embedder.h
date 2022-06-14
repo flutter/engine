@@ -1600,6 +1600,12 @@ typedef struct {
   /// The callback invoked by the engine in root isolate scope. Called
   /// immediately after the root isolate has been created and marked runnable.
   VoidCallback root_isolate_create_callback;
+  /// Path to a the application's AOT-compiled Dart library used in AOT operation.
+  /// This may be provided as an alternative to the data buffers `vm_snapshot_data`,
+  /// `vm_snapshot_instructions`, `isolate_snapshot_data`, and `isolate_snapshot_instructions`.
+  /// Those data buffer fields must not be specified by the caller in conjunction with this field
+  /// The string must be null terminated.
+  const char* application_library_path;
   /// The callback invoked by the engine in order to give the embedder the
   /// chance to respond to semantics node updates from the Dart application.
   /// Semantics node updates are sent in batches terminated by a 'batch end'
