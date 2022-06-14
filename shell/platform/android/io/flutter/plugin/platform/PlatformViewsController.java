@@ -234,12 +234,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           embeddedView.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
           embeddedView.setLayoutDirection(request.direction);
 
-          // Accessibility is initially disabled, and it's e-enabled by AccessibilityBridge after
-          // the framework populates the SemanticsNode.
-          // If there's no SemanticsNode for a platform view, then the platform view remains
-          // inaccessible to TalkBack.
-          // For example, if you wrap a platform view widget with a ExcludeSemantics widget, no
-          // SemanticsNode is populated.
+          // Accessibility in the embedded view is initially disabled because if a Flutter app
+          // disabled accessibility in the first frame, the embedding won't receive an update to
+          // disable accessibility since the embedding never received an update to enable it.
+          // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas
+          // when the framework sends a new a11y tree to the embedding.
           // To prevent races, the framework populate the SemanticsNode after the platform view has
           // been created.
           embeddedView.setImportantForAccessibility(
@@ -784,12 +783,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     platformViewParent.put(viewId, parentView);
 
-    // Accessibility is initially disabled, and it's e-enabled by AccessibilityBridge after the
-    // framework populates the SemanticsNode.
-    // If there's no SemanticsNode for a platform view, then the platform view remains inaccessible
-    // to TalkBack.
-    // For example, if you wrap a platform view widget with a ExcludeSemantics widget, no
-    // SemanticsNode is populated.
+    // Accessibility in the embedded view is initially disabled because if a Flutter app disabled
+    // accessibility in the first frame, the embedding won't receive an update to disable
+    // accessibility since the embedding never received an update to enable it.
+    // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas when
+    // the framework sends a new a11y tree to the embedding.
     // To prevent races, the framework populate the SemanticsNode after the platform view has been
     // created.
     embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
