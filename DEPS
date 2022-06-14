@@ -474,7 +474,7 @@ deps = {
 
    # Upstream Khronos Vulkan Headers (v1.1.130)
    'src/third_party/vulkan-headers':
-   Var('github_git') + '/KhronosGroup/Vulkan-Headers.git' + '@' + '0e57fc1cfa56a203efe43e4dfb9b3c9e9b105593',
+   Var('github_git') + '/KhronosGroup/Vulkan-Headers.git' + '@' + 'ec9b96aae53e152f6812e66fa43757c1256369a0',
 
    # Skia VMA dependency.
   'src/third_party/externals/vulkanmemoryallocator':

@@ -144,6 +144,7 @@ if (enable_unittests) {
       "//flutter/fml",
       "//flutter/shell/common",
       "//flutter/vulkan",
+      "//third_party/vulkan-headers:vulkan_headers",
     ]
 
     # SwiftShader only supports x86/x86_64

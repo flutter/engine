@@ -233,6 +233,7 @@ if (enable_unittests) {
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
+      "//third_party/vulkan-headers:vulkan_headers",
     ]
 
     if (test_enable_gl) {

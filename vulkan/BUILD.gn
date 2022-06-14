@@ -59,6 +59,7 @@ source_set("vulkan") {
   deps = [
     "//flutter/fml",
     "//third_party/skia",
+    "//third_party/vulkan-headers:vulkan_headers",
   ]
 
   public_configs = [
