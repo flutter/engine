@@ -2373,7 +2373,7 @@ class _RepositoryFuchsiaDirectory extends _RepositoryDirectory {
         // Applies to NOTICE.fuchsia file.
         // This is a file that covers things that contribute to the Fuchsia SDK.
         // See: fxb/94240
-        && !entry.name.endsWith('.fuchsia')
+        && !(entry.name == 'NOTICE.fuchsia')
         && super.shouldRecurse(entry);
   }
 
