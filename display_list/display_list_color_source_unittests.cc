@@ -117,7 +117,7 @@ TEST(DisplayListColorSource, FromSkiaColorShader) {
 
 TEST(DisplayListColorSource, FromSkiaImageShader) {
   sk_sp<SkShader> shader =
-      kTestImage1->makeShader(DisplayList::LinearSampling, &kTestMatrix1);
+      kTestImage1->makeShader(ToSk(DisplayList::LinearSampling), &kTestMatrix1);
   std::shared_ptr<DlColorSource> source = DlColorSource::From(shader);
   DlImageColorSource dl_source(kTestImage1, DlTileMode::kClamp,
                                DlTileMode::kClamp, DisplayList::LinearSampling,

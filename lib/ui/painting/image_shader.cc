@@ -54,7 +54,7 @@ void ImageShader::initWithImage(CanvasImage* image,
   sk_image_ = UIDartState::CreateGPUObject(std::move(raw_sk_image));
   SkMatrix local_matrix = ToSkMatrix(matrix4);
   sampling_is_locked_ = filter_quality_index >= 0;
-  SkSamplingOptions sampling =
+  DlSamplingOptions sampling =
       sampling_is_locked_ ? ImageFilter::SamplingFromIndex(filter_quality_index)
                           : DisplayList::LinearSampling;
   cached_shader_ = UIDartState::CreateGPUObject(sk_make_sp<DlImageColorSource>(
@@ -62,7 +62,7 @@ void ImageShader::initWithImage(CanvasImage* image,
 }
 
 std::shared_ptr<DlColorSource> ImageShader::shader(
-    SkSamplingOptions& sampling) {
+    DlSamplingOptions& sampling) {
   if (sampling_is_locked_) {
     sampling = cached_shader_.skia_object()->sampling();
   }

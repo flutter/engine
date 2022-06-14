@@ -221,10 +221,10 @@ static std::ostream& operator<<(std::ostream& os,
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkFilterMode& mode) {
+static std::ostream& operator<<(std::ostream& os, const DlFilterMode& mode) {
   switch (mode) {
-    case SkFilterMode::kNearest: return os << "FilterMode::kNearest";
-    case SkFilterMode::kLinear:  return os << "FilterMode::kLinear";
+    case DlFilterMode::kNearest: return os << "FilterMode::kNearest";
+    case DlFilterMode::kLinear:  return os << "FilterMode::kLinear";
 
     default: return os << "FilterMode::????";
   }
@@ -235,7 +235,7 @@ static std::ostream& operator<<(std::ostream& os, const DlColor& color) {
 }
 
 static std::ostream& operator<<(std::ostream& os,
-                                const SkSamplingOptions sampling) {
+                                const DlSamplingOptions& sampling) {
   if (sampling == DisplayList::NearestSampling) {
     return os << "NearestSampling";
   }
@@ -753,7 +753,7 @@ void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
 }
 void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
-                                            const SkSamplingOptions& sampling,
+                                            const DlSamplingOptions& sampling,
                                             bool render_with_attributes) {
   startl() << "drawImage(" << image.get() << "," << std::endl;
   startl() << "          " << point << ", "
@@ -764,7 +764,7 @@ void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
 void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
                                                 const SkRect& src,
                                                 const SkRect& dst,
-                                                const SkSamplingOptions& sampling,
+                                                const DlSamplingOptions& sampling,
                                                 bool render_with_attributes,
                                                 SkCanvas::SrcRectConstraint constraint) {
   startl() << "drawImageRect(" << image.get() << "," << std::endl;
@@ -778,7 +778,7 @@ void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
 void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
-                                                SkFilterMode filter,
+                                                DlFilterMode filter,
                                                 bool render_with_attributes) {
   startl() << "drawImageNine(" << image.get() << "," << std::endl;
   startl() << "              center: " << center << "," << std::endl;
@@ -790,7 +790,7 @@ void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,
 void DisplayListStreamDispatcher::drawImageLattice(const sk_sp<DlImage> image,
                                                    const SkCanvas::Lattice& lattice,
                                                    const SkRect& dst,
-                                                   SkFilterMode filter,
+                                                   DlFilterMode filter,
                                                    bool render_with_attributes) {
   startl() << "drawImageLattice(blah blah);" << std::endl;
 }
@@ -800,7 +800,7 @@ void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
-                                            const SkSamplingOptions& sampling,
+                                            const DlSamplingOptions& sampling,
                                             const SkRect* cull_rect,
                                             bool render_with_attributes) {
   startl() << "drawAtlas(" << atlas.get() << ", ";

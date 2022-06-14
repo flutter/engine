@@ -72,7 +72,7 @@ fml::RefPtr<FragmentShader> FragmentProgram::shader(
   uniforms.Release();
   std::vector<sk_sp<SkShader>> sk_samplers(sampler_shaders.size());
   for (size_t i = 0; i < sampler_shaders.size(); i++) {
-    SkSamplingOptions sampling;
+    DlSamplingOptions sampling;
     ImageShader* image_shader = sampler_shaders[i];
     // The default value for SkSamplingOptions is used because ImageShader
     // uses a cached value set by the user in the Dart constructor.

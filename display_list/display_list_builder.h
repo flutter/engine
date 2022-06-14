@@ -13,6 +13,7 @@
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_path_effect.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
 
@@ -254,41 +255,41 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 const DlSamplingOptions& sampling,
                  bool render_with_attributes) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 const DlSamplingOptions& sampling,
                  const DlPaint* paint = nullptr);
   void drawImageRect(
       const sk_sp<DlImage> image,
       const SkRect& src,
       const SkRect& dst,
-      const SkSamplingOptions& sampling,
+      const DlSamplingOptions& sampling,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling,
+                     const DlSamplingOptions& sampling,
                      const DlPaint* paint = nullptr,
                      SkCanvas::SrcRectConstraint constraint =
                          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint);
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     DlFilterMode filter,
                      bool render_with_attributes) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     DlFilterMode filter,
                      const DlPaint* paint = nullptr);
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter,
+                        DlFilterMode filter,
                         bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
@@ -296,7 +297,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 const DlSamplingOptions& sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
@@ -305,7 +306,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 const DlSamplingOptions& sampling,
                  const SkRect* cullRect,
                  const DlPaint* paint = nullptr);
   void drawPicture(const sk_sp<SkPicture> picture,

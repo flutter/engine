@@ -84,7 +84,7 @@ TEST(DisplayListImageFilter, FromSkiaErodeImageFilter) {
 
 TEST(DisplayListImageFilter, FromSkiaMatrixImageFilter) {
   sk_sp<SkImageFilter> sk_image_filter = SkImageFilters::MatrixTransform(
-      SkMatrix::RotateDeg(45), DisplayList::LinearSampling, nullptr);
+      SkMatrix::RotateDeg(45), ToSk(DisplayList::LinearSampling), nullptr);
   std::shared_ptr<DlImageFilter> filter = DlImageFilter::From(sk_image_filter);
 
   ASSERT_EQ(filter->type(), DlImageFilterType::kUnknown);
@@ -102,7 +102,7 @@ TEST(DisplayListImageFilter, FromSkiaComposeImageFilter) {
   sk_sp<SkImageFilter> sk_blur_filter =
       SkImageFilters::Blur(5.0, 5.0, SkTileMode::kRepeat, nullptr);
   sk_sp<SkImageFilter> sk_matrix_filter = SkImageFilters::MatrixTransform(
-      SkMatrix::RotateDeg(45), DisplayList::LinearSampling, nullptr);
+      SkMatrix::RotateDeg(45), ToSk(DisplayList::LinearSampling), nullptr);
   sk_sp<SkImageFilter> sk_image_filter =
       SkImageFilters::Compose(sk_blur_filter, sk_matrix_filter);
   std::shared_ptr<DlImageFilter> filter = DlImageFilter::From(sk_image_filter);

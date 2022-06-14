@@ -16,14 +16,14 @@ const SaveLayerOptions SaveLayerOptions::kNoAttributes = SaveLayerOptions();
 const SaveLayerOptions SaveLayerOptions::kWithAttributes =
     kNoAttributes.with_renders_with_attributes();
 
-const SkSamplingOptions DisplayList::NearestSampling =
-    SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
-const SkSamplingOptions DisplayList::LinearSampling =
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
-const SkSamplingOptions DisplayList::MipmapSampling =
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
-const SkSamplingOptions DisplayList::CubicSampling =
-    SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
+const DlSamplingOptions DisplayList::NearestSampling =
+    DlSamplingOptions::MakeNearestSampling();
+const DlSamplingOptions DisplayList::LinearSampling =
+    DlSamplingOptions::MakeLinearSampling();
+const DlSamplingOptions DisplayList::MipmapSampling =
+    DlSamplingOptions::MakeMipmapSampling();
+const DlSamplingOptions DisplayList::CubicSampling =
+    DlSamplingOptions::MakeCubicSampling();
 
 DisplayList::DisplayList()
     : byte_count_(0),
