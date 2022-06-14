@@ -35,6 +35,8 @@ ui.VoidCallback? scheduleFrameCallback;
 
 typedef _KeyDataResponseCallback = void Function(bool handled);
 
+const String highContrastMediaQuery = '(forced-colors: active)';
+
 /// Platform event dispatcher.
 ///
 /// This is the central entry point for platform messages and configuration
@@ -44,6 +46,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// these.
   EnginePlatformDispatcher._() {
     _addBrightnessMediaQueryListener();
+    _addHighContrastMediaQueryListener();
     _addFontSizeObserver();
   }
 
@@ -57,7 +60,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
+    accessibilityFeatures: setAccessibilityFeatures(),
   );
+
+  static EngineAccessibilityFeatures setAccessibilityFeatures() {
+    final EngineAccessibilityFeaturesBuilder builder =
+        EngineAccessibilityFeaturesBuilder(0);
+    final html.MediaQueryList _highContrastMediaQuery =
+        html.window.matchMedia(highContrastMediaQuery);
+    if (_highContrastMediaQuery.matches) {
+      builder.highContrast = true;
+    }
+    return builder.build();
+  }
 
   /// Receives all events related to platform configuration changes.
   @override
@@ -884,6 +899,78 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The setting indicating the current system font of the host platform.
   @override
   String? get systemFontFamily => configuration.systemFontFamily;
+
+  /// The setting indicating the current display mode of the host platform.
+  /// If the platform has no preference, [highContrastMode] defaults to false.
+  bool get highContrastMode => configuration.accessibilityFeatures.highContrast;
+
+  /// Updates [_highContrast] and invokes [onHighContrastModeChanged]
+  /// callback if [_highContrast] changed.
+  void _updateHighContrast(bool value) {
+    if (configuration.accessibilityFeatures.highContrast != value) {
+      final EngineAccessibilityFeatures original =
+          configuration.accessibilityFeatures as EngineAccessibilityFeatures;
+      configuration = configuration.copyWith(
+          accessibilityFeatures: original.copyWith(highContrast: value));
+      invokeOnPlatformConfigurationChanged();
+    }
+  }
+
+  /// Reference to css media query that indicates whether high contrast is on.
+  final html.MediaQueryList _highContrastMediaQuery =
+      html.window.matchMedia(highContrastMediaQuery);
+
+  /// A callback that is invoked whenever [_highContrastMediaQuery] changes value.
+  ///
+  /// Updates the [_highContrast] with the new user preference.
+  html.EventListener? _highContrastMediaQueryListener;
+
+  /// Set the callback function for listening changes in [_highContrastMediaQuery] value.
+  void _addHighContrastMediaQueryListener() {
+    _updateHighContrast(_highContrastMediaQuery.matches);
+
+    _highContrastMediaQueryListener = (html.Event event) {
+      final html.MediaQueryListEvent mqEvent =
+          event as html.MediaQueryListEvent;
+      _updateHighContrast(mqEvent.matches!);
+    };
+    _highContrastMediaQuery.addListener(_highContrastMediaQueryListener);
+    registerHotRestartListener(() {
+      _removeHighContrastMediaQueryListener();
+    });
+  }
+
+  /// Remove the callback function for listening changes in [_highContrastMediaQuery] value.
+  void _removeHighContrastMediaQueryListener() {
+    _highContrastMediaQuery.removeListener(_highContrastMediaQueryListener);
+    _highContrastMediaQueryListener = null;
+  }
+
+  /// A callback that is invoked whenever [highContrastMode] changes value.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  // @override
+  // ui.VoidCallback? get onPlatformBrightnessChanged =>
+  //     _onPlatformBrightnessChanged;
+  // ui.VoidCallback? _onPlatformBrightnessChanged;
+  // Zone? _onPlatformBrightnessChangedZone;
+  // @override
+  // set onPlatformBrightnessChanged(ui.VoidCallback? callback) {
+  //   _onPlatformBrightnessChanged = callback;
+  //   _onPlatformBrightnessChangedZone = Zone.current;
+  //}
+
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
+  void invokeOnHighContrastModeChanged() {
+    invoke(_onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
+  }
 
   /// Reference to css media query that indicates the user theme preference on the web.
   final DomMediaQueryList _brightnessMediaQuery =
