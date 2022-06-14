@@ -1604,7 +1604,7 @@ typedef struct {
   /// operation. This may be provided as an alternative to the data buffers
   /// `vm_snapshot_data`, `vm_snapshot_instructions`, `isolate_snapshot_data`,
   /// and `isolate_snapshot_instructions`. Those data buffer fields must not be
-  /// specified by the caller in conjunction with this field The string must be
+  /// specified by the caller in conjunction with this field. The string must be
   /// null terminated.
   const char* application_library_path;
   /// The callback invoked by the engine in order to give the embedder the
