@@ -243,7 +243,7 @@ deps = {
   'src/third_party/dart/third_party/pkg/html':
    Var('dart_git') + '/html.git@f108bce59d136c584969fd24a5006914796cf213',
 
-  'src/third_party/dart/third_party/pkg/http/pkgs/http':
+  'src/third_party/dart/third_party/pkg/http':
    Var('dart_git') + '/http.git@0c2293062d7c1fa472f299da764a7dbb3895ee22',
 
   'src/third_party/dart/third_party/pkg/http_multi_server':
