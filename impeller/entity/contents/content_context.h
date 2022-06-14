@@ -31,6 +31,8 @@
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
+#include "impeller/entity/box_shadow.frag.h"
+#include "impeller/entity/box_shadow.vert.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
@@ -91,6 +93,8 @@ using GaussianBlurPipeline =
     PipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
 using BorderMaskBlurPipeline =
     PipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
+using BoxShadowPipeline =
+    PipelineT<BoxShadowVertexShader, BoxShadowFragmentShader>;
 using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
@@ -162,6 +166,11 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBoxShadowPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(box_shadow_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidStrokePipeline(
@@ -288,6 +297,7 @@ class ContentContext {
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
+  mutable Variants<BoxShadowPipeline> box_shadow_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;

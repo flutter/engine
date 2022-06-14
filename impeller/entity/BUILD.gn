@@ -28,6 +28,8 @@ impeller_shaders("entity_shaders") {
     "shaders/blending/blend.vert",
     "shaders/border_mask_blur.frag",
     "shaders/border_mask_blur.vert",
+    "shaders/box_shadow.frag",
+    "shaders/box_shadow.vert",
     "shaders/gaussian_blur.frag",
     "shaders/gaussian_blur.vert",
     "shaders/glyph_atlas.frag",
@@ -47,6 +49,8 @@ impeller_shaders("entity_shaders") {
 
 impeller_component("entity") {
   sources = [
+    "contents/box_shadow_contents.cc",
+    "contents/box_shadow_contents.h",
     "contents/clip_contents.cc",
     "contents/clip_contents.h",
     "contents/content_context.cc",
