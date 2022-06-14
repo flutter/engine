@@ -98,9 +98,9 @@ bool Main(const fml::CommandLine& command_line) {
         std::cerr << "Runtime stage data could not be created." << std::endl;
         return false;
       }
-      if (!fml::WriteAtomically(*switches.working_directory,  //
-                                sl_file_name.c_str(),         //
-                                *stage_data_mapping           //
+      if (!fml::WriteAtomically(*switches.working_directory,    //
+                                sl_file_name.string().c_str(),  //
+                                *stage_data_mapping             //
                                 )) {
         std::cerr << "Could not write file to " << switches.sl_file_name
                   << std::endl;
