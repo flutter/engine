@@ -694,6 +694,10 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     _discreteScrollingPanGestureRecognizer =
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(discreteScrollEvent:)];
     _discreteScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskDiscrete;
+    // Disallowing all touch types. If touch events are allowed here, touches to the screen will be
+    // consumed by the UIGestureRecognizer instead of being passed through to flutter via
+    // touchesBegan. Trackpad and mouse scrolls are sent by the platform as scroll events rather
+    // than touch events, so they will still be received.
     _discreteScrollingPanGestureRecognizer.allowedTouchTypes = @[];
     _discreteScrollingPanGestureRecognizer.delegate = self;
     [_flutterView.get() addGestureRecognizer:_discreteScrollingPanGestureRecognizer];
@@ -952,12 +956,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  // When UIApplicationSupportsIndirectInputEvents is set in Info.plist, mouse clicks will be
-  // received with touch.type of UITouchTypeIndirectPointer, which will be correctly translated to
-  // flutter::PointerData::DeviceKind::kMouse. But each mouse click is assigned a unique identifier,
-  // so it needs to be removed from the framework after the click ends. If the device is not
-  // removed, the released click will keep triggering hover events on MouseRegions, with no way to
-  // remove it.
+  // If the UIApplicationSupportsIndirectInputEvents in Info.plist returns YES, then the platform
+  // dispatches indirect pointer touches (trackpad clicks) as UITouch with a type of
+  // UITouchTypeIndirectPointer and different identifiers for each click. They are translated into
+  // Flutter pointer events with type of kMouse and different device IDs. These devices must be
+  // terminated with kRemove events when the touches end, otherwise they will keep triggering hover
+  // events.
+  //
+  // If the UIApplicationSupportsIndirectInputEvents in Info.plist returns NO, then the platform
+  // dispatches indirect pointer touches (trackpad clicks) as UITouch with a type of
+  // UITouchTypeIndirectPointer and different identifiers for each click. They are translated into
+  // Flutter pointer events with type of kTouch and different device IDs. Removing these devices is
+  // neither necessary nor harmful.
+  //
+  // Therefore Flutter always removes these devices. The touches_to_remove_count tracks how many
+  // remove events are needed in this group of touches to properly allocate space for the packet.
+  // The remove event of a touch is synthesized immediately after its normal event.
+  //
+  // See also:
+  // https://developer.apple.com/documentation/uikit/pointer_interactions?language=objc
+  // https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc
   NSUInteger touches_to_remove_count = 0;
   for (UITouch* touch in touches) {
     if (touch.phase == UITouchPhaseEnded || touch.phase == UITouchPhaseCancelled) {
