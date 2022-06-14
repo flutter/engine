@@ -126,6 +126,55 @@ class EngineAccessibilityFeatures implements ui.AccessibilityFeatures {
     }
     return EngineAccessibilityFeatures(value);
   }
+
+  EngineAccessibilityFeaturesBuilder getBuilder(){
+    return EngineAccessibilityFeaturesBuilder(_index);
+  }
+}
+
+class EngineAccessibilityFeaturesBuilder {
+  EngineAccessibilityFeaturesBuilder(this._index);
+
+  int _index = 0;
+
+  set accessibleNavigation(bool value) {
+    const int accessibleNavigation = EngineAccessibilityFeatures._kAccessibleNavigation;
+    _index = value? _index | accessibleNavigation : _index & ~accessibleNavigation;
+  }
+
+  set invertColors(bool value) {
+    const int invertColors = EngineAccessibilityFeatures._kInvertColorsIndex;
+    _index = value? _index | invertColors : _index & ~invertColors;
+  }
+
+  set disableAnimations(bool value) {
+    const int disableAnimations = EngineAccessibilityFeatures._kDisableAnimationsIndex;
+    _index = value? _index | disableAnimations : _index & ~disableAnimations;
+  }
+
+  set boldText(bool value) {
+    const int boldText = EngineAccessibilityFeatures._kBoldTextIndex;
+    _index = value? _index | boldText : _index & ~boldText;
+  }
+
+  set reduceMotion(bool value) {
+    const int reduceMotion = EngineAccessibilityFeatures._kReduceMotionIndex;
+    _index = value? _index | reduceMotion : _index & ~reduceMotion;
+  }
+
+  set highContrast(bool value) {
+    const int highContrast = EngineAccessibilityFeatures._kHighContrastIndex;
+    _index = value? _index | highContrast : _index & ~highContrast;
+  }
+
+  set onOffSwitchLabels(bool value) {
+    const int onOffSwitchLabels = EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex;
+    _index = value? _index | onOffSwitchLabels : _index & ~onOffSwitchLabels;
+  }
+
+  EngineAccessibilityFeatures build() {
+    return EngineAccessibilityFeatures(_index);
+  }
 }
 
 /// Contains updates for the semantics tree.
