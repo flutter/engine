@@ -106,7 +106,6 @@ NS_INLINE NSString* _platformName() {
   NSString* simulatorName =
       [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
   if (simulatorName) {
-    NSLog(@"simulator name %@", simulatorName);
     NSRegularExpression* regex =
         [NSRegularExpression regularExpressionWithPattern:@"Clone.* of "
                                                   options:NSRegularExpressionCaseInsensitive
@@ -125,7 +124,6 @@ NS_INLINE NSString* _platformName() {
 
   NSString* results = [NSString stringWithCString:answer encoding:NSUTF8StringEncoding];
   free(answer);
-  NSLog(@"results %@", results);
   return results;
 }
 
