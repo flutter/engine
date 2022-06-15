@@ -575,9 +575,12 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   }
 
   _ButtonSanitizer _getSanitizer(int device) {
-    final _ButtonSanitizer sanitizer = _sanitizers[device]!;
-    assert(sanitizer != null); // ignore: unnecessary_null_comparison
-    return sanitizer;
+    assert(_sanitizers[device] != null);
+    return _sanitizers[device]!;
+  }
+
+  bool _hasSanitizer(int device) {
+    return _sanitizers.containsKey(device);
   }
 
   void _removePointerIfUnhoverable(html.PointerEvent event) {
@@ -647,12 +650,14 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addPointerEventListener(html.window, 'pointerup', (html.PointerEvent event) {
       final int device = _getPointerId(event);
-      final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent(buttons: event.buttons);
-      _removePointerIfUnhoverable(event);
-      if (details != null) {
-        _convertEventsToPointerData(data: pointerData, event: event, details: details);
-        _callback(pointerData);
+      if (_hasSanitizer(device)) {
+        final List<ui.PointerData> pointerData = <ui.PointerData>[];
+        final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent(buttons: event.buttons);
+        _removePointerIfUnhoverable(event);
+        if (details != null) {
+          _convertEventsToPointerData(data: pointerData, event: event, details: details);
+          _callback(pointerData);
+        }
       }
     });
 
@@ -660,11 +665,13 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     // be able to generate events (example: device is deactivated)
     _addPointerEventListener(glassPaneElement, 'pointercancel', (html.PointerEvent event) {
       final int device = _getPointerId(event);
-      final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails details = _getSanitizer(device).sanitizeCancelEvent();
-      _removePointerIfUnhoverable(event);
-      _convertEventsToPointerData(data: pointerData, event: event, details: details);
-      _callback(pointerData);
+      if (_hasSanitizer(device)) {
+        final List<ui.PointerData> pointerData = <ui.PointerData>[];
+        final _SanitizedDetails details = _getSanitizer(device).sanitizeCancelEvent();
+        _removePointerIfUnhoverable(event);
+        _convertEventsToPointerData(data: pointerData, event: event, details: details);
+        _callback(pointerData);
+      }
     });
 
     _addWheelEventListener((html.Event event) {
