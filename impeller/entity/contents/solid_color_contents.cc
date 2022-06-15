@@ -35,6 +35,9 @@ void SolidColorContents::SetCover(bool cover) {
 
 std::optional<Rect> SolidColorContents::GetCoverage(
     const Entity& entity) const {
+  if (color_.IsTransparent()) {
+    return std::nullopt;
+  }
   return path_.GetTransformedBoundingBox(entity.GetTransformation());
 };
 
