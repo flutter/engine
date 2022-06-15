@@ -434,11 +434,6 @@ def to_gn_args(args):
     if args.target_os == 'ios' or sys.platform.startswith(('cygwin', 'win')):
       gn_args['skia_disable_vma_stl_shared_mutex'] = True
 
-  if sys.platform.startswith(('cygwin', 'win')):
-    # The buildroot currently isn't set up to support Vulkan in the
-    # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
-    gn_args['angle_enable_vulkan'] = False
-
   # We should not need a special case for x86, but this seems to introduce text relocations
   # even with -fPIC everywhere.
   # gn_args['enable_profiling'] = args.runtime_mode != 'release' and args.android_cpu != 'x86'

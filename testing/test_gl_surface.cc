@@ -92,16 +92,16 @@ static bool HasExtension(const char* extensions, const char* name) {
 
 static void ChecSwanglekExtensions() {
   const char* extensions = ::eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
-  FML_CHECK(HasExtension(extensions, "EGL_EXT_platform_base"));
-  FML_CHECK(HasExtension(extensions, "EGL_ANGLE_platform_angle_vulkan"));
+  FML_CHECK(HasExtension(extensions, "EGL_EXT_platform_base")) << extensions;
+  FML_CHECK(HasExtension(extensions, "EGL_ANGLE_platform_angle_vulkan"))
+      << extensions;
   FML_CHECK(HasExtension(extensions,
-                         "EGL_ANGLE_platform_angle_device_type_swiftshader"));
+                         "EGL_ANGLE_platform_angle_device_type_swiftshader"))
+      << extensions;
 }
 
 static EGLDisplay CreateSwangleDisplay() {
   ChecSwanglekExtensions();
-  EGLDisplay display = ::eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  FML_CHECK(display != EGL_NO_DISPLAY);
 
   PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT =
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
@@ -119,8 +119,15 @@ static EGLDisplay CreateSwangleDisplay() {
       EGL_NONE,
   };
 
-  return egl_get_platform_display_EXT(EGL_PLATFORM_ANGLE_ANGLE, display,
-                                      display_config);
+  // We should be getting the display using eglGetDisplay, but this ends up
+  // confusing ANGLE on Windows. ANGLE has special handling for
+  // EGL_DEFAULT_DISPLAY on all platforms.
+  // See https://bugs.chromium.org/p/angleproject/issues/detail?id=7435
+
+  return egl_get_platform_display_EXT(
+      EGL_PLATFORM_ANGLE_ANGLE,
+      reinterpret_cast<EGLNativeDisplayType*>(EGL_DEFAULT_DISPLAY),
+      display_config);
 }
 
 TestGLSurface::TestGLSurface(SkISize surface_size)
