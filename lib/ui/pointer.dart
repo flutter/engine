@@ -94,8 +94,8 @@ enum PointerDeviceKind {
   /// On supporting platforms, when the user is operating on a physical
   /// trackpad, events with kind [trackpad] are dispatched when the user
   /// performs gestures on the trackpad, such as panning, zooming, scrolling,
-  /// or rotating. The [trackpad] kind is only found with pan-zoom
-  /// [PointerChange]s.
+  /// or rotating. The [trackpad] kind is only found with [PointerChange] `add`,
+  /// `remove`, and pan-zoom related values.
   ///
   /// Some platforms do not support or fully support trackpad gestures, and
   /// might convert trackpad gestures into fake pointer events that simulate
