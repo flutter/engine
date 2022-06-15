@@ -66,16 +66,26 @@ class EntityPass {
 
  private:
   struct EntityResult {
+    enum Status {
+      /// The entity was successfully resolved and can be rendered.
+      kSuccess,
+      /// An unexpected rendering error occurred while resolving the Entity.
+      kFailure,
+      /// The entity should be skipped because rendering it will contribute
+      /// nothing to the frame.
+      kSkip,
+    };
+
     /// @brief  The resulting entity that should be rendered. If `std::nullopt`,
     ///         there is nothing to render.
-    std::optional<Entity> entity = std::nullopt;
+    Entity entity;
     /// @brief  This is set to `false` if there was an unexpected rendering
     ///         error while resolving the Entity.
-    bool success = false;
+    Status status = kFailure;
 
-    static EntityResult Success(Entity e) { return {e, true}; }
-    static EntityResult Failure() { return {std::nullopt, false}; }
-    static EntityResult Skip() { return {std::nullopt, true}; }
+    static EntityResult Success(Entity e) { return {e, kSuccess}; }
+    static EntityResult Failure() { return {{}, kFailure}; }
+    static EntityResult Skip() { return {{}, kSkip}; }
   };
 
   EntityResult GetEntityForElement(const EntityPass::Element& element,

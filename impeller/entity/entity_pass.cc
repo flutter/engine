@@ -371,22 +371,20 @@ bool EntityPass::OnRender(ContentContext& renderer,
         GetEntityForElement(element, renderer, pass_context, position,
                             pass_depth, stencil_depth_floor);
 
-    if (!result.success) {
-      return false;
-    }
-
-    if (!result.entity.has_value()) {
-      // Nothing to render.
-      continue;
-    }
-
-    Entity element_entity = result.entity.value();
+    switch (result.status) {
+      case EntityResult::kSuccess:
+        break;
+      case EntityResult::kFailure:
+        return false;
+      case EntityResult::kSkip:
+        continue;
+    };
 
     //--------------------------------------------------------------------------
     /// Setup advanced blends.
     ///
 
-    if (element_entity.GetBlendMode() >
+    if (result.entity.GetBlendMode() >
         Entity::BlendMode::kLastPipelineBlendMode) {
       // End the active pass and flush the buffer before rendering "advanced"
       // blends. Advanced blends work by binding the current render target
@@ -409,19 +407,19 @@ bool EntityPass::OnRender(ContentContext& renderer,
       }
 
       FilterInput::Vector inputs = {
-          FilterInput::Make(element_entity.GetContents()),
+          FilterInput::Make(result.entity.GetContents()),
           FilterInput::Make(texture,
-                            element_entity.GetTransformation().Invert())};
-      element_entity.SetContents(
-          FilterContents::MakeBlend(element_entity.GetBlendMode(), inputs));
-      element_entity.SetBlendMode(Entity::BlendMode::kSourceOver);
+                            result.entity.GetTransformation().Invert())};
+      result.entity.SetContents(
+          FilterContents::MakeBlend(result.entity.GetBlendMode(), inputs));
+      result.entity.SetBlendMode(Entity::BlendMode::kSourceOver);
     }
 
     //--------------------------------------------------------------------------
     /// Render the Element.
     ///
 
-    if (!render_element(element_entity)) {
+    if (!render_element(result.entity)) {
       return false;
     }
   }
