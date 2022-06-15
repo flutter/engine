@@ -30,7 +30,7 @@ class SurfaceFactory {
   static SurfaceFactory? _instance;
 
   SurfaceFactory(int maximumSurfaces)
-      : this.maximumSurfaces = math.max(maximumSurfaces, 1) {
+      : maximumSurfaces = math.max(maximumSurfaces, 1) {
     if (assertionsEnabled) {
       if (maximumSurfaces < 1) {
         printWarning('Attempted to create a $SurfaceFactory with '
