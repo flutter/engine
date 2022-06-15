@@ -16,7 +16,7 @@ third_party {
   license_type: notice
   security {
     # https://nvd.nist.gov/products/cpe/search/results?namingFormat=2.3&keyword=cpe%3A2.3%3Aa%3Agoogle%3Aboringssl
-    tag: "NVD-CPE2.3:cpe:/a:google:boringssl:2022-04-08"
+    tag: "NVD-CPE2.3:cpe:/a:google:boringssl:2021-09-20"
   }
 }
 # Notify reviewers and mailing lists
