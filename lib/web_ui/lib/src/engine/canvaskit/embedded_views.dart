@@ -418,8 +418,6 @@ class HtmlViewEmbedder {
             ? null
             : diffViewList(_activeCompositionOrder, _compositionOrder);
     _updateOverlays(diffResult);
-    print('PICTURE RECORDERS: ${_pictureRecorders.length}');
-    print('OVERLAYS: ${_overlays.length}');
     assert(_pictureRecorders.length == _overlays.length);
     int pictureRecorderIndex = 0;
 
