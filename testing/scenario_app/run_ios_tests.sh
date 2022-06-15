@@ -43,3 +43,6 @@ set -o pipefail && xcodebuild -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,OS=13.0,name=iPhone 8' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE"
+
+# Shutdown all the simulators after tests are done.
+xcrun simctl shutdown all
