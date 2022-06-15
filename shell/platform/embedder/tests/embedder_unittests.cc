@@ -1235,14 +1235,20 @@ TEST_F(EmbedderTest, MustNotRunWithMultipleAOTSources) {
   }
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
-  EmbedderConfigBuilder builder(
-      context,
-      EmbedderConfigBuilder::InitializationPreference::kMultiAOTInitialize);
+  for (const auto& initializationPreference :
+       {EmbedderConfigBuilder::InitializationPreference::
+            kAOTDataAndSnapshotsInitialize,
+        EmbedderConfigBuilder::InitializationPreference::
+            kAOTDataAndPathInitialize,
+        EmbedderConfigBuilder::InitializationPreference::
+            kAOTSnapshotsAndPathInitialize}) {
+    EmbedderConfigBuilder builder(context, initializationPreference);
 
-  builder.SetSoftwareRendererConfig();
+    builder.SetSoftwareRendererConfig();
 
-  auto engine = builder.LaunchEngine();
-  ASSERT_FALSE(engine.is_valid());
+    auto engine = builder.LaunchEngine();
+    ASSERT_FALSE(engine.is_valid());
+  }
 }
 
 TEST_F(EmbedderTest, CanCreateAndCollectAValidElfSource) {

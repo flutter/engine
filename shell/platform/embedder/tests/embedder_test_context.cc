@@ -69,6 +69,10 @@ const std::string& EmbedderTestContext::GetAssetsPath() const {
   return assets_path_;
 }
 
+const std::string& EmbedderTestContext::GetApplicationLibraryPath() const {
+  return application_library_path_;
+}
+
 const fml::Mapping* EmbedderTestContext::GetVMSnapshotData() const {
   return vm_snapshot_data_.get();
 }
