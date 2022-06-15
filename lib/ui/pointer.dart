@@ -50,9 +50,31 @@ enum PointerChange {
 /// The kind of pointer device.
 enum PointerDeviceKind {
   /// A touch-based pointer device.
+  ///
+  /// The most common case is a touch screen.
+  ///
+  /// When the user is operating with a trackpad on iOS (for example, Magic
+  /// Keyboard on iPad), clicking will also dispatch events with kind [touch] if
+  /// `Info.plist` is not present or returns NO for
+  /// `UIApplicationSupportsIndirectInputEvents`.
+  ///
+  /// See also:
+  ///
+  ///  * [UIKit's documentation for UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
   touch,
 
   /// A mouse-based pointer device.
+  ///
+  /// The most common case is a mouse on the desktop or Web.
+  ///
+  /// When the user is operating with a trackpad on iOS (for example, Magic
+  /// Keyboard on iPad), moving the pointing cursor will also dispatch events
+  /// with kind [mouse], and clicking will dispatch events with kind [mouse] if
+  /// `Info.plist` returns YES for `UIApplicationSupportsIndirectInputEvents`.
+  ///
+  /// See also:
+  ///
+  ///  * https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc
   mouse,
 
   /// A pointer device with a stylus.
@@ -61,7 +83,25 @@ enum PointerDeviceKind {
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
 
-  /// A touch-based pointer device with an indirect surface.
+  /// Gestures from a touch-based pointer device with an indirect surface.
+  ///
+  /// On supporting platforms, when the user is operating on a physical
+  /// trackpad, events with kind [trackpad] are dispatched when the user
+  /// performs gestures on the trackpad, such as panning, zooming, scrolling,
+  /// or rotating. The [trackpad] kind is only found with pan-zoom
+  /// [PointerChange]s.
+  ///
+  /// Some platforms do not support or fully support trackpad gestures, and
+  /// might convert trackpad gestures into fake pointer events that simulate
+  /// dragging. This include Web, and iOS when `Info.plist` is not present or
+  /// returns NO for `UIApplicationSupportsIndirectInputEvents`.
+  ///
+  /// Moving the pointing cursor or clicking never triggers events with
+  /// kind [trackpad], but typically [touch] or [mouse].
+  ///
+  /// See also:
+  ///
+  ///  * https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc
   trackpad,
 
   /// An unknown pointer device.
