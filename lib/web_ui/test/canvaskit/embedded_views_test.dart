@@ -482,6 +482,7 @@ void testMain() {
       //   Render: Views 1-10
       //   Expect: main canvas plus platform view overlays; empty cache.
       renderTestScene(<int>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      expect(SurfaceFactory.instance.numAvailableOverlays, 0);
       expect(
           sceneMatchesMarkers([
             overlay,
@@ -510,6 +511,7 @@ void testMain() {
       //   Expect: main canvas plus platform view overlays; empty cache.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(<int>[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+      expect(SurfaceFactory.instance.numAvailableOverlays, 0);
       expect(
           sceneMatchesMarkers([
             overlay,
@@ -752,13 +754,35 @@ void testMain() {
       expect(result, isNotNull);
       expect(result!.viewsToAdd, <int>[]);
       expect(result.viewsToRemove, <int>[6]);
-      expect(result.addToBeginning, isTrue);
-      expect(result.viewToInsertBefore, 3);
 
       result = diffViewList(<int>[3, 4, 5, 6], <int>[4, 5, 6]);
       expect(result, isNotNull);
       expect(result!.viewsToAdd, <int>[]);
       expect(result.viewsToRemove, <int>[3]);
+      expect(result.addToBeginning, isFalse);
+
+      result = diffViewList(<int>[3, 4, 5, 6, 7, 8], <int>[3, 4, 5]);
+      expect(result, isNotNull);
+      expect(result!.viewsToAdd, <int>[]);
+      expect(result.viewsToRemove, <int>[6, 7, 8]);
+
+      result = diffViewList(<int>[1, 2, 3, 4, 5, 6], <int>[4, 5, 6]);
+      expect(result, isNotNull);
+      expect(result!.viewsToAdd, <int>[]);
+      expect(result.viewsToRemove, <int>[1, 2, 3]);
+      expect(result.addToBeginning, isFalse);
+
+      result = diffViewList(<int>[3, 4, 5, 6, 7, 8], <int>[2, 3, 4, 5]);
+      expect(result, isNotNull);
+      expect(result!.viewsToAdd, <int>[2]);
+      expect(result.viewsToRemove, <int>[6, 7, 8]);
+      expect(result.addToBeginning, isTrue);
+      expect(result.viewToInsertBefore, 3);
+
+      result = diffViewList(<int>[1, 2, 3, 4, 5, 6], <int>[4, 5, 6, 7]);
+      expect(result, isNotNull);
+      expect(result!.viewsToAdd, <int>[7]);
+      expect(result.viewsToRemove, <int>[1, 2, 3]);
       expect(result.addToBeginning, isFalse);
 
       result = diffViewList(<int>[1, 2, 3], <int>[4, 5]);
@@ -769,6 +793,9 @@ void testMain() {
 
       result = diffViewList(<int>[3, 4], <int>[1, 2, 3, 4, 5, 6]);
       expect(result, isNull);
+
+      result = diffViewList(<int>[1, 2, 3, 4, 5], <int>[2, 3, 4]);
+      expect(result, isNull);
     });
 
     test('diffViewList works for flutter/flutter#101580', () {
@@ -778,14 +805,14 @@ void testMain() {
       result = diffViewList(<int>[1, 2, 3, 4], <int>[4, 3, 2, 1]);
       expect(result, isNotNull);
       expect(result!.viewsToAdd, <int>[3, 2, 1]);
-      expect(result.viewsToRemove, isEmpty);
+      expect(result.viewsToRemove, <int>[1, 2, 3]);
       expect(result.addToBeginning, isFalse);
 
       // Sort the list
       result = diffViewList(<int>[3, 4, 1, 2], <int>[1, 2, 3, 4]);
       expect(result, isNotNull);
       expect(result!.viewsToAdd, <int>[3, 4]);
-      expect(result.viewsToRemove, isEmpty);
+      expect(result.viewsToRemove, <int>[3, 4]);
       expect(result.addToBeginning, isFalse);
 
       // Move last view to the beginning
@@ -795,9 +822,10 @@ void testMain() {
       // add/remove operations?)
       result = diffViewList(<int>[2, 3, 4, 1], <int>[1, 2, 3, 4]);
       expect(result, isNotNull);
-      expect(result!.viewsToAdd, <int>[2, 3, 4]);
-      expect(result.viewsToRemove, isEmpty);
-      expect(result.addToBeginning, isFalse);
+      expect(result!.viewsToAdd, <int>[1]);
+      expect(result.viewsToRemove, <int>[1]);
+      expect(result.addToBeginning, isTrue);
+      expect(result.viewToInsertBefore, 2);
 
       // Shuffle the list
       result = diffViewList(<int>[1, 2, 3, 4], <int>[2, 4, 1, 3]);
@@ -823,9 +851,11 @@ void testMain() {
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
       expect(
-          flutterViewEmbedder.glassPaneShadow!
-              .querySelectorAll('flt-platform-view-slot'),
-          isEmpty);
+        sceneMatchesMarkers([
+          overlay,
+        ]),
+        isTrue,
+      );
     });
 
     test('does not crash when overlays are disabled', () async {
@@ -883,6 +913,7 @@ void testMain() {
           sceneMatchesMarkers([
             overlay,
             platformView,
+            overlay,
           ]),
           isTrue);
 
@@ -986,6 +1017,7 @@ void testMain() {
           sceneMatchesMarkers([
             overlay,
             platformView,
+            overlay,
           ]),
           isTrue);
 
@@ -1093,30 +1125,6 @@ void testMain() {
       sb.addPlatformView(0, width: 10, height: 10);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.addPlatformView(2, width: 10, height: 10);
-      sb.addPlatformView(3, width: 10, height: 10);
-      sb.addPlatformView(4, width: 10, height: 10);
-      sb.addPlatformView(5, width: 10, height: 10);
-      sb.addPlatformView(6, width: 10, height: 10);
-      sb.pop();
-      dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers([
-            overlay,
-            platformView,
-            platformView,
-            overlay,
-            platformView,
-            platformView,
-            platformView,
-            platformView,
-            platformView,
-            overlay,
-          ]),
-          isTrue);
-
-      sb = LayerSceneBuilder();
-      sb.pushOffset(0, 0);
-      sb.addPlatformView(1, width: 10, height: 10);
       sb.addPlatformView(3, width: 10, height: 10);
       sb.addPlatformView(4, width: 10, height: 10);
       sb.addPlatformView(5, width: 10, height: 10);
@@ -1128,10 +1136,72 @@ void testMain() {
             overlay,
             platformView,
             platformView,
+            overlay,
             platformView,
             platformView,
             platformView,
             platformView,
+            platformView,
+            overlay,
+          ]),
+          isTrue);
+
+      sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPlatformView(4, width: 10, height: 10);
+      sb.addPlatformView(5, width: 10, height: 10);
+      sb.addPlatformView(6, width: 10, height: 10);
+      sb.pop();
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      expect(
+          sceneMatchesMarkers([
+            overlay,
+            platformView,
+            platformView,
+            platformView,
+            platformView,
+            platformView,
+            overlay,
+          ]),
+          isTrue);
+
+      sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPlatformView(4, width: 10, height: 10);
+      sb.pop();
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      expect(
+          sceneMatchesMarkers([
+            overlay,
+            platformView,
+            platformView,
+            platformView,
+            platformView,
+            overlay,
+          ]),
+          isTrue);
+
+      sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(4, width: 10, height: 10);
+      sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPlatformView(1, width: 10, height: 10);
+      sb.pop();
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      expect(
+          sceneMatchesMarkers([
+            overlay,
+            platformView,
+            platformView,
+            platformView,
+            platformView,
+            overlay,
           ]),
           isTrue);
     });
@@ -1155,9 +1225,6 @@ bool sceneMatchesMarkers(List<_EmbeddedViewMarker> markers) {
       .sceneElement!.children
       .where((html.Element element) => element.tagName != 'svg')
       .toList();
-  print('MARKERS LENGTH: ${markers.length}');
-  print('SCENE ELEMENTS LENGTH: ${sceneElements.length}');
-  print('SCENE ELEMENTS: ${sceneElements.map((e) => e.tagName).toList()}');
   if (markers.length != sceneElements.length) {
     return false;
   }
