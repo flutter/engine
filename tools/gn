@@ -303,7 +303,7 @@ def to_gn_args(args):
 
   if gn_args['target_os'] == 'ios':
     gn_args['use_ios_simulator'] = args.simulator
-  else:
+  elif get_host_os() == 'mac':
     gn_args['use_ios_simulator'] = False
 
   if args.dart_debug:
@@ -508,9 +508,10 @@ def to_gn_args(args):
       sys.exit(1)
     gn_args['enable_vulkan_validation_layers'] = True
 
-  # Enable pointer compression on 64-bit mobile targets.
-  if args.target_os in ['android', 'ios'
-                       ] and gn_args['target_cpu'] in ['x64', 'arm64']:
+  # Enable pointer compression on 64-bit mobile targets. iOS is excluded due to
+  # its inability to allocate address space without allocating memory.
+  if args.target_os in ['android'] and gn_args['target_cpu'] in ['x64', 'arm64'
+                                                                ]:
     gn_args['dart_use_compressed_pointers'] = True
 
   if args.fuchsia_target_api_level is not None:

@@ -87,13 +87,17 @@ void Rasterizer::TeardownExternalViewEmbedder() {
 }
 
 void Rasterizer::Teardown() {
-  auto context_switch =
-      surface_ ? surface_->MakeRenderContextCurrent() : nullptr;
-  if (context_switch && context_switch->GetResult()) {
-    compositor_context_->OnGrContextDestroyed();
+  if (surface_) {
+    auto context_switch = surface_->MakeRenderContextCurrent();
+    if (context_switch->GetResult()) {
+      compositor_context_->OnGrContextDestroyed();
+      if (auto* context = surface_->GetContext()) {
+        context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+      }
+    }
+    surface_.reset();
   }
 
-  surface_.reset();
   last_layer_tree_.reset();
 
   if (raster_thread_merger_.get() != nullptr &&
@@ -633,6 +637,14 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     SurfaceFrame::SubmitInfo submit_info;
+    // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
+    // the past and might need to get snapped to future as this frame could have
+    // been resubmitted. `presentation_time` on `submit_info` is not set in this
+    // case.
+    const auto presentation_time = frame_timings_recorder.GetVsyncTargetTime();
+    if (presentation_time > fml::TimePoint::Now()) {
+      submit_info.presentation_time = presentation_time;
+    }
     if (damage) {
       submit_info.frame_damage = damage->GetFrameDamage();
       submit_info.buffer_damage = damage->GetBufferDamage();

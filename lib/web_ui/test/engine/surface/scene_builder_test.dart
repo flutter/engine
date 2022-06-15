@@ -5,7 +5,6 @@
 @TestOn('chrome || firefox')
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -248,7 +247,7 @@ void testMain() {
 
       final DomElement contentAfterReuse = builder2.build().webOnlyRootElement!;
       final List<DomCanvasElement> list =
-          contentAfterReuse.querySelectorAll('canvas').cast<DomCanvasElement>();
+          contentAfterReuse.querySelectorAll('canvas').cast<DomCanvasElement>().toList();
       expect(list[0].style.zIndex, '-1');
       expect(list[1].style.zIndex, '');
     });
@@ -268,7 +267,7 @@ void testMain() {
     final DomElement content = builder.build().webOnlyRootElement!;
     domDocument.body!.append(content);
     List<DomHTMLImageElement> list =
-        content.querySelectorAll('img').cast<DomHTMLImageElement>();
+        content.querySelectorAll('img').cast<DomHTMLImageElement>().toList();
     for (final DomHTMLImageElement image in list) {
       image.alt = 'marked';
     }
@@ -284,7 +283,8 @@ void testMain() {
     builder2.pop();
 
     final DomElement contentAfterReuse = builder2.build().webOnlyRootElement!;
-    list = contentAfterReuse.querySelectorAll('img').cast<DomHTMLImageElement>();
+    list =
+        contentAfterReuse.querySelectorAll('img').cast<DomHTMLImageElement>().toList();
     for (final DomHTMLImageElement image in list) {
       expect(image.alt, 'marked');
     }
@@ -495,19 +495,19 @@ void testMain() {
     // Renders a `string` by breaking it up into individual characters and
     // rendering each character into its own layer.
     Future<void> testCase(String string, String description, { int deletions = 0, int additions = 0, int moves = 0 }) {
-      final Set<html.Node> actualDeletions = <html.Node>{};
-      final Set<html.Node> actualAdditions = <html.Node>{};
+      final Set<DomNode> actualDeletions = <DomNode>{};
+      final Set<DomNode> actualAdditions = <DomNode>{};
 
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
-      final html.MutationObserver observer = html.MutationObserver((List<dynamic> mutations, _) {
-        for (final html.MutationRecord record in mutations.cast<html.MutationRecord>()) {
+      final DomMutationObserver observer = createDomMutationObserver(allowInterop((List<dynamic> mutations, _) {
+        for (final DomMutationRecord record in mutations.cast<DomMutationRecord>()) {
           actualDeletions.addAll(record.removedNodes!);
           actualAdditions.addAll(record.addedNodes!);
         }
-      });
+      }));
       observer.observe(
-          SurfaceSceneBuilder.debugLastFrameScene!.rootElement! as html.Node, childList: true);
+          SurfaceSceneBuilder.debugLastFrameScene!.rootElement!, childList: true);
 
       final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
       for (int i = 0; i < string.length; i++) {
@@ -515,7 +515,8 @@ void testMain() {
         renderedLayers[char] = pushChild(builder, char, oldLayer: renderedLayers[char]);
       }
       final SurfaceScene scene = builder.build();
-      final List<DomElement> pTags = scene.webOnlyRootElement!.querySelectorAll('flt-paragraph');
+      final List<DomElement> pTags =
+          scene.webOnlyRootElement!.querySelectorAll('flt-paragraph').toList();
       expect(pTags, hasLength(string.length));
       expect(
         scene.webOnlyRootElement!.querySelectorAll('flt-paragraph').map((DomElement p) => p.innerText).join(''),
@@ -910,9 +911,9 @@ EnginePicture _drawPathImagePath() {
 }
 
 HtmlImage createTestImage({int width = 100, int height = 50}) {
-  final html.CanvasElement canvas =
-      html.CanvasElement(width: width, height: height);
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);
   ctx.fill();
@@ -922,7 +923,7 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
-  final html.ImageElement imageElement = html.ImageElement();
+  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

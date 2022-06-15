@@ -33,8 +33,7 @@ DisplayListDispatcher::DisplayListDispatcher() = default;
 
 DisplayListDispatcher::~DisplayListDispatcher() = default;
 
-static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
-  // TODO(100086): Implement remaining advanced blends.
+static Entity::BlendMode ToBlendMode(flutter::DlBlendMode mode) {
   switch (mode) {
     case flutter::DlBlendMode::kClear:
       return Entity::BlendMode::kClear;
@@ -87,10 +86,13 @@ static std::optional<Entity::BlendMode> ToBlendMode(flutter::DlBlendMode mode) {
     case flutter::DlBlendMode::kMultiply:
       return Entity::BlendMode::kMultiply;
     case flutter::DlBlendMode::kHue:
+      return Entity::BlendMode::kHue;
     case flutter::DlBlendMode::kSaturation:
+      return Entity::BlendMode::kSaturation;
     case flutter::DlBlendMode::kColor:
+      return Entity::BlendMode::kColor;
     case flutter::DlBlendMode::kLuminosity:
-      return std::nullopt;
+      return Entity::BlendMode::kLuminosity;
   }
   FML_UNREACHABLE();
 }
@@ -242,16 +244,9 @@ void DisplayListDispatcher::setColorFilter(
       auto dl_blend = filter->asBlend();
 
       auto blend_mode = ToBlendMode(dl_blend->mode());
-      if (!blend_mode.has_value()) {
-        // TODO(100086): Implement remaining advanced blends.
-        UNIMPLEMENTED;
-        blend_mode = Entity::BlendMode::kSourceOver;
-      }
-
       auto color = ToColor(dl_blend->color());
 
-      paint_.color_filter = [blend_mode = blend_mode.value(),
-                             color](FilterInput::Ref input) {
+      paint_.color_filter = [blend_mode, color](FilterInput::Ref input) {
         return FilterContents::MakeBlend(blend_mode, {input}, color);
       };
       return;
@@ -272,12 +267,7 @@ void DisplayListDispatcher::setInvertColors(bool invert) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setBlendMode(flutter::DlBlendMode dl_mode) {
-  if (auto mode = ToBlendMode(dl_mode); mode.has_value()) {
-    paint_.blend_mode = mode.value();
-  } else {
-    UNIMPLEMENTED;
-    paint_.blend_mode = Entity::BlendMode::kSourceOver;
-  }
+  paint_.blend_mode = ToBlendMode(dl_mode);
 }
 
 // |flutter::Dispatcher|
@@ -334,9 +324,12 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
   }
 }
 
-// |flutter::Dispatcher|
-void DisplayListDispatcher::setImageFilter(
+static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
     const flutter::DlImageFilter* filter) {
+  if (filter == nullptr) {
+    return std::nullopt;
+  }
+
   switch (filter->type()) {
     case flutter::DlImageFilterType::kBlur: {
       auto blur = filter->asBlur();
@@ -348,7 +341,7 @@ void DisplayListDispatcher::setImageFilter(
         UNIMPLEMENTED;
       }
 
-      paint_.image_filter = [sigma_x, sigma_y](FilterInput::Ref input) {
+      return [sigma_x, sigma_y](FilterInput::Ref input) {
         return FilterContents::MakeGaussianBlur(input, sigma_x, sigma_y);
       };
 
@@ -360,9 +353,14 @@ void DisplayListDispatcher::setImageFilter(
     case flutter::DlImageFilterType::kComposeFilter:
     case flutter::DlImageFilterType::kColorFilter:
     case flutter::DlImageFilterType::kUnknown:
-      UNIMPLEMENTED;
-      break;
+      return std::nullopt;
   }
+}
+
+// |flutter::Dispatcher|
+void DisplayListDispatcher::setImageFilter(
+    const flutter::DlImageFilter* filter) {
+  paint_.image_filter = ToImageFilterProc(filter);
 }
 
 // |flutter::Dispatcher|
@@ -379,9 +377,10 @@ static std::optional<Rect> ToRect(const SkRect* rect) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::saveLayer(const SkRect* bounds,
-                                      const flutter::SaveLayerOptions options) {
-  canvas_.SaveLayer(options.renders_with_attributes() ? paint_ : Paint{},
-                    ToRect(bounds));
+                                      const flutter::SaveLayerOptions options,
+                                      const flutter::DlImageFilter* backdrop) {
+  auto paint = options.renders_with_attributes() ? paint_ : Paint{};
+  canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
 }
 
 // |flutter::Dispatcher|
@@ -639,11 +638,7 @@ void DisplayListDispatcher::drawColor(flutter::DlColor color,
                                       flutter::DlBlendMode dl_mode) {
   Paint paint;
   paint.color = ToColor(color);
-  if (auto mode = ToBlendMode(dl_mode); mode.has_value()) {
-    paint.blend_mode = mode.value();
-  } else {
-    FML_DLOG(ERROR) << "Unimplemented blend mode in " << __FUNCTION__;
-  }
+  paint.blend_mode = ToBlendMode(dl_mode);
   canvas_.DrawPaint(paint);
 }
 
@@ -723,11 +718,7 @@ void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
                                          flutter::DlBlendMode dl_mode) {
-  if (auto mode = ToBlendMode(dl_mode); mode.has_value()) {
-    canvas_.DrawVertices(ToVertices(vertices), mode.value(), paint_);
-  } else {
-    FML_DLOG(ERROR) << "Unimplemented blend mode in " << __FUNCTION__;
-  }
+  canvas_.DrawVertices(ToVertices(vertices), ToBlendMode(dl_mode), paint_);
 }
 
 // |flutter::Dispatcher|
