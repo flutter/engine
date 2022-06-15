@@ -381,7 +381,7 @@ public class AndroidTouchProcessor {
     if (maskedAction == MotionEvent.ACTION_SCROLL) {
       return PointerChange.HOVER;
     }
-    return -1;
+    throw new AssertionError("Unexpected masked action");
   }
 
   @PointerChange
@@ -393,7 +393,7 @@ public class AndroidTouchProcessor {
     } else if (pointerChange == PointerChange.UP || pointerChange == PointerChange.CANCEL) {
       return PointerChange.PAN_ZOOM_END;
     }
-    return -1;
+    throw new AssertionError("Unexpected pointer change");
   }
 
   @PointerDeviceKind
