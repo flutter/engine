@@ -38,12 +38,18 @@ enum PointerChange {
   up,
 
   /// A pan/zoom has started on this pointer.
+  ///
+  /// This type of events will always have kind [PointerDeviceKind.trackpad].
   panZoomStart,
 
   /// The pan/zoom on this pointer has updated.
+  ///
+  /// This type of events will always have kind [PointerDeviceKind.trackpad].
   panZoomUpdate,
 
   /// The pan/zoom on this pointer has ended.
+  ///
+  /// This type of events will always have kind [PointerDeviceKind.trackpad].
   panZoomEnd,
 }
 
