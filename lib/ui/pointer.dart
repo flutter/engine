@@ -66,7 +66,7 @@ enum PointerDeviceKind {
   ///
   /// See also:
   ///
-  ///  * [UIKit's documentation for UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
+  ///  * [UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
   touch,
 
   /// A mouse-based pointer device.
@@ -80,7 +80,7 @@ enum PointerDeviceKind {
   ///
   /// See also:
   ///
-  ///  * https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc
+  ///  * [UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
   mouse,
 
   /// A pointer device with a stylus.
@@ -107,7 +107,7 @@ enum PointerDeviceKind {
   ///
   /// See also:
   ///
-  ///  * https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc
+  ///  * [UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
   trackpad,
 
   /// An unknown pointer device.
