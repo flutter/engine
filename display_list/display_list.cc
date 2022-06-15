@@ -16,15 +16,6 @@ const SaveLayerOptions SaveLayerOptions::kNoAttributes = SaveLayerOptions();
 const SaveLayerOptions SaveLayerOptions::kWithAttributes =
     kNoAttributes.with_renders_with_attributes();
 
-const DlSamplingOptions DisplayList::NearestSampling =
-    DlSamplingOptions::MakeNearestSampling();
-const DlSamplingOptions DisplayList::LinearSampling =
-    DlSamplingOptions::MakeLinearSampling();
-const DlSamplingOptions DisplayList::MipmapSampling =
-    DlSamplingOptions::MakeMipmapSampling();
-const DlSamplingOptions DisplayList::CubicSampling =
-    DlSamplingOptions::MakeCubicSampling();
-
 DisplayList::DisplayList()
     : byte_count_(0),
       op_count_(0),

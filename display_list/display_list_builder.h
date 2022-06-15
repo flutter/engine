@@ -255,24 +255,24 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const DlSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  bool render_with_attributes) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const DlSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const DlPaint* paint = nullptr);
   void drawImageRect(
       const sk_sp<DlImage> image,
       const SkRect& src,
       const SkRect& dst,
-      const DlSamplingOptions& sampling,
+      DlImageSampling sampling,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const DlSamplingOptions& sampling,
+                     DlImageSampling sampling,
                      const DlPaint* paint = nullptr,
                      SkCanvas::SrcRectConstraint constraint =
                          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint);
@@ -297,7 +297,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const DlSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
@@ -306,7 +306,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const DlSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cullRect,
                  const DlPaint* paint = nullptr);
   void drawPicture(const sk_sp<SkPicture> picture,

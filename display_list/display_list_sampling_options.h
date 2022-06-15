@@ -40,78 +40,45 @@ inline SkMipmapMode ToSk(const DlMipmapMode mip_map) {
   return static_cast<SkMipmapMode>(mip_map);
 }
 
-struct DlCubicResampler {
-  float B, C;
-
-  // Historic default for kHigh_SkFilterQuality
-  static constexpr DlCubicResampler Mitchell() { return {1 / 3.0f, 1 / 3.0f}; }
-  static constexpr DlCubicResampler CatmullRom() { return {0.0f, 1 / 2.0f}; }
+enum class DlImageSampling {
+  kDefault,
+  kNearestNeighbor,
+  kLinear,
+  kMipmapLinear,
+  kCubic,
 };
 
-struct DlSamplingOptions {
-  const int maxAniso = 0;
-  const bool useCubic = false;
-  const DlCubicResampler cubic = {0, 0};
-  const DlFilterMode filter = DlFilterMode::kNearest;
-  const DlMipmapMode mipmap = DlMipmapMode::kNone;
-
-  DlSamplingOptions() = default;
-  DlSamplingOptions(const DlSamplingOptions&) = default;
-  DlSamplingOptions& operator=(const DlSamplingOptions& that) {
-    this->~DlSamplingOptions();  // A pedantic no-op.
-    new (this) DlSamplingOptions(that);
-    return *this;
+inline DlImageSampling ToDl(const SkSamplingOptions& so) {
+  if (so.useCubic) {
+    return DlImageSampling::kCubic;
   }
-
-  static DlSamplingOptions MakeNearestSampling() {
-    return DlSamplingOptions(DlFilterMode::kNearest, DlMipmapMode::kNone);
+  if (so.filter == SkFilterMode::kLinear) {
+    if (so.mipmap == SkMipmapMode::kNone) {
+      return DlImageSampling::kLinear;
+    }
+    if (so.mipmap == SkMipmapMode::kLinear) {
+      return DlImageSampling::kMipmapLinear;
+    }
   }
-
-  static const DlSamplingOptions MakeLinearSampling() {
-    static DlSamplingOptions opt =
-        DlSamplingOptions(DlFilterMode::kLinear, DlMipmapMode::kNone);
-    return opt;
+  if (so.filter == SkFilterMode::kNearest && so.mipmap == SkMipmapMode::kNone) {
+    return DlImageSampling::kNearestNeighbor;
   }
+  return DlImageSampling::kDefault;
+}
 
-  static const DlSamplingOptions MakeMipmapSampling() {
-    static DlSamplingOptions opt =
-        DlSamplingOptions(DlFilterMode::kLinear, DlMipmapMode::kLinear);
-    return opt;
+inline SkSamplingOptions ToSk(const DlImageSampling sampling) {
+  switch (sampling) {
+    case DlImageSampling::kCubic:
+      return SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
+    case DlImageSampling::kLinear:
+      return SkSamplingOptions(SkFilterMode::kLinear);
+    case DlImageSampling::kMipmapLinear:
+      return SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
+    case DlImageSampling::kNearestNeighbor:
+      return SkSamplingOptions(SkFilterMode::kNearest);
+    case DlImageSampling::kDefault:
+      return SkSamplingOptions();
   }
-
-  static const DlSamplingOptions MakeCubicSampling() {
-    static DlSamplingOptions opt =
-        DlSamplingOptions(DlCubicResampler{1 / 3.0f, 1 / 3.0f});
-    return opt;
-  }
-
-  explicit DlSamplingOptions(const SkSamplingOptions& skSamplingOptions);
-
-  bool operator==(const DlSamplingOptions& other) const {
-    return maxAniso == other.maxAniso && useCubic == other.useCubic &&
-           cubic.B == other.cubic.B && cubic.C == other.cubic.C &&
-           filter == other.filter && mipmap == other.mipmap;
-  }
-  bool operator!=(const DlSamplingOptions& other) const {
-    return !(*this == other);
-  }
-
- private:
-  DlSamplingOptions(DlFilterMode fm, DlMipmapMode mm)
-      : filter(fm), mipmap(mm) {}
-
-  explicit DlSamplingOptions(const DlCubicResampler& c)
-      : useCubic(true), cubic(c) {}
-
-  friend SkSamplingOptions ToSk(const DlSamplingOptions& dlSamplingOptions);
-};
-
-inline SkSamplingOptions ToSk(const DlSamplingOptions& dlSamplingOptions) {
-  if (dlSamplingOptions.useCubic) {
-    return SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
-  }
-  return SkSamplingOptions(ToSk(dlSamplingOptions.filter),
-                           ToSk(dlSamplingOptions.mipmap));
 }
 
 }  // namespace flutter

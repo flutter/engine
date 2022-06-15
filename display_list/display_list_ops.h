@@ -682,11 +682,11 @@ struct DrawSkVerticesOp final : DLOp {
                                                                        \
     name##Op(const sk_sp<DlImage> image,                               \
              const SkPoint& point,                                     \
-             const DlSamplingOptions& sampling)                        \
+             const DlImageSampling sampling)                           \
         : point(point), sampling(sampling), image(std::move(image)) {} \
                                                                        \
     const SkPoint point;                                               \
-    const DlSamplingOptions sampling;                                  \
+    const DlImageSampling sampling;                                    \
     const sk_sp<DlImage> image;                                        \
                                                                        \
     void dispatch(Dispatcher& dispatcher) const {                      \
@@ -705,7 +705,7 @@ struct DrawImageRectOp final : DLOp {
   DrawImageRectOp(const sk_sp<DlImage> image,
                   const SkRect& src,
                   const SkRect& dst,
-                  const DlSamplingOptions& sampling,
+                  const DlImageSampling sampling,
                   bool render_with_attributes,
                   SkCanvas::SrcRectConstraint constraint)
       : src(src),
@@ -717,7 +717,7 @@ struct DrawImageRectOp final : DLOp {
 
   const SkRect src;
   const SkRect dst;
-  const DlSamplingOptions sampling;
+  const DlImageSampling sampling;
   const bool render_with_attributes;
   const SkCanvas::SrcRectConstraint constraint;
   const sk_sp<DlImage> image;
@@ -811,7 +811,7 @@ struct DrawAtlasBaseOp : DLOp {
   DrawAtlasBaseOp(const sk_sp<DlImage> atlas,
                   int count,
                   DlBlendMode mode,
-                  const DlSamplingOptions& sampling,
+                  const DlImageSampling sampling,
                   bool has_colors,
                   bool render_with_attributes)
       : count(count),
@@ -825,7 +825,7 @@ struct DrawAtlasBaseOp : DLOp {
   const uint16_t mode_index;
   const uint8_t has_colors;
   const uint8_t render_with_attributes;
-  const DlSamplingOptions sampling;
+  const DlImageSampling sampling;
   const sk_sp<DlImage> atlas;
 };
 
@@ -837,7 +837,7 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
   DrawAtlasOp(const sk_sp<DlImage> atlas,
               int count,
               DlBlendMode mode,
-              const DlSamplingOptions& sampling,
+              const DlImageSampling sampling,
               bool has_colors,
               bool render_with_attributes)
       : DrawAtlasBaseOp(atlas,
@@ -868,7 +868,7 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
   DrawAtlasCulledOp(const sk_sp<DlImage> atlas,
                     int count,
                     DlBlendMode mode,
-                    const DlSamplingOptions& sampling,
+                    const DlImageSampling sampling,
                     bool has_colors,
                     const SkRect& cull_rect,
                     bool render_with_attributes)

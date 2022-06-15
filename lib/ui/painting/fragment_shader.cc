@@ -34,7 +34,7 @@ void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
 }
 
 std::shared_ptr<DlColorSource> FragmentShader::shader(
-    DlSamplingOptions& sampling) {
+    DlImageSampling sampling) {
   // Sampling options are ignored, since sampling options don't make sense for
   // generative shaders.
   return source_;

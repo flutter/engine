@@ -310,7 +310,7 @@ class DlErodeImageFilter final : public DlImageFilter {
 
 class DlMatrixImageFilter final : public DlImageFilter {
  public:
-  DlMatrixImageFilter(const SkMatrix& matrix, const DlSamplingOptions& sampling)
+  DlMatrixImageFilter(const SkMatrix& matrix, const DlImageSampling sampling)
       : matrix_(matrix), sampling_(sampling) {}
   explicit DlMatrixImageFilter(const DlMatrixImageFilter* filter)
       : DlMatrixImageFilter(filter->matrix_, filter->sampling_) {}
@@ -325,7 +325,7 @@ class DlMatrixImageFilter final : public DlImageFilter {
   size_t size() const override { return sizeof(*this); }
 
   const SkMatrix& matrix() const { return matrix_; }
-  const DlSamplingOptions& sampling() const { return sampling_; }
+  DlImageSampling sampling() const { return sampling_; }
 
   const DlMatrixImageFilter* asMatrix() const override { return this; }
 
@@ -366,7 +366,7 @@ class DlMatrixImageFilter final : public DlImageFilter {
 
  private:
   SkMatrix matrix_;
-  DlSamplingOptions sampling_;
+  DlImageSampling sampling_;
 };
 
 class DlComposeImageFilter final : public DlImageFilter {

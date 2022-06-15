@@ -27,7 +27,7 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   ~ImageFilter() override;
   static fml::RefPtr<ImageFilter> Create();
 
-  static DlSamplingOptions SamplingFromIndex(int filterQualityIndex);
+  static DlImageSampling SamplingFromIndex(int filterQualityIndex);
   static DlFilterMode FilterModeFromIndex(int index);
 
   void initBlur(double sigma_x, double sigma_y, SkTileMode tile_mode);

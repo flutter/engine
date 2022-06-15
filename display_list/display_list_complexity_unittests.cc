@@ -7,6 +7,7 @@
 #include "flutter/display_list/display_list_complexity.h"
 #include "flutter/display_list/display_list_complexity_gl.h"
 #include "flutter/display_list/display_list_complexity_metal.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -351,7 +352,7 @@ TEST(DisplayListComplexity, DrawImage) {
 
   DisplayListBuilder builder;
   builder.drawImage(DlImage::Make(image), SkPoint::Make(0, 0),
-                    DlSamplingOptions(), false);
+                    DlImageSampling::kDefault, false);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -394,8 +395,8 @@ TEST(DisplayListComplexity, DrawImageRect) {
   SkRect dest = SkRect::MakeXYWH(0, 0, 50, 50);
 
   DisplayListBuilder builder;
-  builder.drawImageRect(DlImage::Make(image), src, dest, DlSamplingOptions(),
-                        true);
+  builder.drawImageRect(DlImage::Make(image), src, dest,
+                        DlImageSampling::kDefault, true);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -421,7 +422,8 @@ TEST(DisplayListComplexity, DrawAtlas) {
 
   DisplayListBuilder builder;
   builder.drawAtlas(DlImage::Make(image), xforms.data(), rects.data(), nullptr,
-                    10, DlBlendMode::kSrc, DlSamplingOptions(), nullptr, true);
+                    10, DlBlendMode::kSrc, DlImageSampling::kDefault, nullptr,
+                    true);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();

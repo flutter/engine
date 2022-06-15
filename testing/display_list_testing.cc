@@ -235,17 +235,17 @@ static std::ostream& operator<<(std::ostream& os, const DlColor& color) {
 }
 
 static std::ostream& operator<<(std::ostream& os,
-                                const DlSamplingOptions& sampling) {
-  if (sampling == DisplayList::NearestSampling) {
+                                const DlImageSampling sampling) {
+  if (sampling == DlImageSampling::kNearestNeighbor) {
     return os << "NearestSampling";
   }
-  if (sampling == DisplayList::LinearSampling) {
+  if (sampling == DlImageSampling::kLinear) {
     return os << "LinearSampling";
   }
-  if (sampling == DisplayList::MipmapSampling) {
+  if (sampling == DlImageSampling::kMipmapLinear) {
     return os << "MipmapSampling";
   }
-  if (sampling == DisplayList::CubicSampling) {
+  if (sampling == DlImageSampling::kCubic) {
     return os << "CubicSampling";
   }
   return os << "UnkownSampling";
@@ -753,7 +753,7 @@ void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
 }
 void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
-                                            const DlSamplingOptions& sampling,
+                                            const DlImageSampling sampling,
                                             bool render_with_attributes) {
   startl() << "drawImage(" << image.get() << "," << std::endl;
   startl() << "          " << point << ", "
@@ -764,7 +764,7 @@ void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
 void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
                                                 const SkRect& src,
                                                 const SkRect& dst,
-                                                const DlSamplingOptions& sampling,
+                                                const DlImageSampling sampling,
                                                 bool render_with_attributes,
                                                 SkCanvas::SrcRectConstraint constraint) {
   startl() << "drawImageRect(" << image.get() << "," << std::endl;
@@ -800,7 +800,7 @@ void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
-                                            const DlSamplingOptions& sampling,
+                                            const DlImageSampling sampling,
                                             const SkRect* cull_rect,
                                             bool render_with_attributes) {
   startl() << "drawAtlas(" << atlas.get() << ", ";

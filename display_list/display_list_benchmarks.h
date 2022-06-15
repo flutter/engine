@@ -82,12 +82,12 @@ void BM_DrawVertices(benchmark::State& state,
 void BM_DrawImage(benchmark::State& state,
                   BackendType backend_type,
                   unsigned attributes,
-                  const DlSamplingOptions& options,
+                  const DlImageSampling options,
                   bool upload_bitmap);
 void BM_DrawImageRect(benchmark::State& state,
                       BackendType backend_type,
                       unsigned attributes,
-                      const DlSamplingOptions& options,
+                      const DlImageSampling options,
                       SkCanvas::SrcRectConstraint constraint,
                       bool upload_bitmap);
 void BM_DrawImageNine(benchmark::State& state,
@@ -332,7 +332,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImage, Texture/BACKEND,                      \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    DlSamplingOptions(), false)                         \
+                    DlImageSampling::kDefault, false)                         \
       ->RangeMultiplier(2)                                              \
       ->Range(128, 512)                                                 \
       ->UseRealTime()                                                   \
@@ -341,7 +341,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImage, Upload/BACKEND,                       \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    DlSamplingOptions(), true)                          \
+                    DlImageSampling::kDefault, true)                          \
       ->RangeMultiplier(2)                                              \
       ->Range(128, 512)                                                 \
       ->UseRealTime()                                                   \
@@ -353,7 +353,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Texture/Strict/BACKEND,                         \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      DlSamplingOptions(),                                              \
+      DlImageSampling::kDefault,                                              \
       SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint, false)    \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
@@ -364,7 +364,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Texture/Fast/BACKEND,                           \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      DlSamplingOptions(),                                              \
+      DlImageSampling::kDefault,                                              \
       SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint, false)      \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
@@ -375,7 +375,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Upload/Strict/BACKEND,                          \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      DlSamplingOptions(),                                              \
+      DlImageSampling::kDefault,                                              \
       SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint, true)     \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
@@ -386,7 +386,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Upload/Fast/BACKEND,                            \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      DlSamplingOptions(),                                              \
+      DlImageSampling::kDefault,                                              \
       SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint, true)       \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \

@@ -45,7 +45,7 @@ TEST_P(DisplayListTest, CanDrawImage) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
   builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                    flutter::DlSamplingOptions{}, true);
+                    flutter::DlImageSampling::kDefault, true);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -207,7 +207,7 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
     auto filter = flutter::DlBlurMaskFilter(kNormal_SkBlurStyle, 10.0f);
     builder.setMaskFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                      flutter::DlSamplingOptions{}, true);
+                      flutter::DlImageSampling::kDefault, true);
   }
 
   // Mask blurred filled path.
@@ -239,7 +239,7 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
                                               flutter::DlBlendMode::kModulate);
     builder.setColorFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
-                      flutter::DlSamplingOptions{}, true);
+                      flutter::DlImageSampling::kDefault, true);
   }
 
   // Advanced blended image.
@@ -248,7 +248,7 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
         flutter::DlBlendColorFilter(SK_ColorRED, flutter::DlBlendMode::kScreen);
     builder.setColorFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(250, 250),
-                      flutter::DlSamplingOptions{}, true);
+                      flutter::DlImageSampling::kDefault, true);
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -277,7 +277,7 @@ TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
                                              flutter::DlTileMode::kClamp);
     builder.setImageFilter(&filter);
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
-                      flutter::DlSamplingOptions{}, true);
+                      flutter::DlImageSampling::kDefault, true);
 
     return builder.Build();
   };

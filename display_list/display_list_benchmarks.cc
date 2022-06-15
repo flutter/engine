@@ -939,7 +939,7 @@ sk_sp<SkImage> ImageFromBitmapWithNewID(const SkBitmap& bitmap) {
 void BM_DrawImage(benchmark::State& state,
                   BackendType backend_type,
                   unsigned attributes,
-                  const DlSamplingOptions& options,
+                  const DlImageSampling options,
                   bool upload_bitmap) {
   auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
@@ -1017,7 +1017,7 @@ std::string ConstraintToString(SkCanvas::SrcRectConstraint constraint) {
 void BM_DrawImageRect(benchmark::State& state,
                       BackendType backend_type,
                       unsigned attributes,
-                      const DlSamplingOptions& options,
+                      const DlImageSampling options,
                       SkCanvas::SrcRectConstraint constraint,
                       bool upload_bitmap) {
   auto canvas_provider = CreateCanvasProvider(backend_type);

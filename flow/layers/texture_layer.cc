@@ -12,7 +12,7 @@ TextureLayer::TextureLayer(const SkPoint& offset,
                            const SkSize& size,
                            int64_t texture_id,
                            bool freeze,
-                           const DlSamplingOptions& sampling)
+                           const DlImageSampling sampling)
     : offset_(offset),
       size_(size),
       texture_id_(texture_id),

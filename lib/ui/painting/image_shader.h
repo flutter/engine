@@ -34,7 +34,7 @@ class ImageShader : public Shader {
                      int filter_quality_index,
                      const tonic::Float64List& matrix4);
 
-  std::shared_ptr<DlColorSource> shader(DlSamplingOptions&) override;
+  std::shared_ptr<DlColorSource> shader(DlImageSampling) override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

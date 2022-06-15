@@ -180,14 +180,14 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
   // |flutter::Dispatcher|
   void drawImage(const sk_sp<flutter::DlImage> image,
                  const SkPoint point,
-                 const flutter::DlSamplingOptions& sampling,
+                 const flutter::DlImageSampling sampling,
                  bool render_with_attributes) override;
 
   // |flutter::Dispatcher|
   void drawImageRect(const sk_sp<flutter::DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const flutter::DlSamplingOptions& sampling,
+                     const flutter::DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override;
 
@@ -212,7 +212,7 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
                  const flutter::DlColor colors[],
                  int count,
                  flutter::DlBlendMode mode,
-                 const flutter::DlSamplingOptions& sampling,
+                 const flutter::DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override;
 

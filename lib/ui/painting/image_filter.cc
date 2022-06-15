@@ -40,14 +40,14 @@ fml::RefPtr<ImageFilter> ImageFilter::Create() {
   return fml::MakeRefCounted<ImageFilter>();
 }
 
-static const std::array<DlSamplingOptions, 4> kFilterQualities = {
-    DlSamplingOptions::MakeNearestSampling(),
-    DlSamplingOptions::MakeLinearSampling(),
-    DlSamplingOptions::MakeMipmapSampling(),
-    DlSamplingOptions::MakeCubicSampling(),
+static const std::array<DlImageSampling, 4> kFilterQualities = {
+    DlImageSampling::kNearestNeighbor,
+    DlImageSampling::kLinear,
+    DlImageSampling::kMipmapLinear,
+    DlImageSampling::kCubic,
 };
 
-DlSamplingOptions ImageFilter::SamplingFromIndex(int filterQualityIndex) {
+DlImageSampling ImageFilter::SamplingFromIndex(int filterQualityIndex) {
   if (filterQualityIndex < 0) {
     return kFilterQualities.front();
   } else if (static_cast<size_t>(filterQualityIndex) >=

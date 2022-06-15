@@ -485,7 +485,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
 void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
     const sk_sp<DlImage> image,
     const SkPoint point,
-    const DlSamplingOptions& sampling,
+    const DlImageSampling sampling,
     bool render_with_attributes) {
   if (IsComplex()) {
     return;

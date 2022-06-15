@@ -191,7 +191,7 @@ void DisplayListCanvasDispatcher::drawVertices(const DlVertices* vertices,
 }
 void DisplayListCanvasDispatcher::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
-                                            const DlSamplingOptions& sampling,
+                                            const DlImageSampling sampling,
                                             bool render_with_attributes) {
   canvas_->drawImage(image ? image->skia_image() : nullptr, point.fX, point.fY,
                      ToSk(sampling), safe_paint(render_with_attributes));
@@ -200,7 +200,7 @@ void DisplayListCanvasDispatcher::drawImageRect(
     const sk_sp<DlImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const DlSamplingOptions& sampling,
+    const DlImageSampling sampling,
     bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
   canvas_->drawImageRect(image ? image->skia_image() : nullptr, src, dst,
@@ -244,7 +244,7 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
-                                            const DlSamplingOptions& sampling,
+                                            const DlImageSampling sampling,
                                             const SkRect* cullRect,
                                             bool render_with_attributes) {
   if (!atlas) {

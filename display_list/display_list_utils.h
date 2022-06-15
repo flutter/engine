@@ -120,12 +120,12 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override {}
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const DlSamplingOptions& sampling,
+                 const DlImageSampling sampling,
                  bool render_with_attributes) override {}
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const DlSamplingOptions& sampling,
+                     const DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override {}
   void drawImageNine(const sk_sp<DlImage> image,
@@ -144,7 +144,7 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const DlSamplingOptions& sampling,
+                 const DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override {}
   void drawPicture(const sk_sp<SkPicture> picture,
@@ -435,12 +435,12 @@ class DisplayListBoundsCalculator final
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const DlSamplingOptions& sampling,
+                 const DlImageSampling sampling,
                  bool render_with_attributes) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const DlSamplingOptions& sampling,
+                     const DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
@@ -459,7 +459,7 @@ class DisplayListBoundsCalculator final
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const DlSamplingOptions& sampling,
+                 const DlImageSampling sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
   void drawPicture(const sk_sp<SkPicture> picture,

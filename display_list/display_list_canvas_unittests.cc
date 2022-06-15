@@ -7,6 +7,7 @@
 #include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_flags.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -2218,7 +2219,7 @@ const DlImageColorSource CanvasCompareTester::kTestImageColorSource(
     kTestImage,
     DlTileMode::kRepeat,
     DlTileMode::kRepeat,
-    DlSamplingOptions::MakeLinearSampling());
+    DlImageSampling::kLinear);
 
 // Eventually this bare bones testing::Test fixture will subsume the
 // CanvasCompareTester and the TestParameters could then become just
@@ -2693,12 +2694,12 @@ TEST_F(DisplayListCanvas, DrawImageNearest) {
           [=](SkCanvas* canvas, const SkPaint& paint) {         //
             canvas->drawImage(CanvasCompareTester::kTestImage,  //
                               kRenderLeft, kRenderTop,
-                              ToSk(DisplayList::NearestSampling), &paint);
+                              ToSk(DlImageSampling::kNearestNeighbor), &paint);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawImage(DlImage::Make(CanvasCompareTester::kTestImage),
                               SkPoint::Make(kRenderLeft, kRenderTop),
-                              DisplayList::NearestSampling, true);
+                              DlImageSampling::kNearestNeighbor, true);
           },
           kDrawImageWithPaintFlags));
 }
@@ -2709,12 +2710,12 @@ TEST_F(DisplayListCanvas, DrawImageNearestNoPaint) {
           [=](SkCanvas* canvas, const SkPaint& paint) {         //
             canvas->drawImage(CanvasCompareTester::kTestImage,  //
                               kRenderLeft, kRenderTop,
-                              ToSk(DisplayList::NearestSampling), nullptr);
+                              ToSk(DlImageSampling::kNearestNeighbor), nullptr);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawImage(DlImage::Make(CanvasCompareTester::kTestImage),
                               SkPoint::Make(kRenderLeft, kRenderTop),
-                              DisplayList::NearestSampling, false);
+                              DlImageSampling::kNearestNeighbor, false);
           },
           kDrawImageFlags));
 }
@@ -2725,12 +2726,12 @@ TEST_F(DisplayListCanvas, DrawImageLinear) {
           [=](SkCanvas* canvas, const SkPaint& paint) {         //
             canvas->drawImage(CanvasCompareTester::kTestImage,  //
                               kRenderLeft, kRenderTop,
-                              ToSk(DisplayList::LinearSampling), &paint);
+                              ToSk(DlImageSampling::kLinear), &paint);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawImage(DlImage::Make(CanvasCompareTester::kTestImage),
                               SkPoint::Make(kRenderLeft, kRenderTop),
-                              DisplayList::LinearSampling, true);
+                              DlImageSampling::kLinear, true);
           },
           kDrawImageWithPaintFlags));
 }
@@ -2742,13 +2743,13 @@ TEST_F(DisplayListCanvas, DrawImageRectNearest) {
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
             canvas->drawImageRect(CanvasCompareTester::kTestImage, src, dst,
-                                  ToSk(DisplayList::NearestSampling), &paint,
-                                  SkCanvas::kFast_SrcRectConstraint);
+                                  ToSk(DlImageSampling::kNearestNeighbor),
+                                  &paint, SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DisplayList::NearestSampling, true);
+                DlImageSampling::kNearestNeighbor, true);
           },
           kDrawImageRectWithPaintFlags));
 }
@@ -2760,13 +2761,13 @@ TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
             canvas->drawImageRect(CanvasCompareTester::kTestImage, src, dst,
-                                  ToSk(DisplayList::NearestSampling), nullptr,
-                                  SkCanvas::kFast_SrcRectConstraint);
+                                  ToSk(DlImageSampling::kNearestNeighbor),
+                                  nullptr, SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DisplayList::NearestSampling, false);
+                DlImageSampling::kNearestNeighbor, false);
           },
           kDrawImageRectFlags));
 }
@@ -2778,13 +2779,13 @@ TEST_F(DisplayListCanvas, DrawImageRectLinear) {
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
             canvas->drawImageRect(CanvasCompareTester::kTestImage, src, dst,
-                                  ToSk(DisplayList::LinearSampling), &paint,
+                                  ToSk(DlImageSampling::kLinear), &paint,
                                   SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DisplayList::LinearSampling, true);
+                DlImageSampling::kLinear, true);
           },
           kDrawImageRectWithPaintFlags));
 }
@@ -2951,7 +2952,7 @@ TEST_F(DisplayListCanvas, DrawAtlasNearest) {
       SK_ColorMAGENTA,
   };
   const sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
-  const DlSamplingOptions sampling = DisplayList::NearestSampling;
+  const DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
@@ -2993,7 +2994,7 @@ TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
       SK_ColorMAGENTA,
   };
   const sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
-  const DlSamplingOptions sampling = DisplayList::NearestSampling;
+  const DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
@@ -3036,7 +3037,7 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
       SK_ColorMAGENTA,
   };
   const sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
-  const DlSamplingOptions sampling = DisplayList::LinearSampling;
+  const DlImageSampling sampling = DlImageSampling::kLinear;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {

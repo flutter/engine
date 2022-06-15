@@ -217,11 +217,6 @@ class SaveLayerOptions {
 // through an instance of DisplayListBuilder::build().
 class DisplayList : public SkRefCnt {
  public:
-  static const DlSamplingOptions NearestSampling;
-  static const DlSamplingOptions LinearSampling;
-  static const DlSamplingOptions MipmapSampling;
-  static const DlSamplingOptions CubicSampling;
-
   DisplayList();
 
   ~DisplayList();

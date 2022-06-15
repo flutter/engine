@@ -149,7 +149,7 @@ class ComplexityCalculatorHelper
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const DlSamplingOptions& sampling,
+                     const DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override {
     if (IsComplex()) {
@@ -181,7 +181,7 @@ class ComplexityCalculatorHelper
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const DlSamplingOptions& sampling,
+                 const DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override {
     if (IsComplex()) {

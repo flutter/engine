@@ -59,7 +59,7 @@ class DisplayListGLComplexityCalculator
     void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
     void drawImage(const sk_sp<DlImage> image,
                    const SkPoint point,
-                   const DlSamplingOptions& sampling,
+                   const DlImageSampling sampling,
                    bool render_with_attributes) override;
     void drawImageNine(const sk_sp<DlImage> image,
                        const SkIRect& center,
