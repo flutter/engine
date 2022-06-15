@@ -47,10 +47,7 @@ class LayerRasterCacheItem : public RasterCacheItem {
   bool TryToPrepareRasterCache(const PaintContext& context,
                                bool parent_cached = false) const override;
 
-  void CacheChildren(const SkMatrix& matrix) {
-    matrix_ = matrix;
-    can_cache_children_ = true;
-  }
+  void MarkCacheChildren() { can_cache_children_ = true; }
 
   bool IsCacheChildren() const { return cache_state_ == CacheState::kChildren; }
 

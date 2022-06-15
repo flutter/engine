@@ -76,7 +76,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   transformed_filter_ = nullptr;
   transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
   if (transformed_filter_) {
-    layer_raster_cache_item_->CacheChildren(matrix);
+    layer_raster_cache_item_->MarkCacheChildren();
   }
 }
 

@@ -72,13 +72,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 
-  if (!children_can_accept_opacity()) {
-    auto child_matrix = child_matrix_;
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    child_matrix = RasterCacheUtil::GetIntegralTransCTM(child_matrix_);
-#endif
-    layer_raster_cache_item_->CacheChildren(child_matrix);
-  } else {
+  if (children_can_accept_opacity()) {
     // For opacity layer, we can use raster_cache children only when the
     // children can't accept opacity so if the children_can_accept_opacity we
     // should tell the AutoCache object don't do raster_cache.
