@@ -897,6 +897,7 @@ TEST_P(EntityTest, SolidStrokeCoverageIsCorrect) {
     contents->SetStrokeCap(SolidStrokeContents::Cap::kButt);
     contents->SetStrokeJoin(SolidStrokeContents::Join::kBevel);
     contents->SetStrokeSize(4);
+    contents->SetColor(Color::Black());
     entity.SetContents(std::move(contents));
     auto actual = entity.GetCoverage();
     auto expected = Rect::MakeLTRB(-2, -2, 12, 12);
@@ -912,6 +913,7 @@ TEST_P(EntityTest, SolidStrokeCoverageIsCorrect) {
     contents->SetStrokeCap(SolidStrokeContents::Cap::kSquare);
     contents->SetStrokeJoin(SolidStrokeContents::Join::kBevel);
     contents->SetStrokeSize(4);
+    contents->SetColor(Color::Black());
     entity.SetContents(std::move(contents));
     auto actual = entity.GetCoverage();
     auto expected =
@@ -929,6 +931,7 @@ TEST_P(EntityTest, SolidStrokeCoverageIsCorrect) {
     contents->SetStrokeJoin(SolidStrokeContents::Join::kMiter);
     contents->SetStrokeSize(4);
     contents->SetStrokeMiter(2);
+    contents->SetColor(Color::Black());
     entity.SetContents(std::move(contents));
     auto actual = entity.GetCoverage();
     auto expected = Rect::MakeLTRB(-4, -4, 14, 14);
