@@ -599,13 +599,16 @@ void DisplayListBuilder::transform(const SkM44* m44) {
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   SkClipOp clip_op,
                                   bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    Push<ClipIntersectRectOp>(0, 1, rect, is_aa);
-    if (!current_layer_->clip_bounds.intersect(rect)) {
-      current_layer_->clip_bounds.setEmpty();
-    }
-  } else {
-    Push<ClipDifferenceRectOp>(0, 1, rect, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      Push<ClipIntersectRectOp>(0, 1, rect, is_aa);
+      if (!current_layer_->clip_bounds.intersect(rect)) {
+        current_layer_->clip_bounds.setEmpty();
+      }
+      break;
+    case SkClipOp::kDifference:
+      Push<ClipDifferenceRectOp>(0, 1, rect, is_aa);
+      break;
   }
 }
 void DisplayListBuilder::clipRRect(const SkRRect& rrect,
@@ -614,13 +617,16 @@ void DisplayListBuilder::clipRRect(const SkRRect& rrect,
   if (rrect.isRect()) {
     clipRect(rrect.rect(), clip_op, is_aa);
   } else {
-    if (clip_op == SkClipOp::kIntersect) {
-      Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa);
-      if (!current_layer_->clip_bounds.intersect(rrect.getBounds())) {
-        current_layer_->clip_bounds.setEmpty();
-      }
-    } else {
-      Push<ClipDifferenceRRectOp>(0, 1, rrect, is_aa);
+    switch (clip_op) {
+      case SkClipOp::kIntersect:
+        Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa);
+        if (!current_layer_->clip_bounds.intersect(rrect.getBounds())) {
+          current_layer_->clip_bounds.setEmpty();
+        }
+        break;
+      case SkClipOp::kDifference:
+        Push<ClipDifferenceRRectOp>(0, 1, rrect, is_aa);
+        break;
     }
   }
 }
@@ -644,13 +650,16 @@ void DisplayListBuilder::clipPath(const SkPath& path,
       return;
     }
   }
-  if (clip_op == SkClipOp::kIntersect) {
-    Push<ClipIntersectPathOp>(0, 1, path, is_aa);
-    if (!current_layer_->clip_bounds.intersect(path.getBounds())) {
-      current_layer_->clip_bounds.setEmpty();
-    }
-  } else {
-    Push<ClipDifferencePathOp>(0, 1, path, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      Push<ClipIntersectPathOp>(0, 1, path, is_aa);
+      if (!current_layer_->clip_bounds.intersect(path.getBounds())) {
+        current_layer_->clip_bounds.setEmpty();
+      }
+      break;
+    case SkClipOp::kDifference:
+      Push<ClipDifferencePathOp>(0, 1, path, is_aa);
+      break;
   }
 }
 SkRect DisplayListBuilder::getLocalClipBounds() {
