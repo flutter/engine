@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 
+import '../html/paragraph/helper.dart';
 import 'line_breaker_test_helper.dart';
 import 'line_breaker_test_raw_data.dart';
 
@@ -15,44 +16,34 @@ void main() {
 }
 
 void testMain() {
-  group('nextLineBreak', () {
-    test('Does not go beyond the ends of a string', () {
-      expect(split('foo'), <Line>[
-        Line('foo', LineBreakType.endOfText),
-      ]);
-
-      final LineBreakResult result = nextLineBreak('foo', 'foo'.length);
-      expect(result.index, 'foo'.length);
-      expect(result.type, LineBreakType.endOfText);
-    });
-
+  group('$LineBreakFragmenter', () {
     test('whitespace', () {
       expect(split('foo bar'), <Line>[
-        Line('foo ', LineBreakType.opportunity),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo ', opportunity),
+        Line('bar', endOfText),
       ]);
       expect(split('  foo    bar  '), <Line>[
-        Line('  ', LineBreakType.opportunity),
-        Line('foo    ', LineBreakType.opportunity),
-        Line('bar  ', LineBreakType.endOfText),
+        Line('  ', opportunity),
+        Line('foo    ', opportunity),
+        Line('bar  ', endOfText),
       ]);
     });
 
     test('single-letter lines', () {
       expect(split('foo a bar'), <Line>[
-        Line('foo ', LineBreakType.opportunity),
-        Line('a ', LineBreakType.opportunity),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo ', opportunity),
+        Line('a ', opportunity),
+        Line('bar', endOfText),
       ]);
       expect(split('a b c'), <Line>[
-        Line('a ', LineBreakType.opportunity),
-        Line('b ', LineBreakType.opportunity),
-        Line('c', LineBreakType.endOfText),
+        Line('a ', opportunity),
+        Line('b ', opportunity),
+        Line('c', endOfText),
       ]);
       expect(split(' a b '), <Line>[
-        Line(' ', LineBreakType.opportunity),
-        Line('a ', LineBreakType.opportunity),
-        Line('b ', LineBreakType.endOfText),
+        Line(' ', opportunity),
+        Line('a ', opportunity),
+        Line('b ', endOfText),
       ]);
     });
 
@@ -60,242 +51,279 @@ void testMain() {
       final String bk = String.fromCharCode(0x000B);
       // Can't have a line break between CR×LF.
       expect(split('foo\r\nbar'), <Line>[
-        Line('foo\r\n', LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo\r\n', mandatory),
+        Line('bar', endOfText),
       ]);
 
       // Any other new line is considered a line break on its own.
 
       expect(split('foo\n\nbar'), <Line>[
-        Line('foo\n', LineBreakType.mandatory),
-        Line('\n', LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo\n', mandatory),
+        Line('\n', mandatory),
+        Line('bar', endOfText),
       ]);
       expect(split('foo\r\rbar'), <Line>[
-        Line('foo\r', LineBreakType.mandatory),
-        Line('\r', LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo\r', mandatory),
+        Line('\r', mandatory),
+        Line('bar', endOfText),
       ]);
       expect(split('foo$bk${bk}bar'), <Line>[
-        Line('foo$bk', LineBreakType.mandatory),
-        Line(bk, LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo$bk', mandatory),
+        Line(bk, mandatory),
+        Line('bar', endOfText),
       ]);
 
       expect(split('foo\n\rbar'), <Line>[
-        Line('foo\n', LineBreakType.mandatory),
-        Line('\r', LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo\n', mandatory),
+        Line('\r', mandatory),
+        Line('bar', endOfText),
       ]);
       expect(split('foo$bk\rbar'), <Line>[
-        Line('foo$bk', LineBreakType.mandatory),
-        Line('\r', LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo$bk', mandatory),
+        Line('\r', mandatory),
+        Line('bar', endOfText),
       ]);
       expect(split('foo\r${bk}bar'), <Line>[
-        Line('foo\r', LineBreakType.mandatory),
-        Line(bk, LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo\r', mandatory),
+        Line(bk, mandatory),
+        Line('bar', endOfText),
       ]);
       expect(split('foo$bk\nbar'), <Line>[
-        Line('foo$bk', LineBreakType.mandatory),
-        Line('\n', LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo$bk', mandatory),
+        Line('\n', mandatory),
+        Line('bar', endOfText),
       ]);
       expect(split('foo\n${bk}bar'), <Line>[
-        Line('foo\n', LineBreakType.mandatory),
-        Line(bk, LineBreakType.mandatory),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo\n', mandatory),
+        Line(bk, mandatory),
+        Line('bar', endOfText),
       ]);
 
       // New lines at the beginning and end.
 
       expect(split('foo\n'), <Line>[
-        Line('foo\n', LineBreakType.mandatory),
-        Line('', LineBreakType.endOfText),
+        Line('foo\n', mandatory),
+        Line('', endOfText),
       ]);
       expect(split('foo\r'), <Line>[
-        Line('foo\r', LineBreakType.mandatory),
-        Line('', LineBreakType.endOfText),
+        Line('foo\r', mandatory),
+        Line('', endOfText),
       ]);
       expect(split('foo$bk'), <Line>[
-        Line('foo$bk', LineBreakType.mandatory),
-        Line('', LineBreakType.endOfText),
+        Line('foo$bk', mandatory),
+        Line('', endOfText),
       ]);
 
       expect(split('\nfoo'), <Line>[
-        Line('\n', LineBreakType.mandatory),
-        Line('foo', LineBreakType.endOfText),
+        Line('\n', mandatory),
+        Line('foo', endOfText),
       ]);
       expect(split('\rfoo'), <Line>[
-        Line('\r', LineBreakType.mandatory),
-        Line('foo', LineBreakType.endOfText),
+        Line('\r', mandatory),
+        Line('foo', endOfText),
       ]);
       expect(split('${bk}foo'), <Line>[
-        Line(bk, LineBreakType.mandatory),
-        Line('foo', LineBreakType.endOfText),
+        Line(bk, mandatory),
+        Line('foo', endOfText),
       ]);
 
       // Whitespace with new lines.
 
       expect(split('foo  \n'), <Line>[
-        Line('foo  \n', LineBreakType.mandatory),
-        Line('', LineBreakType.endOfText),
+        Line('foo  \n', mandatory),
+        Line('', endOfText),
       ]);
 
       expect(split('foo  \n   '), <Line>[
-        Line('foo  \n', LineBreakType.mandatory),
-        Line('   ', LineBreakType.endOfText),
+        Line('foo  \n', mandatory),
+        Line('   ', endOfText),
       ]);
 
       expect(split('foo  \n   bar'), <Line>[
-        Line('foo  \n', LineBreakType.mandatory),
-        Line('   ', LineBreakType.opportunity),
-        Line('bar', LineBreakType.endOfText),
+        Line('foo  \n', mandatory),
+        Line('   ', opportunity),
+        Line('bar', endOfText),
       ]);
 
       expect(split('\n  foo'), <Line>[
-        Line('\n', LineBreakType.mandatory),
-        Line('  ', LineBreakType.opportunity),
-        Line('foo', LineBreakType.endOfText),
+        Line('\n', mandatory),
+        Line('  ', opportunity),
+        Line('foo', endOfText),
       ]);
       expect(split('   \n  foo'), <Line>[
-        Line('   \n', LineBreakType.mandatory),
-        Line('  ', LineBreakType.opportunity),
-        Line('foo', LineBreakType.endOfText),
+        Line('   \n', mandatory),
+        Line('  ', opportunity),
+        Line('foo', endOfText),
       ]);
     });
 
     test('trailing spaces and new lines', () {
       expect(
-        findBreaks('foo bar  '),
-        const <LineBreakResult>[
-          LineBreakResult(4, 4, 3, LineBreakType.opportunity),
-          LineBreakResult(9, 9, 7, LineBreakType.endOfText),
+        computeLineBreakFragments('foo bar  '),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 4, LineBreakResult(4, 0, 1, opportunity)),
+          LineBreakFragment(4, 9, LineBreakResult(9, 0, 2, endOfText)),
         ],
       );
 
       expect(
-        findBreaks('foo  \nbar\nbaz   \n'),
-        const <LineBreakResult>[
-          LineBreakResult(6, 5, 3, LineBreakType.mandatory),
-          LineBreakResult(10, 9, 9, LineBreakType.mandatory),
-          LineBreakResult(17, 16, 13, LineBreakType.mandatory),
-          LineBreakResult(17, 17, 17, LineBreakType.endOfText),
+        computeLineBreakFragments('foo  \nbar\nbaz   \n'),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 6, LineBreakResult(6, 1, 3, mandatory)),
+          LineBreakFragment(6, 10, LineBreakResult(10, 1, 1, mandatory)),
+          LineBreakFragment(10, 17, LineBreakResult(17, 1, 4, mandatory)),
+          LineBreakFragment(17, 17, LineBreakResult(17, 0, 0, endOfText)),
         ],
       );
     });
 
     test('leading spaces', () {
       expect(
-        findBreaks(' foo'),
-        const <LineBreakResult>[
-          LineBreakResult(1, 1, 0, LineBreakType.opportunity),
-          LineBreakResult(4, 4, 4, LineBreakType.endOfText),
+        computeLineBreakFragments(' foo'),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 1, LineBreakResult(1, 0, 1, opportunity)),
+          LineBreakFragment(1, 4, LineBreakResult(4, 0, 0, endOfText)),
         ],
       );
 
       expect(
-        findBreaks('   foo'),
-        const <LineBreakResult>[
-          LineBreakResult(3, 3, 0, LineBreakType.opportunity),
-          LineBreakResult(6, 6, 6, LineBreakType.endOfText),
+        computeLineBreakFragments('   foo'),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 3, LineBreakResult(3, 0, 3, opportunity)),
+          LineBreakFragment(3, 6, LineBreakResult(6, 0, 0, endOfText)),
         ],
       );
 
       expect(
-        findBreaks('  foo   bar'),
-        const <LineBreakResult>[
-          LineBreakResult(2, 2, 0, LineBreakType.opportunity),
-          LineBreakResult(8, 8, 5, LineBreakType.opportunity),
-          LineBreakResult(11, 11, 11, LineBreakType.endOfText),
+        computeLineBreakFragments('  foo   bar'),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 2, LineBreakResult(2, 0, 2, opportunity)),
+          LineBreakFragment(2, 8, LineBreakResult(8, 0, 3, opportunity)),
+          LineBreakFragment(8, 11, LineBreakResult(11, 0, 0, endOfText)),
         ],
       );
 
       expect(
-        findBreaks('  \n   foo'),
-        const <LineBreakResult>[
-          LineBreakResult(3, 2, 0, LineBreakType.mandatory),
-          LineBreakResult(6, 6, 3, LineBreakType.opportunity),
-          LineBreakResult(9, 9, 9, LineBreakType.endOfText),
+        computeLineBreakFragments('  \n   foo'),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 3, LineBreakResult(3, 1, 3, mandatory)),
+          LineBreakFragment(3, 6, LineBreakResult(6, 0, 3, opportunity)),
+          LineBreakFragment(6, 9, LineBreakResult(9, 0, 0, endOfText)),
         ],
       );
     });
 
     test('whitespace before the last character', () {
-      const String text = 'Lorem sit .';
-      const LineBreakResult expectedResult =
-          LineBreakResult(10, 10, 9, LineBreakType.opportunity);
-
-      LineBreakResult result;
-
-      result = nextLineBreak(text, 6);
-      expect(result, expectedResult);
-
-      result = nextLineBreak(text, 9);
-      expect(result, expectedResult);
-
-      result = nextLineBreak(text, 9, maxEnd: 10);
-      expect(result, expectedResult);
+      expect(
+        computeLineBreakFragments('Lorem sit .'),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 6, LineBreakResult(6, 0, 1, opportunity)),
+          LineBreakFragment(6, 10, LineBreakResult(10, 0, 1, opportunity)),
+          LineBreakFragment(10, 11, LineBreakResult(11, 0, 0, endOfText)),
+        ],
+      );
     });
 
     test('comprehensive test', () {
-      final List<TestCase> testCollection = parseRawTestData(rawLineBreakTestData);
+      final List<TestCase> testCollection =
+          parseRawTestData(rawLineBreakTestData);
       for (int t = 0; t < testCollection.length; t++) {
         final TestCase testCase = testCollection[t];
-        final String text = testCase.toText();
 
-        int lastLineBreak = 0;
+        final String text = testCase.toText();
+        final List<LineBreakFragment> fragments = computeLineBreakFragments(text);
+
+        // `f` is the index in the `fragments` list.
+        int f = 0;
+        LineBreakFragment currentFragment = fragments[f];
+
         int surrogateCount = 0;
         // `s` is the index in the `testCase.signs` list.
-        for (int s = 0; s < testCase.signs.length; s++) {
+        for (int s = 0; s < testCase.signs.length - 1; s++) {
           // `i` is the index in the `text`.
-          final int i = s + surrogateCount;
-          if (s < testCase.chars.length && testCase.chars[s].isSurrogatePair) {
-            surrogateCount++;
-          }
+          int i = s + surrogateCount;
 
           final Sign sign = testCase.signs[s];
-          final LineBreakResult result = nextLineBreak(text, lastLineBreak);
-          if (sign.isBreakOpportunity) {
-            // The line break should've been found at index `i`.
-            expect(
-              result.index,
-              i,
-              reason: 'Failed at test case number $t:\n'
-                  '${testCase.toString()}\n'
-                  '"$text"\n'
-                  '\nExpected line break at {$lastLineBreak - $i} but found line break at {$lastLineBreak - ${result.index}}.',
-            );
 
-            // Since this is a line break, passing a `maxEnd` that's greater
-            // should return the same line break.
-            final LineBreakResult maxEndResult =
-                nextLineBreak(text, lastLineBreak, maxEnd: i + 1);
-            expect(maxEndResult.index, i);
-            expect(maxEndResult.type, isNot(LineBreakType.prohibited));
-
-            lastLineBreak = i;
-          } else {
-            // This isn't a line break opportunity so the line break should be
-            // somewhere after index `i`.
+          if (s < testCase.chars.length && testCase.chars[s].isSurrogatePair) {
+            surrogateCount++;
             expect(
-              result.index,
+              currentFragment.end,
               greaterThan(i),
               reason: 'Failed at test case number $t:\n'
                   '${testCase.toString()}\n'
                   '"$text"\n'
-                  '\nUnexpected line break found at {$lastLineBreak - ${result.index}}.',
+                  '\nFragment ended in the middle of a surrogate pair at {${currentFragment.end}}.',
             );
+          }
 
-            // Since this isn't a line break, passing it as a `maxEnd` should
-            // return `maxEnd` as a prohibited line break type.
-            final LineBreakResult maxEndResult =
-                nextLineBreak(text, lastLineBreak, maxEnd: i);
-            expect(maxEndResult.index, i);
-            expect(maxEndResult.type, LineBreakType.prohibited);
+          i = s + surrogateCount;
+
+          if (sign.isBreakOpportunity) {
+            expect(
+              currentFragment.end,
+              i,
+              reason: 'Failed at test case number $t:\n'
+                  '${testCase.toString()}\n'
+                  '"$text"\n'
+                  '\nExpected fragment to end at {$i} but ended at {${currentFragment.end}}.',
+            );
+            currentFragment = fragments[++f];
+          } else {
+            expect(
+              currentFragment.end,
+              greaterThan(i),
+              reason: 'Failed at test case number $t:\n'
+                  '${testCase.toString()}\n'
+                  '"$text"\n'
+                  '\nFragment ended in early at {${currentFragment.end}}.',
+            );
           }
         }
+
+        // Now let's look at the last sign, which requires different handling.
+
+        // The last line break is an endOfText (or a hard break followed by
+        // endOfText if the last character is a hard line break).
+        if (currentFragment.endBreak.type == mandatory) {
+          // When last character is a hard line break, there should be an
+          // extra fragment to represent the empty line at the end.
+          expect(
+            fragments,
+            hasLength(f + 2),
+            reason: 'Failed at test case number $t:\n'
+                '${testCase.toString()}\n'
+                '"$text"\n'
+                '\nExpected an extra fragment for endOfText but there wasn\'t one.',
+          );
+
+          currentFragment = fragments[++f];
+        }
+
+        expect(
+          currentFragment.endBreak.type,
+          endOfText,
+          reason: 'Failed at test case number $t:\n'
+              '${testCase.toString()}\n'
+              '"$text"\n\n'
+              'Expected an endOfText fragment but found: $currentFragment',
+        );
+        expect(
+          currentFragment.end,
+          text.length,
+          reason: 'Failed at test case number $t:\n'
+              '${testCase.toString()}\n'
+              '"$text"\n\n'
+              'Expected an endOfText fragment ending at {${text.length}} but found: $currentFragment',
+        );
+        expect(
+          currentFragment.endBreak.index,
+          text.length,
+          reason: 'Failed at test case number $t:\n'
+              '${testCase.toString()}\n'
+              '"$text"\n\n'
+              'Expected an endOfText fragment with a break ending at {${text.length}} but found: $currentFragment',
+        );
       }
     });
   });
@@ -307,6 +335,13 @@ class Line {
 
   final String text;
   final LineBreakType breakType;
+
+  factory Line.fromLineBreakFragment(String text, LineBreakFragment fragment) {
+    return Line(
+      text.substring(fragment.start, fragment.end),
+      fragment.endBreak.type,
+    );
+  }
 
   @override
   int get hashCode => Object.hash(text, breakType);
@@ -334,24 +369,14 @@ class Line {
 }
 
 List<Line> split(String text) {
-  final List<Line> lines = <Line>[];
-
-  int lastIndex = 0;
-  for (final LineBreakResult brk in findBreaks(text)) {
-    lines.add(Line(text.substring(lastIndex, brk.index), brk.type));
-    lastIndex = brk.index;
-  }
-  return lines;
+  return <Line>[
+    for (final LineBreakFragment fragment in computeLineBreakFragments(text))
+      Line.fromLineBreakFragment(text, fragment)
+  ];
 }
 
-List<LineBreakResult> findBreaks(String text) {
-  final List<LineBreakResult> breaks = <LineBreakResult>[];
-
-  LineBreakResult brk = nextLineBreak(text, 0);
-  breaks.add(brk);
-  while (brk.type != LineBreakType.endOfText) {
-    brk = nextLineBreak(text, brk.index);
-    breaks.add(brk);
-  }
-  return breaks;
+List<LineBreakFragment> computeLineBreakFragments(String text) {
+  final CanvasParagraph paragraph = plain(EngineParagraphStyle(), text);
+  final LineBreakFragmenter fragmenter = LineBreakFragmenter(paragraph);
+  return fragmenter.fragment();
 }

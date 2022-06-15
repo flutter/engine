@@ -59,6 +59,8 @@ class TextLayoutService {
   String? get ellipsis => paragraph.paragraphStyle.ellipsis;
   bool get hasEllipsis => ellipsis != null;
 
+  late final List<LineBreakResult> breaks = computeLineBreaks(paragraph.toPlainText());
+
   /// Performs the layout on a paragraph given the [constraints].
   ///
   /// The function starts by resetting all layout-related properties. Then it
@@ -142,7 +144,7 @@ class TextLayoutService {
         spanIndex++;
       } else if (span is FlatTextSpan) {
         spanometer.currentSpan = span;
-        final DirectionalPosition nextBreak = currentLine.findNextBreak();
+        final DirectionalPosition nextBreak = findNextBreak(currentLine);
         final double additionalWidth =
             currentLine.getAdditionalWidthTo(nextBreak.lineBreak);
 
@@ -275,7 +277,7 @@ class TextLayoutService {
         spanIndex++;
       } else if (span is FlatTextSpan) {
         spanometer.currentSpan = span;
-        final DirectionalPosition nextBreak = currentLine.findNextBreak();
+        final DirectionalPosition nextBreak = findNextBreak(currentLine);
 
         // For the purpose of max intrinsic width, we don't care if the line
         // fits within the constraints or not. So we always extend it.
@@ -393,6 +395,24 @@ class TextLayoutService {
       );
       cumulativeWidth += sequenceWidth;
     }
+  }
+
+  /// Finds the next line break after the end of the line being built.
+  DirectionalPosition findNextBreak(LineBuilder lineBuilder) {
+    final String text = paragraph.toPlainText();
+    final int maxEnd = lineBuilder.spanometer.currentSpan.end;
+
+    int i = lineBuilder.end.index;
+    LineBreakResult nextBreak = breaks[i];
+    while (++i <= maxEnd) {
+      nextBreak = breaks[i];
+      if (nextBreak.type != LineBreakType.prohibited) {
+        break;
+      }
+    }
+
+    // The current end of the line is the beginning of the next block.
+    return getDirectionalBlockEnd(text, lineBuilder.end, nextBreak);
   }
 
   /// Positions a sequence of boxes in the direction opposite to the paragraph
@@ -1538,23 +1558,6 @@ class LineBuilder {
       box._isTrailingSpace = true;
       _trailingSpaceBoxCount++;
     }
-  }
-
-  LineBreakResult? _cachedNextBreak;
-
-  /// Finds the next line break after the end of this line.
-  DirectionalPosition findNextBreak() {
-    LineBreakResult? nextBreak = _cachedNextBreak;
-    final String text = paragraph.toPlainText();
-    // Don't recompute the `nextBreak` until the line has reached the previously
-    // computed `nextBreak`.
-    if (nextBreak == null || end.index >= nextBreak.index) {
-      final int maxEnd = spanometer.currentSpan.end;
-      nextBreak = nextLineBreak(text, end.index, maxEnd: maxEnd);
-      _cachedNextBreak = nextBreak;
-    }
-    // The current end of the line is the beginning of the next block.
-    return getDirectionalBlockEnd(text, end, nextBreak);
   }
 
   /// Creates a new [LineBuilder] to build the next line in the paragraph.
