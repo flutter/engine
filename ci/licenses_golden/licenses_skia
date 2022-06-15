@@ -1,4 +1,4 @@
-Signature: 02ea5504a0f93171f1a1ea14720ae802
+Signature: ddc27f3a7ed27cb085da62bc9011ede1
 
 UNUSED LICENSES:
 
@@ -1317,6 +1317,7 @@ FILE: ../../../third_party/skia/src/sksl/analysis/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/dsl/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/BUILD.bazel
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_graphite_frag.dehydrated.sksl
@@ -1329,6 +1330,7 @@ FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/ir/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
+FILE: ../../../third_party/skia/src/sksl/sksl_compute.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_frag.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_graphite_frag.sksl
@@ -5957,6 +5959,7 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/FixedCountBufferUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/FixedCountBufferUtils.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/LinearTolerances.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLFinalizationChecks.cpp
+FILE: ../../../third_party/skia/src/sksl/analysis/SkSLGetComputeShaderMainParams.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsSameExpressionTree.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsTrivialExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLNoOpErrorReporter.h
