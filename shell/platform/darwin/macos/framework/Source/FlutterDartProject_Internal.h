@@ -26,7 +26,7 @@
 @property(nonatomic, readonly, nullable) NSString* ICUDataPath;
 
 /**
- * The path to the Application library executable.
+ * The path to the application's compiled Dart project library.
  */
 @property(nonatomic, readonly, nullable) NSString* applicationLibraryPath;
 
