@@ -256,6 +256,7 @@ void DisplayListDispatcher::setColorFilter(
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
     case flutter::DlColorFilterType::kUnknown:
       UNIMPLEMENTED;
+      paint_.color_filter = std::nullopt;
       break;
   }
 }
@@ -299,7 +300,7 @@ static FilterContents::BlurStyle ToBlurStyle(SkBlurStyle blur_style) {
 void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
   // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
-    paint_.mask_filter = std::nullopt;
+    paint_.mask_blur = std::nullopt;
     return;
   }
   switch (filter->type()) {
@@ -309,17 +310,12 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
       auto style = ToBlurStyle(blur->style());
       auto sigma = FilterContents::Sigma(blur->sigma());
 
-      paint_.mask_filter = [style, sigma](FilterInput::Ref input,
-                                          bool is_solid_color) {
-        if (is_solid_color) {
-          return FilterContents::MakeGaussianBlur(input, sigma, sigma, style);
-        }
-        return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style);
-      };
+      paint_.mask_blur = {sigma, style};
       break;
     }
     case flutter::DlMaskFilterType::kUnknown:
       UNIMPLEMENTED;
+      paint_.mask_blur = std::nullopt;
       break;
   }
 }
@@ -351,6 +347,7 @@ void DisplayListDispatcher::setImageFilter(
     case flutter::DlImageFilterType::kColorFilter:
     case flutter::DlImageFilterType::kUnknown:
       UNIMPLEMENTED;
+      paint_.image_filter = std::nullopt;
       break;
   }
 }

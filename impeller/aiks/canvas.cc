@@ -129,8 +129,7 @@ void Canvas::DrawPath(Path path, Paint paint) {
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(
-      paint.WithFilters(paint.CreateContentsForEntity(std::move(path))));
+  entity.SetContents(paint.CreateContentsForEntity(std::move(path)));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }
@@ -240,7 +239,7 @@ void Canvas::DrawImageRect(std::shared_ptr<Image> image,
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetContents(paint.WithFilters(contents, false));
+  entity.SetContents(paint.WithFilters(contents, true, false));
   entity.SetTransformation(GetCurrentTransformation());
 
   GetCurrentPass().AddEntity(std::move(entity));
@@ -297,7 +296,7 @@ void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
                            Matrix::MakeTranslation(position));
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(std::move(text_contents), true));
+  entity.SetContents(paint.WithFilters(std::move(text_contents), true, true));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }
@@ -312,7 +311,7 @@ void Canvas::DrawVertices(Vertices vertices,
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(std::move(contents), true));
+  entity.SetContents(paint.WithFilters(std::move(contents), false));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }

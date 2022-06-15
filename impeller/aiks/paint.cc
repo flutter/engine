@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/paint.h"
+
+#include <memory>
+
+#include "impeller/entity/contents/box_shadow_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 
@@ -17,11 +21,21 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
 
   switch (style) {
     case Style::kFill: {
+      if (mask_blur.has_value() &&
+          mask_blur->style == FilterContents::BlurStyle::kNormal &&
+          path.IsRectangle()) {
+        auto box_shadow = std::make_shared<BoxShadowContents>();
+        box_shadow->SetRect(path.GetBoundingBox());
+        box_shadow->SetColor(color);
+        box_shadow->SetSigma(mask_blur->sigma);
+        return WithFilters(box_shadow, false);
+      }
+
       auto solid_color = std::make_shared<SolidColorContents>();
       solid_color->SetPath(std::move(path));
       solid_color->SetColor(color);
       solid_color->SetCover(cover);
-      return solid_color;
+      return WithFilters(solid_color, true, true);
     }
     case Style::kStroke: {
       auto solid_stroke = std::make_shared<SolidStrokeContents>();
@@ -31,7 +45,7 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
       solid_stroke->SetStrokeMiter(stroke_miter);
       solid_stroke->SetStrokeCap(stroke_cap);
       solid_stroke->SetStrokeJoin(stroke_join);
-      return solid_stroke;
+      return WithFilters(solid_stroke, true, true);
     }
   }
 
@@ -40,12 +54,20 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
 
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input,
+    bool with_mask_filter,
     std::optional<bool> is_solid_color) const {
   bool is_solid_color_val = is_solid_color.value_or(!contents);
 
-  if (mask_filter.has_value()) {
-    const MaskFilterProc& filter = mask_filter.value();
-    input = filter(FilterInput::Make(input), is_solid_color_val);
+  if (with_mask_filter && mask_blur.has_value()) {
+    if (is_solid_color_val) {
+      input = FilterContents::MakeGaussianBlur(
+          FilterInput::Make(input), mask_blur->sigma, mask_blur->sigma,
+          mask_blur->style);
+    } else {
+      input = FilterContents::MakeBorderMaskBlur(
+          FilterInput::Make(input), mask_blur->sigma, mask_blur->sigma,
+          mask_blur->style);
+    }
   }
 
   if (image_filter.has_value()) {

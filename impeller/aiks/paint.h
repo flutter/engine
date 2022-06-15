@@ -29,6 +29,11 @@ struct Paint {
     kStroke,
   };
 
+  struct MaskBlur {
+    FilterContents::Sigma sigma;
+    FilterContents::BlurStyle style;
+  };
+
   Color color = Color::Black();
   std::shared_ptr<LinearGradientContents> contents;
 
@@ -41,21 +46,23 @@ struct Paint {
 
   std::optional<ImageFilterProc> image_filter;
   std::optional<ColorFilterProc> color_filter;
-  std::optional<MaskFilterProc> mask_filter;
+  std::optional<MaskBlur> mask_blur;
 
   /// @brief      Wrap this paint's configured filters to the given contents.
-  /// @param[in]  input           The contents to wrap with paint's filters.
-  /// @param[in]  is_solid_color  Affects mask blurring behavior. If false, use
-  ///                             the image border for mask blurring. If true,
-  ///                             do a Gaussian blur to achieve the mask
-  ///                             blurring effect for arbitrary paths. If unset,
-  ///                             use the current paint configuration to infer
-  ///                             the result.
+  /// @param[in]  input             The contents to wrap with paint's filters.
+  /// @param[in]  with_mask_filter  If false, don't append the mask filter.
+  /// @param[in]  is_solid_color    Affects mask blurring behavior. If false,
+  ///                               use the image border for mask blurring. If
+  ///                               true, do a Gaussian blur to achieve the mask
+  ///                               blurring effect for arbitrary paths. If
+  ///                               unset, use the current paint configuration
+  ///                               to infer the result.
   /// @return     The filter-wrapped contents. If there are no filters that need
   ///             to be wrapped for the current paint configuration, the
   ///             original contents is returned.
   std::shared_ptr<Contents> WithFilters(
       std::shared_ptr<Contents> input,
+      bool with_mask_filter = true,
       std::optional<bool> is_solid_color = std::nullopt) const;
 
   std::shared_ptr<Contents> CreateContentsForEntity(Path path = {},
