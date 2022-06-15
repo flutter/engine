@@ -32,7 +32,9 @@ class EmbedderConfigBuilder {
   enum class InitializationPreference {
     kSnapshotsInitialize,
     kAOTDataInitialize,
-    kMultiAOTInitialize,
+    kAOTDataAndSnapshotsInitialize,
+    kAOTDataAndPathInitialize,
+    kAOTSnapshotsAndPathInitialize,
     kNoInitialize,
   };
 
@@ -72,6 +74,8 @@ class EmbedderConfigBuilder {
   void SetSnapshots();
 
   void SetAOTDataElf();
+
+  void SetAOTPath();
 
   void SetIsolateCreateCallbackHook();
 

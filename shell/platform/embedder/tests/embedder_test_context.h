@@ -55,6 +55,8 @@ class EmbedderTestContext {
 
   const std::string& GetAssetsPath() const;
 
+  const std::string& GetApplicationLibraryPath() const;
+
   const fml::Mapping* GetVMSnapshotData() const;
 
   const fml::Mapping* GetVMSnapshotInstructions() const;
@@ -113,6 +115,7 @@ class EmbedderTestContext {
 #endif
 
   std::string assets_path_;
+  std::string application_library_path_;
   ELFAOTSymbols aot_symbols_;
   std::unique_ptr<fml::Mapping> vm_snapshot_data_;
   std::unique_ptr<fml::Mapping> vm_snapshot_instructions_;
