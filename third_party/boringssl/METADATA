@@ -22,4 +22,5 @@ third_party {
 # Notify reviewers and mailing lists
 presubmit: {
   review_notify: "jseales"
+  review_notify: "godofredoc"
 }
