@@ -115,17 +115,21 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     AddCommandLineArgument("--disable-observatory");
 
     if (preference == InitializationPreference::kSnapshotsInitialize ||
-        preference == InitializationPreference::kAOTDataAndSnapshotsInitialize || 
-        preference == InitializationPreference::kAOTSnapshotsAndPathInitialize) {
+        preference ==
+            InitializationPreference::kAOTDataAndSnapshotsInitialize ||
+        preference ==
+            InitializationPreference::kAOTSnapshotsAndPathInitialize) {
       SetSnapshots();
     }
     if (preference == InitializationPreference::kAOTDataInitialize ||
-        preference == InitializationPreference::kAOTDataAndSnapshotsInitialize ||
+        preference ==
+            InitializationPreference::kAOTDataAndSnapshotsInitialize ||
         preference == InitializationPreference::kAOTDataAndPathInitialize) {
       SetAOTDataElf();
     }
     if (preference == InitializationPreference::kAOTDataAndPathInitialize ||
-        preference == InitializationPreference::kAOTSnapshotsAndPathInitialize) {
+        preference ==
+            InitializationPreference::kAOTSnapshotsAndPathInitialize) {
       SetAOTPath();
     }
   }
@@ -244,7 +248,8 @@ void EmbedderConfigBuilder::SetAOTDataElf() {
 }
 
 void EmbedderConfigBuilder::SetAOTPath() {
-  project_args_.application_library_path = context_.GetApplicationLibraryPath().c_str();
+  project_args_.application_library_path =
+      context_.GetApplicationLibraryPath().c_str();
 }
 
 void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
