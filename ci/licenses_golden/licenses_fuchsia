@@ -1,4 +1,4 @@
-Signature: 1ae945b1416e0bd5d16eaea0881666e0
+Signature: d3bf0590201dd1b9a2330d097e98c2a7
 
 UNUSED LICENSES:
 
@@ -618,6 +618,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sysroot/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
@@ -1369,6 +1370,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sysroot/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
@@ -2017,6 +2019,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sysroot/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/trace/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/vulkan.json
@@ -3602,6 +3605,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/internal/lo
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/internal/local_component_runner.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/local_component_handles.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/realm_builder.dart
+FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/power_metrics.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/overview.fidl
@@ -3717,6 +3721,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_base.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/internal/convert.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/elf_stdio.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/include/lib/sys/inspect/tree_handler_settings.h
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 The Fuchsia Authors. All rights reserved.
