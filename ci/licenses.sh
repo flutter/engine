@@ -44,7 +44,7 @@ fi
 echo "Verifying license script is still happy..."
 echo "Using pub from $(command -v pub), dart from $(command -v dart)"
 
-untracked_files="$(cd "$SRC_DIR/flutter"; git status --ignored --short | grep -E "^!" | awk "{print\$2}")"
+untracked_files="$(cd "$SRC_DIR/flutter"; git status --ignored --short | grep -E "^!" | awk "{print\$2}"; echo "third_party/boringssl/")"
 untracked_count="$(echo "$untracked_files" | wc -l)"
 if [[ $untracked_count -gt 0 ]]; then
   echo ""
