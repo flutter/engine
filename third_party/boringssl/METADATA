@@ -1,0 +1,25 @@
+name: "BoringSSL"
+description:
+  "BoringSSL is a fork of OpenSSL that is designed to meet Google's needs."
+third_party {
+  url {
+    type: HOMEPAGE
+    value: "https://boringssl.googlesource.com/boringssl/"
+  }
+  version: "87f316d7748268eb56f2dc147bd593254ae93198"
+  last_upgrade_date: {
+    year: 2021
+    month: 29
+    day: 09
+  }
+  contains_binaries: true
+  license_type: notice
+  security {
+    # https://nvd.nist.gov/products/cpe/search/results?namingFormat=2.3&keyword=cpe%3A2.3%3Aa%3Agoogle%3Aboringssl
+    tag: "NVD-CPE2.3:cpe:/a:google:boringssl:2022-04-08"
+  }
+}
+# Notify reviewers and mailing lists
+presubmit: {
+  review_notify: "jseales"
+}
