@@ -73,6 +73,7 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
 
 TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
   FlutterViewController* viewControllerMock = CreateMockViewController();
+  [viewControllerMock loadView];
   EXPECT_EQ([viewControllerMock.view acceptsFirstMouse:nil], YES);
 }
 
