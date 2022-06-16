@@ -487,7 +487,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           onComplete.run(
               new PlatformViewsChannel.PlatformViewBufferSize(
-                  toLogicalPixels(view.getBufferWidth()), toLogicalPixels(view.getBufferHeight())));
+                  toLogicalPixels(viewWrapper.getBufferWidth()),
+                  toLogicalPixels(viewWrapper.getBufferHeight())));
         }
 
         @Override

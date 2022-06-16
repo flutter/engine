@@ -10,7 +10,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
-import android.os.Build;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
@@ -19,7 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.view.TextureRegistry;
 
-@TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
+@TargetApi(20)
 class VirtualDisplayController {
 
   public static VirtualDisplayController create(
@@ -230,7 +229,6 @@ class VirtualDisplayController {
     presentation.dispatchTouchEvent(event);
   }
 
-  @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   static class OneTimeOnDrawListener implements ViewTreeObserver.OnDrawListener {
     static void schedule(View view, Runnable runnable) {
       OneTimeOnDrawListener listener = new OneTimeOnDrawListener(view, runnable);
