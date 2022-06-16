@@ -20,10 +20,8 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('cannot be created with size less than 1', () {
-      final SurfaceFactory negativeFactory = SurfaceFactory(-1);
-      expect(negativeFactory.maximumSurfaces, 1);
-      final SurfaceFactory zeroFactory = SurfaceFactory(0);
-      expect(zeroFactory.maximumSurfaces, 1);
+      expect(SurfaceFactory(-1).maximumSurfaces, 1);
+      expect(SurfaceFactory(0).maximumSurfaces, 1);
       expect(SurfaceFactory(1).maximumSurfaces, 1);
       expect(SurfaceFactory(2).maximumSurfaces, 2);
     });
