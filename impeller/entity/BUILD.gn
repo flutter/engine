@@ -9,8 +9,21 @@ impeller_shaders("entity_shaders") {
 
   shaders = [
     "shaders/blending/advanced_blend.vert",
+    "shaders/blending/advanced_blend_color.frag",
     "shaders/blending/advanced_blend_colorburn.frag",
+    "shaders/blending/advanced_blend_colordodge.frag",
+    "shaders/blending/advanced_blend_darken.frag",
+    "shaders/blending/advanced_blend_difference.frag",
+    "shaders/blending/advanced_blend_exclusion.frag",
+    "shaders/blending/advanced_blend_hardlight.frag",
+    "shaders/blending/advanced_blend_hue.frag",
+    "shaders/blending/advanced_blend_lighten.frag",
+    "shaders/blending/advanced_blend_luminosity.frag",
+    "shaders/blending/advanced_blend_multiply.frag",
+    "shaders/blending/advanced_blend_overlay.frag",
+    "shaders/blending/advanced_blend_saturation.frag",
     "shaders/blending/advanced_blend_screen.frag",
+    "shaders/blending/advanced_blend_softlight.frag",
     "shaders/blending/blend.frag",
     "shaders/blending/blend.vert",
     "shaders/border_mask_blur.frag",
@@ -58,8 +71,6 @@ impeller_component("entity") {
     "contents/filters/inputs/texture_filter_input.h",
     "contents/linear_gradient_contents.cc",
     "contents/linear_gradient_contents.h",
-    "contents/snapshot.cc",
-    "contents/snapshot.h",
     "contents/solid_color_contents.cc",
     "contents/solid_color_contents.h",
     "contents/solid_stroke_contents.cc",
@@ -76,6 +87,8 @@ impeller_component("entity") {
     "entity_pass.h",
     "entity_pass_delegate.cc",
     "entity_pass_delegate.h",
+    "inline_pass_context.cc",
+    "inline_pass_context.h",
   ]
 
   public_deps = [

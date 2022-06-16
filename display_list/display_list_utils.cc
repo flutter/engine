@@ -175,22 +175,34 @@ void SkMatrixDispatchHelper::reset() {
 void ClipBoundsDispatchHelper::clipRect(const SkRect& rect,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rect, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rect, is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
                                          SkClipOp clip_op,
                                          bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rrect.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rrect.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(path.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(path.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::intersect(const SkRect& rect, bool is_aa) {
@@ -290,7 +302,8 @@ void DisplayListBoundsCalculator::save() {
   accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options) {
+                                            const SaveLayerOptions options,
+                                            const DlImageFilter* backdrop) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   if (options.renders_with_attributes()) {
@@ -317,6 +330,10 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   // we set them as if a clip operation were performed.
   if (bounds) {
     clipRect(*bounds, SkClipOp::kIntersect, false);
+  }
+  if (backdrop) {
+    // A backdrop will affect up to the entire surface, bounded by the clip
+    AccumulateUnbounded();
   }
 }
 void DisplayListBoundsCalculator::restore() {

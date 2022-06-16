@@ -311,7 +311,7 @@ class FlutterViewEmbedder {
 
     final html.Element _accessibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
-        .prepareAccessibilityPlaceholder();
+        .prepareAccessibilityPlaceholder() as html.Element;
 
     glassPaneElementHostNode.nodes.addAll(<html.Node>[
       _accessibilityPlaceholder,
@@ -336,7 +336,7 @@ class FlutterViewEmbedder {
       _sceneHostElement!.style.opacity = '0.3';
     }
 
-    PointerBinding.initInstance(glassPaneElement as html.Element);
+    PointerBinding.initInstance(glassPaneElement);
     KeyboardBinding.initInstance(glassPaneElement);
 
     if (html.window.visualViewport == null && isWebKit) {

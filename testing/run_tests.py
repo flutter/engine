@@ -159,7 +159,7 @@ def BuildEngineExecutableCommand(
       gtest_parallel = os.path.join(
           buildroot_dir, 'third_party', 'gtest-parallel', 'gtest-parallel'
       )
-      test_command = ['python', gtest_parallel] + test_command
+      test_command = ['python3', gtest_parallel] + test_command
 
   return test_command
 
@@ -181,13 +181,15 @@ def RunEngineExecutable(
     return
 
   unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
+  env = os.environ.copy()
   # We cannot run the unstripped binaries directly when coverage is enabled.
   if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
     # Some tests depend on the EGL/GLES libraries placed in the build directory.
-    env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
+  elif IsMac():
+    env['DYLD_LIBRARY_PATH'] = build_dir
   else:
-    env = None
+    env['PATH'] = build_dir + ":" + env['PATH']
 
   print('Running %s in %s' % (executable_name, cwd))
 
@@ -199,8 +201,6 @@ def RunEngineExecutable(
       gtest=gtest,
   )
 
-  if not env:
-    env = os.environ.copy()
   env['FLUTTER_BUILD_DIRECTORY'] = build_dir
   for key, value in extra_env.items():
     env[key] = value
@@ -605,25 +605,53 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   ios_out_dir = os.path.join(out_dir, ios_variant)
   EnsureIosTestsAreBuilt(ios_out_dir)
 
-  ios_unit_test_dir = os.path.join(
-      buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests'
-  )
+  new_simulator_name = 'IosUnitTestsSimulator'
 
-  # Avoid using xcpretty unless the following can be addressed:
-  # - Make sure all relevant failure output is printed on a failure.
-  # - Make sure that a failing exit code is set for CI.
-  # See https://github.com/flutter/flutter/issues/63742
-  command = [
-      'xcodebuild '
-      '-sdk iphonesimulator '
-      '-scheme IosUnitTests '
-      "-destination platform='iOS Simulator,name=iPhone 11' "
-      'test '
-      'FLUTTER_ENGINE=' + ios_variant
+  # Delete simulators with this name in case any were leaked
+  # from another test run.
+  DeleteSimulator(new_simulator_name)
+
+  create_simulator = [
+      'xcrun '
+      'simctl '
+      'create '
+      '%s com.apple.CoreSimulator.SimDeviceType.iPhone-11' % new_simulator_name
   ]
-  if test_filter != None:
-    command[0] = command[0] + " -only-testing:%s" % test_filter
-  RunCmd(command, cwd=ios_unit_test_dir, shell=True)
+  RunCmd(create_simulator, shell=True)
+
+  try:
+    ios_unit_test_dir = os.path.join(
+        buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests'
+    )
+    # Avoid using xcpretty unless the following can be addressed:
+    # - Make sure all relevant failure output is printed on a failure.
+    # - Make sure that a failing exit code is set for CI.
+    # See https://github.com/flutter/flutter/issues/63742
+    test_command = [
+        'xcodebuild '
+        '-sdk iphonesimulator '
+        '-scheme IosUnitTests '
+        "-destination name='" + new_simulator_name + "' "
+        'test '
+        'FLUTTER_ENGINE=' + ios_variant
+    ]
+    if test_filter != None:
+      test_command[0] = test_command[0] + " -only-testing:%s" % test_filter
+    RunCmd(test_command, cwd=ios_unit_test_dir, shell=True)
+  finally:
+    DeleteSimulator(new_simulator_name)
+
+
+def DeleteSimulator(simulator_name):
+  # Will delete all simulators with this name.
+  delete_simulator = [
+      'xcrun',
+      'simctl',
+      'delete',
+      simulator_name,
+  ]
+  # Let this fail if the simulator was never created.
+  RunCmd(delete_simulator, expect_failure=True)
 
 
 def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
@@ -1029,7 +1057,7 @@ def main():
   variants_to_skip = ['host_release', 'host_profile']
   if ('engine' in types or
       'font-subset' in types) and args.variant not in variants_to_skip:
-    RunCmd(['python', 'test.py'], cwd=font_subset_dir)
+    RunCmd(['python3', 'test.py'], cwd=font_subset_dir)
 
 
 if __name__ == '__main__':

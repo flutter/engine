@@ -179,7 +179,6 @@ template("dart_snapshot_aot") {
     outputs = [ elf_object ]
 
     args = [
-      "--lazy_async_stacks",
       "--deterministic",
       "--snapshot_kind=app-aot-elf",
       "--loading_unit_manifest=" + rebase_path(loading_unit_manifest),
@@ -261,6 +260,7 @@ template("copy_fixtures") {
     copy(target_name) {
       sources = invoker.fixtures
       outputs = [ "$target_gen_dir/assets/{{source_file_part}}" ]
+      forward_variables_from(invoker, [ "deps" ])
     }
   } else {
     group(target_name) {
@@ -309,6 +309,7 @@ template("test_fixtures") {
     copy_fixtures_target_name = "_cf_$target_name"
     copy_fixtures(copy_fixtures_target_name) {
       fixtures = invoker.fixtures
+      forward_variables_from(invoker, [ "deps" ])
     }
     test_public_deps += [ ":$copy_fixtures_target_name" ]
   }
