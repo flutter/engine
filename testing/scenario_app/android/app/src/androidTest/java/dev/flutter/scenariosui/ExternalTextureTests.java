@@ -21,7 +21,6 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
-@Ignore("Test fails with java.lang.UnsupportedOperationException")
 public class ExternalTextureTests {
   private static final int SURFACE_WIDTH = 192;
   private static final int SURFACE_HEIGHT = 256;
