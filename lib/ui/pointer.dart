@@ -39,17 +39,17 @@ enum PointerChange {
 
   /// A pan/zoom has started on this pointer.
   ///
-  /// This type of events will always have kind [PointerDeviceKind.trackpad].
+  /// This type of event will always have kind [PointerDeviceKind.trackpad].
   panZoomStart,
 
   /// The pan/zoom on this pointer has updated.
   ///
-  /// This type of events will always have kind [PointerDeviceKind.trackpad].
+  /// This type of event will always have kind [PointerDeviceKind.trackpad].
   panZoomUpdate,
 
   /// The pan/zoom on this pointer has ended.
   ///
-  /// This type of events will always have kind [PointerDeviceKind.trackpad].
+  /// This type of event will always have kind [PointerDeviceKind.trackpad].
   panZoomEnd,
 }
 
@@ -59,10 +59,10 @@ enum PointerDeviceKind {
   ///
   /// The most common case is a touch screen.
   ///
-  /// When the user is operating with a trackpad on iOS (for example, Magic
-  /// Keyboard on iPad), clicking will also dispatch events with kind [touch] if
-  /// `Info.plist` is not present or returns NO for
-  /// `UIApplicationSupportsIndirectInputEvents`.
+  /// When the user is operating with a trackpad on iOS, clicking will also
+  /// dispatch events with kind [touch] if
+  /// `UIApplicationSupportsIndirectInputEvents` is not present in `Info.plist`
+  /// or returns NO.
   ///
   /// See also:
   ///
@@ -73,10 +73,11 @@ enum PointerDeviceKind {
   ///
   /// The most common case is a mouse on the desktop or Web.
   ///
-  /// When the user is operating with a trackpad on iOS (for example, Magic
-  /// Keyboard on iPad), moving the pointing cursor will also dispatch events
-  /// with kind [mouse], and clicking will dispatch events with kind [mouse] if
-  /// `Info.plist` returns YES for `UIApplicationSupportsIndirectInputEvents`.
+  /// When the user is operating with a trackpad on iOS, moving the pointing
+  /// cursor will also dispatch events with kind [mouse], and clicking will
+  /// dispatch events with kind [mouse] if
+  /// `UIApplicationSupportsIndirectInputEvents` is not present in `Info.plist`
+  /// or returns NO.
   ///
   /// See also:
   ///
@@ -89,21 +90,26 @@ enum PointerDeviceKind {
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
 
-  /// Gestures from a touch-based pointer device with an indirect surface.
+  /// Gestures from a trackpad.
   ///
-  /// On supporting platforms, when the user is operating on a physical
-  /// trackpad, events with kind [trackpad] are dispatched when the user
-  /// performs gestures on the trackpad, such as panning, zooming, scrolling,
-  /// or rotating. The [trackpad] kind is only found with [PointerChange] `add`,
+  /// A trackpad here is defined as a touch-based pointer device with an
+  /// indirect surface (the user operates the screen by touching something that
+  /// is not the screen).
+  ///
+  /// When the user makes zoom, pan, scroll or rotate gestures with a physical
+  /// trackpad, supporting platforms dispatch events with kind [trackpad].
+  ///
+  /// Events with kind [trackpad] can only have a [PointerChange] of `add`,
   /// `remove`, and pan-zoom related values.
   ///
-  /// Some platforms do not support or fully support trackpad gestures, and
-  /// might convert trackpad gestures into fake pointer events that simulate
-  /// dragging. This include Web, and iOS when `Info.plist` is not present or
-  /// returns NO for `UIApplicationSupportsIndirectInputEvents`.
+  /// Some platforms don't support (or don't fully support) trackpad
+  /// gestures, and might convert trackpad gestures into fake pointer events
+  /// that simulate dragging. This includes Web, and iOS when
+  /// `UIApplicationSupportsIndirectInputEvents` isn't present in `Info.plist`
+  /// or returns NO.
   ///
-  /// Moving the pointing cursor or clicking never triggers events with
-  /// kind [trackpad], but typically [touch] or [mouse].
+  /// Moving the pointing cursor or clicking typically triggers [touch] or
+  /// [mouse] events, but never triggers [trackpad] events.
   ///
   /// See also:
   ///
