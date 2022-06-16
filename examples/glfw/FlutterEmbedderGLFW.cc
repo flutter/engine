@@ -6,8 +6,8 @@
 #include <chrono>
 #include <iostream>
 
-#include "embedder.h"
 #include "GLFW/glfw3.h"
+#include "embedder.h"
 
 // This value is calculated after the window is created.
 static double g_pixelRatio = 1.0;
