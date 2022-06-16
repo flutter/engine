@@ -98,6 +98,10 @@
   return YES;
 }
 
+- (BOOL)acceptsFirstMouse {
+  return YES;
+}
+
 - (BOOL)acceptsFirstResponder {
   return YES;
 }
