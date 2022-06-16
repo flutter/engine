@@ -187,7 +187,7 @@ class ParagraphTxt : public Paragraph {
   mutable std::unique_ptr<icu::BreakIterator> word_breaker_;
 
   std::vector<LineMetrics> line_metrics_;
-  size_t final_line_count_;
+  size_t final_line_count_ = 0;
   std::vector<double> line_widths_;
 
   // Stores the result of Layout().
@@ -315,8 +315,8 @@ class ParagraphTxt : public Paragraph {
   double longest_line_ = -1.0f;
   double max_intrinsic_width_ = 0;
   double min_intrinsic_width_ = 0;
-  double alphabetic_baseline_ = FLT_MAX;
-  double ideographic_baseline_ = FLT_MAX;
+  double alphabetic_baseline_ = std::numeric_limits<double>::max();
+  double ideographic_baseline_ = std::numeric_limits<double>::max();
 
   bool needs_layout_ = true;
 

@@ -33,10 +33,10 @@ TEST(EncodableValueTest, Int) {
 
 // Test the int/long convenience wrapper.
 TEST(EncodableValueTest, LongValue) {
-  EncodableValue value(std::numeric_limits<int32_t>::max());
-  EXPECT_EQ(value.LongValue(), std::numeric_limits<int32_t>::max());
-  value = std::numeric_limits<int64_t>::max();
-  EXPECT_EQ(value.LongValue(), std::numeric_limits<int64_t>::max());
+  const EncodableValue int_value(std::numeric_limits<int32_t>::max());
+  EXPECT_EQ(int_value.LongValue(), std::numeric_limits<int32_t>::max());
+  const EncodableValue long_value(std::numeric_limits<int64_t>::max());
+  EXPECT_EQ(long_value.LongValue(), std::numeric_limits<int64_t>::max());
 }
 
 TEST(EncodableValueTest, Long) {
@@ -217,6 +217,9 @@ TEST(EncodableValueTest, Comparison) {
       EncodableValue(
           EncodableMap{{EncodableValue(), EncodableValue(1.0)},
                        {EncodableValue("key"), EncodableValue("value")}}),
+      // FloatList
+      EncodableValue(std::vector<float>{0, 1}),
+      EncodableValue(std::vector<float>{0, 100}),
   };
 
   for (size_t i = 0; i < values.size(); ++i) {
@@ -279,5 +282,52 @@ TEST(EncodableValueTest, DeepCopy) {
   innermost_map = std::get<EncodableMap>(second_child[2]);
   EXPECT_EQ(std::get<std::string>(innermost_map[EncodableValue("a")]), "b");
 }
+
+// Simple class for testing custom encodable values
+class TestCustomValue {
+ public:
+  TestCustomValue() : x_(0), y_(0) {}
+  TestCustomValue(int x, int y) : x_(x), y_(y) {}
+  ~TestCustomValue() = default;
+
+  int x() const { return x_; }
+  int y() const { return y_; }
+
+ private:
+  int x_;
+  int y_;
+};
+
+TEST(EncodableValueTest, TypeIndexesCorrect) {
+  // Null
+  EXPECT_EQ(EncodableValue().index(), 0u);
+  // Bool
+  EXPECT_EQ(EncodableValue(true).index(), 1u);
+  // Int32
+  EXPECT_EQ(EncodableValue(100).index(), 2u);
+  // Int64
+  EXPECT_EQ(EncodableValue(INT64_C(100)).index(), 3u);
+  // Double
+  EXPECT_EQ(EncodableValue(7.0).index(), 4u);
+  // String
+  EXPECT_EQ(EncodableValue("one").index(), 5u);
+  // ByteList
+  EXPECT_EQ(EncodableValue(std::vector<uint8_t>()).index(), 6u);
+  // IntList
+  EXPECT_EQ(EncodableValue(std::vector<int32_t>()).index(), 7u);
+  // LongList
+  EXPECT_EQ(EncodableValue(std::vector<int64_t>()).index(), 8u);
+  // DoubleList
+  EXPECT_EQ(EncodableValue(std::vector<double>()).index(), 9u);
+  // List
+  EXPECT_EQ(EncodableValue(EncodableList()).index(), 10u);
+  // Map
+  EXPECT_EQ(EncodableValue(EncodableMap()).index(), 11u);
+  // Custom type
+  TestCustomValue customValue;
+  EXPECT_EQ(((EncodableValue)CustomEncodableValue(customValue)).index(), 12u);
+  // FloatList
+  EXPECT_EQ(EncodableValue(std::vector<float>()).index(), 13u);
+}  // namespace flutter
 
 }  // namespace flutter

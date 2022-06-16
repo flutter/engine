@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_ACCESSIBILITY_BRIDGE_H_
-#define FLUTTER_SHELL_PLATFORM_COMMON_CPP_ACCESSIBILITY_BRIDGE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_ACCESSIBILITY_BRIDGE_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_ACCESSIBILITY_BRIDGE_H_
 
 #include <unordered_map>
 
+#include "flutter/fml/mapping.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #include "flutter/third_party/accessibility/ax/ax_event_generator.h"
@@ -25,7 +26,7 @@ namespace flutter {
 ///
 /// The bridge creates an AXTree to hold the semantics data that comes from
 /// Flutter semantics updates. The tree holds AXNode[s] which contain the
-/// semantics information for semantics node. The AXTree ressemble the Flutter
+/// semantics information for semantics node. The AXTree resemble the Flutter
 /// semantics tree in the Flutter framework. The bridge also uses
 /// FlutterPlatformNodeDelegate to wrap each AXNode in order to provide
 /// an accessibility tree in the native format.
@@ -88,7 +89,7 @@ class AccessibilityBridge
     ///                                 action.
     virtual void DispatchAccessibilityAction(AccessibilityNodeId target,
                                              FlutterSemanticsAction action,
-                                             std::vector<uint8_t> data) = 0;
+                                             fml::MallocMapping data) = 0;
 
     //---------------------------------------------------------------------------
     /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
@@ -96,17 +97,24 @@ class AccessibilityBridge
     ///             by accessibility bridge whenever a new AXNode is created in
     ///             AXTree. Each platform needs to implement this method in
     ///             order to inject its subclass into the accessibility bridge.
-    virtual std::unique_ptr<FlutterPlatformNodeDelegate>
+    virtual std::shared_ptr<FlutterPlatformNodeDelegate>
     CreateFlutterPlatformNodeDelegate() = 0;
   };
+
   //-----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a accessibility bridge.
   ///
   /// @param[in]  user_data           A custom pointer to the data of your
   ///                                 choice. This pointer can be retrieve later
   ///                                 through GetUserData().
-  AccessibilityBridge(std::unique_ptr<AccessibilityBridgeDelegate> delegate);
+  explicit AccessibilityBridge(
+      std::unique_ptr<AccessibilityBridgeDelegate> delegate);
   ~AccessibilityBridge();
+
+  //-----------------------------------------------------------------------------
+  /// @brief      The ID of the root node in the accessibility tree. In Flutter,
+  //              this is always 0.
+  static constexpr int32_t kRootNodeId = 0;
 
   //------------------------------------------------------------------------------
   /// @brief      Adds a semantics node update to the pending semantics update.
@@ -153,6 +161,19 @@ class AccessibilityBridge
   ///             data contains information such as the id of the node that
   ///             has the keyboard focus or the text selection range.
   const ui::AXTreeData& GetAXTreeData() const;
+
+  //------------------------------------------------------------------------------
+  /// @brief      Gets all pending accessibility events generated during
+  ///             semantics updates. This is useful when deciding how to handle
+  ///             events in AccessibilityBridgeDelegate::OnAccessibilityEvent in
+  ///             case one may decide to handle an event differently based on
+  ///             all pending events.
+  const std::vector<ui::AXEventGenerator::TargetedEvent> GetPendingEvents();
+
+  //------------------------------------------------------------------------------
+  /// @brief      Update the AccessibilityBridgeDelegate stored in the
+  ///             accessibility bridge to a new one.
+  void UpdateDelegate(std::unique_ptr<AccessibilityBridgeDelegate> delegate);
 
  private:
   // See FlutterSemanticsNode in embedder.h
@@ -268,7 +289,7 @@ class AccessibilityBridge
   // |FlutterPlatformNodeDelegate::OwnerBridge|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
-                                   std::vector<uint8_t> data) override;
+                                   fml::MallocMapping data) override;
 
   // |FlutterPlatformNodeDelegate::OwnerBridge|
   gfx::RectF RelativeToGlobalBounds(const ui::AXNode* node,
@@ -280,4 +301,4 @@ class AccessibilityBridge
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_ACCESSIBILITY_BRIDGE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_ACCESSIBILITY_BRIDGE_H_

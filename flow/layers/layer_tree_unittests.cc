@@ -19,7 +19,6 @@ class LayerTreeTest : public CanvasTest {
  public:
   LayerTreeTest()
       : layer_tree_(SkISize::Make(64, 64), 1.0f),
-        compositor_context_(fml::kDefaultFrameBudget),
         root_transform_(SkMatrix::Translate(1.0f, 1.0f)),
         scoped_frame_(compositor_context_.AcquireFrame(nullptr,
                                                        &mock_canvas(),
@@ -27,6 +26,7 @@ class LayerTreeTest : public CanvasTest {
                                                        root_transform_,
                                                        false,
                                                        true,
+                                                       nullptr,
                                                        nullptr)) {}
 
   LayerTree& layer_tree() { return layer_tree_; }
@@ -51,7 +51,7 @@ TEST_F(LayerTreeTest, PaintingEmptyLayerDies) {
   layer_tree().Paint(frame());
 }
 
-TEST_F(LayerTreeTest, PaintBeforePreollDies) {
+TEST_F(LayerTreeTest, PaintBeforePrerollDies) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   SkPath child_path;
   child_path.addRect(child_bounds);
@@ -113,9 +113,6 @@ TEST_F(LayerTreeTest, Multiple) {
   EXPECT_FALSE(mock_layer1->is_empty());
   EXPECT_FALSE(mock_layer2->is_empty());
   EXPECT_FALSE(layer->is_empty());
-  EXPECT_FALSE(mock_layer1->needs_system_composite());
-  EXPECT_FALSE(mock_layer2->needs_system_composite());
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
@@ -149,9 +146,6 @@ TEST_F(LayerTreeTest, MultipleWithEmpty) {
   EXPECT_FALSE(mock_layer1->is_empty());
   EXPECT_TRUE(mock_layer2->is_empty());
   EXPECT_FALSE(layer->is_empty());
-  EXPECT_FALSE(mock_layer1->needs_system_composite());
-  EXPECT_FALSE(mock_layer2->needs_system_composite());
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
@@ -169,8 +163,7 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
   const SkPaint child_paint1(SkColors::kGray);
   const SkPaint child_paint2(SkColors::kGreen);
   auto mock_layer1 = std::make_shared<MockLayer>(
-      child_path1, child_paint1, false /* fake_has_platform_view */,
-      true /* fake_needs_system_composite */);
+      child_path1, child_paint1, false /* fake_has_platform_view */);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer1);
@@ -186,9 +179,6 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
   EXPECT_FALSE(mock_layer1->is_empty());
   EXPECT_FALSE(mock_layer2->is_empty());
   EXPECT_FALSE(layer->is_empty());
-  EXPECT_TRUE(mock_layer1->needs_system_composite());
-  EXPECT_FALSE(mock_layer2->needs_system_composite());
-  EXPECT_TRUE(layer->needs_system_composite());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
@@ -201,6 +191,90 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
                        0, MockCanvas::DrawPathData{child_path1, child_paint1}},
                    MockCanvas::DrawCall{0, MockCanvas::DrawPathData{
                                                child_path2, child_paint2}}}));
+}
+
+TEST_F(LayerTreeTest, PrerollContextInitialization) {
+  // This EXPECT macro will ensure that if any fields get added to the
+  // PrerollContext that this test must be revisited and updated.
+  // If any fields get removed or replaced, then the expect_defaults closure
+  // will fail to compile, again bringing attention to updating this test.
+  EXPECT_EQ(sizeof(PrerollContext), size_t(104));
+
+  MutatorsStack mock_mutators;
+  FixedRefreshRateStopwatch mock_raster_time;
+  FixedRefreshRateStopwatch mock_ui_time;
+  TextureRegistry mock_registry;
+
+  auto expect_defaults = [&mock_mutators, &mock_raster_time, &mock_ui_time,
+                          &mock_registry](const PrerollContext& context) {
+    EXPECT_EQ(context.raster_cache, nullptr);
+    EXPECT_EQ(context.gr_context, nullptr);
+    EXPECT_EQ(context.view_embedder, nullptr);
+    EXPECT_EQ(&context.mutators_stack, &mock_mutators);
+    EXPECT_EQ(context.dst_color_space, nullptr);
+    EXPECT_EQ(context.cull_rect, SkRect::MakeEmpty());
+    EXPECT_EQ(context.surface_needs_readback, false);
+
+    EXPECT_EQ(&context.raster_time, &mock_raster_time);
+    EXPECT_EQ(&context.ui_time, &mock_ui_time);
+    EXPECT_EQ(&context.texture_registry, &mock_registry);
+    EXPECT_EQ(context.checkerboard_offscreen_layers, false);
+    EXPECT_EQ(context.frame_device_pixel_ratio, 1.0f);
+
+    EXPECT_EQ(context.has_platform_view, false);
+    EXPECT_EQ(context.has_texture_layer, false);
+
+    EXPECT_EQ(context.subtree_can_inherit_opacity, false);
+  };
+
+  // These 4 initializers are required because they are handled by reference
+  PrerollContext context{
+      .mutators_stack = mock_mutators,
+      .raster_time = mock_raster_time,
+      .ui_time = mock_ui_time,
+      .texture_registry = mock_registry,
+  };
+  expect_defaults(context);
+}
+
+TEST_F(LayerTreeTest, PaintContextInitialization) {
+  // This EXPECT macro will ensure that if any fields get added to the
+  // PaintContext that this test must be revisited and updated.
+  // If any fields get removed or replaced, then the expect_defaults closure
+  // will fail to compile, again bringing attention to updating this test.
+  EXPECT_EQ(sizeof(Layer::PaintContext), size_t(96));
+
+  FixedRefreshRateStopwatch mock_raster_time;
+  FixedRefreshRateStopwatch mock_ui_time;
+  TextureRegistry mock_registry;
+
+  auto expect_defaults = [&mock_raster_time, &mock_ui_time,
+                          &mock_registry](const Layer::PaintContext& context) {
+    EXPECT_EQ(context.internal_nodes_canvas, nullptr);
+    EXPECT_EQ(context.leaf_nodes_canvas, nullptr);
+    EXPECT_EQ(context.gr_context, nullptr);
+    EXPECT_EQ(context.view_embedder, nullptr);
+    EXPECT_EQ(&context.raster_time, &mock_raster_time);
+    EXPECT_EQ(&context.ui_time, &mock_ui_time);
+    EXPECT_EQ(&context.texture_registry, &mock_registry);
+    EXPECT_EQ(context.raster_cache, nullptr);
+    EXPECT_EQ(context.checkerboard_offscreen_layers, false);
+    EXPECT_EQ(context.frame_device_pixel_ratio, 1.0f);
+
+    EXPECT_EQ(context.enable_leaf_layer_tracing, false);
+    EXPECT_EQ(context.layer_snapshot_store, nullptr);
+
+    EXPECT_EQ(context.inherited_opacity, SK_Scalar1);
+    EXPECT_EQ(context.leaf_nodes_builder, nullptr);
+  };
+
+  // These 4 initializers are required because they are handled by reference
+  Layer::PaintContext context{
+      .raster_time = mock_raster_time,
+      .ui_time = mock_ui_time,
+      .texture_registry = mock_registry,
+  };
+  expect_defaults(context);
 }
 
 }  // namespace testing

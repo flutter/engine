@@ -5,10 +5,9 @@
 #ifndef UI_ACCESSIBILITY_AX_NODE_H_
 #define UI_ACCESSIBILITY_AX_NODE_H_
 
-#include <stdint.h>
-#include <optional>
-
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -20,6 +19,11 @@
 #include "base/logging.h"
 #include "gfx/geometry/rect.h"
 #include "gfx/transform.h"
+
+#ifdef _WIN32
+// windowx.h defines GetNextSibling as a macro.
+#undef GetNextSibling
+#endif
 
 namespace ui {
 

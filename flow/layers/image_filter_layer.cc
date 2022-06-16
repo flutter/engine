@@ -11,6 +11,36 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
       transformed_filter_(nullptr),
       render_count_(1) {}
 
+void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const ImageFilterLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (filter_ != prev->filter_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
+
+  if (filter_) {
+    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
+    if (filter) {
+      // This transform will be applied to every child rect in the subtree
+      context->PushFilterBoundsAdjustment([filter](SkRect rect) {
+        return SkRect::Make(
+            filter->filterBounds(rect.roundOut(), SkMatrix::I(),
+                                 SkImageFilter::kForward_MapDirection));
+      });
+    }
+  }
+  DiffChildren(context, prev);
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
@@ -19,6 +49,11 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);
+  context->subtree_can_inherit_opacity = true;
+
+  // We always paint with a saveLayer (or a cached rendering),
+  // so we can always apply opacity in any of those cases.
+  context->subtree_can_inherit_opacity = true;
 
   if (!filter_) {
     set_paint_bounds(child_bounds);
@@ -32,13 +67,19 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   set_paint_bounds(child_bounds);
 
+  SkMatrix child_matrix(matrix);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
+#endif
+
   transformed_filter_ = nullptr;
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     // We have rendered this same ImageFilterLayer object enough
     // times to consider its properties and children to be stable
     // from frame to frame so we try to cache the layer itself
     // for maximum performance.
-    TryToPrepareRasterCache(context, this, matrix);
+    TryToPrepareRasterCache(context, this, child_matrix,
+                            RasterCacheLayerStrategy::kLayer);
   } else {
     // This ImageFilterLayer is not yet considered stable so we
     // increment the count to measure how many times it has been
@@ -52,14 +93,15 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     // instances can do this operation on some transforms and some
     // (filters or transforms) cannot. We can only cache the children
     // and apply the filter on the fly if this operation succeeds.
-    transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
+    transformed_filter_ = filter_->makeWithLocalMatrix(child_matrix);
     if (transformed_filter_) {
       // With a modified SkImageFilter we can now try to cache the
       // children to avoid their rendering costs if they remain
       // stable between frames and also avoiding a rendering surface
       // switch during the Paint phase even if they are not stable.
       // This benefit is seen most during animations.
-      TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
+      TryToPrepareRasterCache(context, this, matrix,
+                              RasterCacheLayerStrategy::kLayerChildren);
     }
   }
 }
@@ -68,30 +110,37 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
+  AutoCachePaint cache_paint(context);
+
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
+
   if (context.raster_cache) {
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                   RasterCacheLayerStrategy::kLayer,
+                                   cache_paint.paint())) {
       return;
     }
     if (transformed_filter_) {
-      SkPaint paint;
-      paint.setImageFilter(transformed_filter_);
-
-      if (context.raster_cache->Draw(GetCacheableChild(),
-                                     *context.leaf_nodes_canvas, &paint)) {
+      cache_paint.setImageFilter(transformed_filter_);
+      if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
+                                     RasterCacheLayerStrategy::kLayerChildren,
+                                     cache_paint.paint())) {
         return;
       }
     }
   }
 
-  SkPaint paint;
-  paint.setImageFilter(filter_);
+  cache_paint.setImageFilter(filter_);
 
   // Normally a save_layer is sized to the current layer bounds, but in this
   // case the bounds of the child may not be the same as the filtered version
   // so we use the bounds of the child container which do not include any
   // modifications that the filter might apply.
   Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
-      context, GetChildContainer()->paint_bounds(), &paint);
+      context, child_paint_bounds(), cache_paint.paint());
   PaintChildren(context);
 }
 

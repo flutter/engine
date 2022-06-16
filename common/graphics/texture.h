@@ -18,15 +18,16 @@ namespace flutter {
 
 class Texture {
  public:
-  Texture(int64_t id);  // Called from UI or raster thread.
-  virtual ~Texture();   // Called from raster thread.
+  explicit Texture(int64_t id);  // Called from UI or raster thread.
+  virtual ~Texture();            // Called from raster thread.
 
   // Called from raster thread.
   virtual void Paint(SkCanvas& canvas,
                      const SkRect& bounds,
                      bool freeze,
                      GrDirectContext* context,
-                     const SkSamplingOptions& sampling) = 0;
+                     const SkSamplingOptions& sampling,
+                     const SkPaint* paint = nullptr) = 0;
 
   // Called from raster thread.
   virtual void OnGrContextCreated() = 0;

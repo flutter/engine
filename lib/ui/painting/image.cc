@@ -44,23 +44,16 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 }
 
 void CanvasImage::dispose() {
-  auto hint_freed_delegate = UIDartState::Current()->GetHintFreedDelegate();
-  if (hint_freed_delegate) {
-    hint_freed_delegate->HintFreed(GetAllocationSize());
-  }
   image_.reset();
   ClearDartWrapper();
 }
 
 size_t CanvasImage::GetAllocationSize() const {
-  if (auto image = image_.get()) {
-    const auto& info = image->imageInfo();
-    const auto kMipmapOverhead = 4.0 / 3.0;
-    const size_t image_byte_size = info.computeMinByteSize() * kMipmapOverhead;
-    return image_byte_size + sizeof(this);
-  } else {
-    return sizeof(CanvasImage);
+  auto size = sizeof(this);
+  if (image_) {
+    size += image_->GetApproximateByteSize();
   }
+  return size;
 }
 
 }  // namespace flutter

@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../configuration.dart';
+import '../dom.dart';
+import 'semantics.dart';
 
 /// Renders [_label] and [_value] to the semantics DOM.
 ///
@@ -43,26 +46,30 @@ class LabelAndValue extends RoleManager {
   ///   its label is not reachable via accessibility focus. This happens, for
   ///   example in popup dialogs, such as the alert dialog. The text of the
   ///   alert is supplied as a label on the parent node.
-  html.Element? _auxiliaryValueElement;
+  DomElement? _auxiliaryValueElement;
 
   @override
   void update() {
     final bool hasValue = semanticsObject.hasValue;
     final bool hasLabel = semanticsObject.hasLabel;
+    final bool hasTooltip = semanticsObject.hasTooltip;
 
-    // If the node is incrementable or a text field the value is reported to the
-    // browser via the respective role managers. We do not need to also render
-    // it again here.
-    final bool shouldDisplayValue = hasValue &&
-        !semanticsObject.isIncrementable &&
-        !semanticsObject.isTextField;
+    // If the node is incrementable the value is reported to the browser via
+    // the respective role manager. We do not need to also render it again here.
+    final bool shouldDisplayValue = hasValue && !semanticsObject.isIncrementable;
 
-    if (!hasLabel && !shouldDisplayValue) {
+    if (!hasLabel && !shouldDisplayValue && !hasTooltip) {
       _cleanUpDom();
       return;
     }
 
     final StringBuffer combinedValue = StringBuffer();
+    if (hasTooltip) {
+      combinedValue.write(semanticsObject.tooltip);
+      if (hasLabel || shouldDisplayValue) {
+        combinedValue.write('\n');
+      }
+    }
     if (hasLabel) {
       combinedValue.write(semanticsObject.label);
       if (shouldDisplayValue) {
@@ -82,7 +89,7 @@ class LabelAndValue extends RoleManager {
     }
 
     if (_auxiliaryValueElement == null) {
-      _auxiliaryValueElement = html.Element.tag('flt-semantics-value');
+      _auxiliaryValueElement = domDocument.createElement('flt-semantics-value');
       // Absolute positioning and sizing of leaf text elements confuses
       // VoiceOver. So we let the browser size the value node. The node will
       // still have a bigger tap area. However, if the node is a parent to other
@@ -96,7 +103,11 @@ class LabelAndValue extends RoleManager {
           ..width = '${semanticsObject.rect!.width}px'
           ..height = '${semanticsObject.rect!.height}px';
       }
-      _auxiliaryValueElement!.style.fontSize = '6px';
+
+      // Normally use a small font size so that text doesn't leave the scope
+      // of the semantics node. When debugging semantics, use a font size
+      // that's reasonably visible.
+      _auxiliaryValueElement!.style.fontSize = configuration.debugShowSemanticsNodes ? '12px' : '6px';
       semanticsObject.element.append(_auxiliaryValueElement!);
     }
     _auxiliaryValueElement!.text = combinedValue.toString();
@@ -107,7 +118,7 @@ class LabelAndValue extends RoleManager {
       _auxiliaryValueElement!.remove();
       _auxiliaryValueElement = null;
     }
-    semanticsObject.element.attributes.remove('aria-label');
+    semanticsObject.element.removeAttribute('aria-label');
     semanticsObject.setAriaRole('heading', false);
   }
 

@@ -156,7 +156,7 @@ abstract class FlutterView {
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
-  /// UI (such as the system notification area), or or physical intrusions in
+  /// UI (such as the system notification area), or physical intrusions in
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
@@ -199,7 +199,7 @@ abstract class FlutterView {
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
-  /// UI (such as the system notification area), or or physical intrusions in
+  /// UI (such as the system notification area), or physical intrusions in
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
@@ -224,6 +224,17 @@ abstract class FlutterView {
   /// * [Scaffold], which automatically applies the padding in material design
   ///   applications.
   WindowPadding get padding => viewConfiguration.padding;
+
+  /// {@macro dart.ui.ViewConfiguration.displayFeatures}
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism to access this data.
+  List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
 
   /// Updates the view's rendering on the GPU with the newly provided [Scene].
   ///
@@ -414,6 +425,24 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///    observe when this value changes.
   double get textScaleFactor => platformDispatcher.textScaleFactor;
 
+  /// Whether the spell check service is supported on the current platform.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// This option is used by [EditableTextState] to define its
+  /// [SpellCheckConfiguration] when spell check is enabled, but no spell check
+  /// service is specified.
+  bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
+
+  /// Whether briefly displaying the characters as you type in obscured text
+  /// fields is enabled in system settings.
+  ///
+  /// See also:
+  ///
+  ///  * [EditableText.obscureText], which when set to true hides the text in
+  ///    the text field.
+  bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
+
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
@@ -460,6 +489,27 @@ class SingletonFlutterWindow extends FlutterWindow {
   VoidCallback? get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
   set onPlatformBrightnessChanged(VoidCallback? callback) {
     platformDispatcher.onPlatformBrightnessChanged = callback;
+  }
+
+  /// The setting indicating the system font of the host platform.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  String? get systemFontFamily => platformDispatcher.systemFontFamily;
+
+  /// A callback that is invoked whenever [systemFontFamily] changes value.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback? get onSystemFontFamilyChanged => platformDispatcher.onSystemFontFamilyChanged;
+  set onSystemFontFamilyChanged(VoidCallback? callback) {
+    platformDispatcher.onSystemFontFamilyChanged = callback;
   }
 
   /// A callback that is invoked to notify the window that it is an appropriate
@@ -517,7 +567,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// {@macro dart.ui.window.accessorForwardWarning}
   ///
-  /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
+  /// It's preferred to use [SchedulerBinding.addTimingsCallback] than to use
   /// [SingletonFlutterWindow.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
@@ -633,6 +683,15 @@ class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onSemanticsEnabledChanged = callback;
   }
 
+  /// The [FrameData] object for the current frame.
+  FrameData get frameData => platformDispatcher.frameData;
+
+  /// A callback that is invoked when the window updates the [FrameData].
+  VoidCallback? get onFrameDataChanged => platformDispatcher.onFrameDataChanged;
+  set onFrameDataChanged(VoidCallback? callback) {
+    platformDispatcher.onFrameDataChanged = callback;
+  }
+
   /// A callback that is invoked whenever the user requests an action to be
   /// performed.
   ///
@@ -736,12 +795,13 @@ class SingletonFlutterWindow extends FlutterWindow {
 class AccessibilityFeatures {
   const AccessibilityFeatures._(this._index);
 
-  static const int _kAccessibleNavigation = 1 << 0;
+  static const int _kAccessibleNavigationIndex = 1 << 0;
   static const int _kInvertColorsIndex = 1 << 1;
   static const int _kDisableAnimationsIndex = 1 << 2;
   static const int _kBoldTextIndex = 1 << 3;
   static const int _kReduceMotionIndex = 1 << 4;
   static const int _kHighContrastIndex = 1 << 5;
+  static const int _kOnOffSwitchLabelsIndex = 1 << 6;
 
   // A bitfield which represents each enabled feature.
   final int _index;
@@ -750,7 +810,7 @@ class AccessibilityFeatures {
   /// interaction model of the device.
   ///
   /// For example, TalkBack on Android and VoiceOver on iOS enable this flag.
-  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
+  bool get accessibleNavigation => _kAccessibleNavigationIndex & _index != 0;
 
   /// The platform is inverting the colors of the application.
   bool get invertColors => _kInvertColorsIndex & _index != 0;
@@ -774,6 +834,11 @@ class AccessibilityFeatures {
   /// Only supported on iOS.
   bool get highContrast => _kHighContrastIndex & _index != 0;
 
+  /// The platform is requesting to show on/off labels inside switches.
+  ///
+  /// Only supported on iOS.
+  bool get onOffSwitchLabels => _kOnOffSwitchLabelsIndex & _index != 0;
+
   @override
   String toString() {
     final List<String> features = <String>[];
@@ -789,6 +854,8 @@ class AccessibilityFeatures {
       features.add('reduceMotion');
     if (highContrast)
       features.add('highContrast');
+    if (onOffSwitchLabels)
+      features.add('onOffSwitchLabels');
     return 'AccessibilityFeatures$features';
   }
 
@@ -849,3 +916,75 @@ enum Brightness {
 ///   belonging to the application, including top level application windows like
 ///   this one.
 final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);
+
+/// Additional data available on each flutter frame.
+class FrameData {
+  const FrameData._({this.frameNumber = -1});
+
+  /// The number of the current frame.
+  ///
+  /// This number monotonically increases, but doesn't necessarily
+  /// start at a particular value.
+  ///
+  /// If not provided, defaults to -1.
+  final int frameNumber;
+}
+
+/// Platform specific configuration for gesture behavior, such as touch slop.
+///
+/// These settings are provided via [ViewConfiguration] to each window, and should
+/// be favored for configuring gesture behavior over the framework constants.
+///
+/// A `null` field indicates that the platform or view does not have a preference
+/// and the fallback constants should be used instead.
+class GestureSettings {
+  /// Create a new [GestureSettings] value.
+  ///
+  /// Consider using [GestureSettings.copyWith] on an existing settings object
+  /// to ensure that newly added fields are correctly set.
+  const GestureSettings({
+    this.physicalTouchSlop,
+    this.physicalDoubleTapSlop,
+  });
+
+  /// The number of physical pixels a pointer is allowed to drift before it is
+  /// considered an intentional movement.
+  ///
+  /// If `null`, the framework's default touch slop configuration should be used
+  /// instead.
+  final double? physicalTouchSlop;
+
+  /// The number of physical pixels that the first and second tap of a double tap
+  /// can drift apart to still be recognized as a double tap.
+  ///
+  /// If `null`, the framework's default double tap slop configuration should be used
+  /// instead.
+  final double? physicalDoubleTapSlop;
+
+  /// Create a new [GestureSetting]s object from an existing value, overwriting
+  /// all of the provided fields.
+  GestureSettings copyWith({
+    double? physicalTouchSlop,
+    double? physicalDoubleTapSlop,
+  }) {
+    return GestureSettings(
+      physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
+      physicalDoubleTapSlop: physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is GestureSettings &&
+      other.physicalTouchSlop == physicalTouchSlop &&
+      other.physicalDoubleTapSlop == physicalDoubleTapSlop;
+  }
+
+  @override
+  int get hashCode => Object.hash(physicalTouchSlop, physicalDoubleTapSlop);
+
+  @override
+  String toString() => 'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';
+}

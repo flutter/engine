@@ -13,11 +13,12 @@
 #include <fuchsia/sys/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <lib/fidl/cpp/binding_set.h>
-#include <lib/sys/cpp/service_directory.h>
+#include <lib/sys/inspect/cpp/component.h>
 #include <zircon/types.h>
 
 #include <memory>
 #include <optional>
+#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -26,6 +27,7 @@
 #include "flutter/lib/ui/semantics/semantics_node.h"
 
 namespace flutter_runner {
+
 // Accessibility bridge.
 //
 // This class intermediates accessibility-related calls between Fuchsia and
@@ -40,13 +42,9 @@ namespace flutter_runner {
 class AccessibilityBridge
     : public fuchsia::accessibility::semantics::SemanticListener {
  public:
-  // A delegate to call when semantics are enabled or disabled.
-  class Delegate {
-   public:
-    virtual void SetSemanticsEnabled(bool enabled) = 0;
-    virtual void DispatchSemanticsAction(int32_t node_id,
-                                         flutter::SemanticsAction action) = 0;
-  };
+  using SetSemanticsEnabledCallback = std::function<void(bool)>;
+  using DispatchSemanticsActionCallback =
+      std::function<void(int32_t, flutter::SemanticsAction)>;
 
   // TODO(MI4-2531, FIDL-718): Remove this. We shouldn't be worried about
   // batching messages at this level.
@@ -67,9 +65,17 @@ class AccessibilityBridge
       "flutter::SemanticsNode::id and "
       "fuchsia::accessibility::semantics::Node::node_id differ in size.");
 
-  AccessibilityBridge(Delegate& delegate,
-                      const std::shared_ptr<sys::ServiceDirectory> services,
-                      fuchsia::ui::views::ViewRef view_ref);
+  // Maximum number of node ids to be deleted through the Semantics API.
+  static constexpr size_t kMaxDeletionsPerUpdate =
+      kMaxMessageSize / kNodeIdSize;
+
+  AccessibilityBridge(
+      SetSemanticsEnabledCallback set_semantics_enabled_callback,
+      DispatchSemanticsActionCallback dispatch_semantics_action_callback,
+      fuchsia::accessibility::semantics::SemanticsManagerHandle
+          semantics_manager,
+      fuchsia::ui::views::ViewRef view_ref,
+      inspect::Node inspect_node);
 
   // Returns true if accessible navigation is enabled.
   bool GetSemanticsEnabled() const;
@@ -105,31 +111,39 @@ class AccessibilityBridge
           OnAccessibilityActionRequestedCallback callback) override;
 
  private:
-  // Holds only the fields we need for hit testing.
-  // In particular, it adds a screen_rect field to flutter::SemanticsNode.
-  struct SemanticsNode {
-    int32_t id;
-    int32_t flags;
-    bool is_focusable;
-    SkRect rect;
-    SkRect screen_rect;
-    SkM44 transform;
-    std::vector<int32_t> children_in_hit_test_order;
+  // Fuchsia's default root semantic node id.
+  static constexpr int32_t kRootNodeId = 0;
+
+  // Represents an atomic semantic update to Fuchsia, which can contain deletes
+  // and updates of semantic nodes.
+  //
+  // An atomic update is a set of operations that take a semantic tree in a
+  // valid state to another valid state. Please check the semantics FIDL
+  // documentation for details.
+  struct FuchsiaAtomicUpdate {
+    FuchsiaAtomicUpdate() = default;
+    ~FuchsiaAtomicUpdate() = default;
+    FuchsiaAtomicUpdate(FuchsiaAtomicUpdate&&) = default;
+
+    // Adds a node to be updated. |size| contains the
+    // size in bytes of the node to be updated.
+    void AddNodeUpdate(fuchsia::accessibility::semantics::Node node,
+                       size_t size);
+
+    // Adds a node to be deleted.
+    void AddNodeDeletion(uint32_t id);
+
+    std::vector<std::pair<fuchsia::accessibility::semantics::Node, size_t>>
+        updates;
+    std::vector<uint32_t> deletions;
   };
 
-  AccessibilityBridge::Delegate& delegate_;
-
-  static constexpr int32_t kRootNodeId = 0;
-  flutter::SemanticsNode root_flutter_semantics_node_;
-  float last_seen_view_pixel_ratio_ = 1.f;
-  fidl::Binding<fuchsia::accessibility::semantics::SemanticListener> binding_;
-  fuchsia::accessibility::semantics::SemanticsManagerPtr
-      fuchsia_semantics_manager_;
-  fuchsia::accessibility::semantics::SemanticTreePtr tree_ptr_;
-  bool semantics_enabled_;
-  // This is the cache of all nodes we've sent to Fuchsia's SemanticsManager.
-  // Assists with pruning unreachable nodes and hit testing.
-  std::unordered_map<int32_t, SemanticsNode> nodes_;
+  // Holds a flutter semantic node and some extra info.
+  // In particular, it adds a screen_rect field to flutter::SemanticsNode.
+  struct SemanticsNode {
+    flutter::SemanticsNode data;
+    SkRect screen_rect;
+  };
 
   fuchsia::accessibility::semantics::Node GetRootNodeUpdate(size_t& node_size);
 
@@ -173,10 +187,11 @@ class AccessibilityBridge
   std::unordered_set<int32_t> GetDescendants(int32_t node_id) const;
 
   // Removes internal references to any dangling nodes from previous
-  // updates, and updates the Accessibility service.
+  // updates, and adds the nodes to be deleted to the current |atomic_update|.
   //
-  // May result in a call to FuchsiaAccessibility::Commit().
-  void PruneUnreachableNodes();
+  // The node ids to be deleted are only collected at this point, and will be
+  // committed in the next call to |Apply()|.
+  void PruneUnreachableNodes(FuchsiaAtomicUpdate* atomic_update);
 
   // Updates the on-screen positions of accessibility elements,
   // starting from the root element with an identity matrix.
@@ -210,9 +225,49 @@ class AccessibilityBridge
       fuchsia::accessibility::semantics::Action fuchsia_action,
       uint32_t node_id);
 
+  // Applies the updates and deletions in |atomic_update|, sending them via
+  // |tree_ptr|.
+  void Apply(FuchsiaAtomicUpdate* atomic_update);
+
   // |fuchsia::accessibility::semantics::SemanticListener|
   void OnSemanticsModeChanged(bool enabled,
                               OnSemanticsModeChangedCallback callback) override;
+
+#if !FLUTTER_RELEASE
+  // Fills the inspect tree with debug information about the semantic tree.
+  void FillInspectTree(int32_t flutter_node_id,
+                       int32_t current_level,
+                       inspect::Node inspect_node,
+                       inspect::Inspector* inspector) const;
+#endif  // !FLUTTER_RELEASE
+
+  SetSemanticsEnabledCallback set_semantics_enabled_callback_;
+  DispatchSemanticsActionCallback dispatch_semantics_action_callback_;
+  flutter::SemanticsNode root_flutter_semantics_node_;
+  float last_seen_view_pixel_ratio_ = 1.f;
+
+  fidl::Binding<fuchsia::accessibility::semantics::SemanticListener> binding_;
+  fuchsia::accessibility::semantics::SemanticsManagerPtr
+      fuchsia_semantics_manager_;
+  fuchsia::accessibility::semantics::SemanticTreePtr tree_ptr_;
+
+  // This is the cache of all nodes we've sent to Fuchsia's SemanticsManager.
+  // Assists with pruning unreachable nodes and hit testing.
+  std::unordered_map<int32_t, SemanticsNode> nodes_;
+  bool semantics_enabled_;
+
+  // Queue of atomic updates to be sent to Fuchsia.
+  std::shared_ptr<std::queue<FuchsiaAtomicUpdate>> atomic_updates_;
+
+  // Node to publish inspect data.
+  inspect::Node inspect_node_;
+
+#if !FLUTTER_RELEASE
+  // Inspect node to store a dump of the semantic tree. Note that this only gets
+  // computed if requested, so it does not use memory to store the dump unless
+  // an explicit request is made.
+  inspect::LazyNode inspect_node_tree_dump_;
+#endif  // !FLUTTER_RELEASE
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };

@@ -488,7 +488,7 @@ static GBytes* test_method_codec_encode_error_envelope(FlMethodCodec* codec,
   return nullptr;
 }
 
-// Implements FlMethodCodec::encode_decode_reponse.
+// Implements FlMethodCodec::encode_decode_response.
 static FlMethodResponse* test_method_codec_decode_response(FlMethodCodec* codec,
                                                            GBytes* message,
                                                            GError** error) {
@@ -531,7 +531,7 @@ static void method_call_success_error_cb(FlMethodChannel* channel,
       fl_method_call_respond_success(method_call, result, &response_error));
   EXPECT_NE(response_error, nullptr);
 
-  // Respond to stop a warning occuring about not responding.
+  // Respond to stop a warning occurring about not responding.
   fl_method_call_respond_not_implemented(method_call, nullptr);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
@@ -573,7 +573,7 @@ static void method_call_error_error_cb(FlMethodChannel* channel,
                                             details, &response_error));
   EXPECT_NE(response_error, nullptr);
 
-  // Respond to stop a warning occuring about not responding.
+  // Respond to stop a warning occurring about not responding.
   fl_method_call_respond_not_implemented(method_call, nullptr);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
@@ -602,4 +602,145 @@ TEST(FlMethodChannelTest, ReceiveMethodCallRespondErrorError) {
 
   // Blocks here until method_call_error_error_cb is called.
   g_main_loop_run(loop);
+}
+
+struct UserDataReassignMethod {
+  GMainLoop* loop;
+  int count;
+};
+
+// This callback parses the user data as UserDataReassignMethod,
+// increases its `count`, and quits `loop`.
+static void reassign_method_cb(FlMethodChannel* channel,
+                               FlMethodCall* method_call,
+                               gpointer raw_user_data) {
+  UserDataReassignMethod* user_data =
+      static_cast<UserDataReassignMethod*>(raw_user_data);
+  user_data->count += 1;
+
+  g_autoptr(FlValue) result = fl_value_new_string("Polo!");
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_method_call_respond_success(method_call, result, &error));
+  EXPECT_EQ(error, nullptr);
+
+  g_main_loop_quit(user_data->loop);
+}
+
+// Make sure that the following steps will work properly:
+//
+// 1. Register a method channel.
+// 2. Dispose the method channel, and it's unregistered.
+// 3. Register a new channel with the same name.
+//
+// This is a regression test to https://github.com/flutter/flutter/issues/90817.
+TEST(FlMethodChannelTest, ReplaceADisposedMethodChannel) {
+  const char* method_name = "test/standard-method";
+  // The loop is used to pause the main process until the callback is fully
+  // executed.
+  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+
+  g_autoptr(FlValue) args = fl_value_new_list();
+  fl_value_append_take(args, fl_value_new_string(method_name));
+  fl_value_append_take(args, fl_value_new_string("FOO"));
+  fl_value_append_take(args, fl_value_new_string("BAR"));
+
+  // Register the first channel and test if it works.
+  UserDataReassignMethod user_data1{
+      .loop = loop,
+      .count = 100,
+  };
+  FlMethodChannel* channel1 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel1, reassign_method_cb,
+                                            &user_data1, nullptr);
+
+  fl_method_channel_invoke_method(channel1, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+  EXPECT_EQ(user_data1.count, 101);
+
+  // Dispose the first channel.
+  g_object_unref(channel1);
+
+  // Register the second channel and test if it works.
+  UserDataReassignMethod user_data2{
+      .loop = loop,
+      .count = 100,
+  };
+  g_autoptr(FlMethodChannel) channel2 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel2, reassign_method_cb,
+                                            &user_data2, nullptr);
+
+  fl_method_channel_invoke_method(channel2, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+
+  EXPECT_EQ(user_data1.count, 101);
+  EXPECT_EQ(user_data2.count, 101);
+}
+
+// Make sure that the following steps will work properly:
+//
+// 1. Register a method channel.
+// 2. Register the same name with a new channel.
+// 3. Dispose the previous method channel.
+//
+// This is a regression test to https://github.com/flutter/flutter/issues/90817.
+TEST(FlMethodChannelTest, DisposeAReplacedMethodChannel) {
+  const char* method_name = "test/standard-method";
+  // The loop is used to pause the main process until the callback is fully
+  // executed.
+  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+
+  g_autoptr(FlValue) args = fl_value_new_list();
+  fl_value_append_take(args, fl_value_new_string(method_name));
+  fl_value_append_take(args, fl_value_new_string("FOO"));
+  fl_value_append_take(args, fl_value_new_string("BAR"));
+
+  // Register the first channel and test if it works.
+  UserDataReassignMethod user_data1{
+      .loop = loop,
+      .count = 100,
+  };
+  FlMethodChannel* channel1 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel1, reassign_method_cb,
+                                            &user_data1, nullptr);
+
+  fl_method_channel_invoke_method(channel1, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+  EXPECT_EQ(user_data1.count, 101);
+
+  // Register a new channel to the same name.
+  UserDataReassignMethod user_data2{
+      .loop = loop,
+      .count = 100,
+  };
+  g_autoptr(FlMethodChannel) channel2 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel2, reassign_method_cb,
+                                            &user_data2, nullptr);
+
+  fl_method_channel_invoke_method(channel2, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+  EXPECT_EQ(user_data1.count, 101);
+  EXPECT_EQ(user_data2.count, 101);
+
+  // Dispose the first channel. The new channel should keep working.
+  g_object_unref(channel1);
+
+  fl_method_channel_invoke_method(channel2, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+  EXPECT_EQ(user_data1.count, 101);
+  EXPECT_EQ(user_data2.count, 102);
 }

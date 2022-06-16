@@ -50,7 +50,7 @@ extern NSNotificationName const FlutterSemanticsUpdateNotification;
 FLUTTER_DARWIN_EXPORT
 #ifdef __IPHONE_13_4
 @interface FlutterViewController
-    : UIViewController <FlutterTextureRegistry, FlutterPluginRegistry, UIPointerInteractionDelegate>
+    : UIViewController <FlutterTextureRegistry, FlutterPluginRegistry, UIGestureRecognizerDelegate>
 #else
 @interface FlutterViewController : UIViewController <FlutterTextureRegistry, FlutterPluginRegistry>
 #endif
@@ -178,6 +178,14 @@ FLUTTER_DARWIN_EXPORT
  * The `FlutterPluginRegistry` used by this FlutterViewController.
  */
 - (id<FlutterPluginRegistry>)pluginRegistry;
+
+/**
+ * A wrapper around UIAccessibilityIsVoiceOverRunning().
+ *
+ * As a C function, UIAccessibilityIsVoiceOverRunning() cannot be mocked in testing. Mock
+ * this class method to testing features depends on UIAccessibilityIsVoiceOverRunning().
+ */
++ (BOOL)isUIAccessibilityIsVoiceOverRunning;
 
 /**
  * True if at least one frame has rendered and the ViewController has appeared.

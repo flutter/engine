@@ -257,7 +257,7 @@ bool VulkanSwapchain::CreateSwapchainImages(GrDirectContext* skia_context,
                                             VkImageUsageFlags usage_flags) {
   std::vector<VkImage> images = GetImages();
 
-  if (images.size() == 0) {
+  if (images.empty()) {
     return false;
   }
 
@@ -350,7 +350,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
 
   // ---------------------------------------------------------------------------
   // Step 2:
-  // Put semaphores in unsignaled state.
+  // Put fences in an unsignaled state.
   // ---------------------------------------------------------------------------
   if (!backbuffer->ResetFences()) {
     FML_DLOG(INFO) << "Could not reset fences.";

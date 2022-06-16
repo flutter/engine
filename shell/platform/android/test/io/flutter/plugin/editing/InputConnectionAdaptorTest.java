@@ -4,8 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -20,7 +21,6 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.Emoji;
 import android.text.InputType;
 import android.text.Selection;
 import android.text.SpannableStringBuilder;
@@ -32,34 +32,39 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import io.flutter.embedding.android.AndroidKeyProcessor;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.ibm.icu.lang.UCharacter;
+import com.ibm.icu.lang.UProperty;
+import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
-import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.util.FakeKeyEvent;
 import java.nio.ByteBuffer;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadow.api.Shadow;
-import org.robolectric.shadows.ShadowClipboardManager;
 import org.robolectric.shadows.ShadowInputMethodManager;
 
 @Config(
     manifest = Config.NONE,
-    shadows = {ShadowClipboardManager.class, InputConnectionAdaptorTest.TestImm.class})
-@RunWith(RobolectricTestRunner.class)
+    shadows = {InputConnectionAdaptorTest.TestImm.class})
+@RunWith(AndroidJUnit4.class)
 public class InputConnectionAdaptorTest {
+  private final Context ctx = ApplicationProvider.getApplicationContext();
+  @Mock KeyboardManager mockKeyboardManager;
   // Verifies the method and arguments for a captured method call.
   private void verifyMethodCall(ByteBuffer buffer, String methodName, String[] expectedArgs)
       throws JSONException {
@@ -75,26 +80,31 @@ public class InputConnectionAdaptorTest {
     }
   }
 
+  @Before
+  public void setUp() {
+    MockitoAnnotations.openMocks(this);
+  }
+
   @Test
   public void inputConnectionAdaptor_ReceivesEnter() throws NullPointerException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
     int inputTargetId = 0;
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState mEditable = new ListenableEditingState(null, testView);
+    Selection.setSelection(mEditable, 0, 0);
     ListenableEditingState spyEditable = spy(mEditable);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
 
     InputConnectionAdaptor inputConnectionAdaptor =
         new InputConnectionAdaptor(
-            testView, inputTargetId, textInputChannel, mockKeyProcessor, spyEditable, outAttrs);
+            testView, inputTargetId, textInputChannel, mockKeyboardManager, spyEditable, outAttrs);
 
     // Send an enter key and make sure the Editable received it.
-    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
-    inputConnectionAdaptor.sendKeyEvent(keyEvent);
+    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, '\n');
+    inputConnectionAdaptor.handleKeyEvent(keyEvent);
     verify(spyEditable, times(1)).insert(eq(0), anyString());
   }
 
@@ -113,8 +123,7 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_cut() {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
     int selStart = 6;
     int selEnd = 11;
     ListenableEditingState editable = sampleEditable(selStart, selEnd);
@@ -131,8 +140,7 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_copy() {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
     int selStart = 6;
     int selEnd = 11;
     ListenableEditingState editable = sampleEditable(selStart, selEnd);
@@ -151,8 +159,7 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_paste() {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
     String textToBePasted = "deadbeef";
     clipboardManager.setText(textToBePasted);
     ListenableEditingState editable = sampleEditable(0, 0);
@@ -166,25 +173,26 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsNull() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
     adaptor.performPrivateCommand("actionCommand", null);
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -194,16 +202,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsByteArray() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     byte[] buffer = new byte[] {'a', 'b', 'c', 'd'};
@@ -212,11 +225,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -228,16 +237,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsByte() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     byte b = 3;
@@ -246,11 +260,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -260,16 +270,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsCharArray() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     char[] buffer = new char[] {'a', 'b', 'c', 'd'};
@@ -278,11 +293,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -295,16 +306,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsChar() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     char b = 'a';
@@ -313,11 +329,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -327,16 +339,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsCharSequenceArray() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     CharSequence charSequence1 = new StringBuffer("abc");
@@ -347,11 +364,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -363,16 +376,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsCharSequence() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     CharSequence charSequence = new StringBuffer("abc");
@@ -381,11 +399,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -397,16 +411,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsFloat() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     float value = 0.5f;
@@ -415,11 +434,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -429,16 +444,21 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformPrivateCommand_dataIsFloatArray() throws JSONException {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
-            testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     float[] value = {0.5f, 0.6f};
@@ -447,11 +467,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -469,7 +485,7 @@ public class InputConnectionAdaptorTest {
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent shiftKeyUp = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT);
-    boolean didConsume = adaptor.sendKeyEvent(shiftKeyUp);
+    boolean didConsume = adaptor.handleKeyEvent(shiftKeyUp);
 
     assertTrue(didConsume);
     assertEquals(selEnd, Selection.getSelectionStart(editable));
@@ -483,7 +499,7 @@ public class InputConnectionAdaptorTest {
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent leftKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
-    boolean didConsume = adaptor.sendKeyEvent(leftKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(leftKeyDown);
 
     assertTrue(didConsume);
     assertEquals(selStart - 1, Selection.getSelectionStart(editable));
@@ -500,134 +516,134 @@ public class InputConnectionAdaptorTest {
     boolean didConsume;
 
     // Normal Character
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 74);
 
     // Non-Spacing Mark
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 73);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 72);
 
     // Keycap
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 69);
 
     // Keycap with invalid base
     adaptor.setSelection(68, 68);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 66);
     adaptor.setSelection(67, 67);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 66);
 
     // Zero Width Joiner
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 55);
 
     // Zero Width Joiner with invalid base
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 53);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 52);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 51);
 
     // ----- Start Emoji Tag Sequence with invalid base testing ----
     // Delete base tag
     adaptor.setSelection(39, 39);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 37);
 
     // Delete the sequence
     adaptor.setSelection(49, 49);
     for (int i = 0; i < 6; i++) {
-      didConsume = adaptor.sendKeyEvent(downKeyDown);
+      didConsume = adaptor.handleKeyEvent(downKeyDown);
       assertTrue(didConsume);
     }
     assertEquals(Selection.getSelectionStart(editable), 37);
     // ----- End Emoji Tag Sequence with invalid base testing ----
 
     // Emoji Tag Sequence
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 23);
 
     // Variation Selector with invalid base
     adaptor.setSelection(22, 22);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 21);
     adaptor.setSelection(22, 22);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 21);
 
     // Variation Selector
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 19);
 
     // Emoji Modifier
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 16);
 
     // Emoji Modifier with invalid base
     adaptor.setSelection(14, 14);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 13);
     adaptor.setSelection(14, 14);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 13);
 
     // Line Feed
     adaptor.setSelection(12, 12);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 11);
 
     // Carriage Return
     adaptor.setSelection(12, 12);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 11);
 
     // Carriage Return and Line Feed
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 9);
 
     // Regional Indicator Symbol odd
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 7);
 
     // Regional Indicator Symbol even
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 3);
 
     // Simple Emoji
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 1);
 
     // First CodePoint
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 0);
   }
@@ -640,7 +656,7 @@ public class InputConnectionAdaptorTest {
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent leftKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
-    boolean didConsume = adaptor.sendKeyEvent(leftKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(leftKeyDown);
 
     assertTrue(didConsume);
     assertEquals(selStart, Selection.getSelectionStart(editable));
@@ -656,7 +672,7 @@ public class InputConnectionAdaptorTest {
     KeyEvent shiftLeftKeyDown =
         new KeyEvent(
             0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, 0, KeyEvent.META_SHIFT_ON);
-    boolean didConsume = adaptor.sendKeyEvent(shiftLeftKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(shiftLeftKeyDown);
 
     assertTrue(didConsume);
     assertEquals(selStart, Selection.getSelectionStart(editable));
@@ -670,7 +686,7 @@ public class InputConnectionAdaptorTest {
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent rightKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
-    boolean didConsume = adaptor.sendKeyEvent(rightKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(rightKeyDown);
 
     assertTrue(didConsume);
     assertEquals(selStart + 1, Selection.getSelectionStart(editable));
@@ -691,26 +707,26 @@ public class InputConnectionAdaptorTest {
     boolean didConsume;
 
     // The cursor moves over two region indicators at a time.
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 4);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 8);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 12);
 
     // When there is only one region indicator left with no pair, the cursor
     // moves over that single region indicator.
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 14);
 
     // If the cursor is placed in the middle of a region indicator pair, it
     // moves over only the second half of the pair.
     adaptor.setSelection(6, 6);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 8);
   }
@@ -725,71 +741,71 @@ public class InputConnectionAdaptorTest {
     boolean didConsume;
 
     // First CodePoint
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 1);
 
     // Simple Emoji
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 3);
 
     // Regional Indicator Symbol even
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 7);
 
     // Regional Indicator Symbol odd
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 9);
 
     // Carriage Return
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 10);
 
     // Line Feed and Carriage Return
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 12);
 
     // Line Feed
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 13);
 
     // Modified Emoji
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 16);
 
     // Emoji Modifier
     adaptor.setSelection(14, 14);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 16);
 
     // Emoji Modifier with invalid base
     adaptor.setSelection(18, 18);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 19);
 
     // Variation Selector
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 21);
 
     // Variation Selector with invalid base
     adaptor.setSelection(22, 22);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 23);
 
     // Emoji Tag Sequence
     for (int i = 0; i < 7; i++) {
-      didConsume = adaptor.sendKeyEvent(downKeyDown);
+      didConsume = adaptor.handleKeyEvent(downKeyDown);
       assertTrue(didConsume);
       assertEquals(Selection.getSelectionStart(editable), 25 + 2 * i);
     }
@@ -799,7 +815,7 @@ public class InputConnectionAdaptorTest {
     // Pass the sequence
     adaptor.setSelection(39, 39);
     for (int i = 0; i < 6; i++) {
-      didConsume = adaptor.sendKeyEvent(downKeyDown);
+      didConsume = adaptor.handleKeyEvent(downKeyDown);
       assertTrue(didConsume);
       assertEquals(Selection.getSelectionStart(editable), 41 + 2 * i);
     }
@@ -807,45 +823,45 @@ public class InputConnectionAdaptorTest {
     // ----- End Emoji Tag Sequence with invalid base testing ----
 
     // Zero Width Joiner with invalid base
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 52);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 53);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 55);
 
     // Zero Width Joiner
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 66);
 
     // Keycap with invalid base
     adaptor.setSelection(67, 67);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 68);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 69);
 
     // Keycap
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 72);
 
     // Non-Spacing Mark
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 73);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 74);
 
     // Normal Character
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    didConsume = adaptor.handleKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 75);
   }
@@ -858,7 +874,7 @@ public class InputConnectionAdaptorTest {
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent rightKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
-    boolean didConsume = adaptor.sendKeyEvent(rightKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(rightKeyDown);
 
     assertTrue(didConsume);
     assertEquals(selStart, Selection.getSelectionStart(editable));
@@ -874,7 +890,7 @@ public class InputConnectionAdaptorTest {
     KeyEvent shiftRightKeyDown =
         new KeyEvent(
             0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT, 0, KeyEvent.META_SHIFT_ON);
-    boolean didConsume = adaptor.sendKeyEvent(shiftRightKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(shiftRightKeyDown);
 
     assertTrue(didConsume);
     assertEquals(selStart, Selection.getSelectionStart(editable));
@@ -888,7 +904,7 @@ public class InputConnectionAdaptorTest {
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent upKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_UP);
-    boolean didConsume = adaptor.sendKeyEvent(upKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(upKeyDown);
 
     assertTrue(didConsume);
     // Checks the caret moved left (to some previous character). Selection.moveUp() behaves
@@ -903,12 +919,43 @@ public class InputConnectionAdaptorTest {
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN);
-    boolean didConsume = adaptor.sendKeyEvent(downKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(downKeyDown);
 
     assertTrue(didConsume);
     // Checks the caret moved right (to some following character). Selection.moveDown() behaves
     // different in tests than on a real device, we can't verify the exact position.
     assertTrue(Selection.getSelectionStart(editable) > selStart);
+  }
+
+  @Test
+  public void testSendKeyEvent_MovementKeysAreNopWhenNoSelection() {
+    // Regression test for https://github.com/flutter/flutter/issues/76283.
+    ListenableEditingState editable = sampleEditable(-1, -1);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN);
+    boolean didConsume = adaptor.handleKeyEvent(keyEvent);
+    assertFalse(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), -1);
+    assertEquals(Selection.getSelectionEnd(editable), -1);
+
+    keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_UP);
+    didConsume = adaptor.handleKeyEvent(keyEvent);
+    assertFalse(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), -1);
+    assertEquals(Selection.getSelectionEnd(editable), -1);
+
+    keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
+    didConsume = adaptor.handleKeyEvent(keyEvent);
+    assertFalse(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), -1);
+    assertEquals(Selection.getSelectionEnd(editable), -1);
+
+    keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
+    didConsume = adaptor.handleKeyEvent(keyEvent);
+    assertFalse(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), -1);
+    assertEquals(Selection.getSelectionEnd(editable), -1);
   }
 
   @Test
@@ -931,19 +978,16 @@ public class InputConnectionAdaptorTest {
       return;
     }
     ListenableEditingState editable = sampleEditable(5, 5);
-    View testView = new View(RuntimeEnvironment.application);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
+    View testView = new View(ctx);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
             testView,
             1,
             mock(TextInputChannel.class),
-            mockKeyProcessor,
+            mockKeyboardManager,
             editable,
             new EditorInfo());
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
 
     testImm.resetStates();
 
@@ -988,20 +1032,17 @@ public class InputConnectionAdaptorTest {
       return;
     }
 
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     ListenableEditingState editable = sampleEditable(5, 5);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
             testView,
             1,
             mock(TextInputChannel.class),
-            mockKeyProcessor,
+            mockKeyboardManager,
             editable,
             new EditorInfo());
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
 
     testImm.resetStates();
 
@@ -1032,30 +1073,27 @@ public class InputConnectionAdaptorTest {
   @Test
   public void testSendKeyEvent_sendSoftKeyEvents() {
     ListenableEditingState editable = sampleEditable(5, 5);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
-    when(mockKeyProcessor.isPendingEvent(any())).thenReturn(true);
-    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable, mockKeyProcessor);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable, mockKeyboardManager);
 
     KeyEvent shiftKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT);
 
-    boolean didConsume = adaptor.sendKeyEvent(shiftKeyDown);
+    boolean didConsume = adaptor.handleKeyEvent(shiftKeyDown);
     assertFalse(didConsume);
-    verify(mockKeyProcessor, never()).onKeyEvent(shiftKeyDown);
+    verify(mockKeyboardManager, never()).handleEvent(shiftKeyDown);
   }
 
   @Test
   public void testSendKeyEvent_sendHardwareKeyEvents() {
     ListenableEditingState editable = sampleEditable(5, 5);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
-    when(mockKeyProcessor.isPendingEvent(any())).thenReturn(false);
-    when(mockKeyProcessor.onKeyEvent(any())).thenReturn(true);
-    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable, mockKeyProcessor);
+    when(mockKeyboardManager.handleEvent(any())).thenReturn(true);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable, mockKeyboardManager);
 
     KeyEvent shiftKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT);
 
+    // Call sendKeyEvent instead of handleKeyEvent.
     boolean didConsume = adaptor.sendKeyEvent(shiftKeyDown);
     assertTrue(didConsume);
-    verify(mockKeyProcessor, times(1)).onKeyEvent(shiftKeyDown);
+    verify(mockKeyboardManager, times(1)).handleEvent(shiftKeyDown);
   }
 
   @Test
@@ -1066,7 +1104,7 @@ public class InputConnectionAdaptorTest {
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
 
     for (int i = 0; i < 4; i++) {
-      boolean didConsume = adaptor.sendKeyEvent(downKeyDown);
+      boolean didConsume = adaptor.handleKeyEvent(downKeyDown);
       assertFalse(didConsume);
     }
     assertEquals(5, Selection.getSelectionStart(editable));
@@ -1077,10 +1115,23 @@ public class InputConnectionAdaptorTest {
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
-    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK);
-    boolean didConsume = adaptor.sendKeyEvent(keyEvent);
+    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK, '\b');
+    boolean didConsume = adaptor.handleKeyEvent(keyEvent);
 
     assertFalse(didConsume);
+  }
+
+  @Test
+  public void testCleanUpBatchEndsOnCloseConnection() {
+    final ListenableEditingState editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor = spy(sampleInputConnectionAdaptor(editable));
+    for (int i = 0; i < 5; i++) {
+      adaptor.beginBatchEdit();
+    }
+    adaptor.endBatchEdit();
+    verify(adaptor, times(1)).endBatchEdit();
+    adaptor.closeConnection();
+    verify(adaptor, times(4)).endBatchEdit();
   }
 
   private static final String SAMPLE_TEXT =
@@ -1110,7 +1161,7 @@ public class InputConnectionAdaptorTest {
 
   private static ListenableEditingState sampleEditable(int selStart, int selEnd) {
     ListenableEditingState sample =
-        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
+        new ListenableEditingState(null, new View(ApplicationProvider.getApplicationContext()));
     sample.replace(0, 0, SAMPLE_TEXT);
     Selection.setSelection(sample, selStart, selEnd);
     return sample;
@@ -1118,7 +1169,7 @@ public class InputConnectionAdaptorTest {
 
   private static ListenableEditingState sampleEditable(int selStart, int selEnd, String text) {
     ListenableEditingState sample =
-        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
+        new ListenableEditingState(null, new View(ApplicationProvider.getApplicationContext()));
     sample.replace(0, 0, text);
     Selection.setSelection(sample, selStart, selEnd);
     return sample;
@@ -1126,32 +1177,50 @@ public class InputConnectionAdaptorTest {
 
   private static InputConnectionAdaptor sampleInputConnectionAdaptor(
       ListenableEditingState editable) {
-    return sampleInputConnectionAdaptor(editable, mock(AndroidKeyProcessor.class));
+    return sampleInputConnectionAdaptor(editable, mock(KeyboardManager.class));
   }
 
   private static InputConnectionAdaptor sampleInputConnectionAdaptor(
-      ListenableEditingState editable, AndroidKeyProcessor mockKeyProcessor) {
-    View testView = new View(RuntimeEnvironment.application);
+      ListenableEditingState editable, KeyboardManager mockKeyboardManager) {
+    View testView = new View(ApplicationProvider.getApplicationContext());
     int client = 0;
     TextInputChannel textInputChannel = mock(TextInputChannel.class);
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsEmoji(anyInt()))
+    when(mockFlutterJNI.isCodePointEmoji(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmoji((int) invocation.getArguments()[0]));
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsEmojiModifier(anyInt()))
+    when(mockFlutterJNI.isCodePointEmojiModifier(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmojiModifier((int) invocation.getArguments()[0]));
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsEmojiModifierBase(anyInt()))
+    when(mockFlutterJNI.isCodePointEmojiModifierBase(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmojiModifierBase((int) invocation.getArguments()[0]));
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsVariationSelector(anyInt()))
-        .thenAnswer(
-            (invocation) -> {
-              int codePoint = (int) invocation.getArguments()[0];
-              return 0xFE0E <= codePoint && codePoint <= 0xFE0F;
-            });
-    when(mockFlutterJNI.nativeFlutterTextUtilsIsRegionalIndicator(anyInt()))
+    when(mockFlutterJNI.isCodePointVariantSelector(anyInt()))
+        .thenAnswer((invocation) -> Emoji.isVariationSelector((int) invocation.getArguments()[0]));
+    when(mockFlutterJNI.isCodePointRegionalIndicator(anyInt()))
         .thenAnswer(
             (invocation) -> Emoji.isRegionalIndicatorSymbol((int) invocation.getArguments()[0]));
     return new InputConnectionAdaptor(
-        testView, client, textInputChannel, mockKeyProcessor, editable, null, mockFlutterJNI);
+        testView, client, textInputChannel, mockKeyboardManager, editable, null, mockFlutterJNI);
+  }
+
+  private static class Emoji {
+    public static boolean isEmoji(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI);
+    }
+
+    public static boolean isEmojiModifier(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI_MODIFIER);
+    }
+
+    public static boolean isEmojiModifierBase(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI_MODIFIER_BASE);
+    }
+
+    public static boolean isRegionalIndicatorSymbol(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.REGIONAL_INDICATOR);
+    }
+
+    public static boolean isVariationSelector(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.VARIATION_SELECTOR);
+    }
   }
 
   private class TestTextInputChannel extends TextInputChannel {
@@ -1188,7 +1257,6 @@ public class InputConnectionAdaptorTest {
   @Implements(InputMethodManager.class)
   public static class TestImm extends ShadowInputMethodManager {
     public static int empty = -999;
-    // private InputMethodSubtype currentInputMethodSubtype;
     CursorAnchorInfo lastCursorAnchorInfo;
     int lastExtractedTextToken = empty;
     ExtractedText lastExtractedText;
@@ -1199,15 +1267,6 @@ public class InputConnectionAdaptorTest {
     int lastCandidatesEnd = empty;
 
     public TestImm() {}
-
-    // @Implementation
-    // public InputMethodSubtype getCurrentInputMethodSubtype() {
-    //  return currentInputMethodSubtype;
-    // }
-
-    // public void setCurrentInputMethodSubtype(InputMethodSubtype inputMethodSubtype) {
-    //  this.currentInputMethodSubtype = inputMethodSubtype;
-    // }
 
     @Implementation
     public void updateCursorAnchorInfo(View view, CursorAnchorInfo cursorAnchorInfo) {

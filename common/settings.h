@@ -29,19 +29,44 @@ class FrameTiming {
     kBuildFinish,
     kRasterStart,
     kRasterFinish,
+    kRasterFinishWallTime,
     kCount
   };
 
   static constexpr Phase kPhases[kCount] = {
-      kVsyncStart, kBuildStart, kBuildFinish, kRasterStart, kRasterFinish};
+      kVsyncStart,  kBuildStart,   kBuildFinish,
+      kRasterStart, kRasterFinish, kRasterFinishWallTime};
+
+  static constexpr int kStatisticsCount = kCount + 5;
 
   fml::TimePoint Get(Phase phase) const { return data_[phase]; }
   fml::TimePoint Set(Phase phase, fml::TimePoint value) {
     return data_[phase] = value;
   }
 
+  uint64_t GetFrameNumber() const { return frame_number_; }
+  void SetFrameNumber(uint64_t frame_number) { frame_number_ = frame_number; }
+  uint64_t GetLayerCacheCount() const { return layer_cache_count_; }
+  uint64_t GetLayerCacheBytes() const { return layer_cache_bytes_; }
+  uint64_t GetPictureCacheCount() const { return picture_cache_count_; }
+  uint64_t GetPictureCacheBytes() const { return picture_cache_bytes_; }
+  void SetRasterCacheStatistics(size_t layer_cache_count,
+                                size_t layer_cache_bytes,
+                                size_t picture_cache_count,
+                                size_t picture_cache_bytes) {
+    layer_cache_count_ = layer_cache_count;
+    layer_cache_bytes_ = layer_cache_bytes;
+    picture_cache_count_ = picture_cache_count;
+    picture_cache_bytes_ = picture_cache_bytes;
+  }
+
  private:
   fml::TimePoint data_[kCount];
+  uint64_t frame_number_;
+  size_t layer_cache_count_;
+  size_t layer_cache_bytes_;
+  size_t picture_cache_count_;
+  size_t picture_cache_bytes_;
 };
 
 using TaskObserverAdd =
@@ -50,6 +75,9 @@ using TaskObserverRemove = std::function<void(intptr_t /* key */)>;
 using UnhandledExceptionCallback =
     std::function<bool(const std::string& /* error */,
                        const std::string& /* stack trace */)>;
+using LogMessageCallback =
+    std::function<void(const std::string& /* tag */,
+                       const std::string& /* message */)>;
 
 // TODO(26783): Deprecate all the "path" struct members in favor of the
 // callback that generates the mapping from these paths.
@@ -79,6 +107,8 @@ struct Settings {
   std::string isolate_snapshot_instr_path;  // deprecated
   MappingCallback isolate_snapshot_instr;
 
+  std::string route;
+
   // Returns the Mapping to a kernel buffer which contains sources for dart:*
   // libraries.
   MappingCallback dart_library_sources_kernel;
@@ -88,28 +118,32 @@ struct Settings {
   // case the primary path to the library can not be loaded.
   std::vector<std::string> application_library_path;
 
+  // Path to a library containing compiled Dart code usable for launching
+  // the VM service isolate.
+  std::vector<std::string> vmservice_snapshot_library_path;
+
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
   MappingsCallback application_kernels;
 
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
-  // Arguments passed as a List<String> to Dart's entrypoint function.
-  std::vector<std::string> dart_entrypoint_args;
-
   // Isolate settings
   bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
-  std::string trace_allowlist;
+  std::vector<std::string> trace_allowlist;
+  std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
+  bool enable_timeline_event_handler = true;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
   bool purge_persistent_cache = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
+  bool enable_serial_gc = false;
 
   // Whether embedder only allows secure connections.
   bool may_insecurely_connect_to_all_domains = true;
@@ -122,6 +156,10 @@ struct Settings {
   // Used as the script entrypoint in debug messages. Does not affect how the
   // Dart code is executed.
   std::string advisory_script_entrypoint = "main";
+
+  // The executable path associated with this process. This is returned by
+  // Platform.executable from dart:io. If unknown, defaults to "Flutter".
+  std::string executable_name = "Flutter";
 
   // Observatory settings
 
@@ -152,8 +190,24 @@ struct Settings {
   // Font settings
   bool use_test_fonts = false;
 
+  bool use_asset_fonts = true;
+
+  // Indicates whether the embedding started a prefetch of the default font
+  // manager before creating the engine.
+  bool prefetched_default_font_manager = false;
+
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
+
+  // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
+  // not supported on the platform.
+  bool enable_impeller = false;
+
+  // Selects the DisplayList for storage of rendering operations.
+  bool enable_display_list = true;
+
+  // Data set by platform-specific embedders for use in font initialization.
+  uint32_t font_initialization_data = 0;
 
   // All shells in the process share the same VM. The last shell to shutdown
   // should typically shut down the VM as well. However, applications depend on
@@ -167,6 +221,10 @@ struct Settings {
   // shells in the platform (via their embedding APIs) should cooperate to make
   // sure this flag is never set if they want the VM to shutdown and free all
   // associated resources.
+  // It can be customized by application, more detail:
+  // https://github.com/flutter/flutter/issues/95903
+  // TODO(eggfly): Should it be set to false by default?
+  // https://github.com/flutter/flutter/issues/96843
   bool leak_vm = true;
 
   // Engine settings
@@ -201,6 +259,11 @@ struct Settings {
   // managed thread and embedders must re-thread as necessary. Performing
   // blocking calls in this callback will cause applications to jank.
   UnhandledExceptionCallback unhandled_exception_callback;
+  // A callback given to the embedder to log print messages from the running
+  // Flutter application. This callback is made on an internal engine managed
+  // thread and embedders must re-thread if necessary. Performing blocking
+  // calls in this callback will cause applications to jank.
+  LogMessageCallback log_message_callback;
   bool enable_software_rendering = false;
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;
@@ -238,12 +301,20 @@ struct Settings {
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t old_gen_heap_size = -1;
 
+  // Max bytes threshold of resource cache, or 0 for unlimited.
+  size_t resource_cache_max_bytes_threshold = 0;
+
   /// A timestamp representing when the engine started. The value is based
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
 
-  std::string ToString() const;
+  /// The minimum number of samples to require in multipsampled anti-aliasing.
+  ///
+  /// Setting this value to 0 or 1 disables MSAA.
+  /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
+  /// GPU does not support the requested sampling value, MSAA will be disabled.
+  uint8_t msaa_samples = 0;
 };
 
 }  // namespace flutter

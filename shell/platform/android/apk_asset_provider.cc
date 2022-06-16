@@ -38,7 +38,7 @@ AssetResolver::AssetResolverType APKAssetProvider::GetType() const {
 
 class APKAssetMapping : public fml::Mapping {
  public:
-  APKAssetMapping(AAsset* asset) : asset_(asset) {}
+  explicit APKAssetMapping(AAsset* asset) : asset_(asset) {}
 
   ~APKAssetMapping() override { AAsset_close(asset_); }
 
@@ -47,6 +47,8 @@ class APKAssetMapping : public fml::Mapping {
   const uint8_t* GetMapping() const override {
     return reinterpret_cast<const uint8_t*>(AAsset_getBuffer(asset_));
   }
+
+  bool IsDontNeedSafe() const override { return !AAsset_isAllocated(asset_); }
 
  private:
   AAsset* const asset_;

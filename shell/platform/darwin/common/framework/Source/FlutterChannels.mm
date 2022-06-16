@@ -6,21 +6,40 @@
 
 #pragma mark - Basic message channel
 
-static NSString* const FlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
+static NSString* const kFlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
 
 static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenger,
                                 NSString* channel,
                                 NSInteger newSize) {
   NSString* messageString = [NSString stringWithFormat:@"resize\r%@\r%@", channel, @(newSize)];
   NSData* message = [messageString dataUsingEncoding:NSUTF8StringEncoding];
-  [binaryMessenger sendOnChannel:FlutterChannelBuffersChannel message:message];
+  [binaryMessenger sendOnChannel:kFlutterChannelBuffersChannel message:message];
 }
 
+static FlutterBinaryMessengerConnection SetMessageHandler(
+    NSObject<FlutterBinaryMessenger>* messenger,
+    NSString* name,
+    FlutterBinaryMessageHandler handler,
+    NSObject<FlutterTaskQueue>* taskQueue) {
+  if (taskQueue) {
+    NSCAssert([messenger respondsToSelector:@selector(setMessageHandlerOnChannel:
+                                                            binaryMessageHandler:taskQueue:)],
+              @"");
+    return [messenger setMessageHandlerOnChannel:name
+                            binaryMessageHandler:handler
+                                       taskQueue:taskQueue];
+  } else {
+    return [messenger setMessageHandlerOnChannel:name binaryMessageHandler:handler];
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 @implementation FlutterBasicMessageChannel {
   NSObject<FlutterBinaryMessenger>* _messenger;
   NSString* _name;
   NSObject<FlutterMessageCodec>* _codec;
   FlutterBinaryMessengerConnection _connection;
+  NSObject<FlutterTaskQueue>* _taskQueue;
 }
 + (instancetype)messageChannelWithName:(NSString*)name
                        binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
@@ -40,11 +59,20 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMessageCodec>*)codec {
+  self = [self initWithName:name binaryMessenger:messenger codec:codec taskQueue:nil];
+  return self;
+}
+
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMessageCodec>*)codec
+                   taskQueue:(NSObject<FlutterTaskQueue>*)taskQueue {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
   _messenger = [messenger retain];
   _codec = [codec retain];
+  _taskQueue = [taskQueue retain];
   return self;
 }
 
@@ -52,6 +80,7 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
   [_name release];
   [_messenger release];
   [_codec release];
+  [_taskQueue release];
   [super dealloc];
 }
 
@@ -61,8 +90,9 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 
 - (void)sendMessage:(id)message reply:(FlutterReply)callback {
   FlutterBinaryReply reply = ^(NSData* data) {
-    if (callback)
+    if (callback) {
       callback([_codec decode:data]);
+    }
   };
   [_messenger sendOnChannel:_name message:[_codec encode:message] binaryReply:reply];
 }
@@ -70,7 +100,7 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 - (void)setMessageHandler:(FlutterMessageHandler)handler {
   if (!handler) {
     if (_connection > 0) {
-      [_messenger cleanupConnection:_connection];
+      [_messenger cleanUpConnection:_connection];
       _connection = 0;
     } else {
       [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
@@ -84,7 +114,7 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
       callback([codec encode:reply]);
     });
   };
-  _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
+  _connection = SetMessageHandler(_messenger, _name, messageHandler, _taskQueue);
 }
 
 - (void)resizeChannelBuffer:(NSInteger)newSize {
@@ -95,6 +125,7 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 
 #pragma mark - Method channel
 
+////////////////////////////////////////////////////////////////////////////////
 @implementation FlutterError
 + (instancetype)errorWithCode:(NSString*)code message:(NSString*)message details:(id)details {
   return [[[FlutterError alloc] initWithCode:code message:message details:details] autorelease];
@@ -118,10 +149,12 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 }
 
 - (BOOL)isEqual:(id)object {
-  if (self == object)
+  if (self == object) {
     return YES;
-  if (![object isKindOfClass:[FlutterError class]])
+  }
+  if (![object isKindOfClass:[FlutterError class]]) {
     return NO;
+  }
   FlutterError* other = (FlutterError*)object;
   return [self.code isEqual:other.code] &&
          ((!self.message && !other.message) || [self.message isEqual:other.message]) &&
@@ -133,6 +166,7 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 }
 @end
 
+////////////////////////////////////////////////////////////////////////////////
 @implementation FlutterMethodCall
 + (instancetype)methodCallWithMethodName:(NSString*)method arguments:(id)arguments {
   return [[[FlutterMethodCall alloc] initWithMethodName:method arguments:arguments] autorelease];
@@ -154,10 +188,12 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 }
 
 - (BOOL)isEqual:(id)object {
-  if (self == object)
+  if (self == object) {
     return YES;
-  if (![object isKindOfClass:[FlutterMethodCall class]])
+  }
+  if (![object isKindOfClass:[FlutterMethodCall class]]) {
     return NO;
+  }
   FlutterMethodCall* other = (FlutterMethodCall*)object;
   return [self.method isEqual:[other method]] &&
          ((!self.arguments && !other.arguments) || [self.arguments isEqual:other.arguments]);
@@ -168,13 +204,15 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 }
 @end
 
-NSObject const* FlutterMethodNotImplemented = [NSObject new];
+NSObject const* FlutterMethodNotImplemented = [[NSObject alloc] init];
 
+////////////////////////////////////////////////////////////////////////////////
 @implementation FlutterMethodChannel {
   NSObject<FlutterBinaryMessenger>* _messenger;
   NSString* _name;
   NSObject<FlutterMethodCodec>* _codec;
   FlutterBinaryMessengerConnection _connection;
+  NSObject<FlutterTaskQueue>* _taskQueue;
 }
 
 + (instancetype)methodChannelWithName:(NSString*)name
@@ -193,11 +231,19 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec {
+  self = [self initWithName:name binaryMessenger:messenger codec:codec taskQueue:nil];
+  return self;
+}
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec
+                   taskQueue:(NSObject<FlutterTaskQueue>*)taskQueue {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
   _messenger = [messenger retain];
   _codec = [codec retain];
+  _taskQueue = [taskQueue retain];
   return self;
 }
 
@@ -205,6 +251,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   [_name release];
   [_messenger release];
   [_codec release];
+  [_taskQueue release];
   [super dealloc];
 }
 
@@ -230,7 +277,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler {
   if (!handler) {
     if (_connection > 0) {
-      [_messenger cleanupConnection:_connection];
+      [_messenger cleanUpConnection:_connection];
       _connection = 0;
     } else {
       [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
@@ -242,15 +289,16 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     FlutterMethodCall* call = [codec decodeMethodCall:message];
     handler(call, ^(id result) {
-      if (result == FlutterMethodNotImplemented)
+      if (result == FlutterMethodNotImplemented) {
         callback(nil);
-      else if ([result isKindOfClass:[FlutterError class]])
+      } else if ([result isKindOfClass:[FlutterError class]]) {
         callback([codec encodeErrorEnvelope:(FlutterError*)result]);
-      else
+      } else {
         callback([codec encodeSuccessEnvelope:result]);
+      }
     });
   };
-  _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
+  _connection = SetMessageHandler(_messenger, _name, messageHandler, _taskQueue);
 }
 
 - (void)resizeChannelBuffer:(NSInteger)newSize {
@@ -261,12 +309,15 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 
 #pragma mark - Event channel
 
-NSObject const* FlutterEndOfEventStream = [NSObject new];
+NSObject const* FlutterEndOfEventStream = [[NSObject alloc] init];
 
+////////////////////////////////////////////////////////////////////////////////
 @implementation FlutterEventChannel {
   NSObject<FlutterBinaryMessenger>* _messenger;
   NSString* _name;
   NSObject<FlutterMethodCodec>* _codec;
+  NSObject<FlutterTaskQueue>* _taskQueue;
+  FlutterBinaryMessengerConnection _connection;
 }
 + (instancetype)eventChannelWithName:(NSString*)name
                      binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
@@ -284,11 +335,19 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec {
+  return [self initWithName:name binaryMessenger:messenger codec:codec taskQueue:nil];
+}
+
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec
+                   taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
   _messenger = [messenger retain];
   _codec = [codec retain];
+  _taskQueue = [taskQueue retain];
   return self;
 }
 
@@ -296,36 +355,42 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
   [_name release];
   [_codec release];
   [_messenger release];
+  [_taskQueue release];
   [super dealloc];
 }
 
-static void SetStreamHandlerMessageHandlerOnChannel(NSObject<FlutterStreamHandler>* handler,
-                                                    NSString* name,
-                                                    NSObject<FlutterBinaryMessenger>* messenger,
-                                                    NSObject<FlutterMethodCodec>* codec) {
+static FlutterBinaryMessengerConnection SetStreamHandlerMessageHandlerOnChannel(
+    NSObject<FlutterStreamHandler>* handler,
+    NSString* name,
+    NSObject<FlutterBinaryMessenger>* messenger,
+    NSObject<FlutterMethodCodec>* codec,
+    NSObject<FlutterTaskQueue>* taskQueue) {
   __block FlutterEventSink currentSink = nil;
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     FlutterMethodCall* call = [codec decodeMethodCall:message];
     if ([call.method isEqual:@"listen"]) {
       if (currentSink) {
         FlutterError* error = [handler onCancelWithArguments:nil];
-        if (error)
+        if (error) {
           NSLog(@"Failed to cancel existing stream: %@. %@ (%@)", error.code, error.message,
                 error.details);
+        }
       }
       currentSink = ^(id event) {
-        if (event == FlutterEndOfEventStream)
+        if (event == FlutterEndOfEventStream) {
           [messenger sendOnChannel:name message:nil];
-        else if ([event isKindOfClass:[FlutterError class]])
+        } else if ([event isKindOfClass:[FlutterError class]]) {
           [messenger sendOnChannel:name message:[codec encodeErrorEnvelope:(FlutterError*)event]];
-        else
+        } else {
           [messenger sendOnChannel:name message:[codec encodeSuccessEnvelope:event]];
+        }
       };
       FlutterError* error = [handler onListenWithArguments:call.arguments eventSink:currentSink];
-      if (error)
+      if (error) {
         callback([codec encodeErrorEnvelope:error]);
-      else
+      } else {
         callback([codec encodeSuccessEnvelope:nil]);
+      }
     } else if ([call.method isEqual:@"cancel"]) {
       if (!currentSink) {
         callback(
@@ -336,22 +401,25 @@ static void SetStreamHandlerMessageHandlerOnChannel(NSObject<FlutterStreamHandle
       }
       currentSink = nil;
       FlutterError* error = [handler onCancelWithArguments:call.arguments];
-      if (error)
+      if (error) {
         callback([codec encodeErrorEnvelope:error]);
-      else
+      } else {
         callback([codec encodeSuccessEnvelope:nil]);
+      }
     } else {
       callback(nil);
     }
   };
-  [messenger setMessageHandlerOnChannel:name binaryMessageHandler:messageHandler];
+  return SetMessageHandler(messenger, name, messageHandler, taskQueue);
 }
 
 - (void)setStreamHandler:(NSObject<FlutterStreamHandler>*)handler {
   if (!handler) {
-    [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
+    [_messenger cleanUpConnection:_connection];
+    _connection = 0;
     return;
   }
-  SetStreamHandlerMessageHandlerOnChannel(handler, _name, _messenger, _codec);
+  _connection =
+      SetStreamHandlerMessageHandlerOnChannel(handler, _name, _messenger, _codec, _taskQueue);
 }
 @end

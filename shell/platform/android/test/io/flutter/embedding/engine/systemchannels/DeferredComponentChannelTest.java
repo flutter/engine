@@ -4,6 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import android.content.res.AssetManager;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
@@ -13,12 +14,11 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 class TestDeferredComponentManager implements DeferredComponentManager {
   DeferredComponentChannel channel;
-  String moduleName;
+  String componentName;
 
   public void setJNI(FlutterJNI flutterJNI) {}
 
@@ -26,23 +26,23 @@ class TestDeferredComponentManager implements DeferredComponentManager {
     this.channel = channel;
   }
 
-  public void installDeferredComponent(int loadingUnitId, String moduleName) {
-    this.moduleName = moduleName;
+  public void installDeferredComponent(int loadingUnitId, String componentName) {
+    this.componentName = componentName;
   }
 
   public void completeInstall() {
-    channel.completeInstallSuccess(moduleName);
+    channel.completeInstallSuccess(componentName);
   }
 
-  public String getDeferredComponentInstallState(int loadingUnitId, String moduleName) {
+  public String getDeferredComponentInstallState(int loadingUnitId, String componentName) {
     return "installed";
   }
 
-  public void loadAssets(int loadingUnitId, String moduleName) {}
+  public void loadAssets(int loadingUnitId, String componentName) {}
 
-  public void loadDartLibrary(int loadingUnitId, String moduleName) {}
+  public void loadDartLibrary(int loadingUnitId, String componentName) {}
 
-  public boolean uninstallDeferredComponent(int loadingUnitId, String moduleName) {
+  public boolean uninstallDeferredComponent(int loadingUnitId, String componentName) {
     return true;
   }
 
@@ -50,7 +50,7 @@ class TestDeferredComponentManager implements DeferredComponentManager {
 }
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class DeferredComponentChannelTest {
   @Test
   public void deferredComponentChannel_installCompletesResults() {
@@ -65,7 +65,7 @@ public class DeferredComponentChannelTest {
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
-    args.put("moduleName", "hello");
+    args.put("componentName", "hello");
     MethodCall methodCall = new MethodCall("installDeferredComponent", args);
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
     fakeDeferredComponentChannel.parsingMethodHandler.onMethodCall(methodCall, mockResult);
@@ -87,7 +87,7 @@ public class DeferredComponentChannelTest {
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
-    args.put("moduleName", "hello");
+    args.put("componentName", "hello");
     MethodCall methodCall = new MethodCall("installDeferredComponent", args);
     MethodChannel.Result mockResult1 = mock(MethodChannel.Result.class);
     MethodChannel.Result mockResult2 = mock(MethodChannel.Result.class);
@@ -112,7 +112,7 @@ public class DeferredComponentChannelTest {
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
-    args.put("moduleName", "hello");
+    args.put("componentName", "hello");
     MethodCall methodCall = new MethodCall("getDeferredComponentInstallState", args);
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
     fakeDeferredComponentChannel.parsingMethodHandler.onMethodCall(methodCall, mockResult);

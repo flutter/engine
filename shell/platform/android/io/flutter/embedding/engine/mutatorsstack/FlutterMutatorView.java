@@ -1,19 +1,29 @@
 package io.flutter.embedding.engine.mutatorsstack;
 
+import static android.view.View.OnFocusChangeListener;
+
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.util.ViewUtils;
 
 /**
- * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.MutatorsStack} to its
- * children.
+ * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack} to
+ * its children.
  */
+@TargetApi(19)
 public class FlutterMutatorView extends FrameLayout {
   private FlutterMutatorsStack mutatorsStack;
   private float screenDensity;
@@ -31,7 +41,7 @@ public class FlutterMutatorView extends FrameLayout {
   public FlutterMutatorView(
       @NonNull Context context,
       float screenDensity,
-      @NonNull AndroidTouchProcessor androidTouchProcessor) {
+      @Nullable AndroidTouchProcessor androidTouchProcessor) {
     super(context, null);
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
@@ -39,9 +49,45 @@ public class FlutterMutatorView extends FrameLayout {
 
   /** Initialize the FlutterMutatorView. */
   public FlutterMutatorView(@NonNull Context context) {
-    super(context, null);
-    this.screenDensity = 1;
-    this.androidTouchProcessor = null;
+    this(context, 1, /* androidTouchProcessor=*/ null);
+  }
+
+  @Nullable @VisibleForTesting ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener;
+
+  /**
+   * Sets a focus change listener that notifies when the current view or any of its descendant views
+   * have received focus.
+   *
+   * <p>If there's an active focus listener, it will first remove the current listener, and then add
+   * the new one.
+   *
+   * @param userFocusListener A user provided focus listener.
+   */
+  public void setOnDescendantFocusChangeListener(@NonNull OnFocusChangeListener userFocusListener) {
+    unsetOnDescendantFocusChangeListener();
+
+    final View mutatorView = this;
+    final ViewTreeObserver observer = getViewTreeObserver();
+    if (observer.isAlive() && activeFocusListener == null) {
+      activeFocusListener =
+          new ViewTreeObserver.OnGlobalFocusChangeListener() {
+            @Override
+            public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+              userFocusListener.onFocusChange(mutatorView, ViewUtils.childHasFocus(mutatorView));
+            }
+          };
+      observer.addOnGlobalFocusChangeListener(activeFocusListener);
+    }
+  }
+
+  /** Unsets any active focus listener. */
+  public void unsetOnDescendantFocusChangeListener() {
+    final ViewTreeObserver observer = getViewTreeObserver();
+    if (observer.isAlive() && activeFocusListener != null) {
+      final ViewTreeObserver.OnGlobalFocusChangeListener currFocusListener = activeFocusListener;
+      activeFocusListener = null;
+      observer.removeOnGlobalFocusChangeListener(currFocusListener);
+    }
   }
 
   /**
@@ -115,6 +161,21 @@ public class FlutterMutatorView extends FrameLayout {
   @Override
   public boolean onInterceptTouchEvent(MotionEvent event) {
     return true;
+  }
+
+  @Override
+  public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+    final View embeddedView = getChildAt(0);
+    if (embeddedView != null
+        && embeddedView.getImportantForAccessibility()
+            == View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS) {
+      return false;
+    }
+    // Forward the request only if the embedded view is in the Flutter accessibility tree.
+    // The embedded view may be ignored when the framework doesn't populate a SemanticNode
+    // for the current platform view.
+    // See AccessibilityBridge for more.
+    return super.requestSendAccessibilityEvent(child, event);
   }
 
   @Override

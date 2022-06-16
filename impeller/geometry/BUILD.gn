@@ -1,0 +1,53 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("geometry") {
+  sources = [
+    "color.cc",
+    "color.h",
+    "constants.cc",
+    "constants.h",
+    "matrix.cc",
+    "matrix.h",
+    "matrix_decomposition.cc",
+    "matrix_decomposition.h",
+    "path.cc",
+    "path.h",
+    "path_builder.cc",
+    "path_builder.h",
+    "path_component.cc",
+    "path_component.h",
+    "point.cc",
+    "point.h",
+    "quaternion.cc",
+    "quaternion.h",
+    "rect.cc",
+    "rect.h",
+    "scalar.h",
+    "shear.cc",
+    "shear.h",
+    "size.cc",
+    "size.h",
+    "type_traits.cc",
+    "type_traits.h",
+    "vector.cc",
+    "vector.h",
+    "vertices.cc",
+    "vertices.h",
+  ]
+}
+
+impeller_component("geometry_unittests") {
+  testonly = true
+  sources = [
+    "geometry_unittests.cc",
+    "geometry_unittests.h",
+  ]
+  deps = [
+    ":geometry",
+    "//flutter/testing",
+  ]
+}

@@ -5,7 +5,18 @@
 #include "flutter/shell/common/shell_test_platform_view_vulkan.h"
 
 #include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/shell/common/context_options.h"
 #include "flutter/vulkan/vulkan_utilities.h"
+
+#if OS_FUCHSIA
+#define VULKAN_SO_PATH "libvulkan.so"
+#elif FML_OS_MACOSX
+#define VULKAN_SO_PATH "libvk_swiftshader.dylib"
+#elif FML_OS_WIN
+#define VULKAN_SO_PATH "vk_swiftshader.dll"
+#else
+#define VULKAN_SO_PATH "libvk_swiftshader.so"
+#endif
 
 namespace flutter {
 namespace testing {
@@ -20,7 +31,7 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
     : ShellTestPlatformView(delegate, std::move(task_runners)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(vsync_clock),
-      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()),
+      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH)),
       shell_test_external_view_embedder_(shell_test_external_view_embedder) {}
 
 ShellTestPlatformViewVulkan::~ShellTestPlatformViewVulkan() = default;
@@ -78,9 +89,9 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
       VK_MAKE_VERSION(1, 1, 0), true);
 
   if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
-    // Make certain the application instance was created and it setup the
+    // Make certain the application instance was created and it set up the
     // instance proc table entries.
-    FML_DLOG(ERROR) << "Instance proc addresses have not been setup.";
+    FML_DLOG(ERROR) << "Instance proc addresses have not been set up.";
     return;
   }
 
@@ -90,9 +101,9 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
 
   if (logical_device_ == nullptr || !logical_device_->IsValid() ||
       !vk_->AreDeviceProcsSetup()) {
-    // Make certain the device was created and it setup the device proc table
+    // Make certain the device was created and it set up the device proc table
     // entries.
-    FML_DLOG(ERROR) << "Device proc addresses have not been setup.";
+    FML_DLOG(ERROR) << "Device proc addresses have not been set up.";
     return;
   }
 
@@ -113,12 +124,8 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
     return false;
   }
 
-  GrContextOptions options;
-  if (PersistentCache::cache_sksl()) {
-    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
-  }
-  PersistentCache::MarkStrategySet();
-  options.fPersistentCache = PersistentCache::GetCacheForProcess();
+  const auto options =
+      MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);
 
   sk_sp<GrDirectContext> context =
       GrDirectContext::MakeVulkan(backend_context, options);
@@ -128,8 +135,7 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
     return false;
   }
 
-  context->setResourceCacheLimits(vulkan::kGrCacheMaxCount,
-                                  vulkan::kGrCacheMaxByteSize);
+  context->setResourceCacheLimit(vulkan::kGrCacheMaxByteSize);
 
   context_ = context;
 
@@ -183,8 +189,11 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
     return true;
   };
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), true,
-                                        std::move(callback));
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
+  return std::make_unique<SurfaceFrame>(
+      std::move(surface), std::move(framebuffer_info), std::move(callback));
 }
 
 GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {

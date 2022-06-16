@@ -1,0 +1,32 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+group("fakes") {
+  testonly = true
+
+  public_deps = [
+    ":focus",
+    "scenic",
+  ]
+}
+
+source_set("focus") {
+  testonly = true
+
+  sources = [
+    "focuser.h",
+    "platform_message.h",
+    "touch_source.h",
+    "view_ref_focused.h",
+  ]
+
+  deps = [
+    "//build/fuchsia/pkg:sys_cpp_testing",
+    "//flutter/lib/ui",
+    "//flutter/testing",
+    "//third_party/rapidjson",
+  ]
+}

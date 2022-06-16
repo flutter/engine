@@ -8,10 +8,7 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace flutter {
@@ -19,7 +16,6 @@ namespace flutter {
 PlatformView::PlatformView(Delegate& delegate, TaskRunners task_runners)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
-      size_(SkISize::Make(0, 0)),
       weak_factory_(this) {}
 
 PlatformView::~PlatformView() = default;
@@ -32,7 +28,7 @@ std::unique_ptr<VsyncWaiter> PlatformView::CreateVSyncWaiter() {
 }
 
 void PlatformView::DispatchPlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   delegate_.OnPlatformViewDispatchPlatformMessage(std::move(message));
 }
 
@@ -42,15 +38,9 @@ void PlatformView::DispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
-void PlatformView::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                                         KeyDataResponse callback) {
-  delegate_.OnPlatformViewDispatchKeyDataPacket(std::move(packet),
-                                                std::move(callback));
-}
-
 void PlatformView::DispatchSemanticsAction(int32_t id,
                                            SemanticsAction action,
-                                           std::vector<uint8_t> args) {
+                                           fml::MallocMapping args) {
   delegate_.OnPlatformViewDispatchSemanticsAction(id, action, std::move(args));
 }
 
@@ -68,7 +58,6 @@ void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
 
 void PlatformView::NotifyCreated() {
   std::unique_ptr<Surface> surface;
-
   // Threading: We want to use the platform view on the non-platform thread.
   // Using the weak pointer is illegal. But, we are going to introduce a latch
   // so that the platform view is not collected till the surface is obtained.
@@ -94,9 +83,17 @@ void PlatformView::NotifyDestroyed() {
   delegate_.OnPlatformViewDestroyed();
 }
 
+void PlatformView::ScheduleFrame() {
+  delegate_.OnPlatformViewScheduleFrame();
+}
+
 sk_sp<GrDirectContext> PlatformView::CreateResourceContext() const {
-  FML_DLOG(WARNING) << "This platform does not setup the resource "
+  FML_DLOG(WARNING) << "This platform does not set up the resource "
                        "context on the IO thread for async texture uploads.";
+  return nullptr;
+}
+
+std::shared_ptr<impeller::Context> PlatformView::GetImpellerContext() const {
   return nullptr;
 }
 
@@ -115,9 +112,11 @@ fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
 void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
                                    CustomAccessibilityActionUpdates actions) {}
 
-void PlatformView::HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {
-  if (auto response = message->response())
+void PlatformView::HandlePlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  if (auto response = message->response()) {
     response->CompleteEmpty();
+  }
 }
 
 void PlatformView::OnPreEngineRestart() const {}
@@ -180,6 +179,20 @@ void PlatformView::UpdateAssetResolverByType(
     std::unique_ptr<AssetResolver> updated_asset_resolver,
     AssetResolver::AssetResolverType type) {
   delegate_.UpdateAssetResolverByType(std::move(updated_asset_resolver), type);
+}
+
+std::unique_ptr<SnapshotSurfaceProducer>
+PlatformView::CreateSnapshotSurfaceProducer() {
+  return nullptr;
+}
+
+std::shared_ptr<PlatformMessageHandler>
+PlatformView::GetPlatformMessageHandler() const {
+  return nullptr;
+}
+
+const Settings& PlatformView::GetSettings() const {
+  return delegate_.OnPlatformViewGetSettings();
 }
 
 }  // namespace flutter

@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/toolchain/clang.gni")
+import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
@@ -24,6 +25,10 @@ shell_gpu_configuration("embedder_gpu_configuration") {
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
 
+config("embedder_header_config") {
+  include_dirs = [ "." ]
+}
+
 # Template for the embedder build. Used to allow building it multiple times with
 # different flags.
 template("embedder_source_set") {
@@ -34,6 +39,8 @@ template("embedder_source_set") {
       "embedder.cc",
       "embedder_engine.cc",
       "embedder_engine.h",
+      "embedder_external_texture_resolver.cc",
+      "embedder_external_texture_resolver.h",
       "embedder_external_view.cc",
       "embedder_external_view.h",
       "embedder_external_view_embedder.cc",
@@ -90,6 +97,8 @@ template("embedder_source_set") {
 
     if (embedder_enable_metal) {
       sources += [
+        "embedder_external_texture_metal.h",
+        "embedder_external_texture_metal.mm",
         "embedder_surface_metal.h",
         "embedder_surface_metal.mm",
       ]
@@ -100,10 +109,18 @@ template("embedder_source_set") {
       deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
 
+    if (embedder_enable_vulkan) {
+      sources += [
+        "embedder_surface_vulkan.cc",
+        "embedder_surface_vulkan.h",
+      ]
+    }
+
     public_deps = [ ":embedder_headers" ]
 
     public_configs += [
       ":embedder_gpu_configuration_config",
+      ":embedder_header_config",
       "//flutter:config",
     ]
   }
@@ -124,7 +141,10 @@ source_set("embedder_headers") {
 }
 
 source_set("embedder_test_utils") {
-  public = [ "test_utils/proc_table_replacement.h" ]
+  public = [
+    "test_utils/key_codes.h",
+    "test_utils/proc_table_replacement.h",
+  ]
 
   deps = [ ":embedder_headers" ]
 
@@ -155,10 +175,14 @@ test_fixtures("fixtures") {
     "fixtures/dpr_noxform.png",
     "fixtures/dpr_xform.png",
     "fixtures/gradient.png",
+    "fixtures/vk_dpr_noxform.png",
+    "fixtures/vk_gradient.png",
     "fixtures/gradient_metal.png",
+    "fixtures/external_texture_metal.png",
     "fixtures/gradient_xform.png",
     "fixtures/scene_without_custom_compositor.png",
     "fixtures/scene_without_custom_compositor_with_xform.png",
+    "fixtures/snapshot_large_scene.png",
     "fixtures/verifyb143464703.png",
     "fixtures/verifyb143464703_soft_noxform.png",
   ]
@@ -200,6 +224,7 @@ if (enable_unittests) {
       ":embedder_gpu_configuration",
       ":fixtures",
       "//flutter/flow",
+      "//flutter/lib/snapshot",
       "//flutter/lib/ui",
       "//flutter/runtime",
       "//flutter/testing",
@@ -224,16 +249,32 @@ if (enable_unittests) {
 
     if (test_enable_metal) {
       sources += [
+        "tests/embedder_test_compositor_metal.cc",
+        "tests/embedder_test_compositor_metal.h",
         "tests/embedder_test_context_metal.cc",
         "tests/embedder_test_context_metal.h",
-        "tests/embedder_unittests_metal.cc",
+        "tests/embedder_unittests_metal.mm",
       ]
 
       deps += [ "//flutter/testing:metal" ]
     }
+
+    if (test_enable_vulkan) {
+      sources += [
+        "tests/embedder_test_compositor_vulkan.cc",
+        "tests/embedder_test_compositor_vulkan.h",
+        "tests/embedder_test_context_vulkan.cc",
+        "tests/embedder_test_context_vulkan.h",
+      ]
+
+      deps += [
+        "//flutter/testing:vulkan",
+        "//flutter/vulkan",
+      ]
+    }
   }
 
-  # Tests the build in FLUTTER_ENGINE_NO_PROTOTYPES mode.
+  # Tests that build in FLUTTER_ENGINE_NO_PROTOTYPES mode.
   executable("embedder_proctable_unittests") {
     testonly = true
 
@@ -245,11 +286,15 @@ if (enable_unittests) {
     sources = [ "tests/embedder_unittests_proctable.cc" ]
 
     defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+    if (is_win) {
+      libs = [ "psapi.lib" ]
+    }
 
     deps = [
       ":embedder",
       ":embedder_gpu_configuration",
       ":fixtures",
+      "//flutter/lib/snapshot",
       "//flutter/testing",
 
       #"//flutter/testing:dart",
@@ -306,10 +351,14 @@ if (is_mac && !embedder_for_target) {
     outputs =
         [ "$_flutter_embedder_framework_dir/Versions/A/Resources/Info.plist" ]
     args = [
+      "--source",
       rebase_path(sources[0]),
+      "--destination",
       rebase_path(outputs[0]),
-      "--bitcode=$enable_bitcode",
     ]
+    if (enable_bitcode) {
+      args += [ "--bitcode" ]
+    }
   }
 
   copy("copy_module_map") {
@@ -332,7 +381,13 @@ if (is_mac && !embedder_for_target) {
   action("generate_symlinks") {
     visibility = [ ":*" ]
     script = "//build/config/mac/package_framework.py"
-    outputs = [ "$root_build_dir/FlutterEmbedder.stamp" ]
+    outputs = [
+      "$root_build_dir/FlutterEmbedder.stamp",
+      _flutter_embedder_framework_dir,
+      "$_flutter_embedder_framework_dir/Resources",
+      "$_flutter_embedder_framework_dir/Headers",
+      "$_flutter_embedder_framework_dir/Modules",
+    ]
     args = [
       "--framework",
       "FlutterEmbedder.framework",
@@ -377,6 +432,67 @@ group("flutter_engine") {
     # For the Mac, the dylib is packaged in a framework with the appropriate headers.
     if (is_mac && !embedder_for_target) {
       deps += [ ":flutter_embedder_framework" ]
+    }
+  }
+}
+
+if (is_mac) {
+  zip_bundle("flutter_embedder_framework_archive") {
+    deps = [ ":generate_symlinks" ]
+    output = "$full_platform_name/FlutterEmbedder.framework.zip"
+    files = [
+      {
+        source = "$root_out_dir/FlutterEmbedder.framework"
+        destination = "FlutterEmbedder.framework"
+      },
+      {
+        source = "$root_out_dir/FlutterEmbedder.framework/Resources"
+        destination = "FlutterEmbedder.framework/Resources"
+      },
+      {
+        source = "$root_out_dir/FlutterEmbedder.framework/Headers"
+        destination = "FlutterEmbedder.framework/Headers"
+      },
+      {
+        source = "$root_out_dir/FlutterEmbedder.framework/Modules"
+        destination = "FlutterEmbedder.framework/Modules"
+      },
+    ]
+  }
+}
+
+if (host_os == "linux" || host_os == "win") {
+  zip_bundle("embedder-archive") {
+    output = "$full_platform_name/$full_platform_name-embedder.zip"
+    deps = [
+      "//flutter/shell/platform/embedder:copy_headers",
+      "//flutter/shell/platform/embedder:flutter_engine_library",
+    ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_embedder.h"
+        destination = "flutter_embedder.h"
+      },
+    ]
+    if (host_os == "linux") {
+      files += [
+        {
+          source = "$root_out_dir/libflutter_engine.so"
+          destination = "libflutter_engine.so"
+        },
+      ]
+    }
+    if (host_os == "win") {
+      files += [
+        {
+          source = "$root_out_dir/flutter_engine.dll"
+          destination = "flutter_engine.dll"
+        },
+        {
+          source = "$root_out_dir/flutter_engine.dll.lib"
+          destination = "flutter_engine.dll.lib"
+        },
+      ]
     }
   }
 }

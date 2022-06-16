@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:collection/collection.dart' show MapEquality;
 
 // This script verifies that the release binaries only export the expected
 // symbols.
@@ -22,10 +21,14 @@ import 'package:collection/collection.dart' show MapEquality;
 /// Takes the path to the out directory as the first argument, and the path to
 /// the buildtools directory as the second argument.
 ///
-/// If the second argument is not specified, it is assumed that it is the parent
-/// of the out directory (for backwards compatibility).
+/// If the second argument is not specified, for backwards compatibility, it is
+/// assumed that it is ../buildtools relative to the first parameter (the out
+/// directory).
 void main(List<String> arguments) {
-  assert(arguments.length == 2 || arguments.length == 1);
+  if (arguments.isEmpty || arguments.length > 2) {
+    print('usage: dart verify_exported.dart OUT_DIR [BUILDTOOLS]');
+    exit(1);
+  }
   final String outPath = arguments.first;
   final String buildToolsPath = arguments.length == 1
       ? p.join(p.dirname(outPath), 'buildtools')
@@ -40,10 +43,13 @@ void main(List<String> arguments) {
     throw UnimplementedError('Script only support running on Linux or MacOS.');
   }
   final String nmPath = p.join(buildToolsPath, platform, 'clang', 'bin', 'llvm-nm');
-  assert(Directory(outPath).existsSync());
+  if (!Directory(outPath).existsSync()) {
+    print('error: build out directory not found: $outPath');
+    exit(1);
+  }
 
   final Iterable<String> releaseBuilds = Directory(outPath).listSync()
-      .where((FileSystemEntity entity) => entity is Directory)
+      .whereType<Directory>()
       .map<String>((FileSystemEntity dir) => p.basename(dir.path))
       .where((String s) => s.contains('_release'));
 
@@ -61,7 +67,7 @@ void main(List<String> arguments) {
 
 int _checkIos(String outPath, String nmPath, Iterable<String> builds) {
   int failures = 0;
-  for (String build in builds) {
+  for (final String build in builds) {
     final String libFlutter = p.join(outPath, build, 'Flutter.framework', 'Flutter');
     if (!File(libFlutter).existsSync()) {
       print('SKIPPING: $libFlutter does not exist.');
@@ -73,10 +79,10 @@ int _checkIos(String outPath, String nmPath, Iterable<String> builds) {
       failures++;
       continue;
     }
-    final Iterable<NmEntry> unexpectedEntries = NmEntry.parse(nmResult.stdout).where((NmEntry entry) {
+    final Iterable<NmEntry> unexpectedEntries = NmEntry.parse(nmResult.stdout as String).where((NmEntry entry) {
       return !(((entry.type == '(__DATA,__common)' || entry.type == '(__DATA,__const)') && entry.name.startsWith('_Flutter'))
           || (entry.type == '(__DATA,__objc_data)'
-              && (entry.name.startsWith('_OBJC_METACLASS_\$_Flutter') || entry.name.startsWith('_OBJC_CLASS_\$_Flutter'))));
+              && (entry.name.startsWith(r'_OBJC_METACLASS_$_Flutter') || entry.name.startsWith(r'_OBJC_CLASS_$_Flutter'))));
     });
     if (unexpectedEntries.isNotEmpty) {
       print('ERROR: $libFlutter exports unexpected symbols:');
@@ -93,7 +99,7 @@ int _checkIos(String outPath, String nmPath, Iterable<String> builds) {
 
 int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
   int failures = 0;
-  for (String build in builds) {
+  for (final String build in builds) {
     final String libFlutter = p.join(outPath, build, 'libflutter.so');
     if (!File(libFlutter).existsSync()) {
       print('SKIPPING: $libFlutter does not exist.');
@@ -105,17 +111,17 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
       failures++;
       continue;
     }
-    final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout);
-    final Map<String, String> entryMap = Map<String, String>.fromIterable(
-        entries,
-        key: (dynamic entry) => entry.name,
-        value: (dynamic entry) => entry.type);
+    final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout as String);
+    final Map<String, String> entryMap = <String, String>{
+      for (final NmEntry entry in entries)
+        entry.name: entry.type,
+    };
     final Map<String, String> expectedSymbols = <String, String>{
       'JNI_OnLoad': 'T',
       '_binary_icudtl_dat_size': 'A',
       '_binary_icudtl_dat_start': 'D',
-      // TODO(fxb/47943): Remove these once Clang lld does not expose them.
-      // arm
+      // TODO(dnfield): Remove these once Clang lld does not expose them.
+      // arm https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=47943
       '__adddf3': 'T',
       '__addsf3': 'T',
       '__aeabi_cdcmpeq': 'T',

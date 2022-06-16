@@ -1,0 +1,36 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("display_list") {
+  sources = [
+    "display_list_dispatcher.cc",
+    "display_list_dispatcher.h",
+    "display_list_image_impeller.cc",
+    "display_list_image_impeller.h",
+  ]
+
+  public_deps = [
+    "../aiks",
+    "//flutter/display_list",
+    "//flutter/fml",
+    "//third_party/skia",
+  ]
+}
+
+impeller_component("display_list_unittests") {
+  testonly = true
+
+  sources = [
+    "display_list_playground.cc",
+    "display_list_playground.h",
+    "display_list_unittests.cc",
+  ]
+
+  deps = [
+    ":display_list",
+    "../playground",
+  ]
+}

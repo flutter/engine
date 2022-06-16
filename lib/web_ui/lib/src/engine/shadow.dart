@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
+
+import 'dom.dart';
 
 /// How far is the light source from the surface of the UI.
 ///
@@ -128,7 +132,7 @@ SurfaceShadowData? computeShadow(ui.Rect shape, double elevation) {
 
 /// Applies a CSS shadow to the [shape].
 void applyCssShadow(
-    html.Element? element, ui.Rect shape, double elevation, ui.Color color) {
+    DomElement? element, ui.Rect shape, double elevation, ui.Color color) {
   final SurfaceShadowData? shadow = computeShadow(shape, elevation);
   if (shadow == null) {
     element!.style.boxShadow = 'none';

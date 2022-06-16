@@ -9,7 +9,9 @@
 static constexpr char kChannelName[] = "flutter/platform";
 
 static constexpr char kGetClipboardDataMethod[] = "Clipboard.getData";
+static constexpr char kHasStringsClipboardMethod[] = "Clipboard.hasStrings";
 static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
+static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 
 static constexpr char kTextPlainFormat[] = "text/plain";
 static constexpr char kTextKey[] = "text";
@@ -46,6 +48,15 @@ void PlatformHandler::HandleMethodCall(
       return;
     }
     GetPlainText(std::move(result), kTextKey);
+  } else if (method.compare(kHasStringsClipboardMethod) == 0) {
+    // Only one string argument is expected.
+    const rapidjson::Value& format = method_call.arguments()[0];
+
+    if (strcmp(format.GetString(), kTextPlainFormat) != 0) {
+      result->Error(kClipboardError, kUnknownClipboardFormatMessage);
+      return;
+    }
+    GetHasStrings(std::move(result));
   } else if (method.compare(kSetClipboardDataMethod) == 0) {
     const rapidjson::Value& document = *method_call.arguments();
     rapidjson::Value::ConstMemberIterator itr = document.FindMember(kTextKey);
@@ -54,6 +65,11 @@ void PlatformHandler::HandleMethodCall(
       return;
     }
     SetPlainText(itr->value.GetString(), std::move(result));
+  } else if (method.compare(kPlaySoundMethod) == 0) {
+    // Only one string argument is expected.
+    const rapidjson::Value& sound_type = method_call.arguments()[0];
+
+    SystemSoundPlay(sound_type.GetString(), std::move(result));
   } else {
     result->NotImplemented();
   }

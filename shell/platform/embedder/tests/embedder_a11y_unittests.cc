@@ -16,13 +16,15 @@
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 #include "flutter/testing/testing.h"
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace flutter {
 namespace testing {
 
-using Embedder11yTest = testing::EmbedderTest;
+using EmbedderA11yTest = testing::EmbedderTest;
 
-// TODO(52372): De-flake and re-enable.
-TEST_F(Embedder11yTest, DISABLED_A11yTreeIsConsistent) {
+TEST_F(EmbedderA11yTest, A11yTreeIsConsistent) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   fml::AutoResetWaitableEvent latch;
@@ -188,6 +190,7 @@ TEST_F(Embedder11yTest, DISABLED_A11yTreeIsConsistent) {
   std::vector<uint8_t> bytes({2, 1});
   result = FlutterEngineDispatchSemanticsAction(
       engine.get(), 42, kFlutterSemanticsActionTap, &bytes[0], bytes.size());
+  ASSERT_EQ(result, FlutterEngineResult::kSuccess);
   latch.Wait();
 
   // Disable semantics. Wait for NotifySemanticsEnabled(false).
@@ -204,3 +207,5 @@ TEST_F(Embedder11yTest, DISABLED_A11yTreeIsConsistent) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

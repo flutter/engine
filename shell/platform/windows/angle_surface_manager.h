@@ -13,7 +13,10 @@
 #include <GLES2/gl2ext.h>
 
 // Windows platform specific includes
+#include <d3d11.h>
 #include <windows.h>
+#include <wrl/client.h>
+#include <memory>
 
 #include "window_binding_handler.h"
 
@@ -23,9 +26,7 @@ namespace flutter {
 // destroy surfaces
 class AngleSurfaceManager {
  public:
-  // Creates a new surface manager retaining reference to the passed-in target
-  // for the lifetime of the manager.
-  AngleSurfaceManager();
+  static std::unique_ptr<AngleSurfaceManager> Create();
   ~AngleSurfaceManager();
 
   // Disallow copy/move.
@@ -33,7 +34,7 @@ class AngleSurfaceManager {
   AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
   // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
-  // asociated with window, in the appropriate format for display.
+  // associated with window, in the appropriate format for display.
   // Target represents the visual entity to bind to.  Width and
   // height represent dimensions surface is created at.
   bool CreateSurface(WindowsRenderTarget* render_target,
@@ -70,11 +71,25 @@ class AngleSurfaceManager {
   // not null.
   EGLBoolean SwapBuffers();
 
+  // Creates a |EGLSurface| from the provided handle.
+  EGLSurface CreateSurfaceFromHandle(EGLenum handle_type,
+                                     EGLClientBuffer handle,
+                                     const EGLint* attributes) const;
+
+  // Gets the |EGLDisplay|.
+  EGLDisplay egl_display() const { return egl_display_; };
+
+  // Gets the |ID3D11Device| chosen by ANGLE.
+  bool GetDevice(ID3D11Device** device);
+
  private:
+  // Creates a new surface manager retaining reference to the passed-in target
+  // for the lifetime of the manager.
+  AngleSurfaceManager();
+
   bool Initialize();
   void CleanUp();
 
- private:
   // Attempts to initialize EGL using ANGLE.
   bool InitializeEGL(
       PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT,
@@ -100,6 +115,16 @@ class AngleSurfaceManager {
 
   // Current render_surface that engine will draw into.
   EGLSurface render_surface_ = EGL_NO_SURFACE;
+
+  // Requested dimensions for current surface
+  EGLint surface_width_ = 0;
+  EGLint surface_height_ = 0;
+
+  // The current D3D device.
+  Microsoft::WRL::ComPtr<ID3D11Device> resolved_device_;
+
+  // Number of active instances of AngleSurfaceManager
+  static int instance_count_;
 };
 
 }  // namespace flutter

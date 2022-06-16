@@ -48,33 +48,30 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
     const DartVMData& vm,
     fml::RefPtr<fml::TaskRunner> task_runner,
     std::string entrypoint) {
-  FML_CHECK(entrypoint.size() > 0);
+  FML_CHECK(!entrypoint.empty());
   TaskRunners runners("io.flutter.test", task_runner, task_runner, task_runner,
                       task_runner);
 
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
+  UIDartState::Context context(runners);
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = entrypoint.c_str();
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
           vm.GetSettings(),                    // settings
           vm.GetIsolateSnapshot(),             // isolate_snapshot
-          runners,                             // task_runners
-          {},                                  // window
-          {},                                  // snapshot_delegate
-          {},                                  // hint_freed_delegate
-          {},                                  // io_manager
-          {},                                  // unref_queue
-          {},                                  // image_decoder
-          "main.dart",                         // advisory_script_uri
-          entrypoint.c_str(),                  // advisory_script_entrypoint
+          {},                                  // platform configuration
           DartIsolate::Flags{},                // flags
+          nullptr,                             // root isolate create callback
           settings.isolate_create_callback,    // isolate create callback
           settings.isolate_shutdown_callback,  // isolate shutdown callback,
           entrypoint,                          // dart entrypoint
           std::nullopt,                        // dart entrypoint library
+          {},                                  // dart entrypoint arguments
           std::move(isolate_configuration),    // isolate configuration
-          nullptr                              // Volatile path tracker
+          std::move(context)                   // engine context
           )
           .lock();
 

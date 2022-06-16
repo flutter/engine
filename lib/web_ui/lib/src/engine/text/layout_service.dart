@@ -2,18 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import 'canvas_paragraph.dart';
+import 'line_breaker.dart';
+import 'measurement.dart';
+import 'paragraph.dart';
+import 'ruler.dart';
+import 'text_direction.dart';
 
 /// Performs layout on a [CanvasParagraph].
 ///
-/// It uses a [html.CanvasElement] to measure text.
+/// It uses a [DomCanvasElement] to measure text.
 class TextLayoutService {
   TextLayoutService(this.paragraph);
 
   final CanvasParagraph paragraph;
 
-  final html.CanvasRenderingContext2D context = html.CanvasElement().context2D;
+  final DomCanvasRenderingContext2D context = createDomCanvasElement().context2D;
 
   // *** Results of layout *** //
 
@@ -23,7 +33,7 @@ class TextLayoutService {
 
   double height = 0.0;
 
-  EngineLineMetrics? longestLine;
+  ParagraphLine? longestLine;
 
   double minIntrinsicWidth = 0.0;
 
@@ -35,14 +45,18 @@ class TextLayoutService {
 
   bool didExceedMaxLines = false;
 
-  final List<EngineLineMetrics> lines = <EngineLineMetrics>[];
+  final List<ParagraphLine> lines = <ParagraphLine>[];
+
+  /// The bounds that contain the text painted inside this paragraph.
+  ui.Rect get paintBounds => _paintBounds;
+  ui.Rect _paintBounds = ui.Rect.zero;
 
   // *** Convenient shortcuts used during layout *** //
 
-  int? get maxLines => paragraph.paragraphStyle._maxLines;
+  int? get maxLines => paragraph.paragraphStyle.maxLines;
   bool get unlimitedLines => maxLines == null;
 
-  String? get ellipsis => paragraph.paragraphStyle._ellipsis;
+  String? get ellipsis => paragraph.paragraphStyle.ellipsis;
   bool get hasEllipsis => ellipsis != null;
 
   /// Performs the layout on a paragraph given the [constraints].
@@ -51,7 +65,7 @@ class TextLayoutService {
   /// starts looping through the paragraph to calculate all layout metrics.
   ///
   /// It uses a [Spanometer] to perform measurements within spans of the
-  /// paragraph. It also uses [LineBuilders] to generate [EngineLineMetrics] as
+  /// paragraph. It also uses [LineBuilders] to generate [ParagraphLine]s as
   /// it iterates through the paragraph.
   ///
   /// The main loop keeps going until:
@@ -78,7 +92,6 @@ class TextLayoutService {
     final Spanometer spanometer = Spanometer(paragraph, context);
 
     int spanIndex = 0;
-    ParagraphSpan span = paragraph.spans[0];
     LineBuilder currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
@@ -86,26 +99,33 @@ class TextLayoutService {
     // statements (e.g. when we reach `endOfText`, when ellipsis has been
     // appended).
     while (true) {
-      // *********************************************** //
-      // *** HANDLE HARD LINE BREAKS AND END OF TEXT *** //
-      // *********************************************** //
+      // ************************** //
+      // *** HANDLE END OF TEXT *** //
+      // ************************** //
 
-      if (currentLine.end.isHard) {
-        if (currentLine.isNotEmpty) {
+      // All spans have been consumed.
+      final bool reachedEnd = spanIndex == spanCount;
+      if (reachedEnd) {
+        // In some cases, we need to extend the line to the end of text and
+        // build it:
+        //
+        // 1. Line is not empty. This could happen when the last span is a
+        //    placeholder.
+        //
+        // 2. We haven't reached `LineBreakType.endOfText` yet. This could
+        //    happen when the last character is a new line.
+        if (currentLine.isNotEmpty || currentLine.end.type != LineBreakType.endOfText) {
+          currentLine.extendToEndOfText();
           lines.add(currentLine.build());
-          if (currentLine.end.type != LineBreakType.endOfText) {
-            currentLine = currentLine.nextLine();
-          }
         }
-
-        if (currentLine.end.type == LineBreakType.endOfText) {
-          break;
-        }
+        break;
       }
 
       // ********************************* //
       // *** THE MAIN MEASUREMENT PART *** //
       // ********************************* //
+
+      ParagraphSpan span = paragraph.spans[spanIndex];
 
       if (span is PlaceholderSpan) {
         if (currentLine.widthIncludingSpace + span.width <= constraints.width) {
@@ -119,18 +139,20 @@ class TextLayoutService {
           }
           currentLine.addPlaceholder(span);
         }
+        spanIndex++;
       } else if (span is FlatTextSpan) {
         spanometer.currentSpan = span;
-        final LineBreakResult nextBreak = currentLine.findNextBreak(span.end);
+        final DirectionalPosition nextBreak = currentLine.findNextBreak();
         final double additionalWidth =
-            currentLine.getAdditionalWidthTo(nextBreak);
+            currentLine.getAdditionalWidthTo(nextBreak.lineBreak);
 
         if (currentLine.width + additionalWidth <= constraints.width) {
-          // TODO(mdebbar): Handle the case when `nextBreak` is just a span end
-          //                that shouldn't extend the line yet.
-
           // The line can extend to `nextBreak` without overflowing.
           currentLine.extendTo(nextBreak);
+          if (nextBreak.type == LineBreakType.mandatory) {
+            lines.add(currentLine.build());
+            currentLine = currentLine.nextLine();
+          }
         } else {
           // The chunk of text can't fit into the current line.
           final bool isLastLine =
@@ -140,12 +162,15 @@ class TextLayoutService {
             // We've reached the line that requires an ellipsis to be appended
             // to it.
 
-            currentLine.forceBreak(nextBreak,
-                allowEmpty: true, ellipsis: ellipsis);
+            currentLine.forceBreak(
+              nextBreak,
+              allowEmpty: true,
+              ellipsis: ellipsis,
+            );
             lines.add(currentLine.build(ellipsis: ellipsis));
             break;
-          } else if (currentLine.isEmpty) {
-            // The current line is still empty, which means we are dealing
+          } else if (currentLine.isNotBreakable) {
+            // The entire line is unbreakable, which means we are dealing
             // with a single block of text that doesn't fit in a single line.
             // We need to force-break it without adding an ellipsis.
 
@@ -154,9 +179,25 @@ class TextLayoutService {
             currentLine = currentLine.nextLine();
           } else {
             // Normal line break.
+            currentLine.revertToLastBreakOpportunity();
+            // If a revert had occurred in the line, we need to revert the span
+            // index accordingly.
+            //
+            // If no revert occurred, then `revertedToSpan` will be equal to
+            // `span` and the following while loop won't do anything.
+            final ParagraphSpan revertedToSpan = currentLine.lastSegment.span;
+            while (span != revertedToSpan) {
+              span = paragraph.spans[--spanIndex];
+            }
             lines.add(currentLine.build());
             currentLine = currentLine.nextLine();
           }
+        }
+
+        // Only go to the next span if we've reached the end of this span.
+        if (currentLine.end.index >= span.end) {
+          currentLine.createBox();
+          ++spanIndex;
         }
       } else {
         throw UnimplementedError('Unknown span type: ${span.runtimeType}');
@@ -165,31 +206,55 @@ class TextLayoutService {
       if (lines.length == maxLines) {
         break;
       }
-
-      // ********************************************* //
-      // *** ADVANCE TO THE NEXT SPAN IF NECESSARY *** //
-      // ********************************************* //
-
-      // Only go to the next span if we've reached the end of this span.
-      if (currentLine.end.index >= span.end && spanIndex < spanCount - 1) {
-        currentLine.createBox();
-        span = paragraph.spans[++spanIndex];
-      }
     }
 
-    // ************************************************** //
-    // *** PARAGRAPH BASELINE & HEIGHT & LONGEST LINE *** //
-    // ************************************************** //
+    // ***************************************************************** //
+    // *** PARAGRAPH BASELINE & HEIGHT & LONGEST LINE & PAINT BOUNDS *** //
+    // ***************************************************************** //
 
-    for (final EngineLineMetrics line in lines) {
+    double boundsLeft = double.infinity;
+    double boundsRight = double.negativeInfinity;
+    for (final ParagraphLine line in lines) {
       height += line.height;
       if (alphabeticBaseline == -1.0) {
         alphabeticBaseline = line.baseline;
-        ideographicBaseline = alphabeticBaseline * _baselineRatioHack;
+        ideographicBaseline = alphabeticBaseline * baselineRatioHack;
       }
       final double longestLineWidth = longestLine?.width ?? 0.0;
       if (longestLineWidth < line.width) {
         longestLine = line;
+      }
+
+      final double left = line.left;
+      if (left < boundsLeft) {
+        boundsLeft = left;
+      }
+      final double right = left + line.width;
+      if (right > boundsRight) {
+        boundsRight = right;
+      }
+    }
+    _paintBounds = ui.Rect.fromLTRB(
+      boundsLeft,
+      0,
+      boundsRight,
+      height,
+    );
+
+    // ********************** //
+    // *** POSITION BOXES *** //
+    // ********************** //
+
+    if (lines.isNotEmpty) {
+      final ParagraphLine lastLine = lines.last;
+      final bool shouldJustifyParagraph =
+        width.isFinite &&
+        paragraph.paragraphStyle.textAlign == ui.TextAlign.justify;
+
+      for (final ParagraphLine line in lines) {
+        // Don't apply justification to the last line.
+        final bool shouldJustifyLine = shouldJustifyParagraph && line != lastLine;
+        _positionLineBoxes(line, withJustification: shouldJustifyLine);
       }
     }
 
@@ -198,20 +263,33 @@ class TextLayoutService {
     // ******************************** //
 
     spanIndex = 0;
-    span = paragraph.spans[0];
     currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
-    while (currentLine.end.type != LineBreakType.endOfText) {
+    while (spanIndex < spanCount) {
+      final ParagraphSpan span = paragraph.spans[spanIndex];
+      bool breakToNextLine = false;
+
       if (span is PlaceholderSpan) {
         currentLine.addPlaceholder(span);
+        spanIndex++;
       } else if (span is FlatTextSpan) {
         spanometer.currentSpan = span;
-        final LineBreakResult nextBreak = currentLine.findNextBreak(span.end);
+        final DirectionalPosition nextBreak = currentLine.findNextBreak();
 
         // For the purpose of max intrinsic width, we don't care if the line
         // fits within the constraints or not. So we always extend it.
         currentLine.extendTo(nextBreak);
+        if (nextBreak.type == LineBreakType.mandatory) {
+          // We don't want to break the line now because we want to update
+          // min/max intrinsic widths below first.
+          breakToNextLine = true;
+        }
+
+        // Only go to the next span if we've reached the end of this span.
+        if (currentLine.end.index >= span.end) {
+          spanIndex++;
+        }
       }
 
       final double widthOfLastSegment = currentLine.lastSegment.width;
@@ -219,27 +297,157 @@ class TextLayoutService {
         minIntrinsicWidth = widthOfLastSegment;
       }
 
-      if (currentLine.end.isHard) {
-        // Max intrinsic width includes the width of trailing spaces.
-        if (maxIntrinsicWidth < currentLine.widthIncludingSpace) {
-          maxIntrinsicWidth = currentLine.widthIncludingSpace;
-        }
-        currentLine = currentLine.nextLine();
+      // Max intrinsic width includes the width of trailing spaces.
+      if (maxIntrinsicWidth < currentLine.widthIncludingSpace) {
+        maxIntrinsicWidth = currentLine.widthIncludingSpace;
       }
 
-      // Only go to the next span if we've reached the end of this span.
-      if (currentLine.end.index >= span.end && spanIndex < spanCount - 1) {
-        span = paragraph.spans[++spanIndex];
+      if (breakToNextLine) {
+        currentLine = currentLine.nextLine();
       }
     }
   }
 
+  ui.TextDirection get _paragraphDirection =>
+      paragraph.paragraphStyle.effectiveTextDirection;
+
+  /// Positions the boxes in the given [line] and takes into account their
+  /// directions, the paragraph's direction, and alignment justification.
+  void _positionLineBoxes(ParagraphLine line, {
+    required bool withJustification,
+  }) {
+    final List<RangeBox> boxes = line.boxes;
+    final double justifyPerSpaceBox = withJustification
+      ? _calculateJustifyPerSpaceBox(line)
+      : 0.0;
+
+    int i = 0;
+    double cumulativeWidth = 0.0;
+    while (i < boxes.length) {
+      final RangeBox box = boxes[i];
+      if (box.boxDirection == _paragraphDirection) {
+        // The box is in the same direction as the paragraph.
+        box.startOffset = cumulativeWidth;
+        box.lineWidth = line.width;
+        if (box is SpanBox && box.isSpaceOnly && !box.isTrailingSpace) {
+          box._width += justifyPerSpaceBox;
+        }
+
+        cumulativeWidth += box.width;
+        i++;
+        continue;
+      }
+
+      // At this point, we found a box that has the opposite direction to the
+      // paragraph. This could be a sequence of one or more boxes.
+      //
+      // These boxes should flow in the opposite direction. So we need to
+      // position them in reverse order.
+      //
+      // If the last box in the sequence is a space-only box (contains only
+      // whitespace characters), it should be excluded from the sequence.
+      //
+      // Example: an LTR paragraph with the contents:
+      //
+      // "ABC rtl1 rtl2 rtl3 XYZ"
+      //     ^    ^    ^    ^
+      //    SP1  SP2  SP3  SP4
+      //
+      //
+      // box direction:    LTR           RTL               LTR
+      //                |------>|<-----------------------|------>
+      //                +----------------------------------------+
+      //                | ABC | | rtl3 | | rtl2 | | rtl1 | | XYZ |
+      //                +----------------------------------------+
+      //                       ^        ^        ^        ^
+      //                      SP1      SP3      SP2      SP4
+      //
+      // Notice how SP2 and SP3 are flowing in the RTL direction because of the
+      // surrounding RTL words. SP4 is also preceded by an RTL word, but it marks
+      // the end of the RTL sequence, so it goes back to flowing in the paragraph
+      // direction (LTR).
+
+      final int first = i;
+      int lastNonSpaceBox = first;
+      i++;
+      while (i < boxes.length && boxes[i].boxDirection != _paragraphDirection) {
+        final RangeBox box = boxes[i];
+        if (box is SpanBox && box.isSpaceOnly) {
+          // Do nothing.
+        } else {
+          lastNonSpaceBox = i;
+        }
+        i++;
+      }
+      final int last = lastNonSpaceBox;
+      i = lastNonSpaceBox + 1;
+
+      // The range (first:last) is the entire sequence of boxes that have the
+      // opposite direction to the paragraph.
+      final double sequenceWidth = _positionLineBoxesInReverse(
+        line,
+        first,
+        last,
+        startOffset: cumulativeWidth,
+        justifyPerSpaceBox: justifyPerSpaceBox,
+      );
+      cumulativeWidth += sequenceWidth;
+    }
+  }
+
+  /// Positions a sequence of boxes in the direction opposite to the paragraph
+  /// text direction.
+  ///
+  /// This is needed when a right-to-left sequence appears in the middle of a
+  /// left-to-right paragraph, or vice versa.
+  ///
+  /// Returns the total width of all the positioned boxes in the sequence.
+  ///
+  /// [first] and [last] are expected to be inclusive.
+  double _positionLineBoxesInReverse(
+    ParagraphLine line,
+    int first,
+    int last, {
+    required double startOffset,
+    required double justifyPerSpaceBox,
+  }) {
+    final List<RangeBox> boxes = line.boxes;
+    double cumulativeWidth = 0.0;
+    for (int i = last; i >= first; i--) {
+      // Update the visual position of each box.
+      final RangeBox box = boxes[i];
+      assert(box.boxDirection != _paragraphDirection);
+      box.startOffset = startOffset + cumulativeWidth;
+      box.lineWidth = line.width;
+      if (box is SpanBox && box.isSpaceOnly &&  !box.isTrailingSpace) {
+        box._width += justifyPerSpaceBox;
+      }
+
+      cumulativeWidth += box.width;
+    }
+    return cumulativeWidth;
+  }
+
+  /// Calculates for the given [line], the amount of extra width that needs to be
+  /// added to each space box in order to align the line with the rest of the
+  /// paragraph.
+  double _calculateJustifyPerSpaceBox(ParagraphLine line) {
+    final double justifyTotal = width - line.width;
+
+    final int spaceBoxesToJustify = line.nonTrailingSpaceBoxCount;
+    if (spaceBoxesToJustify > 0) {
+      return justifyTotal / spaceBoxesToJustify;
+    }
+
+    return 0.0;
+  }
+
   List<ui.TextBox> getBoxesForPlaceholders() {
     final List<ui.TextBox> boxes = <ui.TextBox>[];
-    for (final EngineLineMetrics line in lines) {
-      for (final RangeBox box in line.boxes!) {
+    for (final ParagraphLine line in lines) {
+      for (final RangeBox box in line.boxes) {
         if (box is PlaceholderBox) {
-          boxes.add(box.toTextBox(line));
+          boxes.add(box.toTextBox(line, forPainting: false));
         }
       }
     }
@@ -265,11 +473,11 @@ class TextLayoutService {
 
     final List<ui.TextBox> boxes = <ui.TextBox>[];
 
-    for (final EngineLineMetrics line in lines) {
+    for (final ParagraphLine line in lines) {
       if (line.overlapsWith(start, end)) {
-        for (final RangeBox box in line.boxes!) {
+        for (final RangeBox box in line.boxes) {
           if (box is SpanBox && box.overlapsWith(start, end)) {
-            boxes.add(box.intersect(line, start, end));
+            boxes.add(box.intersect(line, start, end, forPainting: false));
           }
         }
       }
@@ -282,20 +490,7 @@ class TextLayoutService {
     // it possible to do hit testing. Once we find the box, we look inside that
     // box to find where exactly the `offset` is located.
 
-    // [offset] is above all the lines.
-    if (offset.dy < 0) {
-      return ui.TextPosition(offset: 0, affinity: ui.TextAffinity.downstream);
-    }
-
-    // [offset] is below all the lines.
-    if (offset.dy >= paragraph.height) {
-      return ui.TextPosition(
-        offset: paragraph.toPlainText().length,
-        affinity: ui.TextAffinity.upstream,
-      );
-    }
-
-    final EngineLineMetrics line = _findLineForY(offset.dy);
+    final ParagraphLine line = _findLineForY(offset.dy);
     // [offset] is to the left of the line.
     if (offset.dx <= line.left) {
       return ui.TextPosition(
@@ -313,7 +508,7 @@ class TextLayoutService {
     }
 
     final double dx = offset.dx - line.left;
-    for (final RangeBox box in line.boxes!) {
+    for (final RangeBox box in line.boxes) {
       if (box.left <= dx && dx <= box.right) {
         return box.getPositionForX(dx);
       }
@@ -322,11 +517,11 @@ class TextLayoutService {
     return ui.TextPosition(offset: line.startIndex);
   }
 
-  EngineLineMetrics _findLineForY(double y) {
+  ParagraphLine _findLineForY(double y) {
     // We could do a binary search here but it's not worth it because the number
     // of line is typically low, and each iteration is a cheap comparison of
     // doubles.
-    for (EngineLineMetrics line in lines) {
+    for (final ParagraphLine line in lines) {
       if (y <= line.height) {
         return line;
       }
@@ -336,29 +531,99 @@ class TextLayoutService {
   }
 }
 
-/// Represents a box inside [span] with the range of [start] to [end].
+/// Represents a box inside a paragraph span with the range of [start] to [end].
 ///
 /// The box's coordinates are all relative to the line it belongs to. For
 /// example, [left] is the distance from the left edge of the line to the left
 /// edge of the box.
+///
+/// This is what the various measurements/coordinates look like for a box in an
+/// LTR paragraph:
+///
+///          *------------------------lineWidth------------------*
+///                            *--width--*
+///          ┌─────────────────┬─────────┬───────────────────────┐
+///          │                 │---BOX---│                       │
+///          └─────────────────┴─────────┴───────────────────────┘
+///          *---startOffset---*
+///          *------left-------*
+///          *--------endOffset----------*
+///          *----------right------------*
+///
+///
+/// And in an RTL paragraph, [startOffset] and [endOffset] are flipped because
+/// the line starts from the right. Here's what they look like:
+///
+///          *------------------------lineWidth------------------*
+///                            *--width--*
+///          ┌─────────────────┬─────────┬───────────────────────┐
+///          │                 │---BOX---│                       │
+///          └─────────────────┴─────────┴───────────────────────┘
+///                                      *------startOffset------*
+///          *------left-------*
+///                            *-----------endOffset-------------*
+///          *----------right------------*
+///
 abstract class RangeBox {
-  LineBreakResult get start;
-  LineBreakResult get end;
+  RangeBox(
+    this.start,
+    this.end,
+    this.paragraphDirection,
+    this.boxDirection,
+  );
+
+  final LineBreakResult start;
+  final LineBreakResult end;
+
+  /// The distance from the beginning of the line to the beginning of the box.
+  late final double startOffset;
+
+  /// The distance from the beginning of the line to the end of the box.
+  double get endOffset => startOffset + width;
 
   /// The distance from the left edge of the line to the left edge of the box.
-  double get left;
+  double get left => paragraphDirection == ui.TextDirection.ltr
+      ? startOffset
+      : lineWidth - endOffset;
 
   /// The distance from the left edge of the line to the right edge of the box.
-  double get right;
+  double get right => paragraphDirection == ui.TextDirection.ltr
+      ? endOffset
+      : lineWidth - startOffset;
 
-  /// The direction in which text inside this box flows.
-  ui.TextDirection get direction;
+  /// The distance from the left edge of the box to the right edge of the box.
+  double get width;
+
+  /// The width of the line that this box belongs to.
+  late final double lineWidth;
+
+  /// The text direction of the paragraph that this box belongs to.
+  final ui.TextDirection paragraphDirection;
+
+  /// Indicates how this box flows among other boxes.
+  ///
+  /// Example: In an LTR paragraph, the text "ABC hebrew_word 123 DEF" is shown
+  /// visually in the following order:
+  ///
+  ///                +-------------------------------+
+  ///                | ABC | 123 | drow_werbeh | DEF |
+  ///                +-------------------------------+
+  /// box direction:   LTR   RTL       RTL       LTR
+  ///                 ----> <---- <------------  ---->
+  ///
+  /// (In the above example, we are ignoring whitespace to simplify).
+  final ui.TextDirection boxDirection;
 
   /// Returns a [ui.TextBox] representing this range box in the given [line].
   ///
   /// The coordinates of the resulting [ui.TextBox] are relative to the
   /// paragraph, not to the line.
-  ui.TextBox toTextBox(EngineLineMetrics line);
+  ///
+  /// The [forPainting] parameter specifies whether the text box is wanted for
+  /// painting purposes or not. The difference is observed in the handling of
+  /// trailing spaces. Trailing spaces aren't painted on the screen, but their
+  /// dimensions are still useful for other cases like highlighting selection.
+  ui.TextBox toTextBox(ParagraphLine line, {required bool forPainting});
 
   /// Returns the text position within this box's range that's closest to the
   /// given [x] offset.
@@ -373,28 +638,17 @@ class PlaceholderBox extends RangeBox {
   PlaceholderBox(
     this.placeholder, {
     required LineBreakResult index,
-    required this.left,
-    required this.direction,
-  }) : start = index, end = index;
+    required ui.TextDirection paragraphDirection,
+    required ui.TextDirection boxDirection,
+  }) : super(index, index, paragraphDirection, boxDirection);
 
   final PlaceholderSpan placeholder;
 
   @override
-  final LineBreakResult start;
+  double get width => placeholder.width;
 
   @override
-  final LineBreakResult end;
-
-  @override
-  final double left;
-
-  @override
-  double get right => left + placeholder.width;
-
-  @override
-  final ui.TextDirection direction;
-
-  ui.TextBox toTextBox(EngineLineMetrics line) {
+  ui.TextBox toTextBox(ParagraphLine line, {required bool forPainting}) {
     final double left = line.left + this.left;
     final double right = line.left + this.right;
 
@@ -432,7 +686,7 @@ class PlaceholderBox extends RangeBox {
       top,
       right,
       top + placeholder.height,
-      direction,
+      paragraphDirection,
     );
   }
 
@@ -450,28 +704,64 @@ class PlaceholderBox extends RangeBox {
 /// Represents a box in a [FlatTextSpan].
 class SpanBox extends RangeBox {
   SpanBox(
-    Spanometer spanometer, {
-    required this.start,
-    required this.end,
-    required this.left,
-    required this.direction,
-  })   : this.spanometer = spanometer,
-        span = spanometer.currentSpan,
+    this.spanometer, {
+    required LineBreakResult start,
+    required LineBreakResult end,
+    required double width,
+    required ui.TextDirection paragraphDirection,
+    required ui.TextDirection boxDirection,
+    required this.contentDirection,
+    required this.isSpaceOnly,
+  })  : span = spanometer.currentSpan,
         height = spanometer.height,
         baseline = spanometer.ascent,
-        width = spanometer.measureIncludingSpace(start, end);
+        _width = width,
+        super(start, end, paragraphDirection, boxDirection);
 
 
   final Spanometer spanometer;
   final FlatTextSpan span;
-  final LineBreakResult start;
-  final LineBreakResult end;
+
+  /// The direction of the text inside this box.
+  ///
+  /// To illustrate the difference between [boxDirection] and [contentDirection]
+  /// here's an example:
+  ///
+  /// In an LTR paragraph, the text "ABC hebrew_word 123 DEF" is rendered as
+  /// follows:
+  ///
+  ///                     ----> <---- <------------  ---->
+  ///     box direction:   LTR   RTL       RTL       LTR
+  ///                    +-------------------------------+
+  ///                    | ABC | 123 | drow_werbeh | DEF |
+  ///                    +-------------------------------+
+  /// content direction:   LTR   LTR       RTL       LTR
+  ///                     ----> ----> <------------  ---->
+  ///
+  /// Notice the box containing "123" flows in the RTL direction (because it
+  /// comes after an RTL box), while the content of the box flows in the LTR
+  /// direction (i.e. the text is shown as "123" not "321").
+  final ui.TextDirection contentDirection;
+
+  /// Whether this box is made of only white space.
+  final bool isSpaceOnly;
+
+  /// Whether this box is a trailing space box at the end of a line.
+  bool get isTrailingSpace => _isTrailingSpace;
+  bool _isTrailingSpace = false;
+
+  /// This is made mutable so it can be updated later in the layout process for
+  /// the purpose of aligning the lines of a paragraph with [ui.TextAlign.justify].
+  double _width;
 
   @override
-  final double left;
+  double get width => _width;
 
-  /// The distance from the left edge to the right edge of the box.
-  final double width;
+  /// Whether the contents of this box flow in the left-to-right direction.
+  bool get isContentLtr => contentDirection == ui.TextDirection.ltr;
+
+  /// Whether the contents of this box flow in the right-to-left direction.
+  bool get isContentRtl => !isContentLtr;
 
   /// The distance from the top edge to the bottom edge of the box.
   final double height;
@@ -480,16 +770,10 @@ class SpanBox extends RangeBox {
   /// the box.
   final double baseline;
 
-  @override
-  final ui.TextDirection direction;
-
-  @override
-  double get right => left + width;
-
   /// Whether this box's range overlaps with the range from [startIndex] to
   /// [endIndex].
   bool overlapsWith(int startIndex, int endIndex) {
-    return startIndex < this.end.index && this.start.index < endIndex;
+    return startIndex < end.index && start.index < endIndex;
   }
 
   /// Returns the substring of the paragraph that's represented by this box.
@@ -499,12 +783,9 @@ class SpanBox extends RangeBox {
     return spanometer.paragraph.toPlainText().substring(start.index, end.indexWithoutTrailingNewlines);
   }
 
-  /// Returns a [ui.TextBox] representing this range box in the given [line].
-  ///
-  /// The coordinates of the resulting [ui.TextBox] are relative to the
-  /// paragraph, not to the line.
-  ui.TextBox toTextBox(EngineLineMetrics line) {
-    return intersect(line, start.index, end.index);
+  @override
+  ui.TextBox toTextBox(ParagraphLine line, {required bool forPainting}) {
+    return intersect(line, start.index, end.index, forPainting: forPainting);
   }
 
   /// Performs the intersection of this box with the range given by [start] and
@@ -512,43 +793,125 @@ class SpanBox extends RangeBox {
   ///
   /// The coordinates of the resulting [ui.TextBox] are relative to the
   /// paragraph, not to the line.
-  ui.TextBox intersect(EngineLineMetrics line, int start, int end) {
+  ui.TextBox intersect(ParagraphLine line, int start, int end, {required bool forPainting}) {
     final double top = line.baseline - baseline;
-    final double left, right;
 
+    final double before;
     if (start <= this.start.index) {
-      left = this.left;
+      before = 0.0;
     } else {
       spanometer.currentSpan = span;
-      left = this.left + spanometer._measure(this.start.index, start);
+      before = spanometer._measure(this.start.index, start);
     }
 
+    final double after;
     if (end >= this.end.indexWithoutTrailingNewlines) {
-      right = this.right;
+      after = 0.0;
     } else {
       spanometer.currentSpan = span;
-      right = this.right -
-          spanometer._measure(end, this.end.indexWithoutTrailingNewlines);
+      after = spanometer._measure(end, this.end.indexWithoutTrailingNewlines);
+    }
+
+    double left, right;
+    if (isContentLtr) {
+      // Example: let's say the text is "Loremipsum" and we want to get the box
+      // for "rem". In this case, `before` is the width of "Lo", and `after`
+      // is the width of "ipsum".
+      //
+      // Here's how the measurements/coordinates look like:
+      //
+      //              before         after
+      //              |----|     |----------|
+      //              +---------------------+
+      //              | L o r e m i p s u m |
+      //              +---------------------+
+      //    this.left ^                     ^ this.right
+      left = this.left + before;
+      right = this.right - after;
+    } else {
+      // Example: let's say the text is "txet_werbeH" ("Hebrew_text" flowing from
+      // right to left). Say we want to get the box for "brew". The `before` is
+      // the width of "He", and `after` is the width of "_text".
+      //
+      //                 after           before
+      //              |----------|       |----|
+      //              +-----------------------+
+      //              | t x e t _ w e r b e H |
+      //              +-----------------------+
+      //    this.left ^                       ^ this.right
+      //
+      // Notice how `before` and `after` are reversed in the RTL example. That's
+      // because the text flows from right to left.
+      left = this.left + after;
+      right = this.right - before;
+    }
+
+    // When painting a paragraph, trailing spaces should have a zero width.
+    final bool isZeroWidth = forPainting && isTrailingSpace;
+    if (isZeroWidth) {
+      // Collapse the box to the left or to the right depending on the paragraph
+      // direction.
+      if (paragraphDirection == ui.TextDirection.ltr) {
+        right = left;
+      } else {
+        left = right;
+      }
     }
 
     // The [RangeBox]'s left and right edges are relative to the line. In order
     // to make them relative to the paragraph, we need to add the left edge of
     // the line.
     return ui.TextBox.fromLTRBD(
-      left + line.left,
+      line.left + left,
       top,
-      right + line.left,
+      line.left + right,
       top + height,
-      direction,
+      contentDirection,
     );
+  }
+
+  /// Transforms the [x] coordinate to be relative to this box and matches the
+  /// flow of content.
+  ///
+  /// In LTR paragraphs, the [startOffset] and [endOffset] of an RTL box
+  /// indicate the visual beginning and end of the box. But the text inside the
+  /// box flows in the opposite direction (from [endOffset] to [startOffset]).
+  ///
+  /// The X (input) is relative to the line, and always from left-to-right
+  /// independent of paragraph and content direction.
+  ///
+  /// Here's how it looks for a box with LTR content:
+  ///
+  ///          *------------------------lineWidth------------------*
+  ///          *---------------X (input)
+  ///          ┌───────────┬────────────────────────┬───────────────┐
+  ///          │           │ --content-direction--> │               │
+  ///          └───────────┴────────────────────────┴───────────────┘
+  ///                      *---X' (output)
+  ///          *---left----*
+  ///          *---------------right----------------*
+  ///
+  ///
+  /// And here's how it looks for a box with RTL content:
+  ///
+  ///          *------------------------lineWidth------------------*
+  ///          *----------------X (input)
+  ///          ┌───────────┬────────────────────────┬───────────────┐
+  ///          │           │ <--content-direction-- │               │
+  ///          └───────────┴────────────────────────┴───────────────┘
+  ///                  (output) X'------------------*
+  ///          *---left----*
+  ///          *---------------right----------------*
+  ///
+  double _makeXRelativeToContent(double x) {
+    return isContentRtl ? right - x : x - left;
   }
 
   @override
   ui.TextPosition getPositionForX(double x) {
     spanometer.currentSpan = span;
 
-    // Make `x` relative to this box.
-    x -= left;
+    x = _makeXRelativeToContent(x);
 
     final int startIndex = start.index;
     final int endIndex = end.indexWithoutTrailingNewlines;
@@ -632,10 +995,13 @@ class LineSegment {
   double get widthOfTrailingSpace => widthIncludingSpace - width;
 
   /// Whether this segment is made of only white space.
-  bool get isSpaceOnly => start.index == end.indexWithoutTrailingSpaces;
+  ///
+  /// We rely on the [width] to determine this because relying on incides
+  /// doesn't work well for placeholders (they are zero-length strings).
+  bool get isSpaceOnly => width == 0;
 }
 
-/// Builds instances of [EngineLineMetrics] for the given [paragraph].
+/// Builds instances of [ParagraphLine] for the given [paragraph].
 ///
 /// Usage of this class starts by calling [LineBuilder.first] to start building
 /// the first line of the paragraph.
@@ -643,7 +1009,7 @@ class LineSegment {
 /// Then new line breaks can be found by calling [LineBuilder.findNextBreak].
 ///
 /// The line can be extended one or more times before it's built by calling
-/// [LineBuilder.build] which generates the [EngineLineMetrics] instace.
+/// [LineBuilder.build] which generates the [ParagraphLine] instance.
 ///
 /// To start building the next line, simply call [LineBuilder.nextLine] which
 /// creates a new [LineBuilder] that can be extended and built and so on.
@@ -655,7 +1021,7 @@ class LineBuilder {
     required this.start,
     required this.lineNumber,
     required this.accumulatedHeight,
-  }) : end = start;
+  }) : _end = start;
 
   /// Creates a [LineBuilder] for the first line in a paragraph.
   factory LineBuilder.first(
@@ -668,7 +1034,7 @@ class LineBuilder {
       spanometer,
       maxWidth: maxWidth,
       lineNumber: 0,
-      start: LineBreakResult.sameIndex(0, LineBreakType.prohibited),
+      start: const LineBreakResult.sameIndex(0, LineBreakType.prohibited),
       accumulatedHeight: 0.0,
     );
   }
@@ -686,7 +1052,14 @@ class LineBuilder {
   final double accumulatedHeight;
 
   /// The index of the end of the line so far.
-  LineBreakResult end;
+  LineBreakResult get end => _end;
+  LineBreakResult _end;
+  set end(LineBreakResult value) {
+    if (value.type != LineBreakType.prohibited) {
+      isBreakable = true;
+    }
+    _end = value;
+  }
 
   /// The width of the line so far, excluding trailing white space.
   double width = 0.0;
@@ -709,16 +1082,24 @@ class LineBuilder {
   /// The last segment in this line.
   LineSegment get lastSegment => _segments.last;
 
+  /// Returns true if there is at least one break opportunity in the line.
+  bool isBreakable = false;
+
+  /// Returns true if there's no break opportunity in the line.
+  bool get isNotBreakable => !isBreakable;
+
+  /// Whether the end of this line is a prohibited break.
+  bool get isEndProhibited => end.type == LineBreakType.prohibited;
+
+  int _spaceBoxCount = 0;
+
   bool get isEmpty => _segments.isEmpty;
   bool get isNotEmpty => _segments.isNotEmpty;
 
   /// The horizontal offset necessary for the line to be correctly aligned.
   double get alignOffset {
     final double emptySpace = maxWidth - width;
-    final ui.TextDirection textDirection =
-        paragraph.paragraphStyle._textDirection ?? ui.TextDirection.ltr;
-    final ui.TextAlign textAlign =
-        paragraph.paragraphStyle._textAlign ?? ui.TextAlign.start;
+    final ui.TextAlign textAlign = paragraph.paragraphStyle.effectiveTextAlign;
 
     switch (textAlign) {
       case ui.TextAlign.center:
@@ -726,9 +1107,9 @@ class LineBuilder {
       case ui.TextAlign.right:
         return emptySpace;
       case ui.TextAlign.start:
-        return textDirection == ui.TextDirection.rtl ? emptySpace : 0.0;
+        return _paragraphDirection == ui.TextDirection.rtl ? emptySpace : 0.0;
       case ui.TextAlign.end:
-        return textDirection == ui.TextDirection.rtl ? 0.0 : emptySpace;
+        return _paragraphDirection == ui.TextDirection.rtl ? 0.0 : emptySpace;
       default:
         return 0.0;
     }
@@ -745,19 +1126,66 @@ class LineBuilder {
     return widthOfTrailingSpace + spanometer.measure(end, newEnd);
   }
 
-  /// Extends the line by setting a [newEnd].
-  void extendTo(LineBreakResult newEnd) {
-    // If the current end of the line is a hard break, the line shouldn't be
-    // extended any further.
-    assert(
-      isEmpty || !end.isHard,
-      'Cannot extend a line that ends with a hard break.',
-    );
+  bool get _isLastBoxAPlaceholder {
+    if (_boxes.isEmpty) {
+      return false;
+    }
+    return _boxes.last is PlaceholderBox;
+  }
 
+  ui.TextDirection get _paragraphDirection =>
+      paragraph.paragraphStyle.effectiveTextDirection;
+
+  late ui.TextDirection _currentBoxDirection = _paragraphDirection;
+
+  late ui.TextDirection _currentContentDirection = _paragraphDirection;
+
+  bool _shouldCreateBoxBeforeExtendingTo(DirectionalPosition newEnd) {
+    // When the direction changes, we need to make sure to put them in separate
+    // boxes.
+    return newEnd.isSpaceOnly || _currentBoxDirection != newEnd.textDirection || _currentContentDirection != newEnd.textDirection;
+  }
+
+  /// Extends the line by setting a [newEnd].
+  void extendTo(DirectionalPosition newEnd) {
     ascent = math.max(ascent, spanometer.ascent);
     descent = math.max(descent, spanometer.descent);
 
-    _addSegment(_createSegment(newEnd));
+    // When the direction changes, we need to make sure to put them in separate
+    // boxes.
+    if (_shouldCreateBoxBeforeExtendingTo(newEnd)) {
+      createBox();
+    }
+    _currentBoxDirection = newEnd.textDirection ?? _currentBoxDirection;
+    _currentContentDirection = newEnd.textDirection ?? ui.TextDirection.ltr;
+
+    _addSegment(_createSegment(newEnd.lineBreak));
+    if (newEnd.isSpaceOnly) {
+      // Whitespace sequences go in their own boxes.
+      createBox(isSpaceOnly: true);
+    }
+  }
+
+  /// Extends the line to the end of the paragraph.
+  void extendToEndOfText() {
+    if (end.type == LineBreakType.endOfText) {
+      return;
+    }
+
+    final LineBreakResult endOfText = LineBreakResult.sameIndex(
+      paragraph.toPlainText().length,
+      LineBreakType.endOfText,
+    );
+
+    // The spanometer may not be ready in some cases. E.g. when the paragraph
+    // is made up of only placeholders and no text.
+    if (spanometer.isReady) {
+      ascent = math.max(ascent, spanometer.ascent);
+      descent = math.max(descent, spanometer.descent);
+      _addSegment(_createSegment(endOfText));
+    } else {
+      end = endOfText;
+    }
   }
 
   void addPlaceholder(PlaceholderSpan placeholder) {
@@ -780,7 +1208,7 @@ class LineBuilder {
         break;
 
       case ui.PlaceholderAlignment.middle:
-        final double textMidPoint = this.height / 2;
+        final double textMidPoint = height / 2;
         final double placeholderMidPoint = placeholder.height / 2;
         final double diff = placeholderMidPoint - textMidPoint;
         ascent = this.ascent + diff;
@@ -817,10 +1245,13 @@ class LineBuilder {
     // Add the placeholder box.
     _boxes.add(PlaceholderBox(
       placeholder,
-      index: _boxStart,
-      left: _boxLeft,
-      direction: paragraph.paragraphStyle._effectiveTextDirection,
+      index: _currentBoxStart,
+      paragraphDirection: _paragraphDirection,
+      boxDirection: _currentBoxDirection,
     ));
+    _currentBoxStartOffset = widthIncludingSpace;
+    // Breaking is always allowed after a placeholder.
+    isBreakable = true;
   }
 
   /// Creates a new segment to be appended to the end of this line.
@@ -894,6 +1325,18 @@ class LineBuilder {
       }
     }
 
+    // Now let's fixes boxes if they need fixing.
+    //
+    // If we popped a segment of an already created box, we should pop the box
+    // too.
+    if (_currentBoxStart.index > poppedSegment.start.index) {
+      final RangeBox poppedBox = _boxes.removeLast();
+      _currentBoxStartOffset -= poppedBox.width;
+      if (poppedBox is SpanBox && poppedBox.isSpaceOnly) {
+        _spaceBoxCount--;
+      }
+    }
+
     return poppedSegment;
   }
 
@@ -907,7 +1350,7 @@ class LineBuilder {
   /// 2. The line doesn't have any line break opportunities and has to be
   ///    force-broken.
   void forceBreak(
-    LineBreakResult nextBreak, {
+    DirectionalPosition nextBreak, {
     required bool allowEmpty,
     String? ellipsis,
   }) {
@@ -915,7 +1358,7 @@ class LineBuilder {
       final double availableWidth = maxWidth - widthIncludingSpace;
       final int breakingPoint = spanometer.forceBreak(
         end.index,
-        nextBreak.indexWithoutTrailingSpaces,
+        nextBreak.lineBreak.indexWithoutTrailingSpaces,
         availableWidth: availableWidth,
         allowEmpty: allowEmpty,
       );
@@ -924,15 +1367,13 @@ class LineBuilder {
       // 1. Next break is only one character away, with zero or many spaces. AND
       // 2. There isn't enough width to fit the single character. AND
       // 3. `allowEmpty` is false.
-      if (breakingPoint == nextBreak.indexWithoutTrailingSpaces) {
+      if (breakingPoint == nextBreak.lineBreak.indexWithoutTrailingSpaces) {
         // In this case, we just extend to `nextBreak` instead of creating a new
-        // artifical break. It's safe (and better) to do so, because we don't
+        // artificial break. It's safe (and better) to do so, because we don't
         // want the trailing white space to go to the next line.
         extendTo(nextBreak);
       } else {
-        extendTo(
-          LineBreakResult.sameIndex(breakingPoint, LineBreakType.prohibited),
-        );
+        extendTo(nextBreak.copyWithIndex(breakingPoint));
       }
       return;
     }
@@ -949,7 +1390,7 @@ class LineBuilder {
     final double availableWidth = maxWidth - ellipsisWidth;
 
     // First, we create the new segment until `nextBreak`.
-    LineSegment segmentToBreak = _createSegment(nextBreak);
+    LineSegment segmentToBreak = _createSegment(nextBreak.lineBreak);
 
     // Then, we keep popping until we find the segment that has to be broken.
     // After the loop ends, two things are correct:
@@ -968,17 +1409,34 @@ class LineBuilder {
       availableWidth: availableWidthForSegment,
       allowEmpty: allowEmpty,
     );
-    extendTo(
-        LineBreakResult.sameIndex(breakingPoint, LineBreakType.prohibited));
 
     // There's a possibility that the end of line has moved backwards, so we
     // need to remove some boxes in that case.
-    while (_boxes.length > 0 && _boxes.last.end.index > breakingPoint) {
+    while (_boxes.isNotEmpty && _boxes.last.end.index > breakingPoint) {
       _boxes.removeLast();
     }
+    _currentBoxStartOffset = widthIncludingSpace;
+
+    extendTo(nextBreak.copyWithIndex(breakingPoint));
   }
 
-  LineBreakResult get _boxStart {
+  /// Looks for the last break opportunity in the line and reverts the line to
+  /// that point.
+  ///
+  /// If the line already ends with a break opportunity, this method does
+  /// nothing.
+  void revertToLastBreakOpportunity() {
+    assert(isBreakable);
+    while (isEndProhibited) {
+      _popSegment();
+    }
+    // Make sure the line is not empty and still breakable after popping a few
+    // segments.
+    assert(isNotEmpty);
+    assert(isBreakable);
+  }
+
+  LineBreakResult get _currentBoxStart {
     if (_boxes.isEmpty) {
       return start;
     }
@@ -986,29 +1444,26 @@ class LineBuilder {
     return _boxes.last.end;
   }
 
-  double get _boxLeft {
-    if (_boxes.isEmpty) {
-      return 0.0;
-    }
-    return _boxes.last.right;
-  }
+  double _currentBoxStartOffset = 0.0;
 
-  ui.TextDirection get direction =>
-      paragraph.paragraphStyle._effectiveTextDirection;
+  double get _currentBoxWidth => widthIncludingSpace - _currentBoxStartOffset;
 
   /// Cuts a new box in the line.
   ///
   /// If this is the first box in the line, it'll start at the beginning of the
   /// line. Else, it'll start at the end of the last box.
   ///
-  /// A box should be cut whenever the end of line is reached, or when switching
-  /// from one span to another.
-  void createBox() {
-    final LineBreakResult boxStart = _boxStart;
+  /// A box should be cut whenever the end of line is reached, when switching
+  /// from one span to another, or when switching text direction.
+  ///
+  /// [isSpaceOnly] indicates that the box contains nothing but whitespace
+  /// characters.
+  void createBox({bool isSpaceOnly = false}) {
+    final LineBreakResult boxStart = _currentBoxStart;
     final LineBreakResult boxEnd = end;
     // Avoid creating empty boxes. This could happen when the end of a span
     // coincides with the end of a line. In this case, `createBox` is called twice.
-    if (boxStart == boxEnd) {
+    if (boxStart.index == boxEnd.index) {
       return;
     }
 
@@ -1016,26 +1471,45 @@ class LineBuilder {
       spanometer,
       start: boxStart,
       end: boxEnd,
-      left: _boxLeft,
-      direction: paragraph.paragraphStyle._effectiveTextDirection,
+      width: _currentBoxWidth,
+      paragraphDirection: _paragraphDirection,
+      boxDirection: _currentBoxDirection,
+      contentDirection: _currentContentDirection,
+      isSpaceOnly: isSpaceOnly,
     ));
+
+    if (isSpaceOnly) {
+      _spaceBoxCount++;
+    }
+
+    _currentBoxStartOffset = widthIncludingSpace;
   }
 
-  /// Builds the [EngineLineMetrics] instance that represents this line.
-  EngineLineMetrics build({String? ellipsis}) {
+  /// Builds the [ParagraphLine] instance that represents this line.
+  ParagraphLine build({String? ellipsis}) {
     // At the end of each line, we cut the last box of the line.
     createBox();
 
     final double ellipsisWidth =
         ellipsis == null ? 0.0 : spanometer.measureText(ellipsis);
 
-    return EngineLineMetrics.rich(
-      lineNumber,
+    final int endIndexWithoutNewlines = math.max(start.index, end.indexWithoutTrailingNewlines);
+    final bool hardBreak;
+    if (end.type != LineBreakType.endOfText && _isLastBoxAPlaceholder) {
+      hardBreak = false;
+    } else {
+      hardBreak = end.isHard;
+    }
+
+    _processTrailingSpaces();
+
+    return ParagraphLine(
+      lineNumber: lineNumber,
       ellipsis: ellipsis,
       startIndex: start.index,
       endIndex: end.index,
-      endIndexWithoutNewlines: end.indexWithoutTrailingNewlines,
-      hardBreak: end.isHard,
+      endIndexWithoutNewlines: endIndexWithoutNewlines,
+      hardBreak: hardBreak,
       width: width + ellipsisWidth,
       widthWithTrailingSpaces: widthIncludingSpace + ellipsisWidth,
       left: alignOffset,
@@ -1044,12 +1518,43 @@ class LineBuilder {
       ascent: ascent,
       descent: descent,
       boxes: _boxes,
+      spaceBoxCount: _spaceBoxCount,
+      trailingSpaceBoxCount: _trailingSpaceBoxCount,
     );
   }
 
+  int _trailingSpaceBoxCount = 0;
+
+  void _processTrailingSpaces() {
+    _trailingSpaceBoxCount = 0;
+    for (int i = _boxes.length - 1; i >= 0; i--) {
+      final RangeBox box = _boxes[i];
+      final bool isSpaceBox = box is SpanBox && box.isSpaceOnly;
+      if (!isSpaceBox) {
+        // We traversed all trailing space boxes.
+        break;
+      }
+
+      box._isTrailingSpace = true;
+      _trailingSpaceBoxCount++;
+    }
+  }
+
+  LineBreakResult? _cachedNextBreak;
+
   /// Finds the next line break after the end of this line.
-  LineBreakResult findNextBreak(int maxEnd) {
-    return nextLineBreak(paragraph.toPlainText(), end.index, maxEnd: maxEnd);
+  DirectionalPosition findNextBreak() {
+    LineBreakResult? nextBreak = _cachedNextBreak;
+    final String text = paragraph.toPlainText();
+    // Don't recompute the `nextBreak` until the line has reached the previously
+    // computed `nextBreak`.
+    if (nextBreak == null || end.index >= nextBreak.index) {
+      final int maxEnd = spanometer.currentSpan.end;
+      nextBreak = nextLineBreak(text, end.index, maxEnd: maxEnd);
+      _cachedNextBreak = nextBreak;
+    }
+    // The current end of the line is the beginning of the next block.
+    return getDirectionalBlockEnd(text, end, nextBreak);
   }
 
   /// Creates a new [LineBuilder] to build the next line in the paragraph.
@@ -1077,7 +1582,7 @@ class Spanometer {
   Spanometer(this.paragraph, this.context);
 
   final CanvasParagraph paragraph;
-  final html.CanvasRenderingContext2D context;
+  final DomCanvasRenderingContext2D context;
 
   static RulerHost _rulerHost = RulerHost();
 
@@ -1098,7 +1603,7 @@ class Spanometer {
 
   String _cssFontString = '';
 
-  double? get letterSpacing => currentSpan.style._letterSpacing;
+  double? get letterSpacing => currentSpan.style.letterSpacing;
 
   TextHeightRuler? _currentRuler;
   FlatTextSpan? _currentSpan;
@@ -1134,6 +1639,9 @@ class Spanometer {
     }
   }
 
+  /// Whether the spanometer is ready to take measurements.
+  bool get isReady => _currentSpan != null;
+
   /// The distance from the top of the current span to the alphabetic baseline.
   double get ascent => _currentRuler!.alphabeticBaseline;
 
@@ -1158,7 +1666,7 @@ class Spanometer {
   }
 
   double measureText(String text) {
-    return _measureSubstring(context, text, 0, text.length);
+    return measureSubstring(context, text, 0, text.length);
   }
 
   /// In a continuous, unbreakable block of text from [start] to [end], finds
@@ -1220,7 +1728,7 @@ class Spanometer {
     assert(end >= span.start && end <= span.end);
 
     final String text = paragraph.toPlainText();
-    return _measureSubstring(
+    return measureSubstring(
       context,
       text,
       start,

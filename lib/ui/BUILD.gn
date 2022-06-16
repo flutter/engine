@@ -4,6 +4,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("ui") {
@@ -17,6 +18,7 @@ source_set("ui") {
     "dart_ui.cc",
     "dart_ui.h",
     "dart_wrapper.h",
+    "io_manager.cc",
     "io_manager.h",
     "isolate_name_server/isolate_name_server.cc",
     "isolate_name_server/isolate_name_server.h",
@@ -28,20 +30,33 @@ source_set("ui") {
     "painting/codec.h",
     "painting/color_filter.cc",
     "painting/color_filter.h",
+    "painting/display_list_image_gpu.cc",
+    "painting/display_list_image_gpu.h",
     "painting/engine_layer.cc",
     "painting/engine_layer.h",
+    "painting/fragment_program.cc",
+    "painting/fragment_program.h",
+    "painting/fragment_shader.cc",
+    "painting/fragment_shader.h",
     "painting/gradient.cc",
     "painting/gradient.h",
     "painting/image.cc",
     "painting/image.h",
     "painting/image_decoder.cc",
     "painting/image_decoder.h",
+    "painting/image_decoder_skia.cc",
+    "painting/image_decoder_skia.h",
     "painting/image_descriptor.cc",
     "painting/image_descriptor.h",
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
+    "painting/image_encoding_impl.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
+    "painting/image_generator.cc",
+    "painting/image_generator.h",
+    "painting/image_generator_registry.cc",
+    "painting/image_generator_registry.h",
     "painting/image_shader.cc",
     "painting/image_shader.h",
     "painting/immutable_buffer.cc",
@@ -78,6 +93,8 @@ source_set("ui") {
     "semantics/semantics_update.h",
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
+    "semantics/string_attribute.cc",
+    "semantics/string_attribute.h",
     "snapshot_delegate.h",
     "text/asset_manager_font_provider.cc",
     "text/asset_manager_font_provider.h",
@@ -119,19 +136,32 @@ source_set("ui") {
 
   public_configs = [ "//flutter:config" ]
 
-  public_deps = [ "//flutter/third_party/txt" ]
+  public_deps = [
+    "//flutter/flow",
+    "//flutter/third_party/txt",
+  ]
 
   deps = [
     "//flutter/assets",
     "//flutter/common",
-    "//flutter/flow",
+    "//flutter/display_list",
     "//flutter/fml",
+    "//flutter/runtime:dart_plugin_registrant",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
+
+  if (impeller_supports_rendering) {
+    sources += [
+      "painting/image_decoder_impeller.cc",
+      "painting/image_decoder_impeller.h",
+    ]
+
+    deps += [ "//flutter/impeller" ]
+  }
 
   if (!defined(defines)) {
     defines = []
@@ -146,19 +176,6 @@ source_set("ui") {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
   }
-
-  if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
-    sources += [
-      "compositing/scene_host.cc",
-      "compositing/scene_host.h",
-    ]
-
-    deps += [
-      "$fuchsia_sdk_root/pkg:async-cpp",
-      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
-      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-    ]
-  }
 }
 
 if (enable_unittests) {
@@ -170,6 +187,8 @@ if (enable_unittests) {
       "fixtures/Horizontal.png",
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
+      "fixtures/FontManifest.json",
+      "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
   }
 
@@ -184,6 +203,7 @@ if (enable_unittests) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/benchmarking",
+      "//flutter/lib/snapshot",
       "//flutter/shell/common",
       "//flutter/testing:fixture_test",
     ]
@@ -195,10 +215,15 @@ if (enable_unittests) {
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 
     sources = [
+      "compositing/scene_builder_unittests.cc",
+      "hooks_unittests.cc",
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
+      "painting/image_generator_registry_unittests.cc",
       "painting/path_unittests.cc",
+      "painting/single_frame_codec_unittests.cc",
       "painting/vertices_unittests.cc",
+      "semantics/semantics_update_builder_unittests.cc",
       "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
@@ -207,6 +232,7 @@ if (enable_unittests) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/lib/snapshot",
       "//flutter/shell/common:shell_test_fixture_sources",
       "//flutter/testing",
       "//flutter/testing:dart",

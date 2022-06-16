@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom.dart';
+import 'package:ui/src/engine/pointer_binding.dart';
+import 'package:ui/src/engine/semantics.dart';
 
 const PointerSupportDetector _defaultSupportDetector = PointerSupportDetector();
 
@@ -17,158 +17,159 @@ void main() {
 
 void testMain() {
   group('$DesktopSemanticsEnabler', () {
-    DesktopSemanticsEnabler desktopSemanticsEnabler;
-    html.Element _placeholder;
+    late DesktopSemanticsEnabler desktopSemanticsEnabler;
+    late DomElement? _placeholder;
 
     setUp(() {
+      EngineSemanticsOwner.instance.semanticsEnabled = false;
       desktopSemanticsEnabler = DesktopSemanticsEnabler();
+      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
+      domDocument.body!.append(_placeholder!);
     });
 
     tearDown(() {
-      if (_placeholder != null) {
-        _placeholder.remove();
-      }
-      if (desktopSemanticsEnabler?.semanticsActivationTimer != null) {
-        desktopSemanticsEnabler.semanticsActivationTimer.cancel();
-        desktopSemanticsEnabler.semanticsActivationTimer = null;
-      }
+      expect(_placeholder, isNotNull,
+          reason: 'Expected the test to create a placeholder');
+      _placeholder!.remove();
+      EngineSemanticsOwner.instance.semanticsEnabled = false;
     });
 
-    test('prepare accesibility placeholder', () async {
-      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
+    test('prepare accessibility placeholder', () async {
+      expect(_placeholder!.getAttribute('role'), 'button');
+      expect(_placeholder!.getAttribute('aria-live'), 'polite');
+      expect(_placeholder!.getAttribute('tabindex'), '0');
 
-      expect(_placeholder.getAttribute('role'), 'button');
-      expect(_placeholder.getAttribute('aria-live'), 'true');
-      expect(_placeholder.getAttribute('tabindex'), '0');
+      domDocument.body!.append(_placeholder!);
 
-      html.document.body.append(_placeholder);
-
-      expect(html.document.getElementsByTagName('flt-semantics-placeholder'),
+      expect(domDocument.getElementsByTagName('flt-semantics-placeholder'),
           isNotEmpty);
 
-      expect(_placeholder.getBoundingClientRect().height, 1);
-      expect(_placeholder.getBoundingClientRect().width, 1);
-      expect(_placeholder.getBoundingClientRect().top, -1);
-      expect(_placeholder.getBoundingClientRect().left, -1);
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+      expect(_placeholder!.getBoundingClientRect().height, 1);
+      expect(_placeholder!.getBoundingClientRect().width, 1);
+      expect(_placeholder!.getBoundingClientRect().top, -1);
+      expect(_placeholder!.getBoundingClientRect().left, -1);
+    });
 
     test('Not relevant events should be forwarded to the framework', () async {
-      // Prework. Attach the placeholder to dom.
-      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
-      html.document.body.append(_placeholder);
+      // Attach the placeholder to dom.
+      domDocument.body!.append(_placeholder!);
 
-      html.Event event = html.MouseEvent('mousemove');
+      DomEvent event = createDomEvent('Event', 'mousemove');
       bool shouldForwardToFramework =
           desktopSemanticsEnabler.tryEnableSemantics(event);
 
-      expect(shouldForwardToFramework, true);
+      expect(shouldForwardToFramework, isTrue);
 
       // Pointer events are not defined in webkit.
       if (browserEngine != BrowserEngine.webkit) {
-        event = html.PointerEvent('pointermove');
+        event = createDomEvent('Event', 'pointermove');
         shouldForwardToFramework =
             desktopSemanticsEnabler.tryEnableSemantics(event);
 
-        expect(shouldForwardToFramework, true);
+        expect(shouldForwardToFramework, isTrue);
       }
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-        skip: browserEngine == BrowserEngine.edge);
-
-    test(
-        'Relevants events targeting placeholder should not be forwarded to the framework',
-        () async {
-      // Prework. Attach the placeholder to dom.
-      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
-      html.document.body.append(_placeholder);
-
-      html.Event event = html.MouseEvent('mousedown');
-      _placeholder.dispatchEvent(event);
-
-      bool shouldForwardToFramework =
-          desktopSemanticsEnabler.tryEnableSemantics(event);
-
-      expect(shouldForwardToFramework, false);
     });
 
     test(
-        'After max number of relevant events, events should be forwarded to the framework',
+        'Relevant events targeting placeholder should not be forwarded to the framework',
         () async {
-      // Prework. Attach the placeholder to dom.
-      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
-      html.document.body.append(_placeholder);
+      final DomEvent event = createDomEvent('Event', 'mousedown');
+      _placeholder!.dispatchEvent(event);
 
-      html.Event event = html.MouseEvent('mousedown');
-      _placeholder.dispatchEvent(event);
-
-      bool shouldForwardToFramework =
+      final bool shouldForwardToFramework =
           desktopSemanticsEnabler.tryEnableSemantics(event);
 
-      expect(shouldForwardToFramework, false);
-
-      // Send max number of events;
-      for (int i = 1; i <= kMaxSemanticsActivationAttempts; i++) {
-        event = html.MouseEvent('mousedown');
-        _placeholder.dispatchEvent(event);
-
-        shouldForwardToFramework =
-            desktopSemanticsEnabler.tryEnableSemantics(event);
-      }
-
-      expect(shouldForwardToFramework, true);
-    });
-  });
-
-  group('$MobileSemanticsEnabler', () {
-    MobileSemanticsEnabler mobileSemanticsEnabler;
-    html.Element _placeholder;
-
-    setUp(() {
-      mobileSemanticsEnabler = MobileSemanticsEnabler();
+      expect(shouldForwardToFramework, isFalse);
     });
 
-    tearDown(() {
-      if (_placeholder != null) {
-        _placeholder.remove();
-      }
+    test('disposes of the placeholder', () {
+      domDocument.body!.append(_placeholder!);
+
+      expect(_placeholder!.isConnected, isTrue);
+      desktopSemanticsEnabler.dispose();
+      expect(_placeholder!.isConnected, isFalse);
     });
+  }, skip: isMobile);
 
-    test('prepare accesibility placeholder', () async {
-      _placeholder = mobileSemanticsEnabler.prepareAccessibilityPlaceholder();
+  group(
+    '$MobileSemanticsEnabler',
+    () {
+      late MobileSemanticsEnabler mobileSemanticsEnabler;
+      DomElement? _placeholder;
 
-      expect(_placeholder.getAttribute('role'), 'button');
+      setUp(() {
+        EngineSemanticsOwner.instance.semanticsEnabled = false;
+        mobileSemanticsEnabler = MobileSemanticsEnabler();
+        _placeholder = mobileSemanticsEnabler.prepareAccessibilityPlaceholder();
+        domDocument.body!.append(_placeholder!);
+      });
 
-      html.document.body.append(_placeholder);
+      tearDown(() {
+        _placeholder!.remove();
+        EngineSemanticsOwner.instance.semanticsEnabled = false;
+      });
 
-      // Placeholder should cover all the screen on a mobile device.
-      final num bodyHeight = html.window.innerHeight;
-      final num bodyWidht = html.window.innerWidth;
+      test('prepare accessibility placeholder', () async {
+        expect(_placeholder!.getAttribute('role'), 'button');
 
-      expect(_placeholder.getBoundingClientRect().height, bodyHeight);
-      expect(_placeholder.getBoundingClientRect().width, bodyWidht);
+        // Placeholder should cover all the screen on a mobile device.
+        final num bodyHeight = domWindow.innerHeight!;
+        final num bodyWidth = domWindow.innerWidth!;
+
+        expect(_placeholder!.getBoundingClientRect().height, bodyHeight);
+        expect(_placeholder!.getBoundingClientRect().width, bodyWidth);
+      });
+
+      test('Non-relevant events should be forwarded to the framework',
+          () async {
+        DomEvent event;
+        if (_defaultSupportDetector.hasPointerEvents) {
+          event = createDomPointerEvent('pointermove');
+        } else if (_defaultSupportDetector.hasTouchEvents) {
+          event = createDomTouchEvent('touchcancel');
+        } else {
+          event = createDomMouseEvent('mousemove');
+        }
+
+        final bool shouldForwardToFramework =
+            mobileSemanticsEnabler.tryEnableSemantics(event);
+
+        expect(shouldForwardToFramework, isTrue);
+      });
+
+      test('Enables semantics when receiving a relevant event', () {
+        expect(mobileSemanticsEnabler.semanticsActivationTimer, isNull);
+
+        // Send a click off center
+        _placeholder!.dispatchEvent(createDomMouseEvent(
+          'click',
+          <Object?, Object?>{
+            'clientX': 0,
+            'clientY': 0,
+          }
+        ));
+        expect(mobileSemanticsEnabler.semanticsActivationTimer, isNull);
+
+        // Send a click at center
+        final DomRect activatingElementRect =
+            _placeholder!.getBoundingClientRect();
+        final int midX = (activatingElementRect.left +
+                (activatingElementRect.right - activatingElementRect.left) / 2)
+            .toInt();
+        final int midY = (activatingElementRect.top +
+                (activatingElementRect.bottom - activatingElementRect.top) / 2)
+            .toInt();
+        _placeholder!.dispatchEvent(createDomMouseEvent(
+          'click',
+          <Object?, Object?>{
+            'clientX': midX,
+            'clientY': midY,
+          }
+        ));
+        expect(mobileSemanticsEnabler.semanticsActivationTimer, isNotNull);
+      });
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
-
-    test('Not relevant events should be forwarded to the framework', () async {
-      html.Event event;
-      if (_defaultSupportDetector.hasPointerEvents) {
-        event = html.PointerEvent('pointermove');
-      } else if (_defaultSupportDetector.hasTouchEvents) {
-        event = html.TouchEvent('touchcancel');
-      } else {
-        event = html.MouseEvent('mousemove');
-      }
-
-      bool shouldForwardToFramework =
-          mobileSemanticsEnabler.tryEnableSemantics(event);
-
-      expect(shouldForwardToFramework, true);
-    });
-  },  // Run the `MobileSemanticsEnabler` only on mobile browsers.
-      skip: operatingSystem == OperatingSystem.linux ||
-          operatingSystem == OperatingSystem.macOs ||
-          operatingSystem == OperatingSystem.windows);
+    // We can run `MobileSemanticsEnabler` tests in mobile browsers and in desktop Chrome.
+    skip: isDesktop && browserEngine != BrowserEngine.blink,
+  );
 }

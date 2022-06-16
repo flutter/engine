@@ -1,0 +1,69 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/testing/testing.gni")
+
+impeller_shaders("shader_fixtures") {
+  name = "fixtures"
+  shaders = [
+    "box_fade.frag",
+    "box_fade.vert",
+    "colors.vert",
+    "colors.frag",
+    "impeller.frag",
+    "impeller.vert",
+    "instanced_draw.frag",
+    "instanced_draw.vert",
+    "sample.vert",
+    "simple.vert",
+    "test_texture.frag",
+    "test_texture.vert",
+  ]
+}
+
+impellerc("runtime_stages") {
+  shaders = [ "ink_sparkle.frag" ]
+  sl_file_extension = "iplr"
+  shader_target_flag = "--runtime-stage-metal"
+}
+
+test_fixtures("file_fixtures") {
+  fixtures = [
+    "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
+    "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+    "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
+    "airplane.jpg",
+    "bay_bridge.jpg",
+    "blue_noise.png",
+    "boston.jpg",
+    "embarcadero.jpg",
+    "kalimba.jpg",
+    "sample.comp",
+    "sample.tesc",
+    "sample.tese",
+    "sample.vert",
+    "struct_def_bug.vert",
+    "table_mountain_nx.png",
+    "table_mountain_ny.png",
+    "table_mountain_nz.png",
+    "table_mountain_px.png",
+    "table_mountain_py.png",
+    "table_mountain_pz.png",
+    "test_texture.frag",
+    "types.h",
+  ]
+  fixtures +=
+      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ])
+  deps = [ ":runtime_stages" ]
+}
+
+group("fixtures") {
+  testonly = true
+
+  public_deps = [
+    ":file_fixtures",
+    ":shader_fixtures",
+  ]
+}

@@ -75,30 +75,35 @@ TEST(FileTest, CanTruncateAndWrite) {
 
   std::string contents = "some contents here";
 
-  {
-    auto fd = fml::OpenFile(dir.fd(), "some.txt", true,
-                            fml::FilePermission::kReadWrite);
-    ASSERT_TRUE(fd.is_valid());
+  // On the first iteration, this tests writing and then reading a file that
+  // didn't exist yet. On the second iteration it tests truncating, writing,
+  // and reading a file that already existed.
+  for (int i = 0; i < 2; i++) {
+    {
+      auto fd = fml::OpenFile(dir.fd(), "some.txt", true,
+                              fml::FilePermission::kReadWrite);
+      ASSERT_TRUE(fd.is_valid());
 
-    ASSERT_TRUE(fml::TruncateFile(fd, contents.size()));
+      ASSERT_TRUE(fml::TruncateFile(fd, contents.size()));
 
-    fml::FileMapping mapping(fd, {fml::FileMapping::Protection::kWrite});
-    ASSERT_EQ(mapping.GetSize(), contents.size());
-    ASSERT_NE(mapping.GetMutableMapping(), nullptr);
+      fml::FileMapping mapping(fd, {fml::FileMapping::Protection::kWrite});
+      ASSERT_EQ(mapping.GetSize(), contents.size());
+      ASSERT_NE(mapping.GetMutableMapping(), nullptr);
 
-    ::memcpy(mapping.GetMutableMapping(), contents.data(), contents.size());
-  }
+      ::memcpy(mapping.GetMutableMapping(), contents.data(), contents.size());
+    }
 
-  {
-    auto fd =
-        fml::OpenFile(dir.fd(), "some.txt", false, fml::FilePermission::kRead);
-    ASSERT_TRUE(fd.is_valid());
+    {
+      auto fd = fml::OpenFile(dir.fd(), "some.txt", false,
+                              fml::FilePermission::kRead);
+      ASSERT_TRUE(fd.is_valid());
 
-    fml::FileMapping mapping(fd);
-    ASSERT_EQ(mapping.GetSize(), contents.size());
+      fml::FileMapping mapping(fd);
+      ASSERT_EQ(mapping.GetSize(), contents.size());
 
-    ASSERT_EQ(0,
-              ::memcmp(mapping.GetMapping(), contents.data(), contents.size()));
+      ASSERT_EQ(
+          0, ::memcmp(mapping.GetMapping(), contents.data(), contents.size()));
+    }
   }
 
   fml::UnlinkFile(dir.fd(), "some.txt");
@@ -228,11 +233,6 @@ TEST(FileTest, CanStopVisitEarly) {
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a"));
 }
 
-#if OS_WIN
-#define AtomicWriteTest DISABLED_AtomicWriteTest
-#else
-#define AtomicWriteTest AtomicWriteTest
-#endif
 TEST(FileTest, AtomicWriteTest) {
   fml::ScopedTemporaryDirectory dir;
 
@@ -253,6 +253,33 @@ TEST(FileTest, AtomicWriteTest) {
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "precious_data"));
 }
 
+TEST(FileTest, IgnoreBaseDirWhenPathIsAbsolute) {
+  fml::ScopedTemporaryDirectory dir;
+
+  // Make an absolute path.
+  std::string filename = "filename.txt";
+  std::string full_path =
+      fml::paths::AbsolutePath(fml::paths::JoinPaths({dir.path(), filename}));
+
+  const std::string contents = "These are my contents.";
+  auto data = std::make_unique<fml::DataMapping>(
+      std::vector<uint8_t>{contents.begin(), contents.end()});
+
+  // Write.
+  ASSERT_TRUE(fml::WriteAtomically(dir.fd(), full_path.c_str(), *data));
+
+  // Test existence.
+  ASSERT_TRUE(fml::FileExists(dir.fd(), full_path.c_str()));
+
+  // Read and verify.
+  ASSERT_EQ(contents,
+            ReadStringFromFile(fml::OpenFile(dir.fd(), full_path.c_str(), false,
+                                             fml::FilePermission::kRead)));
+
+  // Cleanup.
+  ASSERT_TRUE(fml::UnlinkFile(dir.fd(), full_path.c_str()));
+}
+
 TEST(FileTest, EmptyMappingTest) {
   fml::ScopedTemporaryDirectory dir;
 
@@ -266,6 +293,36 @@ TEST(FileTest, EmptyMappingTest) {
     ASSERT_EQ(mapping.GetMapping(), nullptr);
   }
 
+  ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "my_contents"));
+}
+
+TEST(FileTest, MappingDontNeedSafeTest) {
+  fml::ScopedTemporaryDirectory dir;
+
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", true,
+                              fml::FilePermission::kReadWrite);
+    WriteStringToFile(file, "some content");
+  }
+
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", false,
+                              fml::FilePermission::kRead);
+    fml::FileMapping mapping(file);
+    ASSERT_TRUE(mapping.IsValid());
+    ASSERT_EQ(mapping.GetMutableMapping(), nullptr);
+    ASSERT_TRUE(mapping.IsDontNeedSafe());
+  }
+
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", false,
+                              fml::FilePermission::kReadWrite);
+    fml::FileMapping mapping(file, {fml::FileMapping::Protection::kRead,
+                                    fml::FileMapping::Protection::kWrite});
+    ASSERT_TRUE(mapping.IsValid());
+    ASSERT_NE(mapping.GetMutableMapping(), nullptr);
+    ASSERT_FALSE(mapping.IsDontNeedSafe());
+  }
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "my_contents"));
 }
 

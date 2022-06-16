@@ -18,9 +18,9 @@
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -60,13 +60,15 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action) override;
   void DispatchSemanticsAction(int32_t id,
                                flutter::SemanticsAction action,
-                               std::vector<uint8_t> args) override;
+                               fml::MallocMapping args) override;
   void AccessibilityObjectDidBecomeFocused(int32_t id) override;
   void AccessibilityObjectDidLoseFocus(int32_t id) override;
 
   UIView<UITextInput>* textInputView() override;
 
   UIView* view() const override { return view_controller_.view; }
+
+  bool isVoiceOverRunning() const override { return view_controller_.isVoiceOverRunning; }
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
@@ -78,7 +80,12 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, flutter::SemanticsNodeUpdates& updates);
-  SemanticsObject* FindFirstFocusable(SemanticsObject* object);
+  SemanticsObject* FindNextFocusableIfNecessary();
+  // Finds the first focusable SemanticsObject rooted at the parent. This includes the parent itself
+  // if it is a focusable SemanticsObject.
+  //
+  // If the parent is nil, this function use the root SemanticsObject as the parent.
+  SemanticsObject* FindFirstFocusable(SemanticsObject* parent);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
@@ -92,12 +99,11 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   int32_t last_focused_semantics_object_id_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
-  fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;
   std::unique_ptr<IosDelegate> ios_delegate_;
-
+  fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };
 

@@ -29,10 +29,11 @@ static void StartupAndShutdownShell(benchmark::State& state,
     settings.task_observer_remove = [](intptr_t) {};
 
     if (DartVM::IsRunningPrecompiledCode()) {
-      aot_symbols = testing::LoadELFSymbolFromFixturesIfNeccessary();
+      aot_symbols = testing::LoadELFSymbolFromFixturesIfNeccessary(
+          testing::kDefaultAOTAppELFFileName);
       FML_CHECK(
           testing::PrepareSettingsForAOTWithSymbols(settings, aot_symbols))
-          << "Could not setup settings with AOT symbols.";
+          << "Could not set up settings with AOT symbols.";
     } else {
       settings.application_kernels = [&]() {
         std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
@@ -42,10 +43,10 @@ static void StartupAndShutdownShell(benchmark::State& state,
       };
     }
 
-    thread_host = std::make_unique<ThreadHost>(
+    thread_host = std::make_unique<ThreadHost>(ThreadHost::ThreadHostConfig(
         "io.flutter.bench.", ThreadHost::Type::Platform |
                                  ThreadHost::Type::RASTER |
-                                 ThreadHost::Type::IO | ThreadHost::Type::UI);
+                                 ThreadHost::Type::IO | ThreadHost::Type::UI));
 
     TaskRunners task_runners("test",
                              thread_host->platform_thread->GetTaskRunner(),

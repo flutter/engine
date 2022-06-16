@@ -55,7 +55,7 @@ namespace flutter {
 // Certain fields are ignored in CATransform3D since SkMatrix is 3x3 and CATransform3D is 4x4.
 CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
 
-// Reset the anchor of `layer` to match the tranform operation from flow.
+// Reset the anchor of `layer` to match the transform operation from flow.
 // The position of the `layer` should be unchanged after resetting the anchor.
 void ResetAnchor(CALayer* layer);
 
@@ -141,11 +141,11 @@ class FlutterPlatformViewsController {
       NSString* factoryId,
       FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy);
 
-  // Called at the begining of each frame.
+  // Called at the beginning of each frame.
   void BeginFrame(SkISize frame_size);
 
   // Indicates that we don't compisite any platform views or overlays during this frame.
-  // Also reverts the composition_order_ to its original state at the begining of the frame.
+  // Also reverts the composition_order_ to its original state at the beginning of the frame.
   void CancelFrame();
 
   void PrerollCompositeEmbeddedView(int view_id,
@@ -160,6 +160,9 @@ class FlutterPlatformViewsController {
 
   PostPrerollResult PostPrerollAction(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
+  void EndFrame(bool should_resubmit_frame,
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+
   std::vector<SkCanvas*> GetCurrentCanvases();
 
   SkCanvas* CompositeEmbeddedView(int view_id);
@@ -173,15 +176,77 @@ class FlutterPlatformViewsController {
 
   bool SubmitFrame(GrDirectContext* gr_context,
                    std::shared_ptr<IOSContext> ios_context,
-                   std::unique_ptr<SurfaceFrame> frame,
-                   const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch);
+                   std::unique_ptr<SurfaceFrame> frame);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
+
+  // Returns the platform view id if the platform view (or any of its descendant view) is the first
+  // responder. Returns -1 if no such platform view is found.
+  long FindFirstResponderPlatformViewId();
 
  private:
   static const size_t kMaxLayerAllocations = 2;
 
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
+
+  void OnCreate(FlutterMethodCall* call, FlutterResult& result);
+  void OnDispose(FlutterMethodCall* call, FlutterResult& result);
+  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
+  void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
+  // Dispose the views in `views_to_dispose_`.
+  void DisposeViews();
+
+  // Returns true if there are embedded views in the scene at current frame
+  // Or there will be embedded views in the next frame.
+  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
+  // Make this method check if there are pending view operations instead.
+  // Also rename it to `HasPendingViewOperations`.
+  bool HasPlatformViewThisOrNextFrame();
+
+  // Traverse the `mutators_stack` and return the number of clip operations.
+  int CountClips(const MutatorsStack& mutators_stack);
+
+  // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
+  // `ReconstructClipViewsChain`
+  //
+  // Clips are applied to the super view with a CALayer mask. Transforms are applied to the
+  // current view that's at the head of the chain. For example the following mutators stack [T_1,
+  // C_2, T_3, T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the
+  // following UIView tree:
+  //
+  // C_2 -> C_5 -> PLATFORM_VIEW
+  // (PLATFORM_VIEW is a subview of C_5 which is a subview of C_2)
+  //
+  // T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
+  //
+  // After each clip operation, we update the head to the super view of the current head.
+  void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
+  void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
+
+  // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
+  // the picture on the layer's canvas.
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
+                                                     std::shared_ptr<IOSContext> ios_context,
+                                                     sk_sp<SkPicture> picture,
+                                                     SkRect rect,
+                                                     int64_t view_id,
+                                                     int64_t overlay_id);
+  // Removes overlay views and platform views that aren't needed in the current frame.
+  // Must run on the platform thread.
+  void RemoveUnusedLayers();
+  // Appends the overlay views and platform view and sets their z index based on the composition
+  // order.
+  void BringLayersIntoView(LayersMap layer_map);
+
+  // Begin a CATransaction.
+  // This transaction needs to be balanced with |CommitCATransactionIfNeeded|.
+  void BeginCATransaction();
+
+  // Commit a CATransaction if |BeginCATransaction| has been called during the frame.
+  void CommitCATransactionIfNeeded();
+
+  // Resets the state of the frame.
+  void ResetFrameState();
 
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<FlutterPlatformViewLayerPool> layer_pool_;
@@ -240,73 +305,10 @@ class FlutterPlatformViewsController {
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies;
 
-  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
-
   bool catransaction_added_ = false;
 
-  void OnCreate(FlutterMethodCall* call, FlutterResult& result);
-  void OnDispose(FlutterMethodCall* call, FlutterResult& result);
-  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
-  void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
-  // Dispose the views in `views_to_dispose_`.
-  void DisposeViews();
-
-  // Returns true if there are embedded views in the scene at current frame
-  // Or there will be embedded views in the next frame.
-  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-  // Make this method check if there are pending view operations instead.
-  // Also rename it to `HasPendingViewOperations`.
-  bool HasPlatformViewThisOrNextFrame();
-
-  // Traverse the `mutators_stack` and return the number of clip operations.
-  int CountClips(const MutatorsStack& mutators_stack);
-
-  // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
-  // `ReconstructClipViewsChain`
-  //
-  // Clips are applied to the super view with a CALayer mask. Transforms are applied to the
-  // current view that's at the head of the chain. For example the following mutators stack [T_1,
-  // C_2, T_3, T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the
-  // following UIView tree:
-  //
-  // C_2 -> C_5 -> PLATFORM_VIEW
-  // (PLATFORM_VIEW is a subview of C_5 which is a subview of C_2)
-  //
-  // T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
-  //
-  // After each clip operation, we update the head to the super view of the current head.
-  void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
-  void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
-
-  // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
-  // the picture on the layer's canvas.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
-                                                     std::shared_ptr<IOSContext> ios_context,
-                                                     sk_sp<SkPicture> picture,
-                                                     SkRect rect,
-                                                     int64_t view_id,
-                                                     int64_t overlay_id);
-  // Removes overlay views and platform views that aren't needed in the current frame.
-  // Must run on the platform thread.
-  void RemoveUnusedLayers();
-  // Appends the overlay views and platform view and sets their z index based on the composition
-  // order.
-  void BringLayersIntoView(LayersMap layer_map);
-
-  // Begin a CATransaction.
-  // This transaction needs to be balanced with |CommitCATransactionIfNeeded|.
-  void BeginCATransaction();
-
-  // Commit a CATransaction if |BeginCATransaction| has been called during the frame.
-  void CommitCATransactionIfNeeded();
-
-  bool SubmitFrameGpuSafe(GrDirectContext* gr_context,
-                          std::shared_ptr<IOSContext> ios_context,
-                          std::unique_ptr<SurfaceFrame> frame);
-
-  // Resets the state of the frame.
-  void ResetFrameState();
-
+  // WeakPtrFactory must be the last member.
+  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 
@@ -332,6 +334,11 @@ class FlutterPlatformViewsController {
 
 // Get embedded view
 - (UIView*)embeddedView;
+@end
+
+@interface UIView (FirstResponder)
+// Returns YES if a view or any of its descendant view is the first responder. Returns NO otherwise.
+@property(nonatomic, readonly) BOOL flt_hasFirstResponderInViewHierarchySubtree;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

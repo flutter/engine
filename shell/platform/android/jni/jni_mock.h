@@ -18,7 +18,8 @@ class JNIMock final : public PlatformViewAndroidJNI {
  public:
   MOCK_METHOD(void,
               FlutterViewHandlePlatformMessage,
-              (fml::RefPtr<flutter::PlatformMessage> message, int responseId),
+              (std::unique_ptr<flutter::PlatformMessage> message,
+               int responseId),
               (override));
 
   MOCK_METHOD(void,
@@ -28,7 +29,9 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               FlutterViewUpdateSemantics,
-              (std::vector<uint8_t> buffer, std::vector<std::string> strings),
+              (std::vector<uint8_t> buffer,
+               std::vector<std::string> strings,
+               std::vector<std::vector<uint8_t>> string_attribute_args),
               (override));
 
   MOCK_METHOD(void,
@@ -43,22 +46,22 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               SurfaceTextureAttachToGLContext,
-              (JavaWeakGlobalRef surface_texture, int textureId),
+              (JavaLocalRef surface_texture, int textureId),
               (override));
 
   MOCK_METHOD(void,
               SurfaceTextureUpdateTexImage,
-              (JavaWeakGlobalRef surface_texture),
+              (JavaLocalRef surface_texture),
               (override));
 
   MOCK_METHOD(void,
               SurfaceTextureGetTransformMatrix,
-              (JavaWeakGlobalRef surface_texture, SkMatrix& transform),
+              (JavaLocalRef surface_texture, SkMatrix& transform),
               (override));
 
   MOCK_METHOD(void,
               SurfaceTextureDetachFromGLContext,
-              (JavaWeakGlobalRef surface_texture),
+              (JavaLocalRef surface_texture),
               (override));
 
   MOCK_METHOD(void,

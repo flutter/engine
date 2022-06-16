@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'dom.dart';
+import 'services.dart';
+import 'util.dart';
 
 /// Handles clipboard related platform messages.
 class ClipboardMessageHandler {
@@ -20,7 +24,7 @@ class ClipboardMessageHandler {
     const MethodCodec codec = JSONMethodCodec();
     bool errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
-        .setData(methodCall.arguments['text'])
+        .setData(methodCall.arguments['text'] as String?)
         .then((bool success) {
       if (success) {
         callback!(codec.encodeSuccessEnvelope(true));
@@ -46,10 +50,27 @@ class ClipboardMessageHandler {
       final Map<String, dynamic> map = <String, dynamic>{'text': data};
       callback!(codec.encodeSuccessEnvelope(map));
     }).catchError((dynamic error) {
-      print('Could not get text from clipboard: $error');
-      callback!(codec.encodeErrorEnvelope(
-          code: 'paste_fail', message: 'Clipboard.getData failed'));
+      if (error is UnimplementedError) {
+        // Clipboard.getData not supported.
+        // Passing [null] to [callback] indicates that the platform message isn't
+        // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
+        // handled.
+        Future<void>.delayed(Duration.zero).then((_) {
+          if (callback != null) {
+            callback(null);
+          }
+        });
+        return;
+      }
+      _reportGetDataFailure(callback, codec, error);
     });
+  }
+
+  void _reportGetDataFailure(ui.PlatformMessageResponseCallback? callback,
+      MethodCodec codec, dynamic error) {
+    print('Could not get text from clipboard: $error');
+    callback!(codec.encodeErrorEnvelope(
+        code: 'paste_fail', message: 'Clipboard.getData failed'));
   }
 
   /// Methods used by tests.
@@ -62,17 +83,13 @@ class ClipboardMessageHandler {
   }
 }
 
-bool _unsafeIsNull(dynamic object) {
-  return object == null;
-}
-
 /// Provides functionality for writing text to clipboard.
 ///
 /// A concrete implementation is picked at runtime based on the available
 /// APIs and the browser.
 abstract class CopyToClipboardStrategy {
   factory CopyToClipboardStrategy() {
-    return !_unsafeIsNull(html.window.navigator.clipboard)
+    return !unsafeIsNull(domWindow.navigator.clipboard)
         ? ClipboardAPICopyStrategy()
         : ExecCommandCopyStrategy();
   }
@@ -92,7 +109,7 @@ abstract class CopyToClipboardStrategy {
 abstract class PasteFromClipboardStrategy {
   factory PasteFromClipboardStrategy() {
     return (browserEngine == BrowserEngine.firefox ||
-            _unsafeIsNull(html.window.navigator.clipboard))
+            unsafeIsNull(domWindow.navigator.clipboard))
         ? ExecCommandPasteStrategy()
         : ClipboardAPIPasteStrategy();
   }
@@ -109,12 +126,12 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
   @override
   Future<bool> setData(String? text) async {
     try {
-      await html.window.navigator.clipboard!.writeText(text!);
+      await domWindow.navigator.clipboard!.writeText(text!);
     } catch (error) {
       print('copy is not successful $error');
-      return Future.value(false);
+      return Future<bool>.value(false);
     }
-    return Future.value(true);
+    return Future<bool>.value(true);
   }
 }
 
@@ -127,7 +144,7 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
 class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() async {
-    return html.window.navigator.clipboard!.readText();
+    return domWindow.navigator.clipboard!.readText();
   }
 }
 
@@ -135,19 +152,19 @@ class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
 class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   @override
   Future<bool> setData(String? text) {
-    return Future.value(_setDataSync(text));
+    return Future<bool>.value(_setDataSync(text));
   }
 
   bool _setDataSync(String? text) {
     // Copy content to clipboard with execCommand.
     // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
-    final html.TextAreaElement tempTextArea = _appendTemporaryTextArea();
+    final DomHTMLTextAreaElement tempTextArea = _appendTemporaryTextArea();
     tempTextArea.value = text;
     tempTextArea.focus();
     tempTextArea.select();
     bool result = false;
     try {
-      result = html.document.execCommand('copy');
+      result = domDocument.execCommand('copy');
       if (!result) {
         print('copy is not successful');
       }
@@ -159,9 +176,9 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     return result;
   }
 
-  html.TextAreaElement _appendTemporaryTextArea() {
-    final html.TextAreaElement tempElement = html.TextAreaElement();
-    final html.CssStyleDeclaration elementStyle = tempElement.style;
+  DomHTMLTextAreaElement _appendTemporaryTextArea() {
+    final DomHTMLTextAreaElement tempElement = createDomHTMLTextAreaElement();
+    final DomCSSStyleDeclaration elementStyle = tempElement.style;
     elementStyle
       ..position = 'absolute'
       ..top = '-99999px'
@@ -171,12 +188,12 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
       ..backgroundColor = 'transparent'
       ..background = 'transparent';
 
-    html.document.body!.append(tempElement);
+    domDocument.body!.append(tempElement);
 
     return tempElement;
   }
 
-  void _removeTemporaryTextArea(html.HtmlElement element) {
+  void _removeTemporaryTextArea(DomHTMLElement element) {
     element.remove();
   }
 }
@@ -185,7 +202,8 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
 class ExecCommandPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() {
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/48581
-    throw UnimplementedError('Paste is not implemented for this browser.');
+    // TODO(mdebbar): https://github.com/flutter/flutter/issues/48581
+    return Future<String>.error(
+        UnimplementedError('Paste is not implemented for this browser.'));
   }
 }

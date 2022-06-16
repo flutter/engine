@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/clip_rrect_layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
-
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -59,9 +59,12 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{
                1, MockCanvas::ClipRectData{layer_bounds, SkClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+           MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
+#endif
            MockCanvas::DrawCall{
-               1,
-               MockCanvas::SaveLayerData{layer_bounds, clip_paint, nullptr, 2}},
+               1, MockCanvas::SaveLayerData{layer->paint_bounds(), clip_paint,
+                                            nullptr, 2}},
            MockCanvas::DrawCall{
                2, MockCanvas::DrawPathData{child_path, child_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
@@ -110,8 +113,8 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
                1, MockCanvas::ClipRectData{layer_bounds, SkClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
-               1,
-               MockCanvas::SaveLayerData{layer_bounds, clip_paint, nullptr, 2}},
+               1, MockCanvas::SaveLayerData{layer->paint_bounds(), clip_paint,
+                                            nullptr, 2}},
            MockCanvas::DrawCall{
                2, MockCanvas::DrawPathData{child_path, child_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
@@ -150,6 +153,9 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{
                1, MockCanvas::ClipRectData{layer_bounds, SkClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+           MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
+#endif
            MockCanvas::DrawCall{
                1,
                MockCanvas::SaveLayerData{child_bounds, clip_paint, nullptr, 2}},
@@ -232,6 +238,9 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{
                1, MockCanvas::ClipRectData{layer_bounds, SkClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+           MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
+#endif
            MockCanvas::DrawCall{
                1,
                MockCanvas::SaveLayerData{child_bounds, clip_paint, nullptr, 2}},
@@ -294,15 +303,11 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(layer_path.getBounds(),
-                                                    initial_elevation, 1.0f));
+            DisplayListCanvasDispatcher::ComputeShadowBounds(
+                layer_path, initial_elevation, 1.0f, SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(layer->elevation(), initial_elevation);
 
-  // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
-  // their shadows , so we do not use the direct |Paint()| path there.
-#if !defined(LEGACY_FUCHSIA_EMBEDDER)
   const SkRect paint_bounds = SkRect::MakeXYWH(0, 0, 8, 8);
   const SkPaint clip_paint;
   SkPaint layer_paint;
@@ -323,7 +328,6 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{2, MockCanvas::DrawPaint{layer_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
-#endif
 }
 
 TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
@@ -338,15 +342,11 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(layer_path.getBounds(),
-                                                    initial_elevation, 1.0f));
+            DisplayListCanvasDispatcher::ComputeShadowBounds(
+                layer_path, initial_elevation, 1.0f, SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(layer->elevation(), initial_elevation);
 
-  // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
-  // their shadows , so we do not use the direct |Paint()| path there.
-#if !defined(LEGACY_FUCHSIA_EMBEDDER)
   const SkRect paint_bounds = SkRect::MakeXYWH(0, 0, 8, 8);
   const SkPaint clip_paint;
   SkPaint layer_paint;
@@ -367,7 +367,6 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
            MockCanvas::DrawCall{2, MockCanvas::DrawPaint{layer_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
-#endif
 }
 
 #endif

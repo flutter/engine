@@ -8,9 +8,22 @@
 #include <vector>
 
 #include "flutter/shell/platform/common/client_wrapper/testing/test_codec_extensions.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
+
+namespace {
+
+class MockStandardCodecSerializer : public StandardCodecSerializer {
+ public:
+  MOCK_CONST_METHOD2(WriteValue,
+                     void(const EncodableValue& value,
+                          ByteStreamWriter* stream));
+  MOCK_CONST_METHOD2(ReadValueOfType,
+                     EncodableValue(uint8_t type, ByteStreamReader* stream));
+};
+}  // namespace
 
 // Validates round-trip encoding and decoding of |value|, and checks that the
 // encoded value matches |expected_encoding|.
@@ -63,9 +76,29 @@ static void CheckEncodeDecodeWithEncodePrefix(
   EXPECT_EQ(value, *decoded);
 }
 
+TEST(StandardMessageCodec, GetInstanceCachesInstance) {
+  const StandardMessageCodec& codec_a =
+      StandardMessageCodec::GetInstance(nullptr);
+  const StandardMessageCodec& codec_b =
+      StandardMessageCodec::GetInstance(nullptr);
+  EXPECT_EQ(&codec_a, &codec_b);
+}
+
 TEST(StandardMessageCodec, CanEncodeAndDecodeNull) {
   std::vector<uint8_t> bytes = {0x00};
   CheckEncodeDecode(EncodableValue(), bytes);
+}
+
+TEST(StandardMessageCodec, CanDecodeEmptyBytesAsNullWithoutCallingSerializer) {
+  std::vector<uint8_t> bytes = {};
+  const MockStandardCodecSerializer serializer;
+  const StandardMessageCodec& codec =
+      StandardMessageCodec::GetInstance(&serializer);
+
+  auto decoded = codec.DecodeMessage(bytes);
+
+  EXPECT_EQ(EncodableValue(), *decoded);
+  EXPECT_CALL(serializer, ReadValueOfType(::testing::_, ::testing::_)).Times(0);
 }
 
 TEST(StandardMessageCodec, CanEncodeAndDecodeTrue) {
@@ -172,6 +205,13 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeInt64Array) {
                                 0xef, 0xcd, 0xab, 0x90, 0x78, 0x56, 0x34, 0x12,
                                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
   EncodableValue value(std::vector<int64_t>{0x1234567890abcdef, -1});
+  CheckEncodeDecode(value, bytes);
+}
+
+TEST(StandardMessageCodec, CanEncodeAndDecodeFloat32Array) {
+  std::vector<uint8_t> bytes = {0x0e, 0x02, 0x00, 0x00, 0xd8, 0x0f,
+                                0x49, 0x40, 0x00, 0x00, 0x7a, 0x44};
+  EncodableValue value(std::vector<float>{3.1415920257568359375f, 1000.0f});
   CheckEncodeDecode(value, bytes);
 }
 

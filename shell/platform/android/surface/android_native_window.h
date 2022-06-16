@@ -11,20 +11,20 @@
 #include "flutter/fml/memory/ref_counted.h"
 #include "third_party/skia/include/core/SkSize.h"
 
-#if OS_ANDROID
+#if FML_OS_ANDROID
 #include <android/native_window.h>
-#endif  // OS_ANDROID
+#endif  // FML_OS_ANDROID
 
 namespace flutter {
 
 class AndroidNativeWindow
     : public fml::RefCountedThreadSafe<AndroidNativeWindow> {
  public:
-#if OS_ANDROID
+#if FML_OS_ANDROID
   using Handle = ANativeWindow*;
-#else   // OS_ANDROID
+#else   // FML_OS_ANDROID
   using Handle = std::nullptr_t;
-#endif  // OS_ANDROID
+#endif  // FML_OS_ANDROID
 
   bool IsValid() const;
 
@@ -32,12 +32,19 @@ class AndroidNativeWindow
 
   SkISize GetSize() const;
 
+  /// Returns true when this AndroidNativeWindow is not backed by a real window
+  /// (used for testing).
+  bool IsFakeWindow() const { return is_fake_window_; }
+
  private:
   Handle window_;
+  const bool is_fake_window_;
 
   /// Creates a native window with the given handle. Handle ownership is assumed
   /// by this instance of the native window.
   explicit AndroidNativeWindow(Handle window);
+
+  explicit AndroidNativeWindow(Handle window, bool is_fake_window);
 
   ~AndroidNativeWindow();
 

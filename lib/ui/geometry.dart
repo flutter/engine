@@ -15,8 +15,8 @@ abstract class OffsetBase {
   /// The first argument sets the horizontal component, and the second the
   /// vertical component.
   const OffsetBase(this._dx, this._dy)
-      : assert(_dx != null), // ignore: unnecessary_null_comparison
-        assert(_dy != null); // ignore: unnecessary_null_comparison
+      : assert(_dx != null),
+        assert(_dy != null);
 
   final double _dx;
   final double _dy;
@@ -91,7 +91,7 @@ abstract class OffsetBase {
   }
 
   @override
-  int get hashCode => hashValues(_dx, _dy);
+  int get hashCode => Object.hash(_dx, _dy);
 
   @override
   String toString() => 'OffsetBase(${_dx.toStringAsFixed(1)}, ${_dy.toStringAsFixed(1)})';
@@ -316,7 +316,7 @@ class Offset extends OffsetBase {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Offset? lerp(Offset? a, Offset? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -341,7 +341,7 @@ class Offset extends OffsetBase {
   }
 
   @override
-  int get hashCode => hashValues(dx, dy);
+  int get hashCode => Object.hash(dx, dy);
 
   @override
   String toString() => 'Offset(${dx.toStringAsFixed(1)}, ${dy.toStringAsFixed(1)})';
@@ -587,7 +587,7 @@ class Size extends OffsetBase {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Size? lerp(Size? a, Size? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -613,7 +613,7 @@ class Size extends OffsetBase {
   }
 
   @override
-  int get hashCode => hashValues(_dx, _dy);
+  int get hashCode => Object.hash(_dx, _dy);
 
   @override
   String toString() => 'Size(${width.toStringAsFixed(1)}, ${height.toStringAsFixed(1)})';
@@ -632,10 +632,10 @@ class Rect {
   /// Construct a rectangle from its left, top, right, and bottom edges.
   @pragma('vm:entry-point')
   const Rect.fromLTRB(this.left, this.top, this.right, this.bottom)
-      : assert(left != null), // ignore: unnecessary_null_comparison
-        assert(top != null), // ignore: unnecessary_null_comparison
-        assert(right != null), // ignore: unnecessary_null_comparison
-        assert(bottom != null); // ignore: unnecessary_null_comparison
+      : assert(left != null),
+        assert(top != null),
+        assert(right != null),
+        assert(bottom != null);
 
   /// Construct a rectangle from its left and top edges, its width, and its
   /// height.
@@ -672,7 +672,14 @@ class Rect {
     math.max(a.dy, b.dy),
   );
 
-  Float32List get _value32 => Float32List.fromList(<double>[left, top, right, bottom]);
+  Float32List _getValue32() {
+    final Float32List result = Float32List(4);
+    result[0] = left;
+    result[1] = top;
+    result[2] = right;
+    result[3] = bottom;
+    return result;
+  }
 
   /// The offset of the left edge of this rectangle from the x axis.
   final double left;
@@ -864,7 +871,7 @@ class Rect {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Rect? lerp(Rect? a, Rect? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -900,7 +907,7 @@ class Rect {
   }
 
   @override
-  int get hashCode => hashValues(left, top, right, bottom);
+  int get hashCode => Object.hash(left, top, right, bottom);
 
   @override
   String toString() => 'Rect.fromLTRB(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)})';
@@ -993,7 +1000,7 @@ class Radius {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Radius? lerp(Radius? a, Radius? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -1026,7 +1033,7 @@ class Radius {
   }
 
   @override
-  int get hashCode => hashValues(x, y);
+  int get hashCode => Object.hash(x, y);
 
   @override
   String toString() {
@@ -1179,33 +1186,35 @@ class RRect {
     this.brRadiusY = 0.0,
     this.blRadiusX = 0.0,
     this.blRadiusY = 0.0,
-  }) : assert(left != null), // ignore: unnecessary_null_comparison
-       assert(top != null), // ignore: unnecessary_null_comparison
-       assert(right != null), // ignore: unnecessary_null_comparison
-       assert(bottom != null), // ignore: unnecessary_null_comparison
-       assert(tlRadiusX != null), // ignore: unnecessary_null_comparison
-       assert(tlRadiusY != null), // ignore: unnecessary_null_comparison
-       assert(trRadiusX != null), // ignore: unnecessary_null_comparison
-       assert(trRadiusY != null), // ignore: unnecessary_null_comparison
-       assert(brRadiusX != null), // ignore: unnecessary_null_comparison
-       assert(brRadiusY != null), // ignore: unnecessary_null_comparison
-       assert(blRadiusX != null), // ignore: unnecessary_null_comparison
-       assert(blRadiusY != null); // ignore: unnecessary_null_comparison
+  }) : assert(left != null),
+       assert(top != null),
+       assert(right != null),
+       assert(bottom != null),
+       assert(tlRadiusX != null),
+       assert(tlRadiusY != null),
+       assert(trRadiusX != null),
+       assert(trRadiusY != null),
+       assert(brRadiusX != null),
+       assert(brRadiusY != null),
+       assert(blRadiusX != null),
+       assert(blRadiusY != null);
 
-  Float32List get _value32 => Float32List.fromList(<double>[
-    left,
-    top,
-    right,
-    bottom,
-    tlRadiusX,
-    tlRadiusY,
-    trRadiusX,
-    trRadiusY,
-    brRadiusX,
-    brRadiusY,
-    blRadiusX,
-    blRadiusY,
-  ]);
+  Float32List _getValue32()  {
+    final Float32List result = Float32List(12);
+    result[0] = left;
+    result[1] = top;
+    result[2] = right;
+    result[3] = bottom;
+    result[4] = tlRadiusX;
+    result[5] = tlRadiusY;
+    result[6] = trRadiusX;
+    result[7] = trRadiusY;
+    result[8] = brRadiusX;
+    result[9] = brRadiusY;
+    result[10] = blRadiusX;
+    result[11] = blRadiusY;
+    return result;
+  }
 
   /// The offset of the left edge of this rectangle from the x axis.
   final double left;
@@ -1445,7 +1454,7 @@ class RRect {
   /// Therefore, this method is only needed for RRect use cases that require
   /// the appropriately scaled radii values.
   ///
-  /// See the [Skia scaling implementation](https://github.com/google/skia/blob/master/src/core/SkRRect.cpp)
+  /// See the [Skia scaling implementation](https://github.com/google/skia/blob/main/src/core/SkRRect.cpp)
   /// for more details.
   RRect scaleRadii() {
     double scale = 1.0;
@@ -1558,7 +1567,7 @@ class RRect {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static RRect? lerp(RRect? a, RRect? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -1636,7 +1645,7 @@ class RRect {
   }
 
   @override
-  int get hashCode => hashValues(left, top, right, bottom,
+  int get hashCode => Object.hash(left, top, right, bottom,
     tlRadiusX, tlRadiusY, trRadiusX, trRadiusY,
     blRadiusX, blRadiusY, brRadiusX, brRadiusY);
 

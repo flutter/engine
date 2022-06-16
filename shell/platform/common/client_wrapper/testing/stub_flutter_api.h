@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_API_H_
-#define FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_API_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_API_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_API_H_
 
 #include <memory>
 
@@ -17,7 +17,7 @@ namespace testing {
 // the headers in platform/common/public/.
 
 // Linking this class into a test binary will provide dummy forwarding
-// implementantions of that C API, so that the wrapper can be tested separately
+// implementations of that C API, so that the wrapper can be tested separately
 // from the actual library.
 class StubFlutterApi {
  public:
@@ -29,7 +29,7 @@ class StubFlutterApi {
   // will be forwarded.
   static void SetTestStub(StubFlutterApi* stub);
 
-  // Returns the current stub, as last set by SetTestFluttterStub.
+  // Returns the current stub, as last set by SetTestFlutterStub.
   static StubFlutterApi* GetTestStub();
 
   virtual ~StubFlutterApi() {}
@@ -87,7 +87,7 @@ class StubFlutterApi {
 class ScopedStubFlutterApi {
  public:
   // Calls SetTestFlutterStub with |stub|.
-  ScopedStubFlutterApi(std::unique_ptr<StubFlutterApi> stub);
+  explicit ScopedStubFlutterApi(std::unique_ptr<StubFlutterApi> stub);
 
   // Restores the previous test stub.
   ~ScopedStubFlutterApi();
@@ -103,4 +103,4 @@ class ScopedStubFlutterApi {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_API_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_API_H_

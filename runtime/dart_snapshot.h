@@ -115,6 +115,15 @@ class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
       std::shared_ptr<const fml::Mapping> snapshot_instructions);
 
   //----------------------------------------------------------------------------
+  /// @brief      Create an isolate snapshot specialized for launching the
+  ///             service isolate. Returns nullptr if no such snapshot is
+  ///             available.
+  ///
+  /// @return     A valid isolate snapshot or nullptr.
+  static fml::RefPtr<DartSnapshot> VMServiceIsolateSnapshotFromSettings(
+      const Settings& settings);
+
+  //----------------------------------------------------------------------------
   /// @brief      Determines if this snapshot contains a heap component. Since
   ///             the instructions component is optional, the method does not
   ///             check for its presence. Use `IsValidForAOT` to determine if
@@ -150,6 +159,11 @@ class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
   /// @return     The instructions mapping.
   ///
   const uint8_t* GetInstructionsMapping() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Returns whether both the data and instructions mappings are
+  ///             safe to use with madvise(DONTNEED).
+  bool IsDontNeedSafe() const;
 
   bool IsNullSafetyEnabled(
       const fml::Mapping* application_kernel_mapping) const;

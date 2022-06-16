@@ -36,19 +36,24 @@ class EmbedderConfigBuilder {
     kNoInitialize,
   };
 
-  EmbedderConfigBuilder(EmbedderTestContext& context,
-                        InitializationPreference preference =
-                            InitializationPreference::kSnapshotsInitialize);
+  explicit EmbedderConfigBuilder(
+      EmbedderTestContext& context,
+      InitializationPreference preference =
+          InitializationPreference::kSnapshotsInitialize);
 
   ~EmbedderConfigBuilder();
 
   FlutterProjectArgs& GetProjectArgs();
+
+  void SetRendererConfig(EmbedderTestContextType type, SkISize surface_size);
 
   void SetSoftwareRendererConfig(SkISize surface_size = SkISize::Make(1, 1));
 
   void SetOpenGLRendererConfig(SkISize surface_size);
 
   void SetMetalRendererConfig(SkISize surface_size);
+
+  void SetVulkanRendererConfig(SkISize surface_size);
 
   // Used to explicitly set an `open_gl.fbo_callback`. Using this method will
   // cause your test to fail since the ctor for this class sets
@@ -72,7 +77,15 @@ class EmbedderConfigBuilder {
 
   void SetSemanticsCallbackHooks();
 
+  // Used to set a custom log message handler.
+  void SetLogMessageCallbackHook();
+
+  // Used to set a custom log tag.
+  void SetLogTag(std::string tag);
+
   void SetLocalizationCallbackHooks();
+
+  void SetExecutableName(std::string executable_name);
 
   void SetDartEntrypoint(std::string entrypoint);
 
@@ -98,6 +111,10 @@ class EmbedderConfigBuilder {
 
   UniqueEngine InitializeEngine() const;
 
+  // Sets up the callback for vsync, the callbacks needs to be specified on the
+  // text context vis `SetVsyncCallback`.
+  void SetupVsyncCallback();
+
  private:
   EmbedderTestContext& context_;
   FlutterProjectArgs project_args_ = {};
@@ -105,6 +122,10 @@ class EmbedderConfigBuilder {
   FlutterSoftwareRendererConfig software_renderer_config_ = {};
 #ifdef SHELL_ENABLE_GL
   FlutterOpenGLRendererConfig opengl_renderer_config_ = {};
+#endif
+#ifdef SHELL_ENABLE_VULKAN
+  void InitializeVulkanRendererConfig();
+  FlutterVulkanRendererConfig vulkan_renderer_config_ = {};
 #endif
 #ifdef SHELL_ENABLE_METAL
   void InitializeMetalRendererConfig();
@@ -115,6 +136,7 @@ class EmbedderConfigBuilder {
   FlutterCompositor compositor_ = {};
   std::vector<std::string> command_line_arguments_;
   std::vector<std::string> dart_entrypoint_arguments_;
+  std::string log_tag_;
 
   UniqueEngine SetupEngine(bool run) const;
 

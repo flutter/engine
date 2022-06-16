@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+
+import 'package:ui/ui.dart' as ui;
 
 /// A function that returns current system time.
 typedef TimestampFunction = DateTime Function();
@@ -17,6 +18,8 @@ typedef TimestampFunction = DateTime Function();
 ///
 /// https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout#Notes
 class AlarmClock {
+
+  /// Initializes Alarmclock with a closure that gets called with a timestamp.
   AlarmClock(TimestampFunction timestampFunction)
       : _timestampFunction = timestampFunction;
 
@@ -30,7 +33,11 @@ class AlarmClock {
   DateTime? _datetime;
 
   /// The callback called when the alarm goes off.
-  late ui.VoidCallback callback;
+  ///
+  /// If this is null, the alarm goes off without calling the callback. Set the
+  /// callback to null if the callback is a closure holding onto expensive
+  /// resources.
+  ui.VoidCallback? callback;
 
   /// The time when the alarm clock will go off.
   ///
@@ -100,7 +107,7 @@ class AlarmClock {
     // zero difference between now and _datetime.
     if (!now.isBefore(_datetime!)) {
       _timer = null;
-      callback();
+      callback?.call();
     } else {
       // The timer fired before the target date. We need to reschedule.
       _timer = Timer(_datetime!.difference(now), _timerDidFire);

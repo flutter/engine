@@ -16,6 +16,8 @@
 namespace flutter {
 namespace testing {
 
+const char* GetSourcePath();
+
 //------------------------------------------------------------------------------
 /// @brief      Returns the directory containing the test fixture for the target
 ///             if this target has fixtures configured. If there are no
@@ -26,6 +28,21 @@ namespace testing {
 /// @return     The fixtures path.
 ///
 const char* GetFixturesPath();
+
+//------------------------------------------------------------------------------
+/// @brief      Returns the directory containing assets shared across all tests.
+///
+/// @return     The testing assets path.
+///
+const char* GetTestingAssetsPath();
+
+//------------------------------------------------------------------------------
+/// @brief      Returns the default path to kernel_blob.bin. This file is within
+///             the directory returned by `GetFixturesPath()`.
+///
+/// @return     The kernel file path.
+///
+std::string GetDefaultKernelFilePath();
 
 //------------------------------------------------------------------------------
 /// @brief      Opens the fixtures directory for the unit-test harness.

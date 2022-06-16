@@ -35,6 +35,18 @@ group("libdart") {
   }
 }
 
+source_set("dart_plugin_registrant") {
+  sources = [
+    "dart_plugin_registrant.cc",
+    "dart_plugin_registrant.h",
+  ]
+  deps = [
+    "//flutter/fml",
+    "//flutter/third_party/tonic",
+    "//third_party/dart/runtime:dart_api",
+  ]
+}
+
 source_set("runtime") {
   sources = [
     "dart_isolate.cc",
@@ -45,6 +57,8 @@ source_set("runtime") {
     "dart_service_isolate.h",
     "dart_snapshot.cc",
     "dart_snapshot.h",
+    "dart_timestamp_provider.cc",
+    "dart_timestamp_provider.h",
     "dart_vm.cc",
     "dart_vm.h",
     "dart_vm_data.cc",
@@ -75,18 +89,21 @@ source_set("runtime") {
     sources += [ "ptrace_check.cc" ]
   }
 
-  public_deps = [ "//third_party/rapidjson" ]
+  public_deps = [
+    "//flutter/lib/ui",
+    "//third_party/rapidjson",
+  ]
 
   public_configs = [ "//flutter:config" ]
 
   deps = [
+    ":dart_plugin_registrant",
     ":test_font",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/io",
-    "//flutter/lib/ui",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
     "//third_party/dart/runtime:dart_api",
@@ -134,6 +151,49 @@ if (enable_unittests) {
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
+    ]
+  }
+
+  test_fixtures("no_plugin_registrant") {
+    dart_main = "fixtures/no_dart_plugin_registrant_test.dart"
+    use_target_as_artifact_prefix = true
+  }
+
+  executable("no_dart_plugin_registrant_unittests") {
+    testonly = true
+
+    sources = [ "no_dart_plugin_registrant_unittests.cc" ]
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    public_deps = [
+      ":no_plugin_registrant",
+      "//flutter/fml",
+      "//flutter/lib/snapshot",
+      "//flutter/testing",
+      "//flutter/testing:fixture_test",
+    ]
+  }
+
+  test_fixtures("plugin_registrant") {
+    dart_main = "fixtures/dart_tool/flutter_build/dart_plugin_registrant.dart"
+    use_target_as_artifact_prefix = true
+  }
+
+  executable("dart_plugin_registrant_unittests") {
+    testonly = true
+
+    sources = [ "dart_plugin_registrant_unittests.cc" ]
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    public_deps = [
+      ":plugin_registrant",
+      "//flutter/fml",
+      "//flutter/lib/snapshot",
+      "//flutter/runtime:dart_plugin_registrant",
+      "//flutter/testing",
+      "//flutter/testing:fixture_test",
     ]
   }
 }

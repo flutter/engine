@@ -16,7 +16,7 @@ namespace testing {
 // the headers in platform/glfw/public/.
 
 // Linking this class into a test binary will provide dummy forwarding
-// implementantions of that C API, so that the wrapper can be tested separately
+// implementations of that C API, so that the wrapper can be tested separately
 // from the actual library.
 class StubFlutterGlfwApi {
  public:
@@ -24,7 +24,7 @@ class StubFlutterGlfwApi {
   // will be forwarded.
   static void SetTestStub(StubFlutterGlfwApi* stub);
 
-  // Returns the current stub, as last set by SetTestFluttterStub.
+  // Returns the current stub, as last set by SetTestFlutterStub.
   static StubFlutterGlfwApi* GetTestStub();
 
   virtual ~StubFlutterGlfwApi() {}
@@ -98,7 +98,7 @@ class StubFlutterGlfwApi {
 class ScopedStubFlutterGlfwApi {
  public:
   // Calls SetTestFlutterStub with |stub|.
-  ScopedStubFlutterGlfwApi(std::unique_ptr<StubFlutterGlfwApi> stub);
+  explicit ScopedStubFlutterGlfwApi(std::unique_ptr<StubFlutterGlfwApi> stub);
 
   // Restores the previous test stub.
   ~ScopedStubFlutterGlfwApi();

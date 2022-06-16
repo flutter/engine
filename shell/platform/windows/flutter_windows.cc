@@ -82,8 +82,8 @@ void FlutterDesktopViewControllerForceRedraw(
 }
 
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
-    const FlutterDesktopEngineProperties& engine_properties) {
-  flutter::FlutterProjectBundle project(engine_properties);
+    const FlutterDesktopEngineProperties* engine_properties) {
+  flutter::FlutterProjectBundle project(*engine_properties);
   auto engine = std::make_unique<flutter::FlutterWindowsEngine>(project);
   return HandleForEngine(engine.release());
 }
@@ -129,7 +129,7 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
 }
 
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
-  return std::get<HWND>(*ViewFromHandle(view)->GetRenderTarget());
+  return ViewFromHandle(view)->GetPlatformWindow();
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
@@ -148,7 +148,7 @@ void FlutterDesktopResyncOutputStreams() {
   std::ios::sync_with_stdio();
 }
 
-// Implementations of common/cpp/ API methods.
+// Implementations of common/ API methods.
 
 FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
@@ -158,7 +158,7 @@ FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
 void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopOnPluginRegistrarDestroyed callback) {
-  registrar->engine->SetPluginRegistrarDestructionCallback(callback);
+  registrar->engine->AddPluginRegistrarDestructionCallback(callback, registrar);
 }
 
 bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,

@@ -9,12 +9,22 @@
 #include <memory>
 #include <mutex>
 
+#include "flutter/flow/frame_timings.h"
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/synchronization/semaphore.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
+
+struct PipelineProduceResult {
+  // Whether the item was successfully pushed into the pipeline.
+  bool success = false;
+  // Whether it is the first item of the pipeline. Only valid when 'success' is
+  // 'true'.
+  bool is_first_item = false;
+};
 
 enum class PipelineConsumeResult {
   NoneAvailable,
@@ -27,7 +37,7 @@ size_t GetNextPipelineTraceID();
 /// A thread-safe queue of resources for a single consumer and a single
 /// producer.
 template <class R>
-class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
+class Pipeline {
  public:
   using Resource = R;
   using ResourcePtr = std::unique_ptr<Resource>;
@@ -60,8 +70,8 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       }
     }
 
-    [[nodiscard]] bool Complete(ResourcePtr resource) {
-      bool result = false;
+    [[nodiscard]] PipelineProduceResult Complete(ResourcePtr resource) {
+      PipelineProduceResult result;
       if (continuation_) {
         result = continuation_(std::move(resource), trace_id_);
         continuation_ = nullptr;
@@ -71,11 +81,12 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       return result;
     }
 
-    operator bool() const { return continuation_ != nullptr; }
+    explicit operator bool() const { return continuation_ != nullptr; }
 
    private:
     friend class Pipeline;
-    using Continuation = std::function<bool(ResourcePtr, size_t)>;
+    using Continuation =
+        std::function<PipelineProduceResult(ResourcePtr, size_t)>;
 
     Continuation continuation_;
     size_t trace_id_;
@@ -156,10 +167,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       items_count = queue_.size();
     }
 
-    {
-      TRACE_EVENT0("flutter", "PipelineConsume");
-      consumer(std::move(resource));
-    }
+    consumer(std::move(resource));
 
     empty_.Signal();
     --inflight_;
@@ -179,36 +187,50 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   std::mutex queue_mutex_;
   std::deque<std::pair<ResourcePtr, size_t>> queue_;
 
-  bool ProducerCommit(ResourcePtr resource, size_t trace_id) {
+  PipelineProduceResult ProducerCommit(ResourcePtr resource, size_t trace_id) {
+    bool is_first_item = false;
     {
       std::scoped_lock lock(queue_mutex_);
+      is_first_item = queue_.empty();
       queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
-    return true;
+    return {.success = true, .is_first_item = is_first_item};
   }
 
-  bool ProducerCommitIfEmpty(ResourcePtr resource, size_t trace_id) {
+  PipelineProduceResult ProducerCommitIfEmpty(ResourcePtr resource,
+                                              size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
       if (!queue_.empty()) {
         // Bail if the queue is not empty, opens up spaces to produce other
         // frames.
         empty_.Signal();
-        return false;
+        return {.success = false, .is_first_item = false};
       }
       queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
-    return true;
+    return {.success = true, .is_first_item = true};
   }
 
   FML_DISALLOW_COPY_AND_ASSIGN(Pipeline);
 };
+
+struct LayerTreeItem {
+  LayerTreeItem(std::unique_ptr<LayerTree> layer_tree,
+                std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
+      : layer_tree(std::move(layer_tree)),
+        frame_timings_recorder(std::move(frame_timings_recorder)) {}
+  std::unique_ptr<LayerTree> layer_tree;
+  std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
+};
+
+using LayerTreePipeline = Pipeline<LayerTreeItem>;
 
 }  // namespace flutter
 

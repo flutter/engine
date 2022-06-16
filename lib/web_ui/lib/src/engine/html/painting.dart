@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
 
 /// Implementation of [ui.Paint] used by the HTML rendering backend.
 class SurfacePaint implements ui.Paint {
@@ -152,7 +153,7 @@ class SurfacePaint implements ui.Paint {
     _paintData.colorFilter = value;
   }
 
-  // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33605
+  // TODO(ferhat): see https://github.com/flutter/flutter/issues/33605
   @override
   double get strokeMiterLimit {
     throw UnsupportedError('SurfacePaint.strokeMiterLimit');
@@ -165,13 +166,13 @@ class SurfacePaint implements ui.Paint {
 
   @override
   ui.ImageFilter? get imageFilter {
-    // TODO(flutter/flutter#35156): Implement ImageFilter.
+    // TODO(ferhat): Implement ImageFilter, flutter/flutter#35156.
     return null;
   }
 
   @override
   set imageFilter(ui.ImageFilter? value) {
-    // TODO(flutter/flutter#35156): Implement ImageFilter.
+    // TODO(ferhat): Implement ImageFilter, flutter/flutter#35156
   }
 
   // True if Paint instance has used in RecordingCanvas.

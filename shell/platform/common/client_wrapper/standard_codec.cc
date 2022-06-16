@@ -41,6 +41,7 @@ enum class EncodedType {
   kFloat64List,
   kList,
   kMap,
+  kFloat32List,
 };
 
 // Returns the encoded type that should be written when serializing |value|.
@@ -70,6 +71,8 @@ EncodedType EncodedTypeForValue(const EncodableValue& value) {
       return EncodedType::kList;
     case 11:
       return EncodedType::kMap;
+    case 13:
+      return EncodedType::kFloat32List;
   }
   assert(false);
   return EncodedType::kNull;
@@ -95,7 +98,7 @@ EncodableValue StandardCodecSerializer::ReadValue(
 void StandardCodecSerializer::WriteValue(const EncodableValue& value,
                                          ByteStreamWriter* stream) const {
   stream->WriteByte(static_cast<uint8_t>(EncodedTypeForValue(value)));
-  // TODO: Consider replacing this this with a std::visitor.
+  // TODO(cbracken): Consider replacing this this with std::visit.
   switch (value.index()) {
     case 0:
     case 1:
@@ -155,6 +158,10 @@ void StandardCodecSerializer::WriteValue(const EncodableValue& value,
           << "Unhandled custom type in StandardCodecSerializer::WriteValue. "
           << "Custom types require codec extensions." << std::endl;
       break;
+    case 13: {
+      WriteVector(std::get<std::vector<float>>(value), stream);
+      break;
+    }
   }
 }
 
@@ -210,6 +217,9 @@ EncodableValue StandardCodecSerializer::ReadValueOfType(
       }
       return EncodableValue(map_value);
     }
+    case EncodedType::kFloat32List: {
+      return ReadVector<float>(stream);
+    }
   }
   std::cerr << "Unknown type in StandardCodecSerializer::ReadValueOfType: "
             << static_cast<int>(type) << std::endl;
@@ -221,11 +231,11 @@ size_t StandardCodecSerializer::ReadSize(ByteStreamReader* stream) const {
   if (byte < 254) {
     return byte;
   } else if (byte == 254) {
-    uint16_t value;
+    uint16_t value = 0;
     stream->ReadBytes(reinterpret_cast<uint8_t*>(&value), 2);
     return value;
   } else {
-    uint32_t value;
+    uint32_t value = 0;
     stream->ReadBytes(reinterpret_cast<uint8_t*>(&value), 4);
     return value;
   }
@@ -285,8 +295,8 @@ const StandardMessageCodec& StandardMessageCodec::GetInstance(
   if (!serializer) {
     serializer = &StandardCodecSerializer::GetInstance();
   }
-  auto* sInstances = new std::map<const StandardCodecSerializer*,
-                                  std::unique_ptr<StandardMessageCodec>>;
+  static auto* sInstances = new std::map<const StandardCodecSerializer*,
+                                         std::unique_ptr<StandardMessageCodec>>;
   auto it = sInstances->find(serializer);
   if (it == sInstances->end()) {
     // Uses new due to private constructor (to prevent API clients from
@@ -308,6 +318,9 @@ StandardMessageCodec::~StandardMessageCodec() = default;
 std::unique_ptr<EncodableValue> StandardMessageCodec::DecodeMessageInternal(
     const uint8_t* binary_message,
     size_t message_size) const {
+  if (!binary_message) {
+    return std::make_unique<EncodableValue>();
+  }
   ByteBufferStreamReader stream(binary_message, message_size);
   return std::make_unique<EncodableValue>(serializer_->ReadValue(&stream));
 }
@@ -329,8 +342,8 @@ const StandardMethodCodec& StandardMethodCodec::GetInstance(
   if (!serializer) {
     serializer = &StandardCodecSerializer::GetInstance();
   }
-  auto* sInstances = new std::map<const StandardCodecSerializer*,
-                                  std::unique_ptr<StandardMethodCodec>>;
+  static auto* sInstances = new std::map<const StandardCodecSerializer*,
+                                         std::unique_ptr<StandardMethodCodec>>;
   auto it = sInstances->find(serializer);
   if (it == sInstances->end()) {
     // Uses new due to private constructor (to prevent API clients from

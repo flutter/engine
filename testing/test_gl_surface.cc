@@ -12,9 +12,10 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
-#include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 
 namespace flutter {
 namespace testing {
@@ -298,10 +299,10 @@ sk_sp<SkSurface> TestGLSurface::GetOnscreenSurface() {
   const uint32_t width = surface_size_.width();
   const uint32_t height = surface_size_.height();
   framebuffer_info.fFBOID = GetFramebuffer(width, height);
-#if OS_MACOSX
-  framebuffer_info.fFormat = GR_GL_RGBA8;
+#if FML_OS_MACOSX
+  framebuffer_info.fFormat = 0x8058;  // GL_RGBA8
 #else
-  framebuffer_info.fFormat = GR_GL_BGRA8;
+  framebuffer_info.fFormat = 0x93A1;  // GL_BGRA8;
 #endif
 
   GrBackendRenderTarget backend_render_target(

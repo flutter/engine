@@ -8,6 +8,8 @@
 #import "FlutterBinaryMessenger.h"
 #import "FlutterCodecs.h"
 
+@protocol FlutterTaskQueue;
+
 NS_ASSUME_NONNULL_BEGIN
 /**
  * A message reply callback.
@@ -24,7 +26,8 @@ typedef void (^FlutterReply)(id _Nullable reply);
  * asynchronous replies back to Flutter.
  *
  * @param message The message.
- * @param callback A callback for submitting a reply to the sender.
+ * @param callback A callback for submitting a reply to the sender which can be invoked from any
+ * thread.
  */
 typedef void (^FlutterMessageHandler)(id _Nullable message, FlutterReply callback);
 
@@ -89,6 +92,27 @@ FLUTTER_DARWIN_EXPORT
                        codec:(NSObject<FlutterMessageCodec>*)codec;
 
 /**
+ * Initializes a `FlutterBasicMessageChannel` with the specified name, binary
+ * messenger, and message codec.
+ *
+ * The channel name logically identifies the channel; identically named channels
+ * interfere with each other's communication.
+ *
+ * The binary messenger is a facility for sending raw, binary messages to the
+ * Flutter side. This protocol is implemented by `FlutterEngine` and `FlutterViewController`.
+ *
+ * @param name The channel name.
+ * @param messenger The binary messenger.
+ * @param codec The message codec.
+ * @param taskQueue The FlutterTaskQueue that executes the handler (see
+                    -[FlutterBinaryMessenger makeBackgroundTaskQueue]).
+ */
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMessageCodec>*)codec
+                   taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue;
+
+/**
  * Sends the specified message to the Flutter side, ignoring any reply.
  *
  * @param message The message. Must be supported by the codec of this
@@ -117,8 +141,8 @@ FLUTTER_DARWIN_EXPORT
 
 /**
  * Adjusts the number of messages that will get buffered when sending messages to
- * channels that aren't fully setup yet.  For example, the engine isn't running
- * yet or the channel's message handler isn't setup on the Dart side yet.
+ * channels that aren't fully set up yet.  For example, the engine isn't running
+ * yet or the channel's message handler isn't set up on the Dart side yet.
  */
 - (void)resizeChannelBuffer:(NSInteger)newSize;
 
@@ -142,7 +166,7 @@ typedef void (^FlutterResult)(id _Nullable result);
  *     Invoke the callback with a `FlutterError` to indicate that the call failed.
  *     Invoke the callback with `FlutterMethodNotImplemented` to indicate that the
  *     method was unknown. Any other values, including `nil`, are interpreted as
- *     successful results.
+ *     successful results.  This can be invoked from any thread.
  */
 typedef void (^FlutterMethodCallHandler)(FlutterMethodCall* call, FlutterResult result);
 
@@ -213,6 +237,27 @@ FLUTTER_DARWIN_EXPORT
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec;
 
+/**
+ * Initializes a `FlutterMethodChannel` with the specified name, binary messenger,
+ * method codec, and task queue.
+ *
+ * The channel name logically identifies the channel; identically named channels
+ * interfere with each other's communication.
+ *
+ * The binary messenger is a facility for sending raw, binary messages to the
+ * Flutter side. This protocol is implemented by `FlutterEngine` and `FlutterViewController`.
+ *
+ * @param name The channel name.
+ * @param messenger The binary messenger.
+ * @param codec The method codec.
+ * @param taskQueue The FlutterTaskQueue that executes the handler (see
+                    -[FlutterBinaryMessenger makeBackgroundTaskQueue]).
+ */
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec
+                   taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue;
+
 // clang-format off
 /**
  * Invokes the specified Flutter method with the specified arguments, expecting
@@ -255,8 +300,8 @@ FLUTTER_DARWIN_EXPORT
 
 /**
  * Adjusts the number of messages that will get buffered when sending messages to
- * channels that aren't fully setup yet.  For example, the engine isn't running
- * yet or the channel's message handler isn't setup on the Dart side yet.
+ * channels that aren't fully set up yet.  For example, the engine isn't running
+ * yet or the channel's message handler isn't set up on the Dart side yet.
  */
 - (void)resizeChannelBuffer:(NSInteger)newSize;
 
@@ -371,6 +416,27 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec;
+
+/**
+ * Initializes a `FlutterEventChannel` with the specified name, binary messenger,
+ * method codec and task queue.
+ *
+ * The channel name logically identifies the channel; identically named channels
+ * interfere with each other's communication.
+ *
+ * The binary messenger is a facility for sending raw, binary messages to the
+ * Flutter side. This protocol is implemented by `FlutterEngine` and `FlutterViewController`.
+ *
+ * @param name The channel name.
+ * @param messenger The binary messenger.
+ * @param codec The method codec.
+ * @param taskQueue The FlutterTaskQueue that executes the handler (see
+                    -[FlutterBinaryMessenger makeBackgroundTaskQueue]).
+ */
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec
+                   taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue;
 /**
  * Registers a handler for stream setup requests from the Flutter side.
  *

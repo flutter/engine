@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async' show Future;
 import 'dart:html';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/semantics.dart';
+import 'package:ui/src/engine/services.dart';
 
-const MessageCodec<dynamic> codec = StandardMessageCodec();
+const StandardMessageCodec codec = StandardMessageCodec();
 const String testMessage = 'This is an tooltip.';
 const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{
   'data': <dynamic, dynamic>{'message': testMessage}
@@ -21,7 +21,7 @@ void main() {
 }
 
 void testMain() {
-  AccessibilityAnnouncements accessibilityAnnouncements;
+  late AccessibilityAnnouncements accessibilityAnnouncements;
 
   group('$AccessibilityAnnouncements', () {
     setUp(() {
@@ -45,7 +45,7 @@ void testMain() {
         isNotNull,
       );
       final LabelElement input =
-          document.getElementById('accessibility-element');
+          document.getElementById('accessibility-element')! as LabelElement;
       expect(input.getAttribute('aria-live'), equals('polite'));
       expect(input.text, testMessage);
 

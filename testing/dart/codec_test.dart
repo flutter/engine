@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
@@ -28,10 +27,24 @@ void main() {
 
   test('Fails with invalid data', () async {
     final Uint8List data = Uint8List.fromList(<int>[1, 2, 3]);
-    expect(
-      () => ui.instantiateImageCodec(data),
-      throwsA(exceptionWithMessage('Invalid image data'))
-    );
+    try {
+      await ui.instantiateImageCodec(data);
+      fail('exception not thrown');
+    } on Exception catch (e) {
+      expect(e.toString(), contains('Invalid image data'));
+    }
+  });
+
+  test('getNextFrame fails with invalid data', () async {
+    Uint8List data = await _getSkiaResource('flutter_logo.jpg').readAsBytes();
+    data = Uint8List.view(data.buffer, 0, 4000);
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+    try {
+      await codec.getNextFrame();
+      fail('exception not thrown');
+    } on Exception catch (e) {
+      expect(e.toString(), contains('Codec failed'));
+    }
   });
 
   test('nextFrame', () async {
@@ -72,6 +85,20 @@ void main() {
       <int>[0, 240, 246],
     ]));
   });
+
+  test('disposed decoded image', () async {
+    Uint8List data = await _getSkiaResource('flutter_logo.jpg').readAsBytes();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+    final ui.FrameInfo frameInfo = await codec.getNextFrame();
+    expect(frameInfo.image, isNotNull);
+    frameInfo.image.dispose();
+    try {
+      await codec.getNextFrame();
+      fail('exception not thrown');
+    } on Exception catch (e) {
+      expect(e.toString(), contains('Decoded image has been disposed'));
+    }
+  });
 }
 
 /// Returns a File handle to a file in the skia/resources directory.
@@ -84,10 +111,4 @@ File _getSkiaResource(String fileName) {
   final String assetPath =
     path.join('third_party', 'skia', 'resources', 'images', fileName);
   return File(assetPath);
-}
-
-Matcher exceptionWithMessage(String m) {
-  return predicate<Exception>((Exception e) {
-    return e is Exception && e.toString().contains(m);
-  });
 }

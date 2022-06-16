@@ -26,19 +26,16 @@ Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
   const DartWrapperInfo& info = GetDartWrapperInfo();
 
   Dart_PersistentHandle type = dart_state->class_library().GetClass(info);
-  TONIC_DCHECK(!LogIfError(type));
+  TONIC_DCHECK(!CheckAndHandleError(type));
 
   Dart_Handle wrapper =
       Dart_New(type, dart_state->private_constructor_name(), 0, nullptr);
 
-  TONIC_DCHECK(!LogIfError(wrapper));
+  TONIC_DCHECK(!CheckAndHandleError(wrapper));
 
   Dart_Handle res = Dart_SetNativeInstanceField(
       wrapper, kPeerIndex, reinterpret_cast<intptr_t>(this));
-  TONIC_DCHECK(!LogIfError(res));
-  res = Dart_SetNativeInstanceField(wrapper, kWrapperInfoIndex,
-                                    reinterpret_cast<intptr_t>(&info));
-  TONIC_DCHECK(!LogIfError(res));
+  TONIC_DCHECK(!CheckAndHandleError(res));
 
   this->RetainDartWrappableReference();  // Balanced in FinalizeDartWrapper.
   dart_wrapper_.Set(dart_state, wrapper, this, GetAllocationSize(),
@@ -54,14 +51,10 @@ void DartWrappable::AssociateWithDartWrapper(Dart_Handle wrapper) {
     dart_wrapper_.Clear();
   }
 
-  TONIC_CHECK(!LogIfError(wrapper));
+  TONIC_CHECK(!CheckAndHandleError(wrapper));
 
-  const DartWrapperInfo& info = GetDartWrapperInfo();
-
-  TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(
+  TONIC_CHECK(!CheckAndHandleError(Dart_SetNativeInstanceField(
       wrapper, kPeerIndex, reinterpret_cast<intptr_t>(this))));
-  TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(
-      wrapper, kWrapperInfoIndex, reinterpret_cast<intptr_t>(&info))));
 
   this->RetainDartWrappableReference();  // Balanced in FinalizeDartWrapper.
 
@@ -73,9 +66,8 @@ void DartWrappable::AssociateWithDartWrapper(Dart_Handle wrapper) {
 void DartWrappable::ClearDartWrapper() {
   TONIC_DCHECK(!dart_wrapper_.is_empty());
   Dart_Handle wrapper = dart_wrapper_.Get();
-  TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(wrapper, kPeerIndex, 0)));
-  TONIC_CHECK(
-      !LogIfError(Dart_SetNativeInstanceField(wrapper, kWrapperInfoIndex, 0)));
+  TONIC_CHECK(!CheckAndHandleError(
+      Dart_SetNativeInstanceField(wrapper, kPeerIndex, 0)));
   dart_wrapper_.Clear();
   this->ReleaseDartWrappableReference();
 }
@@ -97,6 +89,9 @@ Dart_PersistentHandle DartWrappable::GetTypeForWrapper(
 }
 
 DartWrappable* DartConverterWrappable::FromDart(Dart_Handle handle) {
+  if (Dart_IsNull(handle)) {
+    return nullptr;
+  }
   intptr_t peer = 0;
   Dart_Handle result =
       Dart_GetNativeInstanceField(handle, DartWrappable::kPeerIndex, &peer);

@@ -2,8 +2,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+// TODO(yjbanov): this does not need to be in the production sources.
+//                https://github.com/flutter/flutter/issues/100394
+
+import 'dart:async';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../engine.dart';
+
+Future<void>? _platformInitializedFuture;
+
+Future<void> initializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) {
+  // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
+  ensureFlutterViewEmbedderInitialized();
+
+  // The following parameters are hard-coded in Flutter's test embedder. Since
+  // we don't have an embedder yet this is the lowest-most layer we can put
+  // this stuff in.
+  window.debugOverrideDevicePixelRatio(devicePixelRatio);
+  window.webOnlyDebugPhysicalSizeOverride =
+      ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
+  scheduleFrameCallback = () {};
+  ui.debugEmulateFlutterTesterEnvironment = true;
+
+  // Initialize platform once and reuse across all tests.
+  if (_platformInitializedFuture != null) {
+    return _platformInitializedFuture!;
+  }
+  return _platformInitializedFuture =
+      initializeEngine(assetManager: WebOnlyMockAssetManager());
+}
 
 const bool _debugLogHistoryActions = false;
 
@@ -28,7 +57,7 @@ class TestHistoryEntry {
 class TestUrlStrategy extends UrlStrategy {
   /// Creates a instance of [TestUrlStrategy] with an empty string as the
   /// path.
-  factory TestUrlStrategy() => TestUrlStrategy.fromEntry(TestHistoryEntry(null, null, ''));
+  factory TestUrlStrategy() => TestUrlStrategy.fromEntry(const TestHistoryEntry(null, null, ''));
 
   /// Creates an instance of [TestUrlStrategy] and populates it with a list
   /// that has [initialEntry] as the only item.
@@ -119,15 +148,16 @@ class TestUrlStrategy extends UrlStrategy {
     });
   }
 
-  final List<html.EventListener> listeners = <html.EventListener>[];
+  final List<DomEventListener> listeners = <DomEventListener>[];
 
   @override
-  ui.VoidCallback addPopStateListener(html.EventListener fn) {
-    listeners.add(fn);
+  ui.VoidCallback addPopStateListener(DomEventListener fn) {
+    final DomEventListener wrappedFn = allowInterop(fn);
+    listeners.add(wrappedFn);
     return () {
       // Schedule a micro task here to avoid removing the listener during
       // iteration in [_firePopStateEvent].
-      scheduleMicrotask(() => listeners.remove(fn));
+      scheduleMicrotask(() => listeners.remove(wrappedFn));
     };
   }
 
@@ -142,7 +172,7 @@ class TestUrlStrategy extends UrlStrategy {
   /// like a real browser.
   void _firePopStateEvent() {
     assert(withinAppHistory);
-    final html.PopStateEvent event = html.PopStateEvent(
+    final DomPopStateEvent event = createDomPopStateEvent(
       'popstate',
       <String, dynamic>{'state': currentEntry.state},
     );

@@ -12,7 +12,9 @@ namespace flutter {
 
 class ColorFilterLayer : public ContainerLayer {
  public:
-  ColorFilterLayer(sk_sp<SkColorFilter> filter);
+  explicit ColorFilterLayer(sk_sp<SkColorFilter> filter);
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -20,6 +22,9 @@ class ColorFilterLayer : public ContainerLayer {
 
  private:
   sk_sp<SkColorFilter> filter_;
+
+  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
+  int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };

@@ -2,13 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
-const String _ahemFontFamily = 'Ahem';
-const String _ahemFontUrl = 'packages/ui/assets/ahem.ttf';
-const String _robotoFontFamily = 'Roboto';
-const String _robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+import '../assets.dart';
+import '../browser_detection.dart';
+import '../dom.dart';
+import '../safe_browser_api.dart';
+import '../util.dart';
+import 'layout_service.dart';
+
+const String ahemFontFamily = 'Ahem';
+const String ahemFontUrl = '/assets/fonts/ahem.ttf';
+const String robotoFontFamily = 'Roboto';
+const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
+const String robotoVariableFontFamily = 'RobotoVariable';
+const String robotoVariableTestFontUrl = '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -29,8 +39,7 @@ class FontCollection {
       byteData = await assetManager.load('FontManifest.json');
     } on AssetManagerException catch (e) {
       if (e.httpStatus == 404) {
-        html.window.console
-            .warn('Font manifest does not exist at `${e.url}` – ignoring.');
+        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
         return;
       } else {
         rethrow;
@@ -38,7 +47,7 @@ class FontCollection {
     }
 
     final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -50,15 +59,15 @@ class FontCollection {
       _assetFontManager = _PolyfillFontManager();
     }
 
-    for (Map<String, dynamic> fontFamily in fontManifest.cast<Map<String, dynamic>>()) {
-      final String? family = fontFamily['family'];
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+    for (final Map<String, dynamic> fontFamily
+        in fontManifest.cast<Map<String, dynamic>>()) {
+      final String? family = fontFamily.tryString('family');
+      final List<Map<String, dynamic>> fontAssets = fontFamily.castList<Map<String, dynamic>>('fonts');
 
-      for (dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+      for (final Map<String, dynamic> fontAsset in fontAssets) {
+        final String asset = fontAsset.readString('asset');
         final Map<String, String> descriptors = <String, String>{};
-        for (String descriptor in fontAsset.keys) {
+        for (final String descriptor in fontAsset.keys) {
           if (descriptor != 'asset') {
             descriptors[descriptor] = '${fontAsset[descriptor]}';
           }
@@ -77,9 +86,11 @@ class FontCollection {
   void debugRegisterTestFonts() {
     _testFontManager = FontManager();
     _testFontManager!.registerAsset(
-        _ahemFontFamily, 'url($_ahemFontUrl)', const <String, String>{});
-    _testFontManager!.registerAsset(
-        _robotoFontFamily, 'url($_robotoTestFontUrl)', const <String, String>{});
+        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
+    _testFontManager!.registerAsset(robotoFontFamily,
+        'url($robotoTestFontUrl)', const <String, String>{});
+    _testFontManager!.registerAsset(robotoVariableFontFamily,
+        'url($robotoVariableTestFontUrl)', const <String, String>{});
   }
 
   /// Returns a [Future] that completes when the registered fonts are loaded
@@ -94,7 +105,7 @@ class FontCollection {
     _assetFontManager = null;
     _testFontManager = null;
     if (supportsFontsClearApi) {
-      html.document.fonts!.clear();
+      domDocument.fonts!.clear();
     }
   }
 }
@@ -107,11 +118,11 @@ class FontManager {
   // For example font family 'Ahem!' does not fall into this category
   // so the family name will be wrapped in quotes.
   static final RegExp notPunctuation =
-      RegExp(r"[a-z0-9\s]+", caseSensitive: false);
+      RegExp(r'[a-z0-9\s]+', caseSensitive: false);
   // Regular expression to detect tokens starting with a digit.
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
-  static final RegExp startWithDigit = RegExp(r"\b\d");
+  static final RegExp startWithDigit = RegExp(r'\b\d');
 
   factory FontManager() {
     if (supportsFontLoadingApi) {
@@ -128,27 +139,27 @@ class FontManager {
   /// Browsers and browsers versions differ significantly on how a valid font
   /// family name should be formatted. Notable issues are:
   ///
-  /// Safari 12 and Firefox crash if you create a [html.FontFace] with a font
+  /// Safari 12 and Firefox crash if you create a [DomFontFace] with a font
   /// family that is not correct CSS syntax. Font family names with invalid
   /// characters are accepted accepted on these browsers, when wrapped it in
   /// quotes.
   ///
-  /// Additionally, for Safari 12 to work [html.FontFace] name should be
+  /// Additionally, for Safari 12 to work [DomFontFace] name should be
   /// loaded correctly on the first try.
   ///
   /// A font in Chrome is not usable other than inside a '<p>' tag, if a
-  /// [html.FontFace] is loaded wrapped with quotes. Unlike Safari 12 if a
+  /// [DomFontFace] is loaded wrapped with quotes. Unlike Safari 12 if a
   /// valid version of the font is also loaded afterwards it will show
   /// that font normally.
   ///
-  /// In Safari 13 the [html.FontFace] should be loaded with unquoted family
+  /// In Safari 13 the [DomFontFace] should be loaded with unquoted family
   /// names.
   ///
   /// In order to avoid all these browser compatibility issues this method:
   /// * Detects the family names that might cause a conflict.
   /// * Loads it with the quotes.
   /// * Loads it again without the quotes.
-  /// * For all the other family names [html.FontFace] is loaded only once.
+  /// * For all the other family names [DomFontFace] is loaded only once.
   ///
   /// See also:
   ///
@@ -176,16 +187,14 @@ class FontManager {
   ) {
     // try/catch because `new FontFace` can crash with an improper font family.
     try {
-      final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
+      final DomFontFace fontFace = createDomFontFace(family, asset, descriptors);
       _fontLoadingFutures.add(fontFace.load().then((_) {
-        html.document.fonts!.add(fontFace);
+        domDocument.fonts!.add(fontFace);
       }, onError: (dynamic e) {
-        html.window.console
-            .warn('Error while trying to load font family "$family":\n$e');
+        printWarning('Error while trying to load font family "$family":\n$e');
       }));
     } catch (e) {
-      html.window.console
-          .warn('Error while loading font family "$family":\n$e');
+      printWarning('Error while loading font family "$family":\n$e');
     }
   }
 
@@ -193,16 +202,15 @@ class FontManager {
   Future<void> _loadFontFaceBytes(String family, Uint8List list) {
     // Since these fonts are loaded by user code, surface the error
     // through the returned future.
-    final html.FontFace fontFace = html.FontFace(family, list);
+    final DomFontFace fontFace = createDomFontFace(family, list);
     return fontFace.load().then((_) {
-      html.document.fonts!.add(fontFace);
+      domDocument.fonts!.add(fontFace);
       // There might be paragraph measurements for this new font before it is
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
-      TextMeasurementService.clearCache();
       Spanometer.clearRulersCache();
     }, onError: (dynamic exception) {
-      // Failures here will throw an html.DomException which confusingly
+      // Failures here will throw an DomException which confusingly
       // does not implement Exception or Error. Rethrow an Exception so it can
       // be caught in user code without depending on dart:html or requiring a
       // catch block without "on".
@@ -237,22 +245,22 @@ class _PolyfillFontManager extends FontManager {
     String asset,
     Map<String, String> descriptors,
   ) {
-    final html.ParagraphElement paragraph = html.ParagraphElement();
+    final DomHTMLParagraphElement paragraph = createDomHTMLParagraphElement();
     paragraph.style.position = 'absolute';
     paragraph.style.visibility = 'hidden';
     paragraph.style.fontSize = '72px';
-    final String fallbackFontName = browserEngine == BrowserEngine.ie11 ?
-      'Times New Roman' : 'sans-serif';
+    final String fallbackFontName =
+        browserEngine == BrowserEngine.ie11 ? 'Times New Roman' : 'sans-serif';
     paragraph.style.fontFamily = fallbackFontName;
     if (descriptors['style'] != null) {
-      paragraph.style.fontStyle = descriptors['style'];
+      paragraph.style.fontStyle = descriptors['style']!;
     }
     if (descriptors['weight'] != null) {
-      paragraph.style.fontWeight = descriptors['weight'];
+      paragraph.style.fontWeight = descriptors['weight']!;
     }
     paragraph.text = _testString;
 
-    html.document.body!.append(paragraph);
+    domDocument.body!.append(paragraph);
     final int sansSerifWidth = paragraph.offsetWidth;
 
     paragraph.style.fontFamily = "'$family', $fallbackFontName";
@@ -289,10 +297,10 @@ class _PolyfillFontManager extends FontManager {
     final String fontFaceDeclaration = fontStyleMap.keys
         .map((String name) => '$name: ${fontStyleMap[name]};')
         .join(' ');
-    final html.StyleElement fontLoadStyle = html.StyleElement();
+    final DomHTMLStyleElement fontLoadStyle = DomHTMLStyleElement();
     fontLoadStyle.type = 'text/css';
     fontLoadStyle.innerHtml = '@font-face { $fontFaceDeclaration }';
-    html.document.head!.append(fontLoadStyle);
+    domDocument.head!.append(fontLoadStyle);
 
     // HACK: If this is an icon font, then when it loads it won't change the
     // width of our test string. So we just have to hope it loads before the
@@ -308,6 +316,3 @@ class _PolyfillFontManager extends FontManager {
     _fontLoadingFutures.add(completer.future);
   }
 }
-
-final bool supportsFontLoadingApi = js_util.hasProperty(html.window, 'FontFace');
-final bool supportsFontsClearApi = js_util.hasProperty(html.document, 'fonts') && js_util.hasProperty(html.document.fonts!, 'clear');

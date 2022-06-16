@@ -8,24 +8,39 @@
 #include <iostream>
 #include <sstream>
 
+#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
-#include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
-#include "flutter/shell/platform/windows/string_conversion.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
-#include "third_party/rapidjson/include/rapidjson/document.h"
+
+#include <dwmapi.h>
+#include "flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h"
+
+// winbase.h defines GetCurrentTime as a macro.
+#undef GetCurrentTime
 
 namespace flutter {
 
 namespace {
 
+// Lifted from vsync_waiter_fallback.cc
+static std::chrono::nanoseconds SnapToNextTick(
+    std::chrono::nanoseconds value,
+    std::chrono::nanoseconds tick_phase,
+    std::chrono::nanoseconds tick_interval) {
+  std::chrono::nanoseconds offset = (tick_phase - value) % tick_interval;
+  if (offset != std::chrono::nanoseconds::zero())
+    offset = offset + tick_interval;
+  return value + offset;
+}
+
 // Creates and returns a FlutterRendererConfig that renders to the view (if any)
-// of a FlutterWindowsEngine, which should be the user_data received by the
-// render callbacks.
-FlutterRendererConfig GetRendererConfig() {
+// of a FlutterWindowsEngine, using OpenGL (via ANGLE).
+// The user_data received by the render callbacks refers to the
+// FlutterWindowsEngine.
+FlutterRendererConfig GetOpenGLRendererConfig() {
   FlutterRendererConfig config = {};
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
@@ -85,6 +100,27 @@ FlutterRendererConfig GetRendererConfig() {
   return config;
 }
 
+// Creates and returns a FlutterRendererConfig that renders to the view (if any)
+// of a FlutterWindowsEngine, using software rasterization.
+// The user_data received by the render callbacks refers to the
+// FlutterWindowsEngine.
+FlutterRendererConfig GetSoftwareRendererConfig() {
+  FlutterRendererConfig config = {};
+  config.type = kSoftware;
+  config.software.struct_size = sizeof(config.software);
+  config.software.surface_present_callback = [](void* user_data,
+                                                const void* allocation,
+                                                size_t row_bytes,
+                                                size_t height) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (!host->view()) {
+      return false;
+    }
+    return host->view()->PresentSoftwareBitmap(allocation, row_bytes, height);
+  };
+  return config;
+}
+
 // Converts a FlutterPlatformMessage to an equivalent FlutterDesktopMessage.
 static FlutterDesktopMessage ConvertToDesktopMessage(
     const FlutterPlatformMessage& engine_message) {
@@ -121,8 +157,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   FlutterEngineGetProcAddresses(&embedder_api_);
 
   task_runner_ = TaskRunner::Create(
-      GetCurrentThreadId(), embedder_api_.GetCurrentTime,
-      [this](const auto* task) {
+      embedder_api_.GetCurrentTime, [this](const auto* task) {
         if (!engine_) {
           std::cerr << "Cannot post an engine task when engine is not running."
                     << std::endl;
@@ -142,23 +177,28 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
-  texture_registrar_ = std::make_unique<FlutterWindowsTextureRegistrar>(this);
-#ifndef WINUWP
+
+  FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
+  texture_registrar_ =
+      std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
+  surface_manager_ = AngleSurfaceManager::Create();
   window_proc_delegate_manager_ =
-      std::make_unique<Win32WindowProcDelegateManager>();
-#endif
+      std::make_unique<WindowProcDelegateManagerWin32>();
 
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
   // https://github.com/flutter/flutter/issues/71099
-  settings_channel_ =
-      std::make_unique<BasicMessageChannel<rapidjson::Document>>(
-          messenger_wrapper_.get(), "flutter/settings",
-          &JsonMessageCodec::GetInstance());
+  settings_plugin_ =
+      SettingsPlugin::Create(messenger_wrapper_.get(), task_runner_.get());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
   Stop();
+}
+
+void FlutterWindowsEngine::SetSwitches(
+    const std::vector<std::string>& switches) {
+  project_->SetSwitches(switches);
 }
 
 bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
@@ -210,22 +250,51 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
+  custom_task_runners.thread_priority_setter =
+      &WindowsPlatformThreadPrioritySetter;
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = assets_path_string.c_str();
   args.icu_data_path = icu_path_string.c_str();
   args.command_line_argc = static_cast<int>(argv.size());
-  args.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
+  args.command_line_argv = argv.empty() ? nullptr : argv.data();
   args.dart_entrypoint_argc = static_cast<int>(entrypoint_argv.size());
   args.dart_entrypoint_argv =
-      entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
+      entrypoint_argv.empty() ? nullptr : entrypoint_argv.data();
   args.platform_message_callback =
       [](const FlutterPlatformMessage* engine_message,
          void* user_data) -> void {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
   };
+  args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    host->OnVsync(baton);
+  };
+  args.on_pre_engine_restart_callback = [](void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    host->view()->OnPreEngineRestart();
+  };
+  args.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
+                                           void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (!node || node->id == kFlutterSemanticsNodeIdBatchEnd) {
+      host->accessibility_bridge_->CommitUpdates();
+      return;
+    }
+    host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+  };
+  args.update_semantics_custom_action_callback =
+      [](const FlutterSemanticsCustomAction* action, void* user_data) {
+        auto host = static_cast<FlutterWindowsEngine*>(user_data);
+        if (!action || action->id == kFlutterSemanticsNodeIdBatchEnd) {
+          host->accessibility_bridge_->CommitUpdates();
+          return;
+        }
+        host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
+            action);
+      };
 
   args.custom_task_runners = &custom_task_runners;
 
@@ -236,7 +305,9 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     args.custom_dart_entrypoint = entrypoint;
   }
 
-  FlutterRendererConfig renderer_config = GetRendererConfig();
+  FlutterRendererConfig renderer_config = surface_manager_
+                                              ? GetOpenGLRendererConfig()
+                                              : GetSoftwareRendererConfig();
 
   auto result = embedder_api_.Run(FLUTTER_ENGINE_VERSION, &renderer_config,
                                   &args, this, &engine_);
@@ -246,15 +317,32 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     return false;
   }
 
-  SendSystemSettings();
+  // Configure device frame rate displayed via devtools.
+  FlutterEngineDisplay display = {};
+  display.struct_size = sizeof(FlutterEngineDisplay);
+  display.display_id = 0;
+  display.single_display = true;
+  display.refresh_rate =
+      1.0 / (static_cast<double>(FrameInterval().count()) / 1000000000.0);
+
+  std::vector<FlutterEngineDisplay> displays = {display};
+  embedder_api_.NotifyDisplayUpdate(engine_,
+                                    kFlutterEngineDisplaysUpdateTypeStartup,
+                                    displays.data(), displays.size());
+
+  SendSystemLocales();
+
+  settings_plugin_->StartWatching();
+  settings_plugin_->SendSettings();
 
   return true;
 }
 
 bool FlutterWindowsEngine::Stop() {
   if (engine_) {
-    if (plugin_registrar_destruction_callback_) {
-      plugin_registrar_destruction_callback_(plugin_registrar_.get());
+    for (const auto& [callback, registrar] :
+         plugin_registrar_destruction_callbacks_) {
+      callback(registrar);
     }
     FlutterEngineResult result = embedder_api_.Shutdown(engine_);
     engine_ = nullptr;
@@ -267,14 +355,43 @@ void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
   view_ = view;
 }
 
+void FlutterWindowsEngine::OnVsync(intptr_t baton) {
+  std::chrono::nanoseconds current_time =
+      std::chrono::nanoseconds(embedder_api_.GetCurrentTime());
+  std::chrono::nanoseconds frame_interval = FrameInterval();
+  auto next = SnapToNextTick(current_time, start_time_, frame_interval);
+  embedder_api_.OnVsync(engine_, baton, next.count(),
+                        (next + frame_interval).count());
+}
+
+std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
+  if (frame_interval_override_.has_value()) {
+    return frame_interval_override_.value();
+  }
+  uint64_t interval = 16600000;
+
+  DWM_TIMING_INFO timing_info = {};
+  timing_info.cbSize = sizeof(timing_info);
+  HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
+  if (result == S_OK && timing_info.rateRefresh.uiDenominator > 0 &&
+      timing_info.rateRefresh.uiNumerator > 0) {
+    interval = static_cast<double>(timing_info.rateRefresh.uiDenominator *
+                                   1000000000.0) /
+               static_cast<double>(timing_info.rateRefresh.uiNumerator);
+  }
+
+  return std::chrono::nanoseconds(interval);
+}
+
 // Returns the currently configured Plugin Registrar.
 FlutterDesktopPluginRegistrarRef FlutterWindowsEngine::GetRegistrar() {
   return plugin_registrar_.get();
 }
 
-void FlutterWindowsEngine::SetPluginRegistrarDestructionCallback(
-    FlutterDesktopOnPluginRegistrarDestroyed callback) {
-  plugin_registrar_destruction_callback_ = callback;
+void FlutterWindowsEngine::AddPluginRegistrarDestructionCallback(
+    FlutterDesktopOnPluginRegistrarDestroyed callback,
+    FlutterDesktopPluginRegistrarRef registrar) {
+  plugin_registrar_destruction_callbacks_[callback] = registrar;
 }
 
 void FlutterWindowsEngine::SendWindowMetricsEvent(
@@ -287,6 +404,14 @@ void FlutterWindowsEngine::SendWindowMetricsEvent(
 void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
   if (engine_) {
     embedder_api_.SendPointerEvent(engine_, &event, 1);
+  }
+}
+
+void FlutterWindowsEngine::SendKeyEvent(const FlutterKeyEvent& event,
+                                        FlutterKeyEventCallback callback,
+                                        void* user_data) {
+  if (engine_) {
+    embedder_api_.SendKeyEvent(engine_, &event, callback, user_data);
   }
 }
 
@@ -350,7 +475,7 @@ void FlutterWindowsEngine::ReloadSystemFonts() {
   embedder_api_.ReloadSystemFonts(engine_);
 }
 
-void FlutterWindowsEngine::SendSystemSettings() {
+void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
@@ -366,16 +491,6 @@ void FlutterWindowsEngine::SendSystemSettings() {
       [](const auto& arg) -> const auto* { return &arg; });
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
-
-  rapidjson::Document settings(rapidjson::kObjectType);
-  auto& allocator = settings.GetAllocator();
-  settings.AddMember("alwaysUse24HourFormat",
-                     Prefer24HourTime(GetUserTimeFormat()), allocator);
-  settings.AddMember("textScaleFactor", 1.0, allocator);
-  // TODO: Implement dark mode support.
-  // https://github.com/flutter/flutter/issues/54612
-  settings.AddMember("platformBrightness", "light", allocator);
-  settings_channel_->Send(settings);
 }
 
 bool FlutterWindowsEngine::RegisterExternalTexture(int64_t texture_id) {
@@ -392,6 +507,44 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
     int64_t texture_id) {
   return (embedder_api_.MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
+}
+
+bool FlutterWindowsEngine::DispatchSemanticsAction(
+    uint64_t target,
+    FlutterSemanticsAction action,
+    fml::MallocMapping data) {
+  return (embedder_api_.DispatchSemanticsAction(engine_, target, action,
+                                                data.GetMapping(),
+                                                data.GetSize()) == kSuccess);
+}
+
+void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
+  using AccessibilityBridgeDelegateWindows = AccessibilityBridgeDelegateWin32;
+
+  if (engine_ && semantics_enabled_ != enabled) {
+    semantics_enabled_ = enabled;
+    embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
+
+    if (!semantics_enabled_ && accessibility_bridge_) {
+      accessibility_bridge_.reset();
+    } else if (semantics_enabled_ && !accessibility_bridge_) {
+      accessibility_bridge_ = std::make_shared<AccessibilityBridge>(
+          std::make_unique<AccessibilityBridgeDelegateWindows>(this));
+    }
+  }
+}
+
+gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
+    AccessibilityNodeId id) {
+  if (!accessibility_bridge_) {
+    return nullptr;
+  }
+  std::shared_ptr<FlutterPlatformNodeDelegate> node_delegate =
+      accessibility_bridge_->GetFlutterPlatformNodeDelegateFromID(id).lock();
+  if (!node_delegate) {
+    return nullptr;
+  }
+  return node_delegate->GetNativeViewAccessible();
 }
 
 }  // namespace flutter

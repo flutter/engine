@@ -4,31 +4,23 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
+#include <algorithm>
+#include <memory>
 #include <utility>
 
+#include "flow/frame_timings.h"
 #include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
+#include "fml/make_copyable.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/utils/SkBase64.h"
-
-// When screenshotting we want to ensure we call the base method for
-// CompositorContext::AcquireFrame instead of the platform-specific method.
-// Specifically, Fuchsia's CompositorContext handles the rendering surface
-// itself which means that we will still continue to render to the onscreen
-// surface if we don't call the base method.
-// TODO(arbreng: fxb/55805)
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#define ACQUIRE_FRAME flutter::CompositorContext::AcquireFrame
-#else
-#define ACQUIRE_FRAME AcquireFrame
-#endif
 
 namespace flutter {
 
@@ -38,25 +30,11 @@ static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
 Rasterizer::Rasterizer(Delegate& delegate)
     : delegate_(delegate),
-      compositor_context_(std::make_unique<flutter::CompositorContext>(
-          delegate.GetFrameBudget())),
+      compositor_context_(std::make_unique<flutter::CompositorContext>(*this)),
       user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
 }
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-// TODO(arbreng: fxb/55805)
-Rasterizer::Rasterizer(
-    Delegate& delegate,
-    std::unique_ptr<flutter::CompositorContext> compositor_context)
-    : delegate_(delegate),
-      compositor_context_(std::move(compositor_context)),
-      user_override_resource_cache_bytes_(false),
-      weak_factory_(this) {
-  FML_DCHECK(compositor_context_);
-}
-#endif
 
 Rasterizer::~Rasterizer() = default;
 
@@ -71,11 +49,17 @@ fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate()
 
 void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   surface_ = std::move(surface);
+
   if (max_cache_bytes_.has_value()) {
     SetResourceCacheMaxBytes(max_cache_bytes_.value(),
                              user_override_resource_cache_bytes_);
   }
-  compositor_context_->OnGrContextCreated();
+
+  auto context_switch = surface_->MakeRenderContextCurrent();
+  if (context_switch->GetResult()) {
+    compositor_context_->OnGrContextCreated();
+  }
+
   if (external_view_embedder_ &&
       external_view_embedder_->SupportsDynamicThreadMerging() &&
       !raster_thread_merger_) {
@@ -83,8 +67,8 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id =
         delegate_.GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId();
-    raster_thread_merger_ =
-        fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
+    raster_thread_merger_ = fml::RasterThreadMerger::CreateOrShareThreadMerger(
+        delegate_.GetParentRasterThreadMerger(), platform_id, gpu_id);
   }
   if (raster_thread_merger_) {
     raster_thread_merger_->SetMergeUnmergeCallback([=]() {
@@ -96,15 +80,30 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   }
 }
 
+void Rasterizer::TeardownExternalViewEmbedder() {
+  if (external_view_embedder_) {
+    external_view_embedder_->Teardown();
+  }
+}
+
 void Rasterizer::Teardown() {
-  compositor_context_->OnGrContextDestroyed();
-  surface_.reset();
+  if (surface_) {
+    auto context_switch = surface_->MakeRenderContextCurrent();
+    if (context_switch->GetResult()) {
+      compositor_context_->OnGrContextDestroyed();
+      if (auto* context = surface_->GetContext()) {
+        context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+      }
+    }
+    surface_.reset();
+  }
+
   last_layer_tree_.reset();
 
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
-    raster_thread_merger_->UnMergeNow();
+    raster_thread_merger_->UnMergeNowIfLastOne();
     raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
   }
 }
@@ -133,6 +132,10 @@ void Rasterizer::NotifyLowMemoryWarning() const {
         << "Rasterizer::NotifyLowMemoryWarning called with no GrContext.";
     return;
   }
+  auto context_switch = surface_->MakeRenderContextCurrent();
+  if (!context_switch->GetResult()) {
+    return;
+  }
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
@@ -144,46 +147,64 @@ flutter::LayerTree* Rasterizer::GetLastLayerTree() {
   return last_layer_tree_.get();
 }
 
-void Rasterizer::DrawLastLayerTree() {
+void Rasterizer::DrawLastLayerTree(
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  DrawToSurface(*last_layer_tree_);
+  RasterStatus raster_status =
+      DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
+
+  // EndFrame should perform cleanups for the external_view_embedder.
+  if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
+    bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
+    external_view_embedder_->SetUsedThisFrame(false);
+    external_view_embedder_->EndFrame(should_resubmit_frame,
+                                      raster_thread_merger_);
+  }
 }
 
-void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-                      LayerTreeDiscardCallback discardCallback) {
+RasterStatus Rasterizer::Draw(std::shared_ptr<LayerTreePipeline> pipeline,
+                              LayerTreeDiscardCallback discard_callback) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
-    return;
+    return RasterStatus::kYielded;
   }
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
   RasterStatus raster_status = RasterStatus::kFailed;
-  Pipeline<flutter::LayerTree>::Consumer consumer =
-      [&](std::unique_ptr<LayerTree> layer_tree) {
-        if (discardCallback(*layer_tree.get())) {
+  LayerTreePipeline::Consumer consumer =
+      [&](std::unique_ptr<LayerTreeItem> item) {
+        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
+        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+            std::move(item->frame_timings_recorder);
+        if (discard_callback(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
-          raster_status = DoDraw(std::move(layer_tree));
+          raster_status =
+              DoDraw(std::move(frame_timings_recorder), std::move(layer_tree));
         }
       };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
+  if (consume_result == PipelineConsumeResult::NoneAvailable) {
+    return RasterStatus::kFailed;
+  }
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
-  auto should_resubmit_frame = raster_status == RasterStatus::kResubmit ||
-                               raster_status == RasterStatus::kSkipAndRetry;
+  bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
   if (should_resubmit_frame) {
+    auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
+        std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_));
     auto front_continuation = pipeline->ProduceIfEmpty();
-    bool result =
-        front_continuation.Complete(std::move(resubmitted_layer_tree_));
-    if (result) {
+    PipelineProduceResult result =
+        front_continuation.Complete(std::move(resubmitted_layer_tree_item));
+    if (result.success) {
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
   } else if (raster_status == RasterStatus::kEnqueuePipeline) {
@@ -191,7 +212,9 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (surface_ && external_view_embedder_) {
+  if (surface_ && external_view_embedder_ &&
+      external_view_embedder_->GetUsedThisFrame()) {
+    external_view_embedder_->SetUsedThisFrame(false);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
   }
@@ -201,16 +224,25 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
-            if (weak_this) {
-              weak_this->Draw(pipeline);
-            }
-          });
+          fml::MakeCopyable(
+              [weak_this = weak_factory_.GetWeakPtr(), pipeline,
+               discard_callback = std::move(discard_callback)]() mutable {
+                if (weak_this) {
+                  weak_this->Draw(pipeline, std::move(discard_callback));
+                }
+              }));
       break;
     }
     default:
       break;
   }
+
+  return raster_status;
+}
+
+bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
+  return raster_status == RasterStatus::kResubmit ||
+         raster_status == RasterStatus::kSkipAndRetry;
 }
 
 namespace {
@@ -252,11 +284,23 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
   sk_sp<SkImage> result;
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
-  if (surface_ == nullptr || surface_->GetContext() == nullptr) {
+
+  std::unique_ptr<Surface> pbuffer_surface;
+  Surface* snapshot_surface = nullptr;
+  if (surface_ && surface_->GetContext()) {
+    snapshot_surface = surface_.get();
+  } else if (snapshot_surface_producer_) {
+    pbuffer_surface = snapshot_surface_producer_->CreateSnapshotSurface();
+    if (pbuffer_surface && pbuffer_surface->GetContext()) {
+      snapshot_surface = pbuffer_surface.get();
+    }
+  }
+
+  if (!snapshot_surface) {
     // Raster surface is fine if there is no on screen surface. This might
     // happen in case of software rendering.
-    sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
-    result = DrawSnapshot(surface, draw_callback);
+    sk_sp<SkSurface> sk_surface = SkSurface::MakeRaster(image_info);
+    result = DrawSnapshot(sk_surface, draw_callback);
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
@@ -265,23 +309,54 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
               result = DrawSnapshot(surface, draw_callback);
             })
             .SetIfFalse([&] {
-              auto context_switch = surface_->MakeRenderContextCurrent();
+              FML_DCHECK(snapshot_surface);
+              auto context_switch =
+                  snapshot_surface->MakeRenderContextCurrent();
               if (!context_switch->GetResult()) {
                 return;
               }
 
+              GrRecordingContext* context = snapshot_surface->GetContext();
+              auto max_size = context->maxRenderTargetSize();
+              double scale_factor = std::min(
+                  1.0, static_cast<double>(max_size) /
+                           static_cast<double>(std::max(image_info.width(),
+                                                        image_info.height())));
+
+              // Scale down the render target size to the max supported by the
+              // GPU if necessary. Exceeding the max would otherwise cause a
+              // null result.
+              if (scale_factor < 1.0) {
+                image_info = image_info.makeWH(
+                    static_cast<double>(image_info.width()) * scale_factor,
+                    static_cast<double>(image_info.height()) * scale_factor);
+              }
+
               // When there is an on screen surface, we need a render target
               // SkSurface because we want to access texture backed images.
-              sk_sp<SkSurface> surface = SkSurface::MakeRenderTarget(
-                  surface_->GetContext(),  // context
-                  SkBudgeted::kNo,         // budgeted
-                  image_info               // image info
-              );
-              result = DrawSnapshot(surface, draw_callback);
+              sk_sp<SkSurface> sk_surface =
+                  SkSurface::MakeRenderTarget(context,          // context
+                                              SkBudgeted::kNo,  // budgeted
+                                              image_info        // image info
+                  );
+              if (!sk_surface) {
+                FML_LOG(ERROR)
+                    << "DoMakeRasterSnapshot can not create GPU render target";
+                return;
+              }
+
+              sk_surface->getCanvas()->scale(scale_factor, scale_factor);
+              result = DrawSnapshot(sk_surface, draw_callback);
             }));
   }
 
   return result;
+}
+
+sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(
+    std::function<void(SkCanvas*)> draw_callback,
+    SkISize picture_size) {
+  return DoMakeRasterSnapshot(picture_size, draw_callback);
 }
 
 sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
@@ -313,8 +388,15 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                               });
 }
 
+fml::Milliseconds Rasterizer::GetFrameBudget() const {
+  return delegate_.GetFrameBudget();
+};
+
 RasterStatus Rasterizer::DoDraw(
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::unique_ptr<flutter::LayerTree> layer_tree) {
+  TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
+                                "Rasterizer::DoDraw");
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
@@ -323,24 +405,19 @@ RasterStatus Rasterizer::DoDraw(
     return RasterStatus::kFailed;
   }
 
-  FrameTiming timing;
-#if !defined(OS_FUCHSIA)
-  const fml::TimePoint frame_target_time = layer_tree->target_time();
-#endif
-  timing.Set(FrameTiming::kVsyncStart, layer_tree->vsync_start());
-  timing.Set(FrameTiming::kBuildStart, layer_tree->build_start());
-  timing.Set(FrameTiming::kBuildFinish, layer_tree->build_finish());
-  timing.Set(FrameTiming::kRasterStart, fml::TimePoint::Now());
-
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
 
-  RasterStatus raster_status = DrawToSurface(*layer_tree);
+  RasterStatus raster_status =
+      DrawToSurface(*frame_timings_recorder, *layer_tree);
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
-  } else if (raster_status == RasterStatus::kResubmit ||
-             raster_status == RasterStatus::kSkipAndRetry) {
+  } else if (ShouldResubmitFrame(raster_status)) {
     resubmitted_layer_tree_ = std::move(layer_tree);
+    resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
+        FrameTimingsRecorder::State::kBuildEnd);
+    return raster_status;
+  } else if (raster_status == RasterStatus::kDiscarded) {
     return raster_status;
   }
 
@@ -354,13 +431,15 @@ RasterStatus Rasterizer::DoDraw(
   // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
   // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp
   // for Fuchsia to capture SceneUpdateContext::ExecutePaintTasks.
-  const auto raster_finish_time = fml::TimePoint::Now();
-  timing.Set(FrameTiming::kRasterFinish, raster_finish_time);
-  delegate_.OnFrameRasterized(timing);
+  delegate_.OnFrameRasterized(frame_timings_recorder->GetRecordedTime());
 
 // SceneDisplayLag events are disabled on Fuchsia.
 // see: https://github.com/flutter/flutter/issues/56598
 #if !defined(OS_FUCHSIA)
+  const fml::TimePoint raster_finish_time =
+      frame_timings_recorder->GetRasterEndTime();
+  fml::TimePoint frame_target_time =
+      frame_timings_recorder->GetVsyncTargetTime();
   if (raster_finish_time > frame_target_time) {
     fml::TimePoint latest_frame_target_time =
         delegate_.GetLatestFrameTargetTime();
@@ -414,17 +493,42 @@ RasterStatus Rasterizer::DoDraw(
   return raster_status;
 }
 
-RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
-  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
+RasterStatus Rasterizer::DrawToSurface(
+    FrameTimingsRecorder& frame_timings_recorder,
+    flutter::LayerTree& layer_tree) {
   FML_DCHECK(surface_);
 
-  // There is no way for the compositor to know how long the layer tree
-  // construction took. Fortunately, the layer tree does. Grab that time
-  // for instrumentation.
-  compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
+  RasterStatus raster_status;
+  if (surface_->AllowsDrawingWhenGpuDisabled()) {
+    raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+  } else {
+    delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
+        fml::SyncSwitch::Handlers()
+            .SetIfTrue([&] { raster_status = RasterStatus::kDiscarded; })
+            .SetIfFalse([&] {
+              raster_status =
+                  DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+            }));
+  }
+
+  return raster_status;
+}
+
+/// Unsafe because it assumes we have access to the GPU which isn't the case
+/// when iOS is backgrounded, for example.
+/// \see Rasterizer::DrawToSurface
+RasterStatus Rasterizer::DrawToSurfaceUnsafe(
+    FrameTimingsRecorder& frame_timings_recorder,
+    flutter::LayerTree& layer_tree) {
+  FML_DCHECK(surface_);
+
+  compositor_context_->ui_time().SetLapTime(
+      frame_timings_recorder.GetBuildDuration());
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
+    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
+    external_view_embedder_->SetUsedThisFrame(true);
     external_view_embedder_->BeginFrame(
         layer_tree.frame_size(), surface_->GetContext(),
         layer_tree.device_pixel_ratio(), raster_thread_merger_);
@@ -436,7 +540,6 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
-
   if (frame == nullptr) {
     return RasterStatus::kFailed;
   }
@@ -456,41 +559,85 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       external_view_embedder_.get(),  // external view embedder
       root_surface_transformation,    // root surface transformation
       true,                           // instrumentation enabled
-      frame->supports_readback(),     // surface supports pixel reads
-      raster_thread_merger_           // thread merger
+      frame->framebuffer_info()
+          .supports_readback,               // surface supports pixel reads
+      raster_thread_merger_,                // thread merger
+      frame->GetDisplayListBuilder().get()  // display list builder
   );
-
   if (compositor_frame) {
-    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
+    compositor_context_->raster_cache().PrepareNewFrame();
+    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+
+    std::unique_ptr<FrameDamage> damage;
+    // when leaf layer tracing is enabled we wish to repaing the whole frame for
+    // accurate performance metrics.
+    if (frame->framebuffer_info().supports_partial_repaint &&
+        !layer_tree.is_leaf_layer_tracing_enabled()) {
+      // Disable partial repaint if external_view_embedder_ SubmitFrame is
+      // involved - ExternalViewEmbedder unconditionally clears the entire
+      // surface and also partial repaint with platform view present is
+      // something that still need to be figured out.
+      bool force_full_repaint =
+          external_view_embedder_ &&
+          (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+
+      damage = std::make_unique<FrameDamage>();
+      if (frame->framebuffer_info().existing_damage && !force_full_repaint) {
+        damage->SetPreviousLayerTree(last_layer_tree_.get());
+        damage->AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
+        damage->SetClipAlignment(
+            frame->framebuffer_info().horizontal_clip_alignment,
+            frame->framebuffer_info().vertical_clip_alignment);
+      }
+    }
+
+    bool ignore_raster_cache = true;
+    if (surface_->EnableRasterCache() &&
+        !layer_tree.is_leaf_layer_tracing_enabled()) {
+      ignore_raster_cache = false;
+    }
+
+    RasterStatus raster_status =
+        compositor_frame->Raster(layer_tree,           // layer tree
+                                 ignore_raster_cache,  // ignore raster cache
+                                 damage.get()          // frame damage
+        );
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
-    if (shared_engine_block_thread_merging_ && raster_thread_merger_ &&
-        raster_thread_merger_->IsMerged()) {
-      // TODO(73620): Remove when platform views are accounted for.
-      FML_LOG(ERROR)
-          << "Error: Thread merging not implemented for engines with shared "
-             "components.\n\n"
-             "This is likely a result of using platform views with enigne "
-             "groups.  See "
-             "https://github.com/flutter/flutter/issues/73620.";
-      fml::KillProcess();
+
+    SurfaceFrame::SubmitInfo submit_info;
+    // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
+    // the past and might need to get snapped to future as this frame could have
+    // been resubmitted. `presentation_time` on `submit_info` is not set in this
+    // case.
+    const auto presentation_time = frame_timings_recorder.GetVsyncTargetTime();
+    if (presentation_time > fml::TimePoint::Now()) {
+      submit_info.presentation_time = presentation_time;
     }
+    if (damage) {
+      submit_info.frame_damage = damage->GetFrameDamage();
+      submit_info.buffer_damage = damage->GetBufferDamage();
+    }
+
+    frame->set_submit_info(submit_info);
+
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(
-          surface_->GetContext(), std::move(frame),
-          delegate_.GetIsGpuDisabledSyncSwitch());
+      external_view_embedder_->SubmitFrame(surface_->GetContext(),
+                                           std::move(frame));
     } else {
       frame->Submit();
     }
 
+    compositor_context_->raster_cache().CleanupAfterFrame();
+    frame_timings_recorder.RecordRasterEnd(
+        &compositor_context_->raster_cache());
     FireNextFrameCallbackIfPresent();
 
     if (surface_->GetContext()) {
-      TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
 
@@ -513,10 +660,10 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
-  auto frame = compositor_context.ACQUIRE_FRAME(
+  auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
-      root_surface_transformation, false, true, nullptr);
-  frame->Raster(*tree, true);
+      root_surface_transformation, false, true, nullptr, nullptr);
+  frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
   SkSerialProcs procs = {0};
@@ -530,24 +677,6 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   return recorder.finishRecordingAsPicture()->serialize(&procs);
 }
 
-static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
-                                              const SkISize& size) {
-  const auto image_info = SkImageInfo::MakeN32Premul(
-      size.width(), size.height(), SkColorSpace::MakeSRGB());
-  if (surface_context) {
-    // There is a rendering surface that may contain textures that are going to
-    // be referenced in the layer tree about to be drawn.
-    return SkSurface::MakeRenderTarget(surface_context,  //
-                                       SkBudgeted::kNo,  //
-                                       image_info        //
-    );
-  }
-
-  // There is no rendering surface, assume no GPU textures are present and
-  // create a raster surface.
-  return SkSurface::MakeRaster(image_info);
-}
-
 sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context,
@@ -555,15 +684,16 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     bool compressed) {
   // Attempt to create a snapshot surface depending on whether we have access to
   // a valid GPU rendering context.
-  auto snapshot_surface =
-      CreateSnapshotSurface(surface_context, tree->frame_size());
-  if (snapshot_surface == nullptr) {
+  std::unique_ptr<OffscreenSurface> snapshot_surface =
+      std::make_unique<OffscreenSurface>(surface_context, tree->frame_size());
+
+  if (!snapshot_surface->IsValid()) {
     FML_LOG(ERROR) << "Screenshot: unable to create snapshot surface";
     return nullptr;
   }
 
   // Draw the current layer tree into the snapshot surface.
-  auto* canvas = snapshot_surface->getCanvas();
+  auto* canvas = snapshot_surface->GetCanvas();
 
   // There is no root surface transformation for the screenshot layer. Reset the
   // matrix to identity.
@@ -580,40 +710,21 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     return nullptr;
   }
 
-  auto frame = compositor_context.ACQUIRE_FRAME(
-      surface_context, canvas, nullptr, root_surface_transformation, false,
-      true, nullptr);
+  auto frame = compositor_context.AcquireFrame(
+      surface_context,              // skia context
+      canvas,                       // canvas
+      nullptr,                      // view embedder
+      root_surface_transformation,  // root surface transformation
+      false,                        // instrumentation enabled
+      true,                         // render buffer readback supported
+      nullptr,                      // thread merger
+      nullptr                       // display list builder
+  );
   canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, nullptr);
   canvas->flush();
 
-  // Prepare an image from the surface, this image may potentially be on th GPU.
-  auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
-  if (!potentially_gpu_snapshot) {
-    FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
-    return nullptr;
-  }
-
-  // Copy the GPU image snapshot into CPU memory.
-  auto cpu_snapshot = potentially_gpu_snapshot->makeRasterImage();
-  if (!cpu_snapshot) {
-    FML_LOG(ERROR) << "Screenshot: unable to make raster image";
-    return nullptr;
-  }
-
-  // If the caller want the pixels to be compressed, there is a Skia utility to
-  // compress to PNG. Use that.
-  if (compressed) {
-    return cpu_snapshot->encodeToData();
-  }
-
-  // Copy it into a bitmap and return the same.
-  SkPixmap pixmap;
-  if (!cpu_snapshot->peekPixels(&pixmap)) {
-    FML_LOG(ERROR) << "Screenshot: unable to obtain bitmap pixels";
-    return nullptr;
-  }
-  return SkData::MakeWithCopy(pixmap.addr32(), pixmap.computeByteSize());
+  return snapshot_surface->GetRasterData(compressed);
 }
 
 Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
@@ -668,6 +779,15 @@ void Rasterizer::SetExternalViewEmbedder(
   external_view_embedder_ = view_embedder;
 }
 
+void Rasterizer::SetSnapshotSurfaceProducer(
+    std::unique_ptr<SnapshotSurfaceProducer> producer) {
+  snapshot_surface_producer_ = std::move(producer);
+}
+
+fml::RefPtr<fml::RasterThreadMerger> Rasterizer::GetRasterThreadMerger() {
+  return raster_thread_merger_;
+}
+
 void Rasterizer::FireNextFrameCallbackIfPresent() {
   if (!next_frame_callback_) {
     return;
@@ -694,9 +814,12 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
 
   GrDirectContext* context = surface_->GetContext();
   if (context) {
-    int max_resources;
-    context->getResourceCacheLimits(&max_resources, nullptr);
-    context->setResourceCacheLimits(max_resources, max_bytes);
+    auto context_switch = surface_->MakeRenderContextCurrent();
+    if (!context_switch->GetResult()) {
+      return;
+    }
+
+    context->setResourceCacheLimit(max_bytes);
   }
 }
 
@@ -706,9 +829,7 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   }
   GrDirectContext* context = surface_->GetContext();
   if (context) {
-    size_t max_bytes;
-    context->getResourceCacheLimits(nullptr, &max_bytes);
-    return max_bytes;
+    return context->getResourceCacheLimit();
   }
   return std::nullopt;
 }

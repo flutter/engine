@@ -86,6 +86,51 @@ void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
   data.scroll_delta_y = scroll_delta_y;
 }
 
+void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
+                                        PointerData::Change change,
+                                        int64_t device,
+                                        double dx,
+                                        double dy,
+                                        double pan_x,
+                                        double pan_y,
+                                        double scale,
+                                        double rotation) {
+  data.time_stamp = 0;
+  data.change = change;
+  data.kind = PointerData::DeviceKind::kMouse;
+  data.signal_kind = PointerData::SignalKind::kNone;
+  data.device = device;
+  data.pointer_identifier = 0;
+  data.physical_x = dx;
+  data.physical_y = dy;
+  data.physical_delta_x = 0.0;
+  data.physical_delta_y = 0.0;
+  data.buttons = 0;
+  data.obscured = 0;
+  data.synthesized = 0;
+  data.pressure = 0.0;
+  data.pressure_min = 0.0;
+  data.pressure_max = 0.0;
+  data.distance = 0.0;
+  data.distance_max = 0.0;
+  data.size = 0.0;
+  data.radius_major = 0.0;
+  data.radius_minor = 0.0;
+  data.radius_min = 0.0;
+  data.radius_max = 0.0;
+  data.orientation = 0.0;
+  data.tilt = 0.0;
+  data.platformData = 0;
+  data.scroll_delta_x = 0.0;
+  data.scroll_delta_y = 0.0;
+  data.pan_x = pan_x;
+  data.pan_y = pan_y;
+  data.pan_delta_x = 0.0;
+  data.pan_delta_y = 0.0;
+  data.scale = scale;
+  data.rotation = rotation;
+}
+
 void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT
                          std::unique_ptr<PointerDataPacket> packet) {
   size_t kBytesPerPointerData = kPointerDataFieldCount * kBytesPerField;
@@ -511,7 +556,7 @@ TEST(PointerDataPacketConverterTest, CanHandleThreeFingerGesture) {
 
 TEST(PointerDataPacketConverterTest, CanConvetScroll) {
   PointerDataPacketConverter converter;
-  auto packet = std::make_unique<PointerDataPacket>(5);
+  auto packet = std::make_unique<PointerDataPacket>(6);
   PointerData data;
   CreateSimulatedMousePointerData(data, PointerData::Change::kAdd,
                                   PointerData::SignalKind::kNone, 0, 0.0, 0.0,
@@ -533,12 +578,16 @@ TEST(PointerDataPacketConverterTest, CanConvetScroll) {
                                   PointerData::SignalKind::kScroll, 1, 49.0,
                                   49.0, 50.0, 0.0, 0);
   packet->SetPointerData(4, data);
+  CreateSimulatedMousePointerData(data, PointerData::Change::kHover,
+                                  PointerData::SignalKind::kScroll, 2, 10.0,
+                                  20.0, 30.0, 40.0, 0);
+  packet->SetPointerData(5, data);
   auto converted_packet = converter.Convert(std::move(packet));
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
 
-  ASSERT_EQ(result.size(), (size_t)7);
+  ASSERT_EQ(result.size(), (size_t)9);
   ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
   ASSERT_EQ(result[0].signal_kind, PointerData::SignalKind::kNone);
   ASSERT_EQ(result[0].device, 0);
@@ -597,6 +646,73 @@ TEST(PointerDataPacketConverterTest, CanConvetScroll) {
   ASSERT_EQ(result[6].physical_y, 49.0);
   ASSERT_EQ(result[6].scroll_delta_x, 50.0);
   ASSERT_EQ(result[6].scroll_delta_y, 0.0);
+
+  // Converter will synthesize an add for device 2.
+  ASSERT_EQ(result[7].change, PointerData::Change::kAdd);
+  ASSERT_EQ(result[7].signal_kind, PointerData::SignalKind::kNone);
+  ASSERT_EQ(result[7].device, 2);
+  ASSERT_EQ(result[7].physical_x, 10.0);
+  ASSERT_EQ(result[7].physical_y, 20.0);
+  ASSERT_EQ(result[7].synthesized, 1);
+
+  ASSERT_EQ(result[8].change, PointerData::Change::kHover);
+  ASSERT_EQ(result[8].signal_kind, PointerData::SignalKind::kScroll);
+  ASSERT_EQ(result[8].device, 2);
+  ASSERT_EQ(result[8].physical_x, 10.0);
+  ASSERT_EQ(result[8].physical_y, 20.0);
+  ASSERT_EQ(result[8].scroll_delta_x, 30.0);
+  ASSERT_EQ(result[8].scroll_delta_y, 40.0);
+}
+
+TEST(PointerDataPacketConverterTest, CanConvertTrackpadGesture) {
+  PointerDataPacketConverter converter;
+  auto packet = std::make_unique<PointerDataPacket>(3);
+  PointerData data;
+  CreateSimulatedTrackpadGestureData(data, PointerData::Change::kPanZoomStart,
+                                     0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  packet->SetPointerData(0, data);
+  CreateSimulatedTrackpadGestureData(data, PointerData::Change::kPanZoomUpdate,
+                                     0, 0.0, 0.0, 3.0, 4.0, 1.0, 0.0);
+  packet->SetPointerData(1, data);
+  CreateSimulatedTrackpadGestureData(data, PointerData::Change::kPanZoomEnd, 0,
+                                     0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  packet->SetPointerData(2, data);
+  auto converted_packet = converter.Convert(std::move(packet));
+
+  std::vector<PointerData> result;
+  UnpackPointerPacket(result, std::move(converted_packet));
+
+  ASSERT_EQ(result.size(), (size_t)4);
+  ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
+  ASSERT_EQ(result[0].device, 0);
+  ASSERT_EQ(result[0].synthesized, 1);
+
+  ASSERT_EQ(result[1].change, PointerData::Change::kPanZoomStart);
+  ASSERT_EQ(result[1].signal_kind, PointerData::SignalKind::kNone);
+  ASSERT_EQ(result[1].device, 0);
+  ASSERT_EQ(result[1].physical_x, 0.0);
+  ASSERT_EQ(result[1].physical_y, 0.0);
+  ASSERT_EQ(result[1].synthesized, 0);
+
+  ASSERT_EQ(result[2].change, PointerData::Change::kPanZoomUpdate);
+  ASSERT_EQ(result[2].signal_kind, PointerData::SignalKind::kNone);
+  ASSERT_EQ(result[2].device, 0);
+  ASSERT_EQ(result[2].physical_x, 0.0);
+  ASSERT_EQ(result[2].physical_y, 0.0);
+  ASSERT_EQ(result[2].pan_x, 3.0);
+  ASSERT_EQ(result[2].pan_y, 4.0);
+  ASSERT_EQ(result[2].pan_delta_x, 3.0);
+  ASSERT_EQ(result[2].pan_delta_y, 4.0);
+  ASSERT_EQ(result[2].scale, 1.0);
+  ASSERT_EQ(result[2].rotation, 0.0);
+  ASSERT_EQ(result[2].synthesized, 0);
+
+  ASSERT_EQ(result[3].change, PointerData::Change::kPanZoomEnd);
+  ASSERT_EQ(result[3].signal_kind, PointerData::SignalKind::kNone);
+  ASSERT_EQ(result[3].device, 0);
+  ASSERT_EQ(result[3].physical_x, 0.0);
+  ASSERT_EQ(result[3].physical_y, 0.0);
+  ASSERT_EQ(result[3].synthesized, 0);
 }
 
 }  // namespace testing

@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import 'shaders/shader.dart';
+import 'surface.dart';
 
 /// A surface that applies an [imageFilter] to its children.
 class PersistedImageFilter extends PersistedContainerSurface
@@ -13,13 +16,14 @@ class PersistedImageFilter extends PersistedContainerSurface
   final ui.ImageFilter filter;
 
   @override
-  html.Element createElement() {
+  DomElement createElement() {
     return defaultCreateElement('flt-image-filter');
   }
 
   @override
   void apply() {
-    rootElement!.style.filter = _imageFilterToCss(filter as EngineImageFilter);
+    rootElement!.style.filter = (filter as EngineImageFilter).filterAttribute;
+    rootElement!.style.transform = (filter as EngineImageFilter).transformAttribute;
   }
 
   @override

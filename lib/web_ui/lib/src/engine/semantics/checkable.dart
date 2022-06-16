@@ -11,8 +11,10 @@
 //                framework. Currently the framework does not report the
 //                grouping of radio buttons.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import 'semantics.dart';
 
 /// The specific type of checkable control.
 enum _CheckableKind {
@@ -101,7 +103,7 @@ class Checkable extends RoleManager {
 
   void _updateDisabledAttribute() {
     if (semanticsObject.enabledState() == EnabledState.disabled) {
-      final html.Element element = semanticsObject.element;
+      final DomElement element = semanticsObject.element;
       element
         ..setAttribute('aria-disabled', 'true')
         ..setAttribute('disabled', 'true');
@@ -111,7 +113,7 @@ class Checkable extends RoleManager {
   }
 
   void _removeDisabledAttribute() {
-    final html.Element element = semanticsObject.element;
+    final DomElement element = semanticsObject.element;
     element..removeAttribute('aria-disabled')..removeAttribute('disabled');
   }
 }

@@ -8,11 +8,13 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/io_manager.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
@@ -54,44 +56,6 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                                         collected before the VM is
   ///                                         destroyed (this order is
   ///                                         guaranteed by the shell).
-  /// @param[in]  isolate_snapshot            The isolate snapshot used to start
-  ///                                         the root isolate managed by this
-  ///                                         runtime controller. The isolate
-  ///                                         must be transitioned into the
-  ///                                         running phase manually by the
-  ///                                         caller.
-  /// @param[in]  task_runners                The task runners used by the shell
-  ///                                         hosting this runtime controller.
-  ///                                         This may be used by the isolate to
-  ///                                         scheduled asynchronous texture
-  ///                                         uploads or post tasks to the
-  ///                                         platform task runner.
-  /// @param[in]  snapshot_delegate           The snapshot delegate used by the
-  ///                                         isolate to gather raster snapshots
-  ///                                         of Flutter view hierarchies.
-  /// @param[in]  hint_freed_delegate         The delegate used by the isolate
-  ///                                         to hint the Dart VM when
-  ///                                         additional memory may be freed
-  ///                                         if a GC ran at the next
-  ///                                         NotifyIdle.
-  /// @param[in]  io_manager                  The IO manager used by the isolate
-  ///                                         for asynchronous texture uploads.
-  /// @param[in]  unref_queue                 The unref queue used by the
-  ///                                         isolate to collect resources that
-  ///                                         may reference resources on the
-  ///                                         GPU.
-  /// @param[in]  image_decoder               The image decoder
-  /// @param[in]  advisory_script_uri         The advisory script URI (only used
-  ///                                         for debugging). This does not
-  ///                                         affect the code being run in the
-  ///                                         isolate in any way.
-  /// @param[in]  advisory_script_entrypoint  The advisory script entrypoint
-  ///                                         (only used for debugging). This
-  ///                                         does not affect the code being run
-  ///                                         in the isolate in any way. The
-  ///                                         isolate must be transitioned to
-  ///                                         the running state explicitly by
-  ///                                         the caller.
   /// @param[in]  idle_notification_callback  The idle notification callback.
   ///                                         This allows callers to run native
   ///                                         code in isolate scope when the VM
@@ -111,27 +75,19 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @param[in]  persistent_isolate_data     Unstructured persistent read-only
   ///                                         data that the root isolate can
   ///                                         access in a synchronous manner.
-  /// @param[in]  volatile_path_tracker       Cache for tracking path
-  ///                                         volatility.
+  /// @param[in]  context              Engine-owned state which is
+  ///                                         accessed by the root dart isolate.
   ///
   RuntimeController(
-      RuntimeDelegate& client,
+      RuntimeDelegate& p_client,
       DartVM* vm,
-      fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      TaskRunners task_runners,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-      fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
-      fml::WeakPtr<IOManager> io_manager,
-      fml::RefPtr<SkiaUnrefQueue> unref_queue,
-      fml::WeakPtr<ImageDecoder> image_decoder,
-      std::string advisory_script_uri,
-      std::string advisory_script_entrypoint,
+      fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
       const std::function<void(int64_t)>& idle_notification_callback,
       const PlatformData& platform_data,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data,
-      std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+      std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+      const UIDartState::Context& context);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a RuntimeController that shares as many resources as
@@ -141,13 +97,16 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @see        RuntimeController::RuntimeController
   ///
   std::unique_ptr<RuntimeController> Spawn(
-      RuntimeDelegate& client,
+      RuntimeDelegate& p_client,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       const std::function<void(int64_t)>& idle_notification_callback,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data) const;
+      std::shared_ptr<const fml::Mapping> persistent_isolate_data,
+      fml::WeakPtr<IOManager> io_manager,
+      fml::WeakPtr<ImageDecoder> image_decoder,
+      fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry) const;
 
   // |PlatformConfigurationClient|
   ~RuntimeController() override;
@@ -165,12 +124,20 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             Launch an isolate in that runtime controller instead.
   ///
   /// @param[in]  settings                 The per engine instance settings.
+  /// @param[in]  root_isolate_create_callback  A callback invoked before the
+  ///                                      root isolate has launched the Dart
+  ///                                      program, but after it has been
+  ///                                      created. This is called without
+  ///                                      isolate scope, and after any root
+  ///                                      isolate callback in the settings.
   /// @param[in]  dart_entrypoint          The dart entrypoint. If
   ///                                      `std::nullopt` or empty, `main` will
   ///                                      be attempted.
   /// @param[in]  dart_entrypoint_library  The dart entrypoint library. If
   ///                                      `std::nullopt` or empty, the core
   ///                                      library will be attempted.
+  /// @param[in]  dart_entrypoint_args     Arguments passed as a List<String>
+  ///                                      to Dart's entrypoint function.
   /// @param[in]  isolate_configuration    The isolate configuration
   ///
   /// @return     If the isolate could be launched and guided to the
@@ -178,12 +145,14 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   [[nodiscard]] bool LaunchRootIsolate(
       const Settings& settings,
+      fml::closure root_isolate_create_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
+      const std::vector<std::string>& dart_entrypoint_args,
       std::unique_ptr<IsolateConfiguration> isolate_configuration);
 
   //----------------------------------------------------------------------------
-  /// @brief      Clone the the runtime controller. Launching an isolate with a
+  /// @brief      Clone the runtime controller. Launching an isolate with a
   ///             cloned runtime controller will use the same snapshots and
   ///             copies all window data to the new instance. This is usually
   ///             only used in the debug runtime mode to support the
@@ -289,7 +258,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If notification to begin frame rendering was delivered to the
   ///             running isolate.
   ///
-  bool BeginFrame(fml::TimePoint frame_time);
+  bool BeginFrame(fml::TimePoint frame_time, uint64_t frame_number);
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
@@ -349,7 +318,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///   the VM. There is a “small” pause that occurs when the concurrent mark is
   ///   initiated and another pause when the mark concludes and a sweep is
   ///   initiated.
-  /// * If the total allocations exceeds the the hard threshold, a “big”
+  /// * If the total allocations exceeds the hard threshold, a “big”
   ///   stop-the-world pause is initiated.
   /// * If after either the sweep after the concurrent mark, or, the
   ///   stop-the-world pause, the consumption returns to be below the soft
@@ -372,7 +341,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///   the concurrent mark initiated by either reaching the soft threshold or
   ///   an explicit NotifyIdle.
   /// * If you are running out of memory, its because too many large objects
-  ///   were allocation and remained reachable such that the the old space kept
+  ///   were allocation and remained reachable such that the old space kept
   ///   growing till it could grow no more.
   /// * At the edges of allocation thresholds, failures can occur gracefully if
   ///   the instigating allocation was made in the Dart VM or rather gracelessly
@@ -383,15 +352,12 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @bug        The `deadline` argument must be converted to `std::chrono`
   ///             instead of a raw integer.
   ///
-  /// @param[in]  deadline  The deadline measures in microseconds against the
-  ///             system's monotonic time. The clock can be accessed via
-  ///             `Dart_TimelineGetMicros`.
-  /// @param[in] freed_hint  A hint of the number of bytes potentially freed
-  ///                        since the last call to NotifyIdle if a GC were run.
+  /// @param[in]  deadline  The deadline is used by the VM to determine if the
+  ///             corresponding sweep can be performed within the deadline.
   ///
   /// @return     If the idle notification was forwarded to the running isolate.
   ///
-  bool NotifyIdle(int64_t deadline, size_t freed_hint);
+  virtual bool NotifyIdle(fml::TimePoint deadline);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be
@@ -411,7 +377,8 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If the message was dispatched to the running root isolate.
   ///             This may fail is an isolate is not running.
   ///
-  virtual bool DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  virtual bool DispatchPlatformMessage(
+      std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the specified pointer data message to the running
@@ -423,20 +390,6 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             an isolate is not running.
   ///
   bool DispatchPointerDataPacket(const PointerDataPacket& packet);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Dispatch the specified pointer data message to the running
-  ///             root isolate.
-  ///
-  /// @param[in]  packet    The key data message to dispatch to the isolate.
-  /// @param[in]  callback  Called when the framework has decided whether
-  ///                       to handle this key data.
-  ///
-  /// @return     If the key data message was dispatched. This may fail is
-  ///             an isolate is not running.
-  ///
-  bool DispatchKeyDataPacket(const KeyDataPacket& packet,
-                             KeyDataResponse callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the semantics action to the specified accessibility
@@ -452,7 +405,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   bool DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Gets the main port identifier of the root isolate.
@@ -580,7 +533,13 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
-  const fml::WeakPtr<IOManager>& GetIOManager() const { return io_manager_; }
+
+  // |PlatformConfigurationClient|
+  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
+
+  const fml::WeakPtr<IOManager>& GetIOManager() const {
+    return context_.io_manager;
+  }
 
   virtual DartVM* GetDartVM() const { return vm_; }
 
@@ -591,16 +550,20 @@ class RuntimeController : public PlatformConfigurationClient {
   const PlatformData& GetPlatformData() const { return platform_data_; }
 
   const fml::RefPtr<SkiaUnrefQueue>& GetSkiaUnrefQueue() const {
-    return unref_queue_;
+    return context_.unref_queue;
   }
 
   const fml::WeakPtr<SnapshotDelegate>& GetSnapshotDelegate() const {
-    return snapshot_delegate_;
+    return context_.snapshot_delegate;
+  }
+
+  std::weak_ptr<const DartIsolate> GetRootIsolate() const {
+    return root_isolate_;
   }
 
  protected:
   /// Constructor for Mocks.
-  RuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners);
+  RuntimeController(RuntimeDelegate& p_client, TaskRunners task_runners);
 
  private:
   struct Locale {
@@ -620,14 +583,6 @@ class RuntimeController : public PlatformConfigurationClient {
   RuntimeDelegate& client_;
   DartVM* const vm_;
   fml::RefPtr<const DartSnapshot> isolate_snapshot_;
-  TaskRunners task_runners_;
-  fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
-  fml::WeakPtr<HintFreedDelegate> hint_freed_delegate_;
-  fml::WeakPtr<IOManager> io_manager_;
-  fml::RefPtr<SkiaUnrefQueue> unref_queue_;
-  fml::WeakPtr<ImageDecoder> image_decoder_;
-  std::string advisory_script_uri_;
-  std::string advisory_script_entrypoint_;
   std::function<void(int64_t)> idle_notification_callback_;
   PlatformData platform_data_;
   std::weak_ptr<DartIsolate> root_isolate_;
@@ -636,7 +591,7 @@ class RuntimeController : public PlatformConfigurationClient {
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
-  std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
+  UIDartState::Context context_;
 
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
@@ -655,10 +610,13 @@ class RuntimeController : public PlatformConfigurationClient {
   void UpdateSemantics(SemanticsUpdate* update) override;
 
   // |PlatformConfigurationClient|
-  void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
   // |PlatformConfigurationClient|
   FontCollection& GetFontCollection() override;
+
+  // |PlatformConfigurationClient|
+  std::shared_ptr<AssetManager> GetAssetManager() override;
 
   // |PlatformConfigurationClient|
   void UpdateIsolateDescription(const std::string isolate_name,
@@ -666,9 +624,6 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   void SetNeedsReportTimings(bool value) override;
-
-  // |PlatformConfigurationClient|
-  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
 
   // |PlatformConfigurationClient|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(

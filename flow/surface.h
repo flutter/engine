@@ -33,6 +33,10 @@ class Surface {
 
   virtual bool ClearRenderContext();
 
+  virtual bool AllowsDrawingWhenGpuDisabled() const;
+
+  virtual bool EnableRasterCache() const;
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);
 };

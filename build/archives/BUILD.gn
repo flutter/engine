@@ -1,0 +1,197 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/build/zip_bundle.gni")
+import("//flutter/common/config.gni")
+
+if (build_engine_artifacts) {
+  zip_bundle("artifacts") {
+    deps = [
+      "//flutter/flutter_frontend_server:frontend_server",
+      "//flutter/impeller/compiler:impellerc",
+      "//flutter/impeller/tessellator:tessellator_shared",
+      "//flutter/lib/snapshot:generate_snapshot_bin",
+      "//flutter/shell/testing:testing",
+      "//flutter/shell/testing:testing_fractional_translation",
+    ]
+    prefix = "$full_target_platform_name/"
+    if (flutter_runtime_mode != "debug") {
+      prefix = "$full_platform_name-$flutter_runtime_mode/"
+    }
+    output = "$prefix/artifacts.zip"
+    files = [
+      {
+        source = "//third_party/icu/flutter/icudtl.dat"
+        destination = "icudtl.dat"
+      },
+      {
+        source = "$root_out_dir/gen/flutter/lib/snapshot/isolate_snapshot.bin"
+        destination = "isolate_snapshot.bin"
+      },
+      {
+        source = "$root_gen_dir/flutter/lib/snapshot/vm_isolate_snapshot.bin"
+        destination = "vm_isolate_snapshot.bin"
+      },
+      {
+        source = "$root_gen_dir/frontend_server.dart.snapshot"
+        destination = "frontend_server.dart.snapshot"
+      },
+    ]
+
+    exe = ""
+    if (host_os == "win") {
+      exe = ".exe"
+    }
+    dll = ".so"
+    if (host_os == "win") {
+      dll = ".dll"
+    } else if (host_os == "mac") {
+      dll = ".dylib"
+    }
+    files += [
+      {
+        source = "$root_out_dir/flutter_tester$exe"
+        destination = "flutter_tester$exe"
+      },
+      {
+        source = "$root_out_dir/flutter_tester_fractional_translation$exe"
+        destination = "flutter_tester_fractional_translation$exe"
+      },
+      {
+        source = "$root_out_dir/impellerc$exe"
+        destination = "impellerc$exe"
+      },
+      {
+        source = "$root_out_dir/libtessellator$dll"
+        destination = "libtessellator$dll"
+      },
+    ]
+  }
+}
+
+if (host_os == "linux" || host_os == "win") {
+  group("embedder") {
+    deps = [ "//flutter/shell/platform/embedder:embedder-archive" ]
+  }
+}
+
+# Generates flutter_patched_sdk.zip for debug and profile runtime modes
+# and saves it in the zips_archive folder. For release runtime mode it
+# generates flutter_patched_sdk_product.zip and saves it to
+# zips_archive/flutter_patched_sdk_product/ folder.
+zip_bundle("flutter_patched_sdk") {
+  file_suffix = ""
+  path_prefix = ""
+  if (flutter_runtime_mode == "release") {
+    file_suffix = "_product"
+    path_prefix = "flutter_patched_sdk_product/"
+  }
+  output = "flutter_patched_sdk${file_suffix}.zip"
+  deps = [ "//flutter/lib/snapshot:strong_platform" ]
+  files = [
+    {
+      source = "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill"
+      destination = "${path_prefix}vm_outline_strong.dill"
+    },
+    {
+      source = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
+      destination = "${path_prefix}platform_strong.dill"
+    },
+  ]
+}
+
+# Flutter consumes the dart sdk as a prebuilt. Rather than regenerating
+# the zip file we are just copying the original file to the artifacts location.
+if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
+  zip_bundle("dart_sdk_archive") {
+    deps = []
+    output = "dart-sdk-$full_target_platform_name.zip"
+    if (is_mac) {
+      # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
+      # names will require changes in the list of artifacts the tool is downloading.
+      output = "dart-sdk-darwin-$target_cpu.zip"
+    }
+    files = [
+      {
+        source = prebuilt_dart_sdk
+        destination = "dart-sdk"
+      },
+    ]
+  }
+}
+
+# Archives Flutter Web SDK
+if (!is_fuchsia) {
+  group("flutter_web_sdk") {
+    deps = [ "//flutter/web_sdk:flutter_web_sdk_archive" ]
+  }
+}
+
+# Archives Flutter Windows Artifacts
+if (host_os == "win") {
+  zip_bundle("windows_flutter") {
+    output = "$full_platform_name-$flutter_runtime_mode/$full_platform_name-flutter.zip"
+    deps = [
+      "//flutter/shell/platform/common:publish_headers",
+      "//flutter/shell/platform/windows:flutter_windows",
+      "//flutter/shell/platform/windows:publish_headers_windows",
+    ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_export.h"
+        destination = "flutter_export.h"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.h"
+        destination = "flutter_windows.h"
+      },
+      {
+        source = "$root_out_dir/flutter_messenger.h"
+        destination = "flutter_messenger.h"
+      },
+      {
+        source = "$root_out_dir/flutter_plugin_registrar.h"
+        destination = "flutter_plugin_registrar.h"
+      },
+      {
+        source = "$root_out_dir/flutter_texture_registrar.h"
+        destination = "flutter_texture_registrar.h"
+      },
+      {
+        source = "$root_out_dir/flutter_windows.dll"
+        destination = "flutter_windows.dll"
+      },
+    ]
+  }
+}
+
+# Archives Flutter Mac Artifacts
+if (is_mac) {
+  group("macos_flutter_framework") {
+    deps = [
+      "//flutter/shell/platform/darwin/macos:macos_flutter_framework_archive",
+    ]
+  }
+
+  zip_bundle("archive_gen_snapshot") {
+    deps = [ "//flutter/lib/snapshot:create_macos_gen_snapshots" ]
+    suffix = "-$flutter_runtime_mode"
+    if (flutter_runtime_mode == "debug") {
+      suffix = ""
+    }
+    output = "$full_platform_name$suffix/gen_snapshot.zip"
+    files = [
+      {
+        source = "$root_out_dir/gen_snapshot_$target_cpu"
+        destination = "gen_snapshot_$target_cpu"
+      },
+    ]
+  }
+
+  group("flutter_embedder_framework") {
+    deps = [
+      "//flutter/shell/platform/embedder:flutter_embedder_framework_archive",
+    ]
+  }
+}

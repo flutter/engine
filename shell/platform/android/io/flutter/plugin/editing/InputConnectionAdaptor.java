@@ -4,13 +4,11 @@
 
 package io.flutter.plugin.editing;
 
-import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.text.DynamicLayout;
 import android.text.Editable;
 import android.text.InputType;
@@ -25,20 +23,22 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputMethodManager;
-import android.view.inputmethod.InputMethodSubtype;
+import androidx.annotation.NonNull;
 import io.flutter.Log;
-import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
-class InputConnectionAdaptor extends BaseInputConnection
+public class InputConnectionAdaptor extends BaseInputConnection
     implements ListenableEditingState.EditingStateWatcher {
   private static final String TAG = "InputConnectionAdaptor";
+
+  public interface KeyboardDelegate {
+    public boolean handleEvent(@NonNull KeyEvent keyEvent);
+  }
 
   private final View mFlutterView;
   private final int mClient;
   private final TextInputChannel textInputChannel;
-  private final AndroidKeyProcessor keyProcessor;
   private final ListenableEditingState mEditable;
   private final EditorInfo mEditorInfo;
   private ExtractedTextRequest mExtractRequest;
@@ -48,13 +48,15 @@ class InputConnectionAdaptor extends BaseInputConnection
   private InputMethodManager mImm;
   private final Layout mLayout;
   private FlutterTextUtils flutterTextUtils;
+  private final KeyboardDelegate keyboardDelegate;
+  private int batchEditNestDepth = 0;
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
       View view,
       int client,
       TextInputChannel textInputChannel,
-      AndroidKeyProcessor keyProcessor,
+      KeyboardDelegate keyboardDelegate,
       ListenableEditingState editable,
       EditorInfo editorInfo,
       FlutterJNI flutterJNI) {
@@ -65,7 +67,7 @@ class InputConnectionAdaptor extends BaseInputConnection
     mEditable = editable;
     mEditable.addEditingStateListener(this);
     mEditorInfo = editorInfo;
-    this.keyProcessor = keyProcessor;
+    this.keyboardDelegate = keyboardDelegate;
     this.flutterTextUtils = new FlutterTextUtils(flutterJNI);
     // We create a dummy Layout with max width so that the selection
     // shifting acts as if all text were in one line.
@@ -85,10 +87,10 @@ class InputConnectionAdaptor extends BaseInputConnection
       View view,
       int client,
       TextInputChannel textInputChannel,
-      AndroidKeyProcessor keyProcessor,
+      KeyboardDelegate keyboardDelegate,
       ListenableEditingState editable,
       EditorInfo editorInfo) {
-    this(view, client, textInputChannel, keyProcessor, editable, editorInfo, new FlutterJNI());
+    this(view, client, textInputChannel, keyboardDelegate, editable, editorInfo, new FlutterJNI());
   }
 
   private ExtractedText getExtractedText(ExtractedTextRequest request) {
@@ -135,12 +137,14 @@ class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public boolean beginBatchEdit() {
     mEditable.beginBatchEdit();
+    batchEditNestDepth += 1;
     return super.beginBatchEdit();
   }
 
   @Override
   public boolean endBatchEdit() {
     boolean result = super.endBatchEdit();
+    batchEditNestDepth -= 1;
     mEditable.endBatchEdit();
     return result;
   }
@@ -238,27 +242,9 @@ class InputConnectionAdaptor extends BaseInputConnection
   public void closeConnection() {
     super.closeConnection();
     mEditable.removeEditingStateListener(this);
-  }
-
-  // Detect if the keyboard is a Samsung keyboard, where we apply Samsung-specific hacks to
-  // fix critical bugs that make the keyboard otherwise unusable. See finishComposingText() for
-  // more details.
-  @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
-  @SuppressWarnings("deprecation")
-  private boolean isSamsung() {
-    InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
-    // Impacted devices all shipped with Android Lollipop or newer.
-    if (subtype == null
-        || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-        || !Build.MANUFACTURER.equals("samsung")) {
-      return false;
+    for (; batchEditNestDepth > 0; batchEditNestDepth--) {
+      endBatchEdit();
     }
-    String keyboardName =
-        Settings.Secure.getString(
-            mFlutterView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
-    // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
-    // for "Samsung" just in case Samsung changes the name of the keyboard.
-    return keyboardName.contains("Samsung");
   }
 
   @Override
@@ -290,73 +276,19 @@ class InputConnectionAdaptor extends BaseInputConnection
   // occur, and need a chance to be handled by the framework.
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
-    // This gives the key processor a chance to process this event if it came
-    // from a soft keyboard. It will send it to the framework to be handled and
-    // return true. If the framework ends up not handling it, the processor will
-    // re-send the event to this function. Only do this if the event is not the
-    // current event, since that indicates that the key processor sent it to us,
-    // and we only want to call the key processor for events that it doesn't
-    // already know about (i.e. when events arrive here from a soft keyboard and
-    // not a hardware keyboard), to avoid a loop.
-    if (keyProcessor != null
-        && !keyProcessor.isPendingEvent(event)
-        && keyProcessor.onKeyEvent(event)) {
-      return true;
-    }
+    return keyboardDelegate.handleEvent(event);
+  }
 
+  public boolean handleKeyEvent(KeyEvent event) {
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
-        int selStart = Selection.getSelectionStart(mEditable);
-        int selEnd = Selection.getSelectionEnd(mEditable);
-        if (selStart == selEnd && !event.isShiftPressed()) {
-          int newSel = Math.max(flutterTextUtils.getOffsetBefore(mEditable, selStart), 0);
-          setSelection(newSel, newSel);
-        } else {
-          int newSelEnd = Math.max(flutterTextUtils.getOffsetBefore(mEditable, selEnd), 0);
-          setSelection(selStart, newSelEnd);
-        }
-        return true;
+        return handleHorizontalMovement(true, event.isShiftPressed());
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
-        int selStart = Selection.getSelectionStart(mEditable);
-        int selEnd = Selection.getSelectionEnd(mEditable);
-        if (selStart == selEnd && !event.isShiftPressed()) {
-          int newSel =
-              Math.min(flutterTextUtils.getOffsetAfter(mEditable, selStart), mEditable.length());
-          setSelection(newSel, newSel);
-        } else {
-          int newSelEnd =
-              Math.min(flutterTextUtils.getOffsetAfter(mEditable, selEnd), mEditable.length());
-          setSelection(selStart, newSelEnd);
-        }
-        return true;
+        return handleHorizontalMovement(false, event.isShiftPressed());
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_UP) {
-        int selStart = Selection.getSelectionStart(mEditable);
-        int selEnd = Selection.getSelectionEnd(mEditable);
-        if (selStart == selEnd && !event.isShiftPressed()) {
-          Selection.moveUp(mEditable, mLayout);
-          int newSelStart = Selection.getSelectionStart(mEditable);
-          setSelection(newSelStart, newSelStart);
-        } else {
-          Selection.extendUp(mEditable, mLayout);
-          int newSelStart = Selection.getSelectionStart(mEditable);
-          int newSelEnd = Selection.getSelectionEnd(mEditable);
-          setSelection(newSelStart, newSelEnd);
-        }
-        return true;
+        return handleVerticalMovement(true, event.isShiftPressed());
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_DOWN) {
-        int selStart = Selection.getSelectionStart(mEditable);
-        int selEnd = Selection.getSelectionEnd(mEditable);
-        if (selStart == selEnd && !event.isShiftPressed()) {
-          Selection.moveDown(mEditable, mLayout);
-          int newSelStart = Selection.getSelectionStart(mEditable);
-          setSelection(newSelStart, newSelStart);
-        } else {
-          Selection.extendDown(mEditable, mLayout);
-          int newSelStart = Selection.getSelectionStart(mEditable);
-          int newSelEnd = Selection.getSelectionEnd(mEditable);
-          setSelection(newSelStart, newSelEnd);
-        }
-        return true;
+        return handleVerticalMovement(false, event.isShiftPressed());
         // When the enter key is pressed on a non-multiline field, consider it a
         // submit instead of a newline.
       } else if ((event.getKeyCode() == KeyEvent.KEYCODE_ENTER
@@ -366,17 +298,20 @@ class InputConnectionAdaptor extends BaseInputConnection
         return true;
       } else {
         // Enter a character.
-        int character = event.getUnicodeChar();
-        if (character == 0) {
+        final int selStart = Selection.getSelectionStart(mEditable);
+        final int selEnd = Selection.getSelectionEnd(mEditable);
+        final int character = event.getUnicodeChar();
+        if (selStart < 0 || selEnd < 0 || character == 0) {
           return false;
         }
-        int selStart = Math.max(0, Selection.getSelectionStart(mEditable));
-        int selEnd = Math.max(0, Selection.getSelectionEnd(mEditable));
-        int selMin = Math.min(selStart, selEnd);
-        int selMax = Math.max(selStart, selEnd);
+
+        final int selMin = Math.min(selStart, selEnd);
+        final int selMax = Math.max(selStart, selEnd);
+        beginBatchEdit();
         if (selMin != selMax) mEditable.delete(selMin, selMax);
         mEditable.insert(selMin, String.valueOf((char) character));
         setSelection(selMin + 1, selMin + 1);
+        endBatchEdit();
         return true;
       }
     }
@@ -388,6 +323,60 @@ class InputConnectionAdaptor extends BaseInputConnection
       return true;
     }
     return false;
+  }
+
+  private boolean handleHorizontalMovement(boolean isLeft, boolean isShiftPressed) {
+    final int selStart = Selection.getSelectionStart(mEditable);
+    final int selEnd = Selection.getSelectionEnd(mEditable);
+
+    if (selStart < 0 || selEnd < 0) {
+      return false;
+    }
+
+    final int newSelectionEnd =
+        isLeft
+            ? Math.max(flutterTextUtils.getOffsetBefore(mEditable, selEnd), 0)
+            : Math.min(flutterTextUtils.getOffsetAfter(mEditable, selEnd), mEditable.length());
+
+    final boolean shouldCollapse = selStart == selEnd && !isShiftPressed;
+
+    if (shouldCollapse) {
+      setSelection(newSelectionEnd, newSelectionEnd);
+    } else {
+      setSelection(selStart, newSelectionEnd);
+    }
+    return true;
+  };
+
+  private boolean handleVerticalMovement(boolean isUp, boolean isShiftPressed) {
+    final int selStart = Selection.getSelectionStart(mEditable);
+    final int selEnd = Selection.getSelectionEnd(mEditable);
+
+    if (selStart < 0 || selEnd < 0) {
+      return false;
+    }
+
+    final boolean shouldCollapse = selStart == selEnd && !isShiftPressed;
+
+    beginBatchEdit();
+    if (shouldCollapse) {
+      if (isUp) {
+        Selection.moveUp(mEditable, mLayout);
+      } else {
+        Selection.moveDown(mEditable, mLayout);
+      }
+      final int newSelection = Selection.getSelectionStart(mEditable);
+      setSelection(newSelection, newSelection);
+    } else {
+      if (isUp) {
+        Selection.extendUp(mEditable, mLayout);
+      } else {
+        Selection.extendDown(mEditable, mLayout);
+      }
+      setSelection(Selection.getSelectionStart(mEditable), Selection.getSelectionEnd(mEditable));
+    }
+    endBatchEdit();
+    return true;
   }
 
   @Override

@@ -2,12 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 import 'dart:ui';
 
-import 'package:test/test.dart';
-
-import 'test_util.dart';
+import 'package:litetest/litetest.dart';
 
 // These tests should be kept in sync with the web tests in
 // lib/web_ui/test/lerp_test.dart.
@@ -126,5 +123,3 @@ void main() {
     expectAssertion(() => lerpDouble(0.0, -double.infinity, 5.0));
   });
 }
-
-final Matcher throwsAssertionError = throwsA(const TypeMatcher<AssertionError>());

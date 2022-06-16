@@ -7,8 +7,12 @@ package io.flutter;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * This class is a simple dependency injector for the relatively thin Android part of the Flutter
@@ -30,7 +34,6 @@ public final class FlutterInjector {
    * <p>This can only be called at the beginning of the program before the {@link #instance()} is
    * accessed.
    */
-  @VisibleForTesting
   public static void setInstance(@NonNull FlutterInjector injector) {
     if (accessed) {
       throw new IllegalStateException(
@@ -65,15 +68,24 @@ public final class FlutterInjector {
   }
 
   private FlutterInjector(
-      @NonNull FlutterLoader flutterLoader, DeferredComponentManager deferredComponentManager) {
+      @NonNull FlutterLoader flutterLoader,
+      @Nullable DeferredComponentManager deferredComponentManager,
+      @NonNull FlutterJNI.Factory flutterJniFactory,
+      @NonNull ExecutorService executorService) {
     this.flutterLoader = flutterLoader;
     this.deferredComponentManager = deferredComponentManager;
+    this.flutterJniFactory = flutterJniFactory;
+    this.executorService = executorService;
   }
 
   private FlutterLoader flutterLoader;
   private DeferredComponentManager deferredComponentManager;
-
-  /** Returns the {@link FlutterLoader} instance to use for the Flutter Android engine embedding. */
+  private FlutterJNI.Factory flutterJniFactory;
+  private ExecutorService executorService;
+  /**
+   * Returns the {@link io.flutter.embedding.engine.loader.FlutterLoader} instance to use for the
+   * Flutter Android engine embedding.
+   */
   @NonNull
   public FlutterLoader flutterLoader() {
     return flutterLoader;
@@ -88,17 +100,38 @@ public final class FlutterInjector {
     return deferredComponentManager;
   }
 
+  public ExecutorService executorService() {
+    return executorService;
+  }
+
+  @NonNull
+  public FlutterJNI.Factory getFlutterJNIFactory() {
+    return flutterJniFactory;
+  }
+
   /**
    * Builder used to supply a custom FlutterInjector instance to {@link
    * FlutterInjector#setInstance(FlutterInjector)}.
    *
-   * <p>Non-overriden values have reasonable defaults.
+   * <p>Non-overridden values have reasonable defaults.
    */
   public static final class Builder {
+    private class NamedThreadFactory implements ThreadFactory {
+      private int threadId = 0;
+
+      public Thread newThread(Runnable command) {
+        Thread thread = new Thread(command);
+        thread.setName("flutter-worker-" + threadId++);
+        return thread;
+      }
+    }
+
     private FlutterLoader flutterLoader;
     private DeferredComponentManager deferredComponentManager;
+    private FlutterJNI.Factory flutterJniFactory;
+    private ExecutorService executorService;
     /**
-     * Sets a {@link FlutterLoader} override.
+     * Sets a {@link io.flutter.embedding.engine.loader.FlutterLoader} override.
      *
      * <p>A reasonable default will be used if unspecified.
      */
@@ -113,9 +146,27 @@ public final class FlutterInjector {
       return this;
     }
 
+    public Builder setFlutterJNIFactory(@NonNull FlutterJNI.Factory factory) {
+      this.flutterJniFactory = factory;
+      return this;
+    }
+
+    public Builder setExecutorService(@NonNull ExecutorService executorService) {
+      this.executorService = executorService;
+      return this;
+    }
+
     private void fillDefaults() {
+      if (flutterJniFactory == null) {
+        flutterJniFactory = new FlutterJNI.Factory();
+      }
+
+      if (executorService == null) {
+        executorService = Executors.newCachedThreadPool(new NamedThreadFactory());
+      }
+
       if (flutterLoader == null) {
-        flutterLoader = new FlutterLoader();
+        flutterLoader = new FlutterLoader(flutterJniFactory.provideFlutterJNI(), executorService);
       }
       // DeferredComponentManager's intended default is null.
     }
@@ -127,7 +178,8 @@ public final class FlutterInjector {
     public FlutterInjector build() {
       fillDefaults();
 
-      return new FlutterInjector(flutterLoader, deferredComponentManager);
+      return new FlutterInjector(
+          flutterLoader, deferredComponentManager, flutterJniFactory, executorService);
     }
   }
 }

@@ -15,17 +15,19 @@ source_set("fml") {
     "base32.h",
     "build_config.h",
     "closure.h",
-    "command_line.cc",
-    "command_line.h",
     "compiler_specific.h",
     "concurrent_message_loop.cc",
     "concurrent_message_loop.h",
     "delayed_task.cc",
     "delayed_task.h",
     "eintr_wrapper.h",
+    "endianness.cc",
+    "endianness.h",
     "file.cc",
     "file.h",
     "hash_combine.h",
+    "hex_codec.cc",
+    "hex_codec.h",
     "icu_util.cc",
     "icu_util.h",
     "log_level.h",
@@ -37,6 +39,7 @@ source_set("fml") {
     "make_copyable.h",
     "mapping.cc",
     "mapping.h",
+    "math.h",
     "memory/ref_counted.h",
     "memory/ref_counted_internal.h",
     "memory/ref_ptr.h",
@@ -59,6 +62,8 @@ source_set("fml") {
     "posix_wrappers.h",
     "raster_thread_merger.cc",
     "raster_thread_merger.h",
+    "shared_thread_merger.cc",
+    "shared_thread_merger.h",
     "size.h",
     "synchronization/atomic_object.h",
     "synchronization/count_down_latch.cc",
@@ -70,8 +75,11 @@ source_set("fml") {
     "synchronization/sync_switch.h",
     "synchronization/waitable_event.cc",
     "synchronization/waitable_event.h",
+    "task_queue_id.h",
     "task_runner.cc",
     "task_runner.h",
+    "task_source.cc",
+    "task_source.h",
     "thread.cc",
     "thread.h",
     "thread_local.cc",
@@ -79,6 +87,7 @@ source_set("fml") {
     "time/time_delta.h",
     "time/time_point.cc",
     "time/time_point.h",
+    "time/timestamp_provider.h",
     "trace_event.cc",
     "trace_event.h",
     "unique_fd.cc",
@@ -87,13 +96,17 @@ source_set("fml") {
     "wakeable.h",
   ]
 
-  if (is_mac || is_ios || is_linux) {
+  if (is_mac || is_linux || (is_ios && is_debug)) {
     sources += [ "backtrace.cc" ]
   } else {
     sources += [ "backtrace_stub.cc" ]
   }
 
-  public_deps = []
+  public_deps = [
+    ":build_config",
+    ":command_line",
+    ":string_conversion",
+  ]
 
   deps = [
     "//third_party/dart/runtime:dart_api",
@@ -101,6 +114,11 @@ source_set("fml") {
     # These need to be in sync with the Fuchsia buildroot.
     "//third_party/icu",
   ]
+
+  if (is_mac || is_linux || (is_ios && is_debug)) {
+    # This abseil dependency is only used by backtrace.cc.
+    deps += [ "//third_party/abseil-cpp/absl/debugging:symbolize" ]
+  }
 
   configs += [ "//third_party/icu:icu_config" ]
 
@@ -179,6 +197,8 @@ source_set("fml") {
       "platform/fuchsia/message_loop_fuchsia.cc",
       "platform/fuchsia/message_loop_fuchsia.h",
       "platform/fuchsia/paths_fuchsia.cc",
+      "platform/fuchsia/task_observers.cc",
+      "platform/fuchsia/task_observers.h",
     ]
 
     public_deps += [
@@ -203,13 +223,7 @@ source_set("fml") {
       "platform/win/native_library_win.cc",
       "platform/win/paths_win.cc",
       "platform/win/posix_wrappers_win.cc",
-      "platform/win/wstring_conversion.h",
     ]
-
-    if (is_win) {
-      # For wstring_conversion. See issue #50053.
-      defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
-    }
   } else {
     sources += [
       "platform/posix/file_posix.cc",
@@ -219,6 +233,51 @@ source_set("fml") {
       "platform/posix/posix_wrappers_posix.cc",
     ]
   }
+}
+
+source_set("build_config") {
+  sources = [ "build_config.h" ]
+
+  public_configs = [
+    "//flutter:config",
+    "//flutter/common:flutter_config",
+  ]
+}
+
+source_set("command_line") {
+  sources = [
+    "command_line.cc",
+    "command_line.h",
+  ]
+
+  public_configs = [
+    "//flutter:config",
+    "//flutter/common:flutter_config",
+  ]
+}
+
+source_set("string_conversion") {
+  sources = [
+    "string_conversion.cc",
+    "string_conversion.h",
+  ]
+
+  if (is_win) {
+    sources += [
+      "platform/win/wstring_conversion.cc",
+      "platform/win/wstring_conversion.h",
+    ]
+
+    # TODO(cbracken): https://github.com/flutter/flutter/issues/50053
+    defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
+  }
+
+  deps = [ ":build_config" ]
+
+  public_configs = [
+    "//flutter:config",
+    "//flutter/common:flutter_config",
+  ]
 }
 
 if (enable_unittests) {
@@ -234,7 +293,6 @@ if (enable_unittests) {
     deps = [
       "//flutter/benchmarking",
       "//flutter/fml",
-      "//flutter/runtime:libdart",
     ]
   }
 
@@ -246,23 +304,32 @@ if (enable_unittests) {
       "backtrace_unittests.cc",
       "base32_unittest.cc",
       "command_line_unittest.cc",
+      "endianness_unittests.cc",
       "file_unittest.cc",
       "hash_combine_unittests.cc",
+      "hex_codec_unittest.cc",
       "logging_unittests.cc",
+      "mapping_unittests.cc",
+      "math_unittests.cc",
       "memory/ref_counted_unittest.cc",
       "memory/task_runner_checker_unittest.cc",
       "memory/weak_ptr_unittest.cc",
+      "message_loop_impl_unittests.cc",
       "message_loop_task_queues_merge_unmerge_unittests.cc",
       "message_loop_task_queues_unittests.cc",
       "message_loop_unittests.cc",
       "paths_unittests.cc",
       "raster_thread_merger_unittests.cc",
+      "string_conversion_unittests.cc",
       "synchronization/count_down_latch_unittests.cc",
       "synchronization/semaphore_unittest.cc",
       "synchronization/sync_switch_unittest.cc",
       "synchronization/waitable_event_unittest.cc",
+      "task_source_unittests.cc",
       "thread_local_unittests.cc",
       "thread_unittests.cc",
+      "time/chrono_timestamp_provider.cc",
+      "time/chrono_timestamp_provider.h",
       "time/time_delta_unittest.cc",
       "time/time_point_unittest.cc",
       "time/time_unittest.cc",
@@ -275,14 +342,20 @@ if (enable_unittests) {
       ]
     }
 
+    if (is_win) {
+      sources += [ "platform/win/wstring_conversion_unittests.cc" ]
+    }
+
     deps = [
       ":fml_fixtures",
       "//flutter/fml",
       "//flutter/fml/dart",
+      "//flutter/runtime",
       "//flutter/runtime:libdart",
       "//flutter/testing",
     ]
 
+    # This is needed for //third_party/googletest for linking zircon symbols.
     if (is_fuchsia) {
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]

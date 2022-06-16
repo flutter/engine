@@ -2,14 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:typed_data';
 
-final bool _supportsDecode = js_util.getProperty(
-        js_util.getProperty(
-            js_util.getProperty(html.window, 'Image'), 'prototype'),
-        'decode') !=
-    null;
+import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'dom.dart';
+import 'safe_browser_api.dart';
+import 'util.dart';
+
+Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
+  getJsProperty<Object>(
+    getJsProperty<Object>(domWindow, 'Image'),
+    'prototype',
+  ),
+  'decode',
+);
+final bool _supportsDecode = _jsImageDecodeFunction != null;
 
 typedef WebOnlyImageCodecChunkCallback = void Function(
     int cumulativeBytesLoaded, int expectedTotalBytes);
@@ -34,9 +44,13 @@ class HtmlCodec implements ui.Codec {
     // builders to create UI.
       chunkCallback?.call(0, 100);
     if (_supportsDecode) {
-      final html.ImageElement imgElement = html.ImageElement();
+      final DomHTMLImageElement imgElement = createDomHTMLImageElement();
       imgElement.src = src;
-      js_util.setProperty(imgElement, 'decoding', 'async');
+      setJsProperty<String>(imgElement, 'decoding', 'async');
+
+      // Ignoring the returned future on purpose because we're communicating
+      // through the `completer`.
+      // ignore: unawaited_futures
       imgElement.decode().then((dynamic _) {
         chunkCallback?.call(100, 100);
         int naturalWidth = imgElement.naturalWidth;
@@ -67,25 +81,28 @@ class HtmlCodec implements ui.Codec {
     return completer.future;
   }
 
-  void _decodeUsingOnLoad(Completer completer) {
-    StreamSubscription<html.Event>? loadSubscription;
-    late StreamSubscription<html.Event> errorSubscription;
-    final html.ImageElement imgElement = html.ImageElement();
+  void _decodeUsingOnLoad(Completer<ui.FrameInfo> completer) {
+    final DomHTMLImageElement imgElement = createDomHTMLImageElement();
     // If the browser doesn't support asynchronous decoding of an image,
     // then use the `onload` event to decide when it's ready to paint to the
     // DOM. Unfortunately, this will cause the image to be decoded synchronously
     // on the main thread, and may cause dropped framed.
-    errorSubscription = imgElement.onError.listen((html.Event event) {
-      loadSubscription?.cancel();
-      errorSubscription.cancel();
+    late DomEventListener errorListener;
+    DomEventListener? loadListener;
+    errorListener = allowInterop((DomEvent event) {
+      if (loadListener != null) {
+        imgElement.removeEventListener('load', loadListener);
+      }
+      imgElement.removeEventListener('error', errorListener);
       completer.completeError(event);
     });
-    loadSubscription = imgElement.onLoad.listen((html.Event event) {
+    imgElement.addEventListener('error', errorListener);
+    loadListener = allowInterop((DomEvent event) {
       if (chunkCallback != null) {
         chunkCallback!(100, 100);
       }
-      loadSubscription!.cancel();
-      errorSubscription.cancel();
+      imgElement.removeEventListener('load', loadListener!);
+      imgElement.removeEventListener('error', errorListener);
       final HtmlImage image = HtmlImage(
         imgElement,
         imgElement.naturalWidth,
@@ -93,6 +110,7 @@ class HtmlCodec implements ui.Codec {
       );
       completer.complete(SingleFrameInfo(image));
     });
+    imgElement.addEventListener('load', loadListener);
     imgElement.src = src;
   }
 
@@ -101,13 +119,13 @@ class HtmlCodec implements ui.Codec {
 }
 
 class HtmlBlobCodec extends HtmlCodec {
-  final html.Blob blob;
+  final DomBlob blob;
 
-  HtmlBlobCodec(this.blob) : super(html.Url.createObjectUrlFromBlob(blob));
+  HtmlBlobCodec(this.blob) : super(domWindow.URL.createObjectURL(blob));
 
   @override
   void dispose() {
-    html.Url.revokeObjectUrl(src);
+    domWindow.URL.revokeObjectURL(src);
   }
 }
 
@@ -122,7 +140,7 @@ class SingleFrameInfo implements ui.FrameInfo {
 }
 
 class HtmlImage implements ui.Image {
-  final html.ImageElement imgElement;
+  final DomHTMLImageElement imgElement;
   bool _requiresClone = false;
   HtmlImage(this.imgElement, this.width, this.height);
 
@@ -162,28 +180,33 @@ class HtmlImage implements ui.Image {
 
   @override
   Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    if (format == ui.ImageByteFormat.rawRgba) {
-      final html.CanvasElement canvas = html.CanvasElement()
-        ..width = width
-        ..height = height;
-      final html.CanvasRenderingContext2D ctx = canvas.context2D;
-      ctx.drawImage(imgElement, 0, 0);
-      final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
-      return Future.value(imageData.data.buffer.asByteData());
-    }
-    if (imgElement.src?.startsWith('data:') == true) {
-      final data = UriData.fromUri(Uri.parse(imgElement.src!));
-      return Future.value(data.contentAsBytes().buffer.asByteData());
-    } else {
-      return Future.value(null);
+    switch (format) {
+      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
+      // The format rawRgba always returns straight rather than premul currently.
+      case ui.ImageByteFormat.rawRgba:
+      case ui.ImageByteFormat.rawStraightRgba:
+        final DomCanvasElement canvas = createDomCanvasElement()
+          ..width = width
+          ..height = height;
+        final DomCanvasRenderingContext2D ctx = canvas.context2D;
+        ctx.drawImage(imgElement, 0, 0);
+        final DomImageData imageData = ctx.getImageData(0, 0, width, height);
+        return Future<ByteData?>.value(imageData.data.buffer.asByteData());
+      default:
+        if (imgElement.src?.startsWith('data:') == true) {
+          final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
+          return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+        } else {
+          return Future<ByteData?>.value(null);
+        }
     }
   }
 
   // Returns absolutely positioned actual image element on first call and
   // clones on subsequent calls.
-  html.ImageElement cloneImageElement() {
+  DomHTMLImageElement cloneImageElement() {
     if (_requiresClone) {
-      return imgElement.clone(true) as html.ImageElement;
+      return imgElement.cloneNode(true) as DomHTMLImageElement;
     } else {
       _requiresClone = true;
       imgElement.style.position = 'absolute';

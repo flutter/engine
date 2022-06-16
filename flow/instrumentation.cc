@@ -5,7 +5,6 @@
 #include "flutter/flow/instrumentation.h"
 
 #include <algorithm>
-#include <limits>
 
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -15,16 +14,25 @@ namespace flutter {
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch(fml::Milliseconds frame_budget)
-    : start_(fml::TimePoint::Now()), current_sample_(0) {
+Stopwatch::Stopwatch(const RefreshRateUpdater& updater)
+    : refresh_rate_updater_(updater),
+      start_(fml::TimePoint::Now()),
+      current_sample_(0) {
   const fml::TimeDelta delta = fml::TimeDelta::Zero();
   laps_.resize(kMaxSamples, delta);
   cache_dirty_ = true;
   prev_drawn_sample_index_ = 0;
-  frame_budget_ = frame_budget;
 }
 
 Stopwatch::~Stopwatch() = default;
+
+FixedRefreshRateStopwatch::FixedRefreshRateStopwatch(
+    fml::Milliseconds frame_budget)
+    : Stopwatch(fixed_delegate_), fixed_delegate_(frame_budget) {}
+
+FixedRefreshRateUpdater::FixedRefreshRateUpdater(
+    fml::Milliseconds fixed_frame_budget)
+    : fixed_frame_budget_(fixed_frame_budget) {}
 
 void Stopwatch::Start() {
   start_ = fml::TimePoint::Now();
@@ -45,7 +53,7 @@ const fml::TimeDelta& Stopwatch::LastLap() const {
 }
 
 double Stopwatch::UnitFrameInterval(double raster_time_ms) const {
-  return raster_time_ms / frame_budget_.count();
+  return raster_time_ms / GetFrameBudget().count();
 }
 
 double Stopwatch::UnitHeight(double raster_time_ms,
@@ -78,6 +86,14 @@ fml::TimeDelta Stopwatch::AverageDelta() const {
 // Initialize the SkSurface for drawing into. Draws the base background and any
 // timing data from before the initial Visualize() call.
 void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
+  // Mark as dirty if the size has changed.
+  if (visualize_cache_surface_) {
+    if (rect.width() != visualize_cache_surface_->width() ||
+        rect.height() != visualize_cache_surface_->height()) {
+      cache_dirty_ = true;
+    };
+  }
+
   if (!cache_dirty_) {
     return;
   }
@@ -101,7 +117,7 @@ void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double one_frame_ms = frame_budget_.count();
+  const double one_frame_ms = GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
@@ -151,7 +167,7 @@ void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double one_frame_ms = frame_budget_.count();
+  const double one_frame_ms = GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
@@ -228,96 +244,12 @@ void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
   visualize_cache_surface_->draw(canvas, rect.x(), rect.y());
 }
 
-CounterValues::CounterValues() : current_sample_(kMaxSamples - 1) {
-  values_.resize(kMaxSamples, 0);
+fml::Milliseconds Stopwatch::GetFrameBudget() const {
+  return refresh_rate_updater_.GetFrameBudget();
 }
 
-CounterValues::~CounterValues() = default;
-
-void CounterValues::Add(int64_t value) {
-  current_sample_ = (current_sample_ + 1) % kMaxSamples;
-  values_[current_sample_] = value;
-}
-
-void CounterValues::Visualize(SkCanvas* canvas, const SkRect& rect) const {
-  size_t max_bytes = GetMaxValue();
-
-  if (max_bytes == 0) {
-    // The backend for this counter probably did not fill in any values.
-    return;
-  }
-
-  size_t min_bytes = GetMinValue();
-
-  SkPaint paint;
-
-  // Paint the background.
-  paint.setColor(0x99FFFFFF);
-  canvas->drawRect(rect, paint);
-
-  // Establish the graph position.
-  const SkScalar x = rect.x();
-  const SkScalar y = rect.y();
-  const SkScalar width = rect.width();
-  const SkScalar height = rect.height();
-  const SkScalar bottom = y + height;
-  const SkScalar right = x + width;
-
-  // Prepare a path for the data.
-  SkPath path;
-  path.moveTo(x, bottom);
-
-  for (size_t i = 0; i < kMaxSamples; ++i) {
-    int64_t current_bytes = values_[i];
-    double ratio = static_cast<double>(current_bytes - min_bytes) /
-                   static_cast<double>(max_bytes - min_bytes);
-    path.lineTo(
-        x + ((static_cast<double>(i) / static_cast<double>(kMaxSamples)) *
-             width),
-        y + ((1.0 - ratio) * height));
-  }
-
-  path.rLineTo(100, 0);
-  path.lineTo(right, bottom);
-  path.close();
-
-  // Draw the graph.
-  paint.setColor(0xAA0000FF);
-  canvas->drawPath(path, paint);
-
-  // Paint the vertical marker for the current frame.
-  const double sample_unit_width = (1.0 / kMaxSamples);
-  const double sample_margin_unit_width = sample_unit_width / 6.0;
-  const double sample_margin_width = width * sample_margin_unit_width;
-  paint.setStyle(SkPaint::Style::kFill_Style);
-  paint.setColor(SK_ColorGRAY);
-  double sample_x =
-      x + width * (static_cast<double>(current_sample_) / kMaxSamples) -
-      sample_margin_width;
-  const auto marker_rect = SkRect::MakeLTRB(
-      sample_x, y,
-      sample_x + width * sample_unit_width + sample_margin_width * 2, bottom);
-  canvas->drawRect(marker_rect, paint);
-}
-
-int64_t CounterValues::GetCurrentValue() const {
-  return values_[current_sample_];
-}
-
-int64_t CounterValues::GetMaxValue() const {
-  auto max = std::numeric_limits<int64_t>::min();
-  for (size_t i = 0; i < kMaxSamples; ++i) {
-    max = std::max<int64_t>(max, values_[i]);
-  }
-  return max;
-}
-
-int64_t CounterValues::GetMinValue() const {
-  auto min = std::numeric_limits<int64_t>::max();
-  for (size_t i = 0; i < kMaxSamples; ++i) {
-    min = std::min<int64_t>(min, values_[i]);
-  }
-  return min;
+fml::Milliseconds FixedRefreshRateUpdater::GetFrameBudget() const {
+  return fixed_frame_budget_;
 }
 
 }  // namespace flutter

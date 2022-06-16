@@ -1,0 +1,100 @@
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.android.tools.build:gradle:7.0.0"
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+apply plugin: "com.android.library"
+
+rootProject.buildDir = project.property("build_dir")
+
+// Shows warnings for usage of deprecated API usages.
+// TODO(camsim99): Make deprecation warnings fatal and remove limit when all
+// 434 (at the time of this comment) deprecations are fixed.
+gradle.projectsEvaluated {
+  tasks.withType(JavaCompile) {
+      options.compilerArgs << "-Xlint:deprecation" << "-Xmaxwarns" << "434"
+  }
+}
+
+def availableProcessors = Runtime.runtime.availableProcessors() ?: 1
+
+println "=========================================="
+println "AVAILABLE PROCESSORS: $availableProcessors"
+println "=========================================="
+
+android {
+  compileSdkVersion 32
+
+  defaultConfig {
+    minSdkVersion 16
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  testOptions {
+    unitTests {
+      includeAndroidResources = true
+    }
+
+    unitTests.all {
+      jvmArgs "-Xmx8g" // Max JVM heap size is 8G/30G available in the CI bot.
+      maxHeapSize "8g"
+      maxParallelForks availableProcessors // The CI bot has 8 CPUs.
+      testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+        showStackTraces true
+      }
+    }
+  }
+
+  dependencies {
+    // Please *don't* add embedding dependencies to this file.
+    // The embedding dependencies are configured in tools/androidx/files.json.
+    // Only add test dependencies.
+
+    implementation files(project.property("flutter_jar"))
+    testImplementation "androidx.test:core:1.4.0"
+    testImplementation "com.google.android.play:core:1.8.0"
+    testImplementation "com.ibm.icu:icu4j:69.1"
+    testImplementation "org.robolectric:robolectric:4.7.3"
+    testImplementation "junit:junit:4.13"
+    testImplementation "androidx.test.ext:junit:1.1.3"
+
+    def mockitoVersion = "4.1.0"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.mockito:mockito-inline:$mockitoVersion"
+    testImplementation "org.mockito:mockito-android:$mockitoVersion"
+  }
+
+  // Configure the embedding dependencies.
+  apply from: new File(rootDir, '../../../../tools/androidx/configure.gradle').absolutePath;
+  configureDependencies(new File(rootDir, '../../../..')) { dependency ->
+    dependencies {
+      testImplementation "$dependency"
+    }
+  }
+
+  sourceSets {
+    main {
+      test {
+        java {
+          srcDirs = ["../test"]
+       }
+      }
+    }
+  }
+}

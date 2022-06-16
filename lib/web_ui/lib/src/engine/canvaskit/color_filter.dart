@@ -2,27 +2,34 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../color_filter.dart';
+import '../util.dart';
+import 'canvaskit_api.dart';
+import 'image_filter.dart';
+import 'skia_object_cache.dart';
 
 /// A concrete [ManagedSkiaObject] subclass that owns a [SkColorFilter] and
 /// manages its lifecycle.
 ///
 /// Seealso:
 ///
-/// * [CkPaint.colorFilter], which uses a [_ManagedSkColorFilter] to manage
+/// * [CkPaint.colorFilter], which uses a [ManagedSkColorFilter] to manage
 ///   the lifecycle of its [SkColorFilter].
-class _ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
-  _ManagedSkColorFilter(CkColorFilter ckColorFilter)
-    : this.ckColorFilter = ckColorFilter;
+class ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
+  ManagedSkColorFilter(CkColorFilter ckColorFilter)
+      : colorFilter = ckColorFilter;
 
-  final CkColorFilter ckColorFilter;
-
-  @override
-  SkColorFilter createDefault() => ckColorFilter._initRawColorFilter();
+  final CkColorFilter colorFilter;
 
   @override
-  SkColorFilter resurrect() => ckColorFilter._initRawColorFilter();
+  SkColorFilter createDefault() => colorFilter._initRawColorFilter();
+
+  @override
+  SkColorFilter resurrect() => colorFilter._initRawColorFilter();
 
   @override
   void delete() {
@@ -30,122 +37,175 @@ class _ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
   }
 
   @override
-  int get hashCode => ckColorFilter.hashCode;
+  int get hashCode => colorFilter.hashCode;
 
   @override
   bool operator ==(Object other) {
-    if (runtimeType != other.runtimeType)
+    if (runtimeType != other.runtimeType) {
       return false;
-    return other is _ManagedSkColorFilter
-        && other.ckColorFilter == ckColorFilter;
+    }
+    return other is ManagedSkColorFilter && other.colorFilter == colorFilter;
   }
 
   @override
-  String toString() => ckColorFilter.toString();
+  String toString() => colorFilter.toString();
 }
 
 /// A [ui.ColorFilter] backed by Skia's [SkColorFilter].
 ///
 /// Additionally, this class provides the interface for converting itself to a
 /// [ManagedSkiaObject] that manages a skia image filter.
-abstract class CkColorFilter implements _CkManagedSkImageFilterConvertible<SkImageFilter>, EngineColorFilter {
+abstract class CkColorFilter
+    implements CkManagedSkImageFilterConvertible, EngineColorFilter {
   const CkColorFilter();
 
   /// Called by [ManagedSkiaObject.createDefault] and
-  /// [ManagedSkiaObject.resurrect] to create a new [SKImageFilter], when this
+  /// [ManagedSkiaObject.resurrect] to create a new [SkImageFilter], when this
   /// filter is used as an [ImageFilter].
-  SkImageFilter _initRawImageFilter() => canvasKit.ImageFilter.MakeColorFilter(_initRawColorFilter(), null);
+  SkImageFilter initRawImageFilter() =>
+      canvasKit.ImageFilter.MakeColorFilter(_initRawColorFilter(), null);
 
   /// Called by [ManagedSkiaObject.createDefault] and
-  /// [ManagedSkiaObject.resurrect] to create a new [SKColorFilter], when this
+  /// [ManagedSkiaObject.resurrect] to create a new [SkColorFilter], when this
   /// filter is used as a [ColorFilter].
   SkColorFilter _initRawColorFilter();
 
-  ManagedSkiaObject<SkImageFilter> get _imageFilter => _CkColorFilterImageFilter(colorFilter: this);
+  @override
+  ManagedSkiaObject<SkImageFilter> get imageFilter =>
+      CkColorFilterImageFilter(colorFilter: this);
 }
 
-class _CkBlendModeColorFilter extends CkColorFilter {
-  const _CkBlendModeColorFilter(this.color, this.blendMode);
+class CkBlendModeColorFilter extends CkColorFilter {
+  const CkBlendModeColorFilter(this.color, this.blendMode);
 
   final ui.Color color;
   final ui.BlendMode blendMode;
 
   @override
   SkColorFilter _initRawColorFilter() {
-    return canvasKit.ColorFilter.MakeBlend(
+    final SkColorFilter? filter = canvasKit.ColorFilter.MakeBlend(
       toSharedSkColor1(color),
       toSkBlendMode(blendMode),
     );
+    if (filter == null) {
+      throw ArgumentError('Invalid parameters for blend mode ColorFilter');
+    }
+    return filter;
   }
 
   @override
-  int get hashCode => ui.hashValues(color, blendMode);
+  int get hashCode => Object.hash(color, blendMode);
 
   @override
   bool operator ==(Object other) {
-    if (runtimeType != other.runtimeType)
+    if (runtimeType != other.runtimeType) {
       return false;
-    return other is _CkBlendModeColorFilter
-        && other.color == color
-        && other.blendMode == blendMode;
+    }
+    return other is CkBlendModeColorFilter &&
+        other.color == color &&
+        other.blendMode == blendMode;
   }
 
   @override
   String toString() => 'ColorFilter.mode($color, $blendMode)';
 }
 
-class _CkMatrixColorFilter extends CkColorFilter {
-  const _CkMatrixColorFilter(this.matrix);
+class CkMatrixColorFilter extends CkColorFilter {
+  const CkMatrixColorFilter(this.matrix);
 
   final List<double> matrix;
 
-  @override
-  SkColorFilter _initRawColorFilter() {
-    assert(this.matrix.length == 20,  'Color Matrix must have 20 entries.');
-    final List<double> matrix = this.matrix;
-    if (matrix is Float32List)
-      return canvasKit.ColorFilter.MakeMatrix(matrix);
-    final Float32List float32Matrix = Float32List(20);
+  /// Flutter documentation says the translation column of the color matrix
+  /// is specified in unnormalized 0..255 space. CanvasKit expects the
+  /// translation values to be normalized to 0..1 space.
+  ///
+  /// See [https://api.flutter.dev/flutter/dart-ui/ColorFilter/ColorFilter.matrix.html].
+  Float32List get _normalizedMatrix {
+    assert(matrix.length == 20, 'Color Matrix must have 20 entries.');
+    final Float32List result = Float32List(20);
+    const List<int> translationIndices = <int>[4, 9, 14, 19];
     for (int i = 0; i < 20; i++) {
-      float32Matrix[i] = matrix[i];
+      if (translationIndices.contains(i)) {
+        result[i] = matrix[i] / 255.0;
+      } else {
+        result[i] = matrix[i];
+      }
     }
-    return canvasKit.ColorFilter.MakeMatrix(float32Matrix);
+    return result;
   }
 
   @override
-  int get hashCode => ui.hashList(matrix);
+  SkColorFilter _initRawColorFilter() {
+    return canvasKit.ColorFilter.MakeMatrix(_normalizedMatrix);
+  }
+
+  @override
+  int get hashCode => Object.hashAll(matrix);
 
   @override
   bool operator ==(Object other) {
-    return runtimeType == other.runtimeType
-      && other is _CkMatrixColorFilter
-      && _listEquals<double>(matrix, other.matrix);
+    return runtimeType == other.runtimeType &&
+        other is CkMatrixColorFilter &&
+        listEquals<double>(matrix, other.matrix);
   }
 
   @override
   String toString() => 'ColorFilter.matrix($matrix)';
 }
 
-class _CkLinearToSrgbGammaColorFilter extends CkColorFilter {
-  const _CkLinearToSrgbGammaColorFilter();
+class CkLinearToSrgbGammaColorFilter extends CkColorFilter {
+  const CkLinearToSrgbGammaColorFilter();
   @override
-  SkColorFilter _initRawColorFilter() => canvasKit.ColorFilter.MakeLinearToSRGBGamma();
+  SkColorFilter _initRawColorFilter() =>
+      canvasKit.ColorFilter.MakeLinearToSRGBGamma();
 
   @override
   bool operator ==(Object other) => runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 
   @override
   String toString() => 'ColorFilter.linearToSrgbGamma()';
 }
 
-class _CkSrgbToLinearGammaColorFilter extends CkColorFilter {
-  const _CkSrgbToLinearGammaColorFilter();
+class CkSrgbToLinearGammaColorFilter extends CkColorFilter {
+  const CkSrgbToLinearGammaColorFilter();
   @override
-  SkColorFilter _initRawColorFilter() => canvasKit.ColorFilter.MakeSRGBToLinearGamma();
+  SkColorFilter _initRawColorFilter() =>
+      canvasKit.ColorFilter.MakeSRGBToLinearGamma();
 
   @override
   bool operator ==(Object other) => runtimeType == other.runtimeType;
 
   @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
   String toString() => 'ColorFilter.srgbToLinearGamma()';
+}
+
+class CkComposeColorFilter extends CkColorFilter {
+  const CkComposeColorFilter(this.outer, this.inner);
+  final ManagedSkColorFilter? outer;
+  final ManagedSkColorFilter inner;
+
+  @override
+  SkColorFilter _initRawColorFilter() =>
+      canvasKit.ColorFilter.MakeCompose(outer?.skiaObject, inner.skiaObject);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! CkComposeColorFilter) {
+      return false;
+    }
+    final CkComposeColorFilter filter = other;
+    return filter.outer == outer && filter.inner == inner;
+  }
+
+  @override
+  int get hashCode => Object.hash(outer, inner);
+
+  @override
+  String toString() => 'ColorFilter.compose($outer, $inner)';
 }

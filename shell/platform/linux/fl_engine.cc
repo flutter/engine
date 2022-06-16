@@ -8,19 +8,26 @@
 
 #include <cstring>
 
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_dart_project_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
 #include "flutter/shell/platform/linux/fl_settings_plugin.h"
+#include "flutter/shell/platform/linux/fl_texture_gl_private.h"
+#include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-
-static constexpr int kMicrosecondsPerNanosecond = 1000;
 
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
+
+// Use different device ID for mouse and pan/zoom events, since we can't
+// differentiate the actual device (mouse v.s. trackpad)
+static constexpr int32_t kMousePointerDeviceId = 0;
+static constexpr int32_t kPointerPanZoomDeviceId = 1;
 
 struct _FlEngine {
   GObject parent_instance;
@@ -32,6 +39,8 @@ struct _FlEngine {
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
   FlSettingsPlugin* settings_plugin;
+  FlTextureRegistrar* texture_registrar;
+  FlTaskRunner* task_runner;
   FlutterEngineAOTData aot_data;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
   FlutterEngineProcTable embedder_api;
@@ -45,6 +54,11 @@ struct _FlEngine {
   FlEngineUpdateSemanticsNodeHandler update_semantics_node_handler;
   gpointer update_semantics_node_handler_data;
   GDestroyNotify update_semantics_node_handler_destroy_notify;
+
+  // Function to call right before the engine is restarted.
+  FlEngineOnPreEngineRestartHandler on_pre_engine_restart_handler;
+  gpointer on_pre_engine_restart_handler_data;
+  GDestroyNotify on_pre_engine_restart_handler_destroy_notify;
 };
 
 G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
@@ -58,13 +72,6 @@ G_DEFINE_TYPE_WITH_CODE(
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
                           fl_engine_plugin_registry_iface_init))
-
-// Subclass of GSource that integrates Flutter tasks into the GLib main loop.
-typedef struct {
-  GSource parent;
-  FlEngine* engine;
-  FlutterTask task;
-} FlutterSource;
 
 // Parse a locale into its components.
 static void parse_locale(const gchar* locale,
@@ -143,40 +150,6 @@ static void setup_locales(FlEngine* self) {
   }
 }
 
-// Callback to run a Flutter task in the GLib main loop.
-static gboolean flutter_source_dispatch(GSource* source,
-                                        GSourceFunc callback,
-                                        gpointer user_data) {
-  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  FlEngine* self = fl_source->engine;
-
-  FlutterEngineResult result =
-      self->embedder_api.RunTask(self->engine, &fl_source->task);
-  if (result != kSuccess) {
-    g_warning("Failed to run Flutter task\n");
-  }
-
-  return G_SOURCE_REMOVE;
-}
-
-// Called when the engine is disposed.
-static void engine_weak_notify_cb(gpointer user_data,
-                                  GObject* where_the_object_was) {
-  FlutterSource* source = reinterpret_cast<FlutterSource*>(user_data);
-  source->engine = nullptr;
-  g_source_destroy(reinterpret_cast<GSource*>(source));
-}
-
-// Called when a flutter source completes.
-static void flutter_source_finalize(GSource* source) {
-  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  if (fl_source->engine != nullptr) {
-    g_object_weak_unref(G_OBJECT(fl_source->engine), engine_weak_notify_cb,
-                        fl_source);
-    fl_source->engine = nullptr;
-  }
-}
-
 // Called when engine needs a backing store for a specific #FlutterLayer.
 static bool compositor_create_backing_store_callback(
     const FlutterBackingStoreConfig* config,
@@ -203,16 +176,6 @@ static bool compositor_present_layers_callback(const FlutterLayer** layers,
   return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
                                     layers_count);
 }
-
-// Table of functions for Flutter GLib main loop integration.
-static GSourceFuncs flutter_source_funcs = {
-    nullptr,                  // prepare
-    nullptr,                  // check
-    flutter_source_dispatch,  // dispatch
-    flutter_source_finalize,  // finalize
-    nullptr,
-    nullptr  // Internal usage
-};
 
 // Flutter engine rendering callbacks.
 
@@ -247,13 +210,9 @@ static uint32_t fl_engine_gl_get_fbo(void* user_data) {
 }
 
 static bool fl_engine_gl_present(void* user_data) {
-  FlEngine* self = static_cast<FlEngine*>(user_data);
-  g_autoptr(GError) error = nullptr;
-  gboolean result = fl_renderer_present(self->renderer, &error);
-  if (!result) {
-    g_warning("%s", error->message);
-  }
-  return result;
+  // No action required, as this is handled in
+  // compositor_present_layers_callback.
+  return true;
 }
 
 static bool fl_engine_gl_make_resource_current(void* user_data) {
@@ -264,6 +223,47 @@ static bool fl_engine_gl_make_resource_current(void* user_data) {
     g_warning("%s", error->message);
   }
   return result;
+}
+
+// Called by the engine to retrieve an external texture.
+static bool fl_engine_gl_external_texture_frame_callback(
+    void* user_data,
+    int64_t texture_id,
+    size_t width,
+    size_t height,
+    FlutterOpenGLTexture* opengl_texture) {
+  FlEngine* self = static_cast<FlEngine*>(user_data);
+  if (!self->texture_registrar) {
+    return false;
+  }
+
+  FlTexture* texture =
+      fl_texture_registrar_lookup_texture(self->texture_registrar, texture_id);
+  if (texture == nullptr) {
+    g_warning("Unable to find texture %" G_GINT64_FORMAT, texture_id);
+    return false;
+  }
+
+  gboolean result;
+  g_autoptr(GError) error = nullptr;
+  if (FL_IS_TEXTURE_GL(texture)) {
+    result = fl_texture_gl_populate(FL_TEXTURE_GL(texture), width, height,
+                                    opengl_texture, &error);
+  } else if (FL_IS_PIXEL_BUFFER_TEXTURE(texture)) {
+    result =
+        fl_pixel_buffer_texture_populate(FL_PIXEL_BUFFER_TEXTURE(texture),
+                                         width, height, opengl_texture, &error);
+  } else {
+    g_warning("Unsupported texture type %" G_GINT64_FORMAT, texture_id);
+    return false;
+  }
+
+  if (!result) {
+    g_warning("%s", error->message);
+    return false;
+  }
+
+  return true;
 }
 
 // Called by the engine to determine if it is on the GTK thread.
@@ -278,15 +278,7 @@ static void fl_engine_post_task(FlutterTask task,
                                 void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
 
-  g_autoptr(GSource) source =
-      g_source_new(&flutter_source_funcs, sizeof(FlutterSource));
-  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  fl_source->engine = self;
-  g_object_weak_ref(G_OBJECT(self), engine_weak_notify_cb, fl_source);
-  fl_source->task = task;
-  g_source_set_ready_time(source,
-                          target_time_nanos / kMicrosecondsPerNanosecond);
-  g_source_attach(source, nullptr);
+  fl_task_runner_post_task(self->task_runner, task, target_time_nanos);
 }
 
 // Called when a platform message is received from the engine.
@@ -320,6 +312,20 @@ static void fl_engine_update_semantics_node_cb(const FlutterSemanticsNode* node,
   }
 }
 
+// Called right before the engine is restarted.
+//
+// This method should reset states to as if the engine has just been started,
+// which usually indicates the user has requested a hot restart (Shift-R in the
+// Flutter CLI.)
+static void fl_engine_on_pre_engine_restart_cb(void* user_data) {
+  FlEngine* self = FL_ENGINE(user_data);
+
+  if (self->on_pre_engine_restart_handler != nullptr) {
+    self->on_pre_engine_restart_handler(
+        self, self->on_pre_engine_restart_handler_data);
+  }
+}
+
 // Called when a response to a sent platform message is received from the
 // engine.
 static void fl_engine_platform_message_response_cb(const uint8_t* data,
@@ -336,7 +342,8 @@ static FlPluginRegistrar* fl_engine_get_registrar_for_plugin(
     const gchar* name) {
   FlEngine* self = FL_ENGINE(registry);
 
-  return fl_plugin_registrar_new(nullptr, self->binary_messenger);
+  return fl_plugin_registrar_new(nullptr, self->binary_messenger,
+                                 self->texture_registrar);
 }
 
 static void fl_engine_plugin_registry_iface_init(
@@ -359,8 +366,10 @@ static void fl_engine_dispose(GObject* object) {
 
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
+  g_clear_object(&self->texture_registrar);
   g_clear_object(&self->binary_messenger);
   g_clear_object(&self->settings_plugin);
+  g_clear_object(&self->task_runner);
 
   if (self->platform_message_handler_destroy_notify) {
     self->platform_message_handler_destroy_notify(
@@ -376,6 +385,13 @@ static void fl_engine_dispose(GObject* object) {
   self->update_semantics_node_handler_data = nullptr;
   self->update_semantics_node_handler_destroy_notify = nullptr;
 
+  if (self->on_pre_engine_restart_handler_destroy_notify) {
+    self->on_pre_engine_restart_handler_destroy_notify(
+        self->on_pre_engine_restart_handler_data);
+  }
+  self->on_pre_engine_restart_handler_data = nullptr;
+  self->on_pre_engine_restart_handler_destroy_notify = nullptr;
+
   G_OBJECT_CLASS(fl_engine_parent_class)->dispose(object);
 }
 
@@ -389,6 +405,7 @@ static void fl_engine_init(FlEngine* self) {
   self->embedder_api.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&self->embedder_api);
 
+  self->texture_registrar = fl_texture_registrar_new(self);
   self->binary_messenger = fl_binary_messenger_new(self);
 }
 
@@ -410,6 +427,8 @@ G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
 gboolean fl_engine_start(FlEngine* self, GError** error) {
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
 
+  self->task_runner = fl_task_runner_new(self);
+
   FlutterRendererConfig config = {};
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(FlutterOpenGLRendererConfig);
@@ -419,6 +438,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   config.open_gl.fbo_callback = fl_engine_gl_get_fbo;
   config.open_gl.present = fl_engine_gl_present;
   config.open_gl.make_resource_current = fl_engine_gl_make_resource_current;
+  config.open_gl.gl_external_texture_frame_callback =
+      fl_engine_gl_external_texture_frame_callback;
 
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
@@ -454,6 +475,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.update_semantics_node_callback = fl_engine_update_semantics_node_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
+  args.on_pre_engine_restart_callback = fl_engine_on_pre_engine_restart_cb;
   args.dart_entrypoint_argc =
       dart_entrypoint_args != nullptr ? g_strv_length(dart_entrypoint_args) : 0;
   args.dart_entrypoint_argv =
@@ -499,12 +521,14 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   setup_locales(self);
 
+  g_autoptr(FlSettings) settings = fl_settings_new();
   self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
-  fl_settings_plugin_start(self->settings_plugin);
+  fl_settings_plugin_start(self->settings_plugin, settings);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
-  if (result != kSuccess)
+  if (result != kSuccess) {
     g_warning("Failed to enable accessibility features on Flutter engine");
+  }
 
   return TRUE;
 }
@@ -546,6 +570,23 @@ void fl_engine_set_update_semantics_node_handler(
   self->update_semantics_node_handler = handler;
   self->update_semantics_node_handler_data = user_data;
   self->update_semantics_node_handler_destroy_notify = destroy_notify;
+}
+
+void fl_engine_set_on_pre_engine_restart_handler(
+    FlEngine* self,
+    FlEngineOnPreEngineRestartHandler handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->on_pre_engine_restart_handler_destroy_notify) {
+    self->on_pre_engine_restart_handler_destroy_notify(
+        self->on_pre_engine_restart_handler_data);
+  }
+
+  self->on_pre_engine_restart_handler = handler;
+  self->on_pre_engine_restart_handler_data = user_data;
+  self->on_pre_engine_restart_handler_destroy_notify = destroy_notify;
 }
 
 gboolean fl_engine_send_platform_message_response(
@@ -693,7 +734,51 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.scroll_delta_y = scroll_delta_y;
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
+  fl_event.device = kMousePointerDeviceId;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
+}
+
+void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
+                                           size_t timestamp,
+                                           double x,
+                                           double y,
+                                           FlutterPointerPhase phase,
+                                           double pan_x,
+                                           double pan_y,
+                                           double scale,
+                                           double rotation) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent fl_event = {};
+  fl_event.struct_size = sizeof(fl_event);
+  fl_event.timestamp = timestamp;
+  fl_event.x = x;
+  fl_event.y = y;
+  fl_event.phase = phase;
+  fl_event.pan_x = pan_x;
+  fl_event.pan_y = pan_y;
+  fl_event.scale = scale;
+  fl_event.rotation = rotation;
+  fl_event.device = kPointerPanZoomDeviceId;
+  fl_event.device_kind = kFlutterPointerDeviceKindTrackpad;
+  self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
+}
+
+void fl_engine_send_key_event(FlEngine* self,
+                              const FlutterKeyEvent* event,
+                              FlutterKeyEventCallback callback,
+                              void* user_data) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  self->embedder_api.SendKeyEvent(self->engine, event, callback, user_data);
 }
 
 void fl_engine_dispatch_semantics_action(FlEngine* self,
@@ -717,8 +802,45 @@ void fl_engine_dispatch_semantics_action(FlEngine* self,
                                              action_data, action_data_length);
 }
 
+gboolean fl_engine_mark_texture_frame_available(FlEngine* self,
+                                                int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
+  return self->embedder_api.MarkExternalTextureFrameAvailable(
+             self->engine, texture_id) == kSuccess;
+}
+
+gboolean fl_engine_register_external_texture(FlEngine* self,
+                                             int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
+  return self->embedder_api.RegisterExternalTexture(self->engine, texture_id) ==
+         kSuccess;
+}
+
+gboolean fl_engine_unregister_external_texture(FlEngine* self,
+                                               int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
+  return self->embedder_api.UnregisterExternalTexture(self->engine,
+                                                      texture_id) == kSuccess;
+}
+
 G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(
     FlEngine* self) {
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
   return self->binary_messenger;
+}
+
+FlTaskRunner* fl_engine_get_task_runner(FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->task_runner;
+}
+
+void fl_engine_execute_task(FlEngine* self, FlutterTask* task) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+  self->embedder_api.RunTask(self->engine, task);
+}
+
+G_MODULE_EXPORT FlTextureRegistrar* fl_engine_get_texture_registrar(
+    FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->texture_registrar;
 }

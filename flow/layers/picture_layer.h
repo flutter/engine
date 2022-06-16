@@ -20,7 +20,13 @@ class PictureLayer : public Layer {
                bool is_complex,
                bool will_change);
 
-  SkPicture* picture() const { return picture_.get().get(); }
+  SkPicture* picture() const { return picture_.skia_object().get(); }
+
+  bool IsReplacing(DiffContext* context, const Layer* layer) const override;
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
+  const PictureLayer* as_picture_layer() const override { return this; }
 
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
 
@@ -33,6 +39,12 @@ class PictureLayer : public Layer {
   SkiaGPUObject<SkPicture> picture_;
   bool is_complex_ = false;
   bool will_change_ = false;
+
+  sk_sp<SkData> SerializedPicture() const;
+  mutable sk_sp<SkData> cached_serialized_picture_;
+  static bool Compare(DiffContext::Statistics& statistics,
+                      const PictureLayer* l1,
+                      const PictureLayer* l2);
 
   FML_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };

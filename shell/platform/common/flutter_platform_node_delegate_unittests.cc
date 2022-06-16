@@ -12,6 +12,34 @@
 namespace flutter {
 namespace testing {
 
+TEST(FlutterPlatformNodeDelegateTest, NodeDelegateHasUniqueId) {
+  TestAccessibilityBridgeDelegate* delegate =
+      new TestAccessibilityBridgeDelegate();
+  std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(std::move(ptr));
+
+  // Add node 0: root.
+  FlutterSemanticsNode node0{sizeof(FlutterSemanticsNode), 0};
+  std::vector<int32_t> node0_children{1};
+  node0.child_count = node0_children.size();
+  node0.children_in_traversal_order = node0_children.data();
+  node0.children_in_hit_test_order = node0_children.data();
+
+  // Add node 1: text child of node 0.
+  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  node1.label = "prefecture";
+  node1.value = "Kyoto";
+
+  bridge->AddFlutterSemanticsNodeUpdate(&node0);
+  bridge->AddFlutterSemanticsNodeUpdate(&node1);
+  bridge->CommitUpdates();
+
+  auto node0_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+  auto node1_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
+  EXPECT_TRUE(node0_delegate->GetUniqueId() != node1_delegate->GetUniqueId());
+}
+
 TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   TestAccessibilityBridgeDelegate* delegate =
       new TestAccessibilityBridgeDelegate();
@@ -172,6 +200,52 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   EXPECT_EQ(bounds.width(), 20);
   EXPECT_EQ(bounds.height(), 20);
   EXPECT_EQ(result, ui::AXOffscreenResult::kOffscreen);
+}
+
+TEST(FlutterPlatformNodeDelegateTest, canUseOwnerBridge) {
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(
+          std::make_unique<TestAccessibilityBridgeDelegate>());
+  FlutterSemanticsNode root;
+  root.id = 0;
+  root.label = "root";
+  root.hint = "";
+  root.value = "";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 1;
+  int32_t children[] = {1};
+  root.children_in_traversal_order = children;
+  root.custom_accessibility_actions_count = 0;
+  root.rect = {0, 0, 100, 100};  // LTRB
+  root.transform = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+
+  FlutterSemanticsNode child1;
+  child1.id = 1;
+  child1.label = "child 1";
+  child1.hint = "";
+  child1.value = "";
+  child1.increased_value = "";
+  child1.decreased_value = "";
+  child1.child_count = 0;
+  child1.custom_accessibility_actions_count = 0;
+  child1.rect = {0, 0, 50, 50};  // LTRB
+  child1.transform = {0.5, 0, 0, 0, 0.5, 0, 0, 0, 1};
+  bridge->AddFlutterSemanticsNodeUpdate(&child1);
+
+  bridge->CommitUpdates();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
+  auto owner_bridge = child1_node->GetOwnerBridge().lock();
+
+  bool result;
+  gfx::RectF bounds = owner_bridge->RelativeToGlobalBounds(
+      child1_node->GetAXNode(), result, true);
+  EXPECT_EQ(bounds.x(), 0);
+  EXPECT_EQ(bounds.y(), 0);
+  EXPECT_EQ(bounds.width(), 25);
+  EXPECT_EQ(bounds.height(), 25);
+  EXPECT_EQ(result, false);
 }
 
 }  // namespace testing

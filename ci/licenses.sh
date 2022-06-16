@@ -62,7 +62,6 @@ dart --version
 # Runs in a subshell.
 function collect_licenses() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  pub get
   dart --enable-asserts lib/main.dart         \
     --src ../../..                            \
     --out ../../../out/license_script_output  \
@@ -90,7 +89,7 @@ function verify_licenses() (
           echo "changed, and then update this file:"
           echo "  flutter/sky/packages/sky_engine/LICENSE"
           echo "For more information, see the script in:"
-          echo "  https://github.com/flutter/engine/tree/master/tools/licenses"
+          echo "  https://github.com/flutter/engine/tree/main/tools/licenses"
           echo ""
           diff -U 6 "flutter/ci/licenses_golden/$(basename "$f")" "$f"
           echo "================================================================="
@@ -110,7 +109,7 @@ function verify_licenses() (
       echo "license tool signature golden file:"
       echo "  ci/licenses_golden/tool_signature"
       echo "For more information, see the script in:"
-      echo "  https://github.com/flutter/engine/tree/master/tools/licenses"
+      echo "  https://github.com/flutter/engine/tree/main/tools/licenses"
       echo ""
       diff -U 6 "flutter/ci/licenses_golden/tool_signature" "out/license_script_output/tool_signature"
       echo "================================================================="
@@ -122,7 +121,7 @@ function verify_licenses() (
 
   local actualLicenseCount
   actualLicenseCount="$(tail -n 1 flutter/ci/licenses_golden/licenses_flutter | tr -dc '0-9')"
-  local expectedLicenseCount=15 # When changing this number: Update the error message below as well describing all expected license types.
+  local expectedLicenseCount=16 # When changing this number: Update the error message below as well describing all expected license types.
 
   if [[ $actualLicenseCount -ne $expectedLicenseCount ]]; then
       echo "=============================== ERROR ==============================="

@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 
+#include <optional>
+
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
@@ -20,6 +22,19 @@ struct GLFrameInfo {
   uint32_t height;
 };
 
+// Information passed during presentation of a frame.
+struct GLPresentInfo {
+  uint32_t fbo_id;
+
+  // Damage is a hint to compositor telling it which parts of front buffer
+  // need to be updated
+  const std::optional<SkIRect>& damage;
+
+  // Time at which this frame is scheduled to be presented. This is a hint
+  // that can be passed to the platform to drop queued frames.
+  std::optional<fml::TimePoint> presentation_time = std::nullopt;
+};
+
 class GPUSurfaceGLDelegate {
  public:
   ~GPUSurfaceGLDelegate();
@@ -31,9 +46,13 @@ class GPUSurfaceGLDelegate {
   // either the GPU or IO threads.
   virtual bool GLContextClearCurrent() = 0;
 
+  // Inform the GL Context that there's going to be no writing beyond
+  // the specified region
+  virtual void GLContextSetDamageRegion(const std::optional<SkIRect>& region) {}
+
   // Called to present the main GL surface. This is only called for the main GL
   // context and not any of the contexts dedicated for IO.
-  virtual bool GLContextPresent(uint32_t fbo_id) = 0;
+  virtual bool GLContextPresent(const GLPresentInfo& present_info) = 0;
 
   // The ID of the main window bound framebuffer. Typically FBO0.
   virtual intptr_t GLContextFBO(GLFrameInfo frame_info) const = 0;
@@ -45,9 +64,8 @@ class GPUSurfaceGLDelegate {
   // rendering subsequent frames.
   virtual bool GLContextFBOResetAfterPresent() const;
 
-  // Indicates whether or not the surface supports pixel readback as used in
-  // circumstances such as a BackdropFilter.
-  virtual bool SurfaceSupportsReadback() const;
+  // Returns framebuffer info for current backbuffer
+  virtual SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const;
 
   // A transformation applied to the onscreen surface before the canvas is
   // flushed.
@@ -69,6 +87,9 @@ class GPUSurfaceGLDelegate {
   // instrumentation to specific GL calls can specify custom GL functions
   // here.
   virtual GLProcResolver GetGLProcResolver() const;
+
+  // Whether to allow drawing to the surface when the GPU is disabled
+  virtual bool AllowsDrawingWhenGpuDisabled() const;
 };
 
 }  // namespace flutter

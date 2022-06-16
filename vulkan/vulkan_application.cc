@@ -100,21 +100,22 @@ VulkanApplication::VulkanApplication(
     return;
   }
 
-  // Now that we have an instance, setup instance proc table entries.
-  if (!vk.SetupInstanceProcAddresses(instance)) {
-    FML_DLOG(INFO) << "Could not setup instance proc addresses.";
+  // Now that we have an instance, set up instance proc table entries.
+  if (!vk.SetupInstanceProcAddresses(VulkanHandle<VkInstance>(instance))) {
+    FML_DLOG(INFO) << "Could not set up instance proc addresses.";
     return;
   }
 
-  instance_ = {instance, [this](VkInstance i) {
-                 FML_DLOG(INFO) << "Destroying Vulkan instance";
-                 vk.DestroyInstance(i, nullptr);
-               }};
+  instance_ = VulkanHandle<VkInstance>{instance, [this](VkInstance i) {
+                                         FML_DLOG(INFO)
+                                             << "Destroying Vulkan instance";
+                                         vk.DestroyInstance(i, nullptr);
+                                       }};
 
   if (enable_instance_debugging) {
     auto debug_report = std::make_unique<VulkanDebugReport>(vk, instance_);
     if (!debug_report->IsValid()) {
-      FML_DLOG(INFO) << "Vulkan debugging was enabled but could not be setup "
+      FML_DLOG(INFO) << "Vulkan debugging was enabled but could not be set up "
                         "for this instance.";
     } else {
       debug_report_ = std::move(debug_report);
@@ -178,7 +179,8 @@ std::unique_ptr<VulkanDevice>
 VulkanApplication::AcquireFirstCompatibleLogicalDevice() const {
   for (auto device_handle : GetPhysicalDevices()) {
     auto logical_device = std::make_unique<VulkanDevice>(
-        vk, device_handle, enable_validation_layers_);
+        vk, VulkanHandle<VkPhysicalDevice>(device_handle),
+        enable_validation_layers_);
     if (logical_device->IsValid()) {
       return logical_device;
     }

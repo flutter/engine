@@ -5,9 +5,8 @@
 #ifndef BASE_NUMERICS_SAFE_CONVERSIONS_H_
 #define BASE_NUMERICS_SAFE_CONVERSIONS_H_
 
-#include <stddef.h>
-
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <type_traits>
 
@@ -200,7 +199,7 @@ struct SaturateFastOp<
 // saturated_cast<> is analogous to static_cast<> for numeric types, except
 // that the specified numeric conversion will saturate by default rather than
 // overflow or underflow, and NaN assignment to an integral will return 0.
-// All boundary condition behaviors can be overriden with a custom handler.
+// All boundary condition behaviors can be overridden with a custom handler.
 template <typename Dst,
           template <typename> class SaturationHandler = SaturationDefaultLimits,
           typename Src>

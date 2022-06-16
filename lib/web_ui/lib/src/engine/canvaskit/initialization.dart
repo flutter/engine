@@ -1,22 +1,30 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+library canvaskit_initialization;
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
 
-/// A JavaScript entrypoint that allows developer to set rendering backend
-/// at runtime before launching the application.
-@JS('window.flutterWebRenderer')
-external String? get requestedRendererType;
+import '../../engine.dart' show kProfileMode;
+import '../browser_detection.dart';
+import '../configuration.dart';
+import '../dom.dart';
+import '../safe_browser_api.dart';
+import 'canvaskit_api.dart';
+import 'fonts.dart';
+import 'util.dart';
 
 /// Whether to use CanvasKit as the rendering backend.
-bool get useCanvasKit => _autoDetect ? _detectRenderer() : _useSkia;
+final bool useCanvasKit = FlutterConfiguration.flutterWebAutoDetect
+  ? _hasCanvasKit
+  : FlutterConfiguration.useSkia;
 
 /// Returns true if CanvasKit is used.
 ///
 /// Otherwise, returns false.
-bool _detectRenderer() {
+final bool _hasCanvasKit = _detectCanvasKit();
+
+bool _detectCanvasKit() {
   if (requestedRendererType != null) {
     return requestedRendererType! == 'canvaskit';
   }
@@ -25,84 +33,79 @@ bool _detectRenderer() {
   return isDesktop;
 }
 
-/// Auto detect which rendering backend to use.
-///
-/// Using flutter tools option "--web-render=auto" or not specifying one
-/// would set the value to true. Otherwise, it would be false.
-const bool _autoDetect =
-    bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: true);
+String get canvasKitBuildUrl =>
+    configuration.canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
+String get canvasKitJavaScriptBindingsUrl =>
+    canvasKitBuildUrl + 'canvaskit.js';
+String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
+    canvasKitBase + file;
 
-/// Enable the Skia-based rendering backend.
+/// Downloads CanvasKit and instantiates its WASM module.
 ///
-/// Using flutter tools option "--web-render=canvaskit" would set the value to
-/// true.
-/// Using flutter tools option "--web-render=html" would set the value to false.
-const bool _useSkia =
-    bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
+/// Uses a cached implemenation if it exists. Otherwise downloads CanvasKit.
+/// Assigns the global [canvasKit] object.
+///
+/// Does not put any UI onto the page. It is therefore safe to call this
+/// function while the page is showing non-Flutter UI, such as a loading
+/// indicator or a splash screen.
+///
+/// See also:
+///
+///  * `initializeEngineUi`, which puts UI elements on the page.
+Future<void> initializeCanvasKit({String? canvasKitBase}) async {
+  if (windowFlutterCanvasKit != null) {
+    canvasKit = windowFlutterCanvasKit!;
+  } else if (useH5vccCanvasKit) {
+    if (h5vcc?.canvasKit == null) {
+      throw CanvasKitError('H5vcc CanvasKit implementation not found.');
+    }
+    canvasKit = h5vcc!.canvasKit!;
+    windowFlutterCanvasKit = canvasKit;
+  } else {
+    canvasKit = await downloadCanvasKit(canvasKitBase: canvasKitBase);
+    windowFlutterCanvasKit = canvasKit;
+  }
+}
 
-/// If set to true, forces CPU-only rendering (i.e. no WebGL).
+/// Download and initialize the CanvasKit module.
 ///
-/// This is mainly used for testing or for apps that want to ensure they
-/// run on devices which don't support WebGL.
-const bool canvasKitForceCpuOnly = bool.fromEnvironment(
-    'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
-    defaultValue: false);
+/// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
+/// and intialize the CanvasKit wasm.
+Future<CanvasKit> downloadCanvasKit({String? canvasKitBase}) async {
+  await _downloadCanvasKitJs(canvasKitBase: canvasKitBase);
+  final Completer<CanvasKit> canvasKitInitCompleter = Completer<CanvasKit>();
+  final CanvasKitInitPromise canvasKitInitPromise =
+      CanvasKitInit(CanvasKitInitOptions(
+    locateFile: allowInterop((String file, String unusedBase) =>
+        canvasKitWasmModuleUrl(canvasKitBase ?? canvasKitBuildUrl, file)),
+  ));
+  canvasKitInitPromise.then(allowInterop((CanvasKit ck) {
+    canvasKitInitCompleter.complete(ck);
+  }));
+  return canvasKitInitCompleter.future;
+}
 
-/// The URL to use when downloading the CanvasKit script and associated wasm.
-///
-/// The expected directory structure nested under this URL is as follows:
-///
-///     /canvaskit.js              - the release build of CanvasKit JS API bindings
-///     /canvaskit.wasm            - the release build of CanvasKit WASM module
-///     /profiling/canvaskit.js    - the profile build of CanvasKit JS API bindings
-///     /profiling/canvaskit.wasm  - the profile build of CanvasKit WASM module
-///
-/// The base URL can be overridden using the `FLUTTER_WEB_CANVASKIT_URL`
-/// environment variable, which can be set in the Flutter tool using the
-/// `--dart-define` option. The value must end with a `/`.
-///
-/// Example:
-///
-/// ```
-/// flutter run \
-///   -d chrome \
-///   --web-renderer=canvaskit \
-///   --dart-define=FLUTTER_WEB_CANVASKIT_URL=https://example.com/custom-canvaskit-build/
-/// ```
-///
-/// When CanvasKit pushes a new release to NPM, update this URL to reflect the
-/// most recent version. For example, if CanvasKit releases version 0.34.0 to
-/// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
-const String canvasKitBaseUrl = String.fromEnvironment(
-  'FLUTTER_WEB_CANVASKIT_URL',
-  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.22.0/bin/',
-);
-final String canvasKitBuildUrl = canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
-final String canvasKitJavaScriptBindingsUrl = canvasKitBuildUrl + 'canvaskit.js';
-String canvasKitWasmModuleUrl(String file) => canvasKitBuildUrl + file;
+/// Downloads the CanvasKit JavaScript file at [canvasKitBase].
+Future<void> _downloadCanvasKitJs({String? canvasKitBase}) {
+  final String canvasKitJavaScriptUrl = canvasKitBase != null
+      ? canvasKitBase + 'canvaskit.js'
+      : canvasKitJavaScriptBindingsUrl;
 
-/// Initialize CanvasKit.
-///
-/// This calls `CanvasKitInit` and assigns the global [canvasKit] object.
-Future<void> initializeCanvasKit() {
-  final Completer<void> canvasKitCompleter = Completer<void>();
-  late StreamSubscription<html.Event> loadSubscription;
-  loadSubscription = domRenderer.canvasKitScript!.onLoad.listen((_) {
-    loadSubscription.cancel();
-    final CanvasKitInitPromise canvasKitInitPromise = CanvasKitInit(CanvasKitInitOptions(
-      locateFile: js.allowInterop((String file, String unusedBase) => canvasKitWasmModuleUrl(file)),
-    ));
-    canvasKitInitPromise.then(js.allowInterop((CanvasKit ck) {
-      canvasKit = ck;
-      windowFlutterCanvasKit = canvasKit;
-      canvasKitCompleter.complete();
-    }));
-  });
+  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  canvasKitScript.src = canvasKitJavaScriptUrl;
 
-  /// Add a Skia scene host.
-  skiaSceneHost = html.Element.tag('flt-scene');
-  domRenderer.renderScene(skiaSceneHost);
-  return canvasKitCompleter.future;
+  final Completer<void> canvasKitLoadCompleter = Completer<void>();
+  late DomEventListener callback;
+  void loadEventHandler(DomEvent _) {
+    canvasKitLoadCompleter.complete();
+    canvasKitScript.removeEventListener('load', callback);
+  }
+  callback = allowInterop(loadEventHandler);
+  canvasKitScript.addEventListener('load', callback);
+
+  patchCanvasKitModule(canvasKitScript);
+
+  return canvasKitLoadCompleter.future;
 }
 
 /// The Skia font collection.
@@ -115,4 +118,4 @@ void ensureSkiaFontCollectionInitialized() {
 }
 
 /// The scene host, where the root canvas and overlay canvases are added to.
-html.Element? skiaSceneHost;
+DomElement? skiaSceneHost;

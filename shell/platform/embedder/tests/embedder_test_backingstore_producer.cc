@@ -5,7 +5,13 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+#include <memory>
 
 namespace flutter {
 namespace testing {
@@ -13,7 +19,18 @@ namespace testing {
 EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
     sk_sp<GrDirectContext> context,
     RenderTargetType type)
-    : context_(context), type_(type) {}
+    : context_(context),
+      type_(type)
+#ifdef SHELL_ENABLE_METAL
+      ,
+      test_metal_context_(std::make_unique<TestMetalContext>())
+#endif
+#ifdef SHELL_ENABLE_VULKAN
+      ,
+      test_vulkan_context_(nullptr)
+#endif
+{
+}
 
 EmbedderTestBackingStoreProducer::~EmbedderTestBackingStoreProducer() = default;
 
@@ -28,6 +45,14 @@ bool EmbedderTestBackingStoreProducer::Create(
       return CreateTexture(config, renderer_out);
     case RenderTargetType::kOpenGLFramebuffer:
       return CreateFramebuffer(config, renderer_out);
+#endif
+#ifdef SHELL_ENABLE_METAL
+    case RenderTargetType::kMetalTexture:
+      return CreateMTLTexture(config, renderer_out);
+#endif
+#ifdef SHELL_ENABLE_VULKAN
+    case RenderTargetType::kVulkanImage:
+      return CreateVulkanImage(config, renderer_out);
 #endif
     default:
       return false;
@@ -172,6 +197,127 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
   };
 
   return true;
+}
+
+bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out) {
+#ifdef SHELL_ENABLE_METAL
+  // TODO(gw280): Use SkSurface::MakeRenderTarget instead of generating our
+  // own MTLTexture and wrapping it.
+  auto surface_size = SkISize::Make(config->size.width, config->size.height);
+  auto texture_info = test_metal_context_->CreateMetalTexture(surface_size);
+
+  GrMtlTextureInfo skia_texture_info;
+  skia_texture_info.fTexture.reset(SkCFSafeRetain(texture_info.texture));
+  GrBackendTexture backend_texture(surface_size.width(), surface_size.height(),
+                                   GrMipmapped::kNo, skia_texture_info);
+
+  sk_sp<SkSurface> surface = SkSurface::MakeFromBackendTexture(
+      context_.get(), backend_texture, kTopLeft_GrSurfaceOrigin, 1,
+      kBGRA_8888_SkColorType, nullptr, nullptr);
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not create Skia surface from a Metal texture.";
+    return false;
+  }
+
+  backing_store_out->type = kFlutterBackingStoreTypeMetal;
+  backing_store_out->user_data = surface.get();
+  backing_store_out->metal.texture.texture = texture_info.texture;
+  // The balancing unref is in the destruction callback.
+  surface->ref();
+  backing_store_out->metal.struct_size = sizeof(FlutterMetalBackingStore);
+  backing_store_out->metal.texture.user_data = surface.get();
+  backing_store_out->metal.texture.destruction_callback = [](void* user_data) {
+    reinterpret_cast<SkSurface*>(user_data)->unref();
+  };
+
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out) {
+#ifdef SHELL_ENABLE_VULKAN
+  if (!test_vulkan_context_) {
+    test_vulkan_context_ = fml::MakeRefCounted<TestVulkanContext>();
+  }
+
+  auto surface_size = SkISize::Make(config->size.width, config->size.height);
+  TestVulkanImage* test_image = new TestVulkanImage(
+      std::move(test_vulkan_context_->CreateImage(surface_size).value()));
+
+  GrVkImageInfo image_info = {
+      .fImage = test_image->GetImage(),
+      .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
+      .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .fFormat = VK_FORMAT_R8G8B8A8_UNORM,
+      .fImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                          VK_IMAGE_USAGE_SAMPLED_BIT,
+      .fSampleCount = 1,
+      .fLevelCount = 1,
+  };
+  GrBackendTexture backend_texture(surface_size.width(), surface_size.height(),
+                                   image_info);
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  SkSurface::TextureReleaseProc release_vktexture = [](void* user_data) {
+    delete reinterpret_cast<TestVulkanImage*>(user_data);
+  };
+
+  sk_sp<SkSurface> surface = SkSurface::MakeFromBackendTexture(
+      context_.get(),            // context
+      backend_texture,           // back-end texture
+      kTopLeft_GrSurfaceOrigin,  // surface origin
+      1,                         // sample count
+      kRGBA_8888_SkColorType,    // color type
+      SkColorSpace::MakeSRGB(),  // color space
+      &surface_properties,       // surface properties
+      release_vktexture,         // texture release proc
+      test_image                 // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not create Skia surface from Vulkan image.";
+    return false;
+  }
+  backing_store_out->type = kFlutterBackingStoreTypeVulkan;
+
+  FlutterVulkanImage* image = new FlutterVulkanImage();
+  image->image = reinterpret_cast<uint64_t>(image_info.fImage);
+  image->format = VK_FORMAT_R8G8B8A8_UNORM;
+  backing_store_out->vulkan.image = image;
+
+  // Collect all allocated resources in the destruction_callback.
+  {
+    UserData* user_data = new UserData();
+    user_data->image = image;
+    user_data->surface = surface.get();
+
+    backing_store_out->user_data = user_data;
+    backing_store_out->vulkan.user_data = user_data;
+    backing_store_out->vulkan.destruction_callback = [](void* user_data) {
+      UserData* d = reinterpret_cast<UserData*>(user_data);
+      d->surface->unref();
+      delete d->image;
+      delete d;
+    };
+
+    // The balancing unref is in the destruction callback.
+    surface->ref();
+  }
+
+  return true;
+#else
+  return false;
+#endif
 }
 
 }  // namespace testing

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -11,7 +9,7 @@ import 'package:vector_math/vector_math_64.dart';
 
 import 'scenario.dart';
 
-/// Sends the recieved locale data back as semantics information.
+/// Sends the received locale data back as semantics information.
 class LocaleInitialization extends Scenario {
   /// Constructor
   LocaleInitialization(PlatformDispatcher dispatcher)
@@ -54,6 +52,7 @@ class LocaleInitialization extends Scenario {
         actions: 1,
         rect: const Rect.fromLTRB(0.0, 0.0, 414.0, 48.0),
         label: window.locales.toString(),
+        labelAttributes: <StringAttribute>[],
         textDirection: TextDirection.ltr,
         textSelectionBase: -1,
         textSelectionExtent: -1,
@@ -69,9 +68,14 @@ class LocaleInitialization extends Scenario {
         elevation: 0.0,
         thickness: 0.0,
         hint: '',
+        hintAttributes: <StringAttribute>[],
         value: '',
+        valueAttributes: <StringAttribute>[],
         increasedValue: '',
+        increasedValueAttributes: <StringAttribute>[],
         decreasedValue: '',
+        decreasedValueAttributes: <StringAttribute>[],
+        tooltip: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),
@@ -103,6 +107,7 @@ class LocaleInitialization extends Scenario {
         actions: 1,
         rect: const Rect.fromLTRB(0.0, 0.0, 414.0, 48.0),
         label: label,
+        labelAttributes: <StringAttribute>[],
         textDirection: TextDirection.ltr,
         textSelectionBase: 0,
         textSelectionExtent: 0,
@@ -118,9 +123,14 @@ class LocaleInitialization extends Scenario {
         elevation: 0.0,
         thickness: 0.0,
         hint: '',
+        hintAttributes: <StringAttribute>[],
         value: '',
+        valueAttributes: <StringAttribute>[],
         increasedValue: '',
+        increasedValueAttributes: <StringAttribute>[],
         decreasedValue: '',
+        decreasedValueAttributes: <StringAttribute>[],
+        tooltip: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),

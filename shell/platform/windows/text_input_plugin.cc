@@ -3,14 +3,14 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/fml/string_conversion.h"
+#include "flutter/shell/platform/common/text_editing_delta.h"
 
 #include <windows.h>
 
 #include <cstdint>
-#include <iostream>
 
 #include "flutter/shell/platform/common/json_method_codec.h"
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
 static constexpr char kClearClientMethod[] = "TextInput.clearClient";
@@ -25,8 +25,16 @@ static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
 static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
+static constexpr char kUpdateEditingStateWithDeltasMethod[] =
+    "TextInputClient.updateEditingStateWithDeltas";
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 
+static constexpr char kDeltaOldTextKey[] = "oldText";
+static constexpr char kDeltaTextKey[] = "deltaText";
+static constexpr char kDeltaStartKey[] = "deltaStart";
+static constexpr char kDeltaEndKey[] = "deltaEnd";
+static constexpr char kDeltasKey[] = "deltas";
+static constexpr char kEnableDeltaModel[] = "enableDeltaModel";
 static constexpr char kTextInputAction[] = "inputAction";
 static constexpr char kTextInputType[] = "inputType";
 static constexpr char kTextInputTypeName[] = "name";
@@ -52,25 +60,34 @@ static constexpr char kInternalConsistencyError[] =
 
 namespace flutter {
 
-void TextInputPlugin::TextHook(FlutterWindowsView* view,
-                               const std::u16string& text) {
+void TextInputPlugin::TextHook(const std::u16string& text) {
   if (active_model_ == nullptr) {
     return;
   }
+  std::u16string text_before_change =
+      fml::Utf8ToUtf16(active_model_->GetText());
+  TextRange selection_before_change = active_model_->selection();
   active_model_->AddText(text);
-  SendStateUpdate(*active_model_);
+
+  if (enable_delta_model) {
+    TextEditingDelta delta =
+        TextEditingDelta(text_before_change, selection_before_change, text);
+    SendStateUpdateWithDelta(*active_model_, &delta);
+  } else {
+    SendStateUpdate(*active_model_);
+  }
 }
 
-bool TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
-                                   int key,
+void TextInputPlugin::KeyboardHook(int key,
                                    int scancode,
                                    int action,
                                    char32_t character,
-                                   bool extended) {
+                                   bool extended,
+                                   bool was_down) {
   if (active_model_ == nullptr) {
-    return false;
+    return;
   }
-  if (action == WM_KEYDOWN) {
+  if (action == WM_KEYDOWN || action == WM_SYSKEYDOWN) {
     // Most editing keys (arrow keys, backspace, delete, etc.) are handled in
     // the framework, so don't need to be handled at this layer.
     switch (key) {
@@ -81,7 +98,6 @@ bool TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
         break;
     }
   }
-  return false;
 }
 
 TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger,
@@ -103,23 +119,91 @@ TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger,
 TextInputPlugin::~TextInputPlugin() = default;
 
 void TextInputPlugin::ComposeBeginHook() {
+  if (active_model_ == nullptr) {
+    return;
+  }
   active_model_->BeginComposing();
-  SendStateUpdate(*active_model_);
+  if (enable_delta_model) {
+    std::string text = active_model_->GetText();
+    TextRange selection = active_model_->selection();
+    TextEditingDelta delta = TextEditingDelta(text);
+    SendStateUpdateWithDelta(*active_model_, &delta);
+  } else {
+    SendStateUpdate(*active_model_);
+  }
+}
+
+void TextInputPlugin::ComposeCommitHook() {
+  if (active_model_ == nullptr) {
+    return;
+  }
+  std::string text_before_change = active_model_->GetText();
+  TextRange selection_before_change = active_model_->selection();
+  TextRange composing_before_change = active_model_->composing_range();
+  std::string composing_text_before_change = text_before_change.substr(
+      composing_before_change.start(), composing_before_change.length());
+  active_model_->CommitComposing();
+
+  // We do not trigger SendStateUpdate here.
+  //
+  // Until a WM_IME_ENDCOMPOSING event, the user is still composing from the OS
+  // point of view. Commit events are always immediately followed by another
+  // composing event or an end composing event. However, in the brief window
+  // between the commit event and the following event, the composing region is
+  // collapsed. Notifying the framework of this intermediate state will trigger
+  // any framework code designed to execute at the end of composing, such as
+  // input formatters, which may try to update the text and send a message back
+  // to the engine with changes.
+  //
+  // This is a particular problem with Korean IMEs, which build up one
+  // character at a time in their composing region until a keypress that makes
+  // no sense for the in-progress character. At that point, the result
+  // character is committed and a compose event is immedidately received with
+  // the new composing region.
+  //
+  // In the case where this event is immediately followed by a composing event,
+  // the state will be sent in ComposeChangeHook.
+  //
+  // In the case where this event is immediately followed by an end composing
+  // event, the state will be sent in ComposeEndHook.
 }
 
 void TextInputPlugin::ComposeEndHook() {
+  if (active_model_ == nullptr) {
+    return;
+  }
+  std::string text_before_change = active_model_->GetText();
+  TextRange selection_before_change = active_model_->selection();
   active_model_->CommitComposing();
   active_model_->EndComposing();
-  SendStateUpdate(*active_model_);
+  if (enable_delta_model) {
+    std::string text = active_model_->GetText();
+    TextEditingDelta delta = TextEditingDelta(text);
+    SendStateUpdateWithDelta(*active_model_, &delta);
+  } else {
+    SendStateUpdate(*active_model_);
+  }
 }
 
 void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
                                         int cursor_pos) {
+  if (active_model_ == nullptr) {
+    return;
+  }
+  std::string text_before_change = active_model_->GetText();
+  TextRange composing_before_change = active_model_->composing_range();
   active_model_->AddText(text);
-  cursor_pos += active_model_->composing_range().base();
+  cursor_pos += active_model_->composing_range().extent();
   active_model_->UpdateComposingText(text);
   active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
-  SendStateUpdate(*active_model_);
+  std::string text_after_change = active_model_->GetText();
+  if (enable_delta_model) {
+    TextEditingDelta delta = TextEditingDelta(
+        fml::Utf8ToUtf16(text_before_change), composing_before_change, text);
+    SendStateUpdateWithDelta(*active_model_, &delta);
+  } else {
+    SendStateUpdate(*active_model_);
+  }
 }
 
 void TextInputPlugin::HandleMethodCall(
@@ -130,6 +214,12 @@ void TextInputPlugin::HandleMethodCall(
   if (method.compare(kShowMethod) == 0 || method.compare(kHideMethod) == 0) {
     // These methods are no-ops.
   } else if (method.compare(kClearClientMethod) == 0) {
+    if (active_model_ != nullptr && active_model_->composing()) {
+      active_model_->CommitComposing();
+      active_model_->EndComposing();
+      SendStateUpdate(*active_model_);
+    }
+    delegate_->OnResetImeComposing();
     active_model_ = nullptr;
   } else if (method.compare(kSetClientMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
@@ -150,6 +240,11 @@ void TextInputPlugin::HandleMethodCall(
       return;
     }
     client_id_ = client_id_json.GetInt();
+    auto enable_delta_model_json = client_config.FindMember(kEnableDeltaModel);
+    if (enable_delta_model_json != client_config.MemberEnd() &&
+        enable_delta_model_json->value.IsBool()) {
+      enable_delta_model = enable_delta_model_json->value.GetBool();
+    }
     input_action_ = "";
     auto input_action_json = client_config.FindMember(kTextInputAction);
     if (input_action_json != client_config.MemberEnd() &&
@@ -315,10 +410,52 @@ void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
   channel_->InvokeMethod(kUpdateEditingStateMethod, std::move(args));
 }
 
+void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
+                                               const TextEditingDelta* delta) {
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
+  auto& allocator = args->GetAllocator();
+  args->PushBack(client_id_, allocator);
+
+  rapidjson::Value object(rapidjson::kObjectType);
+  rapidjson::Value deltas(rapidjson::kArrayType);
+  rapidjson::Value deltaJson(rapidjson::kObjectType);
+
+  deltaJson.AddMember(kDeltaOldTextKey, delta->old_text(), allocator);
+  deltaJson.AddMember(kDeltaTextKey, delta->delta_text(), allocator);
+  deltaJson.AddMember(kDeltaStartKey, delta->delta_start(), allocator);
+  deltaJson.AddMember(kDeltaEndKey, delta->delta_end(), allocator);
+
+  TextRange selection = model.selection();
+  deltaJson.AddMember(kSelectionAffinityKey, kAffinityDownstream, allocator);
+  deltaJson.AddMember(kSelectionBaseKey, selection.base(), allocator);
+  deltaJson.AddMember(kSelectionExtentKey, selection.extent(), allocator);
+  deltaJson.AddMember(kSelectionIsDirectionalKey, false, allocator);
+
+  int composing_base = model.composing() ? model.composing_range().base() : -1;
+  int composing_extent =
+      model.composing() ? model.composing_range().extent() : -1;
+  deltaJson.AddMember(kComposingBaseKey, composing_base, allocator);
+  deltaJson.AddMember(kComposingExtentKey, composing_extent, allocator);
+
+  deltas.PushBack(deltaJson, allocator);
+  object.AddMember(kDeltasKey, deltas, allocator);
+  args->PushBack(object, allocator);
+
+  channel_->InvokeMethod(kUpdateEditingStateWithDeltasMethod, std::move(args));
+}
+
 void TextInputPlugin::EnterPressed(TextInputModel* model) {
   if (input_type_ == kMultilineInputType) {
-    model->AddText(std::u16string({u'\n'}));
-    SendStateUpdate(*model);
+    std::u16string text_before_change = fml::Utf8ToUtf16(model->GetText());
+    TextRange selection_before_change = model->selection();
+    model->AddText(u"\n");
+    if (enable_delta_model) {
+      TextEditingDelta delta(text_before_change, selection_before_change,
+                             u"\n");
+      SendStateUpdateWithDelta(*model, &delta);
+    } else {
+      SendStateUpdate(*model);
+    }
   }
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = args->GetAllocator();

@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
@@ -22,8 +23,6 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class Scene;
-
-typedef std::function<void(bool /* handled */)> KeyDataResponse;
 
 //--------------------------------------------------------------------------
 /// @brief An enum for defining the different kinds of accessibility features
@@ -37,6 +36,7 @@ enum class AccessibilityFeatureFlag : int32_t {
   kBoldText = 1 << 3,
   kReduceMotion = 1 << 4,
   kHighContrast = 1 << 5,
+  kOnOffSwitchLabels = 1 << 6,
 };
 
 //--------------------------------------------------------------------------
@@ -87,7 +87,8 @@ class PlatformConfigurationClient {
   /// @param[in]  message  The message from the Flutter application to send to
   ///                      the underlying platform.
   ///
-  virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) = 0;
+  virtual void HandlePlatformMessage(
+      std::unique_ptr<PlatformMessage> message) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Returns the current collection of fonts available on the
@@ -97,6 +98,11 @@ class PlatformConfigurationClient {
   ///             collections of them. MinikinFontForTest is used for FontFamily
   ///             creation.
   virtual FontCollection& GetFontCollection() = 0;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Returns the current collection of assets available on the
+  ///             platform.
+  virtual std::shared_ptr<AssetManager> GetAssetManager() = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Notifies this client of the name of the root isolate and its
@@ -309,7 +315,7 @@ class PlatformConfiguration final {
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that the embedder encountered an
@@ -324,25 +330,7 @@ class PlatformConfiguration final {
   ///
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Registers a callback to be invoked when the framework has
-  ///             decided whether to handle an event. This callback originates
-  ///             in the platform view and has been forwarded through the engine
-  ///             to here.
-  ///
-  ///             This method will move and store the `callback`, associate it
-  ///             with a self-incrementing identifier, the response ID, then
-  ///             return the ID, which is typically used by
-  ///             Window::DispatchKeyDataPacket.
-  ///
-  /// @param[in]  callback  The callback to be registered.
-  ///
-  /// @return     The response ID to be associated with the callback. Using this
-  ///             ID in CompleteKeyDataResponse will invoke the callback.
-  ///
-  uint64_t RegisterKeyDataResponse(KeyDataResponse callback);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that it is time to begin working on a
@@ -363,7 +351,12 @@ class PlatformConfiguration final {
   ///                         began. May be used by animation interpolators,
   ///                         physics simulations, etc..
   ///
-  void BeginFrame(fml::TimePoint frame_time);
+  /// @param[in]  frame_number The frame number recorded by the animator. Used
+  ///                          by the framework to associate frame specific
+  ///                          debug information with frame timings and timeline
+  ///                          events.
+  ///
+  void BeginFrame(fml::TimePoint frame_time, uint64_t frame_number);
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
@@ -384,12 +377,13 @@ class PlatformConfiguration final {
   ///
   /// @see        `FrameTiming`
   ///
-  /// @param[in]  timings  Collection of `FrameTiming::kCount` * `n` timestamps
-  ///                      for `n` frames whose timings have not been reported
-  ///                      yet. A collection of integers is reported here for
-  ///                      easier conversions to Dart objects. The timestamps
-  ///                      are measured against the system monotonic clock
-  ///                      measured in microseconds.
+  /// @param[in]  timings  Collection of `FrameTiming::kStatisticsCount` * 'n'
+  ///                      values for `n` frames whose timings have not been
+  ///                      reported yet. Many of the values are timestamps, but
+  ///                      a collection of integers is reported here for easier
+  ///                      conversions to Dart objects. The timestamps are
+  ///                      measured against the system monotonic clock measured
+  ///                      in microseconds.
   ///
   void ReportTimings(std::vector<int64_t> timings);
 
@@ -432,30 +426,17 @@ class PlatformConfiguration final {
   ///
   void CompletePlatformMessageEmptyResponse(int response_id);
 
-  //----------------------------------------------------------------------------
-  /// @brief      Responds to a previously registered key data message from the
-  ///             framework to the engine.
-  ///
-  ///             For each response_id, this method should be called exactly
-  ///             once. Responding to a response_id that has not been registered
-  ///             or has been invoked will lead to a fatal error.
-  ///
-  /// @param[in] response_id The unique id that identifies the original platform
-  ///                        message to respond to, created by
-  ///                        RegisterKeyDataResponse.
-  /// @param[in] handled     Whether the key data is handled.
-  ///
-  void CompleteKeyDataResponse(uint64_t response_id, bool handled);
+  Dart_Handle on_error() { return on_error_.Get(); }
 
  private:
   PlatformConfigurationClient* client_;
+  tonic::DartPersistentValue on_error_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_lifecycle_state_;
   tonic::DartPersistentValue update_semantics_enabled_;
   tonic::DartPersistentValue update_accessibility_features_;
   tonic::DartPersistentValue dispatch_platform_message_;
-  tonic::DartPersistentValue dispatch_key_message_;
   tonic::DartPersistentValue dispatch_semantics_action_;
   tonic::DartPersistentValue begin_frame_;
   tonic::DartPersistentValue draw_frame_;
@@ -467,10 +448,6 @@ class PlatformConfiguration final {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
-
-  // ID starts at 1 because an ID of 0 indicates that no response is expected.
-  uint64_t next_key_response_id_ = 1;
-  std::unordered_map<uint64_t, KeyDataResponse> pending_key_responses_;
 };
 
 }  // namespace flutter

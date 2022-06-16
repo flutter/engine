@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'message_codec.dart';
+import 'serialization.dart';
 
 /// [MessageCodec] with unencoded binary messages represented using [ByteData].
 ///
@@ -141,8 +144,8 @@ class JSONMethodCodec implements MethodCodec {
         decoded[0] is String &&
         (decoded[1] == null || decoded[1] is String)) {
       throw PlatformException(
-        code: decoded[0],
-        message: decoded[1],
+        code: decoded[0] as String,
+        message: decoded[1] as String?,
         details: decoded[2],
       );
     }
@@ -304,7 +307,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
       buffer.putUint8(_valueNull);
     } else if (value is bool) {
       buffer.putUint8(value ? _valueTrue : _valueFalse);
-      // TODO(flutter_web): upstream double/int if/else swap.
+      // TODO(hterkelsen): upstream double/int if/else swap.
     } else if (value is double) {
       buffer.putUint8(_valueFloat64);
       buffer.putFloat64(value);
@@ -556,7 +559,10 @@ class StandardMethodCodec implements MethodCodec {
         (errorMessage == null || errorMessage is String) &&
         !buffer.hasRemaining)
       throw PlatformException(
-          code: errorCode, message: errorMessage, details: errorDetails);
+        code: errorCode,
+        message: errorMessage as String?,
+        details: errorDetails,
+      );
     else
       throw const FormatException('Invalid envelope');
   }

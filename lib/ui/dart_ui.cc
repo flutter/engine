@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/dart_ui.h"
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/compositing/scene_builder.h"
@@ -13,6 +14,7 @@
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/engine_layer.h"
+#include "flutter/lib/ui/painting/fragment_program.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_descriptor.h"
@@ -26,16 +28,13 @@
 #include "flutter/lib/ui/painting/vertices.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
+#include "flutter/lib/ui/semantics/string_attribute.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck
-#endif
 
 using tonic::ToDart;
 
@@ -69,11 +68,13 @@ void DartUI::InitForGlobal() {
     DartRuntimeHooks::RegisterNatives(g_natives);
     EngineLayer::RegisterNatives(g_natives);
     FontCollection::RegisterNatives(g_natives);
+    FragmentProgram::RegisterNatives(g_natives);
     ImageDescriptor::RegisterNatives(g_natives);
     ImageFilter::RegisterNatives(g_natives);
     ImageShader::RegisterNatives(g_natives);
     ImmutableBuffer::RegisterNatives(g_natives);
     IsolateNameServerNatives::RegisterNatives(g_natives);
+    NativeStringAttribute::RegisterNatives(g_natives);
     Paragraph::RegisterNatives(g_natives);
     ParagraphBuilder::RegisterNatives(g_natives);
     Picture::RegisterNatives(g_natives);
@@ -84,18 +85,28 @@ void DartUI::InitForGlobal() {
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     PlatformConfiguration::RegisterNatives(g_natives);
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-    SceneHost::RegisterNatives(g_natives);
-#endif
   }
 }
 
-void DartUI::InitForIsolate() {
+void DartUI::InitForIsolate(const Settings& settings) {
   FML_DCHECK(g_natives);
-  Dart_Handle result = Dart_SetNativeResolver(
-      Dart_LookupLibrary(ToDart("dart:ui")), GetNativeFunction, GetSymbol);
+
+  Dart_Handle dart_ui = Dart_LookupLibrary(ToDart("dart:ui"));
+  if (Dart_IsError(dart_ui)) {
+    Dart_PropagateError(dart_ui);
+  }
+
+  Dart_Handle result =
+      Dart_SetNativeResolver(dart_ui, GetNativeFunction, GetSymbol);
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
+  }
+
+  if (settings.enable_impeller) {
+    result = Dart_SetField(dart_ui, ToDart("_impellerEnabled"), Dart_True());
+    if (Dart_IsError(result)) {
+      Dart_PropagateError(result);
+    }
   }
 }
 

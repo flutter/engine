@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -35,26 +34,28 @@ TestLine l(
 
 void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
   final String text = paragraph.toPlainText();
-  final List<EngineLineMetrics> lines = paragraph.computeLineMetrics();
+  final List<ParagraphLine> lines = paragraph.lines;
   expect(lines, hasLength(expectedLines.length));
   for (int i = 0; i < lines.length; i++) {
-    final EngineLineMetrics line = lines[i];
+    final ParagraphLine line = lines[i];
     final TestLine expectedLine = expectedLines[i];
 
     expect(
       line.lineNumber,
       i,
-      reason: '${i}th line had the wrong `lineNumber`. Expected: $i. Actual: ${line.lineNumber}',
+      reason: 'line #$i had the wrong `lineNumber`. Expected: $i. Actual: ${line.lineNumber}',
     );
     if (expectedLine.displayText != null) {
-      final String substring =
+      String displayText =
           text.substring(line.startIndex, line.endIndexWithoutNewlines);
-      final String ellipsis = line.ellipsis ?? '';
+      if (line.ellipsis != null) {
+        displayText += line.ellipsis!;
+      }
       expect(
-        substring + ellipsis,
+        displayText,
         expectedLine.displayText,
         reason:
-            '${i}th line had a different `displayText` value: "${line.displayText}" vs. "${expectedLine.displayText}"',
+            'line #$i had a different `displayText` value: "$displayText" vs. "${expectedLine.displayText}"',
       );
     }
     if (expectedLine.startIndex != null) {
@@ -62,7 +63,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.startIndex,
         expectedLine.startIndex,
         reason:
-            '${i}th line had a different `startIndex` value: "${line.startIndex}" vs. "${expectedLine.startIndex}"',
+            'line #$i had a different `startIndex` value: "${line.startIndex}" vs. "${expectedLine.startIndex}"',
       );
     }
     if (expectedLine.endIndex != null) {
@@ -70,7 +71,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.endIndex,
         expectedLine.endIndex,
         reason:
-            '${i}th line had a different `endIndex` value: "${line.endIndex}" vs. "${expectedLine.endIndex}"',
+            'line #$i had a different `endIndex` value: "${line.endIndex}" vs. "${expectedLine.endIndex}"',
       );
     }
     if (expectedLine.endIndexWithoutNewlines != null) {
@@ -78,7 +79,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.endIndexWithoutNewlines,
         expectedLine.endIndexWithoutNewlines,
         reason:
-            '${i}th line had a different `endIndexWithoutNewlines` value: "${line.endIndexWithoutNewlines}" vs. "${expectedLine.endIndexWithoutNewlines}"',
+            'line #$i had a different `endIndexWithoutNewlines` value: "${line.endIndexWithoutNewlines}" vs. "${expectedLine.endIndexWithoutNewlines}"',
       );
     }
     if (expectedLine.hardBreak != null) {
@@ -86,7 +87,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.hardBreak,
         expectedLine.hardBreak,
         reason:
-            '${i}th line had a different `hardBreak` value: "${line.hardBreak}" vs. "${expectedLine.hardBreak}"',
+            'line #$i had a different `hardBreak` value: "${line.hardBreak}" vs. "${expectedLine.hardBreak}"',
       );
     }
     if (expectedLine.height != null) {
@@ -94,7 +95,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.height,
         expectedLine.height,
         reason:
-            '${i}th line had a different `height` value: "${line.height}" vs. "${expectedLine.height}"',
+            'line #$i had a different `height` value: "${line.height}" vs. "${expectedLine.height}"',
       );
     }
     if (expectedLine.width != null) {
@@ -102,7 +103,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.width,
         expectedLine.width,
         reason:
-            '${i}th line had a different `width` value: "${line.width}" vs. "${expectedLine.width}"',
+            'line #$i had a different `width` value: "${line.width}" vs. "${expectedLine.width}"',
       );
     }
     if (expectedLine.widthWithTrailingSpaces != null) {
@@ -110,7 +111,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.widthWithTrailingSpaces,
         expectedLine.widthWithTrailingSpaces,
         reason:
-            '${i}th line had a different `widthWithTrailingSpaces` value: "${line.widthWithTrailingSpaces}" vs. "${expectedLine.widthWithTrailingSpaces}"',
+            'line #$i had a different `widthWithTrailingSpaces` value: "${line.widthWithTrailingSpaces}" vs. "${expectedLine.widthWithTrailingSpaces}"',
       );
     }
     if (expectedLine.left != null) {
@@ -118,7 +119,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
         line.left,
         expectedLine.left,
         reason:
-            '${i}th line had a different `left` value: "${line.left}" vs. "${expectedLine.left}"',
+            'line #$i had a different `left` value: "${line.left}" vs. "${expectedLine.left}"',
       );
     }
   }

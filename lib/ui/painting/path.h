@@ -24,7 +24,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
  public:
   ~CanvasPath() override;
-  static fml::RefPtr<CanvasPath> CreateNew(Dart_Handle path_handle) {
+  static fml::RefPtr<CanvasPath> CreateNew() {
     return fml::MakeRefCounted<CanvasPath>();
   }
 
@@ -114,8 +114,6 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   size_t GetAllocationSize() const override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-  virtual void ReleaseDartWrappableReference() const override;
 
  private:
   CanvasPath();

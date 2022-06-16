@@ -21,8 +21,8 @@ ConcurrentMessageLoop::ConcurrentMessageLoop(size_t worker_count)
     : worker_count_(std::max<size_t>(worker_count, 1ul)) {
   for (size_t i = 0; i < worker_count_; ++i) {
     workers_.emplace_back([i, this]() {
-      fml::Thread::SetCurrentThreadName(
-          std::string{"io.worker." + std::to_string(i + 1)});
+      fml::Thread::SetCurrentThreadName(fml::Thread::ThreadConfig(
+          std::string{"io.worker." + std::to_string(i + 1)}));
       WorkerMain();
     });
   }
@@ -78,7 +78,7 @@ void ConcurrentMessageLoop::WorkerMain() {
   while (true) {
     std::unique_lock lock(tasks_mutex_);
     tasks_condition_.wait(lock, [&]() {
-      return tasks_.size() > 0 || shutdown_ || HasThreadTasksLocked();
+      return !tasks_.empty() || shutdown_ || HasThreadTasksLocked();
     });
 
     // Shutdown cannot be read with the task mutex unlocked.
@@ -86,7 +86,7 @@ void ConcurrentMessageLoop::WorkerMain() {
     fml::closure task;
     std::vector<fml::closure> thread_tasks;
 
-    if (tasks_.size() != 0) {
+    if (!tasks_.empty()) {
       task = tasks_.front();
       tasks_.pop();
     }

@@ -1,0 +1,38 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("image") {
+  public = [
+    "compressed_image.h",
+    "decompressed_image.h",
+  ]
+
+  sources = [
+    "backends/skia/compressed_image_skia.cc",
+    "backends/skia/compressed_image_skia.h",
+    "compressed_image.cc",
+    "decompressed_image.cc",
+  ]
+
+  public_deps = [
+    "../base",
+    "../geometry",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//third_party/skia",
+  ]
+}
+
+impeller_component("image_unittests") {
+  testonly = true
+  sources = []
+  deps = [
+    ":image",
+    "//flutter/testing",
+  ]
+}

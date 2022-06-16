@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <hb-subset.h>
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -39,8 +40,8 @@ void Usage() {
                "and the subsetting operation succeeds."
             << std::endl;
   std::cout << "Codepoints should be specified on stdin, separated by spaces, "
-               "and must be input as decimal numbers (123), hexidecimal "
-               "numbers (0x7B), or unicode hexidecimal characters (\\u7B)."
+               "and must be input as decimal numbers (123), hexadecimal "
+               "numbers (0x7B), or unicode hexadecimal characters (\\u7B)."
             << std::endl;
   std::cout << "Input terminates with a newline." << std::endl;
   std::cout
@@ -48,6 +49,27 @@ void Usage() {
          "specified multiple times, e.g. '123 123' will be treated as '123'."
       << std::endl;
 }
+
+template <typename...>
+using void_t = void;
+template <typename T, typename = void>
+struct HarfBuzzSubset {
+  // This is the HarfBuzz 3.0 interface.
+  static HarfbuzzWrappers::HbFacePtr Make(hb_face_t* face, T input) {
+    // The prior version of harfbuzz automatically dropped layout tables,
+    // but in the new version they are kept by default. So re-add them to the
+    // drop list to retain the same behaviour.
+
+    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+               HB_TAG('G', 'S', 'U', 'B'));
+    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+               HB_TAG('G', 'P', 'O', 'S'));
+    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+               HB_TAG('G', 'D', 'E', 'F'));
+
+    return HarfbuzzWrappers::HbFacePtr(hb_subset_or_fail(face, input));
+  }
+};
 
 int main(int argc, char** argv) {
   if (argc != 3) {
@@ -104,9 +126,10 @@ int main(int argc, char** argv) {
     }
   }
 
-  HarfbuzzWrappers::HbFacePtr new_face(hb_subset(font_face.get(), input.get()));
+  HarfbuzzWrappers::HbFacePtr new_face =
+      HarfBuzzSubset<hb_subset_input_t*>::Make(font_face.get(), input.get());
 
-  if (new_face.get() == hb_face_get_empty()) {
+  if (!new_face || new_face.get() == hb_face_get_empty()) {
     std::cerr
         << "Failed to subset font; aborting. This error normally indicates "
            "the current version of Harfbuzz is unable to process it."

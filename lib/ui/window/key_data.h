@@ -28,8 +28,11 @@ enum class KeyEventType : int64_t {
 // a different way in KeyDataPacket.
 //
 // This structure is unpacked by hooks.dart.
+//
+// Changes to this struct must also be made to
+// io/flutter/embedding/android/KeyData.java.
 struct alignas(8) KeyData {
-  // Timestamp in microseconds from an arbitrary and consistant start point
+  // Timestamp in microseconds from an arbitrary and consistent start point
   uint64_t timestamp;
   KeyEventType type;
   uint64_t physical;

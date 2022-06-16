@@ -14,6 +14,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -21,17 +22,18 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
 import java.io.File;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
+@TargetApi(21)
 public class PlayStoreDeferredComponentManagerTest {
   private class TestFlutterJNI extends FlutterJNI {
     public int loadDartDeferredLibraryCalled = 0;
@@ -74,15 +76,15 @@ public class PlayStoreDeferredComponentManagerTest {
     }
 
     @Override
-    public void installDeferredComponent(int loadingUnitId, String moduleName) {
+    public void installDeferredComponent(int loadingUnitId, String componentName) {
       // Override this to skip the online SplitInstallManager portion.
-      loadAssets(loadingUnitId, moduleName);
-      loadDartLibrary(loadingUnitId, moduleName);
+      loadAssets(loadingUnitId, componentName);
+      loadDartLibrary(loadingUnitId, componentName);
     }
   }
 
   private Context createSpyContext(Bundle metadata) throws NameNotFoundException {
-    Context spyContext = spy(RuntimeEnvironment.application);
+    Context spyContext = spy(ApplicationProvider.getApplicationContext());
     doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
     if (metadata == null) {
       metadata = new Bundle();
@@ -90,9 +92,12 @@ public class PlayStoreDeferredComponentManagerTest {
     PackageManager packageManager = mock(PackageManager.class);
     ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
     applicationInfo.metaData = metadata;
+    applicationInfo.splitSourceDirs = new String[1];
+    applicationInfo.splitSourceDirs[0] = "some.invalid.apk";
     when(packageManager.getApplicationInfo(any(String.class), any(int.class)))
         .thenReturn(applicationInfo);
     doReturn(packageManager).when(spyContext).getPackageManager();
+    doReturn(applicationInfo).when(spyContext).getApplicationInfo();
     return spyContext;
   }
 
@@ -185,11 +190,66 @@ public class PlayStoreDeferredComponentManagerTest {
   }
 
   @Test
+  public void manifestMappingHandlesBaseModuleEmptyString() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+
+    Bundle bundle = new Bundle();
+    bundle.putString(
+        PlayStoreDeferredComponentManager.MAPPING_KEY, "123:module:custom_name.so,3:,4:");
+    bundle.putString(ApplicationInfoLoader.PUBLIC_FLUTTER_ASSETS_DIR_KEY, "custom_assets");
+
+    Context spyContext = createSpyContext(bundle);
+    doReturn(null).when(spyContext).getAssets();
+
+    String soTestFilename = "libapp.so-3.part.so";
+    String soTestPath = "test/path/" + soTestFilename;
+    doReturn(new File(soTestPath)).when(spyContext).getFilesDir();
+    PlayStoreDeferredComponentManager playStoreManager =
+        new PlayStoreDeferredComponentManager(spyContext, jni);
+    jni.setDeferredComponentManager(playStoreManager);
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.installDeferredComponent(3, null);
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 0); // no assets to load for base
+    assertEquals(jni.deferredComponentInstallFailureCalled, 0);
+
+    assertEquals(jni.searchPaths[0], soTestFilename);
+    assertTrue(jni.searchPaths[1].endsWith(soTestPath));
+    assertEquals(jni.searchPaths.length, 2);
+    assertEquals(jni.loadingUnitId, 3);
+  }
+
+  @Test
   public void searchPathsAddsApks() throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
     Context spyContext = createSpyContext(null);
     doReturn(null).when(spyContext).getAssets();
     String apkTestPath = "test/path/TestModuleName_armeabi_v7a.apk";
+    doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
+    TestPlayStoreDeferredComponentManager playStoreManager =
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
+    jni.setDeferredComponentManager(playStoreManager);
+
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.installDeferredComponent(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.deferredComponentInstallFailureCalled, 0);
+
+    assertEquals(jni.searchPaths[0], "libapp.so-123.part.so");
+    assertTrue(jni.searchPaths[1].endsWith(apkTestPath + "!lib/armeabi-v7a/libapp.so-123.part.so"));
+    assertEquals(jni.searchPaths.length, 2);
+    assertEquals(jni.loadingUnitId, 123);
+  }
+
+  @Test
+  public void searchPathsSearchesSplitConfig() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = createSpyContext(null);
+    doReturn(null).when(spyContext).getAssets();
+    String apkTestPath = "test/path/split_config.armeabi_v7a.apk";
     doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
     TestPlayStoreDeferredComponentManager playStoreManager =
         new TestPlayStoreDeferredComponentManager(spyContext, jni);
@@ -275,5 +335,15 @@ public class PlayStoreDeferredComponentManagerTest {
     assertTrue(playStoreManager.uninstallDeferredComponent(5, null));
     assertTrue(playStoreManager.uninstallDeferredComponent(2, null));
     assertFalse(playStoreManager.uninstallDeferredComponent(3, null));
+  }
+
+  @Test
+  public void assetOnlyMappingParses() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Bundle bundle = new Bundle();
+    bundle.putString(PlayStoreDeferredComponentManager.MAPPING_KEY, "");
+    Context spyContext = createSpyContext(bundle);
+    TestPlayStoreDeferredComponentManager playStoreManager =
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
   }
 }

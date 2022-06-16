@@ -15,9 +15,8 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/shell/platform/windows/task_runner_win32.h"
-#include "flutter/shell/platform/windows/win32_dpi_utils.h"
-#include "flutter/shell/platform/windows/win32_flutter_window.h"
+#include "flutter/shell/platform/windows/dpi_utils_win32.h"
+#include "flutter/shell/platform/windows/flutter_window_win32.h"
 
 // Returns the engine corresponding to the given opaque API handle.
 static flutter::FlutterWindowsEngine* EngineFromHandle(
@@ -30,16 +29,15 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
     int height,
     FlutterDesktopEngineRef engine) {
   std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
-      std::make_unique<flutter::Win32FlutterWindow>(width, height);
+      std::make_unique<flutter::FlutterWindowWin32>(width, height);
 
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->view =
       std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
-  state->view->CreateRenderSurface();
-
   // Take ownership of the engine, starting it if necessary.
   state->view->SetEngine(
       std::unique_ptr<flutter::FlutterWindowsEngine>(EngineFromHandle(engine)));
+  state->view->CreateRenderSurface();
   if (!state->view->GetEngine()->running()) {
     if (!state->view->GetEngine()->RunWithEntrypoint(nullptr)) {
       return nullptr;
@@ -69,10 +67,7 @@ bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
 }
 
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
-  return static_cast<flutter::TaskRunnerWin32*>(
-             EngineFromHandle(engine)->task_runner())
-      ->ProcessTasks()
-      .count();
+  return std::chrono::nanoseconds::max().count();
 }
 
 void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(

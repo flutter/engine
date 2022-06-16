@@ -8,7 +8,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.view.PointerIcon;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -18,20 +20,19 @@ import java.util.HashMap;
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
 @Config(
     manifest = Config.NONE,
     shadows = {})
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @TargetApi(24)
 public class MouseCursorPluginTest {
   @Test
   public void mouseCursorPlugin_SetsSystemCursorOnRequest() throws JSONException {
     // Initialize a general MouseCursorPlugin.
-    FlutterView testView = spy(new FlutterView(RuntimeEnvironment.application));
+    FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     MouseCursorChannel mouseCursorChannel = new MouseCursorChannel(mock(DartExecutor.class));
 
     MouseCursorPlugin mouseCursorPlugin = new MouseCursorPlugin(testView, mouseCursorChannel);

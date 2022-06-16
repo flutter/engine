@@ -12,8 +12,12 @@ namespace flutter {
 
 class TextInputPluginDelegate {
  public:
-  // Notifies delegate that the cursor position has changed.
+  // Notifies the delegate of the updated the cursor rect in Flutter root view
+  // coordinates.
   virtual void OnCursorRectUpdated(const Rect& rect) = 0;
+
+  // Notifies the delegate that the system IME composing state should be reset.
+  virtual void OnResetImeComposing() = 0;
 };
 
 }  // namespace flutter

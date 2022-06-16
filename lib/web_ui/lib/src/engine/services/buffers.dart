@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:collection';
+import 'dart:typed_data';
 
 abstract class _TypedDataBuffer<E> extends ListBase<E> {
   static const int _initialLength = 8;
@@ -140,7 +140,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
     // position [index] using flip-by-double-reverse.
     int writeIndex = _length;
     int skipCount = start;
-    for (E value in values) {
+    for (final E value in values) {
       if (skipCount > 0) {
         skipCount--;
         continue;
@@ -199,7 +199,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
     // Otherwise, just add values one at a time.
     int i = 0;
-    for (E value in values) {
+    for (final E value in values) {
       if (i >= start) {
         add(value);
       }

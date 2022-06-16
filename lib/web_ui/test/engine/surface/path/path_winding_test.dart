@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 
 import 'dart:math' as math;
-import 'package:test/bootstrap/browser.dart'; // ignore: import_of_legacy_library_into_null_safe
-import 'package:test/test.dart'; // ignore: import_of_legacy_library_into_null_safe
-import 'package:ui/ui.dart' hide window;
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' hide window;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -19,38 +18,38 @@ void testMain() {
   group('Convexity', () {
     test('Empty path should be convex', () {
       final SurfacePath path = SurfacePath();
-      expect(path.isConvex, true);
+      expect(path.isConvex, isTrue);
     });
 
     test('Circle should be convex', () {
       final SurfacePath path = SurfacePath();
-      path.addOval(Rect.fromLTRB(0, 0, 20, 20));
-      expect(path.isConvex, true);
+      path.addOval(const Rect.fromLTRB(0, 0, 20, 20));
+      expect(path.isConvex, isTrue);
       // 2nd circle.
-      path.addOval(Rect.fromLTRB(0, 0, 20, 20));
-      expect(path.isConvex, false);
+      path.addOval(const Rect.fromLTRB(0, 0, 20, 20));
+      expect(path.isConvex, isFalse);
     });
 
     test('addRect should be convex', () {
       SurfacePath path = SurfacePath();
-      path.addRect(Rect.fromLTRB(0, 0, 20, 20));
-      assert(path.isConvex, true);
+      path.addRect(const Rect.fromLTRB(0, 0, 20, 20));
+      expect(path.isConvex, isTrue);
 
       path = SurfacePath();
       path.addRectWithDirection(
-          Rect.fromLTRB(0, 0, 20, 20), SPathDirection.kCW, 0);
-      assert(path.isConvex, true);
+          const Rect.fromLTRB(0, 0, 20, 20), SPathDirection.kCW, 0);
+      expect(path.isConvex, isTrue);
 
       path = SurfacePath();
       path.addRectWithDirection(
-          Rect.fromLTRB(0, 0, 20, 20), SPathDirection.kCCW, 0);
-      assert(path.isConvex, true);
+          const Rect.fromLTRB(0, 0, 20, 20), SPathDirection.kCCW, 0);
+      expect(path.isConvex, isTrue);
     });
 
     test('Quad should be convex', () {
       final SurfacePath path = SurfacePath();
       path.quadraticBezierTo(100, 100, 50, 50);
-      expect(path.isConvex, true);
+      expect(path.isConvex, isTrue);
     });
 
     test('moveto/lineto convexity', () {
@@ -71,7 +70,7 @@ void testMain() {
             SPathDirection.kCW),
       ];
 
-      for (LineTestCase testCase in testCases) {
+      for (final LineTestCase testCase in testCases) {
         final SurfacePath path = SurfacePath();
         setFromString(path, testCase.pathContent);
         expect(path.convexityType, testCase.convexity);
@@ -79,7 +78,7 @@ void testMain() {
     });
 
     test('Convexity of path with infinite points should return unknown', () {
-      final List<Offset> nonFinitePts = <Offset>[
+      const List<Offset> nonFinitePts = <Offset>[
         Offset(double.infinity, 0),
         Offset(0, double.infinity),
         Offset(double.infinity, double.infinity),
@@ -94,7 +93,7 @@ void testMain() {
       ];
       final int nonFinitePointsCount = nonFinitePts.length;
 
-      final List<Offset> axisAlignedPts = <Offset>[
+      const List<Offset> axisAlignedPts = <Offset>[
         Offset(kScalarMax, 0),
         Offset(0, kScalarMax),
         Offset(kScalarMin, 0),
@@ -207,10 +206,10 @@ void testMain() {
       }
 
       for (int index = 0; index < (11 * axisAlignedPointsCount); ++index) {
-        int f = index % axisAlignedPointsCount;
-        int g = (f + 1) % axisAlignedPointsCount;
+        final int f = index % axisAlignedPointsCount;
+        final int g = (f + 1) % axisAlignedPointsCount;
         path.reset();
-        int curveSelect = index % 11;
+        final int curveSelect = index % 11;
         switch (curveSelect) {
           case 0:
             path.moveTo(axisAlignedPts[f].dx, axisAlignedPts[f].dy);
@@ -286,13 +285,13 @@ void testMain() {
             break;
         }
         if (curveSelect != 7 && curveSelect != 10) {
-          int result = path.convexityType;
+          final int result = path.convexityType;
           expect(result, SPathConvexityType.kConvex);
         } else {
           // we make a copy so that we don't cache the result on the passed
           // in path.
-          SurfacePath path2 = SurfacePath.from(path);
-          int c = path2.convexityType;
+          final SurfacePath path2 = SurfacePath.from(path);
+          final int c = path2.convexityType;
           assert(SPathConvexityType.kUnknown == c ||
               SPathConvexityType.kConcave == c);
         }
@@ -415,8 +414,8 @@ void testMain() {
     test('degenerate segments1', () {
       final SurfacePath strokedSin = SurfacePath();
       for (int i = 0; i < 2000; i++) {
-        double x = i.toDouble() / 2.0;
-        double y = 500 - (x + math.sin(x / 100) * 40) / 3;
+        final double x = i.toDouble() / 2.0;
+        final double y = 500 - (x + math.sin(x / 100) * 40) / 3;
         if (0 == i) {
           strokedSin.moveTo(x, y);
         } else {
@@ -435,9 +434,9 @@ void testMain() {
       path.quadraticBezierTo(0.0, 200.0, 0.0, 100.0);
       path.quadraticBezierTo(0.0, 0.0, 100.0, 0.0);
       path.close();
-      expect(path.contains(Offset(100, 20)), true);
-      expect(path.contains(Offset(100, 120)), true);
-      expect(path.contains(Offset(100, -10)), false);
+      expect(path.contains(const Offset(100, 20)), isTrue);
+      expect(path.contains(const Offset(100, 120)), isTrue);
+      expect(path.contains(const Offset(100, -10)), isFalse);
     });
   });
 }
@@ -453,7 +452,7 @@ class LineTestCase {
 /// with moveTo/lineTo instructions for points.
 void setFromString(SurfacePath path, String value) {
   bool first = true;
-  List<String> points = value.split(' ');
+  final List<String> points = value.split(' ');
   if (points.length < 2) {
     return;
   }

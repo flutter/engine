@@ -35,15 +35,15 @@ import io.flutter.view.FlutterView;
 import java.util.ArrayList;
 
 /**
- * Deprecated class that performs the actual work of tying Android {@link Activity} instances to
- * Flutter.
+ * Deprecated class that performs the actual work of tying Android {@link android.app.Activity}
+ * instances to Flutter.
  *
  * <p>This exists as a dedicated class (as opposed to being integrated directly into {@link
  * FlutterActivity}) to facilitate applications that don't wish to subclass {@code FlutterActivity}.
  * The most obvious example of when this may come in handy is if an application wishes to subclass
  * the Android v4 support library's {@code FragmentActivity}.
  *
- * <h3>Usage:</h3>
+ * <p><b>Usage:</b>
  *
  * <p>To wire this class up to your activity, simply forward the events defined in {@link
  * FlutterActivityEvents} from your activity to an instance of this class. Optionally, you can make
@@ -84,6 +84,8 @@ public final class FlutterActivityDelegate
     /**
      * Hook for subclasses to indicate that the {@code FlutterNativeView} returned by {@link
      * #createFlutterNativeView()} should not be destroyed when this activity is destroyed.
+     *
+     * @return Whether the FlutterNativeView is retained.
      */
     boolean retainFlutterNativeView();
   }
@@ -323,9 +325,6 @@ public final class FlutterActivityDelegate
     if (observatoryPort > 0) {
       args.add("--observatory-port=" + Integer.toString(observatoryPort));
     }
-    if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
-      args.add("--disable-service-auth-codes");
-    }
     if (intent.getBooleanExtra("endless-trace-buffer", false)) {
       args.add("--endless-trace-buffer");
     }
@@ -426,9 +425,7 @@ public final class FlutterActivityDelegate
       ActivityInfo activityInfo =
           activity
               .getPackageManager()
-              .getActivityInfo(
-                  activity.getComponentName(),
-                  PackageManager.GET_META_DATA | PackageManager.GET_ACTIVITIES);
+              .getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA);
       Bundle metadata = activityInfo.metaData;
       return metadata != null && metadata.getBoolean(SPLASH_SCREEN_META_DATA_KEY);
     } catch (NameNotFoundException e) {

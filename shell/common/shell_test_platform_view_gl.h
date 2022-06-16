@@ -23,8 +23,10 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
                           std::shared_ptr<ShellTestExternalViewEmbedder>
                               shell_test_external_view_embedder);
 
+  // |ShellTestPlatformView|
   virtual ~ShellTestPlatformViewGL() override;
 
+  // |ShellTestPlatformView|
   virtual void SimulateVSync() override;
 
  private:
@@ -56,7 +58,7 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
   bool GLContextClearCurrent() override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id) override;
+  bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
   intptr_t GLContextFBO(GLFrameInfo frame_info) const override;

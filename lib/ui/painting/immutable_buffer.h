@@ -30,7 +30,7 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
 
   /// Initializes a new ImmutableData from a Dart Uint8List.
   ///
-  /// The zero indexed argument is the the caller that will be registered as the
+  /// The zero indexed argument is the caller that will be registered as the
   /// Dart peer of the native ImmutableBuffer object.
   ///
   /// The first indexed argumented is a tonic::Uint8List of bytes to copy.
@@ -38,6 +38,19 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
   /// The second indexed argument is expected to be a void callback to signal
   /// when the copy has completed.
   static void init(Dart_NativeArguments args);
+
+  /// Initializes a new ImmutableData from an asset matching a provided
+  /// asset string.
+  ///
+  /// The zero indexed argument is the caller that will be registered as the
+  /// Dart peer of the native ImmutableBuffer object.
+  ///
+  /// The first indexed argumented is a String corresponding to the asset
+  /// to load.
+  ///
+  /// The second indexed argument is expected to be a void callback to signal
+  /// when the copy has completed.
+  static void initFromAsset(Dart_NativeArguments args);
 
   /// The length of the data in bytes.
   size_t length() const {
@@ -54,8 +67,8 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
   /// The byte buffer will continue to live if other objects hold a reference to
   /// it.
   void dispose() {
-    ClearDartWrapper();
     data_.reset();
+    ClearDartWrapper();
   }
 
   size_t GetAllocationSize() const override;

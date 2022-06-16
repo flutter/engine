@@ -2,17 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
 
-// ignore: implementation_imports
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart';
-
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart' show operatingSystem, OperatingSystem, useCanvasKit;
+import 'package:ui/ui.dart';
 
 Future<dynamic> _callScreenshotServer(dynamic requestData) async {
   final html.HttpRequest request = await html.HttpRequest.request(
@@ -66,6 +62,7 @@ Future<void> matchGoldenFile(String filename,
             'height': region.height
           },
     'pixelComparison': pixelComparison.toString(),
+    'isCanvaskitTest': useCanvasKit,
   };
 
   // Chrome on macOS renders slightly differently from Linux, so allow it an

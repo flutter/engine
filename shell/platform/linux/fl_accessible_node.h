@@ -42,16 +42,19 @@ G_DECLARE_FINAL_TYPE(FlAccessibleNode,
 FlAccessibleNode* fl_accessible_node_new(FlEngine* engine, int32_t id);
 
 /**
- * fl_accessible_node_new:
+ * fl_accessible_node_set_parent:
  * @node: an #FlAccessibleNode.
  * @parent: an #AtkObject.
+ * @index: the index of this node in the parent.
  *
  * Sets the parent of this node. The parent can be changed at any time.
  */
-void fl_accessible_node_set_parent(FlAccessibleNode* node, AtkObject* parent);
+void fl_accessible_node_set_parent(FlAccessibleNode* node,
+                                   AtkObject* parent,
+                                   gint index);
 
 /**
- * fl_accessible_node_new:
+ * fl_accessible_node_set_children:
  * @node: an #FlAccessibleNode.
  * @children: (transfer none) (element-type AtkObject): a list of #AtkObject.
  *

@@ -4,6 +4,7 @@
 
 #include "vulkan_debug_report.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <vector>
 
@@ -107,14 +108,17 @@ static const char* VkDebugReportObjectTypeEXTToString(
 }
 
 static VKAPI_ATTR VkBool32
-OnVulkanDebugReportCallback(VkDebugReportFlagsEXT flags,
-                            VkDebugReportObjectTypeEXT object_type,
-                            uint64_t object,
-                            size_t location,
-                            int32_t message_code,
-                            const char* layer_prefix,
-                            const char* message,
-                            void* user_data) {
+#ifdef WIN32
+    __stdcall
+#endif
+    OnVulkanDebugReportCallback(VkDebugReportFlagsEXT flags,
+                                VkDebugReportObjectTypeEXT object_type,
+                                uint64_t object,
+                                size_t location,
+                                int32_t message_code,
+                                const char* layer_prefix,
+                                const char* message,
+                                void* user_data) {
   std::vector<std::pair<std::string, std::string>> items;
 
   items.emplace_back("Severity", VkDebugReportFlagsEXTToString(flags));
@@ -208,9 +212,10 @@ VulkanDebugReport::VulkanDebugReport(
     return;
   }
 
-  handle_ = {handle, [this](VkDebugReportCallbackEXT handle) {
-               vk.DestroyDebugReportCallbackEXT(application_, handle, nullptr);
-             }};
+  handle_ = VulkanHandle<VkDebugReportCallbackEXT>{
+      handle, [this](VkDebugReportCallbackEXT handle) {
+        vk.DestroyDebugReportCallbackEXT(application_, handle, nullptr);
+      }};
 
   valid_ = true;
 }

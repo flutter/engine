@@ -4,11 +4,15 @@
 # found in the LICENSE file.
 
 # Runs the Android scenario tests on a connected device.
+#   To run the test on a x64 emulator, build `android_debug_unopt_x64`, and then run
+#   `./run_android_tests.sh android_debug_unopt_x64`.
 
 set -e
 
 # Needed because if it is set, cd may print the path it changed to.
 unset CDPATH
+
+BUILD_VARIANT=$1
 
 # On Mac OS, readlink -f doesn't work, so follow_links traverses the path one
 # link at a time, and then cds into the link destination and find out where it
@@ -29,7 +33,36 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
+SRC_DIR="$(cd "$SCRIPT_DIR/../../.."; pwd -P)"
+OUT_DIR="$SRC_DIR/out/$BUILD_VARIANT"
 
-cd "$SCRIPT_DIR/android"
-GRADLE_USER_HOME="$PWD/android/gradle-home/.cache"
-set -o pipefail && ./gradlew app:verifyDebugAndroidTestScreenshotTest --gradle-user-home "$GRADLE_USER_HOME"
+# Dump the logcat and symbolize stack traces before exiting.
+function dumpLogcat {
+  ndkstack="windows-x86_64"
+  if [ "$(uname)" == "Darwin" ]; then
+    ndkstack="darwin-x86_64"
+  elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    ndkstack="linux-x86_64"
+  fi
+
+  echo "-> Symbolize stack traces"
+  "$SRC_DIR"/third_party/android_tools/ndk/prebuilt/"$ndkstack"/bin/ndk-stack \
+    -sym "$OUT_DIR" \
+    -dump "$OUT_DIR"/scenario_app/logcat.txt
+  echo "<- Done"
+
+  echo "-> Dump full logcat"
+  cat "$OUT_DIR"/scenario_app/logcat.txt
+  echo "<- Done"
+}
+
+trap dumpLogcat EXIT
+
+cd $SCRIPT_DIR
+
+"$SRC_DIR"/third_party/dart/tools/sdks/dart-sdk/bin/dart pub get
+
+"$SRC_DIR"/third_party/dart/tools/sdks/dart-sdk/bin/dart run \
+  "$SCRIPT_DIR"/bin/android_integration_tests.dart \
+  --adb="$SRC_DIR"/third_party/android_tools/sdk/platform-tools/adb \
+  --out-dir="$OUT_DIR"

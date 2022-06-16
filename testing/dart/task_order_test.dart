@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 
-import 'package:test/test.dart' hide TypeMatcher, isInstanceOf;
+import 'package:litetest/litetest.dart';
 
 void main() {
   test('Message loop flushes microtasks between iterations', () async {

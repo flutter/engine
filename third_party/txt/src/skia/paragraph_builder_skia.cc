@@ -107,6 +107,7 @@ skt::TextStyle TxtToSkia(const TextStyle& txt) {
   skia.setWordSpacing(SkDoubleToScalar(txt.word_spacing));
   skia.setHeight(SkDoubleToScalar(txt.height));
   skia.setHeightOverride(txt.has_height_override);
+  skia.setHalfLeading(txt.half_leading);
 
   skia.setLocale(SkString(txt.locale.c_str()));
   if (txt.has_background) {
@@ -121,11 +122,29 @@ skt::TextStyle TxtToSkia(const TextStyle& txt) {
     skia.addFontFeature(SkString(ff.first.c_str()), ff.second);
   }
 
+  if (!txt.font_variations.GetAxisValues().empty()) {
+    std::vector<SkFontArguments::VariationPosition::Coordinate> coordinates;
+    for (const auto& it : txt.font_variations.GetAxisValues()) {
+      const std::string& axis = it.first;
+      if (axis.length() != 4) {
+        continue;
+      }
+      coordinates.push_back({
+          SkSetFourByteTag(axis[0], axis[1], axis[2], axis[3]),
+          it.second,
+      });
+    }
+    SkFontArguments::VariationPosition position = {
+        coordinates.data(), static_cast<int>(coordinates.size())};
+    skia.setFontArguments(
+        SkFontArguments().setVariationDesignPosition(position));
+  }
+
   skia.resetShadows();
   for (const txt::TextShadow& txt_shadow : txt.text_shadows) {
     skt::TextShadow shadow;
     shadow.fOffset = txt_shadow.offset;
-    shadow.fBlurRadius = txt_shadow.blur_radius;
+    shadow.fBlurSigma = txt_shadow.blur_sigma;
     shadow.fColor = txt_shadow.color;
     skia.addShadow(shadow);
   }
@@ -176,7 +195,7 @@ void ParagraphBuilderSkia::AddPlaceholder(PlaceholderRun& span) {
 }
 
 std::unique_ptr<Paragraph> ParagraphBuilderSkia::Build() {
-  return std::unique_ptr<Paragraph>(new ParagraphSkia(builder_->Build()));
+  return std::make_unique<ParagraphSkia>(builder_->Build());
 }
 
 }  // namespace txt

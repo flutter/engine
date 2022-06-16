@@ -10,7 +10,6 @@
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
-#include "flutter/fml/synchronization/sync_switch.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -148,7 +147,7 @@ class MutatorsStack {
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Bottom()
       const;
 
-  // Returns an iterator pointing to the begining of the mutator vector, which
+  // Returns an iterator pointing to the beginning of the mutator vector, which
   // is the mutator that is furtherest from the leaf node.
   const std::vector<std::shared_ptr<Mutator>>::const_iterator Begin() const;
 
@@ -211,13 +210,9 @@ class EmbeddedViewParams {
     final_bounding_rect_ = path.getBounds();
   }
 
-  EmbeddedViewParams(const EmbeddedViewParams& other) {
-    size_points_ = other.size_points_;
-    mutators_stack_ = other.mutators_stack_;
-    matrix_ = other.matrix_;
-    final_bounding_rect_ = other.final_bounding_rect_;
-  };
-
+  // The transformation Matrix corresponding to the sum of all the
+  // transformations in the platform view's mutator stack.
+  const SkMatrix& transformMatrix() const { return matrix_; };
   // The original size of the platform view before any mutation matrix is
   // applied.
   const SkSize& sizePoints() const { return size_points_; };
@@ -277,7 +272,7 @@ class ExternalViewEmbedder {
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
 
-  // Indicates the begining of a frame.
+  // Indicates the beginning of a frame.
   //
   // The `raster_thread_merger` will be null if |SupportsDynamicThreadMerging|
   // returns false.
@@ -310,10 +305,8 @@ class ExternalViewEmbedder {
   // This method can mutate the root Skia canvas before submitting the frame.
   //
   // It can also allocate frames for overlay surfaces to compose hybrid views.
-  virtual void SubmitFrame(
-      GrDirectContext* context,
-      std::unique_ptr<SurfaceFrame> frame,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch);
+  virtual void SubmitFrame(GrDirectContext* context,
+                           std::unique_ptr<SurfaceFrame> frame);
 
   // This method provides the embedder a way to do additional tasks after
   // |SubmitFrame|. For example, merge task runners if `should_resubmit_frame`
@@ -336,6 +329,24 @@ class ExternalViewEmbedder {
   // * See also |BegineFrame| and |EndFrame| for getting the
   // |RasterThreadMerger| instance.
   virtual bool SupportsDynamicThreadMerging();
+
+  // Called when the rasterizer is being torn down.
+  // This method provides a way to release resources associated with the current
+  // embedder.
+  virtual void Teardown();
+
+  // Change the flag about whether it is used in this frame, it will be set to
+  // true when 'BeginFrame' and false when 'EndFrame'.
+  void SetUsedThisFrame(bool used_this_frame) {
+    used_this_frame_ = used_this_frame;
+  }
+
+  // Whether it is used in this frame, returns true between 'BeginFrame' and
+  // 'EndFrame', otherwise returns false.
+  bool GetUsedThisFrame() const { return used_this_frame_; }
+
+ private:
+  bool used_this_frame_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

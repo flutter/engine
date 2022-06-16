@@ -57,14 +57,14 @@
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
                   commandQueue:(id<MTLCommandQueue>)commandQueue
-                    metalLayer:(CAMetalLayer*)layer {
+                         layer:(CALayer*)layer {
   self = [super init];
   if (self) {
     _device = device;
     _commandQueue = commandQueue;
     _surfaceManager = [[FlutterMetalSurfaceManager alloc] initWithDevice:device
                                                             commandQueue:commandQueue
-                                                              metalLayer:layer];
+                                                                   layer:layer];
   }
   return self;
 }
@@ -78,16 +78,15 @@
 }
 
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {
-  // no-op when using Metal rendering backend.
+  id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
+  [commandBuffer commit];
+  [commandBuffer waitUntilScheduled];
 }
 
 - (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer {
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
 
-  id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
-  [commandBuffer commit];
-  [commandBuffer waitUntilScheduled];
   [_surfaceManager swapBuffers];
 
   [CATransaction commit];

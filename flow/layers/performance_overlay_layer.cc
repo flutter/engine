@@ -74,6 +74,18 @@ PerformanceOverlayLayer::PerformanceOverlayLayer(uint64_t options,
   }
 }
 
+void PerformanceOverlayLayer::Diff(DiffContext* context,
+                                   const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(old_layer);
+    auto prev = old_layer->as_performance_overlay_layer();
+    context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
+  }
+  context->AddLayerBounds(paint_bounds());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
 void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   const int padding = 8;
 

@@ -5,9 +5,16 @@
 #ifndef FLUTTER_SHELL_COMMON_SKIA_EVENT_TRACER_IMPL_H_
 #define FLUTTER_SHELL_COMMON_SKIA_EVENT_TRACER_IMPL_H_
 
+#include <mutex>
+#include <optional>
+#include <string>
+#include <vector>
+
 namespace flutter {
 
-void InitSkiaEventTracer(bool enabled);
+void InitSkiaEventTracer(
+    bool enabled,
+    const std::optional<std::vector<std::string>>& allowlist);
 
 }  // namespace flutter
 

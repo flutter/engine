@@ -95,7 +95,7 @@
   int err = DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex,
                                FlutterObservatoryPublisher.serviceName.UTF8String, registrationType,
                                domain, NULL, htons(port), txtData.length, txtData.bytes,
-                               registrationCallback, NULL);
+                               RegistrationCallback, NULL);
 
   if (err != 0) {
     FML_LOG(ERROR) << "Failed to register observatory port with mDNS with error " << err << ".";
@@ -125,7 +125,7 @@ static const DNSServiceErrorType kFlutter_DNSServiceErr_PolicyDenied =
     -65570;
 #endif  // __IPHONE_OS_VERSION_MAX_ALLOWED
 
-static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
+static void DNSSD_API RegistrationCallback(DNSServiceRef sdRef,
                                            DNSServiceFlags flags,
                                            DNSServiceErrorType errorCode,
                                            const char* name,
@@ -206,8 +206,8 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
             // uri comes in as something like 'http://127.0.0.1:XXXXX/' where XXXXX is the port
             // number.
             if (weak) {
-              NSURL* url =
-                  [[NSURL alloc] initWithString:[NSString stringWithUTF8String:uri.c_str()]];
+              NSURL* url = [[[NSURL alloc]
+                  initWithString:[NSString stringWithUTF8String:uri.c_str()]] autorelease];
               weak.get().url = url;
               if (weak.get().enableObservatoryPublication) {
                 [[weak.get() delegate] publishServiceProtocolPort:url];
@@ -236,6 +236,10 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 }
 
 - (void)dealloc {
+  // It will be destroyed and invalidate its weak pointers
+  // before any other members are destroyed.
+  _weakFactory.reset();
+
   [_delegate stopService];
   [_url release];
 

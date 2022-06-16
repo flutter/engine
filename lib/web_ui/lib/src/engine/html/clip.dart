@@ -2,8 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:svg' as svg;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import '../shadow.dart';
+import '../svg.dart';
+import '../util.dart';
+import 'dom_canvas.dart';
+import 'painting.dart';
+import 'path/path.dart';
+import 'path_to_svg_clip.dart';
+import 'surface.dart';
+import 'surface_stats.dart';
 
 /// Mixin used by surfaces that clip their contents using an overflowing DOM
 /// element.
@@ -12,8 +24,8 @@ mixin _DomClip on PersistedContainerSurface {
   /// [rootElement] is used to compensate for the coordinate system shift
   /// introduced by the [rootElement] translation.
   @override
-  html.Element? get childContainer => _childContainer;
-  html.Element? _childContainer;
+  DomElement? get childContainer => _childContainer;
+  DomElement? _childContainer;
 
   @override
   void adoptElements(_DomClip oldSurface) {
@@ -23,12 +35,12 @@ mixin _DomClip on PersistedContainerSurface {
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-clip');
-    _childContainer = html.Element.tag('flt-clip-interior');
-    if (_debugExplainSurfaceStats) {
+  DomElement createElement() {
+    final DomElement element = defaultCreateElement('flt-clip');
+    _childContainer = createDomElement('flt-clip-interior');
+    if (debugExplainSurfaceStats) {
       // This creates an additional interior element. Count it too.
-      _surfaceStatsFor(this).allocatedDomNodeCount++;
+      surfaceStatsFor(this).allocatedDomNodeCount++;
     }
     _childContainer!.style.position = 'absolute';
 
@@ -46,7 +58,7 @@ mixin _DomClip on PersistedContainerSurface {
     _childContainer = null;
   }
 
-  void applyOverflow(html.Element element, ui.Clip? clipBehaviour) {
+  void applyOverflow(DomElement element, ui.Clip? clipBehaviour) {
     if (!debugShowClipLayers) {
       // Hide overflow in production mode. When debugging we want to see the
       // clipped picture in full.
@@ -75,14 +87,17 @@ class PersistedClipRect extends PersistedContainerSurface
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
-    _localClipBounds = rect;
-    _localTransformInverse = null;
-    _projectedClip = null;
+    transform = parent!.transform;
+    if (clipBehavior != ui.Clip.none) {
+      localClipBounds = rect;
+    } else {
+      localClipBounds = null;
+    }
+    projectedClip = null;
   }
 
   @override
-  html.Element createElement() {
+  DomElement createElement() {
     return super.createElement()..setAttribute('clip-type', 'rect');
   }
 
@@ -107,6 +122,7 @@ class PersistedClipRect extends PersistedContainerSurface
   void update(PersistedClipRect oldSurface) {
     super.update(oldSurface);
     if (rect != oldSurface.rect || clipBehavior != oldSurface.clipBehavior) {
+      localClipBounds = null;
       apply();
     }
   }
@@ -128,20 +144,23 @@ class PersistedClipRRect extends PersistedContainerSurface
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
-    _localClipBounds = rrect.outerRect;
-    _localTransformInverse = null;
-    _projectedClip = null;
+    transform = parent!.transform;
+    if (clipBehavior != ui.Clip.none) {
+      localClipBounds = rrect.outerRect;
+    } else {
+      localClipBounds = null;
+    }
+    projectedClip = null;
   }
 
   @override
-  html.Element createElement() {
+  DomElement createElement() {
     return super.createElement()..setAttribute('clip-type', 'rrect');
   }
 
   @override
   void apply() {
-    html.CssStyleDeclaration style = rootElement!.style;
+    final DomCSSStyleDeclaration style = rootElement!.style;
     style
       ..left = '${rrect.left}px'
       ..top = '${rrect.top}px'
@@ -165,6 +184,7 @@ class PersistedClipRRect extends PersistedContainerSurface
   void update(PersistedClipRRect oldSurface) {
     super.update(oldSurface);
     if (rrect != oldSurface.rrect || clipBehavior != oldSurface.clipBehavior) {
+      localClipBounds = null;
       apply();
     }
   }
@@ -189,35 +209,47 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   final ui.Color color;
   final ui.Color shadowColor;
   final ui.Clip clipBehavior;
-  html.Element? _clipElement;
-  html.Element? _svgElement;
+  DomElement? _clipElement;
+  DomElement? _svgElement;
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
+    transform = parent!.transform;
 
-    final ui.RRect? roundRect = path.toRoundedRect();
-    if (roundRect != null) {
-      _localClipBounds = roundRect.outerRect;
-    } else {
-      final ui.Rect? rect = path.toRect();
-      if (rect != null) {
-        _localClipBounds = rect;
+    if (clipBehavior != ui.Clip.none) {
+      final ui.RRect? roundRect = path.toRoundedRect();
+      if (roundRect != null) {
+        localClipBounds = roundRect.outerRect;
       } else {
-        _localClipBounds = null;
+        final ui.Rect? rect = path.toRect();
+        if (rect != null) {
+          localClipBounds = rect;
+        } else {
+          localClipBounds = null;
+        }
       }
+    } else {
+      localClipBounds = null;
     }
-    _localTransformInverse = null;
-    _projectedClip = null;
+    projectedClip = null;
   }
 
   void _applyColor() {
-    rootElement!.style.backgroundColor = colorToCssString(color);
+    rootElement!.style.backgroundColor = colorToCssString(color)!;
   }
 
   @override
-  html.Element createElement() {
+  DomElement createElement() {
     return super.createElement()..setAttribute('clip-type', 'physical-shape');
+  }
+
+  @override
+  void discard() {
+    super.discard();
+    _clipElement?.remove();
+    _clipElement = null;
+    _svgElement?.remove();
+    _svgElement = null;
   }
 
   @override
@@ -234,7 +266,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       final String borderRadius =
           '${roundRect.tlRadiusX}px ${roundRect.trRadiusX}px '
           '${roundRect.brRadiusX}px ${roundRect.blRadiusX}px';
-      final html.CssStyleDeclaration style = rootElement!.style;
+      final DomCSSStyleDeclaration style = rootElement!.style;
       style
         ..left = '${roundRect.left}px'
         ..top = '${roundRect.top}px'
@@ -252,7 +284,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     } else {
       final ui.Rect? rect = path.toRect();
       if (rect != null) {
-        final html.CssStyleDeclaration style = rootElement!.style;
+        final DomCSSStyleDeclaration style = rootElement!.style;
         style
           ..left = '${rect.left}px'
           ..top = '${rect.top}px'
@@ -274,7 +306,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
           final double ry = ovalRect.height / 2.0;
           final String borderRadius =
               rx == ry ? '${rx}px ' : '${rx}px ${ry}px ';
-          final html.CssStyleDeclaration style = rootElement!.style;
+          final DomCSSStyleDeclaration style = rootElement!.style;
           final double left = ovalRect.left;
           final double top = ovalRect.top;
           style
@@ -312,27 +344,27 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// we size the inner container to cover full pathBounds instead of sizing
     /// to clipping rect bounds (which is the case for elevation == 0.0 where
     /// we shift outer/inner clip area instead to position clip-path).
-    final String svgClipPath = elevation == 0.0
-        ? _pathToSvgClipPath(path,
+    final svg.SvgSvgElement svgClipPath = elevation == 0.0
+        ? pathToSvgClipPath(path,
             offsetX: -pathBounds.left,
             offsetY: -pathBounds.top,
             scaleX: 1.0 / pathBounds.width,
             scaleY: 1.0 / pathBounds.height)
-        : _pathToSvgClipPath(path,
+        : pathToSvgClipPath(path,
             offsetX: 0.0,
             offsetY: 0.0,
             scaleX: 1.0 / pathBounds.right,
             scaleY: 1.0 / pathBounds.bottom);
+
     /// If apply is called multiple times (without update), remove prior
     /// svg clip and render elements.
     _clipElement?.remove();
     _svgElement?.remove();
-    _clipElement =
-        html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-    domRenderer.append(rootElement!, _clipElement!);
+    _clipElement = svgClipPath as DomElement;
+    rootElement!.append(_clipElement!);
     if (elevation == 0.0) {
-      DomRenderer.setClipPath(rootElement!, 'url(#svgClip$_clipIdCounter)');
-      final html.CssStyleDeclaration rootElementStyle = rootElement!.style;
+      setClipPath(rootElement!, createSvgClipUrl());
+      final DomCSSStyleDeclaration rootElementStyle = rootElement!.style;
       rootElementStyle
         ..overflow = ''
         ..left = '${pathBounds.left}px'
@@ -346,8 +378,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       return;
     }
 
-    DomRenderer.setClipPath(childContainer!, 'url(#svgClip$_clipIdCounter)');
-    final html.CssStyleDeclaration rootElementStyle = rootElement!.style;
+    setClipPath(childContainer!, createSvgClipUrl());
+    final DomCSSStyleDeclaration rootElementStyle = rootElement!.style;
     rootElementStyle
       ..overflow = ''
       ..left = '${pathBounds.left}px'
@@ -362,19 +394,24 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       ..height = '${pathBounds.bottom}px';
 
     final ui.Rect pathBounds2 = path.getBounds();
-    _svgElement = _pathToSvgElement(
-        path, SurfacePaintData()..color = color, '${pathBounds2.right}', '${pathBounds2.bottom}');
+    _svgElement = pathToSvgElement(
+        path,
+        SurfacePaintData()
+          ..style = ui.PaintingStyle.fill
+          ..color = color,
+        '${pathBounds2.right}',
+        '${pathBounds2.bottom}');
+
     /// Render element behind the clipped content.
     rootElement!.insertBefore(_svgElement!, childContainer);
 
     final SurfaceShadowData shadow = computeShadow(pathBounds, elevation)!;
     final ui.Color boxShadowColor = toShadowColor(shadowColor);
     _svgElement!.style
-        ..filter =
-        'drop-shadow(${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurWidth}px '
-        'rgba(${boxShadowColor.red}, ${boxShadowColor.green}, '
-        '${boxShadowColor.blue}, ${boxShadowColor.alpha / 255}))'
+      ..filter = 'drop-shadow(${shadow.offset.dx}px ${shadow.offset.dy}px '
+          '${shadow.blurWidth}px '
+          'rgba(${boxShadowColor.red}, ${boxShadowColor.green}, '
+          '${boxShadowColor.blue}, ${boxShadowColor.alpha / 255}))'
       ..transform = 'translate(-${pathBounds2.left}px, -${pathBounds2.top}px)';
 
     rootElement!.style.backgroundColor = '';
@@ -383,8 +420,14 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   @override
   void update(PersistedPhysicalShape oldSurface) {
     super.update(oldSurface);
-    if (oldSurface.path != path || oldSurface.elevation != elevation ||
-        oldSurface.shadowColor != shadowColor || oldSurface.color != color) {
+    final bool pathChanged = oldSurface.path != path;
+    if (pathChanged) {
+      localClipBounds = null;
+    }
+    if (pathChanged ||
+        oldSurface.elevation != elevation ||
+        oldSurface.shadowColor != shadowColor ||
+        oldSurface.color != color) {
       oldSurface._clipElement?.remove();
       oldSurface._clipElement = null;
       oldSurface._svgElement?.remove();
@@ -395,19 +438,20 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       _svgElement = null;
       // Reset style on prior element since we may have switched between
       // rect/rrect and arbitrary path.
-      DomRenderer.setClipPath(rootElement!, '');
+      setClipPath(rootElement!, '');
       _applyShape();
     } else {
       // Reuse clipElement from prior surface.
       _clipElement = oldSurface._clipElement;
       if (_clipElement != null) {
-        domRenderer.append(rootElement!, _clipElement!);
+        rootElement!.append(_clipElement!);
       }
       oldSurface._clipElement = null;
       _svgElement = oldSurface._svgElement;
       if (_svgElement != null) {
         rootElement!.insertBefore(_svgElement!, childContainer);
       }
+      oldSurface._svgElement = null;
     }
   }
 }
@@ -421,34 +465,35 @@ class PersistedClipPath extends PersistedContainerSurface
 
   final ui.Path clipPath;
   final ui.Clip clipBehavior;
-  html.Element? _clipElement;
+  DomElement? _clipElement;
 
   @override
-  html.Element createElement() {
+  DomElement createElement() {
     return defaultCreateElement('flt-clippath');
   }
 
   @override
   void recomputeTransformAndClip() {
     super.recomputeTransformAndClip();
-    _localClipBounds ??= clipPath.getBounds();
+    if (clipBehavior != ui.Clip.none) {
+      localClipBounds ??= clipPath.getBounds();
+    } else {
+      localClipBounds = null;
+    }
   }
 
   @override
   void apply() {
     _clipElement?.remove();
-    final String svgClipPath =
-        createSvgClipDef(childContainer as html.HtmlElement, clipPath);
-    _clipElement =
-        html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-    domRenderer.append(childContainer!, _clipElement!);
+    _clipElement = createSvgClipDef(childContainer!, clipPath);
+    childContainer!.append(_clipElement!);
   }
 
   @override
   void update(PersistedClipPath oldSurface) {
     super.update(oldSurface);
     if (oldSurface.clipPath != clipPath) {
-      _localClipBounds = null;
+      localClipBounds = null;
       oldSurface._clipElement?.remove();
       apply();
     } else {
@@ -469,11 +514,12 @@ class PersistedClipPath extends PersistedContainerSurface
 }
 
 /// Creates an svg clipPath and applies it to [element].
-String createSvgClipDef(html.HtmlElement element, ui.Path clipPath) {
+SVGSVGElement createSvgClipDef(DomElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
-  final String svgClipPath = _pathToSvgClipPath(clipPath,
-      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
-  DomRenderer.setClipPath(element, 'url(#svgClip$_clipIdCounter)');
+  final SVGSVGElement svgClipPath = pathToSvgClipPath(clipPath,
+      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom) as
+      SVGSVGElement;
+  setClipPath(element, createSvgClipUrl());
   // We need to set width and height for the clipElement to cover the
   // bounds of the path since browsers such as Safari and Edge
   // seem to incorrectly intersect the element bounding rect with

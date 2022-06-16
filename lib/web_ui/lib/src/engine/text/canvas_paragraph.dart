@@ -2,15 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import '../embedder.dart';
+import '../html/bitmap_canvas.dart';
+import '../profiler.dart';
+import 'layout_service.dart';
+import 'paint_service.dart';
+import 'paragraph.dart';
+import 'word_breaker.dart';
+
+const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
 
 /// A paragraph made up of a flat list of text spans and placeholders.
 ///
-/// As opposed to [DomParagraph], a [CanvasParagraph] doesn't use a DOM element
-/// to represent the structure of its spans and styles. Instead it uses a flat
-/// list of [ParagraphSpan] objects.
-class CanvasParagraph implements EngineParagraph {
+/// [CanvasParagraph] doesn't use a DOM element to represent the structure of
+/// its spans and styles. Instead it uses a flat list of [ParagraphSpan]
+/// objects.
+class CanvasParagraph implements ui.Paragraph {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
@@ -20,7 +30,7 @@ class CanvasParagraph implements EngineParagraph {
     required this.paragraphStyle,
     required this.plainText,
     required this.placeholderCount,
-    required this.drawOnCanvas,
+    required this.canDrawOnCanvas,
   });
 
   /// The flat list of spans that make up this paragraph.
@@ -35,8 +45,11 @@ class CanvasParagraph implements EngineParagraph {
   /// The number of placeholders in this paragraph.
   final int placeholderCount;
 
-  @override
-  final bool drawOnCanvas;
+  /// Whether this paragraph can be drawn on a bitmap canvas.
+  ///
+  /// Some text features cannot be rendered into a 2D canvas and must use HTML,
+  /// such as font features and text decorations.
+  final bool canDrawOnCanvas;
 
   @override
   double get width => _layoutService.width;
@@ -62,8 +75,15 @@ class CanvasParagraph implements EngineParagraph {
   @override
   bool get didExceedMaxLines => _layoutService.didExceedMaxLines;
 
-  @override
+  List<ParagraphLine> get lines => _layoutService.lines;
+
+  /// The bounds that contain the text painted inside this paragraph.
+  ui.Rect get paintBounds => _layoutService.paintBounds;
+
+  /// Whether this paragraph has been laid out or not.
   bool isLaidOut = false;
+
+  bool get isRtl => paragraphStyle.effectiveTextDirection == ui.TextDirection.rtl;
 
   ui.ParagraphConstraints? _lastUsedConstraints;
 
@@ -105,102 +125,80 @@ class CanvasParagraph implements EngineParagraph {
 
   // TODO(mdebbar): Returning true means we always require a bitmap canvas. Revisit
   // this decision once `CanvasParagraph` is fully implemented.
-  @override
+  /// Whether this paragraph is doing arbitrary paint operations that require
+  /// a bitmap canvas, and can't be expressed in a DOM canvas.
   bool get hasArbitraryPaint => true;
 
-  @override
+  /// Paints this paragraph instance on a [canvas] at the given [offset].
   void paint(BitmapCanvas canvas, ui.Offset offset) {
     _paintService.paint(canvas, offset);
   }
 
-  @override
+  /// Generates a flat string computed from all the spans of the paragraph.
   String toPlainText() => plainText;
 
-  html.HtmlElement? _cachedDomElement;
+  DomHTMLElement? _cachedDomElement;
 
-  @override
-  html.HtmlElement toDomElement() {
+  /// Returns a DOM element that represents the entire paragraph and its
+  /// children.
+  ///
+  /// Generates a new DOM element on every invocation.
+  DomHTMLElement toDomElement() {
     assert(isLaidOut);
-    final html.HtmlElement? domElement = _cachedDomElement;
+    final DomHTMLElement? domElement = _cachedDomElement;
     if (domElement == null) {
       return _cachedDomElement ??= _createDomElement();
     }
-    return domElement.clone(true) as html.HtmlElement;
+    return domElement.cloneNode(true) as DomHTMLElement;
   }
 
-  html.HtmlElement _createDomElement() {
-    final html.HtmlElement rootElement =
-        domRenderer.createElement('p') as html.HtmlElement;
+  DomHTMLElement _createDomElement() {
+    final DomHTMLElement rootElement =
+        domDocument.createElement('flt-paragraph') as DomHTMLElement;
 
     // 1. Set paragraph-level styles.
-    _applyParagraphStyleToElement(element: rootElement, style: paragraphStyle);
-    final html.CssStyleDeclaration cssStyle = rootElement.style;
+
+    final DomCSSStyleDeclaration cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
       // Prevent the browser from doing any line breaks in the paragraph. We want
-      // to insert our own <BR> breaks based on layout results.
+      // to have full control of the paragraph layout.
       ..whiteSpace = 'pre';
-
-    if (width > longestLine) {
-      // In this case, we set the width so that the CSS text-align property
-      // works correctly.
-      // When `longestLine` is >= `paragraph.width` that means the DOM element
-      // will automatically size itself to fit the longest line, so there's no
-      // need to set an explicit width.
-      cssStyle.width = '${width}px';
-    }
-
-    if (paragraphStyle._maxLines != null || paragraphStyle._ellipsis != null) {
-      cssStyle
-        ..overflowY = 'hidden'
-        ..height = '${height}px';
-    }
-
-    if (paragraphStyle._ellipsis != null &&
-        (paragraphStyle._maxLines == null || paragraphStyle._maxLines == 1)) {
-      cssStyle
-        ..width = '${width}px'
-        ..overflowX = 'hidden'
-        ..textOverflow = 'ellipsis';
-    }
 
     // 2. Append all spans to the paragraph.
 
-    ParagraphSpan? span;
-    late html.HtmlElement element;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
-
+    DomHTMLElement? lastSpanElement;
     for (int i = 0; i < lines.length; i++) {
-      // Insert a <BR> element before each line except the first line.
-      if (i > 0) {
-        domRenderer.append(element, domRenderer.createElement('br'));
-      }
+      final ParagraphLine line = lines[i];
+      final List<RangeBox> boxes = line.boxes;
+      final StringBuffer buffer = StringBuffer();
 
-      for (final RangeBox box in lines[i].boxes!) {
+      int j = 0;
+      while (j < boxes.length) {
+        final RangeBox box = boxes[j++];
+
         if (box is SpanBox) {
-          if (box.span != span) {
-            span = box.span;
-            element = domRenderer.createElement('span') as html.HtmlElement;
-            _applyTextStyleToElement(
-              element: element,
-              style: box.span.style,
-              isSpan: true
-            );
-            domRenderer.append(rootElement, element);
-          }
-          domRenderer.appendText(element, box.toText());
-        } else if (box is PlaceholderBox) {
-          span = box.placeholder;
-          // If there's a line-end after this placeholder, we want the <BR> to
-          // be inserted in the root paragraph element.
-          element = rootElement;
-          domRenderer.append(
-            rootElement,
-            _createPlaceholderElement(placeholder: box.placeholder),
+          lastSpanElement = domDocument.createElement('flt-span') as
+              DomHTMLElement;
+          applyTextStyleToElement(
+            element: lastSpanElement,
+            style: box.span.style,
+            isSpan: true,
           );
+          _positionSpanElement(lastSpanElement, line, box);
+          lastSpanElement.appendText(box.toText());
+          rootElement.append(lastSpanElement);
+          buffer.write(box.toText());
+        } else if (box is PlaceholderBox) {
+          lastSpanElement = null;
         } else {
           throw UnimplementedError('Unknown box type: ${box.runtimeType}');
         }
+      }
+
+      final String? ellipsis = line.ellipsis;
+      if (ellipsis != null) {
+        (lastSpanElement ?? rootElement).appendText(ellipsis);
       }
     }
 
@@ -239,24 +237,35 @@ class CanvasParagraph implements EngineParagraph {
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
     final int index = position.offset;
-    final List<EngineLineMetrics> lines = computeLineMetrics();
 
     int i;
     for (i = 0; i < lines.length - 1; i++) {
-      final EngineLineMetrics line = lines[i];
+      final ParagraphLine line = lines[i];
       if (index >= line.startIndex && index < line.endIndex) {
         break;
       }
     }
 
-    final EngineLineMetrics line = lines[i];
+    final ParagraphLine line = lines[i];
     return ui.TextRange(start: line.startIndex, end: line.endIndex);
   }
 
   @override
   List<EngineLineMetrics> computeLineMetrics() {
-    return _layoutService.lines;
+    return lines.map((ParagraphLine line) => line.lineMetrics).toList();
   }
+}
+
+void _positionSpanElement(DomElement element, ParagraphLine line, RangeBox box) {
+  final ui.Rect boxRect = box.toTextBox(line, forPainting: true).toRect();
+  element.style
+    ..position = 'absolute'
+    ..top = '${boxRect.top}px'
+    ..left = '${boxRect.left}px'
+    // This is needed for space-only spans that are used to justify the paragraph.
+    ..width = '${boxRect.width}px'
+    // Makes sure the baseline of each span is positioned as expected.
+    ..lineHeight = '${boxRect.height}px';
 }
 
 /// A common interface for all types of spans that make up a paragraph.
@@ -365,6 +374,7 @@ abstract class StyleNode {
         fontFamily: _fontFamily,
         fontFamilyFallback: _fontFamilyFallback,
         fontFeatures: _fontFeatures,
+        fontVariations: _fontVariations,
         fontSize: _fontSize,
         letterSpacing: _letterSpacing,
         wordSpacing: _wordSpacing,
@@ -378,7 +388,7 @@ abstract class StyleNode {
     return style;
   }
 
-  ui.Color get _color;
+  ui.Color? get _color;
   ui.TextDecoration? get _decoration;
   ui.Color? get _decorationColor;
   ui.TextDecorationStyle? get _decorationStyle;
@@ -389,6 +399,7 @@ abstract class StyleNode {
   String get _fontFamily;
   List<String>? get _fontFamilyFallback;
   List<ui.FontFeature>? get _fontFeatures;
+  List<ui.FontVariation>? get _fontVariations;
   double get _fontSize;
   double? get _letterSpacing;
   double? get _wordSpacing;
@@ -414,64 +425,67 @@ class ChildStyleNode extends StyleNode {
   // property isn't defined, go to the parent node.
 
   @override
-  ui.Color get _color => style._color ?? parent._color;
+  ui.Color? get _color => style.color ?? (_foreground == null ? parent._color : null);
 
   @override
-  ui.TextDecoration? get _decoration => style._decoration ?? parent._decoration;
+  ui.TextDecoration? get _decoration => style.decoration ?? parent._decoration;
 
   @override
-  ui.Color? get _decorationColor => style._decorationColor ?? parent._decorationColor;
+  ui.Color? get _decorationColor => style.decorationColor ?? parent._decorationColor;
 
   @override
-  ui.TextDecorationStyle? get _decorationStyle => style._decorationStyle ?? parent._decorationStyle;
+  ui.TextDecorationStyle? get _decorationStyle => style.decorationStyle ?? parent._decorationStyle;
 
   @override
-  double? get _decorationThickness => style._decorationThickness ?? parent._decorationThickness;
+  double? get _decorationThickness => style.decorationThickness ?? parent._decorationThickness;
 
   @override
-  ui.FontWeight? get _fontWeight => style._fontWeight ?? parent._fontWeight;
+  ui.FontWeight? get _fontWeight => style.fontWeight ?? parent._fontWeight;
 
   @override
-  ui.FontStyle? get _fontStyle => style._fontStyle ?? parent._fontStyle;
+  ui.FontStyle? get _fontStyle => style.fontStyle ?? parent._fontStyle;
 
   @override
-  ui.TextBaseline? get _textBaseline => style._textBaseline ?? parent._textBaseline;
+  ui.TextBaseline? get _textBaseline => style.textBaseline ?? parent._textBaseline;
 
   @override
-  List<String>? get _fontFamilyFallback => style._fontFamilyFallback ?? parent._fontFamilyFallback;
+  List<String>? get _fontFamilyFallback => style.fontFamilyFallback ?? parent._fontFamilyFallback;
 
   @override
-  List<ui.FontFeature>? get _fontFeatures => style._fontFeatures ?? parent._fontFeatures;
+  List<ui.FontFeature>? get _fontFeatures => style.fontFeatures ?? parent._fontFeatures;
 
   @override
-  double get _fontSize => style._fontSize ?? parent._fontSize;
+  List<ui.FontVariation>? get _fontVariations => style.fontVariations ?? parent._fontVariations;
 
   @override
-  double? get _letterSpacing => style._letterSpacing ?? parent._letterSpacing;
+  double get _fontSize => style.fontSize ?? parent._fontSize;
 
   @override
-  double? get _wordSpacing => style._wordSpacing ?? parent._wordSpacing;
+  double? get _letterSpacing => style.letterSpacing ?? parent._letterSpacing;
 
   @override
-  double? get _height => style._height ?? parent._height;
+  double? get _wordSpacing => style.wordSpacing ?? parent._wordSpacing;
 
   @override
-  ui.Locale? get _locale => style._locale ?? parent._locale;
+  double? get _height => style.height ?? parent._height;
 
   @override
-  ui.Paint? get _background => style._background ?? parent._background;
+  ui.Locale? get _locale => style.locale ?? parent._locale;
 
   @override
-  ui.Paint? get _foreground => style._foreground ?? parent._foreground;
+  ui.Paint? get _background => style.background ?? parent._background;
 
   @override
-  List<ui.Shadow>? get _shadows => style._shadows ?? parent._shadows;
+  ui.Paint? get _foreground => style.foreground ?? parent._foreground;
+
+  @override
+  List<ui.Shadow>? get _shadows => style.shadows ?? parent._shadows;
 
   // Font family is slightly different from the other properties above. It's
-  // never null on the TextStyle object, so we use `_isFontFamilyProvided` to
+  // never null on the TextStyle object, so we use `isFontFamilyProvided` to
   // check if font family is defined or not.
   @override
-  String get _fontFamily => style._isFontFamilyProvided ? style._fontFamily : parent._fontFamily;
+  String get _fontFamily => style.isFontFamilyProvided ? style.fontFamily : parent._fontFamily;
 }
 
 /// The root style node for the paragraph.
@@ -501,15 +515,15 @@ class RootStyleNode extends StyleNode {
   double? get _decorationThickness => null;
 
   @override
-  ui.FontWeight? get _fontWeight => paragraphStyle._fontWeight;
+  ui.FontWeight? get _fontWeight => paragraphStyle.fontWeight;
   @override
-  ui.FontStyle? get _fontStyle => paragraphStyle._fontStyle;
+  ui.FontStyle? get _fontStyle => paragraphStyle.fontStyle;
 
   @override
   ui.TextBaseline? get _textBaseline => null;
 
   @override
-  String get _fontFamily => paragraphStyle._fontFamily ?? DomRenderer.defaultFontFamily;
+  String get _fontFamily => paragraphStyle.fontFamily ?? FlutterViewEmbedder.defaultFontFamily;
 
   @override
   List<String>? get _fontFamilyFallback => null;
@@ -518,7 +532,10 @@ class RootStyleNode extends StyleNode {
   List<ui.FontFeature>? get _fontFeatures => null;
 
   @override
-  double get _fontSize => paragraphStyle._fontSize ?? DomRenderer.defaultFontSize;
+  List<ui.FontVariation>? get _fontVariations => null;
+
+  @override
+  double get _fontSize => paragraphStyle.fontSize ?? FlutterViewEmbedder.defaultFontSize;
 
   @override
   double? get _letterSpacing => null;
@@ -527,10 +544,10 @@ class RootStyleNode extends StyleNode {
   double? get _wordSpacing => null;
 
   @override
-  double? get _height => paragraphStyle._height;
+  double? get _height => paragraphStyle.height;
 
   @override
-  ui.Locale? get _locale => paragraphStyle._locale;
+  ui.Locale? get _locale => paragraphStyle.locale;
 
   @override
   ui.Paint? get _background => null;
@@ -583,11 +600,9 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     // - https://github.com/flutter/engine/blob/c0f7e8acf9318d264ad6a235facd097de597ffcc/third_party/txt/src/txt/paragraph_txt.cc#L325-L350
 
     // Require a baseline to be specified if using a baseline-based alignment.
-    assert((alignment == ui.PlaceholderAlignment.aboveBaseline ||
+    assert(!(alignment == ui.PlaceholderAlignment.aboveBaseline ||
             alignment == ui.PlaceholderAlignment.belowBaseline ||
-            alignment == ui.PlaceholderAlignment.baseline)
-        ? baseline != null
-        : true);
+            alignment == ui.PlaceholderAlignment.baseline) || baseline != null);
 
     _placeholderCount++;
     _placeholderScales.add(scale);
@@ -613,7 +628,7 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     }
   }
 
-  bool _drawOnCanvas = true;
+  bool _canDrawOnCanvas = true;
 
   @override
   void addText(String text) {
@@ -622,17 +637,24 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     _plainTextBuffer.write(text);
     final int end = _plainTextBuffer.length;
 
-    if (_drawOnCanvas) {
-      final ui.TextDecoration? decoration = style._decoration;
+    if (_canDrawOnCanvas) {
+      final ui.TextDecoration? decoration = style.decoration;
       if (decoration != null && decoration != ui.TextDecoration.none) {
-        _drawOnCanvas = false;
+        _canDrawOnCanvas = false;
       }
     }
 
-    if (_drawOnCanvas) {
-      final List<ui.FontFeature>? fontFeatures = style._fontFeatures;
+    if (_canDrawOnCanvas) {
+      final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
       if (fontFeatures != null && fontFeatures.isNotEmpty) {
-        _drawOnCanvas = false;
+        _canDrawOnCanvas = false;
+      }
+    }
+
+    if (_canDrawOnCanvas) {
+      final List<ui.FontVariation>? fontVariations = style.fontVariations;
+      if (fontVariations != null && fontVariations.isNotEmpty) {
+        _canDrawOnCanvas = false;
       }
     }
 
@@ -646,7 +668,7 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
       paragraphStyle: _paragraphStyle,
       plainText: _plainTextBuffer.toString(),
       placeholderCount: _placeholderCount,
-      drawOnCanvas: _drawOnCanvas,
+      canDrawOnCanvas: _canDrawOnCanvas,
     );
   }
 }

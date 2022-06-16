@@ -4,29 +4,19 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
-@interface FlutterViewController ()
+@interface FlutterViewController () <FlutterKeyboardViewDelegate>
 
 // The FlutterView for this view controller.
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
 
 /**
- * This just returns the NSPasteboard so that it can be mocked in the tests.
+ * The text input plugin that handles text editing state for text fields.
  */
-@property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
-
-/**
- * Adds an intermediate responder for keyboard events. Key up and key down events are forwarded to
- * all added responders, and they either handle the keys or not.
- */
-- (void)addKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
-
-/**
- * Removes an intermediate responder for keyboard events.
- */
-- (void)removeKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
+@property(nonatomic, readonly, nonnull) FlutterTextInputPlugin* textInputPlugin;
 
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
@@ -40,4 +30,15 @@
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
                                nibName:(nullable NSString*)nibName
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Returns YES if provided event is being currently redispatched by keyboard manager.
+ */
+- (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
+
+@end
+
+// Private methods made visible for testing
+@interface FlutterViewController (TestMethods)
+- (void)onAccessibilityStatusChanged:(BOOL)enabled;
 @end

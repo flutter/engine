@@ -11,13 +11,13 @@
 namespace flutter::testing {
 
 TEST(FlutterGLCompositorTest, TestPresent) {
-  id mockViewController = CreateMockViewController(nil);
+  id mockViewController = CreateMockViewController();
 
   std::unique_ptr<flutter::FlutterGLCompositor> macos_compositor =
       std::make_unique<FlutterGLCompositor>(mockViewController, nullptr);
 
   bool flag = false;
-  macos_compositor->SetPresentCallback([f = &flag]() {
+  macos_compositor->SetPresentCallback([f = &flag](bool has_flutter_content) {
     *f = true;
     return true;
   });
@@ -26,4 +26,4 @@ TEST(FlutterGLCompositorTest, TestPresent) {
   ASSERT_TRUE(flag);
 }
 
-}  // flutter::testing
+}  // namespace flutter::testing

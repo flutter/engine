@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import '../platform_dispatcher.dart';
+import '../safe_browser_api.dart';
+import 'semantics.dart';
 
 /// Adds increment/decrement event handling to a semantics object.
 ///
@@ -16,7 +20,7 @@ part of engine;
 /// gestures must be interpreted by the Flutter framework.
 class Incrementable extends RoleManager {
   /// The HTML element used to render semantics to the browser.
-  final html.InputElement _element = html.InputElement();
+  final DomHTMLInputElement _element = createDomHTMLInputElement();
 
   /// The value used by the input element.
   ///
@@ -45,7 +49,7 @@ class Incrementable extends RoleManager {
     _element.type = 'range';
     _element.setAttribute('role', 'slider');
 
-    _element.addEventListener('change', (_) {
+    _element.addEventListener('change', allowInterop((_) {
       if (_element.disabled!) {
         return;
       }
@@ -60,7 +64,7 @@ class Incrementable extends RoleManager {
         EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
             semanticsObject.id, ui.SemanticsAction.decrease, null);
       }
-    });
+    }));
 
     // Store the callback as a closure because Dart does not guarantee that
     // tear-offs produce the same function object.

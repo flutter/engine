@@ -20,8 +20,11 @@ declare_args() {
   # Whether to use the Skia text shaper module for all text rendering
   flutter_always_use_skshaper = false
 
-  # Whether to use the legacy embedder when building for Fuchsia.
-  flutter_enable_legacy_fuchsia_embedder = true
+  # Whether to use a prebuilt Dart SDK instead of building one.
+  flutter_prebuilt_dart_sdk = false
+
+  # Whether layers can be drawn at half pixel boundaries.
+  support_fractional_translation = false
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -56,10 +59,81 @@ if (flutter_runtime_mode == "debug") {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=0" ]
 }
 
+if (support_fractional_translation) {
+  feature_defines_list += [ "SUPPORT_FRACTIONAL_TRANSLATION=1" ]
+}
+
 if (is_ios || is_mac) {
   flutter_cflags_objc = [
     "-Werror=overriding-method-mismatch",
     "-Werror=undeclared-selector",
   ]
   flutter_cflags_objcc = flutter_cflags_objc
+  flutter_cflags_objc_arc = flutter_cflags_objc + [ "-fobjc-arc" ]
+  flutter_cflags_objcc_arc = flutter_cflags_objc_arc
 }
+
+# A combo of host os name and cpu is used in several locations to
+# generate the names of the archived artifacts.
+platform_name = host_os
+if (platform_name == "mac") {
+  platform_name = "darwin"
+} else if (platform_name == "win") {
+  platform_name = "windows"
+}
+
+full_platform_name = "$platform_name-$host_cpu"
+
+target_platform_name = target_os
+if (target_platform_name == "mac") {
+  platform_target_name = "darwin"
+} else if (target_platform_name == "win") {
+  target_platform_name = "windows"
+}
+
+full_target_platform_name = "$target_platform_name-$target_cpu"
+
+# Prebuilt Dart SDK location
+
+if (flutter_prebuilt_dart_sdk) {
+  _target_os_name = target_os
+  if (_target_os_name == "mac") {
+    _target_os_name = "macos"
+  } else if (_target_os_name == "win") {
+    _target_os_name = "windows"
+  }
+
+  _host_os_name = host_os
+  if (_host_os_name == "mac") {
+    _host_os_name = "macos"
+  } else if (_host_os_name == "win") {
+    _host_os_name = "windows"
+  }
+
+  _target_prebuilt_dart_sdk_config = "$_target_os_name-$target_cpu"
+  _host_prebuilt_dart_sdk_config = "$_host_os_name-$host_cpu"
+
+  target_prebuilt_dart_sdk =
+      "//flutter/prebuilts/$_target_prebuilt_dart_sdk_config/dart-sdk"
+  host_prebuilt_dart_sdk =
+      "//flutter/prebuilts/$_host_prebuilt_dart_sdk_config/dart-sdk"
+
+  # There is no prebuilt Dart SDK targeting Fuchsia, but we also don't need
+  # one, so even when the build is targeting Fuchsia, use the prebuilt
+  # Dart SDK for the host.
+  if (current_toolchain == host_toolchain || is_fuchsia) {
+    prebuilt_dart_sdk = host_prebuilt_dart_sdk
+    prebuilt_dart_sdk_config = _host_prebuilt_dart_sdk_config
+  } else {
+    prebuilt_dart_sdk = target_prebuilt_dart_sdk
+    prebuilt_dart_sdk_config = _target_prebuilt_dart_sdk_config
+  }
+}
+
+# Flutter SDK artifacts should only be built when either doing host builds, or
+# for cross-compiled desktop targets.
+# TODO: We can't build the engine artifacts for arm (32-bit) right now;
+# see https://github.com/flutter/flutter/issues/74322
+build_engine_artifacts =
+    current_toolchain == host_toolchain ||
+    (is_linux && !is_chromeos && current_cpu != "arm") || is_mac

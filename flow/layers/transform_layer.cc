@@ -26,6 +26,20 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
   }
 }
 
+void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const TransformLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (transform_ != prev->transform_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+  context->PushTransform(transform_);
+  DiffChildren(context, prev);
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TransformLayer::Preroll");
 
@@ -42,6 +56,10 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     context->cull_rect = kGiantRect;
   }
 
+  // Collect inheritance information on our children in Preroll so that
+  // we can pass it along by default.
+  context->subtree_can_inherit_opacity = true;
+
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, child_matrix, &child_paint_bounds);
 
@@ -51,22 +69,6 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->cull_rect = previous_cull_rect;
   context->mutators_stack.Pop();
 }
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-
-void TransformLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
-  TRACE_EVENT0("flutter", "TransformLayer::UpdateScene");
-  FML_DCHECK(needs_system_composite());
-
-  std::optional<SceneUpdateContext::Transform> transform;
-  if (!transform_.isIdentity()) {
-    transform.emplace(context, transform_);
-  }
-
-  UpdateSceneChildren(context);
-}
-
-#endif
 
 void TransformLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");

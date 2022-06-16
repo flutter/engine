@@ -20,10 +20,8 @@ class FlutterView {
   FlutterView(FlutterView const&) = delete;
   FlutterView& operator=(FlutterView const&) = delete;
 
-#ifndef WINUWP
   // Returns the backing HWND for the view.
   HWND GetNativeWindow() { return FlutterDesktopViewGetHWND(view_); }
-#endif
 
  private:
   // Handle for interacting with the C API's view.

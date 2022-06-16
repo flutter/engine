@@ -8,7 +8,6 @@
 #include <GLES/gl.h>
 
 #include "flutter/common/graphics/texture.h"
-#include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
 namespace flutter {
@@ -17,7 +16,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
  public:
   AndroidExternalTextureGL(
       int64_t id,
-      const fml::jni::JavaObjectWeakGlobalRef& surface_texture,
+      const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidExternalTextureGL() override;
@@ -26,7 +25,8 @@ class AndroidExternalTextureGL : public flutter::Texture {
              const SkRect& bounds,
              bool freeze,
              GrDirectContext* context,
-             const SkSamplingOptions& sampling) override;
+             const SkSamplingOptions& sampling,
+             const SkPaint* paint) override;
 
   void OnGrContextCreated() override;
 
@@ -49,7 +49,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
 
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 
-  fml::jni::JavaObjectWeakGlobalRef surface_texture_;
+  fml::jni::ScopedJavaGlobalRef<jobject> surface_texture_;
 
   AttachmentState state_ = AttachmentState::uninitialized;
 

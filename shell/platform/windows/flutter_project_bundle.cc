@@ -80,6 +80,11 @@ UniqueAotDataPtr FlutterProjectBundle::LoadAotData(
 
 FlutterProjectBundle::~FlutterProjectBundle() {}
 
+void FlutterProjectBundle::SetSwitches(
+    const std::vector<std::string>& switches) {
+  engine_switches_ = switches;
+}
+
 const std::vector<std::string> FlutterProjectBundle::GetSwitches() {
   return GetSwitchesFromEnvironment();
 }

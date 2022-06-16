@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-import 'package:test/bootstrap/browser.dart'; // ignore: import_of_legacy_library_into_null_safe
-import 'package:test/test.dart'; // ignore: import_of_legacy_library_into_null_safe
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 
 import 'package:ui/ui.dart';
 
@@ -154,9 +153,9 @@ void expectAssertion(Function callback) {
     try {
       callback();
     } catch (e) {
-      expect(e is AssertionError, true);
+      expect(e is AssertionError, isTrue);
       threw = true;
     }
-    expect(threw, true);
+    expect(threw, isTrue);
   }
 }

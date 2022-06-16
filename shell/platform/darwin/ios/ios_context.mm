@@ -9,29 +9,45 @@
 #import "flutter/shell/platform/darwin/ios/ios_context_software.h"
 
 #if SHELL_ENABLE_METAL
-#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_metal_impeller.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
 #endif  // SHELL_ENABLE_METAL
 
 namespace flutter {
 
-IOSContext::IOSContext() = default;
+IOSContext::IOSContext(MsaaSampleCount msaa_samples) : msaa_samples_(msaa_samples) {}
 
 IOSContext::~IOSContext() = default;
 
-std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI rendering_api) {
-  switch (rendering_api) {
+std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI api,
+                                               IOSRenderingBackend backend,
+                                               MsaaSampleCount msaa_samples) {
+  switch (api) {
     case IOSRenderingAPI::kOpenGLES:
       return std::make_unique<IOSContextGL>();
     case IOSRenderingAPI::kSoftware:
       return std::make_unique<IOSContextSoftware>();
 #if SHELL_ENABLE_METAL
     case IOSRenderingAPI::kMetal:
-      return std::make_unique<IOSContextMetal>();
+      switch (backend) {
+        case IOSRenderingBackend::kSkia:
+          return std::make_unique<IOSContextMetalSkia>(msaa_samples);
+        case IOSRenderingBackend::kImpeller:
+          return std::make_unique<IOSContextMetalImpeller>();
+      }
 #endif  // SHELL_ENABLE_METAL
     default:
       break;
   }
   FML_CHECK(false);
+  return nullptr;
+}
+
+IOSRenderingBackend IOSContext::GetBackend() const {
+  return IOSRenderingBackend::kSkia;
+}
+
+std::shared_ptr<impeller::Context> IOSContext::GetImpellerContext() const {
   return nullptr;
 }
 

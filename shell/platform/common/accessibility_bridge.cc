@@ -104,6 +104,29 @@ const ui::AXTreeData& AccessibilityBridge::GetAXTreeData() const {
   return tree_.data();
 }
 
+const std::vector<ui::AXEventGenerator::TargetedEvent>
+AccessibilityBridge::GetPendingEvents() {
+  std::vector<ui::AXEventGenerator::TargetedEvent> result(
+      event_generator_.begin(), event_generator_.end());
+  return result;
+}
+
+void AccessibilityBridge::UpdateDelegate(
+    std::unique_ptr<AccessibilityBridgeDelegate> delegate) {
+  delegate_ = std::move(delegate);
+  // Recreate FlutterPlatformNodeDelegates since they may contain stale state
+  // from the previous AccessibilityBridgeDelegate.
+  for (const auto& [node_id, old_platform_node_delegate] : id_wrapper_map_) {
+    std::shared_ptr<FlutterPlatformNodeDelegate> platform_node_delegate =
+        delegate_->CreateFlutterPlatformNodeDelegate();
+    platform_node_delegate->Init(
+        std::static_pointer_cast<FlutterPlatformNodeDelegate::OwnerBridge>(
+            shared_from_this()),
+        old_platform_node_delegate->GetAXNode());
+    id_wrapper_map_[node_id] = platform_node_delegate;
+  }
+}
+
 void AccessibilityBridge::OnNodeWillBeDeleted(ui::AXTree* tree,
                                               ui::AXNode* node) {}
 
@@ -230,9 +253,17 @@ void AccessibilityBridge::SetRoleFromFlutterUpdate(ui::AXNodeData& node_data,
     node_data.role = ax::mojom::Role::kCheckBox;
     return;
   }
+  if (flags & kFlutterSemanticsFlagHasToggledState) {
+    node_data.role = ax::mojom::Role::kToggleButton;
+    return;
+  }
+  if (flags & kFlutterSemanticsFlagIsSlider) {
+    node_data.role = ax::mojom::Role::kSlider;
+    return;
+  }
   // If the state cannot be derived from the flutter flags, we fallback to group
   // or static text.
-  if (node.children_in_traversal_order.size() == 0) {
+  if (node.children_in_traversal_order.empty()) {
     node_data.role = ax::mojom::Role::kStaticText;
   } else {
     node_data.role = ax::mojom::Role::kGroup;
@@ -315,14 +346,14 @@ void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(
       actions & FlutterSemanticsAction::kFlutterSemanticsActionTap);
   // TODO(chunhtai): figure out if there is a node that does not clip overflow.
   node_data.AddBoolAttribute(ax::mojom::BoolAttribute::kClipsChildren,
-                             node.children_in_traversal_order.size() != 0);
+                             !node.children_in_traversal_order.empty());
   node_data.AddBoolAttribute(
       ax::mojom::BoolAttribute::kSelected,
       flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsSelected);
   node_data.AddBoolAttribute(
       ax::mojom::BoolAttribute::kEditableRoot,
       flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
-          (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) > 0);
+          (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0);
 }
 
 void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
@@ -532,8 +563,8 @@ gfx::RectF AccessibilityBridge::RelativeToGlobalBounds(const ui::AXNode* node,
 void AccessibilityBridge::DispatchAccessibilityAction(
     AccessibilityNodeId target,
     FlutterSemanticsAction action,
-    std::vector<uint8_t> data) {
-  delegate_->DispatchAccessibilityAction(target, action, data);
+    fml::MallocMapping data) {
+  delegate_->DispatchAccessibilityAction(target, action, std::move(data));
 }
 
 }  // namespace flutter

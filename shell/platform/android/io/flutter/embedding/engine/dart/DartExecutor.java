@@ -14,8 +14,10 @@ import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
+import io.flutter.util.TraceSection;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Configures, bootstraps, and starts executing Dart code.
@@ -61,6 +63,11 @@ public class DartExecutor implements BinaryMessenger {
     this.dartMessenger = new DartMessenger(flutterJNI);
     dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
     this.binaryMessenger = new DefaultBinaryMessenger(dartMessenger);
+    // The JNI might already be attached if coming from a spawned engine. If so, correctly report
+    // that this DartExecutor is already running.
+    if (flutterJNI.isAttached()) {
+      isApplicationRunning = true;
+    }
   }
 
   /**
@@ -78,7 +85,8 @@ public class DartExecutor implements BinaryMessenger {
   public void onAttachedToJNI() {
     Log.v(
         TAG,
-        "Attached to JNI. Registering the platform message handler for this Dart execution context.");
+        "Attached to JNI. Registering the platform message handler for this Dart execution"
+            + " context.");
     flutterJNI.setPlatformMessageHandler(dartMessenger);
   }
 
@@ -92,7 +100,8 @@ public class DartExecutor implements BinaryMessenger {
   public void onDetachedFromJNI() {
     Log.v(
         TAG,
-        "Detached from JNI. De-registering the platform message handler for this Dart execution context.");
+        "Detached from JNI. De-registering the platform message handler for this Dart execution"
+            + " context.");
     flutterJNI.setPlatformMessageHandler(null);
   }
 
@@ -113,20 +122,39 @@ public class DartExecutor implements BinaryMessenger {
    * @param dartEntrypoint specifies which Dart function to run, and where to find it
    */
   public void executeDartEntrypoint(@NonNull DartEntrypoint dartEntrypoint) {
+    executeDartEntrypoint(dartEntrypoint, null);
+  }
+
+  /**
+   * Starts executing Dart code based on the given {@code dartEntrypoint} and the {@code
+   * dartEntrypointArgs}.
+   *
+   * <p>See {@link DartEntrypoint} for configuration options.
+   *
+   * @param dartEntrypoint specifies which Dart function to run, and where to find it
+   * @param dartEntrypointArgs Arguments passed as a list of string to Dart's entrypoint function.
+   */
+  public void executeDartEntrypoint(
+      @NonNull DartEntrypoint dartEntrypoint, @Nullable List<String> dartEntrypointArgs) {
     if (isApplicationRunning) {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
     }
 
-    Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
+    TraceSection.begin("DartExecutor#executeDartEntrypoint");
+    try {
+      Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
+      flutterJNI.runBundleAndSnapshotFromLibrary(
+          dartEntrypoint.pathToBundle,
+          dartEntrypoint.dartEntrypointFunctionName,
+          dartEntrypoint.dartEntrypointLibrary,
+          assetManager,
+          dartEntrypointArgs);
 
-    flutterJNI.runBundleAndSnapshotFromLibrary(
-        dartEntrypoint.pathToBundle,
-        dartEntrypoint.dartEntrypointFunctionName,
-        dartEntrypoint.dartEntrypointLibrary,
-        assetManager);
-
-    isApplicationRunning = true;
+      isApplicationRunning = true;
+    } finally {
+      TraceSection.end();
+    }
   }
 
   /**
@@ -142,15 +170,20 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    Log.v(TAG, "Executing Dart callback: " + dartCallback);
+    TraceSection.begin("DartExecutor#executeDartCallback");
+    try {
+      Log.v(TAG, "Executing Dart callback: " + dartCallback);
+      flutterJNI.runBundleAndSnapshotFromLibrary(
+          dartCallback.pathToBundle,
+          dartCallback.callbackHandle.callbackName,
+          dartCallback.callbackHandle.callbackLibraryPath,
+          dartCallback.androidAssetManager,
+          null);
 
-    flutterJNI.runBundleAndSnapshotFromLibrary(
-        dartCallback.pathToBundle,
-        dartCallback.callbackHandle.callbackName,
-        dartCallback.callbackHandle.callbackLibraryPath,
-        dartCallback.androidAssetManager);
-
-    isApplicationRunning = true;
+      isApplicationRunning = true;
+    } finally {
+      TraceSection.end();
+    }
   }
 
   /**
@@ -163,6 +196,14 @@ public class DartExecutor implements BinaryMessenger {
   }
 
   // ------ START BinaryMessenger (Deprecated: use getBinaryMessenger() instead) -----
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @UiThread
+  @Override
+  public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+    return binaryMessenger.makeBackgroundTaskQueue(options);
+  }
+
   /** @deprecated Use {@link #getBinaryMessenger()} instead. */
   @Deprecated
   @Override
@@ -189,6 +230,31 @@ public class DartExecutor implements BinaryMessenger {
   public void setMessageHandler(
       @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
     binaryMessenger.setMessageHandler(channel, handler);
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  @UiThread
+  public void setMessageHandler(
+      @NonNull String channel,
+      @Nullable BinaryMessenger.BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
+    binaryMessenger.setMessageHandler(channel, handler, taskQueue);
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  public void enableBufferingIncomingMessages() {
+    dartMessenger.enableBufferingIncomingMessages();
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  public void disableBufferingIncomingMessages() {
+    dartMessenger.disableBufferingIncomingMessages();
   }
   // ------ END BinaryMessenger -----
 
@@ -221,7 +287,7 @@ public class DartExecutor implements BinaryMessenger {
   }
 
   /** Callback interface invoked when the isolate identifier becomes available. */
-  interface IsolateServiceIdListener {
+  public interface IsolateServiceIdListener {
     void onIsolateServiceIdAvailable(@NonNull String isolateServiceId);
   }
 
@@ -241,7 +307,10 @@ public class DartExecutor implements BinaryMessenger {
    * is an appropriate time to free resources, such as going to the background.
    *
    * <p>This does not notify a Flutter application about memory pressure. For that, use the {@link
-   * SystemChannel#sendMemoryPressureWarning}.
+   * io.flutter.embedding.engine.systemchannels.SystemChannel#sendMemoryPressureWarning}.
+   *
+   * <p>Calling this method may cause jank or latency in the application. Avoid calling it during
+   * critical periods like application startup or periods of animation.
    */
   public void notifyLowMemoryWarning() {
     if (flutterJNI.isAttached()) {
@@ -366,6 +435,10 @@ public class DartExecutor implements BinaryMessenger {
       this.messenger = messenger;
     }
 
+    public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+      return messenger.makeBackgroundTaskQueue(options);
+    }
+
     /**
      * Sends the given {@code message} from Android to Dart over the given {@code channel}.
      *
@@ -410,6 +483,25 @@ public class DartExecutor implements BinaryMessenger {
     public void setMessageHandler(
         @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
       messenger.setMessageHandler(channel, handler);
+    }
+
+    @Override
+    @UiThread
+    public void setMessageHandler(
+        @NonNull String channel,
+        @Nullable BinaryMessenger.BinaryMessageHandler handler,
+        @Nullable TaskQueue taskQueue) {
+      messenger.setMessageHandler(channel, handler, taskQueue);
+    }
+
+    @Override
+    public void enableBufferingIncomingMessages() {
+      messenger.enableBufferingIncomingMessages();
+    }
+
+    @Override
+    public void disableBufferingIncomingMessages() {
+      messenger.disableBufferingIncomingMessages();
     }
   }
 }

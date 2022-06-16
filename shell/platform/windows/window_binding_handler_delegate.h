@@ -5,13 +5,18 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 
+#include <functional>
+
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
 
 class WindowBindingHandlerDelegate {
  public:
+  using KeyEventCallback = std::function<void(bool)>;
+
   // Notifies delegate that backing window size has changed.
   // Typically called by currently configured WindowBindingHandler, this is
   // called on the platform thread.
@@ -19,44 +24,77 @@ class WindowBindingHandlerDelegate {
 
   // Notifies delegate that backing window mouse has moved.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerMove(double x, double y) = 0;
+  virtual void OnPointerMove(double x,
+                             double y,
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id) = 0;
 
   // Notifies delegate that backing window mouse pointer button has been
   // pressed. Typically called by currently configured WindowBindingHandler
   virtual void OnPointerDown(double x,
                              double y,
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id,
                              FlutterPointerMouseButtons button) = 0;
 
   // Notifies delegate that backing window mouse pointer button has been
   // released. Typically called by currently configured WindowBindingHandler
   virtual void OnPointerUp(double x,
                            double y,
+                           FlutterPointerDeviceKind device_kind,
+                           int32_t device_id,
                            FlutterPointerMouseButtons button) = 0;
 
   // Notifies delegate that backing window mouse pointer has left the window.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerLeave() = 0;
+  virtual void OnPointerLeave(double x,
+                              double y,
+                              FlutterPointerDeviceKind device_kind,
+                              int32_t device_id) = 0;
+
+  // Notifies delegate that a pan/zoom gesture has started.
+  // Typically called by DirectManipulationEventHandler
+  virtual void OnPointerPanZoomStart(int32_t device_id) = 0;
+
+  // Notifies delegate that a pan/zoom gesture has updated.
+  // Typically called by DirectManipulationEventHandler
+  virtual void OnPointerPanZoomUpdate(int32_t device_id,
+                                      double pan_x,
+                                      double pan_y,
+                                      double scale,
+                                      double rotation) = 0;
+
+  // Notifies delegate that a pan/zoom gesture has ended.
+  // Typically called by DirectManipulationEventHandler
+  virtual void OnPointerPanZoomEnd(int32_t device_id) = 0;
 
   // Notifies delegate that backing window has received text.
   // Typically called by currently configured WindowBindingHandler
   virtual void OnText(const std::u16string&) = 0;
 
-  // TODO(clarkezone) refactor delegate to avoid needing win32 magic values in
-  // UWP implementation https://github.com/flutter/flutter/issues/70202 Notifies
-  // delegate that backing window size has received key press. Should return
-  // true if the event was handled and should not be propagated. Typically
-  // called by currently configured WindowBindingHandler.
-  virtual bool OnKey(int key,
+  // Notifies delegate that backing window size has received key press. Should
+  // return true if the event was handled and should not be propagated.
+  // Typically called by currently configured WindowBindingHandler.
+  virtual void OnKey(int key,
                      int scancode,
                      int action,
                      char32_t character,
-                     bool extended) = 0;
+                     bool extended,
+                     bool was_down,
+                     KeyEventCallback callback) = 0;
 
   // Notifies the delegate that IME composing mode has begun.
   //
   // Triggered when the user begins editing composing text using a multi-step
   // input method such as in CJK text input.
   virtual void OnComposeBegin() = 0;
+
+  // Notifies the delegate that IME composing region have been committed.
+  //
+  // Triggered when the user commits the current composing text while using a
+  // multi-step input method such as in CJK text input. Composing continues with
+  // the next keypress.
+  virtual void OnComposeCommit() = 0;
 
   // Notifies the delegate that IME composing mode has ended.
   //
@@ -76,7 +114,16 @@ class WindowBindingHandlerDelegate {
                         double y,
                         double delta_x,
                         double delta_y,
-                        int scroll_offset_multiplier) = 0;
+                        int scroll_offset_multiplier,
+                        FlutterPointerDeviceKind device_kind,
+                        int32_t device_id) = 0;
+
+  // Notifies delegate that the Flutter semantics tree should be enabled or
+  // disabled.
+  virtual void OnUpdateSemanticsEnabled(bool enabled) = 0;
+
+  // Returns the root view accessibility node, or nullptr if none.
+  virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 };
 
 }  // namespace flutter

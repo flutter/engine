@@ -16,6 +16,8 @@ class ShaderMaskLayer : public ContainerLayer {
                   const SkRect& mask_rect,
                   SkBlendMode blend_mode);
 
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
@@ -24,6 +26,9 @@ class ShaderMaskLayer : public ContainerLayer {
   sk_sp<SkShader> shader_;
   SkRect mask_rect_;
   SkBlendMode blend_mode_;
+
+  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
+  int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
 };

@@ -6,24 +6,18 @@
 
 #include <sys/stat.h>
 
-#include <mutex>
 #include <sstream>
 #include <vector>
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/compiler_specific.h"
-#include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
-#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/lib/io/dart_io.h"
-#include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_isolate.h"
-#include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm_initializer.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
@@ -33,7 +27,6 @@
 #include "third_party/tonic/dart_class_provider.h"
 #include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/logging/dart_error.h"
-#include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
 namespace dart {
@@ -56,19 +49,26 @@ extern const uint8_t* observatory_assets_archive;
 namespace flutter {
 
 // Arguments passed to the Dart VM in all configurations.
-static const char* kDartLanguageArgs[] = {
+static const char* kDartAllConfigsArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
-    "--no-causal_async_stacks",
-    "--lazy_async_stacks",
+    // 'mark_when_idle' appears to cause a regression, turning off for now.
+    // "--mark_when_idle",
     // clang-format on
 };
 
-// TODO(74520): Remove flag once isolate group work is completed (or add it to
-//              JIT mode).
-static const char* kDartPrecompilationArgs[] = {"--precompilation",
-                                                "--enable-isolate-groups"};
+static const char* kDartPrecompilationArgs[] = {"--precompilation"};
+
+static const char* kSerialGCArgs[] = {
+    // clang-format off
+    "--concurrent_mark=false",
+    "--concurrent_sweep=false",
+    "--compactor_tasks=1",
+    "--scavenger_tasks=0",
+    "--marker_tasks=0",
+    // clang-format on
+};
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
@@ -98,11 +98,8 @@ static const char* kDartEndlessTraceBufferArgs[]{
     "--timeline_recorder=endless",
 };
 
-static const char* kDartSystraceTraceBufferArgs[]{
-    "--timeline_recorder=systrace",
-};
-
-static const char* kDartFuchsiaTraceArgs[] FML_ALLOW_UNUSED_TYPE = {
+// This is the same as --timeline_recorder=systrace.
+static const char* kDartSystraceTraceBufferArgs[] = {
     "--systrace_timeline",
 };
 
@@ -219,11 +216,25 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
   // the VM enables the same by default. In either case, we have some profiling
   // flags.
   if (enable_profiling) {
-    return {// This is the default. But just be explicit.
-            "--profiler",
-            // This instructs the profiler to walk C++ frames, and to include
-            // them in the profile.
-            "--profile-vm"};
+    return {
+      // This is the default. But just be explicit.
+      "--profiler",
+          // This instructs the profiler to walk C++ frames, and to include
+          // them in the profile.
+          "--profile-vm",
+#if FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
+          // Set the profiler interrupt period to 500Hz instead of the
+          // default 1000Hz on 32-bit iOS devices to reduce average and worst
+          // case frame build times.
+          //
+          // Note: profile_period is time in microseconds between sampling
+          // events, not frequency. Frequency is calculated 1/period (or
+          // 1,000,000 / 2,000 -> 500Hz in this case).
+          "--profile_period=2000",
+#else
+          "--profile_period=1000",
+#endif  // FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
+    };
   } else {
     return {"--no-profiler"};
   }
@@ -254,7 +265,7 @@ std::shared_ptr<DartVM> DartVM::Create(
   );
 
   if (!vm_data) {
-    FML_LOG(ERROR) << "Could not setup VM data to bootstrap the VM from.";
+    FML_LOG(ERROR) << "Could not set up VM data to bootstrap the VM from.";
     return {};
   }
 
@@ -313,7 +324,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     args.push_back(profiler_flag);
   }
 
-  PushBackAll(&args, kDartLanguageArgs, fml::size(kDartLanguageArgs));
+  PushBackAll(&args, kDartAllConfigsArgs, fml::size(kDartAllConfigsArgs));
 
   if (IsRunningPrecompiledCode()) {
     PushBackAll(&args, kDartPrecompilationArgs,
@@ -331,7 +342,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 #endif  // !OS_FUCHSIA
 
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-#if !OS_IOS || TARGET_OS_SIMULATOR
+#if !FML_OS_IOS && !FML_OS_MACOSX
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
@@ -351,11 +362,18 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   PushBackAll(&args, kDartDisableIntegerDivisionArgs,
               fml::size(kDartDisableIntegerDivisionArgs));
 #endif  // TARGET_CPU_ARM
-#endif  // !OS_IOS || TARGET_OS_SIMULATOR
+#endif  // !FML_OS_IOS && !FML_OS_MACOSX
 #endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
   if (enable_asserts) {
     PushBackAll(&args, kDartAssertArgs, fml::size(kDartAssertArgs));
+  }
+
+  // On low power devices with lesser number of cores, using concurrent
+  // marking or sweeping causes contention for the UI thread leading to
+  // Jank, this option can be used to turn off all concurrent GC activities.
+  if (settings_.enable_serial_gc) {
+    PushBackAll(&args, kSerialGCArgs, fml::size(kSerialGCArgs));
   }
 
   if (settings_.start_paused) {
@@ -387,7 +405,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   }
 
 #if defined(OS_FUCHSIA)
-  PushBackAll(&args, kDartFuchsiaTraceArgs, fml::size(kDartFuchsiaTraceArgs));
+  PushBackAll(&args, kDartSystraceTraceBufferArgs,
+              fml::size(kDartSystraceTraceBufferArgs));
   PushBackAll(&args, kDartSystraceTraceStreamsArgs,
               fml::size(kDartSystraceTraceStreamsArgs));
 #else
@@ -416,6 +435,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 
   DartUI::InitForGlobal();
 
+  dart::bin::SetExecutableName(settings_.executable_name.c_str());
+
   {
     TRACE_EVENT0("flutter", "Dart_Initialize");
     Dart_InitializeParams params = {};
@@ -436,9 +457,15 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     params.cleanup_group = reinterpret_cast<decltype(params.cleanup_group)>(
         DartIsolate::DartIsolateGroupCleanupCallback);
     params.thread_exit = ThreadExitCallback;
-    params.get_service_assets = GetVMServiceAssetsArchiveCallback;
+    params.file_open = dart::bin::OpenFile;
+    params.file_read = dart::bin::ReadFile;
+    params.file_write = dart::bin::WriteFile;
+    params.file_close = dart::bin::CloseFile;
     params.entropy_source = dart::bin::GetEntropy;
-    DartVMInitializer::Initialize(&params);
+    params.get_service_assets = GetVMServiceAssetsArchiveCallback;
+    DartVMInitializer::Initialize(&params,
+                                  settings_.enable_timeline_event_handler,
+                                  settings_.trace_systrace);
     // Send the earliest available timestamp in the application lifecycle to
     // timeline. The difference between this timestamp and the time we render
     // the very first frame gives us a good idea about Flutter's startup time.
@@ -472,6 +499,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     Dart_SetDartLibrarySourcesKernel(dart_library_sources->GetMapping(),
                                      dart_library_sources->GetSize());
   }
+
+  // Update thread names now that the Dart VM is initialized.
+  concurrent_message_loop_->PostTaskToAllWorkers(
+      [] { Dart_SetThreadName("FlutterConcurrentMessageLoopWorker"); });
 }
 
 DartVM::~DartVM() {

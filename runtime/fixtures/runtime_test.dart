@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.10
-
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
@@ -51,11 +49,6 @@ void notifyNative() native 'NotifyNative';
 @pragma('vm:entry-point')
 void testIsolateShutdown() {  }
 
-@pragma('vm:entry-point')
-void testCanSaveCompilationTrace() {
-  notifyResult(saveCompilationTrace().isNotEmpty);
-}
-
 void notifyResult(bool success) native 'NotifyNative';
 void passMessage(String message) native 'PassMessage';
 
@@ -71,8 +64,58 @@ void testCanLaunchSecondaryIsolate() {
   Isolate.spawn(secondaryIsolateMain, 'Hello from root isolate.', onExit: onExit.sendPort);
 }
 
+
 @pragma('vm:entry-point')
-void testCanRecieveArguments(List<String> args) {
+void testIsolateStartupFailure() async {
+  Future mainTest(dynamic _) async {
+    Future testSuccessfullIsolateLaunch() async {
+      final onMessage = ReceivePort();
+      final onExit = ReceivePort();
+
+      final messages = StreamIterator<dynamic>(onMessage);
+      final exits = StreamIterator<dynamic>(onExit);
+
+      await Isolate.spawn((SendPort port) => port.send('good'),
+          onMessage.sendPort, onExit: onExit.sendPort);
+      if (!await messages.moveNext()) {
+        throw 'Failed to receive message';
+      }
+      if (messages.current != 'good') {
+        throw 'Failed to receive correct message';
+      }
+      if (!await exits.moveNext()) {
+        throw 'Failed to receive onExit';
+      }
+      messages.cancel();
+      exits.cancel();
+    }
+
+    Future testUnsuccessfullIsolateLaunch() async {
+      IsolateSpawnException? error;
+      try {
+        await Isolate.spawn((_) {}, null);
+      } on IsolateSpawnException catch (e) {
+        error = e;
+      }
+      if (error == null) {
+        throw 'Expected isolate spawn to fail.';
+      }
+    }
+
+    await testSuccessfullIsolateLaunch();
+    makeNextIsolateSpawnFail();
+    await testUnsuccessfullIsolateLaunch();
+    notifyNative();
+  }
+
+  // The root isolate will not run an eventloop, so we have to run the actual
+  // test in an isolate.
+  Isolate.spawn(mainTest, null);
+}
+void makeNextIsolateSpawnFail() native 'MakeNextIsolateSpawnFail';
+
+@pragma('vm:entry-point')
+void testCanReceiveArguments(List<String> args) {
   notifyResult(args.length == 1 && args[0] == 'arg1');
 }
 
@@ -118,20 +161,25 @@ void testCanConvertListOfInts(List<int> args){
 bool didCallRegistrantBeforeEntrypoint = false;
 
 // Test the Dart plugin registrant.
-// _registerPlugins requires the entrypoint annotation, so the compiler doesn't tree shake it.
 @pragma('vm:entry-point')
-void _registerPlugins() { // ignore: unused_element
-  if (didCallRegistrantBeforeEntrypoint) {
-    throw '_registerPlugins is being called twice';
+class _PluginRegistrant {
+
+  @pragma('vm:entry-point')
+  static void register() {
+    if (didCallRegistrantBeforeEntrypoint) {
+      throw '_registerPlugins is being called twice';
+    }
+    didCallRegistrantBeforeEntrypoint = true;
   }
-  didCallRegistrantBeforeEntrypoint = true;
+
 }
 
+
 @pragma('vm:entry-point')
-void mainForPluginRegistrantTest() { // ignore: unused_element
+void mainForPluginRegistrantTest() {
   if (didCallRegistrantBeforeEntrypoint) {
-    passMessage('_registerPlugins was called');
+    passMessage('_PluginRegistrant.register() was called');
   } else {
-    passMessage('_registerPlugins was not called');
+    passMessage('_PluginRegistrant.register() was not called');
   }
 }

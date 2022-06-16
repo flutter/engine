@@ -5,22 +5,74 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
+#include "flutter/fml/platform/darwin/message_loop_darwin.h"
+#import "flutter/lib/ui/window/platform_configuration.h"
+#include "flutter/lib/ui/window/pointer_data.h"
+#import "flutter/lib/ui/window/viewport_metrics.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponder.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterFakeKeyEvents.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/embedder/embedder.h"
 
 FLUTTER_ASSERT_ARC
 
-namespace flutter {
-class PointerDataPacket {};
+@interface FlutterEngine ()
+- (FlutterTextInputPlugin*)textInputPlugin;
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(nullable FlutterKeyEventCallback)callback
+            userData:(nullable void*)userData;
+@end
+
+/// Sometimes we have to use a custom mock to avoid retain cycles in OCMock.
+/// Used for testing low memory notification.
+@interface FlutterEnginePartialMock : FlutterEngine
+@property(nonatomic, strong) FlutterBasicMessageChannel* lifecycleChannel;
+@property(nonatomic, strong) FlutterBasicMessageChannel* keyEventChannel;
+@property(nonatomic, weak) FlutterViewController* viewController;
+@property(nonatomic, strong) FlutterTextInputPlugin* textInputPlugin;
+@property(nonatomic, assign) BOOL didCallNotifyLowMemory;
+- (FlutterTextInputPlugin*)textInputPlugin;
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(nullable FlutterKeyEventCallback)callback
+            userData:(nullable void*)userData;
+@end
+
+@implementation FlutterEnginePartialMock
+@synthesize viewController;
+@synthesize lifecycleChannel;
+@synthesize keyEventChannel;
+@synthesize textInputPlugin;
+
+- (void)notifyLowMemory {
+  _didCallNotifyLowMemory = YES;
 }
+
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(FlutterKeyEventCallback)callback
+            userData:(void*)userData API_AVAILABLE(ios(9.0)) {
+  if (callback == nil)
+    return;
+  // NSAssert(callback != nullptr, @"Invalid callback");
+  // Response is async, so we have to post it to the run loop instead of calling
+  // it directly.
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode,
+                        ^() {
+                          callback(true, userData);
+                        });
+}
+@end
 
 @interface FlutterEngine ()
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryURI
        initialRoute:(NSString*)initialRoute;
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
+- (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics;
+- (void)attachView;
 @end
 
 @interface FlutterEngine (TestLowMemory)
@@ -31,10 +83,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 /// A simple mock class for FlutterEngine.
 ///
-/// OCMockClass can't be used for FlutterEngine sometimes because OCMock retains arguments to
+/// OCMClassMock can't be used for FlutterEngine sometimes because OCMock retains arguments to
 /// invocations and since the init for FlutterViewController calls a method on the
 /// FlutterEngine it creates a retain cycle that stops us from testing behaviors related to
 /// deleting FlutterViewControllers.
+///
+/// Used for testing deallocation.
 @interface MockEngine : NSObject
 @end
 
@@ -45,10 +99,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)setViewController:(FlutterViewController*)viewController {
   // noop
 }
-@end
-
-@interface FlutterViewControllerTest : XCTestCase
-@property(nonatomic, strong) id mockEngine;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -65,17 +115,51 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @end
 #endif
 
+@interface FlutterKeyboardManager (Tests)
+@property(nonatomic, retain, readonly)
+    NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
+@end
+
+@interface FlutterEmbedderKeyResponder (Tests)
+@property(nonatomic, copy, readonly) FlutterSendKeyEvent sendEvent;
+@end
+
 @interface FlutterViewController (Tests)
+
+@property(nonatomic, assign) double targetViewInsetBottom;
+
 - (void)surfaceUpdated:(BOOL)appeared;
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
-- (void)dispatchPresses:(NSSet<UIPress*>*)presses;
-- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
+- (void)handlePressEvent:(FlutterUIPressProxy*)press
+              nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
+- (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
+- (void)updateViewportMetrics;
+- (void)onUserSettingsChanged:(NSNotification*)notification;
+- (void)applicationWillTerminate:(NSNotification*)notification;
+- (void)goToApplicationLifecycle:(nonnull NSString*)state;
+- (void)keyboardWillChangeFrame:(NSNotification*)notification;
+- (void)keyboardWillBeHidden:(NSNotification*)notification;
+- (void)startKeyBoardAnimation:(NSTimeInterval)duration;
+- (void)ensureViewportMetricsIsCorrect;
+- (void)invalidateDisplayLink;
+- (void)addInternalPlugins;
+- (flutter::PointerData)generatePointerDataForFake;
+@end
+
+@interface FlutterViewControllerTest : XCTestCase
+@property(nonatomic, strong) id mockEngine;
+@property(nonatomic, strong) id mockTextInputPlugin;
+@property(nonatomic, strong) id messageSent;
+- (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback;
 @end
 
 @implementation FlutterViewControllerTest
 
 - (void)setUp {
   self.mockEngine = OCMClassMock([FlutterEngine class]);
+  self.mockTextInputPlugin = OCMClassMock([FlutterTextInputPlugin class]);
+  OCMStub([self.mockEngine textInputPlugin]).andReturn(self.mockTextInputPlugin);
+  self.messageSent = nil;
 }
 
 - (void)tearDown {
@@ -83,34 +167,296 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // FlutterViewControllers from deallocing.
   [self.mockEngine stopMocking];
   self.mockEngine = nil;
+  self.mockTextInputPlugin = nil;
+  self.messageSent = nil;
+}
+
+- (void)testkeyboardWillChangeFrameWillStartKeyboardAnimation {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  CGFloat width = UIScreen.mainScreen.bounds.size.width;
+  CGRect keyboardFrame = CGRectMake(0, 100, width, 400);
+  BOOL isLocal = YES;
+  NSNotification* notification = [NSNotification
+      notificationWithName:@""
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
+                    @"UIKeyboardAnimationDurationUserInfoKey" : [NSNumber numberWithDouble:0.25],
+                    @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal]
+                  }];
+
+  XCTestExpectation* expectation = [self expectationWithDescription:@"update viewport"];
+  OCMStub([mockEngine updateViewportMetrics:flutter::ViewportMetrics()])
+      .ignoringNonObjectArgs()
+      .andDo(^(NSInvocation* invocation) {
+        [expectation fulfill];
+      });
+  id viewControllerMock = OCMPartialMock(viewController);
+  [viewControllerMock keyboardWillChangeFrame:notification];
+  OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testEnsureBottomInsetIsZeroWhenKeyboardDismissed {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  CGRect keyboardFrame = CGRectMake(0, 0, 0, 0);
+  BOOL isLocal = YES;
+  NSNotification* fakeNotification = [NSNotification
+      notificationWithName:@""
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  viewControllerMock.targetViewInsetBottom = 10;
+  [viewControllerMock keyboardWillBeHidden:fakeNotification];
+  XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 0);
+}
+
+- (void)testEnsureViewportMetricsWillInvokeAndDisplayLinkWillInvalidateInViewDidDisappear {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  id viewControllerMock = OCMPartialMock(viewController);
+  [viewControllerMock viewDidDisappear:YES];
+  OCMVerify([viewControllerMock ensureViewportMetricsIsCorrect]);
+  OCMVerify([viewControllerMock invalidateDisplayLink]);
 }
 
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([self.mockEngine lifecycleChannel]).andReturn(lifecycleChannel);
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  mockEngine.lifecycleChannel = lifecycleChannel;
   FlutterViewController* viewControllerA =
       [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
   FlutterViewController* viewControllerB =
       [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
   id viewControllerMock = OCMPartialMock(viewControllerA);
   OCMStub([viewControllerMock surfaceUpdated:NO]);
-  OCMStub([self.mockEngine viewController]).andReturn(viewControllerB);
+  mockEngine.viewController = viewControllerB;
   [viewControllerA viewDidDisappear:NO];
   OCMReject([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
   OCMReject([viewControllerMock surfaceUpdated:[OCMArg any]]);
 }
 
+- (void)testAppWillTerminateViewDidDestroyTheEngine {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  id viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock goToApplicationLifecycle:@"AppLifecycleState.detached"]);
+  OCMStub([mockEngine destroyContext]);
+  [viewController applicationWillTerminate:nil];
+  OCMVerify([viewControllerMock goToApplicationLifecycle:@"AppLifecycleState.detached"]);
+  OCMVerify([mockEngine destroyContext]);
+}
+
 - (void)testViewDidDisappearDoesPauseEngineWhenIsTheViewController {
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([self.mockEngine lifecycleChannel]).andReturn(lifecycleChannel);
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
-  id viewControllerMock = OCMPartialMock(viewController);
-  OCMStub([viewControllerMock surfaceUpdated:NO]);
-  OCMStub([self.mockEngine viewController]).andReturn(viewController);
-  [viewController viewDidDisappear:NO];
-  OCMVerify([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
-  OCMVerify([viewControllerMock surfaceUpdated:NO]);
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  mockEngine.lifecycleChannel = lifecycleChannel;
+  __weak FlutterViewController* weakViewController;
+  @autoreleasepool {
+    FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                  nibName:nil
+                                                                                   bundle:nil];
+    weakViewController = viewController;
+    id viewControllerMock = OCMPartialMock(viewController);
+    OCMStub([viewControllerMock surfaceUpdated:NO]);
+    [viewController viewDidDisappear:NO];
+    OCMVerify([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
+    OCMVerify([viewControllerMock surfaceUpdated:NO]);
+  }
+  XCTAssertNil(weakViewController);
+}
+
+- (void)
+    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewWillAppear {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController viewWillAppear:YES];
+  OCMVerify([viewController onUserSettingsChanged:nil]);
+}
+
+- (void)
+    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewWillAppear {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = nil;
+  mockEngine.viewController = viewControllerB;
+  [viewControllerA viewWillAppear:YES];
+  OCMVerify(never(), [viewControllerA onUserSettingsChanged:nil]);
+}
+
+- (void)
+    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewDidAppear {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController viewDidAppear:YES];
+  OCMVerify([viewController onUserSettingsChanged:nil]);
+}
+
+- (void)
+    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewDidAppear {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = nil;
+  mockEngine.viewController = viewControllerB;
+  [viewControllerA viewDidAppear:YES];
+  OCMVerify(never(), [viewControllerA onUserSettingsChanged:nil]);
+}
+
+- (void)
+    testEngineConfigSyncMethodWillExecuteWhenViewControllerInEngineIsCurrentViewControllerInViewWillDisappear {
+  id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  mockEngine.lifecycleChannel = lifecycleChannel;
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+  [viewController viewWillDisappear:NO];
+  OCMVerify([lifecycleChannel sendMessage:@"AppLifecycleState.inactive"]);
+}
+
+- (void)
+    testEngineConfigSyncMethodWillNotExecuteWhenViewControllerInEngineIsNotCurrentViewControllerInViewWillDisappear {
+  id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  mockEngine.lifecycleChannel = lifecycleChannel;
+  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = viewControllerB;
+  [viewControllerA viewDidDisappear:NO];
+  OCMReject([lifecycleChannel sendMessage:@"AppLifecycleState.inactive"]);
+}
+
+- (void)testUpdateViewportMetricsDoesntInvokeEngineWhenNotTheViewController {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = viewControllerB;
+  [viewControllerA updateViewportMetrics];
+  flutter::ViewportMetrics viewportMetrics;
+  OCMVerify(never(), [mockEngine updateViewportMetrics:viewportMetrics]);
+}
+
+- (void)testUpdateViewportMetricsDoesInvokeEngineWhenIsTheViewController {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+  flutter::ViewportMetrics viewportMetrics;
+  OCMExpect([mockEngine updateViewportMetrics:viewportMetrics]).ignoringNonObjectArgs();
+  [viewController updateViewportMetrics];
+  OCMVerifyAll(mockEngine);
+}
+
+- (void)testViewDidLoadDoesntInvokeEngineWhenNotTheViewController {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = viewControllerB;
+  UIView* view = viewControllerA.view;
+  XCTAssertNotNil(view);
+  OCMVerify(never(), [mockEngine attachView]);
+}
+
+- (void)testViewDidLoadDoesInvokeEngineWhenIsTheViewController {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+  UIView* view = viewController.view;
+  XCTAssertNotNil(view);
+  OCMVerify([mockEngine attachView]);
+}
+
+- (void)testInternalPluginsWeakPtrNotCrash {
+  FlutterSendKeyEvent sendEvent;
+  @autoreleasepool {
+    FlutterViewController* vc = [[FlutterViewController alloc] initWithProject:nil
+                                                                       nibName:nil
+                                                                        bundle:nil];
+    [vc addInternalPlugins];
+    FlutterKeyboardManager* keyboardManager = vc.keyboardManager;
+    FlutterEmbedderKeyResponder* keyPrimaryResponder = (FlutterEmbedderKeyResponder*)
+        [(NSArray<id<FlutterKeyPrimaryResponder>>*)keyboardManager.primaryResponders firstObject];
+    sendEvent = [keyPrimaryResponder sendEvent];
+  }
+
+  if (sendEvent) {
+    sendEvent({}, nil, nil);
+  }
+}
+
+// Regression test for https://github.com/flutter/engine/pull/32098.
+- (void)testInternalPluginsInvokeInViewDidLoad {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController viewDidLoad];
+  OCMVerify([viewController addInternalPlugins]);
 }
 
 - (void)testBinaryMessenger {
@@ -150,9 +496,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)testItReportsPlatformBrightnessWhenViewWillAppear {
   // Setup test.
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
-
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  OCMStub([mockEngine settingsChannel]).andReturn(settingsChannel);
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
@@ -249,12 +596,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
   } else {
     return;
   }
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
 
   // Setup test.
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
-
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+  OCMStub([mockEngine settingsChannel]).andReturn(settingsChannel);
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
@@ -305,6 +653,46 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [partialMockVC stopMocking];
   [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
+}
+
+- (void)testItReportsAccessibilityOnOffSwitchLabelsFlagNotSet {
+  if (@available(iOS 13, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  // Setup test.
+  FlutterViewController* viewController =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
+  id partialMockViewController = OCMPartialMock(viewController);
+  OCMStub([partialMockViewController accessibilityIsOnOffSwitchLabelsEnabled]).andReturn(NO);
+
+  // Exercise behavior under test.
+  int32_t flags = [partialMockViewController accessibilityFlags];
+
+  // Verify behavior.
+  XCTAssert((flags & (int32_t)flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels) == 0);
+}
+
+- (void)testItReportsAccessibilityOnOffSwitchLabelsFlagSet {
+  if (@available(iOS 13, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  // Setup test.
+  FlutterViewController* viewController =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
+  id partialMockViewController = OCMPartialMock(viewController);
+  OCMStub([partialMockViewController accessibilityIsOnOffSwitchLabelsEnabled]).andReturn(YES);
+
+  // Exercise behavior under test.
+  int32_t flags = [partialMockViewController accessibilityFlags];
+
+  // Verify behavior.
+  XCTAssert((flags & (int32_t)flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels) != 0);
 }
 
 - (void)testPerformOrientationUpdateForcesOrientationChange {
@@ -504,6 +892,21 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [self waitForExpectations:@[ expectation ] timeout:1.0];
 }
 
+- (void)testReleasesKeyboardManagerOnDealloc {
+  __weak FlutterKeyboardManager* weakKeyboardManager = nil;
+  @autoreleasepool {
+    FlutterViewController* viewController = [[FlutterViewController alloc] init];
+
+    [viewController addInternalPlugins];
+    weakKeyboardManager = viewController.keyboardManager;
+    XCTAssertNotNil(weakKeyboardManager);
+    [viewController deregisterNotifications];
+    viewController = nil;
+  }
+  // View controller has released the keyboard manager.
+  XCTAssertNil(weakKeyboardManager);
+}
+
 - (void)testDoesntLoadViewInInit {
   FlutterDartProject* project = [[FlutterDartProject alloc] init];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
@@ -512,6 +915,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                         nibName:nil
                                                                          bundle:nil];
   XCTAssertFalse([realVC isViewLoaded], @"shouldn't have loaded since it hasn't been shown");
+  engine.viewController = nil;
 }
 
 - (void)testHideOverlay {
@@ -525,18 +929,32 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerHideHomeIndicator
                                                       object:nil];
   XCTAssertTrue(realVC.prefersHomeIndicatorAutoHidden, @"");
+  engine.viewController = nil;
 }
 
 - (void)testNotifyLowMemory {
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
-  OCMStub([self.mockEngine viewController]).andReturn(viewController);
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   id viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock surfaceUpdated:NO]);
-
   [viewController beginAppearanceTransition:NO animated:NO];
   [viewController endAppearanceTransition];
-  OCMVerify([self.mockEngine notifyLowMemory]);
+  XCTAssertTrue(mockEngine.didCallNotifyLowMemory);
+}
+
+- (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback {
+  NSMutableDictionary* replyMessage = [@{
+    @"handled" : @YES,
+  } mutableCopy];
+  // Response is async, so we have to post it to the run loop instead of calling
+  // it directly.
+  self.messageSent = message;
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode,
+                        ^() {
+                          callback(replyMessage);
+                        });
 }
 
 - (void)testValidKeyUpEvent API_AVAILABLE(ios(13.4)) {
@@ -545,36 +963,33 @@ typedef enum UIAccessibilityContrast : NSInteger {
   } else {
     return;
   }
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  mockEngine.keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([mockEngine.keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
+      .andCall(self, @selector(sendMessage:reply:));
+  OCMStub([self.mockTextInputPlugin handlePress:[OCMArg any]]).andReturn(YES);
+  mockEngine.textInputPlugin = self.mockTextInputPlugin;
 
-  id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([self.mockEngine keyEventChannel]).andReturn(keyEventChannel);
-
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
-  id testSet = [self fakeUiPressSetForPhase:UIPressPhaseBegan
-                                    keyCode:UIKeyboardHIDUsageKeyboardA
-                              modifierFlags:UIKeyModifierShift
-                                 characters:@"a"
-                charactersIgnoringModifiers:@"A"];
+  // Allocate the keyboard manager in the view controller by adding the internal
+  // plugins.
+  [vc addInternalPlugins];
 
-  // Exercise behavior under test.
-  [vc dispatchPresses:testSet];
+  [vc handlePressEvent:keyUpEvent(UIKeyboardHIDUsageKeyboardA, UIKeyModifierShift, 123.0)
+            nextAction:^(){
+            }];
 
-  // Verify behavior.
-  OCMVerify([keyEventChannel
-      sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-        return [message[@"keymap"] isEqualToString:@"ios"] &&
-               [message[@"type"] isEqualToString:@"keydown"] &&
-               [message[@"keyCode"] isEqualToNumber:[NSNumber numberWithInt:4]] &&
-               [message[@"modifiers"] isEqualToNumber:[NSNumber numberWithInt:131072]] &&
-               [message[@"characters"] isEqualToString:@"a"] &&
-               [message[@"charactersIgnoringModifiers"] isEqualToString:@"A"];
-      }]]);
-
-  // Clean up mocks
-  [keyEventChannel stopMocking];
+  XCTAssert(self.messageSent != nil);
+  XCTAssert([self.messageSent[@"keymap"] isEqualToString:@"ios"]);
+  XCTAssert([self.messageSent[@"type"] isEqualToString:@"keyup"]);
+  XCTAssert([self.messageSent[@"keyCode"] isEqualToNumber:[NSNumber numberWithInt:4]]);
+  XCTAssert([self.messageSent[@"modifiers"] isEqualToNumber:[NSNumber numberWithInt:0]]);
+  XCTAssert([self.messageSent[@"characters"] isEqualToString:@""]);
+  XCTAssert([self.messageSent[@"charactersIgnoringModifiers"] isEqualToString:@""]);
+  [vc deregisterNotifications];
 }
 
 - (void)testValidKeyDownEvent API_AVAILABLE(ios(13.4)) {
@@ -584,35 +999,34 @@ typedef enum UIAccessibilityContrast : NSInteger {
     return;
   }
 
-  id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([self.mockEngine keyEventChannel]).andReturn(keyEventChannel);
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  mockEngine.keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([mockEngine.keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
+      .andCall(self, @selector(sendMessage:reply:));
+  OCMStub([self.mockTextInputPlugin handlePress:[OCMArg any]]).andReturn(YES);
+  mockEngine.textInputPlugin = self.mockTextInputPlugin;
 
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
-                                                                    nibName:nil
-                                                                     bundle:nil];
+  __strong FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                             nibName:nil
+                                                                              bundle:nil];
+  // Allocate the keyboard manager in the view controller by adding the internal
+  // plugins.
+  [vc addInternalPlugins];
 
-  id testSet = [self fakeUiPressSetForPhase:UIPressPhaseEnded
-                                    keyCode:UIKeyboardHIDUsageKeyboardA
-                              modifierFlags:UIKeyModifierShift
-                                 characters:@"a"
-                charactersIgnoringModifiers:@"A"];
+  [vc handlePressEvent:keyDownEvent(UIKeyboardHIDUsageKeyboardA, UIKeyModifierShift, 123.0f, "A",
+                                    "a")
+            nextAction:^(){
+            }];
 
-  // Exercise behavior under test.
-  [vc dispatchPresses:testSet];
-
-  // Verify behavior.
-  OCMVerify([keyEventChannel
-      sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-        return [message[@"keymap"] isEqualToString:@"ios"] &&
-               [message[@"type"] isEqualToString:@"keyup"] &&
-               [message[@"keyCode"] isEqualToNumber:[NSNumber numberWithInt:4]] &&
-               [message[@"modifiers"] isEqualToNumber:[NSNumber numberWithInt:131072]] &&
-               [message[@"characters"] isEqualToString:@"a"] &&
-               [message[@"charactersIgnoringModifiers"] isEqualToString:@"A"];
-      }]]);
-
-  // Clean up mocks
-  [keyEventChannel stopMocking];
+  XCTAssert(self.messageSent != nil);
+  XCTAssert([self.messageSent[@"keymap"] isEqualToString:@"ios"]);
+  XCTAssert([self.messageSent[@"type"] isEqualToString:@"keydown"]);
+  XCTAssert([self.messageSent[@"keyCode"] isEqualToNumber:[NSNumber numberWithInt:4]]);
+  XCTAssert([self.messageSent[@"modifiers"] isEqualToNumber:[NSNumber numberWithInt:0]]);
+  XCTAssert([self.messageSent[@"characters"] isEqualToString:@"A"]);
+  XCTAssert([self.messageSent[@"charactersIgnoringModifiers"] isEqualToString:@"a"]);
+  [vc deregisterNotifications];
+  vc = nil;
 }
 
 - (void)testIgnoredKeyEvents API_AVAILABLE(ios(13.4)) {
@@ -621,34 +1035,36 @@ typedef enum UIAccessibilityContrast : NSInteger {
   } else {
     return;
   }
-
   id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
+      .andCall(self, @selector(sendMessage:reply:));
+  OCMStub([self.mockTextInputPlugin handlePress:[OCMArg any]]).andReturn(YES);
   OCMStub([self.mockEngine keyEventChannel]).andReturn(keyEventChannel);
 
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
-  id emptySet = [NSSet set];
-  id ignoredSet = [self fakeUiPressSetForPhase:UIPressPhaseStationary
-                                       keyCode:UIKeyboardHIDUsageKeyboardA
-                                 modifierFlags:UIKeyModifierShift
-                                    characters:@"a"
-                   charactersIgnoringModifiers:@"A"];
+  // Allocate the keyboard manager in the view controller by adding the internal
+  // plugins.
+  [vc addInternalPlugins];
 
-  id mockUiPress = OCMClassMock([UIPress class]);
-  OCMStub([mockUiPress phase]).andReturn(UIPressPhaseBegan);
-  id emptyKeySet = [NSSet setWithArray:@[ mockUiPress ]];
-  // Exercise behavior under test.
-  [vc dispatchPresses:emptySet];
-  [vc dispatchPresses:ignoredSet];
-  [vc dispatchPresses:emptyKeySet];
+  [vc handlePressEvent:keyEventWithPhase(UIPressPhaseStationary, UIKeyboardHIDUsageKeyboardA,
+                                         UIKeyModifierShift, 123.0)
+            nextAction:^(){
+            }];
+  [vc handlePressEvent:keyEventWithPhase(UIPressPhaseCancelled, UIKeyboardHIDUsageKeyboardA,
+                                         UIKeyModifierShift, 123.0)
+            nextAction:^(){
+            }];
+  [vc handlePressEvent:keyEventWithPhase(UIPressPhaseChanged, UIKeyboardHIDUsageKeyboardA,
+                                         UIKeyModifierShift, 123.0)
+            nextAction:^(){
+            }];
 
-  // Verify behavior.
+  XCTAssert(self.messageSent == nil);
   OCMVerify(never(), [keyEventChannel sendMessage:[OCMArg any]]);
-
-  // Clean up mocks
-  [keyEventChannel stopMocking];
+  [vc deregisterNotifications];
 }
 
 - (void)testPanGestureRecognizer API_AVAILABLE(ios(13.4)) {
@@ -692,35 +1108,23 @@ typedef enum UIAccessibilityContrast : NSInteger {
   id mockPanGestureRecognizer = OCMClassMock([UIPanGestureRecognizer class]);
   XCTAssertNotNil(mockPanGestureRecognizer);
 
-  [vc scrollEvent:mockPanGestureRecognizer];
+  [vc discreteScrollEvent:mockPanGestureRecognizer];
 
   [[[self.mockEngine verify] ignoringNonObjectArgs]
-      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>()];
+      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];
 }
 
-- (NSSet<UIPress*>*)fakeUiPressSetForPhase:(UIPressPhase)phase
-                                   keyCode:(UIKeyboardHIDUsage)keyCode
-                             modifierFlags:(UIKeyModifierFlags)modifierFlags
-                                characters:(NSString*)characters
-               charactersIgnoringModifiers:(NSString*)charactersIgnoringModifiers
-    API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return [NSSet set];
-  }
-  id mockUiPress = OCMClassMock([UIPress class]);
-  OCMStub([mockUiPress phase]).andReturn(phase);
+- (void)testFakeEventTimeStamp {
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
 
-  id mockUiKey = OCMClassMock([UIKey class]);
-  OCMStub([mockUiKey keyCode]).andReturn(keyCode);
-  OCMStub([mockUiKey modifierFlags]).andReturn(modifierFlags);
-  OCMStub([mockUiKey characters]).andReturn(characters);
-  OCMStub([mockUiKey charactersIgnoringModifiers]).andReturn(charactersIgnoringModifiers);
-
-  OCMStub([mockUiPress key]).andReturn(mockUiKey);
-
-  return [NSSet setWithArray:@[ mockUiPress ]];
+  flutter::PointerData pointer_data = [vc generatePointerDataForFake];
+  int64_t current_micros = [[NSProcessInfo processInfo] systemUptime] * 1000 * 1000;
+  int64_t interval_micros = current_micros - pointer_data.time_stamp;
+  const int64_t tolerance_millis = 2;
+  XCTAssertTrue(interval_micros / 1000 < tolerance_millis,
+                @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
 }
-
 @end

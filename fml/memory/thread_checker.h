@@ -12,7 +12,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 
-#if defined(OS_WIN)
+#if defined(FML_OS_WIN)
 #include <windows.h>
 #else
 #include <pthread.h>
@@ -30,7 +30,7 @@ namespace fml {
 // there's a small space cost to having even an empty class. )
 class ThreadChecker final {
  public:
-#if defined(OS_WIN)
+#if defined(FML_OS_WIN)
   ThreadChecker() : self_(GetCurrentThreadId()) {}
   ~ThreadChecker() {}
 
@@ -57,7 +57,7 @@ class ThreadChecker final {
       char actual_thread[buffer_length];
       if (0 == pthread_getname_np(current_thread, actual_thread,
                                   buffer_length) &&
-          0 == pthread_getname_np(self_, actual_thread, buffer_length)) {
+          0 == pthread_getname_np(self_, expected_thread, buffer_length)) {
         FML_DLOG(ERROR) << "IsCreationThreadCurrent expected thread: '"
                         << expected_thread << "' actual thread:'"
                         << actual_thread << "'";

@@ -5,7 +5,7 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
 
 namespace flutter {
@@ -37,16 +37,16 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrDirectContext* gr_context) {
   if (gr_context) {
-    return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this, true);
+    return std::make_unique<GPUSurfaceGLSkia>(sk_ref_sp(gr_context), this, true);
   } else {
     IOSContextGL* gl_context = CastToGLContext(GetContext());
     sk_sp<GrDirectContext> context = gl_context->GetMainContext();
     if (!context) {
-      context = GPUSurfaceGL::MakeGLContext(this);
+      context = GPUSurfaceGLSkia::MakeGLContext(this);
       gl_context->SetMainContext(context);
     }
 
-    return std::make_unique<GPUSurfaceGL>(context, this, true);
+    return std::make_unique<GPUSurfaceGLSkia>(context, this, true);
   }
 }
 
@@ -56,13 +56,15 @@ intptr_t IOSSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
 }
 
 // |GPUSurfaceGLDelegate|
-bool IOSSurfaceGL::SurfaceSupportsReadback() const {
+SurfaceFrame::FramebufferInfo IOSSurfaceGL::GLContextFramebufferInfo() const {
+  SurfaceFrame::FramebufferInfo res;
   // The onscreen surface wraps a GL renderbuffer, which is extremely slow to read on iOS.
   // Certain filter effects, in particular BackdropFilter, require making a copy of
   // the current destination. For performance, the iOS surface will specify that it
   // does not support readback so that the engine compositor can implement a workaround
   // such as rendering the scene to an offscreen surface or Skia saveLayer.
-  return false;
+  res.supports_readback = false;
+  return res;
 }
 
 // |GPUSurfaceGLDelegate|
@@ -84,9 +86,14 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool IOSSurfaceGL::GLContextPresent(uint32_t fbo_id) {
+bool IOSSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
   return IsValid() && render_target_->PresentRenderBuffer();
+}
+
+// |GPUSurfaceGLDelegate|
+bool IOSSurfaceGL::AllowsDrawingWhenGpuDisabled() const {
+  return false;
 }
 
 }  // namespace flutter

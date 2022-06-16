@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.10
-
 import 'dart:async';
+import 'dart:convert';
+import 'dart:core';
+import 'dart:ffi' as ffi;
+import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:isolate';
-import 'dart:ffi';
-import 'dart:core';
-import 'dart:convert';
 
 void main() {}
 
@@ -32,6 +31,22 @@ void customEntrypoint1() {
 void sayHiFromCustomEntrypoint1() native 'SayHiFromCustomEntrypoint1';
 void sayHiFromCustomEntrypoint2() native 'SayHiFromCustomEntrypoint2';
 void sayHiFromCustomEntrypoint3() native 'SayHiFromCustomEntrypoint3';
+
+
+@pragma('vm:entry-point')
+void terminateExitCodeHandler() {
+  final ProcessResult result = Process.runSync(
+        'ls', <String>[]
+  );
+}
+
+
+@pragma('vm:entry-point')
+void executableNameNotNull() {
+  notifyStringValue(Platform.executable);
+}
+
+void notifyStringValue(String value) native 'NotifyStringValue';
 
 
 @pragma('vm:entry-point')
@@ -93,7 +108,7 @@ Future<SemanticsActionData> get semanticsAction {
 }
 
 @pragma('vm:entry-point')
-void a11y_main() async { // ignore: non_constant_identifier_names
+void a11y_main() async {
   // Return initial state (semantics disabled).
   notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 
@@ -113,6 +128,7 @@ void a11y_main() async { // ignore: non_constant_identifier_names
     ..updateNode(
       id: 42,
       label: 'A: root',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(0.0, 0.0, 10.0, 10.0),
       transform: kTestTransform,
       childrenInTraversalOrder: Int32List.fromList(<int>[84, 96]),
@@ -131,15 +147,21 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 84,
       label: 'B: leaf',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       actions: 0,
@@ -156,10 +178,15 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       additionalActions: Int32List(0),
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
@@ -167,6 +194,7 @@ void a11y_main() async { // ignore: non_constant_identifier_names
     ..updateNode(
       id: 96,
       label: 'C: branch',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       childrenInTraversalOrder: Int32List.fromList(<int>[128]),
@@ -185,15 +213,21 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 128,
       label: 'D: leaf',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       additionalActions: Int32List.fromList(<int>[21]),
@@ -211,10 +245,15 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
     )
@@ -270,9 +309,11 @@ void null_platform_messages() {
 
 Picture CreateSimplePicture() {
   Paint blackPaint = Paint();
+  Paint whitePaint = Paint()..color = Color.fromARGB(255, 255, 255, 255);
   PictureRecorder baseRecorder = PictureRecorder();
   Canvas canvas = Canvas(baseRecorder);
   canvas.drawRect(Rect.fromLTRB(0.0, 0.0, 1000.0, 1000.0), blackPaint);
+  canvas.drawRect(Rect.fromLTRB(10.0, 10.0, 990.0, 990.0), whitePaint);
   return baseRecorder.endRecording();
 }
 
@@ -506,7 +547,7 @@ void _echoKeyEvent(
 
 // Convert `kind` in enum form to its integer form.
 //
-// It performs a revesed mapping from `unserializeKeyEventKind`
+// It performs a reversed mapping from `unserializeKeyEventKind`
 // in shell/platform/embedder/tests/embedder_unittests.cc.
 int _serializeKeyEventType(KeyEventType change) {
   switch(change) {
@@ -521,7 +562,7 @@ int _serializeKeyEventType(KeyEventType change) {
 
 // Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
 @pragma('vm:entry-point')
-void key_data_echo() async { // ignore: non_constant_identifier_names
+void key_data_echo() async {
   PlatformDispatcher.instance.onKeyData = (KeyData data) {
     _echoKeyEvent(
       _serializeKeyEventType(data.type),
@@ -536,6 +577,27 @@ void key_data_echo() async { // ignore: non_constant_identifier_names
   signalNativeTest();
 }
 
+// After platform channel 'test/starts_echo' receives a message, starts echoing
+// the event data with `_echoKeyEvent`, and returns synthesized as handled.
+@pragma('vm:entry-point')
+void key_data_late_echo() async {
+  channelBuffers.setListener('test/starts_echo', (ByteData? data, PlatformMessageResponseCallback callback) {
+    PlatformDispatcher.instance.onKeyData = (KeyData data) {
+      _echoKeyEvent(
+        _serializeKeyEventType(data.type),
+        data.timeStamp.inMicroseconds,
+        data.physical,
+        data.logical,
+        data.character == null ? 0 : data.character!.codeUnitAt(0),
+        data.synthesized,
+      );
+      return data.synthesized;
+    };
+    callback(null);
+  });
+  signalNativeTest();
+}
+
 @pragma('vm:entry-point')
 void render_gradient() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
@@ -546,6 +608,24 @@ void render_gradient() {
     builder.pushOffset(0.0, 0.0);
 
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(size)); // gradient - flutter
+
+    builder.pop();
+
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_texture() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Size size = Size(800.0, 600.0);
+
+    SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0.0, 0.0);
+
+    builder.addTexture(/*textureId*/1, width: size.width, height: size.height);
 
     builder.pop();
 
@@ -628,7 +708,7 @@ void can_display_platform_view_with_pixel_ratio() {
 @pragma('vm:entry-point')
 void can_receive_locale_updates() {
   PlatformDispatcher.instance.onLocaleChanged = (){
-    signalNativeCount(PlatformDispatcher.instance.locales!.length);
+    signalNativeCount(PlatformDispatcher.instance.locales.length);
   };
   signalNativeTest();
 }
@@ -858,6 +938,72 @@ void render_targets_are_recycled() {
 void nativeArgumentsCallback(List<String> args) native 'NativeArgumentsCallback';
 
 @pragma('vm:entry-point')
+void custom_logger(List<String> args) {
+  print("hello world");
+}
+
+@pragma('vm:entry-point')
 void dart_entrypoint_args(List<String> args) {
   nativeArgumentsCallback(args);
+}
+
+void snapshotsCallback(Image big_image, Image small_image) native 'SnapshotsCallback';
+
+@pragma('vm:entry-point')
+void snapshot_large_scene(int max_size) async {
+  // Set width to double the max size, which will result in height being half the max size after scaling.
+  double width = max_size * 2.0, height = max_size.toDouble();
+
+  PictureRecorder recorder = PictureRecorder();
+  {
+    Canvas canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width, height));
+    Paint paint = Paint();
+    // Bottom left
+    paint.color = Color.fromARGB(255, 100, 255, 100);
+    canvas.drawRect(Rect.fromLTWH(0, height / 2, width / 2, height / 2), paint);
+    // Top right
+    paint.color = Color.fromARGB(255, 100, 100, 255);
+    canvas.drawRect(Rect.fromLTWH(width / 2, 0, width / 2, height / 2), paint);
+  }
+  Picture picture = recorder.endRecording();
+  Image big_image = await picture.toImage(width.toInt(), height.toInt());
+
+  // The max size varies across hardware/drivers, so normalize the result to a smaller target size in
+  // order to reliably test against an image fixture.
+  double small_width = 128, small_height = 64;
+  recorder = PictureRecorder();
+  {
+    Canvas canvas = Canvas(recorder, Rect.fromLTWH(0, 0, small_width, small_height));
+    canvas.scale(small_width / big_image.width);
+    canvas.drawImage(big_image, Offset.zero, Paint());
+  }
+  picture = recorder.endRecording();
+  Image small_image = await picture.toImage(small_width.toInt(), small_height.toInt());
+
+  snapshotsCallback(big_image, small_image);
+}
+
+@pragma('vm:entry-point')
+void invalid_backingstore() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Color red = Color.fromARGB(127, 255, 0, 0);
+    Size size = Size(50.0, 150.0);
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    builder.addPicture(Offset(10.0, 10.0), CreateColoredBox(red, size)); // red - flutter
+    builder.pop();
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.onDrawFrame = () {
+    signalNativeTest();
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_schedule_frame() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime){
+    signalNativeCount(beginTime.inMicroseconds);
+  };
+  signalNativeTest();
 }

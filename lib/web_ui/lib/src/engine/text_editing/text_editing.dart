@@ -2,11 +2,33 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
+
+import '../browser_detection.dart';
+import '../embedder.dart';
+import '../host_node.dart';
+import '../platform_dispatcher.dart';
+import '../safe_browser_api.dart';
+import '../semantics.dart';
+import '../services.dart';
+import '../text/paragraph.dart';
+import '../util.dart';
+import 'autofill_hint.dart';
+import 'composition_aware_mixin.dart';
+import 'input_type.dart';
+import 'text_capitalization.dart';
 
 /// Make the content editable span visible to facilitate debugging.
 bool _debugVisibleTextEditing = false;
+
+/// Set this to `true` to print when text input commands are scheduled and run.
+bool _debugPrintTextInputCommands = false;
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -15,6 +37,7 @@ const int _kReturnKeyCode = 13;
 /// is autofilled.
 bool browserHasAutofillOverlay() =>
     browserEngine == BrowserEngine.blink ||
+    browserEngine == BrowserEngine.samsung ||
     browserEngine == BrowserEngine.webkit;
 
 /// `transparentTextEditing` class is configured to make the autofill overlay
@@ -22,6 +45,10 @@ bool browserHasAutofillOverlay() =>
 const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
+
+/// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
+@visibleForTesting
+HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow!;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -104,14 +131,16 @@ void _hideAutofillElements(html.HtmlElement domElement,
 
 /// Form that contains all the fields in the same AutofillGroup.
 ///
-/// These values are to be used when autofill is enabled and there is a group of
-/// text fields with more than one text field.
+/// An [EngineAutofillForm] will only be constructed when autofill is enabled
+/// (the default) on the current input field. See the [fromFrameworkMessage]
+/// static method.
 class EngineAutofillForm {
-  EngineAutofillForm(
-      {required this.formElement,
-      this.elements,
-      this.items,
-      this.formIdentifier = ''});
+  EngineAutofillForm({
+    required this.formElement,
+    this.elements,
+    this.items,
+    this.formIdentifier = '',
+  });
 
   final html.FormElement formElement;
 
@@ -128,12 +157,23 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
+  /// Creates an [EngineAutofillFrom] from the JSON representation of a Flutter
+  /// framework `TextInputConfiguration` object.
+  ///
+  /// The `focusedElementAutofill` argument corresponds to the "autofill" field
+  /// in a `TextInputConfiguration`. Not having this field indicates autofill
+  /// is explicitly disabled on the text field by the developer.
+  ///
+  /// The `fields` argument corresponds to the "fields" field in a
+  /// `TextInputConfiguration`.
+  ///
+  /// Returns null if autofill is disabled for the input field.
   static EngineAutofillForm? fromFrameworkMessage(
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
-    // Autofill value can be null if focused text element does not have an
-    // autofill hint set.
+    // Autofill value will be null if the developer explicitly disables it on
+    // the input field.
     if (focusedElementAutofill == null) {
       return null;
     }
@@ -149,7 +189,7 @@ class EngineAutofillForm {
     formElement.noValidate = true;
     formElement.method = 'post';
     formElement.action = '#';
-    formElement.addEventListener('submit', (e) {
+    formElement.addEventListener('submit', (html.Event e) {
       e.preventDefault();
     });
 
@@ -157,27 +197,31 @@ class EngineAutofillForm {
 
     // We keep the ids in a list then sort them later, in case the text fields'
     // locations are re-ordered on the framework side.
-    final List<String> ids = List.empty(growable: true);
+    final List<String> ids = List<String>.empty(growable: true);
 
     // The focused text editing element will not be created here.
     final AutofillInfo focusedElement =
         AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
 
     if (fields != null) {
-      for (Map<String, dynamic> field in fields.cast<Map<String, dynamic>>()) {
-        final Map<String, dynamic> autofillInfo = field['autofill'];
+      for (final Map<String, dynamic> field in
+          fields.cast<Map<String, dynamic>>()) {
+        final Map<String, dynamic> autofillInfo = field.readJson('autofill');
         final AutofillInfo autofill = AutofillInfo.fromFrameworkMessage(
-            autofillInfo,
-            textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-                field['textCapitalization']));
+          autofillInfo,
+          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
+            field.readString('textCapitalization'),
+          ),
+        );
 
         ids.add(autofill.uniqueIdentifier);
 
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
-          EngineInputType engineInputType =
-              EngineInputType.fromName(field['inputType']['name']);
+          final EngineInputType engineInputType = EngineInputType.fromName(
+            field.readJson('inputType').readString('name'),
+          );
 
-          html.HtmlElement htmlElement = engineInputType.createDomElement();
+          final html.HtmlElement htmlElement = engineInputType.createDomElement();
           autofill.editingState.applyToDomElement(htmlElement);
           autofill.applyToDomElement(htmlElement);
           _hideAutofillElements(htmlElement);
@@ -195,7 +239,7 @@ class EngineAutofillForm {
     ids.sort();
     final StringBuffer idBuffer = StringBuffer();
 
-    // Add a seperator between element identifiers.
+    // Add a separator between element identifiers.
     for (final String id in ids) {
       if (idBuffer.length > 0) {
         idBuffer.write('*');
@@ -207,7 +251,7 @@ class EngineAutofillForm {
 
     // If a form with the same Autofill elements is already on the dom, remove
     // it from DOM.
-    html.FormElement? form = formsOnTheDom[formIdentifier];
+    final html.FormElement? form = formsOnTheDom[formIdentifier];
     form?.remove();
 
     // In order to submit the form when Framework sends a `TextInput.commit`
@@ -229,11 +273,11 @@ class EngineAutofillForm {
 
   void placeForm(html.HtmlElement mainTextEditingElement) {
     formElement.append(mainTextEditingElement);
-    domRenderer.glassPaneElement!.append(formElement);
+    defaultTextEditingRoot.append(formElement);
   }
 
   void storeForm() {
-    formsOnTheDom[formIdentifier] = this.formElement;
+    formsOnTheDom[formIdentifier] = formElement;
     _hideAutofillElements(formElement, isOffScreen: true);
   }
 
@@ -242,34 +286,38 @@ class EngineAutofillForm {
   /// Registering to the listeners could have been done in the constructor.
   /// On the other hand, overall for text editing there is already a lifecycle
   /// for subscriptions: All the subscriptions of the DOM elements are to the
-  /// `_subscriptions` property of [DefaultTextEditingStrategy].
+  /// `subscriptions` property of [DefaultTextEditingStrategy].
   /// [TextEditingStrategy] manages all subscription lifecyle. All
   /// listeners with no exceptions are added during
   /// [TextEditingStrategy.addEventHandlers] method call and all
   /// listeners are removed during [TextEditingStrategy.disable] method call.
   List<StreamSubscription<html.Event>> addInputEventListeners() {
-    Iterable<String> keys = elements!.keys;
-    List<StreamSubscription<html.Event>> subscriptions =
+    final Iterable<String> keys = elements!.keys;
+    final List<StreamSubscription<html.Event>> subscriptions =
         <StreamSubscription<html.Event>>[];
-    keys.forEach((String key) {
-      final html.Element element = elements![key]!;
-      subscriptions.add(element.onInput.listen((html.Event e) {
-        if (items![key] == null) {
-          throw StateError(
-              'Autofill would not work withuot Autofill value set');
-        } else {
-          final AutofillInfo autofillInfo = items![key]!;
-          _handleChange(element, autofillInfo);
-        }
-      }));
-    });
+
+    void addSubscriptionForKey(String key) {
+        final html.Element element = elements![key]!;
+        subscriptions.add(
+            element.onInput.listen((html.Event e) {
+              if (items![key] == null) {
+                throw StateError(
+                    'AutofillInfo must have a valid uniqueIdentifier.');
+              } else {
+                final AutofillInfo autofillInfo = items![key]!;
+                handleChange(element, autofillInfo);
+              }
+            })
+        );
+    }
+
+    keys.forEach(addSubscriptionForKey);
     return subscriptions;
   }
 
-  void _handleChange(html.Element domElement, AutofillInfo autofillInfo) {
-    EditingState newEditingState = EditingState.fromDomElement(
-        domElement as html.HtmlElement?,
-        textCapitalization: autofillInfo.textCapitalization);
+  void handleChange(html.Element domElement, AutofillInfo autofillInfo) {
+    final EditingState newEditingState = EditingState.fromDomElement(
+        domElement as html.HtmlElement?);
 
     _sendAutofillEditingState(autofillInfo.uniqueIdentifier, newEditingState);
   }
@@ -297,11 +345,13 @@ class EngineAutofillForm {
 /// These values are to be used when a text field have autofill enabled.
 @visibleForTesting
 class AutofillInfo {
-  AutofillInfo(
-      {required this.editingState,
-      required this.uniqueIdentifier,
-      required this.hint,
-      required this.textCapitalization});
+  AutofillInfo({
+    required this.editingState,
+    required this.uniqueIdentifier,
+    required this.autofillHint,
+    required this.textCapitalization,
+    this.placeholder,
+  });
 
   /// The current text and selection state of a text field.
   final EditingState editingState;
@@ -319,61 +369,293 @@ class AutofillInfo {
   /// to upper case.
   ///
   /// This value is not necessary for autofilling the focused element since
-  /// [DefaultTextEditingStrategy._inputConfiguration] already has this
+  /// [DefaultTextEditingStrategy.inputConfiguration] already has this
   /// information.
   ///
   /// On the other hand for the multi element forms, for the input elements
   /// other the focused field, we need to use this information.
   final TextCapitalizationConfig textCapitalization;
 
-  /// Attribute used for autofill.
+  /// The type of information expected in the field, specified by the developer.
   ///
   /// Used as a guidance to the browser as to the type of information expected
   /// in the field.
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
-  final String hint;
+  final String? autofillHint;
+
+  /// The optional hint text placed on the view that typically suggests what
+  /// sort of input the field accepts, for example "enter your password here".
+  ///
+  /// If the developer does not specify any [autofillHints], the [placeholder]
+  /// can be a useful indication to the platform autofill service as to what
+  /// information is expected in this field.
+  final String? placeholder;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
       {TextCapitalizationConfig textCapitalization =
           const TextCapitalizationConfig.defaultCapitalization()}) {
     assert(autofill != null); // ignore: unnecessary_null_comparison
-    final String uniqueIdentifier = autofill['uniqueIdentifier']!;
-    final List<dynamic> hintsList = autofill['hints'];
+    final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
+    final List<dynamic>? hintsList = autofill.tryList('hints');
+    final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
     final EditingState editingState =
-        EditingState.fromFrameworkMessage(autofill['editingValue']);
+        EditingState.fromFrameworkMessage(autofill.readJson('editingValue'));
     return AutofillInfo(
-        uniqueIdentifier: uniqueIdentifier,
-        hint: BrowserAutofillHints.instance.flutterToEngine(hintsList[0]),
-        editingState: editingState,
-        textCapitalization: textCapitalization);
+      uniqueIdentifier: uniqueIdentifier,
+      autofillHint: (firstHint != null) ? BrowserAutofillHints.instance.flutterToEngine(firstHint) : null,
+      editingState: editingState,
+      placeholder: autofill.tryString('hintText'),
+      textCapitalization: textCapitalization,
+    );
   }
 
   void applyToDomElement(html.HtmlElement domElement,
       {bool focusedElement = false}) {
-    domElement.id = hint;
+    final String? autofillHint = this.autofillHint;
+    final String? placeholder = this.placeholder;
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
-      element.name = hint;
-      element.id = hint;
-      element.autocomplete = hint;
-      if (hint.contains('password')) {
-        element.type = 'password';
-      } else {
-        element.type = 'text';
+      final html.InputElement element = domElement;
+      if (placeholder != null) {
+        element.placeholder = placeholder;
       }
+      if (autofillHint != null) {
+        element.name = autofillHint;
+        element.id = autofillHint;
+        if (autofillHint.contains('password')) {
+          element.type = 'password';
+        } else {
+          element.type = 'text';
+        }
+      }
+      element.autocomplete = autofillHint ?? 'on';
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
-      element.name = hint;
-      element.id = hint;
-      element.setAttribute('autocomplete', hint);
+      if (placeholder != null) {
+        domElement.placeholder = placeholder;
+      }
+      if (autofillHint != null) {
+        domElement.name = autofillHint;
+        domElement.id = autofillHint;
+      }
+      domElement.setAttribute('autocomplete', autofillHint ?? 'on');
     }
   }
 }
 
+/// Replaces a range of text in the original string with the text given in the
+/// replacement string.
+String _replace(String originalText, String replacementText, ui.TextRange replacedRange) {
+  assert(replacedRange.isValid);
+  assert(replacedRange.start <= originalText.length && replacedRange.end <= originalText.length);
+
+  final ui.TextRange normalizedRange = ui.TextRange(start: math.min(replacedRange.start, replacedRange.end), end: math.max(replacedRange.start, replacedRange.end));
+
+  return normalizedRange.textBefore(originalText) + replacementText + normalizedRange.textAfter(originalText);
+}
+
+/// The change between the last editing state and the current editing state
+/// of a text field.
+///
+/// This is packaged into a JSON and sent to the framework
+/// to be processed into a concrete [TextEditingDelta].
+class TextEditingDeltaState {
+  TextEditingDeltaState({
+    this.oldText = '',
+    this.deltaText = '',
+    this.deltaStart = -1,
+    this.deltaEnd = -1,
+    this.baseOffset,
+    this.extentOffset,
+    this.composingOffset,
+    this.composingExtent,
+  });
+
+  /// Infers the correct delta values based on information from the new editing state
+  /// and the last editing state.
+  ///
+  /// For a deletion we calculate the length of the deleted text by comparing the new
+  /// and last editing states. We subtract this from the [deltaEnd] that we set when beforeinput
+  /// was fired to determine the [deltaStart].
+  ///
+  /// For a replacement at a selection we set the [deltaStart] to be the beginning of the selection
+  /// from the last editing state.
+  ///
+  /// For the composing region we check if a composing range was captured by the compositionupdate event,
+  /// we have a non empty [deltaText], and that we did not have an active selection. An active selection
+  /// would mean we are not composing.
+  ///
+  /// We then verify that the delta we collected results in the text contained within the new editing state
+  /// when applied to the last editing state. If it is not then we use our new editing state as the source of truth,
+  /// and use regex to find the correct [deltaStart] and [deltaEnd].
+  static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState lastTextEditingDeltaState) {
+    final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState.copyWith();
+    final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
+    final bool isTextBeingRemoved = newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1;
+    final bool isTextBeingChangedAtActiveSelection = newTextEditingDeltaState.deltaText.isNotEmpty && !previousSelectionWasCollapsed;
+
+    if (isTextBeingRemoved) {
+      // When text is deleted outside of the composing region or is cut using the native toolbar,
+      // we calculate the length of the deleted text by comparing the new and old editing state lengths.
+      // This value is then subtracted from the end position of the delta to capture the deleted range.
+      final int deletedLength = newTextEditingDeltaState.oldText.length - newEditingState.text!.length;
+      newTextEditingDeltaState.deltaStart = newTextEditingDeltaState.deltaEnd - deletedLength;
+    } else if (isTextBeingChangedAtActiveSelection) {
+      // When a selection of text is replaced by a copy/paste operation we set the starting range
+      // of the delta to be the beginning of the selection of the previous editing state.
+      newTextEditingDeltaState.deltaStart = lastEditingState!.baseOffset!;
+    }
+
+    // If we are composing then set the delta range to the composing region we
+    // captured in compositionupdate.
+    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != null && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
+    if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
+      newTextEditingDeltaState.deltaStart = newTextEditingDeltaState.composingOffset!;
+    }
+
+    final bool isDeltaRangeEmpty = newTextEditingDeltaState.deltaStart == -1 && newTextEditingDeltaState.deltaStart == newTextEditingDeltaState.deltaEnd;
+    if (!isDeltaRangeEmpty) {
+      // To verify the range of our delta we should compare the newEditingState's
+      // text with the delta applied to the oldText. If they differ then capture
+      // the correct delta range from the newEditingState's text value.
+      //
+      // We can assume the deltaText for additions and replacements to the text value
+      // are accurate. What may not be accurate is the range of the delta.
+      //
+      // We can think of the newEditingState as our source of truth.
+      //
+      // This verification is needed for cases such as the insertion of a period
+      // after a double space, and the insertion of an accented character through
+      // a native composing menu.
+      final ui.TextRange replacementRange = ui.TextRange(start: newTextEditingDeltaState.deltaStart, end: newTextEditingDeltaState.deltaEnd);
+      final String textAfterDelta = _replace(
+          newTextEditingDeltaState.oldText, newTextEditingDeltaState.deltaText,
+          replacementRange);
+      final bool isDeltaVerified = textAfterDelta == newEditingState.text!;
+
+      if (!isDeltaVerified) {
+        // 1. Find all matches for deltaText.
+        // 2. Apply matches/replacement to oldText until oldText matches the
+        // new editing state's text value.
+        final bool isPeriodInsertion = newTextEditingDeltaState.deltaText.contains('.');
+        final RegExp deltaTextPattern = RegExp(RegExp.escape(newTextEditingDeltaState.deltaText));
+        for (final Match match in deltaTextPattern.allMatches(newEditingState.text!)) {
+          String textAfterMatch;
+          int actualEnd;
+          final bool isMatchWithinOldTextBounds = match.start >= 0 && match.end <= newTextEditingDeltaState.oldText.length;
+          if (!isMatchWithinOldTextBounds) {
+            actualEnd = match.start + newTextEditingDeltaState.deltaText.length - 1;
+            textAfterMatch = _replace(
+              newTextEditingDeltaState.oldText,
+              newTextEditingDeltaState.deltaText,
+              ui.TextRange(
+                start: match.start,
+                end: actualEnd,
+              ),
+            );
+          } else {
+            actualEnd = actualEnd = isPeriodInsertion? match.end - 1 : match.end;
+            textAfterMatch = _replace(
+              newTextEditingDeltaState.oldText,
+              newTextEditingDeltaState.deltaText,
+              ui.TextRange(
+                start: match.start,
+                end: actualEnd,
+              ),
+            );
+          }
+
+          if (textAfterMatch == newEditingState.text!) {
+            newTextEditingDeltaState.deltaStart = match.start;
+            newTextEditingDeltaState.deltaEnd = actualEnd;
+            break;
+          }
+        }
+      }
+    }
+
+    // Update selection of the delta using information from the new editing state.
+    newTextEditingDeltaState.baseOffset = newEditingState.baseOffset!;
+    newTextEditingDeltaState.extentOffset = newEditingState.extentOffset!;
+
+    return newTextEditingDeltaState;
+  }
+
+  /// The text before the text field was updated.
+  String oldText;
+
+  /// The text that is being inserted/replaced into the text field.
+  /// This will be an empty string for deletions and non text updates
+  /// such as selection updates.
+  String deltaText;
+
+  /// The position in the text field where the change begins.
+  ///
+  /// Has a default value of -1 to signify an empty range.
+  int deltaStart;
+
+  /// The position in the text field where the change ends.
+  ///
+  /// Has a default value of -1 to signify an empty range.
+  int deltaEnd;
+
+  /// The updated starting position of the selection in the text field.
+  int? baseOffset;
+
+  /// The updated terminating position of the selection in the text field.
+  int? extentOffset;
+
+  /// The starting position of the composing region.
+  int? composingOffset;
+
+  /// The terminating position of the composing region.
+  int? composingExtent;
+
+  Map<String, dynamic> toFlutter() => <String, dynamic>{
+    'deltas': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'oldText': oldText,
+        'deltaText': deltaText,
+        'deltaStart': deltaStart,
+        'deltaEnd': deltaEnd,
+        'selectionBase': baseOffset,
+        'selectionExtent': extentOffset,
+        'composingBase': composingOffset,
+        'composingExtent': composingExtent
+      },
+    ],
+  };
+
+  TextEditingDeltaState copyWith({
+    String? oldText,
+    String? deltaText,
+    int? deltaStart,
+    int? deltaEnd,
+    int? baseOffset,
+    int? extentOffset,
+    int? composingOffset,
+    int? composingExtent,
+  }) {
+    return TextEditingDeltaState(
+      oldText: oldText ?? this.oldText,
+      deltaText: deltaText ?? this.deltaText,
+      deltaStart: deltaStart ?? this.deltaStart,
+      deltaEnd: deltaEnd ?? this.deltaEnd,
+      baseOffset: baseOffset ?? this.baseOffset,
+      extentOffset: extentOffset ?? this.extentOffset,
+      composingOffset: composingOffset ?? this.composingOffset,
+      composingExtent: composingExtent ?? this.composingExtent,
+    );
+  }
+}
+
 /// The current text and selection state of a text field.
-@visibleForTesting
 class EditingState {
-  EditingState({this.text, int? baseOffset, int? extentOffset}) :
+  EditingState({
+      this.text,
+      int? baseOffset,
+      int? extentOffset,
+      this.composingBaseOffset,
+      this.composingExtentOffset
+    }) :
     // Don't allow negative numbers. Pick the smallest selection index for base.
     baseOffset = math.max(0, math.min(baseOffset ?? 0, extentOffset ?? 0)),
     // Don't allow negative numbers. Pick the greatest selection index for extent.
@@ -400,14 +682,20 @@ class EditingState {
   /// valid selection range for input DOM elements.
   factory EditingState.fromFrameworkMessage(
       Map<String, dynamic> flutterEditingState) {
-    final int selectionBase = flutterEditingState['selectionBase'];
-    final int selectionExtent = flutterEditingState['selectionExtent'];
-    final String? text = flutterEditingState['text'];
+    final String? text = flutterEditingState.tryString('text');
+
+    final int selectionBase = flutterEditingState.readInt('selectionBase');
+    final int selectionExtent = flutterEditingState.readInt('selectionExtent');
+
+    final int? composingBase = flutterEditingState.tryInt('composingBase');
+    final int? composingExtent = flutterEditingState.tryInt('composingExtent');
 
     return EditingState(
       text: text,
       baseOffset: selectionBase,
       extentOffset: selectionExtent,
+      composingBaseOffset: composingBase,
+      composingExtentOffset: composingExtent
     );
   }
 
@@ -416,17 +704,15 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
-  factory EditingState.fromDomElement(html.HtmlElement? domElement,
-      {TextCapitalizationConfig textCapitalization =
-          const TextCapitalizationConfig.defaultCapitalization()}) {
+  factory EditingState.fromDomElement(html.HtmlElement? domElement) {
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
+      final html.InputElement element = domElement;
       return EditingState(
           text: element.value,
           baseOffset: element.selectionStart,
           extentOffset: element.selectionEnd);
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
+      final html.TextAreaElement element = domElement;
       return EditingState(
           text: element.value,
           baseOffset: element.selectionStart,
@@ -436,6 +722,22 @@ class EditingState {
     }
   }
 
+    EditingState copyWith({
+     String? text,
+     int? baseOffset,
+     int? extentOffset,
+     int? composingBaseOffset,
+     int? composingExtentOffset,
+   }) {
+     return EditingState(
+       text: text ?? this.text,
+       baseOffset: baseOffset ?? this.baseOffset,
+       extentOffset: extentOffset ?? this.extentOffset,
+       composingBaseOffset: composingBaseOffset ?? this.composingBaseOffset,
+       composingExtentOffset: composingExtentOffset ?? this.composingExtentOffset,
+     );
+   }
+
   /// The counterpart of [EditingState.fromFrameworkMessage]. It generates a Map that
   /// can be sent to Flutter.
   // TODO(mdebbar): Should we get `selectionAffinity` and other properties from flutter's editing state?
@@ -443,6 +745,8 @@ class EditingState {
         'text': text,
         'selectionBase': baseOffset,
         'selectionExtent': extentOffset,
+        'composingBase': composingBaseOffset,
+        'composingExtent': composingExtentOffset,
       };
 
   /// The current text being edited.
@@ -454,11 +758,19 @@ class EditingState {
   /// The offset at which the text selection terminates.
   final int? extentOffset;
 
+  /// The offset at which [CompositionAwareMixin.composingText] begins, if any.
+  final int? composingBaseOffset;
+
+  /// The offset at which [CompositionAwareMixin.composingText] terminates, if any.
+  final int? composingExtentOffset;
+
   /// Whether the current editing state is valid or not.
   bool get isValid => baseOffset! >= 0 && extentOffset! >= 0;
 
   @override
-  int get hashCode => ui.hashValues(text, baseOffset, extentOffset);
+  int get hashCode => Object.hash(
+    text, baseOffset, extentOffset, composingBaseOffset, composingExtentOffset
+  );
 
   @override
   bool operator ==(Object other) {
@@ -471,13 +783,15 @@ class EditingState {
     return other is EditingState &&
         other.text == text &&
         other.baseOffset == baseOffset &&
-        other.extentOffset == extentOffset;
+        other.extentOffset == extentOffset &&
+        other.composingBaseOffset == composingBaseOffset &&
+        other.composingExtentOffset == composingExtentOffset;
   }
 
   @override
   String toString() {
     return assertionsEnabled
-        ? 'EditingState("$text", base:$baseOffset, extent:$extentOffset)'
+        ? 'EditingState("$text", base:$baseOffset, extent:$extentOffset, composingBase:$composingBaseOffset, composingExtent:$composingExtentOffset)'
         : super.toString();
   }
 
@@ -485,15 +799,42 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
+  ///
+  /// This should only be used by focused elements only, because only focused
+  /// elements can have their text selection range set. Attempting to set
+  /// selection range on a non-focused element will cause it to request focus.
+  ///
+  /// See also:
+  ///
+  ///  * [applyTextToDomElement], which is used for non-focused elements.
   void applyToDomElement(html.HtmlElement? domElement) {
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
+      final html.InputElement element = domElement;
       element.value = text;
       element.setSelectionRange(baseOffset!, extentOffset!);
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
+      final html.TextAreaElement element = domElement;
       element.value = text;
       element.setSelectionRange(baseOffset!, extentOffset!);
+    } else {
+      throw UnsupportedError('Unsupported DOM element type: <${domElement?.tagName}> (${domElement.runtimeType})');
+    }
+  }
+
+  /// Applies the [text] to the [domElement].
+  ///
+  /// This is used by non-focused elements.
+  ///
+  /// See also:
+  ///
+  ///  * [applyToDomElement], which is used for focused elements.
+  void applyTextToDomElement(html.HtmlElement? domElement) {
+    if (domElement is html.InputElement) {
+      final html.InputElement element = domElement;
+      element.value = text;
+    } else if (domElement is html.TextAreaElement) {
+      final html.TextAreaElement element = domElement;
+      element.value = text;
     } else {
       throw UnsupportedError('Unsupported DOM element type');
     }
@@ -517,29 +858,32 @@ class InputConfiguration {
         const TextCapitalizationConfig.defaultCapitalization(),
     this.autofill,
     this.autofillGroup,
+    this.enableDeltaModel = false,
   });
 
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
       : inputType = EngineInputType.fromName(
-          flutterInputConfiguration['inputType']['name'],
-          isDecimal: flutterInputConfiguration['inputType']['decimal'] ?? false,
+          flutterInputConfiguration.readJson('inputType').readString('name'),
+          isDecimal: flutterInputConfiguration.readJson('inputType').tryBool('decimal') ?? false,
         ),
         inputAction =
-            flutterInputConfiguration['inputAction'] ?? 'TextInputAction.done',
-        obscureText = flutterInputConfiguration['obscureText'] ?? false,
-        readOnly = flutterInputConfiguration['readOnly'] ?? false,
-        autocorrect = flutterInputConfiguration['autocorrect'] ?? true,
+            flutterInputConfiguration.tryString('inputAction') ?? 'TextInputAction.done',
+        obscureText = flutterInputConfiguration.tryBool('obscureText') ?? false,
+        readOnly = flutterInputConfiguration.tryBool('readOnly') ?? false,
+        autocorrect = flutterInputConfiguration.tryBool('autocorrect') ?? true,
         textCapitalization = TextCapitalizationConfig.fromInputConfiguration(
-          flutterInputConfiguration['textCapitalization'],
+          flutterInputConfiguration.readString('textCapitalization'),
         ),
         autofill = flutterInputConfiguration.containsKey('autofill')
             ? AutofillInfo.fromFrameworkMessage(
-                flutterInputConfiguration['autofill'])
+                flutterInputConfiguration.readJson('autofill'))
             : null,
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
-            flutterInputConfiguration['autofill'],
-            flutterInputConfiguration['fields']);
+          flutterInputConfiguration.tryJson('autofill'),
+          flutterInputConfiguration.tryList('fields'),
+        ),
+        enableDeltaModel = flutterInputConfiguration.tryBool('enableDeltaModel') ?? false;
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -564,6 +908,8 @@ class InputConfiguration {
   /// supported by Safari.
   final bool autocorrect;
 
+  final bool enableDeltaModel;
+
   final AutofillInfo? autofill;
 
   final EngineAutofillForm? autofillGroup;
@@ -571,8 +917,8 @@ class InputConfiguration {
   final TextCapitalizationConfig textCapitalization;
 }
 
-typedef _OnChangeCallback = void Function(EditingState? editingState);
-typedef _OnActionCallback = void Function(String? inputAction);
+typedef OnChangeCallback = void Function(EditingState? editingState, TextEditingDeltaState? editingDeltaState);
+typedef OnActionCallback = void Function(String? inputAction);
 
 /// Provides HTML DOM functionality for editable text.
 ///
@@ -581,8 +927,8 @@ typedef _OnActionCallback = void Function(String? inputAction);
 abstract class TextEditingStrategy {
   void initializeTextEditing(
     InputConfiguration inputConfig, {
-    required _OnChangeCallback onChange,
-    required _OnActionCallback onAction,
+    required OnChangeCallback onChange,
+    required OnActionCallback onAction,
   });
 
   /// Sets the initial placement of the DOM element on the UI.
@@ -632,15 +978,13 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
 
   @override
   void placeElement() {
+    geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
-      _geometry?.applyToDomElement(focusedFormElement!);
       placeForm();
       // Set the last editing state if it exists, this is critical for a
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
-      if (_lastEditingState != null) {
-        _lastEditingState!.applyToDomElement(domElement);
-      }
+      lastEditingState?.applyToDomElement(domElement);
       // On Chrome, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
@@ -652,9 +996,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
-      domElement.focus();
-    } else {
-      _geometry?.applyToDomElement(domElement);
+      activeDomElement.focus();
     }
   }
 }
@@ -685,15 +1027,16 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
   /// Making an extra `focus` request causes flickering in Safari.
   @override
   void placeElement() {
-    _geometry?.applyToDomElement(domElement);
+    geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
       placeForm();
       // On Safari Desktop, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
-      // the engine about the location of the text field. This call will
-      // arrive after `show` call. Therefore form is placed, when
-      //  `setEditableSizeAndTransform` method is called and focus called on the
+      // the engine about the location of the text field. This call may arrive
+      // after the first `show` call, depending on the text input widget's
+      // implementation. Therefore form is placed, when
+      // `setEditableSizeAndTransform` method is called and focus called on the
       // form only after placing it to the correct position and only once after
       // that. Calling focus multiple times causes flickering.
       focusedFormElement!.focus();
@@ -702,16 +1045,17 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
       // If domElement is not focused cursor location will not be correct.
-      domElement.focus();
-      if (_lastEditingState != null) {
-        _lastEditingState!.applyToDomElement(domElement);
-      }
+      activeDomElement.focus();
+      lastEditingState?.applyToDomElement(activeDomElement);
     }
   }
 
   @override
   void initializeElementPlacement() {
-    domElement.focus();
+    if (geometry != null) {
+      placeElement();
+    }
+    activeDomElement.focus();
   }
 }
 
@@ -736,92 +1080,114 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
 ///
 /// Unless a formfactor/browser requires specific implementation for a specific
 /// strategy the methods in this class should be used.
-abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
+abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements TextEditingStrategy  {
   final HybridTextEditing owner;
 
   DefaultTextEditingStrategy(this.owner);
 
-  @visibleForTesting
   bool isEnabled = false;
 
-  html.HtmlElement get domElement => _domElement!;
-  set domElement(html.HtmlElement element) {
-    _domElement = element;
+  /// The DOM element used for editing, if any.
+  html.HtmlElement? domElement;
+
+  /// Same as [domElement] but null-checked.
+  ///
+  /// This must only be called in places that know for sure that a DOM element
+  /// is currently available for editing.
+  html.HtmlElement get activeDomElement {
+    assert(
+      domElement != null,
+      'The DOM element of this text editing strategy is not currently active.',
+    );
+    return domElement!;
   }
 
-  html.HtmlElement? _domElement;
+  late InputConfiguration inputConfiguration;
+  EditingState? lastEditingState;
 
-  late InputConfiguration _inputConfiguration;
-  EditingState? _lastEditingState;
+  TextEditingDeltaState? _editingDeltaState;
+  TextEditingDeltaState get editingDeltaState {
+    _editingDeltaState ??= TextEditingDeltaState(oldText: lastEditingState!.text!);
+    return _editingDeltaState!;
+  }
 
   /// Styles associated with the editable text.
-  EditableTextStyle? _style;
+  EditableTextStyle? style;
 
   /// Size and transform of the editable text on the page.
-  EditableTextGeometry? _geometry;
+  EditableTextGeometry? geometry;
 
-  _OnChangeCallback? _onChange;
-  _OnActionCallback? _onAction;
+  OnChangeCallback? onChange;
+  OnActionCallback? onAction;
 
-  final List<StreamSubscription<html.Event>> _subscriptions =
+  final List<StreamSubscription<html.Event>> subscriptions =
       <StreamSubscription<html.Event>>[];
 
-  bool get hasAutofillGroup => _inputConfiguration.autofillGroup != null;
+  bool get hasAutofillGroup => inputConfiguration.autofillGroup != null;
 
   /// Whether the focused input element is part of a form.
   bool get appendedToForm => _appendedToForm;
   bool _appendedToForm = false;
 
   html.FormElement? get focusedFormElement =>
-      _inputConfiguration.autofillGroup?.formElement;
+      inputConfiguration.autofillGroup?.formElement;
 
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
-    required _OnChangeCallback onChange,
-    required _OnActionCallback onAction,
+    required OnChangeCallback onChange,
+    required OnActionCallback onAction,
   }) {
     assert(!isEnabled);
 
-    _domElement = inputConfig.inputType.createDomElement();
-    _applyConfiguration(inputConfig);
+    domElement = inputConfig.inputType.createDomElement();
+    applyConfiguration(inputConfig);
 
-    _setStaticStyleAttributes(domElement);
-    _style?.applyToDomElement(domElement);
+    _setStaticStyleAttributes(activeDomElement);
+    style?.applyToDomElement(activeDomElement);
 
     if (!hasAutofillGroup) {
       // If there is an Autofill Group the `FormElement`, it will be appended to the
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      domRenderer.glassPaneElement!.append(domElement);
+      defaultTextEditingRoot.append(activeDomElement);
       _appendedToForm = false;
     }
 
     initializeElementPlacement();
 
     isEnabled = true;
-    _onChange = onChange;
-    _onAction = onAction;
+    this.onChange = onChange;
+    this.onAction = onAction;
   }
 
-  void _applyConfiguration(InputConfiguration config) {
-    _inputConfiguration = config;
+  void applyConfiguration(InputConfiguration config) {
+    inputConfiguration = config;
 
     if (config.readOnly) {
-      domElement.setAttribute('readonly', 'readonly');
+      activeDomElement.setAttribute('readonly', 'readonly');
     } else {
-      domElement.removeAttribute('readonly');
+      activeDomElement.removeAttribute('readonly');
     }
 
     if (config.obscureText) {
-      domElement.setAttribute('type', 'password');
+      activeDomElement.setAttribute('type', 'password');
     }
 
-    config.autofill?.applyToDomElement(domElement, focusedElement: true);
+    if (config.inputType == EngineInputType.none) {
+      activeDomElement.setAttribute('inputmode', 'none');
+    }
+
+    final AutofillInfo? autofill = config.autofill;
+    if (autofill != null) {
+      autofill.applyToDomElement(activeDomElement, focusedElement: true);
+    } else {
+      activeDomElement.setAttribute('autocomplete', 'off');
+    }
 
     final String autocorrectValue = config.autocorrect ? 'on' : 'off';
-    domElement.setAttribute('autocorrect', autocorrectValue);
+    activeDomElement.setAttribute('autocorrect', autocorrectValue);
   }
 
   @override
@@ -831,41 +1197,44 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   @override
   void addEventHandlers() {
-    if (_inputConfiguration.autofillGroup != null) {
-      _subscriptions
-          .addAll(_inputConfiguration.autofillGroup!.addInputEventListeners());
+    if (inputConfiguration.autofillGroup != null) {
+      subscriptions
+          .addAll(inputConfiguration.autofillGroup!.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.
-    _subscriptions.add(domElement.onInput.listen(_handleChange));
+    subscriptions.add(activeDomElement.onInput.listen(handleChange));
 
-    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
 
-    _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+    subscriptions.add(html.document.onSelectionChange.listen(handleChange));
 
-    // Refocus on the domElement after blur, so that user can keep editing the
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+
+    addCompositionEventHandlers(activeDomElement);
+
+    // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
-    _subscriptions.add(domElement.onBlur.listen((_) {
-      domElement.focus();
+    subscriptions.add(activeDomElement.onBlur.listen((_) {
+      activeDomElement.focus();
     }));
 
     preventDefaultForMouseEvents();
   }
 
   @override
-  void updateElementPlacement(EditableTextGeometry geometry) {
-    _geometry = geometry;
+  void updateElementPlacement(EditableTextGeometry textGeometry) {
+    geometry = textGeometry;
     if (isEnabled) {
       placeElement();
     }
   }
 
-  @mustCallSuper
   @override
-  void updateElementStyle(EditableTextStyle style) {
-    _style = style;
+  void updateElementStyle(EditableTextStyle textStyle) {
+    style = textStyle;
     if (isEnabled) {
-      _style!.applyToDomElement(domElement);
+      textStyle.applyToDomElement(activeDomElement);
     }
   }
 
@@ -874,67 +1243,109 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     assert(isEnabled);
 
     isEnabled = false;
-    _lastEditingState = null;
-    _style = null;
-    _geometry = null;
+    lastEditingState = null;
+    _editingDeltaState = null;
+    style = null;
+    geometry = null;
 
-    for (int i = 0; i < _subscriptions.length; i++) {
-      _subscriptions[i].cancel();
+    for (int i = 0; i < subscriptions.length; i++) {
+      subscriptions[i].cancel();
     }
-    _subscriptions.clear();
+    subscriptions.clear();
+    removeCompositionEventHandlers(activeDomElement);
+
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
     // More details on `TextInput.finishAutofillContext` call.
     if (_appendedToForm &&
-        _inputConfiguration.autofillGroup?.formElement != null) {
+        inputConfiguration.autofillGroup?.formElement != null) {
       // Subscriptions are removed, listeners won't be triggered.
-      domElement.blur();
-      _hideAutofillElements(domElement, isOffScreen: true);
-      _inputConfiguration.autofillGroup?.storeForm();
+      activeDomElement.blur();
+      _hideAutofillElements(activeDomElement, isOffScreen: true);
+      inputConfiguration.autofillGroup?.storeForm();
     } else {
-      domElement.remove();
+      activeDomElement.remove();
     }
-    _domElement = null;
+    domElement = null;
   }
 
-  @mustCallSuper
   @override
   void setEditingState(EditingState? editingState) {
-    _lastEditingState = editingState;
+    lastEditingState = editingState;
     if (!isEnabled || !editingState!.isValid) {
       return;
     }
-    _lastEditingState!.applyToDomElement(domElement);
+    lastEditingState!.applyToDomElement(domElement);
   }
 
   void placeElement() {
-    domElement.focus();
+    activeDomElement.focus();
   }
 
   void placeForm() {
-    _inputConfiguration.autofillGroup!.placeForm(domElement);
+    inputConfiguration.autofillGroup!.placeForm(activeDomElement);
     _appendedToForm = true;
   }
 
-  void _handleChange(html.Event event) {
+  void handleChange(html.Event event) {
     assert(isEnabled);
 
-    EditingState newEditingState = EditingState.fromDomElement(domElement,
-        textCapitalization: _inputConfiguration.textCapitalization);
+    EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
+    newEditingState = determineCompositionState(newEditingState);
 
-    if (newEditingState != _lastEditingState) {
-      _lastEditingState = newEditingState;
-      _onChange!(_lastEditingState);
+    TextEditingDeltaState? newTextEditingDeltaState;
+    if (inputConfiguration.enableDeltaModel) {
+      editingDeltaState.composingOffset = newEditingState.composingBaseOffset;
+      editingDeltaState.composingExtent = newEditingState.composingExtentOffset;
+      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);
+    }
+
+    if (newEditingState != lastEditingState) {
+      lastEditingState = newEditingState;
+      _editingDeltaState = newTextEditingDeltaState;
+      onChange!(lastEditingState, _editingDeltaState);
+      // Flush delta after it has been sent to framework.
+      _editingDeltaState = null;
     }
   }
 
-  void _maybeSendAction(html.Event event) {
-    if (event is html.KeyboardEvent) {
-      if (_inputConfiguration.inputType.submitActionOnEnter &&
-          event.keyCode == _kReturnKeyCode) {
-        event.preventDefault();
-        _onAction!(_inputConfiguration.inputAction);
+  void handleBeforeInput(html.Event event) {
+    // In some cases the beforeinput event is not fired such as when the selection
+    // of a text field is updated. In this case only the oninput event is fired.
+    // We still want a delta generated in these cases so we can properly update
+    // the selection. We begin to set the deltaStart and deltaEnd in beforeinput
+    // because a change in the selection will not have a delta range, it will only
+    // have a baseOffset and extentOffset. If these are set inside of inferDeltaState
+    // then the method will incorrectly report a deltaStart and deltaEnd for a non
+    // text update delta.
+    final String? eventData = getJsProperty<void>(event, 'data') as String?;
+    final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
+
+    if (inputType != null) {
+      if (inputType.contains('delete')) {
+        // The deltaStart is set in handleChange because there is where we get access
+        // to the new selection baseOffset which is our new deltaStart.
+        editingDeltaState.deltaText = '';
+        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+      } else if (inputType == 'insertLineBreak'){
+        // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
+        editingDeltaState.deltaText = '\n';
+        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+      } else if (eventData != null) {
+        // When event.data is not null we we will begin by considering this delta as an insertion
+        // at the selection extentOffset. This may change due to logic in handleChange to handle
+        // composition and other IME behaviors.
+        editingDeltaState.deltaText = eventData;
+        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
       }
+    }
+  }
+
+  void maybeSendAction(html.Event event) {
+    if (event is html.KeyboardEvent && event.keyCode == _kReturnKeyCode) {
+      onAction!(inputConfiguration.inputAction);
     }
   }
 
@@ -948,8 +1359,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   /// - Selection changes.
   void enable(
     InputConfiguration inputConfig, {
-    required _OnChangeCallback onChange,
-    required _OnActionCallback onAction,
+    required OnChangeCallback onChange,
+    required OnActionCallback onAction,
   }) {
     assert(!isEnabled);
 
@@ -957,12 +1368,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     addEventHandlers();
 
-    if (_lastEditingState != null) {
-      setEditingState(this._lastEditingState);
+    if (lastEditingState != null) {
+      setEditingState(lastEditingState);
     }
 
     // Re-focuses after setting editing state.
-    domElement.focus();
+    activeDomElement.focus();
   }
 
   /// Prevent default behavior for mouse down, up and move.
@@ -971,15 +1382,15 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   /// selection conflicts with selection sent from the framework, which creates
   /// flickering during selection by mouse.
   void preventDefaultForMouseEvents() {
-    _subscriptions.add(domElement.onMouseDown.listen((_) {
+    subscriptions.add(activeDomElement.onMouseDown.listen((_) {
       _.preventDefault();
     }));
 
-    _subscriptions.add(domElement.onMouseUp.listen((_) {
+    subscriptions.add(activeDomElement.onMouseUp.listen((_) {
       _.preventDefault();
     }));
 
-    _subscriptions.add(domElement.onMouseMove.listen((_) {
+    subscriptions.add(activeDomElement.onMouseMove.listen((_) {
       _.preventDefault();
     }));
   }
@@ -1014,8 +1425,18 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   /// in iOS is set to correct place, 100ms after focus. We use this timer for
   /// timing this delay.
   Timer? _positionInputElementTimer;
-  static const Duration _delayBeforePlacement =
-      const Duration(milliseconds: 100);
+  static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
+
+  /// This interval between the blur subscription and callback is considered to
+  /// be fast.
+  ///
+  /// This is only used for iOS. The blur callback may trigger as soon as the
+  /// creation of the subscription. Occasionally in this case, the virtual
+  /// keyboard will quickly show and hide again.
+  ///
+  /// Less than this interval allows the virtual keyboard to keep showing up
+  /// instead of hiding rapidly.
+  static const Duration _blurFastCallbackInterval = Duration(milliseconds: 200);
 
   /// Whether or not the input element can be positioned at this point in time.
   ///
@@ -1033,16 +1454,16 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
-    required _OnChangeCallback onChange,
-    required _OnActionCallback onAction,
+    required OnChangeCallback onChange,
+    required OnActionCallback onAction,
   }) {
     super.initializeTextEditing(inputConfig,
         onChange: onChange, onAction: onAction);
-    inputConfig.inputType.configureInputMode(domElement);
+    inputConfig.inputType.configureInputMode(activeDomElement);
     if (hasAutofillGroup) {
       placeForm();
     }
-    inputConfig.textCapitalization.setAutocapitalizeAttribute(domElement);
+    inputConfig.textCapitalization.setAutocapitalizeAttribute(activeDomElement);
   }
 
   @override
@@ -1050,46 +1471,69 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     /// Position the element outside of the page before focusing on it. This is
     /// useful for not triggering a scroll when iOS virtual keyboard is
     /// coming up.
-    domElement.style.transform = 'translate(-9999px, -9999px)';
+    activeDomElement.style.transform = 'translate(-9999px, -9999px)';
 
     _canPosition = false;
   }
 
   @override
   void addEventHandlers() {
-    if (_inputConfiguration.autofillGroup != null) {
-      _subscriptions
-          .addAll(_inputConfiguration.autofillGroup!.addInputEventListeners());
+    if (inputConfiguration.autofillGroup != null) {
+      subscriptions
+          .addAll(inputConfiguration.autofillGroup!.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.
-    _subscriptions.add(domElement.onInput.listen(_handleChange));
+    subscriptions.add(activeDomElement.onInput.listen(handleChange));
 
-    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
 
-    _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+    subscriptions.add(html.document.onSelectionChange.listen(handleChange));
+
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+
+    addCompositionEventHandlers(activeDomElement);
 
     // Position the DOM element after it is focused.
-    _subscriptions.add(domElement.onFocus.listen((_) {
+    subscriptions.add(activeDomElement.onFocus.listen((_) {
       // Cancel previous timer if exists.
       _schedulePlacement();
     }));
 
     _addTapListener();
 
-    // On iOS, blur is trigerred if the virtual keyboard is closed or the
-    // browser is sent to background or the browser tab is changed.
+    // Record start time of blur subscription.
+    final Stopwatch blurWatch = Stopwatch()..start();
+
+    // On iOS, blur is trigerred in the following cases:
     //
-    // Since in all these cases, the connection needs to be closed,
-    // [domRenderer.windowHasFocus] is not checked in [IOSTextEditingStrategy].
-    _subscriptions.add(domElement.onBlur.listen((_) {
-      owner.sendTextConnectionClosedToFrameworkIfAny();
+    // 1. The browser app is sent to the background (or the tab is changed). In
+    //    this case, the window loses focus (see [windowHasFocus]),
+    //    so we close the input connection with the framework.
+    // 2. The user taps on another focusable element. In this case, we refocus
+    //    the input field and wait for the framework to manage the focus change.
+    // 3. The virtual keyboard is closed by tapping "done". We can't detect this
+    //    programmatically, so we end up refocusing the input field. This is
+    //    okay because the virtual keyboard will hide, and as soon as the user
+    //    taps the text field again, the virtual keyboard will come up.
+    // 4. Safari sometimes sends a blur event immediately after activating the
+    //    input field. In this case, we want to keep the focus on the input field.
+    //    In order to detect this, we measure how much time has passed since the
+    //    input field was activated. If the time is too short, we re-focus the
+    //    input element.
+    subscriptions.add(activeDomElement.onBlur.listen((_) {
+      final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
+      if (windowHasFocus && isFastCallback) {
+        activeDomElement.focus();
+      } else {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
+      }
     }));
   }
 
   @override
-  void updateElementPlacement(EditableTextGeometry geometry) {
-    _geometry = geometry;
+  void updateElementPlacement(EditableTextGeometry textGeometry) {
+    geometry = textGeometry;
     if (isEnabled && _canPosition) {
       placeElement();
     }
@@ -1120,7 +1564,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   /// [_positionInputElementTimer] timer is restarted. The element will be
   /// placed to its correct position after [_delayBeforePlacement].
   void _addTapListener() {
-    _subscriptions.add(domElement.onClick.listen((_) {
+    subscriptions.add(activeDomElement.onClick.listen((_) {
       // Check if the element is already positioned. If not this does not fall
       // under `The user was using the long press, now they want to enter text
       // via keyboard` journey.
@@ -1144,8 +1588,8 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    domElement.focus();
-    _geometry?.applyToDomElement(domElement);
+    activeDomElement.focus();
+    geometry?.applyToDomElement(activeDomElement);
   }
 }
 
@@ -1162,41 +1606,45 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
-    required _OnChangeCallback onChange,
-    required _OnActionCallback onAction,
+    required OnChangeCallback onChange,
+    required OnActionCallback onAction,
   }) {
     super.initializeTextEditing(inputConfig,
         onChange: onChange, onAction: onAction);
-    inputConfig.inputType.configureInputMode(domElement);
+    inputConfig.inputType.configureInputMode(activeDomElement);
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      domRenderer.glassPaneElement!.append(domElement);
+      defaultTextEditingRoot.append(activeDomElement);
     }
-    inputConfig.textCapitalization.setAutocapitalizeAttribute(domElement);
+    inputConfig.textCapitalization.setAutocapitalizeAttribute(activeDomElement);
   }
 
   @override
   void addEventHandlers() {
-    if (_inputConfiguration.autofillGroup != null) {
-      _subscriptions
-          .addAll(_inputConfiguration.autofillGroup!.addInputEventListeners());
+    if (inputConfiguration.autofillGroup != null) {
+      subscriptions
+          .addAll(inputConfiguration.autofillGroup!.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.
-    _subscriptions.add(domElement.onInput.listen(_handleChange));
+    subscriptions.add(activeDomElement.onInput.listen(handleChange));
 
-    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
 
-    _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+    subscriptions.add(html.document.onSelectionChange.listen(handleChange));
 
-    _subscriptions.add(domElement.onBlur.listen((_) {
-      if (domRenderer.windowHasFocus!) {
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+
+    addCompositionEventHandlers(activeDomElement);
+
+    subscriptions.add(activeDomElement.onBlur.listen((_) {
+      if (windowHasFocus) {
         // Chrome on Android will hide the onscreen keyboard when you tap outside
         // the text box. Instead, we want the framework to tell us to hide the
         // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-        // refocus as long as [domRenderer.windowHasFocus] is true.
-        domElement.focus();
+        // refocus as long as [windowHasFocus] is true.
+        activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();
       }
@@ -1205,8 +1653,8 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    domElement.focus();
-    _geometry?.applyToDomElement(domElement);
+    activeDomElement.focus();
+    geometry?.applyToDomElement(activeDomElement);
   }
 }
 
@@ -1220,8 +1668,8 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
-    required _OnChangeCallback onChange,
-    required _OnActionCallback onAction,
+    required OnChangeCallback onChange,
+    required OnActionCallback onAction,
   }) {
     super.initializeTextEditing(inputConfig,
         onChange: onChange, onAction: onAction);
@@ -1232,15 +1680,19 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void addEventHandlers() {
-    if (_inputConfiguration.autofillGroup != null) {
-      _subscriptions
-          .addAll(_inputConfiguration.autofillGroup!.addInputEventListeners());
+    if (inputConfiguration.autofillGroup != null) {
+      subscriptions
+          .addAll(inputConfiguration.autofillGroup!.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.
-    _subscriptions.add(domElement.onInput.listen(_handleChange));
+    subscriptions.add(activeDomElement.onInput.listen(handleChange));
 
-    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
+
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+
+    addCompositionEventHandlers(activeDomElement);
 
     // Detects changes in text selection.
     //
@@ -1255,18 +1707,18 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //
     // After each keyup, the start/end values of the selection is compared to
     // the previously saved editing state.
-    _subscriptions.add(domElement.onKeyUp.listen((event) {
-      _handleChange(event);
+    subscriptions.add(activeDomElement.onKeyUp.listen((html.KeyboardEvent event) {
+      handleChange(event);
     }));
 
     // In Firefox the context menu item "Select All" does not work without
     // listening to onSelect. On the other browsers onSelectionChange is
     // enough for covering "Select All" functionality.
-    _subscriptions.add(domElement.onSelect.listen(_handleChange));
+    subscriptions.add(activeDomElement.onSelect.listen(handleChange));
 
-    // Refocus on the domElement after blur, so that user can keep editing the
+    // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
-    _subscriptions.add(domElement.onBlur.listen((_) {
+    subscriptions.add(activeDomElement.onBlur.listen((_) {
       _postponeFocus();
     }));
 
@@ -1279,21 +1731,230 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Calling focus inside a Timer for `0` milliseconds guarantee that it is
     // called after blur event propagation is completed.
     Timer(const Duration(milliseconds: 0), () {
-      domElement.focus();
+      activeDomElement.focus();
     });
   }
 
   @override
   void placeElement() {
-    domElement.focus();
-    _geometry?.applyToDomElement(domElement);
+    activeDomElement.focus();
+    geometry?.applyToDomElement(activeDomElement);
     // Set the last editing state if it exists, this is critical for a
     // users ongoing work to continue uninterrupted when there is an update to
     // the transform.
-    if (_lastEditingState != null) {
-      _lastEditingState!.applyToDomElement(domElement);
+    lastEditingState?.applyToDomElement(activeDomElement);
+  }
+}
+
+/// Base class for all `TextInput` commands sent through the `flutter/textinput`
+/// channel.
+@immutable
+abstract class TextInputCommand {
+  const TextInputCommand();
+
+  /// Executes the logic for this command.
+  void run(HybridTextEditing textEditing);
+}
+
+/// Responds to the 'TextInput.setClient' message.
+class TextInputSetClient extends TextInputCommand {
+  const TextInputSetClient({
+    required this.clientId,
+    required this.configuration,
+  });
+
+  final int clientId;
+  final InputConfiguration configuration;
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    final bool clientIdChanged = textEditing._clientId != null && textEditing._clientId != clientId;
+    if (clientIdChanged && textEditing.isEditing) {
+      // We're connecting a new client. Any pending command for the previous client
+      // are irrelevant at this point.
+      textEditing.stopEditing();
+    }
+    textEditing._clientId = clientId;
+    textEditing.configuration = configuration;
+  }
+}
+
+/// Creates the text editing strategy used in non-a11y mode.
+DefaultTextEditingStrategy createDefaultTextEditingStrategy(HybridTextEditing textEditing) {
+  DefaultTextEditingStrategy strategy;
+  if (browserEngine == BrowserEngine.webkit &&
+      operatingSystem == OperatingSystem.iOs) {
+    strategy = IOSTextEditingStrategy(textEditing);
+  } else if (browserEngine == BrowserEngine.webkit) {
+    strategy = SafariDesktopTextEditingStrategy(textEditing);
+  } else if (browserEngine == BrowserEngine.blink &&
+      operatingSystem == OperatingSystem.android) {
+    strategy = AndroidTextEditingStrategy(textEditing);
+  } else if (browserEngine == BrowserEngine.firefox) {
+    strategy = FirefoxTextEditingStrategy(textEditing);
+  } else {
+    strategy = GloballyPositionedTextEditingStrategy(textEditing);
+  }
+  return strategy;
+}
+
+/// Responds to the 'TextInput.updateConfig' message.
+class TextInputUpdateConfig extends TextInputCommand {
+  const TextInputUpdateConfig();
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    textEditing.strategy.applyConfiguration(textEditing.configuration!);
+  }
+}
+
+/// Responds to the 'TextInput.setEditingState' message.
+class TextInputSetEditingState extends TextInputCommand {
+  const TextInputSetEditingState({
+    required this.state,
+  });
+
+  final EditingState state;
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    textEditing.strategy.setEditingState(state);
+  }
+}
+
+/// Responds to the 'TextInput.show' message.
+class TextInputShow extends TextInputCommand {
+  const TextInputShow();
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    if (!textEditing.isEditing) {
+      textEditing._startEditing();
     }
   }
+}
+
+/// Responds to the 'TextInput.setEditableSizeAndTransform' message.
+class TextInputSetEditableSizeAndTransform extends TextInputCommand {
+  const TextInputSetEditableSizeAndTransform({
+    required this.geometry,
+  });
+
+  final EditableTextGeometry geometry;
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    textEditing.strategy.updateElementPlacement(geometry);
+  }
+}
+
+/// Responds to the 'TextInput.setStyle' message.
+class TextInputSetStyle extends TextInputCommand {
+  const TextInputSetStyle({
+    required this.style,
+  });
+
+  final EditableTextStyle style;
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    textEditing.strategy.updateElementStyle(style);
+  }
+}
+
+/// Responds to the 'TextInput.clearClient' message.
+class TextInputClearClient extends TextInputCommand {
+  const TextInputClearClient();
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    if (textEditing.isEditing) {
+      textEditing.stopEditing();
+    }
+  }
+}
+
+/// Responds to the 'TextInput.hide' message.
+class TextInputHide extends TextInputCommand {
+  const TextInputHide();
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    if (textEditing.isEditing) {
+      textEditing.stopEditing();
+    }
+  }
+}
+
+class TextInputSetMarkedTextRect extends TextInputCommand {
+  const TextInputSetMarkedTextRect();
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    // No-op: this message is currently only used on iOS to implement
+    // UITextInput.firstRecForRange.
+  }
+}
+
+class TextInputSetCaretRect extends TextInputCommand {
+  const TextInputSetCaretRect();
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    // No-op: not supported on this platform.
+  }
+}
+
+class TextInputRequestAutofill extends TextInputCommand {
+  const TextInputRequestAutofill();
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    // No-op: not supported on this platform.
+  }
+}
+
+class TextInputFinishAutofillContext extends TextInputCommand {
+  const TextInputFinishAutofillContext({
+    required this.saveForm,
+  });
+
+  final bool saveForm;
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    // Close the text editing connection. Form is finalizing.
+    textEditing.sendTextConnectionClosedToFrameworkIfAny();
+    if (saveForm) {
+      saveForms();
+    }
+    // Clean the forms from DOM after submitting them.
+    cleanForms();
+  }
+}
+
+/// Submits the forms currently attached to the DOM.
+///
+/// Browser will save the information entered to the form.
+///
+/// Called when the form is finalized with save option `true`.
+/// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
+void saveForms() {
+  formsOnTheDom.forEach((String identifier, html.FormElement form) {
+    final html.InputElement submitBtn =
+        form.getElementsByClassName('submitBtn').first as html.InputElement;
+    submitBtn.click();
+  });
+}
+
+/// Removes the forms from the DOM.
+///
+/// Called when the form is finalized.
+void cleanForms() {
+  for (final html.FormElement form in formsOnTheDom.values) {
+    form.remove();
+  }
+  formsOnTheDom.clear();
 }
 
 /// Translates the message-based communication between the framework and the
@@ -1311,97 +1972,91 @@ class TextEditingChannel {
       ByteData? data, ui.PlatformMessageResponseCallback? callback) {
     const JSONMethodCodec codec = JSONMethodCodec();
     final MethodCall call = codec.decodeMethodCall(data);
+    final TextInputCommand command;
     switch (call.method) {
       case 'TextInput.setClient':
-        implementation.setClient(
-          call.arguments[0],
-          InputConfiguration.fromFrameworkMessage(call.arguments[1]),
+        command = TextInputSetClient(
+          clientId: call.arguments[0] as int,
+          configuration: InputConfiguration.fromFrameworkMessage(call.arguments[1] as Map<String, dynamic>),
         );
         break;
 
       case 'TextInput.updateConfig':
-        final config = InputConfiguration.fromFrameworkMessage(call.arguments);
-        implementation.updateConfig(config);
+        // Set configuration eagerly because it contains data about the text
+        // field used to flush the command queue. However, delaye applying the
+        // configuration because the strategy may not be available yet.
+        implementation.configuration = InputConfiguration.fromFrameworkMessage(
+          call.arguments as Map<String, dynamic>
+        );
+        command = const TextInputUpdateConfig();
         break;
 
       case 'TextInput.setEditingState':
-        implementation
-            .setEditingState(EditingState.fromFrameworkMessage(call.arguments));
+        command = TextInputSetEditingState(
+          state: EditingState.fromFrameworkMessage(
+            call.arguments as Map<String, dynamic>
+          ),
+        );
         break;
 
       case 'TextInput.show':
-        implementation.show();
+        command = const TextInputShow();
         break;
 
       case 'TextInput.setEditableSizeAndTransform':
-        implementation.setEditableSizeAndTransform(
-            EditableTextGeometry.fromFrameworkMessage(call.arguments));
+        command = TextInputSetEditableSizeAndTransform(
+          geometry: EditableTextGeometry.fromFrameworkMessage(
+            call.arguments as Map<String, dynamic>
+          ),
+        );
         break;
 
       case 'TextInput.setStyle':
-        implementation
-            .setStyle(EditableTextStyle.fromFrameworkMessage(call.arguments));
+        command = TextInputSetStyle(
+          style: EditableTextStyle.fromFrameworkMessage(
+            call.arguments as Map<String, dynamic>,
+          ),
+        );
         break;
 
       case 'TextInput.clearClient':
-        implementation.clearClient();
+        command = const TextInputClearClient();
         break;
 
       case 'TextInput.hide':
-        implementation.hide();
+        command = const TextInputHide();
         break;
 
       case 'TextInput.requestAutofill':
-        // No-op:  This message is sent by the framework to requests the platform autofill UI to appear.
-        // Since autofill UI is a part of the browser, web engine does not need to utilize this method.
+        // There's no API to request autofill on the web. Instead we let the
+        // browser show autofill options automatically, if available. We
+        // therefore simply ignore this message.
+        command = const TextInputRequestAutofill();
         break;
 
       case 'TextInput.finishAutofillContext':
-        final bool saveForm = call.arguments as bool;
-        // Close the text editing connection. Form is finalizing.
-        implementation.sendTextConnectionClosedToFrameworkIfAny();
-        if (saveForm) {
-          saveForms();
-        }
-        // Clean the forms from DOM after submitting them.
-        cleanForms();
+        command = TextInputFinishAutofillContext(
+          saveForm: call.arguments as bool,
+        );
         break;
 
       case 'TextInput.setMarkedTextRect':
-        // No-op: this message is currently only used on iOS to implement
-        // UITextInput.firstRecForRange.
+        command = const TextInputSetMarkedTextRect();
+        break;
+
+      case 'TextInput.setCaretRect':
+        command = const TextInputSetCaretRect();
         break;
 
       default:
-        throw StateError(
-            'Unsupported method call on the flutter/textinput channel: ${call.method}');
+        EnginePlatformDispatcher.instance.replyToPlatformMessage(callback, null);
+        return;
     }
-    EnginePlatformDispatcher.instance
-        ._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
-  }
 
-  /// Used for submitting the forms attached on the DOM.
-  ///
-  /// Browser will save the information entered to the form.
-  ///
-  /// Called when the form is finalized with save option `true`.
-  /// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
-  void saveForms() {
-    formsOnTheDom.forEach((String identifier, html.FormElement form) {
-      final html.InputElement submitBtn =
-          form.getElementsByClassName('submitBtn').first as html.InputElement;
-      submitBtn.click();
+    implementation.acceptCommand(command, () {
+      EnginePlatformDispatcher.instance
+          .replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
     });
-  }
-
-  /// Used for removing the forms on the DOM.
-  ///
-  /// Called when the form is finalized.
-  void cleanForms() {
-    for (html.FormElement form in formsOnTheDom.values) {
-      form.remove();
-    }
-    formsOnTheDom.clear();
   }
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
@@ -1412,6 +2067,20 @@ class TextEditingChannel {
         MethodCall('TextInputClient.updateEditingState', <dynamic>[
           clientId,
           editingState!.toFlutter(),
+        ]),
+      ),
+      _emptyCallback,
+    );
+  }
+
+  /// Sends the 'TextInputClient.updateEditingStateWithDeltas' message to the framework.
+  void updateEditingStateWithDelta(int? clientId, TextEditingDeltaState? editingDeltaState) {
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall('TextInputClient.updateEditingStateWithDeltas', <dynamic>[
+          clientId,
+          editingDeltaState!.toFlutter(),
         ]),
       ),
       _emptyCallback,
@@ -1457,7 +2126,7 @@ final HybridTextEditing textEditing = HybridTextEditing();
 ///
 /// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
 final Map<String, html.FormElement> formsOnTheDom =
-    Map<String, html.FormElement>();
+    <String, html.FormElement>{};
 
 /// Should be used as a singleton to provide support for text editing in
 /// Flutter Web.
@@ -1472,135 +2141,51 @@ class HybridTextEditing {
   ///
   /// The constructor also decides which text editing strategy to use depending
   /// on the operating system and browser engine.
-  HybridTextEditing() {
-    if (browserEngine == BrowserEngine.webkit &&
-        operatingSystem == OperatingSystem.iOs) {
-      this._defaultEditingElement = IOSTextEditingStrategy(this);
-    } else if (browserEngine == BrowserEngine.webkit) {
-      this._defaultEditingElement = SafariDesktopTextEditingStrategy(this);
-    } else if (browserEngine == BrowserEngine.blink &&
-        operatingSystem == OperatingSystem.android) {
-      this._defaultEditingElement = AndroidTextEditingStrategy(this);
-    } else if (browserEngine == BrowserEngine.firefox) {
-      this._defaultEditingElement = FirefoxTextEditingStrategy(this);
-    } else {
-      this._defaultEditingElement = GloballyPositionedTextEditingStrategy(this);
-    }
-    channel = TextEditingChannel(this);
-  }
+  HybridTextEditing();
 
-  late TextEditingChannel channel;
-
-  /// The text editing stategy used. It can change depending on the
-  /// formfactor/browser.
-  ///
-  /// It uses an HTML element to manage editing state when a custom element is
-  /// not provided via [useCustomEditableElement]
-  late final DefaultTextEditingStrategy _defaultEditingElement;
-
-  /// The HTML element used to manage editing state.
-  ///
-  /// This field is populated using [useCustomEditableElement]. If `null` the
-  /// [_defaultEditingElement] is used instead.
-  DefaultTextEditingStrategy? _customEditingElement;
-
-  DefaultTextEditingStrategy get editingElement {
-    return _customEditingElement ?? _defaultEditingElement;
-  }
-
-  /// Responds to the 'TextInput.setClient' message.
-  void setClient(int? clientId, InputConfiguration configuration) {
-    final bool clientIdChanged = _clientId != null && _clientId != clientId;
-    if (clientIdChanged && isEditing) {
-      stopEditing();
-    }
-    _clientId = clientId;
-    _configuration = configuration;
-  }
-
-  void updateConfig(InputConfiguration configuration) {
-    _configuration = configuration;
-    editingElement._applyConfiguration(_configuration);
-  }
-
-  /// Responds to the 'TextInput.setEditingState' message.
-  void setEditingState(EditingState state) {
-    editingElement.setEditingState(state);
-  }
-
-  /// Responds to the 'TextInput.show' message.
-  void show() {
-    if (!isEditing) {
-      _startEditing();
-    }
-  }
-
-  /// Responds to the 'TextInput.setEditableSizeAndTransform' message.
-  void setEditableSizeAndTransform(EditableTextGeometry geometry) {
-    editingElement.updateElementPlacement(geometry);
-  }
-
-  /// Responds to the 'TextInput.setStyle' message.
-  void setStyle(EditableTextStyle style) {
-    editingElement.updateElementStyle(style);
-  }
-
-  /// Responds to the 'TextInput.clearClient' message.
-  void clearClient() {
-    // We do not distinguish between "clearClient" and "hide" on the Web.
-    hide();
-  }
-
-  /// Responds to the 'TextInput.hide' message.
-  void hide() {
-    if (isEditing) {
-      stopEditing();
-    }
-  }
+  late final TextEditingChannel channel = TextEditingChannel(this);
 
   /// A CSS class name used to identify all elements used for text editing.
   @visibleForTesting
   static const String textEditingClass = 'flt-text-editing';
-
-  static bool isEditingElement(html.Element element) {
-    return element.classes.contains(textEditingClass);
-  }
-
-  /// Requests that [customEditingElement] is used for managing text editing state
-  /// instead of the hidden default element.
-  ///
-  /// Use [stopUsingCustomEditableElement] to switch back to default element.
-  void useCustomEditableElement(
-      DefaultTextEditingStrategy? customEditingElement) {
-    if (isEditing && customEditingElement != _customEditingElement) {
-      stopEditing();
-    }
-    _customEditingElement = customEditingElement;
-  }
-
-  /// Switches back to using the built-in default element for managing text
-  /// editing state.
-  void stopUsingCustomEditableElement() {
-    useCustomEditableElement(null);
-  }
 
   int? _clientId;
 
   /// Flag which shows if there is an ongoing editing.
   ///
   /// Also used to define if a keyboard is needed.
-  @visibleForTesting
   bool isEditing = false;
 
-  late InputConfiguration _configuration;
+  InputConfiguration? configuration;
+
+  DefaultTextEditingStrategy? debugTextEditingStrategyOverride;
+
+  /// Supplies the DOM element used for editing.
+  late final DefaultTextEditingStrategy strategy =
+    debugTextEditingStrategyOverride ??
+    (EngineSemanticsOwner.instance.semanticsEnabled
+      ? SemanticsTextEditingStrategy.ensureInitialized(this)
+      : createDefaultTextEditingStrategy(this));
+
+  void acceptCommand(TextInputCommand command, ui.VoidCallback callback) {
+    if (_debugPrintTextInputCommands) {
+      print('flutter/textinput channel command: ${command.runtimeType}');
+    }
+    command.run(this);
+    callback();
+  }
 
   void _startEditing() {
     assert(!isEditing);
     isEditing = true;
-    editingElement.enable(
-      _configuration,
-      onChange: (EditingState? editingState) {
-        channel.updateEditingState(_clientId, editingState);
+    strategy.enable(
+      configuration!,
+      onChange: (EditingState? editingState, TextEditingDeltaState? editingDeltaState) {
+        if (configuration!.enableDeltaModel) {
+          channel.updateEditingStateWithDelta(_clientId, editingDeltaState);
+        } else {
+          channel.updateEditingState(_clientId, editingState);
+        }
       },
       onAction: (String? inputAction) {
         channel.performAction(_clientId, inputAction);
@@ -1611,7 +2196,7 @@ class HybridTextEditing {
   void stopEditing() {
     assert(isEditing);
     isEditing = false;
-    editingElement.disable();
+    strategy.disable();
   }
 
   void sendTextConnectionClosedToFrameworkIfAny() {
@@ -1641,9 +2226,9 @@ class EditableTextStyle {
     assert(flutterStyle.containsKey('textAlignIndex'));
     assert(flutterStyle.containsKey('textDirectionIndex'));
 
-    final int textAlignIndex = flutterStyle['textAlignIndex'];
-    final int textDirectionIndex = flutterStyle['textDirectionIndex'];
-    final int? fontWeightIndex = flutterStyle['fontWeightIndex'];
+    final int textAlignIndex = flutterStyle['textAlignIndex'] as int;
+    final int textDirectionIndex = flutterStyle['textDirectionIndex'] as int;
+    final int? fontWeightIndex = flutterStyle['fontWeightIndex'] as int?;
 
     // Convert [fontWeightIndex] to its CSS equivalent value.
     final String fontWeight = fontWeightIndex != null
@@ -1654,8 +2239,8 @@ class EditableTextStyle {
     // corresponding enum values in [ui.TextAlign] and [ui.TextDirection]
     // respectively.
     return EditableTextStyle(
-      fontSize: flutterStyle['fontSize'],
-      fontFamily: flutterStyle['fontFamily'],
+      fontSize: flutterStyle.tryDouble('fontSize'),
+      fontFamily: flutterStyle.tryString('fontFamily'),
       textAlign: ui.TextAlign.values[textAlignIndex],
       textDirection: ui.TextDirection.values[textDirectionIndex],
       fontWeight: fontWeight,
@@ -1673,7 +2258,7 @@ class EditableTextStyle {
   String? get align => textAlignToCssValue(textAlign, textDirection);
 
   String get cssFont =>
-      '${fontWeight} ${fontSize}px ${canonicalizeFontFamily(fontFamily)}';
+      '$fontWeight ${fontSize}px ${canonicalizeFontFamily(fontFamily)}';
 
   void applyToDomElement(html.HtmlElement domElement) {
     domElement.style
@@ -1688,7 +2273,7 @@ class EditableTextStyle {
 /// message from the framework.
 @immutable
 class EditableTextGeometry {
-  EditableTextGeometry({
+  const EditableTextGeometry({
     required this.width,
     required this.height,
     required this.globalTransform,
@@ -1703,10 +2288,10 @@ class EditableTextGeometry {
     assert(encodedGeometry.containsKey('transform'));
 
     final List<double> transformList =
-        List<double>.from(encodedGeometry['transform']);
+        List<double>.from(encodedGeometry.readList('transform'));
     return EditableTextGeometry(
-      width: encodedGeometry['width'],
-      height: encodedGeometry['height'],
+      width: encodedGeometry.readDouble('width'),
+      height: encodedGeometry.readDouble('height'),
       globalTransform: Float32List.fromList(transformList),
     );
   }

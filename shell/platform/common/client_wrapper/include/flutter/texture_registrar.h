@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_TEXTURE_REGISTRAR_H_
-#define FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_TEXTURE_REGISTRAR_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CLIENT_WRAPPER_INCLUDE_FLUTTER_TEXTURE_REGISTRAR_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_CLIENT_WRAPPER_INCLUDE_FLUTTER_TEXTURE_REGISTRAR_H_
 
 #include <flutter_texture_registrar.h>
 
@@ -27,7 +27,7 @@ class PixelBufferTexture {
   // As the callback is usually invoked from the render thread, the callee must
   // take care of proper synchronization. It also needs to be ensured that the
   // returned buffer isn't released prior to unregistering this texture.
-  PixelBufferTexture(CopyBufferCallback copy_buffer_callback)
+  explicit PixelBufferTexture(CopyBufferCallback copy_buffer_callback)
       : copy_buffer_callback_(copy_buffer_callback) {}
 
   // Returns the callback-provided FlutterDesktopPixelBuffer that contains the
@@ -42,10 +42,40 @@ class PixelBufferTexture {
   const CopyBufferCallback copy_buffer_callback_;
 };
 
+// A GPU surface-based texture.
+class GpuSurfaceTexture {
+ public:
+  // A callback used for retrieving surface descriptors.
+  typedef std::function<
+      const FlutterDesktopGpuSurfaceDescriptor*(size_t width, size_t height)>
+      ObtainDescriptorCallback;
+
+  GpuSurfaceTexture(FlutterDesktopGpuSurfaceType surface_type,
+                    ObtainDescriptorCallback obtain_descriptor_callback)
+      : surface_type_(surface_type),
+        obtain_descriptor_callback_(obtain_descriptor_callback) {}
+
+  // Returns the callback-provided FlutterDesktopGpuSurfaceDescriptor that
+  // contains the surface handle. The intended surface size is specified by
+  // |width| and |height|.
+  const FlutterDesktopGpuSurfaceDescriptor* ObtainDescriptor(
+      size_t width,
+      size_t height) const {
+    return obtain_descriptor_callback_(width, height);
+  }
+
+  // Gets the surface type.
+  FlutterDesktopGpuSurfaceType surface_type() const { return surface_type_; }
+
+ private:
+  const FlutterDesktopGpuSurfaceType surface_type_;
+  const ObtainDescriptorCallback obtain_descriptor_callback_;
+};
+
 // The available texture variants.
 // Only PixelBufferTexture is currently implemented.
 // Other variants are expected to be added in the future.
-typedef std::variant<PixelBufferTexture> TextureVariant;
+typedef std::variant<PixelBufferTexture, GpuSurfaceTexture> TextureVariant;
 
 // An object keeping track of external textures.
 //
@@ -72,4 +102,4 @@ class TextureRegistrar {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_TEXTURE_REGISTRAR_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CLIENT_WRAPPER_INCLUDE_FLUTTER_TEXTURE_REGISTRAR_H_

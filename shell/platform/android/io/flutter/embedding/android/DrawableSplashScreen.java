@@ -17,7 +17,13 @@ import androidx.annotation.Nullable;
 /**
  * {@link SplashScreen} that displays a given {@link Drawable}, which then fades its alpha to zero
  * when instructed to {@link #transitionToFlutter(Runnable)}.
+ *
+ * <p>Please use the new Splash screen API available on Android S. On lower versions of Android,
+ * it's no longer necessary to display a splash screen to wait for the Flutter first frame.
+ *
+ * @deprecated
  */
+@Deprecated
 public final class DrawableSplashScreen implements SplashScreen {
   private final Drawable drawable;
   private final ImageView.ScaleType scaleType;
@@ -27,6 +33,8 @@ public final class DrawableSplashScreen implements SplashScreen {
   /**
    * Constructs a {@code DrawableSplashScreen} that displays the given {@code drawable} and
    * crossfades to Flutter content in 500 milliseconds.
+   *
+   * @param drawable A drawable to display on the Splash screen view.
    */
   public DrawableSplashScreen(@NonNull Drawable drawable) {
     this(drawable, ImageView.ScaleType.FIT_XY, 500);
@@ -36,11 +44,10 @@ public final class DrawableSplashScreen implements SplashScreen {
    * Constructs a {@code DrawableSplashScreen} that displays the given {@code drawable} and
    * crossfades to Flutter content in the given {@code crossfadeDurationInMillis}.
    *
-   * <p>
-   *
    * @param drawable The {@code Drawable} to be displayed as a splash screen.
-   * @param scaleType The {@link ImageView.ScaleType} to be applied to the {@code Drawable} when the
-   *     {@code Drawable} is displayed full-screen.
+   * @param scaleType The {@link android.widget.ImageView.ScaleType} to be applied to the {@code
+   *     Drawable} when the {@code Drawable} is displayed full-screen.
+   * @param crossfadeDurationInMillis Duration of the crossfade in milliseconds.
    */
   public DrawableSplashScreen(
       @NonNull Drawable drawable,

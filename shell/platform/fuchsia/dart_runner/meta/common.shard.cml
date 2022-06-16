@@ -1,0 +1,44 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+{
+    capabilities: [
+        // Required for inspect.
+        // Copied from inspect/client.shard.cml because out-of-tree doesn't
+        // have support for CML includes from the SDK.
+        {
+            directory: "diagnostics",
+            rights: [ "connect" ],
+            path: "/diagnostics",
+        },
+    ],
+    use: [
+        {
+            directory: "config-data",
+            rights: [ "r*" ],
+            path: "/config/data",
+        },
+        {
+            protocol: [
+                "fuchsia.device.NameProvider",  // For fdio uname()
+                "fuchsia.feedback.CrashReporter",
+                "fuchsia.intl.PropertyProvider",  // For dartVM timezone support
+                "fuchsia.logger.LogSink",  // For syslog
+                "fuchsia.net.name.Lookup",  // For fdio sockets
+                "fuchsia.posix.socket.Provider",  // For fdio sockets
+                "fuchsia.tracing.provider.Registry",  // For trace-provider
+            ],
+            from: "parent",
+        },
+    ],
+    expose: [
+        // Required for inspect.
+        // Copied from inspect/client.shard.cml because out-of-tree doesn't
+        // have support for CML includes from the SDK.
+        {
+            directory: "diagnostics",
+            from: "self",
+            to: "framework",
+        },
+    ],
+}

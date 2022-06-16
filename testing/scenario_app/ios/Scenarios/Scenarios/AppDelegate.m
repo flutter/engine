@@ -46,16 +46,21 @@
     @"--platform-view-clippath" : @"platform_view_clippath",
     @"--platform-view-transform" : @"platform_view_transform",
     @"--platform-view-opacity" : @"platform_view_opacity",
+    @"--platform-view-with-other-backdrop-filter" : @"platform_view_with_other_backdrop_filter",
+    @"--two-platform-views-with-other-backdrop-filter" :
+        @"two_platform_views_with_other_backdrop_filter",
     @"--platform-view-rotate" : @"platform_view_rotate",
+    @"--non-full-screen-flutter-view-platform-view" : @"non_full_screen_flutter_view_platform_view",
     @"--gesture-reject-after-touches-ended" : @"platform_view_gesture_reject_after_touches_ended",
     @"--gesture-reject-eager" : @"platform_view_gesture_reject_eager",
     @"--gesture-accept" : @"platform_view_gesture_accept",
     @"--tap-status-bar" : @"tap_status_bar",
-    @"--text-semantics-focus" : @"text_semantics_focus",
     @"--animated-color-square" : @"animated_color_square",
     @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture",
     @"--bogus-font-text" : @"bogus_font_text",
     @"--spawn-engine-works" : @"spawn_engine_works",
+    @"--pointer-events" : @"pointer_events",
+    @"--platform-view-scrolling-under-widget" : @"platform_view_scrolling_under_widget"
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -86,7 +91,7 @@
     FlutterEngine* spawner = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest"
                                                          project:nil];
     [spawner run];
-    return [spawner spawnWithEntrypoint:nil libraryURI:nil];
+    return [spawner spawnWithEntrypoint:nil libraryURI:nil initialRoute:nil entrypointArgs:nil];
   } else {
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest"
                                                         project:nil];
@@ -108,6 +113,7 @@
   FlutterEngine* engine = [self engineForTest:scenarioIdentifier];
   FlutterViewController* flutterViewController =
       [self flutterViewControllerForTest:scenarioIdentifier withEngine:engine];
+  flutterViewController.view.accessibilityIdentifier = @"flutter_view";
 
   [engine.binaryMessenger
       setMessageHandlerOnChannel:@"waiting_for_status"
@@ -141,7 +147,16 @@
                                 withId:@"scenarios/textPlatformView_blockPolicyUntilTouchesEnded"
       gestureRecognizersBlockingPolicy:
           FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded];
-  self.window.rootViewController = flutterViewController;
+
+  UIViewController* rootViewController = flutterViewController;
+  // Make Flutter View's origin x/y not 0.
+  if ([scenarioIdentifier isEqualToString:@"non_full_screen_flutter_view_platform_view"]) {
+    rootViewController = [UIViewController new];
+    [rootViewController.view addSubview:flutterViewController.view];
+    flutterViewController.view.frame = CGRectMake(150, 150, 500, 500);
+  }
+
+  self.window.rootViewController = rootViewController;
 
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--assert-ca-layer-type"]) {
     if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--enable-software-rendering"]) {

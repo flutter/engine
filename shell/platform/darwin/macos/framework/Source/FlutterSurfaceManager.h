@@ -49,6 +49,12 @@
             bufferIndex:(size_t)index
                    size:(CGSize)size;
 
+/**
+ * Tells the delegate that IOSurface with given index has been released. Delegate should free
+ * all resources associated with the surface
+ */
+- (void)onSurfaceReleased:(size_t)index;
+
 @end
 
 /**
@@ -67,7 +73,7 @@
 @property(nullable, nonatomic, weak) id<FlutterIOSurfaceManagerDelegate> delegate;
 
 /**
- * Initializes and returns an IOSurface manager that renders to a child layer (refered to as the
+ * Initializes and returns an IOSurface manager that renders to a child layer (referred to as the
  * content layer) of the containing layer and applies the transform to the contents of the content
  * layer.
  */
@@ -100,6 +106,6 @@
  */
 - (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
                            commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                             metalLayer:(nonnull CAMetalLayer*)layer;
+                                  layer:(nonnull CALayer*)containingLayer;
 
 @end

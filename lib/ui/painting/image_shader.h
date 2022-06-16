@@ -31,12 +31,23 @@ class ImageShader : public Shader {
   void initWithImage(CanvasImage* image,
                      SkTileMode tmx,
                      SkTileMode tmy,
+                     int filter_quality_index,
                      const tonic::Float64List& matrix4);
+
+  std::shared_ptr<DlColorSource> shader(SkSamplingOptions&) override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
+  int width();
+  int height();
+
  private:
   ImageShader();
+
+  flutter::SkiaGPUObject<SkImage> sk_image_;
+  bool sampling_is_locked_;
+
+  flutter::SkiaGPUObject<DlImageColorSource> cached_shader_;
 };
 
 }  // namespace flutter

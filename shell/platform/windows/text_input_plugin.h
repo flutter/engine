@@ -13,48 +13,47 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
+#include "flutter/shell/platform/common/text_editing_delta.h"
 #include "flutter/shell/platform/common/text_input_model.h"
-#include "flutter/shell/platform/windows/keyboard_hook_handler.h"
-#include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
 namespace flutter {
 
-class FlutterWindowsView;
-
 // Implements a text input plugin.
 //
 // Specifically handles window events within windows.
-class TextInputPlugin : public KeyboardHookHandler {
+class TextInputPlugin {
  public:
   explicit TextInputPlugin(flutter::BinaryMessenger* messenger,
                            TextInputPluginDelegate* delegate);
 
   virtual ~TextInputPlugin();
 
-  // |KeyboardHookHandler|
-  bool KeyboardHook(FlutterWindowsView* view,
-                    int key,
-                    int scancode,
-                    int action,
-                    char32_t character,
-                    bool extended) override;
+  virtual void KeyboardHook(int key,
+                            int scancode,
+                            int action,
+                            char32_t character,
+                            bool extended,
+                            bool was_down);
 
-  // |KeyboardHookHandler|
-  void TextHook(FlutterWindowsView* view, const std::u16string& text) override;
+  virtual void TextHook(const std::u16string& text);
 
-  // |KeyboardHookHandler|
-  void ComposeBeginHook() override;
+  virtual void ComposeBeginHook();
 
-  // |KeyboardHookHandler|
-  void ComposeEndHook() override;
+  virtual void ComposeCommitHook();
 
-  // |KeyboardHookHandler|
-  void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
+  virtual void ComposeEndHook();
+
+  virtual void ComposeChangeHook(const std::u16string& text, int cursor_pos);
 
  private:
   // Sends the current state of the given model to the Flutter engine.
   void SendStateUpdate(const TextInputModel& model);
+
+  // Sends the current state of the given model to the Flutter engine.
+  void SendStateUpdateWithDelta(const TextInputModel& model,
+                                const TextEditingDelta*);
 
   // Sends an action triggered by the Enter key to the Flutter engine.
   void EnterPressed(TextInputModel* model);
@@ -79,6 +78,12 @@ class TextInputPlugin : public KeyboardHookHandler {
 
   // The active model. nullptr if not set.
   std::unique_ptr<TextInputModel> active_model_;
+
+  // Whether to enable that the engine sends text input updates to the framework
+  // as TextEditingDeltas or as one TextEditingValue.
+  // For more information on the delta model, see:
+  // https://master-api.flutter.dev/flutter/services/TextInputConfiguration/enableDeltaModel.html
+  bool enable_delta_model;
 
   // Keyboard type of the client. See available options:
   // https://api.flutter.dev/flutter/services/TextInputType-class.html

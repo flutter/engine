@@ -6,6 +6,10 @@
 
 #include <GLES/glext.h>
 
+#include "third_party/skia/include/core/SkAlphaType.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -13,7 +17,7 @@ namespace flutter {
 
 AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
-    const fml::jni::JavaObjectWeakGlobalRef& surface_texture,
+    const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
     : Texture(id),
       jni_facade_(jni_facade),
@@ -38,7 +42,8 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
                                      const SkRect& bounds,
                                      bool freeze,
                                      GrDirectContext* context,
-                                     const SkSamplingOptions& sampling) {
+                                     const SkSamplingOptions& sampling,
+                                     const SkPaint* paint) {
   if (state_ == AttachmentState::detached) {
     return;
   }
@@ -69,12 +74,13 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
       transformAroundCenter.postTranslate(0.5, 0.5);
       canvas.concat(transformAroundCenter);
     }
-    canvas.drawImage(image, 0, 0, sampling, nullptr);
+    canvas.drawImage(image, 0, 0, sampling, paint);
   }
 }
 
 void AndroidExternalTextureGL::UpdateTransform() {
-  jni_facade_->SurfaceTextureGetTransformMatrix(surface_texture_, transform);
+  jni_facade_->SurfaceTextureGetTransformMatrix(
+      fml::jni::ScopedJavaLocalRef<jobject>(surface_texture_), transform);
 }
 
 void AndroidExternalTextureGL::OnGrContextDestroyed() {
@@ -86,16 +92,19 @@ void AndroidExternalTextureGL::OnGrContextDestroyed() {
 }
 
 void AndroidExternalTextureGL::Attach(jint textureName) {
-  jni_facade_->SurfaceTextureAttachToGLContext(surface_texture_, textureName);
+  jni_facade_->SurfaceTextureAttachToGLContext(
+      fml::jni::ScopedJavaLocalRef<jobject>(surface_texture_), textureName);
 }
 
 void AndroidExternalTextureGL::Update() {
-  jni_facade_->SurfaceTextureUpdateTexImage(surface_texture_);
+  jni_facade_->SurfaceTextureUpdateTexImage(
+      fml::jni::ScopedJavaLocalRef<jobject>(surface_texture_));
   UpdateTransform();
 }
 
 void AndroidExternalTextureGL::Detach() {
-  jni_facade_->SurfaceTextureDetachFromGLContext(surface_texture_);
+  jni_facade_->SurfaceTextureDetachFromGLContext(
+      fml::jni::ScopedJavaLocalRef<jobject>(surface_texture_));
 }
 
 void AndroidExternalTextureGL::OnTextureUnregistered() {}

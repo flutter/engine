@@ -12,6 +12,18 @@
 
 FLUTTER_ASSERT_NOT_ARC
 
+@interface FlutterEngineSpy : FlutterEngine
+@property(nonatomic) BOOL ensureSemanticsEnabledCalled;
+@end
+
+@implementation FlutterEngineSpy
+
+- (void)ensureSemanticsEnabled {
+  _ensureSemanticsEnabledCalled = YES;
+}
+
+@end
+
 @interface FlutterEngineTest_mrc : XCTestCase
 @end
 
@@ -26,7 +38,10 @@ FLUTTER_ASSERT_NOT_ARC
 - (void)testSpawnsShareGpuContext {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
   [engine run];
-  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil libraryURI:nil];
+  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil
+                                          libraryURI:nil
+                                        initialRoute:nil
+                                      entrypointArgs:nil];
   XCTAssertNotNil(spawn);
   XCTAssertTrue([engine iosPlatformView] != nullptr);
   XCTAssertTrue([spawn iosPlatformView] != nullptr);
@@ -38,7 +53,13 @@ FLUTTER_ASSERT_NOT_ARC
   XCTAssertTrue(engine_context->GetMainContext() != nullptr);
   XCTAssertEqual(engine_context->GetMainContext(), spawn_context->GetMainContext());
   [engine release];
-  [spawn release];
+}
+
+- (void)testEnableSemanticsWhenFlutterViewAccessibilityDidCall {
+  FlutterEngineSpy* engine = [[FlutterEngineSpy alloc] initWithName:@"foobar"];
+  engine.ensureSemanticsEnabledCalled = NO;
+  [engine flutterViewAccessibilityDidCall];
+  XCTAssertTrue(engine.ensureSemanticsEnabledCalled);
 }
 
 @end

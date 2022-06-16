@@ -1,13 +1,9 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// @dart = 2.6
+
 import 'dart:io' as io;
 import 'package:image/image.dart';
-import 'package:meta/meta.dart';
-import 'package:path/path.dart' as path;
-
-import 'package:yaml/yaml.dart';
 
 /// How to compares pixels within the image.
 ///
@@ -26,8 +22,8 @@ enum PixelComparison {
 void main(List<String> args) {
   final io.File fileA = io.File(args[0]);
   final io.File fileB = io.File(args[1]);
-  final Image imageA = decodeNamedImage(fileA.readAsBytesSync(), 'a.png');
-  final Image imageB = decodeNamedImage(fileB.readAsBytesSync(), 'b.png');
+  final Image imageA = decodeNamedImage(fileA.readAsBytesSync(), 'a.png')!;
+  final Image imageB = decodeNamedImage(fileB.readAsBytesSync(), 'b.png')!;
   final ImageDiff diff = ImageDiff(
       golden: imageA, other: imageB, pixelComparison: PixelComparison.fuzzy);
   print('Diff: ${(diff.rate * 100).toStringAsFixed(4)}%');
@@ -51,7 +47,7 @@ class ImageDiff {
   ///  * white: when both pixels are the same
   ///  * red: when a pixel is found in other, but not in golden
   ///  * green: when a pixel is found in golden, but not in other
-  Image diff;
+  late Image diff;
 
   /// The ratio of wrong pixels to all pixels in golden (between 0 and 1)
   /// This gets set to 1 (100% difference) when golden and other aren't the same size.
@@ -60,9 +56,9 @@ class ImageDiff {
   /// Image diff constructor which requires two [Image]s to compare and
   /// [PixelComparison] algorithm.
   ImageDiff({
-    @required this.golden,
-    @required this.other,
-    @required this.pixelComparison,
+    required this.golden,
+    required this.other,
+    required this.pixelComparison,
   }) {
     _computeDiff();
   }
@@ -104,7 +100,7 @@ class ImageDiff {
   }
 
   static int _average(Iterable<int> values) {
-    return values.reduce((a, b) => a + b) ~/ values.length;
+    return values.reduce((int a, int b) => a + b) ~/ values.length;
   }
 
   /// The value of the pixel at [x] and [y] coordinates.
@@ -129,9 +125,9 @@ class ImageDiff {
           _reflectedPixel(image, x + 1, y + 1),
         ];
         return <int>[
-          _average(pixels.map((p) => getRed(p))),
-          _average(pixels.map((p) => getGreen(p))),
-          _average(pixels.map((p) => getBlue(p))),
+          _average(pixels.map((int p) => getRed(p))),
+          _average(pixels.map((int p) => getGreen(p))),
+          _average(pixels.map((int p) => getBlue(p))),
         ];
       case PixelComparison.precise:
         final int pixel = image.getPixel(x, y);
@@ -141,7 +137,7 @@ class ImageDiff {
           getBlue(pixel),
         ];
       default:
-        throw 'Unrecognized pixel comparison value: ${pixelComparison}';
+        throw 'Unrecognized pixel comparison value: $pixelComparison';
     }
   }
 
@@ -188,93 +184,5 @@ class ImageDiff {
 
 /// Returns text explaining pixel difference rate.
 String getPrintableDiffFilesInfo(double diffRate, double maxRate) =>
-    '(${((diffRate) * 100).toStringAsFixed(4)}% of pixels were different. '
+    '(${(diffRate * 100).toStringAsFixed(4)}% of pixels were different. '
     'Maximum allowed rate is: ${(maxRate * 100).toStringAsFixed(4)}%).';
-
-/// Downloads the repository that stores the golden files.
-///
-/// Reads the url of the repo and `commit no` to sync to, from
-/// `goldens_lock.yaml`.
-class GoldensRepoFetcher {
-  String _repository;
-  String _revision;
-  final io.Directory _webUiGoldensRepositoryDirectory;
-  final String _lockFilePath;
-
-  /// Constructor that takes directory to download the repository and
-  /// file with goldens repo information.
-  GoldensRepoFetcher(this._webUiGoldensRepositoryDirectory, this._lockFilePath);
-
-  /// Fetches golden files from github.com/flutter/goldens, cloning the
-  /// repository if necessary.
-  ///
-  /// The repository is cloned into web_ui/.dart_tool.
-  Future<void> fetch() async {
-    final io.File lockFile = io.File(path.join(_lockFilePath));
-    final YamlMap lock = loadYaml(lockFile.readAsStringSync()) as YamlMap;
-    _repository = lock['repository'] as String;
-    _revision = lock['revision'] as String;
-
-    final String localRevision = await _getLocalRevision();
-    if (localRevision == _revision) {
-      return;
-    }
-
-    print('Fetching $_repository@$_revision');
-
-    if (!_webUiGoldensRepositoryDirectory.existsSync()) {
-      _webUiGoldensRepositoryDirectory.createSync(recursive: true);
-      await _runGit(
-        <String>['init'],
-        _webUiGoldensRepositoryDirectory.path,
-      );
-
-      await _runGit(
-        <String>['remote', 'add', 'origin', _repository],
-        _webUiGoldensRepositoryDirectory.path,
-      );
-    }
-
-    await _runGit(
-      <String>['fetch', 'origin', 'master'],
-      _webUiGoldensRepositoryDirectory.path,
-    );
-    await _runGit(
-      <String>['checkout', _revision],
-      _webUiGoldensRepositoryDirectory.path,
-    );
-  }
-
-  Future<String> _getLocalRevision() async {
-    final io.File head = io.File(
-        path.join(_webUiGoldensRepositoryDirectory.path, '.git', 'HEAD'));
-
-    if (!head.existsSync()) {
-      return null;
-    }
-
-    return head.readAsStringSync().trim();
-  }
-
-  /// Runs `git` with given arguments.
-  Future<void> _runGit(
-    List<String> arguments,
-    String workingDirectory,
-  ) async {
-    final io.Process process = await io.Process.start(
-      'git',
-      arguments,
-      workingDirectory: workingDirectory,
-      // Running the process in a system shell for Windows. Otherwise
-      // the process is not able to get Dart from path.
-      runInShell: io.Platform.isWindows,
-      mode: io.ProcessStartMode.inheritStdio,
-    );
-    final int exitCode = await process.exitCode;
-    if (exitCode != 0) {
-      throw Exception('Git command failed with arguments $arguments on '
-          'workingDirectory: $workingDirectory resulting with exitCode: '
-          '$exitCode');
-    }
-  }
-}

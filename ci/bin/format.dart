@@ -8,22 +8,20 @@
 
 // TODO(gspencergoog): Support clang formatting on Windows.
 // TODO(gspencergoog): Support Java formatting on Windows.
-// TODO(gspencergoog): Convert to null safety.
 
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:isolate/isolate.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-import 'package:process_runner/process_runner.dart';
 import 'package:process/process.dart';
+import 'package:process_runner/process_runner.dart';
 
 class FormattingException implements Exception {
   FormattingException(this.message, [this.result]);
 
   final String message;
-  final ProcessResult /*?*/ result;
+  final ProcessResult? result;
 
   int get exitCode => result?.exitCode ?? -1;
 
@@ -31,8 +29,8 @@ class FormattingException implements Exception {
   String toString() {
     final StringBuffer output = StringBuffer(runtimeType.toString());
     output.write(': $message');
-    final String stderr = result?.stderr as String ?? '';
-    if (stderr.isNotEmpty) {
+    final String? stderr = result?.stderr as String?;
+    if (stderr?.isNotEmpty == true) {
       output.write(':\n$stderr');
     }
     return output.toString();
@@ -47,39 +45,42 @@ enum MessageType {
 
 enum FormatCheck {
   clang,
-  java,
-  whitespace,
   gn,
+  java,
+  python,
+  whitespace,
 }
 
 FormatCheck nameToFormatCheck(String name) {
   switch (name) {
     case 'clang':
       return FormatCheck.clang;
-    case 'java':
-      return FormatCheck.java;
-    case 'whitespace':
-      return FormatCheck.whitespace;
     case 'gn':
       return FormatCheck.gn;
+    case 'java':
+      return FormatCheck.java;
+    case 'python':
+      return FormatCheck.python;
+    case 'whitespace':
+      return FormatCheck.whitespace;
+    default:
+      throw FormattingException('Unknown FormatCheck type $name');
   }
-  assert(false, 'Unknown FormatCheck type $name');
-  return null;
 }
 
 String formatCheckToName(FormatCheck check) {
   switch (check) {
     case FormatCheck.clang:
       return 'C++/ObjC';
-    case FormatCheck.java:
-      return 'Java';
-    case FormatCheck.whitespace:
-      return 'Trailing whitespace';
     case FormatCheck.gn:
       return 'GN';
+    case FormatCheck.java:
+      return 'Java';
+    case FormatCheck.python:
+      return 'Python';
+    case FormatCheck.whitespace:
+      return 'Trailing whitespace';
   }
-  assert(false, 'Unhandled FormatCheck type $check');
-  return null;
 }
 
 List<String> formatCheckNames() {
@@ -106,33 +107,33 @@ Future<String> _runGit(
   return result.stdout;
 }
 
-typedef MessageCallback = Function(String message, {MessageType type});
+typedef MessageCallback = Function(String? message, {MessageType type});
 
 /// Base class for format checkers.
 ///
 /// Provides services that all format checkers need.
 abstract class FormatChecker {
   FormatChecker({
-    ProcessManager /*?*/ processManager,
-    @required this.baseGitRef,
-    @required this.repoDir,
-    @required this.srcDir,
+    ProcessManager processManager = const LocalProcessManager(),
+    required this.baseGitRef,
+    required this.repoDir,
+    required this.srcDir,
     this.allFiles = false,
     this.messageCallback,
   }) : _processRunner = ProcessRunner(
           defaultWorkingDirectory: repoDir,
-          processManager: processManager ?? const LocalProcessManager(),
+          processManager: processManager,
         );
 
   /// Factory method that creates subclass format checkers based on the type of check.
   factory FormatChecker.ofType(
     FormatCheck check, {
-    ProcessManager /*?*/ processManager,
-    @required String baseGitRef,
-    @required Directory repoDir,
-    @required Directory srcDir,
+    ProcessManager processManager = const LocalProcessManager(),
+    required String baseGitRef,
+    required Directory repoDir,
+    required Directory srcDir,
     bool allFiles = false,
-    MessageCallback messageCallback,
+    MessageCallback? messageCallback,
   }) {
     switch (check) {
       case FormatCheck.clang:
@@ -144,27 +145,6 @@ abstract class FormatChecker {
           allFiles: allFiles,
           messageCallback: messageCallback,
         );
-        break;
-      case FormatCheck.java:
-        return JavaFormatChecker(
-          processManager: processManager,
-          baseGitRef: baseGitRef,
-          repoDir: repoDir,
-          srcDir: srcDir,
-          allFiles: allFiles,
-          messageCallback: messageCallback,
-        );
-        break;
-      case FormatCheck.whitespace:
-        return WhitespaceFormatChecker(
-          processManager: processManager,
-          baseGitRef: baseGitRef,
-          repoDir: repoDir,
-          srcDir: srcDir,
-          allFiles: allFiles,
-          messageCallback: messageCallback,
-        );
-        break;
       case FormatCheck.gn:
         return GnFormatChecker(
           processManager: processManager,
@@ -174,17 +154,41 @@ abstract class FormatChecker {
           allFiles: allFiles,
           messageCallback: messageCallback,
         );
-        break;
+      case FormatCheck.java:
+        return JavaFormatChecker(
+          processManager: processManager,
+          baseGitRef: baseGitRef,
+          repoDir: repoDir,
+          srcDir: srcDir,
+          allFiles: allFiles,
+          messageCallback: messageCallback,
+        );
+      case FormatCheck.python:
+        return PythonFormatChecker(
+          processManager: processManager,
+          baseGitRef: baseGitRef,
+          repoDir: repoDir,
+          srcDir: srcDir,
+          allFiles: allFiles,
+          messageCallback: messageCallback,
+        );
+      case FormatCheck.whitespace:
+        return WhitespaceFormatChecker(
+          processManager: processManager,
+          baseGitRef: baseGitRef,
+          repoDir: repoDir,
+          srcDir: srcDir,
+          allFiles: allFiles,
+          messageCallback: messageCallback,
+        );
     }
-    assert(false, 'Unhandled FormatCheck type $check');
-    return null;
   }
 
   final ProcessRunner _processRunner;
   final Directory srcDir;
   final Directory repoDir;
   final bool allFiles;
-  MessageCallback /*?*/ messageCallback;
+  MessageCallback? messageCallback;
   final String baseGitRef;
 
   /// Override to provide format checking for a specific type.
@@ -194,7 +198,7 @@ abstract class FormatChecker {
   Future<bool> fixFormatting();
 
   @protected
-  void message(String string) => messageCallback?.call(string, type: MessageType.message);
+  void message(String? string) => messageCallback?.call(string, type: MessageType.message);
 
   @protected
   void error(String string) => messageCallback?.call(string, type: MessageType.error);
@@ -208,8 +212,10 @@ abstract class FormatChecker {
   /// Uses to convert the stdout of a previous command into an input stream for
   /// the next command.
   @protected
-  Stream<List<int>> codeUnitsAsStream(List<int> input) async* {
-    yield input;
+  Stream<List<int>> codeUnitsAsStream(List<int>? input) async* {
+    if (input != null) {
+      yield input;
+    }
   }
 
   @protected
@@ -299,12 +305,12 @@ abstract class FormatChecker {
 /// Checks and formats C++/ObjC files using clang-format.
 class ClangFormatChecker extends FormatChecker {
   ClangFormatChecker({
-    ProcessManager /*?*/ processManager,
-    @required String baseGitRef,
-    @required Directory repoDir,
-    @required Directory srcDir,
+    ProcessManager processManager = const LocalProcessManager(),
+    required String baseGitRef,
+    required Directory repoDir,
+    required Directory srcDir,
     bool allFiles = false,
-    MessageCallback messageCallback,
+    MessageCallback? messageCallback,
   }) : super(
           processManager: processManager,
           baseGitRef: baseGitRef,
@@ -334,7 +340,7 @@ class ClangFormatChecker extends FormatChecker {
     );
   }
 
-  /*late*/ File clangFormat;
+  late final File clangFormat;
 
   @override
   Future<bool> checkFormatting() async {
@@ -350,7 +356,7 @@ class ClangFormatChecker extends FormatChecker {
     if (failures.isEmpty) {
       return true;
     }
-    return await applyPatch(failures);
+    return applyPatch(failures);
   }
 
   Future<String> _getClangFormatVersion() async {
@@ -379,7 +385,7 @@ class ClangFormatChecker extends FormatChecker {
       message('Using ${await _getClangFormatVersion()}');
     }
     final List<WorkerJob> clangJobs = <WorkerJob>[];
-    for (String file in files) {
+    for (final String file in files) {
       if (file.trim().isEmpty) {
         continue;
       }
@@ -392,7 +398,7 @@ class ClangFormatChecker extends FormatChecker {
     final Stream<WorkerJob> completedClangFormats = clangPool.startWorkers(clangJobs);
     final List<WorkerJob> diffJobs = <WorkerJob>[];
     await for (final WorkerJob completedJob in completedClangFormats) {
-      if (completedJob.result != null && completedJob.result.exitCode == 0) {
+      if (completedJob.result.exitCode == 0) {
         diffJobs.add(
           WorkerJob(<String>['diff', '-u', completedJob.command.last, '-'],
               stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw), failOk: true),
@@ -416,9 +422,14 @@ class ClangFormatChecker extends FormatChecker {
       } else {
         error('Found ${failed.length} C++/ObjC file${plural ? 's' : ''}'
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
+        stdout.writeln('To fix, run:');
+        stdout.writeln();
+        stdout.writeln('patch -p0 <<DONE');
         for (final WorkerJob job in failed) {
           stdout.write(job.result.stdout);
         }
+        stdout.writeln('DONE');
+        stdout.writeln();
       }
     } else {
       message('Completed checking ${diffJobs.length} C++/ObjC files with no formatting problems.');
@@ -432,12 +443,12 @@ class ClangFormatChecker extends FormatChecker {
 /// Checks the format of Java files uing the Google Java format checker.
 class JavaFormatChecker extends FormatChecker {
   JavaFormatChecker({
-    ProcessManager /*?*/ processManager,
-    @required String baseGitRef,
-    @required Directory repoDir,
-    @required Directory srcDir,
+    ProcessManager processManager = const LocalProcessManager(),
+    required String baseGitRef,
+    required Directory repoDir,
+    required Directory srcDir,
     bool allFiles = false,
-    MessageCallback messageCallback,
+    MessageCallback? messageCallback,
   }) : super(
           processManager: processManager,
           baseGitRef: baseGitRef,
@@ -459,7 +470,7 @@ class JavaFormatChecker extends FormatChecker {
     );
   }
 
-  /*late*/ File googleJavaFormatJar;
+  late final File googleJavaFormatJar;
 
   Future<String> _getGoogleJavaFormatVersion() async {
     final ProcessRunnerResult result = await _processRunner
@@ -481,7 +492,7 @@ class JavaFormatChecker extends FormatChecker {
     if (failures.isEmpty) {
       return true;
     }
-    return await applyPatch(failures);
+    return applyPatch(failures);
   }
 
   Future<String> _getJavaVersion() async {
@@ -515,7 +526,7 @@ class JavaFormatChecker extends FormatChecker {
     if (verbose) {
       message('Using $javaFormatVersion with Java $javaVersion');
     }
-    for (String file in files) {
+    for (final String file in files) {
       if (file.trim().isEmpty) {
         continue;
       }
@@ -532,7 +543,7 @@ class JavaFormatChecker extends FormatChecker {
     final Stream<WorkerJob> completedClangFormats = formatPool.startWorkers(formatJobs);
     final List<WorkerJob> diffJobs = <WorkerJob>[];
     await for (final WorkerJob completedJob in completedClangFormats) {
-      if (completedJob.result != null && completedJob.result.exitCode == 0) {
+      if (completedJob.result.exitCode == 0) {
         diffJobs.add(
           WorkerJob(
             <String>['diff', '-u', completedJob.command.last, '-'],
@@ -559,9 +570,14 @@ class JavaFormatChecker extends FormatChecker {
       } else {
         error('Found ${failed.length} Java file${plural ? 's' : ''}'
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
+        stdout.writeln('To fix, run:');
+        stdout.writeln();
+        stdout.writeln('patch -p0 <<DONE');
         for (final WorkerJob job in failed) {
           stdout.write(job.result.stdout);
         }
+        stdout.writeln('DONE');
+        stdout.writeln();
       }
     } else {
       message('Completed checking ${diffJobs.length} Java files with no formatting problems.');
@@ -575,12 +591,12 @@ class JavaFormatChecker extends FormatChecker {
 /// Checks the format of any BUILD.gn files using the "gn format" command.
 class GnFormatChecker extends FormatChecker {
   GnFormatChecker({
-    ProcessManager /*?*/ processManager,
-    @required String baseGitRef,
-    @required Directory repoDir,
-    @required Directory srcDir,
+    ProcessManager processManager = const LocalProcessManager(),
+    required String baseGitRef,
+    required Directory repoDir,
+    required Directory srcDir,
     bool allFiles = false,
-    MessageCallback messageCallback,
+    MessageCallback? messageCallback,
   }) : super(
           processManager: processManager,
           baseGitRef: baseGitRef,
@@ -599,7 +615,7 @@ class GnFormatChecker extends FormatChecker {
     );
   }
 
-  /*late*/ File gnBinary;
+  late final File gnBinary;
 
   @override
   Future<bool> checkFormatting() async {
@@ -615,7 +631,7 @@ class GnFormatChecker extends FormatChecker {
     return true;
   }
 
-  Future<int> _runGnCheck({@required bool fixing}) async {
+  Future<int> _runGnCheck({required bool fixing}) async {
     final List<String> filesToCheck = await getFileList(<String>['*.gn', '*.gni']);
 
     final List<String> cmd = <String>[
@@ -663,9 +679,101 @@ class GnFormatChecker extends FormatChecker {
   }
 }
 
+/// Checks the format of any .py files using the "yapf" command.
+class PythonFormatChecker extends FormatChecker {
+  PythonFormatChecker({
+    ProcessManager processManager = const LocalProcessManager(),
+    required String baseGitRef,
+    required Directory repoDir,
+    required Directory srcDir,
+    bool allFiles = false,
+    MessageCallback? messageCallback,
+  }) : super(
+          processManager: processManager,
+          baseGitRef: baseGitRef,
+          repoDir: repoDir,
+          srcDir: srcDir,
+          allFiles: allFiles,
+          messageCallback: messageCallback,
+        ) {
+    yapfBin = File(path.join(
+      repoDir.absolute.path,
+      'tools',
+      'yapf.sh',
+    ));
+    _yapfStyle = File(path.join(
+      repoDir.absolute.path,
+      '.style.yapf',
+    ));
+  }
+
+  late final File yapfBin;
+  late final File _yapfStyle;
+
+  @override
+  Future<bool> checkFormatting() async {
+    message('Checking Python formatting...');
+    return (await _runYapfCheck(fixing: false)) == 0;
+  }
+
+  @override
+  Future<bool> fixFormatting() async {
+    message('Fixing Python formatting...');
+    await _runYapfCheck(fixing: true);
+    // The yapf script shouldn't fail when fixing errors.
+    return true;
+  }
+
+  Future<int> _runYapfCheck({required bool fixing}) async {
+    final List<String> filesToCheck = <String>[
+      ...await getFileList(<String>['*.py']),
+      // Always include flutter/tools/gn.
+      '${repoDir.path}/tools/gn',
+    ];
+
+    final List<String> cmd = <String>[
+      yapfBin.path,
+      '--style', _yapfStyle.path,
+      if (!fixing) '--diff',
+      if (fixing) '--in-place',
+    ];
+    final List<WorkerJob> jobs = <WorkerJob>[];
+    for (final String file in filesToCheck) {
+      jobs.add(WorkerJob(<String>[...cmd, file]));
+    }
+    final ProcessPool yapfPool = ProcessPool(
+      processRunner: _processRunner,
+      printReport: namedReport('python format'),
+    );
+    final List<WorkerJob> completedJobs = await yapfPool.runToCompletion(jobs);
+    reportDone();
+    final List<String> incorrect = <String>[];
+    for (final WorkerJob job in completedJobs) {
+      if (job.result.exitCode == 1) {
+        incorrect.add('  ${job.command.last}\n${job.result.output}');
+      }
+    }
+    if (incorrect.isNotEmpty) {
+      final bool plural = incorrect.length > 1;
+      if (fixing) {
+        message('Fixed ${incorrect.length} python file${plural ? 's' : ''}'
+            ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
+      } else {
+        error('Found ${incorrect.length} python file${plural ? 's' : ''}'
+            ' which ${plural ? 'were' : 'was'} formatted incorrectly:');
+        incorrect.forEach(stderr.writeln);
+      }
+    } else {
+      message('All python files formatted correctly.');
+    }
+    return incorrect.length;
+  }
+}
+
 @immutable
 class _GrepResult {
-  const _GrepResult(this.file, this.hits, this.lineNumbers);
+  const _GrepResult(this.file, [this.hits = const <String>[], this.lineNumbers = const <int>[]]);
+  bool get isEmpty => hits.isEmpty && lineNumbers.isEmpty;
   final File file;
   final List<String> hits;
   final List<int> lineNumbers;
@@ -674,12 +782,12 @@ class _GrepResult {
 /// Checks for trailing whitspace in Dart files.
 class WhitespaceFormatChecker extends FormatChecker {
   WhitespaceFormatChecker({
-    ProcessManager /*?*/ processManager,
-    @required String baseGitRef,
-    @required Directory repoDir,
-    @required Directory srcDir,
+    ProcessManager processManager = const LocalProcessManager(),
+    required String baseGitRef,
+    required Directory repoDir,
+    required Directory srcDir,
     bool allFiles = false,
-    MessageCallback messageCallback,
+    MessageCallback? messageCallback,
   }) : super(
           processManager: processManager,
           baseGitRef: baseGitRef,
@@ -701,7 +809,7 @@ class WhitespaceFormatChecker extends FormatChecker {
   Future<bool> fixFormatting() async {
     final List<File> failures = await _getWhitespaceFailures();
     if (failures.isNotEmpty) {
-      for (File file in failures) {
+      for (final File file in failures) {
         stderr.writeln('Fixing $file');
         String contents = file.readAsStringSync();
         contents = contents.replaceAll(trailingWsRegEx, '');
@@ -711,7 +819,7 @@ class WhitespaceFormatChecker extends FormatChecker {
     return true;
   }
 
-  static Future<_GrepResult> _hasTrailingWhitespace(File file) async {
+  static _GrepResult _hasTrailingWhitespace(File file) {
     final List<String> hits = <String>[];
     final List<int> lineNumbers = <int>[];
     int lineNumber = 0;
@@ -723,17 +831,13 @@ class WhitespaceFormatChecker extends FormatChecker {
       lineNumber++;
     }
     if (hits.isEmpty) {
-      return null;
+      return _GrepResult(file);
     }
     return _GrepResult(file, hits, lineNumbers);
   }
 
-  Stream<_GrepResult> _whereHasTrailingWhitespace(Iterable<File> files) async* {
-    final LoadBalancer pool =
-        await LoadBalancer.create(Platform.numberOfProcessors, IsolateRunner.spawn);
-    for (final File file in files) {
-      yield await pool.run<_GrepResult, File>(_hasTrailingWhitespace, file);
-    }
+  Iterable<_GrepResult> _whereHasTrailingWhitespace(Iterable<File> files) {
+    return files.map(_hasTrailingWhitespace);
   }
 
   Future<List<File>> _getWhitespaceFailures() async {
@@ -769,14 +873,14 @@ class WhitespaceFormatChecker extends FormatChecker {
     int inProgress = Platform.numberOfProcessors;
     int pending = total;
     int failed = 0;
-    await for (final _GrepResult result in _whereHasTrailingWhitespace(
+    for (final _GrepResult result in _whereHasTrailingWhitespace(
       files.map<File>(
         (String file) => File(
           path.join(repoDir.absolute.path, file),
         ),
       ),
     )) {
-      if (result == null) {
+      if (result.isEmpty) {
         completed++;
       } else {
         failed++;
@@ -804,7 +908,7 @@ class WhitespaceFormatChecker extends FormatChecker {
 Future<String> _getDiffBaseRevision(ProcessManager processManager, Directory repoDir) async {
   final ProcessRunner processRunner = ProcessRunner(
     defaultWorkingDirectory: repoDir,
-    processManager: processManager ?? const LocalProcessManager(),
+    processManager: processManager,
   );
   String upstream = 'upstream';
   final String upstreamUrl = await _runGit(
@@ -815,7 +919,7 @@ Future<String> _getDiffBaseRevision(ProcessManager processManager, Directory rep
   if (upstreamUrl.isEmpty) {
     upstream = 'origin';
   }
-  await _runGit(<String>['fetch', upstream, 'master'], processRunner);
+  await _runGit(<String>['fetch', upstream, 'main'], processRunner);
   String result = '';
   try {
     // This is the preferred command to use, but developer checkouts often do
@@ -861,7 +965,7 @@ Future<int> main(List<String> arguments) async {
           'On Windows, only whitespace and gn checks are currently supported.');
   parser.addFlag('verbose', help: 'Print verbose output.', defaultsTo: verbose);
 
-  ArgResults options;
+  late final ArgResults options;
   try {
     options = parser.parse(arguments);
   } on FormatException catch (e) {
@@ -883,7 +987,8 @@ Future<int> main(List<String> arguments) async {
     stderr.writeln('Src: $srcDir');
   }
 
-  void message(String message, {MessageType type = MessageType.message}) {
+  void message(String? message, {MessageType type = MessageType.message}) {
+    message ??= '';
     switch (type) {
       case MessageType.message:
         stderr.writeln(message);

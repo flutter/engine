@@ -118,9 +118,10 @@ public class MouseCursorPlugin {
      *
      * <p>If typeis not recognized, returns the default pointer icon.
      *
-     * <p>This is typically implemented by calling {@link android.view.PointerIcon.getSystemIcon}
+     * <p>This is typically implemented by calling {@link android.view.PointerIcon#getSystemIcon}
      * with the context associated with this view.
      */
+    @NonNull
     public PointerIcon getSystemPointerIcon(int type);
 
     /**

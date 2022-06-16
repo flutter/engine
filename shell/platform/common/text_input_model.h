@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
-#define FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_TEXT_INPUT_MODEL_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_TEXT_INPUT_MODEL_H_
 
 #include <memory>
 #include <string>
@@ -20,22 +20,33 @@ class TextInputModel {
   TextInputModel();
   virtual ~TextInputModel();
 
-  // Sets the text.
+  // Sets the text, as well as the selection and the composing region.
   //
-  // Resets the selection base and extent.
-  void SetText(const std::string& text);
+  // This method is typically used to update the TextInputModel's editing state
+  // when the Flutter framework sends its latest text editing state.
+  bool SetText(const std::string& text,
+               const TextRange& selection = TextRange(0),
+               const TextRange& composing_range = TextRange(0));
 
   // Attempts to set the text selection.
   //
   // Returns false if the selection is not within the bounds of the text.
   // While in composing mode, the selection is restricted to the composing
   // range; otherwise, it is restricted to the length of the text.
+  //
+  // To update both the text and the selection/composing range within the text
+  // (for instance, when the framework sends its latest text editing state),
+  // call |SetText| instead.
   bool SetSelection(const TextRange& range);
 
   // Attempts to set the composing range.
   //
   // Returns false if the range or offset are out of range for the text, or if
   // the offset is outside the composing range.
+  //
+  // To update both the text and the selection/composing range within the text
+  // (for instance, when the framework sends its latest text editing state),
+  // call |SetText| instead.
   bool SetComposingRange(const TextRange& range, size_t cursor_offset);
 
   // Begins IME composing mode.
@@ -155,12 +166,31 @@ class TextInputModel {
   // Returns true if the cursor could be moved.
   bool MoveCursorToEnd();
 
+  // Attempts to select text from the cursor position to the beginning.
+  //
+  // If composing is active, the selection is applied to the beginning of the
+  // composing range; otherwise, it is applied to the beginning of the text.
+  //
+  // Returns true if the selection could be applied.
+  bool SelectToBeginning();
+
+  // Attempts to select text from the cursor position to the end.
+  //
+  // If composing is active, the selection is applied to the end of the
+  // composing range; otherwise, it is moved to the end of the text.
+  //
+  // Returns true if the selection could be applied.
+  bool SelectToEnd();
+
   // Gets the current text as UTF-8.
   std::string GetText() const;
 
   // Gets the cursor position as a byte offset in UTF-8 string returned from
   // GetText().
   int GetCursorOffset() const;
+
+  // Returns a range covering the entire text.
+  TextRange text_range() const { return TextRange(0, text_.length()); }
 
   // The current selection.
   TextRange selection() const { return selection_; }
@@ -188,9 +218,6 @@ class TextInputModel {
     return composing_ ? composing_range_ : text_range();
   }
 
-  // Returns a range covering the entire text.
-  TextRange text_range() const { return TextRange(0, text_.length()); }
-
   std::u16string text_;
   TextRange selection_ = TextRange(0);
   TextRange composing_range_ = TextRange(0);
@@ -199,4 +226,4 @@ class TextInputModel {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_TEXT_INPUT_MODEL_H_

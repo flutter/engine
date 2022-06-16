@@ -1,0 +1,78 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// To use, run:
+//  $  gradle updateDependencies
+//
+// This script downloads the embedding dependencies into a lib/ directory,
+// extract jar files from AARs, so they can be used in gn.
+def destinationDir = "lib"
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:3.5.0"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: "com.android.application"
+
+android {
+  compileSdkVersion 32
+}
+
+configurations {
+  embedding
+}
+
+// Configure the embedding dependencies.
+apply from: new File(rootDir, '../tools/androidx/configure.gradle').absolutePath;
+configureDependencies(new File(rootDir, '../..')) { dependency ->
+  dependencies {
+     embedding "$dependency"
+  }
+}
+
+task updateDependencies() {
+  delete destinationDir
+  // Copy the dependencies from the compileOnly configuration into
+  // the destination directory.
+  copy {
+    from configurations.embedding
+    into destinationDir
+  }
+  doLast {
+    // Extract classes.jar from aar and rename it as the dependency name .jar
+    // since javac doesn't support AARs.
+    fileTree(destinationDir)
+      .filter { it.name.endsWith(".aar") }
+      .collect { aarDependency ->
+        def dependencyName = "${aarDependency.name.take(aarDependency.name.lastIndexOf('.'))}";
+        copy {
+          into destinationDir
+          from(zipTree(aarDependency)) {
+            include "classes.jar"
+          }
+          rename "classes.jar", "${dependencyName}.jar"
+        }
+        delete aarDependency
+      }
+  }
+  doLast {
+    fileTree(destinationDir)
+      .collect { dependency ->
+        println "\"//third_party/robolectric/lib/${dependency.name}\","
+      }
+  }
+}

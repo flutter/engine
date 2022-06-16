@@ -12,7 +12,7 @@
 
 static const char* kCallbackCacheSubDir = "Library/Caches/";
 
-static const SEL selectorsHandledByPlugins[] = {
+static const SEL kSelectorsHandledByPlugins[] = {
     @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
     @selector(application:performFetchWithCompletionHandler:)};
 
@@ -71,12 +71,12 @@ static const SEL selectorsHandledByPlugins[] = {
   [super dealloc];
 }
 
-static BOOL isPowerOfTwo(NSUInteger x) {
+static BOOL IsPowerOfTwo(NSUInteger x) {
   return x != 0 && (x & (x - 1)) == 0;
 }
 
 - (BOOL)isSelectorAddedDynamically:(SEL)selector {
-  for (const SEL& aSelector : selectorsHandledByPlugins) {
+  for (const SEL& aSelector : kSelectorsHandledByPlugins) {
     if (selector == aSelector) {
       return YES;
     }
@@ -98,7 +98,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 
 - (void)addDelegate:(NSObject<FlutterApplicationLifeCycleDelegate>*)delegate {
   [_delegates addPointer:(__bridge void*)delegate];
-  if (isPowerOfTwo([_delegates count])) {
+  if (IsPowerOfTwo([_delegates count])) {
     [_delegates compact];
   }
 }
@@ -244,6 +244,18 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     if ([delegate respondsToSelector:_cmd]) {
       [delegate application:application
           didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+    }
+  }
+}
+
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {
+    if (!delegate) {
+      continue;
+    }
+    if ([delegate respondsToSelector:_cmd]) {
+      [delegate application:application didFailToRegisterForRemoteNotificationsWithError:error];
     }
   }
 }
