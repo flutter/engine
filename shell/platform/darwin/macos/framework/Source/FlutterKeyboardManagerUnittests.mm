@@ -15,12 +15,12 @@
 
 namespace {
 
+using flutter::testing::keycodes::kLogicalBracketLeft;
+using flutter::testing::keycodes::kLogicalDigit1;
 using flutter::testing::keycodes::kLogicalKeyA;
 using flutter::testing::keycodes::kLogicalKeyM;
 using flutter::testing::keycodes::kLogicalKeyQ;
 using flutter::testing::keycodes::kLogicalKeyT;
-using flutter::testing::keycodes::kLogicalDigit1;
-using flutter::testing::keycodes::kLogicalBracketLeft;
 
 using flutter::LayoutClue;
 
