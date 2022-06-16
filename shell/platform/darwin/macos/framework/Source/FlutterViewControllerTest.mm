@@ -71,6 +71,11 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
 }
 
+TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
+  FlutterViewController* viewControllerMock = CreateMockViewController();
+  EXPECT_EQ([viewControllerMock.view acceptsFirstMouse:nil], YES);
+}
+
 TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
