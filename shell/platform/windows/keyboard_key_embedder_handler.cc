@@ -184,7 +184,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     return;
   }
 
-  const bool is_physical_down = action == WM_KEYDOWN || action == WM_SYSKEYDOWN;
+  const bool is_event_down = action == WM_KEYDOWN || action == WM_SYSKEYDOWN;
 
   UpdateLastSeenCritialKey(key, physical_key, sequence_logical_key);
   // Synchronize the toggled states of critical keys (such as whether CapsLocks
@@ -197,14 +197,14 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // updated to the true state, while the critical keys whose toggled state have
   // been changed will be pressed regardless of their true pressed state.
   // Updating the pressed state will be done by SynchronizeCritialPressedStates.
-  SynchronizeCritialToggledStates(key, is_physical_down);
+  SynchronizeCritialToggledStates(key, is_event_down);
   // Synchronize the pressed states of critical keys (such as whether CapsLocks
   // is pressed).
   //
   // After this function, all critical keys except for the target key will have
   // their toggled state and pressed state matched with their true states. The
   // target key's pressed state will be updated immediately after this.
-  SynchronizeCritialPressedStates(key, physical_key, is_physical_down);
+  SynchronizeCritialPressedStates(key, physical_key, is_event_down);
 
   // The resulting event's `type`.
   FlutterKeyEventType type;
@@ -215,7 +215,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   uint64_t eventual_logical_record;
   uint64_t result_logical_key;
 
-  if (is_physical_down) {
+  if (is_event_down) {
     if (had_record) {
       if (was_down) {
         // A normal repeated key.
@@ -340,7 +340,7 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
     int event_virtual_key,
-    bool event_is_down) {
+    bool is_event_down) {
   //    NowState ---------------->  PreEventState --------------> TrueState
   //              Synchronization                      Event
   for (auto& kv : critical_keys_) {
@@ -368,7 +368,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       // Check if the main event's key is the key being checked. If it's the
       // non-repeat down event, toggle the state.
       if (virtual_key == event_virtual_key && !target_is_pressed &&
-          event_is_down) {
+          is_event_down) {
         pre_event_toggled = !pre_event_toggled;
       }
       if (key_info.toggled_on != pre_event_toggled) {
@@ -393,8 +393,8 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
     int event_virtual_key,
-    int this_physical_key,
-    bool is_physical_down) {
+    int event_physical_key,
+    bool is_event_down) {
   // During an incoming event, there might be a synthesized Flutter event for
   // each key of each pressing goal, followed by an eventual main Flutter
   // event.
@@ -421,7 +421,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
       bool pre_event_pressed = true_pressed;
       // Check if the main event is the key being checked to get the correct
       // target state.
-      if (is_physical_down) {
+      if (is_event_down) {
         // For down events, this key is the event key if they have the same
         // virtual key, because virtual key represents "functionality."
         if (virtual_key == event_virtual_key) {
@@ -436,7 +436,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
         // synthesize a down event even if it's not. The later code will handle
         // such cases by skipping abrupt up events. Obviously don't synthesize
         // up events either.
-        if (this_physical_key == key_info.physical_key) {
+        if (event_physical_key == key_info.physical_key) {
           continue;
         }
       }
