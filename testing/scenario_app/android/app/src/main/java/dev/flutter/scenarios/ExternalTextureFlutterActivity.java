@@ -6,6 +6,7 @@ package dev.flutter.scenarios;
 
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Canvas;
+import android.graphics.ImageFormat;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -369,7 +370,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.onFirstFrame = onFirstFrame;
       writer = ImageWriter.newInstance(surface, 3);
-      reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, writer.getFormat(), 2);
+      reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, ImageFormat.PRIVATE, 2);
 
       inner.attach(reader.getSurface(), null);
 
