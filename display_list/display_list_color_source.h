@@ -106,7 +106,7 @@ class DlColorSource
   virtual bool is_opaque() const = 0;
 
   virtual std::shared_ptr<DlColorSource> with_sampling(
-      const DlImageSampling options) const {
+      DlImageSampling options) const {
     return shared();
   }
 
@@ -220,7 +220,7 @@ class DlImageColorSource final : public SkRefCnt,
   }
 
   std::shared_ptr<DlColorSource> with_sampling(
-      const DlImageSampling sampling) const override {
+      DlImageSampling sampling) const override {
     return std::make_shared<DlImageColorSource>(
         sk_image_, horizontal_tile_mode_, vertical_tile_mode_, sampling,
         matrix_ptr());

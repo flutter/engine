@@ -310,7 +310,7 @@ class DlErodeImageFilter final : public DlImageFilter {
 
 class DlMatrixImageFilter final : public DlImageFilter {
  public:
-  DlMatrixImageFilter(const SkMatrix& matrix, const DlImageSampling sampling)
+  DlMatrixImageFilter(const SkMatrix& matrix, DlImageSampling sampling)
       : matrix_(matrix), sampling_(sampling) {}
   explicit DlMatrixImageFilter(const DlMatrixImageFilter* filter)
       : DlMatrixImageFilter(filter->matrix_, filter->sampling_) {}

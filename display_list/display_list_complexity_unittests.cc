@@ -352,7 +352,7 @@ TEST(DisplayListComplexity, DrawImage) {
 
   DisplayListBuilder builder;
   builder.drawImage(DlImage::Make(image), SkPoint::Make(0, 0),
-                    DlImageSampling::kDefault, false);
+                    DlImageSampling::kNearestNeighbor, false);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -396,7 +396,7 @@ TEST(DisplayListComplexity, DrawImageRect) {
 
   DisplayListBuilder builder;
   builder.drawImageRect(DlImage::Make(image), src, dest,
-                        DlImageSampling::kDefault, true);
+                        DlImageSampling::kNearestNeighbor, true);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -422,8 +422,8 @@ TEST(DisplayListComplexity, DrawAtlas) {
 
   DisplayListBuilder builder;
   builder.drawAtlas(DlImage::Make(image), xforms.data(), rects.data(), nullptr,
-                    10, DlBlendMode::kSrc, DlImageSampling::kDefault, nullptr,
-                    true);
+                    10, DlBlendMode::kSrc, DlImageSampling::kNearestNeighbor,
+                    nullptr, true);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();

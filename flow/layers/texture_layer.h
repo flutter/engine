@@ -17,7 +17,7 @@ class TextureLayer : public Layer {
                const SkSize& size,
                int64_t texture_id,
                bool freeze,
-               const DlImageSampling sampling);
+               DlImageSampling sampling);
 
   bool IsReplacing(DiffContext* context, const Layer* layer) const override {
     return layer->as_texture_layer() != nullptr;

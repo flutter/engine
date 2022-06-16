@@ -60,7 +60,7 @@ class DisplayListMetalComplexityCalculator
     void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
     void drawImage(const sk_sp<DlImage> image,
                    const SkPoint point,
-                   const DlImageSampling sampling,
+                   DlImageSampling sampling,
                    bool render_with_attributes) override;
     void drawImageNine(const sk_sp<DlImage> image,
                        const SkIRect& center,

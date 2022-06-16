@@ -2952,7 +2952,7 @@ TEST_F(DisplayListCanvas, DrawAtlasNearest) {
       SK_ColorMAGENTA,
   };
   const sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
-  const DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
+  DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
@@ -2994,7 +2994,7 @@ TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
       SK_ColorMAGENTA,
   };
   const sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
-  const DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
+  DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
@@ -3037,7 +3037,7 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
       SK_ColorMAGENTA,
   };
   const sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
-  const DlImageSampling sampling = DlImageSampling::kLinear;
+  DlImageSampling sampling = DlImageSampling::kLinear;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {

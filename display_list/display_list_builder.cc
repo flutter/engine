@@ -901,7 +901,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const DlColor colors[],
                                    int count,
                                    DlBlendMode mode,
-                                   const DlImageSampling sampling,
+                                   DlImageSampling sampling,
                                    const SkRect* cull_rect,
                                    bool render_with_attributes) {
   int bytes = count * (sizeof(SkRSXform) + sizeof(SkRect));
@@ -939,7 +939,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const DlColor colors[],
                                    int count,
                                    DlBlendMode mode,
-                                   const DlImageSampling sampling,
+                                   DlImageSampling sampling,
                                    const SkRect* cull_rect,
                                    const DlPaint* paint) {
   if (paint != nullptr) {

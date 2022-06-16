@@ -24,24 +24,7 @@ inline SkFilterMode ToSk(const DlFilterMode filter_mode) {
   return static_cast<SkFilterMode>(filter_mode);
 }
 
-enum class DlMipmapMode {
-  kNone,     // ignore mipmap levels, sample from the "base"
-  kNearest,  // sample from the nearest level
-  kLinear,   // interpolate between the two nearest levels
-
-  kLast = kLinear,
-};
-
-inline DlMipmapMode ToDl(const SkMipmapMode mip_map) {
-  return static_cast<DlMipmapMode>(mip_map);
-}
-
-inline SkMipmapMode ToSk(const DlMipmapMode mip_map) {
-  return static_cast<SkMipmapMode>(mip_map);
-}
-
 enum class DlImageSampling {
-  kDefault,
   kNearestNeighbor,
   kLinear,
   kMipmapLinear,
@@ -63,10 +46,10 @@ inline DlImageSampling ToDl(const SkSamplingOptions& so) {
   if (so.filter == SkFilterMode::kNearest && so.mipmap == SkMipmapMode::kNone) {
     return DlImageSampling::kNearestNeighbor;
   }
-  return DlImageSampling::kDefault;
+  return DlImageSampling::kNearestNeighbor;
 }
 
-inline SkSamplingOptions ToSk(const DlImageSampling sampling) {
+inline SkSamplingOptions ToSk(DlImageSampling sampling) {
   switch (sampling) {
     case DlImageSampling::kCubic:
       return SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
@@ -76,8 +59,6 @@ inline SkSamplingOptions ToSk(const DlImageSampling sampling) {
       return SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
     case DlImageSampling::kNearestNeighbor:
       return SkSamplingOptions(SkFilterMode::kNearest);
-    case DlImageSampling::kDefault:
-      return SkSamplingOptions();
   }
 }
 

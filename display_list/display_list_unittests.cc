@@ -64,9 +64,8 @@ constexpr SkPoint TestPoints[] = {
 };
 #define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
 
-static const DlImageSampling kNearestSampling =
-    DlImageSampling::kNearestNeighbor;
-static const DlImageSampling kLinearSampling = DlImageSampling::kLinear;
+static DlImageSampling kNearestSampling = DlImageSampling::kNearestNeighbor;
+static DlImageSampling kLinearSampling = DlImageSampling::kLinear;
 
 static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
   sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
