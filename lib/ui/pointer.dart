@@ -104,12 +104,13 @@ enum PointerDeviceKind {
   ///
   /// Some platforms don't support (or don't fully support) trackpad
   /// gestures, and might convert trackpad gestures into fake pointer events
-  /// that simulate dragging. This includes Web, and iOS when
-  /// `UIApplicationSupportsIndirectInputEvents` isn't present in `Info.plist`
-  /// or returns NO.
+  /// that simulate dragging. These events typically have kind [touch] or
+  /// [mouse] instead of [trackpad]. This includes (but is not limited to) Web,
+  /// and iOS when `UIApplicationSupportsIndirectInputEvents` isn't present in
+  /// `Info.plist` or returns NO.
   ///
-  /// Moving the pointing cursor or clicking typically triggers [touch] or
-  /// [mouse] events, but never triggers [trackpad] events.
+  /// Moving the pointing cursor or clicking with a trackpad typically triggers
+  /// [touch] or [mouse] events, but never triggers [trackpad] events.
   ///
   /// See also:
   ///
