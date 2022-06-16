@@ -96,7 +96,8 @@ public class PlatformViewsControllerTest {
             motionEventId.getId());
 
     MotionEvent resolvedEvent =
-        platformViewsController.toMotionEvent(/*density=*/ 1, frameWorkTouch);
+        platformViewsController.toMotionEvent(
+            /*density=*/ 1, frameWorkTouch, /*usingVirtualDisplay=*/ false);
 
     assertNotEquals(resolvedEvent.getAction(), frameWorkTouch.action);
     assertEquals(resolvedEvent.getAction(), original.getAction());
