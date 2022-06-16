@@ -123,7 +123,7 @@ class HtmlViewEmbedder {
   /// overallocating canvases. This isn't a problem in practice, however, as
   /// unused recording canvases are simply deleted at the end of the frame.
   List<CkCanvas> getOverlayCanvases() {
-    final List<CkCanvas> overlayCanvases = _pictureRecorders
+    final List<CkCanvas> overlayCanvases = _pictureRecordersCreatedDuringPreroll
         .map((CkPictureRecorder r) => r.recordingCanvas!)
         .toList();
     return overlayCanvases;
