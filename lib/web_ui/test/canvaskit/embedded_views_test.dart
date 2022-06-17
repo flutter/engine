@@ -320,8 +320,7 @@ void testMain() {
       //   Render: up to cache size platform views.
       //   Expect: main canvas plus platform view overlays.
       renderTestScene(viewCount: 8);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
@@ -338,23 +337,21 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       // Frame 2:
       //   Render: zero platform views.
       //   Expect: main canvas, no overlays.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
-      expect(sceneMatchesMarkers(<_EmbeddedViewMarker>[overlay]), isTrue);
+      expectSceneMatches(<_EmbeddedViewMarker>[overlay]);
 
       // Frame 3:
       //   Render: less than cache size platform views.
       //   Expect: overlays reused.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 6);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
@@ -368,16 +365,14 @@ void testMain() {
             overlay,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       // Frame 4:
       //   Render: more platform views than max cache size.
       //   Expect: main canvas, backup overlay, maximum overlays.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 16);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
@@ -402,15 +397,14 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       // Frame 5:
       //   Render: zero platform views.
       //   Expect: main canvas, no overlays.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
-      expect(sceneMatchesMarkers(<_EmbeddedViewMarker>[overlay]), isTrue);
+      expectSceneMatches(<_EmbeddedViewMarker>[overlay]);
 
       // Frame 6:
       //   Render: deleted platform views.
@@ -444,7 +438,7 @@ void testMain() {
       //   Expect: success. Just checking the system is not left in a corrupted state.
       await createPlatformView(0, 'test-platform-view');
       renderTestScene(viewCount: 0);
-      expect(sceneMatchesMarkers(<_EmbeddedViewMarker>[overlay]), isTrue);
+      expectSceneMatches(<_EmbeddedViewMarker>[overlay]);
       // TODO(yjbanov): skipped due to https://github.com/flutter/flutter/issues/73867
     }, skip: isSafari);
 
@@ -483,8 +477,7 @@ void testMain() {
       //   Expect: main canvas plus platform view overlays; empty cache.
       renderTestScene(<int>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       expect(SurfaceFactory.instance.numAvailableOverlays, 0);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
@@ -503,8 +496,7 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       // Frame 2:
       //   Render: Views 2-11
@@ -512,8 +504,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(<int>[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
       expect(SurfaceFactory.instance.numAvailableOverlays, 0);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
@@ -532,16 +523,14 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       // Frame 3:
       //   Render: Views 3-12
       //   Expect: main canvas plus platform view overlays; empty cache.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(<int>[3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
@@ -560,8 +549,33 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
+
+      // Frame 4:
+      //   Render: Views 3-12 again (same as last frame)
+      //   Expect: main canvas plus platform view overlays; empty cache.
+      await Future<void>.delayed(Duration.zero);
+      renderTestScene(<int>[3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+          expectSceneMatches(<_EmbeddedViewMarker>[
+            overlay,
+            platformView,
+            overlay,
+            platformView,
+            overlay,
+            platformView,
+            overlay,
+            platformView,
+            overlay,
+            platformView,
+            overlay,
+            platformView,
+            overlay,
+            platformView,
+            platformView,
+            platformView,
+            platformView,
+            overlay,
+          ]);
 
       // TODO(yjbanov): skipped due to https://github.com/flutter/flutter/issues/73867
     }, skip: isSafari);
@@ -580,13 +594,11 @@ void testMain() {
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       expect(
         flutterViewEmbedder.glassPaneElement!
@@ -600,11 +612,9 @@ void testMain() {
       sb.pushOffset(0, 0);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       expect(
         flutterViewEmbedder.glassPaneElement!
@@ -627,13 +637,11 @@ void testMain() {
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       expect(
         flutterViewEmbedder.glassPaneElement!
@@ -647,13 +655,11 @@ void testMain() {
       sb.pushOffset(0, 0);
       sb.addPlatformView(1, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       expect(
           flutterViewEmbedder.glassPaneElement!
@@ -665,11 +671,9 @@ void testMain() {
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       // The actual contents of the platform view are kept in the dom, until
       // it's actually disposed of!
@@ -850,12 +854,9 @@ void testMain() {
       sb.pop();
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-        sceneMatchesMarkers(<_EmbeddedViewMarker>[
+        expectSceneMatches(<_EmbeddedViewMarker>[
           overlay,
-        ]),
-        isTrue,
-      );
+        ]);
     });
 
     test('does not crash when overlays are disabled', () async {
@@ -875,12 +876,10 @@ void testMain() {
       sb.pop();
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
-          ]),
-          isTrue);
+          ]);
       HtmlViewEmbedder.debugDisableOverlays = false;
     });
 
@@ -909,13 +908,11 @@ void testMain() {
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -925,14 +922,12 @@ void testMain() {
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       // Reset configuration
       debugSetConfiguration(FlutterConfiguration(null));
@@ -959,13 +954,11 @@ void testMain() {
       sb.pop();
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -973,12 +966,10 @@ void testMain() {
       sb.pop();
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
-          ]),
-          isTrue);
+          ]);
 
       HtmlViewEmbedder.debugDisableOverlays = false;
     });
@@ -1013,13 +1004,11 @@ void testMain() {
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1027,14 +1016,12 @@ void testMain() {
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1043,16 +1030,14 @@ void testMain() {
       sb.addPlatformView(2, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
             overlay,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1062,8 +1047,7 @@ void testMain() {
       sb.addPlatformView(3, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
@@ -1071,8 +1055,7 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1083,8 +1066,7 @@ void testMain() {
       sb.addPlatformView(4, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
@@ -1093,8 +1075,7 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1106,8 +1087,7 @@ void testMain() {
       sb.addPlatformView(5, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
@@ -1117,8 +1097,7 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1131,8 +1110,7 @@ void testMain() {
       sb.addPlatformView(6, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
@@ -1143,8 +1121,7 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1155,8 +1132,7 @@ void testMain() {
       sb.addPlatformView(6, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
@@ -1164,8 +1140,7 @@ void testMain() {
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1175,16 +1150,14 @@ void testMain() {
       sb.addPlatformView(4, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1194,16 +1167,14 @@ void testMain() {
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-          sceneMatchesMarkers(<_EmbeddedViewMarker>[
+          expectSceneMatches(<_EmbeddedViewMarker>[
             overlay,
             platformView,
             platformView,
             platformView,
             platformView,
             overlay,
-          ]),
-          isTrue);
+          ]);
     });
     // TODO(dit): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
@@ -1219,28 +1190,20 @@ enum _EmbeddedViewMarker {
 _EmbeddedViewMarker get overlay => _EmbeddedViewMarker.overlay;
 _EmbeddedViewMarker get platformView => _EmbeddedViewMarker.platformView;
 
-// TODO(hterkelsen): Make this into a Matcher for better error messages.
-bool sceneMatchesMarkers(List<_EmbeddedViewMarker> markers) {
+void expectSceneMatches(List<_EmbeddedViewMarker> markers) {
   final List<html.Element> sceneElements = flutterViewEmbedder
       .sceneElement!.children
       .where((html.Element element) => element.tagName != 'svg')
       .toList();
-  if (markers.length != sceneElements.length) {
-    return false;
-  }
+  expect(markers, hasLength(sceneElements.length));
   for (int i = 0; i < markers.length; i++) {
     switch (markers[i]) {
       case _EmbeddedViewMarker.overlay:
-        if (sceneElements[i].tagName != 'FLT-CANVAS-CONTAINER') {
-          return false;
-        }
+        expect(sceneElements[i].tagName, 'FLT-CANVAS-CONTAINER');
         break;
       case _EmbeddedViewMarker.platformView:
-        if (sceneElements[i].tagName != 'FLT-PLATFORM-VIEW-SLOT') {
-          return false;
-        }
+        expect(sceneElements[i].tagName, 'FLT-PLATFORM-VIEW-SLOT');
         break;
     }
   }
-  return true;
 }

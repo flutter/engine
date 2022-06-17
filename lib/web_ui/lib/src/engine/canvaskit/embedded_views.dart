@@ -31,6 +31,11 @@ class HtmlViewEmbedder {
   ///
   /// This should never be used outside of tests.
   static set debugDisableOverlays(bool disable) {
+    // Short circuit if the value is the same as what we already have.
+    if (disable == _debugOverlaysDisabled) {
+      return;
+    }
+    _debugOverlaysDisabled = disable;
     final SurfaceFactory? instance = SurfaceFactory.debugUninitializedInstance;
     if (instance != null) {
       instance.releaseSurfaces();
@@ -50,6 +55,7 @@ class HtmlViewEmbedder {
           SurfaceFactory(configuration.canvasKitMaximumSurfaces));
     }
   }
+  static bool _debugOverlaysDisabled = false;
 
   /// Whether or not we have seen a visible platform view in this frame yet.
   bool _seenFirstVisibleViewInPreroll = false;
@@ -595,6 +601,7 @@ class HtmlViewEmbedder {
         diffResult.viewsToRemove.isEmpty) {
       // The composition order has not changed, continue using the assigned
       // overlays.
+      return;
     }
     final List<List<int>> overlayGroups = getOverlayGroups(_compositionOrder);
     final List<int> viewsNeedingOverlays =

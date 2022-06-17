@@ -104,9 +104,7 @@ class SurfaceFactory {
   /// If there are available surfaces in the cache, then this will return one of
   /// them. If this factory hasn't yet created [maximumSurfaces] surfaces, then a
   /// new one will be created. If this factory has already created [maximumSurfaces]
-  /// surfaces, then this will return a backup surface which will be returned by
-  /// all subsequent calls to [getSurface] until some surfaces have been
-  /// released with [releaseSurface].
+  /// surfaces, then this will return null.
   Surface? getSurface() {
     final Surface? surface = getOverlay();
     if (surface != null) {
