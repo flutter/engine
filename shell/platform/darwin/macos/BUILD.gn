@@ -347,10 +347,12 @@ zip_bundle("macos_flutter_framework_archive") {
       destination = "FlutterMacOS.framework.zip"
     },
   ]
-  if (full_platform_name == "darwin-x64" && 
-    (flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile" || flutter_runtime_mode == "release")){
+  if (full_platform_name == "darwin-x64" &&
+      (flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile" ||
+       flutter_runtime_mode == "release")) {
     encode_entitlements = true
     entitlements = []
-    without_entitlements = [ "FlutterMacOS.framework.zip/Versions/A/FlutterMacOS" ]  
+    without_entitlements =
+        [ "FlutterMacOS.framework.zip/Versions/A/FlutterMacOS" ]
   }
 }

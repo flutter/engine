@@ -68,15 +68,20 @@ if (build_engine_artifacts) {
         destination = "libtessellator$dll"
       },
     ]
-    if (host_os == "mac" && (full_target_platform_name == "darwin-x64")){
+    if (host_os == "mac" && full_target_platform_name == "darwin-x64") {
       encode_entitlements = true
-      if (flutter_runtime_mode == "debug"){
-        entitlements = [ "flutter_tester", "gen_snapshot", "impellerc", "libtessellator.dylib" ]
-        without_entitlements = []      
-      }
-      else if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
+      if (flutter_runtime_mode == "debug") {
+        entitlements = [
+          "flutter_tester",
+          "gen_snapshot",
+          "impellerc",
+          "libtessellator.dylib",
+        ]
+        without_entitlements = []
+      } else if (flutter_runtime_mode == "profile" ||
+                 flutter_runtime_mode == "release") {
         entitlements = [ "gen_snapshot" ]
-        without_entitlements = []   
+        without_entitlements = []
       }
     }
   }
@@ -134,8 +139,12 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
     ]
     if (is_mac && (target_cpu == "arm64" || target_cpu == "x64")) {
       encode_entitlements = true
-      entitlements = [ "dart-sdk/bin/dart", "dart-sdk/bin/dartaotruntime", "dart-sdk/bin/utils/gen_snapshot" ]
-      without_entitlements = []      
+      entitlements = [
+        "dart-sdk/bin/dart",
+        "dart-sdk/bin/dartaotruntime",
+        "dart-sdk/bin/utils/gen_snapshot",
+      ]
+      without_entitlements = []
     }
   }
 }
@@ -208,11 +217,15 @@ if (is_mac) {
         destination = "gen_snapshot_$target_cpu"
       },
     ]
-    if (full_platform_name == "darwin-x64" && 
-      (flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile" || flutter_runtime_mode == "release")){
+    if (full_platform_name == "darwin-x64" &&
+        (flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile" ||
+         flutter_runtime_mode == "release")) {
       encode_entitlements = true
-      entitlements = [ "gen_snapshot_arm64", "gen_snapshot_x64" ]
-      without_entitlements = []  
+      entitlements = [
+        "gen_snapshot_arm64",
+        "gen_snapshot_x64",
+      ]
+      without_entitlements = []
     }
   }
 

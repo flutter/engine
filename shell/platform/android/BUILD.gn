@@ -608,13 +608,14 @@ if (target_cpu != "x86") {
         destination = gen_snapshot_bin
       },
     ]
-    if(host_os == "mac" && 
-      (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x64") &&
-      (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release")){
+    if (host_os == "mac" &&
+        (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x64") &&
+        (flutter_runtime_mode == "profile" ||
+         flutter_runtime_mode == "release")) {
       encode_entitlements = true
       entitlements = [ "gen_snapshot" ]
-      without_entitlements = []  
-    }   
+      without_entitlements = []
+    }
 
     deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
   }

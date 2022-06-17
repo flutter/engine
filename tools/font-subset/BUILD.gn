@@ -73,7 +73,7 @@ zip_bundle("font-subset") {
   if (is_mac && target_cpu == "x64") {
     encode_entitlements = true
     entitlements = []
-    without_entitlements = [ "font-subset" ]  
+    without_entitlements = [ "font-subset" ]
   }
 
   deps = [

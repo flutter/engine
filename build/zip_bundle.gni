@@ -20,16 +20,16 @@ if (flutter_runtime_mode == "jit_release") {
 # directory and a destination path in the archive to create.
 #
 # If this zip file is not intended to be codesigned as a Mac artifact,
-# set variable encode_entitlements to false. 
+# set variable encode_entitlements to false.
 #
-# If encode_entitlements is set to true, this api will embed Mac 
-# codesign entitlements information in the zip file at 
+# If encode_entitlements is set to true, this api will embed Mac
+# codesign entitlements information in the zip file at
 # $root_build_dir/zip_archives.
-# If encode_entitlements is true, user provides two array variables 
+# If encode_entitlements is true, user provides two array variables
 # 'entitlements' and 'without_entitlements'.
 # The entitlements array specifies the list of filepaths that should be
 # codesigned with entitlements.
-# The without_entitlements array specifies the list of filepaths that 
+# The without_entitlements array specifies the list of filepaths that
 # should not be codesigned with entitlements.
 #
 # For example, to create a zip file named archive.zip with all files in the
@@ -67,7 +67,7 @@ if (flutter_runtime_mode == "jit_release") {
 #     },
 #   ]
 #   entitlements = ["lib.so"]
-#   without_entitlements = [ "other_files" ] 
+#   without_entitlements = [ "other_files" ]
 # }
 template("zip_bundle") {
   assert(defined(invoker.output), "output must be defined")
@@ -91,18 +91,14 @@ template("zip_bundle") {
       ]
       sources += [ input.source ]
     }
-    if (invoker.encode_entitlements){
-      args += ["-e"]
+    if (invoker.encode_entitlements) {
+      args += [ "-e" ]
       foreach(filepath, invoker.entitlements) {
-        args += [
-          filepath
-        ]
+        args += [ filepath ]
       }
-      args += ["-we"]
+      args += [ "-we" ]
       foreach(filepath, invoker.without_entitlements) {
-        args += [
-          filepath
-        ]
+        args += [ filepath ]
       }
     }
   }
