@@ -89,7 +89,7 @@ FlColorScheme fl_settings_get_color_scheme(FlSettings* settings);
  *
  * This corresponds to `org.gnome.desktop.interface.enable-animations` in GNOME.
  *
- * Returns: %TRUE% if animations are enabled.
+ * Returns: %TRUE if animations are enabled.
  */
 gboolean fl_settings_get_enable_animations(FlSettings* settings);
 
@@ -102,7 +102,7 @@ gboolean fl_settings_get_enable_animations(FlSettings* settings);
  * This corresponds to `org.gnome.desktop.a11y.interface.high-contrast` in
  * GNOME.
  *
- * Returns: %TRUE% if high contrast is used.
+ * Returns: %TRUE if high contrast is used.
  */
 gboolean fl_settings_get_high_contrast(FlSettings* settings);
 
