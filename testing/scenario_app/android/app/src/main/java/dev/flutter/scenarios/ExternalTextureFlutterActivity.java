@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Shader.TileMode;
 import android.graphics.SurfaceTexture;
@@ -378,7 +377,13 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         writer = ImageWriter.newInstance(surface, 3);
       }
       if (VERSION.SDK_INT >= VERSION_CODES.Q) {
-        reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, ImageFormat.PRIVATE, 2, HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+        reader =
+            ImageReader.newInstance(
+                SURFACE_WIDTH,
+                SURFACE_HEIGHT,
+                ImageFormat.PRIVATE,
+                2,
+                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
       } else {
         reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, writer.getFormat(), 2);
       }
