@@ -601,6 +601,7 @@ if (target_cpu != "x86") {
       gen_snapshot_bin = "gen_snapshot.exe"
       gen_snapshot_path = rebase_path("$root_out_dir/$gen_snapshot_bin")
     }
+    encode_entitlements = false
 
     files = [
       {
