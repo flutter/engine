@@ -369,8 +369,13 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     @Override
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.onFirstFrame = onFirstFrame;
-      writer = ImageWriter.newInstance(surface, 3);
-      reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, ImageFormat.PRIVATE, 2);
+      if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+        // /!\ Fun Android Behavior Change /!\
+        writer = ImageWriter.newInstance(surface, 3, ImageFormat.PRIVATE);
+      } else {
+        writer = ImageWriter.newInstance(surface, 3);
+      }
+      reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, writer.getFormat(), 2);
 
       inner.attach(reader.getSurface(), null);
 
