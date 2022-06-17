@@ -2401,7 +2401,11 @@ class _RepositoryFuchsiaSdkLinuxDirectory extends _RepositoryDirectory {
         && entry.name != 'docs'
         && entry.name != 'images'
         && entry.name != 'meta'
-        && entry.name != 'tools';
+        && entry.name != 'tools'
+        // Applies to NOTICE.fuchsia file.
+        // This is a file that covers things that contribute to the Fuchsia SDK.
+        // See: fxb/94240
+        && !(entry.name == 'NOTICE.fuchsia');
   }
 }
 
