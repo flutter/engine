@@ -102,8 +102,9 @@ class DlImageFilter
   // (untransformed) coordinate space.
   //
   // The output bounds parameter must be supplied and the method will either
-  // return a pointer to it with the result filled in, or it will return a
-  // nullptr if it cannot determine the results.
+  // return a pointer to it with the result filled in, or it will set it to
+  // a copy of the |output_bounds| and return a nullptr if it cannot
+  // determine the results.
   virtual SkRect* map_local_bounds(const SkRect& input_bounds,
                                    SkRect& output_bounds) const = 0;
 
@@ -115,12 +116,48 @@ class DlImageFilter
   // Blur filter will expand based on the ctm).
   //
   // The output bounds parameter must be supplied and the method will either
-  // return a pointer to it with the result filled in, or it will return a
-  // nullptr if it cannot determine the results.
+  // return a pointer to it with the result filled in, or it will set it to
+  // a copy of the |output_bounds| and return a nullptr if it cannot
+  // determine the results.
   virtual SkIRect* map_device_bounds(const SkIRect& input_bounds,
                                      const SkMatrix& ctm,
                                      SkIRect& output_bounds) const = 0;
+
+  // Return the input bounds that will be needed in order for the filter to
+  // properly fill the indicated output_bounds under the specified
+  // transformation matrix. Both output_bounds and input_bounds are taken to
+  // be relative to the transformed coordinate space of the provided |ctm|.
+  //
+  // The output bounds parameter must be supplied and the method will either
+  // return a pointer to it with the result filled in, or it will set it to
+  // a copy of the |output_bounds| and return a nullptr if it cannot
+  // determine the results.
+  virtual SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                           const SkMatrix& ctm,
+                                           SkIRect& input_bounds) const = 0;
 };
+
+static SkVector abs_finite(SkVector v) {
+  if (!SkScalarIsFinite(v.fX)) {
+    v.fX = 0;
+  } else if (v.fX < 0) {
+    v.fX = v.fX;
+  }
+  v.fX = ceil(v.fX);
+  if (!SkScalarIsFinite(v.fY)) {
+    v.fY = 0;
+  } else if (v.fY < 0) {
+    v.fY = -v.fY;
+  }
+  v.fY = ceil(v.fY);
+  return v;
+}
+
+static SkVector map_vectors(const SkMatrix& ctm, SkScalar x, SkScalar y) {
+  SkVector v_x = abs_finite(ctm.mapVector(x, 0));
+  SkVector v_y = abs_finite(ctm.mapVector(0, y));
+  return v_x + v_y;
+}
 
 class DlBlurImageFilter final : public DlImageFilter {
  public:
@@ -153,16 +190,17 @@ class DlBlurImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    SkVector device_sigma = ctm.mapVector(sigma_x_ * 3, sigma_y_ * 3);
-    if (!SkScalarIsFinite(device_sigma.fX)) {
-      device_sigma.fX = 0;
-    }
-    if (!SkScalarIsFinite(device_sigma.fY)) {
-      device_sigma.fY = 0;
-    }
-    output_bounds = input_bounds.makeOutset(ceil(abs(device_sigma.fX)),
-                                            ceil(abs(device_sigma.fY)));
+    SkVector device_sigma = map_vectors(ctm, sigma_x_ * 3.0, sigma_y_ * 3.0);
+    output_bounds =
+        input_bounds.makeOutset(ceil(device_sigma.fX), ceil(device_sigma.fY));
     return &output_bounds;
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    // Blurs are symmetric in terms of output-for-input and input-for-output
+    return map_device_bounds(output_bounds, ctm, input_bounds);
   }
 
   SkScalar sigma_x() const { return sigma_x_; }
@@ -186,6 +224,28 @@ class DlBlurImageFilter final : public DlImageFilter {
   SkScalar sigma_y_;
   DlTileMode tile_mode_;
 };
+
+static SkIRect* inset_device_bounds(const SkIRect& input_bounds,
+                                    SkScalar radius_x,
+                                    SkScalar radius_y,
+                                    const SkMatrix& ctm,
+                                    SkIRect& output_bounds) {
+  SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
+  output_bounds = input_bounds.makeInset(floor(abs(device_radius.fX)),
+                                         floor(abs(device_radius.fY)));
+  return &output_bounds;
+}
+
+static SkIRect* outset_device_bounds(const SkIRect& input_bounds,
+                                     SkScalar radius_x,
+                                     SkScalar radius_y,
+                                     const SkMatrix& ctm,
+                                     SkIRect& output_bounds) {
+  SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
+  output_bounds = input_bounds.makeOutset(ceil(abs(device_radius.fX)),
+                                          ceil(abs(device_radius.fY)));
+  return &output_bounds;
+}
 
 class DlDilateImageFilter final : public DlImageFilter {
  public:
@@ -216,16 +276,15 @@ class DlDilateImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    SkVector device_radius = ctm.mapVector(radius_x_, radius_y_);
-    if (!SkScalarIsFinite(device_radius.fX)) {
-      device_radius.fX = 0;
-    }
-    if (!SkScalarIsFinite(device_radius.fY)) {
-      device_radius.fY = 0;
-    }
-    output_bounds = input_bounds.makeOutset(ceil(abs(device_radius.fX)),
-                                            ceil(abs(device_radius.fY)));
-    return &output_bounds;
+    return outset_device_bounds(input_bounds, radius_x_, radius_y_, ctm,
+                                output_bounds);
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    return inset_device_bounds(output_bounds, radius_x_, radius_y_, ctm,
+                               input_bounds);
   }
 
   SkScalar radius_x() const { return radius_x_; }
@@ -269,23 +328,22 @@ class DlErodeImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    output_bounds = input_bounds.makeOutset(radius_x_, radius_y_);
+    output_bounds = input_bounds.makeInset(radius_x_, radius_y_);
     return &output_bounds;
   }
 
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    SkVector device_radius = ctm.mapVector(radius_x_, radius_y_);
-    if (!SkScalarIsFinite(device_radius.fX)) {
-      device_radius.fX = 0;
-    }
-    if (!SkScalarIsFinite(device_radius.fY)) {
-      device_radius.fY = 0;
-    }
-    output_bounds = input_bounds.makeOutset(ceil(abs(device_radius.fX)),
-                                            ceil(abs(device_radius.fY)));
-    return &output_bounds;
+    return inset_device_bounds(input_bounds, radius_x_, radius_y_, ctm,
+                               output_bounds);
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    return outset_device_bounds(output_bounds, radius_x_, radius_y_, ctm,
+                                input_bounds);
   }
 
   SkScalar radius_x() const { return radius_x_; }
@@ -352,6 +410,26 @@ class DlMatrixImageFilter final : public DlImageFilter {
     return &output_bounds;
   }
 
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    SkMatrix full_matrix = SkMatrix::Concat(ctm, matrix_);
+    SkMatrix inverse;
+    SkIRect* ret = nullptr;
+    if (full_matrix.invert(&inverse)) {
+      SkRect bounds;
+      bounds.set(output_bounds);
+      if (inverse.mapRect(&bounds)) {
+        input_bounds = bounds.roundOut();
+        ret = &input_bounds;
+      }
+    }
+    if (!ret) {
+      input_bounds = output_bounds;
+    }
+    return ret;
+  }
+
   sk_sp<SkImageFilter> skia_object() const override {
     return SkImageFilters::MatrixTransform(matrix_, sampling_, nullptr);
   }
@@ -415,7 +493,7 @@ class DlComposeImageFilter final : public DlImageFilter {
       }
     }
     if (ret && outer_) {
-      if (!outer_->map_local_bounds(input_bounds, output_bounds)) {
+      if (!outer_->map_local_bounds(output_bounds, output_bounds)) {
         ret = nullptr;
       }
     }
@@ -435,12 +513,32 @@ class DlComposeImageFilter final : public DlImageFilter {
       }
     }
     if (ret && outer_) {
-      if (!outer_->map_device_bounds(input_bounds, ctm, output_bounds)) {
+      if (!outer_->map_device_bounds(output_bounds, ctm, output_bounds)) {
         ret = nullptr;
       }
     }
     if (!ret) {
       output_bounds = input_bounds;
+    }
+    return ret;
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    SkIRect* ret = &input_bounds;
+    if (outer_) {
+      if (!outer_->get_input_device_bounds(output_bounds, ctm, input_bounds)) {
+        ret = nullptr;
+      }
+    }
+    if (ret && inner_) {
+      if (!inner_->get_input_device_bounds(input_bounds, ctm, input_bounds)) {
+        ret = nullptr;
+      }
+    }
+    if (!ret) {
+      input_bounds = output_bounds;
     }
     return ret;
   }
@@ -512,6 +610,12 @@ class DlColorFilterImageFilter final : public DlImageFilter {
     return modifies_transparent_black() ? nullptr : &output_bounds;
   }
 
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    return map_device_bounds(output_bounds, ctm, input_bounds);
+  }
+
   sk_sp<SkImageFilter> skia_object() const override {
     return SkImageFilters::ColorFilter(color_filter_->skia_object(), nullptr);
   }
@@ -563,8 +667,8 @@ class DlUnknownImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    output_bounds = input_bounds;
     if (modifies_transparent_black()) {
+      output_bounds = input_bounds;
       return nullptr;
     }
     output_bounds = sk_filter_->computeFastBounds(input_bounds);
@@ -574,13 +678,25 @@ class DlUnknownImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    output_bounds = input_bounds;
     if (modifies_transparent_black()) {
+      output_bounds = input_bounds;
       return nullptr;
     }
     output_bounds = sk_filter_->filterBounds(
         input_bounds, ctm, SkImageFilter::kForward_MapDirection);
     return &output_bounds;
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    if (modifies_transparent_black()) {
+      input_bounds = output_bounds;
+      return nullptr;
+    }
+    input_bounds = sk_filter_->filterBounds(
+        output_bounds, ctm, SkImageFilter::kReverse_MapDirection);
+    return &input_bounds;
   }
 
   sk_sp<SkImageFilter> skia_object() const override { return sk_filter_; }
