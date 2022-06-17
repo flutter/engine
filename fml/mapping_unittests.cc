@@ -5,6 +5,13 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/testing/testing.h"
 
+#if defined(OS_FUCHSIA)
+#include <stdio.h>
+#include <assert.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#endif // defined(OS_FUCHSIA)
+
 namespace fml {
 
 TEST(MallocMapping, EmptyContructor) {
@@ -59,5 +66,21 @@ TEST(MallocMapping, IsDontNeedSafe) {
   ASSERT_NE(nullptr, mapping.GetMapping());
   ASSERT_FALSE(mapping.IsDontNeedSafe());
 }
+
+#if defined(OS_FUCHSIA)
+TEST(FuchsiaMmap, CopyOnWrite) {
+  FILE* writer = fopen("foo.txt", "w");
+  assert(writer);
+  fprintf(writer, "hello world\n");
+  fclose(writer);
+  FILE* reader = fopen("foo.txt", "r");
+  assert(reader);
+  int reader_fd = fileno(reader);
+  struct stat stat_buffer;
+  fstat(reader_fd, &stat_buffer);
+  void* mapping = mmap(NULL, stat_buffer.st_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, reader_fd, 0);
+  ASSERT_TRUE(mapping);
+}
+#endif
 
 }  // namespace fml
