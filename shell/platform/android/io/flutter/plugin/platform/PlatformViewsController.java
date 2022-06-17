@@ -244,10 +244,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // These views allow out-of-band graphics operations that aren't notified to the Android
           // view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
           // The virtual display is wired up to a GL texture that is composed by the Flutter engine.
-          final boolean shouldUseVirtualDisplay =
-              ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VD);
+          // Also, use virtual display if the API level is 20, 21 or 22 since the Case 2. requires
+          // at least API level 23.
+          final boolean shouldUseVD =
+              ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VD)
+                  || Build.VERSION.SDK_INT < 23;
 
-          if (!usesSoftwareRendering && shouldUseVirtualDisplay) {
+          if (!usesSoftwareRendering && shouldUseVD) {
             Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
             // API level 20 is required to use VirtualDisplay#setSurface.
             ensureValidAndroidVersion(20);
