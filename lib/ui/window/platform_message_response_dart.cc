@@ -69,26 +69,28 @@ PlatformMessageResponseDart::~PlatformMessageResponseDart() {
 }
 
 void PlatformMessageResponseDart::Complete(std::unique_ptr<fml::Mapping> data) {
-  PostCompletion(std::move(callback_), ui_task_runner_, &is_complete_, channel_,
-                 [data = std::move(data)]() mutable {
-                   void* mapping = data->GetMutableMapping();
-                   Dart_Handle byte_buffer;
-                   if (mapping) {
-                     size_t data_size = data->GetSize();
-                     byte_buffer = Dart_NewExternalTypedDataWithFinalizer(
-                         /*type=*/Dart_TypedData_kByteData,
-                         /*data=*/mapping,
-                         /*length=*/data_size,
-                         /*peer=*/data.release(),
-                         /*external_allocation_size=*/data_size,
-                         /*callback=*/MappingFinalizer);
+  PostCompletion(
+      std::move(callback_), ui_task_runner_, &is_complete_, channel_,
+      [data = std::move(data)]() mutable {
+        void* mapping = data->GetMutableMapping();
+        Dart_Handle byte_buffer;
+        size_t data_size = data->GetSize();
+        if (mapping &&
+            data_size >= tonic::DartByteData::kExternalSizeThreshold) {
+          byte_buffer = Dart_NewExternalTypedDataWithFinalizer(
+              /*type=*/Dart_TypedData_kByteData,
+              /*data=*/mapping,
+              /*length=*/data_size,
+              /*peer=*/data.release(),
+              /*external_allocation_size=*/data_size,
+              /*callback=*/MappingFinalizer);
 
-                   } else {
-                     byte_buffer = tonic::DartByteData::Create(
-                         data->GetMapping(), data->GetSize());
-                   }
-                   return byte_buffer;
-                 });
+        } else {
+          byte_buffer =
+              tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
+        }
+        return byte_buffer;
+      });
 }
 
 void PlatformMessageResponseDart::CompleteEmpty() {
