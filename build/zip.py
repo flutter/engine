@@ -69,19 +69,11 @@ def main(args):
       else:
         zip_file.write(path, archive_name)
   if args.entitlements or args.without_entitlements:
-    entitlement_txt = open('/tmp/entitlements.txt', 'w+')
-    for filepath in args.entitlements:
-      entitlement_txt.write(filepath + '\n')
-    entitlement_txt.close()
-    zip_file.write('/tmp/entitlements.txt', 'entitlements.txt')
-    os.remove('/tmp/entitlements.txt')
+    entitlements_txt = '\n'.join(args.entitlements)
+    zip_file.writestr('entitlements.txt', entitlements_txt)
 
-    without_entitlement_txt = open('/tmp/without_entitlements.txt', 'w+')
-    for filepath in args.without_entitlements:
-      without_entitlement_txt.write(filepath + '\n')
-    without_entitlement_txt.close()
-    zip_file.write('/tmp/without_entitlements.txt', 'withoutEntitlements.txt')
-    os.remove('/tmp/without_entitlements.txt')
+    without_entitlements_txt = '\n'.join(args.without_entitlements)
+    zip_file.writestr('withoutEntitlements.txt', without_entitlements_txt)
   zip_file.close()
 
 
