@@ -277,6 +277,7 @@ zip_bundle("flutter_gtk") {
     prefix = "$full_target_platform_name-$flutter_runtime_mode/"
   }
   output = "${prefix}${full_target_platform_name}-flutter-gtk.zip"
+  encode_entitlements = false
   deps = [
     ":flutter_linux_gtk",
     ":publish_headers_linux",

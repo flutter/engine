@@ -529,6 +529,7 @@ group("robolectric_tests") {
 
 zip_bundle("android_symbols") {
   output = "$android_zip_archive_dir/symbols.zip"
+  encode_entitlements = false
   files = [
     {
       source = "$root_build_dir/libflutter.so"
@@ -541,6 +542,7 @@ zip_bundle("android_symbols") {
 
 zip_bundle("flutter_jar_zip") {
   output = "$android_zip_archive_dir/artifacts.zip"
+  encode_entitlements = false
   files = [
     {
       source = "$root_build_dir/flutter.jar"
@@ -573,6 +575,7 @@ action("gen_android_javadoc") {
 
 zip_bundle("android_javadoc") {
   output = "android-javadoc.zip"
+  encode_entitlements = false
   javadoc_dir = get_target_outputs(":gen_android_javadoc")
 
   files = [
@@ -605,6 +608,13 @@ if (target_cpu != "x86") {
         destination = gen_snapshot_bin
       },
     ]
+    if(host_os == "mac" && 
+      (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x64") &&
+      (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release")){
+      encode_entitlements = true
+      entitlements = [ "gen_snapshot" ]
+      without_entitlements = []  
+    }   
 
     deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
   }

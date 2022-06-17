@@ -440,6 +440,7 @@ if (is_mac) {
   zip_bundle("flutter_embedder_framework_archive") {
     deps = [ ":generate_symlinks" ]
     output = "$full_platform_name/FlutterEmbedder.framework.zip"
+    encode_entitlements = false
     files = [
       {
         source = "$root_out_dir/FlutterEmbedder.framework"
@@ -464,6 +465,7 @@ if (is_mac) {
 if (host_os == "linux" || host_os == "win") {
   zip_bundle("embedder-archive") {
     output = "$full_platform_name/$full_platform_name-embedder.zip"
+    encode_entitlements = false
     deps = [
       "//flutter/shell/platform/embedder:copy_headers",
       "//flutter/shell/platform/embedder:flutter_engine_library",

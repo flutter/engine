@@ -20,6 +20,7 @@ if (build_engine_artifacts) {
       prefix = "$full_platform_name-$flutter_runtime_mode/"
     }
     output = "$prefix/artifacts.zip"
+    encode_entitlements = false
     files = [
       {
         source = "//third_party/icu/flutter/icudtl.dat"
@@ -67,6 +68,17 @@ if (build_engine_artifacts) {
         destination = "libtessellator$dll"
       },
     ]
+    if (host_os == "mac" && (full_target_platform_name == "darwin-x64")){
+      encode_entitlements = true
+      if (flutter_runtime_mode == "debug"){
+        entitlements = [ "flutter_tester", "gen_snapshot", "impellerc", "libtessellator.dylib" ]
+        without_entitlements = []      
+      }
+      else if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
+        entitlements = [ "gen_snapshot" ]
+        without_entitlements = []   
+      }
+    }
   }
 }
 
@@ -88,6 +100,7 @@ zip_bundle("flutter_patched_sdk") {
     path_prefix = "flutter_patched_sdk_product/"
   }
   output = "flutter_patched_sdk${file_suffix}.zip"
+  encode_entitlements = false
   deps = [ "//flutter/lib/snapshot:strong_platform" ]
   files = [
     {
@@ -107,6 +120,7 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
   zip_bundle("dart_sdk_archive") {
     deps = []
     output = "dart-sdk-$full_target_platform_name.zip"
+    encode_entitlements = false
     if (is_mac) {
       # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
       # names will require changes in the list of artifacts the tool is downloading.
@@ -118,6 +132,11 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
         destination = "dart-sdk"
       },
     ]
+    if (is_mac && (target_cpu == "arm64" || target_cpu == "x64")) {
+      encode_entitlements = true
+      entitlements = [ "dart-sdk/bin/dart", "dart-sdk/bin/dartaotruntime", "dart-sdk/bin/utils/gen_snapshot" ]
+      without_entitlements = []      
+    }
   }
 }
 
@@ -137,6 +156,7 @@ if (host_os == "win") {
       "//flutter/shell/platform/windows:flutter_windows",
       "//flutter/shell/platform/windows:publish_headers_windows",
     ]
+    encode_entitlements = false
     files = [
       {
         source = "$root_out_dir/flutter_export.h"
@@ -181,12 +201,19 @@ if (is_mac) {
       suffix = ""
     }
     output = "$full_platform_name$suffix/gen_snapshot.zip"
+    encode_entitlements = false
     files = [
       {
         source = "$root_out_dir/gen_snapshot_$target_cpu"
         destination = "gen_snapshot_$target_cpu"
       },
     ]
+    if (full_platform_name == "darwin-x64" && 
+      (flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile" || flutter_runtime_mode == "release")){
+      encode_entitlements = true
+      entitlements = [ "gen_snapshot_arm64", "gen_snapshot_x64" ]
+      without_entitlements = []  
+    }
   }
 
   group("flutter_embedder_framework") {

@@ -68,6 +68,20 @@ def main(args):
         _zip_dir(path, zip_file, archive_name)
       else:
         zip_file.write(path, archive_name)
+  if args.entitlements or args.without_entitlements:
+    entitlement_txt = open("/tmp/entitlements.txt","w+")
+    for filepath in args.entitlements:
+      entitlement_txt.write(filepath+"\n")
+    entitlement_txt.close()
+    zip_file.write("/tmp/entitlements.txt", "entitlements.txt")
+    os.remove("/tmp/entitlements.txt")
+
+    without_entitlement_txt = open("/tmp/without_entitlements.txt","w+")
+    for filepath in args.without_entitlements:
+      without_entitlement_txt.write(filepath+"\n")
+    without_entitlement_txt.close()
+    zip_file.write("/tmp/without_entitlements.txt", "withoutEntitlements.txt")
+    os.remove("/tmp/without_entitlements.txt")
   zip_file.close()
 
 
@@ -85,6 +99,20 @@ if __name__ == '__main__':
       nargs=2,
       action='append',
       help='The input file and its destination location in the zip archive.'
+  )
+  parser.add_argument(
+      '-e',
+      dest='entitlements',
+      nargs='*',
+      action='store',
+      help='The list of file paths that need to be codesigned [with] entitlements.'
+  )
+  parser.add_argument(
+    '-we',
+    dest='without_entitlements',
+    nargs='*',
+    action='store',
+    help='The list of file paths that need to be codesigned [without] entitlements.'
   )
   parser.add_argument(
       '-f',

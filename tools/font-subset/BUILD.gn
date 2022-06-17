@@ -41,6 +41,7 @@ generated_file("_font-subset-license") {
 }
 
 zip_bundle("font-subset") {
+  encode_entitlements = false
   if (is_mac) {
     # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
     # names will require changes in the list of artifacts the tool is downloading.
@@ -68,6 +69,12 @@ zip_bundle("font-subset") {
       destination = "LICENSE.font-subset.md"
     },
   ]
+
+  if (is_mac && target_cpu == "x64") {
+    encode_entitlements = true
+    entitlements = []
+    without_entitlements = [ "font-subset" ]  
+  }
 
   deps = [
     ":_font-subset",
