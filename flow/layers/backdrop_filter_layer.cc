@@ -40,10 +40,14 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
-  FML_DLOG(ERROR) << "In Preroll";
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
   SkRect child_paint_bounds = SkRect::MakeEmpty();
+  auto visited_platform_views = context->view_embedder->GetVisitedPlatformViews();
+  for (int64_t id : visited_platform_views) {
+    context->view_embedder->PushMutator(id);
+  }
+  
   PrerollChildren(context, matrix, &child_paint_bounds);
   child_paint_bounds.join(context->cull_rect);
   set_paint_bounds(child_paint_bounds);
@@ -52,7 +56,6 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
 void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
-  FML_DLOG(ERROR) << "In Paint";
   SkPaint paint;
   paint.setBlendMode(blend_mode_);
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(

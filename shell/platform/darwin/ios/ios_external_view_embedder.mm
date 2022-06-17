@@ -92,4 +92,8 @@ bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return true;
 }
 
+void IOSExternalViewEmbedder::PushMutator(int64_t view_id) { //int alpha, 
+  platform_views_controller_->PushMutator(view_id);
+}
+
 }  // namespace flutter

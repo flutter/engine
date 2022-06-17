@@ -184,6 +184,8 @@ class FlutterPlatformViewsController {
   // responder. Returns -1 if no such platform view is found.
   long FindFirstResponderPlatformViewId();
 
+  void PushMutator(int64_t platform_view_id); //flutter::Mutator mutator, 
+
  private:
   static const size_t kMaxLayerAllocations = 2;
 
@@ -297,6 +299,8 @@ class FlutterPlatformViewsController {
 
   // The latest composition order that was presented in Present().
   std::vector<int64_t> active_composition_order_;
+
+  
 
   // Only compoiste platform views in this set.
   std::unordered_set<int64_t> views_to_recomposite_;

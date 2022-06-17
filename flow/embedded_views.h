@@ -224,6 +224,10 @@ class EmbeddedViewParams {
   // Clippings are ignored.
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
+  void PushFilter(int opacity) {
+    mutators_stack_.PushOpacity(opacity);
+  }
+
   bool operator==(const EmbeddedViewParams& other) const {
     return size_points_ == other.size_points_ &&
            mutators_stack_ == other.mutators_stack_ &&
@@ -345,8 +349,20 @@ class ExternalViewEmbedder {
   // 'EndFrame', otherwise returns false.
   bool GetUsedThisFrame() const { return used_this_frame_; }
 
+  std::vector<int64_t> GetVisitedPlatformViews() {
+    return visited_platform_views_;
+  }
+
+  void PushVisitedPlatformView(int64_t view_id) {
+    visited_platform_views_.push_back(view_id);
+  }
+
+  virtual void PushMutator(int64_t view_id) {}  //int alpha
+
  private:
   bool used_this_frame_ = false;
+
+  std::vector<int64_t> visited_platform_views_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

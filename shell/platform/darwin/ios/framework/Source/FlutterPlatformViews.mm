@@ -319,6 +319,13 @@ void FlutterPlatformViewsController::EndFrame(
   }
 }
 
+void FlutterPlatformViewsController::PushMutator(int64_t platform_view_id) { //flutter::Mutator mutator, 
+  EmbeddedViewParams params = current_composition_params_[platform_view_id];
+  params.PushFilter(10);
+  EmbeddedViewParams newParams = EmbeddedViewParams(params.transformMatrix(), params.sizePoints(), params.mutatorsStack());
+  current_composition_params_[platform_view_id] = newParams;
+}
+
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
