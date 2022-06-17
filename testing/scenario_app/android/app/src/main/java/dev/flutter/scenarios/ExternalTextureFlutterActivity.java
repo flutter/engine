@@ -371,12 +371,10 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.onFirstFrame = onFirstFrame;
       if (VERSION.SDK_INT >= VERSION_CODES.Q) {
-        // /!\ Fun Android Behavior Change /!\
+        // On Android Q+, use PRIVATE image format.
+        // Also let the frame producer know the images will
+        // be sampled from by the GPU.
         writer = ImageWriter.newInstance(surface, 3, ImageFormat.PRIVATE);
-      } else {
-        writer = ImageWriter.newInstance(surface, 3);
-      }
-      if (VERSION.SDK_INT >= VERSION_CODES.Q) {
         reader =
             ImageReader.newInstance(
                 SURFACE_WIDTH,
@@ -385,6 +383,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
                 2,
                 HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
       } else {
+        // Before Android Q, this will change the format of the surface to match the images.
+        writer = ImageWriter.newInstance(surface, 3);
         reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, writer.getFormat(), 2);
       }
       inner.attach(reader.getSurface(), null);
@@ -417,7 +417,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
       canReadImage = false;
       Image image = reader.acquireLatestImage();
-      Log.w(TAG, "Original crop rect: " + image.getCropRect().toShortString());
       image.setCropRect(crop);
       try {
         canWriteImage = false;
@@ -471,7 +470,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     }
 
     private void destroyReaderWriter() {
-      if (writer != null) writer.close();
+      writer.close();
       Log.i(TAG, "ImageWriter destroyed");
       reader.close();
       Log.i(TAG, "ImageReader destroyed");
