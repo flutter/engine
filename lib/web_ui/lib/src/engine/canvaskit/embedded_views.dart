@@ -55,25 +55,11 @@ class HtmlViewEmbedder {
           SurfaceFactory(configuration.canvasKitMaximumSurfaces));
     }
   }
+
   static bool _debugOverlaysDisabled = false;
 
-  /// Whether or not we have seen a visible platform view in this frame yet.
-  bool _seenFirstVisibleViewInPreroll = false;
-
-  /// Whether or not we have seen a visible platform view in this frame yet.
-  bool _seenFirstVisibleView = false;
-
-  /// Picture recorders which were created during the preroll phase.
-  ///
-  /// These picture recorders will be "claimed" in the paint phase by platform
-  /// views being composited into the scene.
-  final List<CkPictureRecorder> _pictureRecordersCreatedDuringPreroll =
-      <CkPictureRecorder>[];
-
-  /// Picture recorders which were actually used in the paint phase.
-  ///
-  /// This is a subset of [_pictureRecordersCreatedDuringPreroll].
-  final List<CkPictureRecorder> _pictureRecorders = <CkPictureRecorder>[];
+  /// The context for the current frame.
+  EmbedderFrameContext _context = EmbedderFrameContext();
 
   /// The most recent composition parameters for a given view id.
   ///
@@ -102,11 +88,6 @@ class HtmlViewEmbedder {
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
 
-  /// The number of platform views in this frame which are visible.
-  ///
-  /// These platform views will require overlays.
-  int _visibleViewCount = 0;
-
   /// The most recent composition order.
   List<int> _activeCompositionOrder = <int>[];
 
@@ -129,7 +110,8 @@ class HtmlViewEmbedder {
   /// overallocating canvases. This isn't a problem in practice, however, as
   /// unused recording canvases are simply deleted at the end of the frame.
   List<CkCanvas> getOverlayCanvases() {
-    final List<CkCanvas> overlayCanvases = _pictureRecordersCreatedDuringPreroll
+    final List<CkCanvas> overlayCanvases = _context
+        .pictureRecordersCreatedDuringPreroll
         .map((CkPictureRecorder r) => r.recordingCanvas!)
         .toList();
     return overlayCanvases;
@@ -137,22 +119,22 @@ class HtmlViewEmbedder {
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
     final bool hasAvailableOverlay =
-        _pictureRecordersCreatedDuringPreroll.length <
+        _context.pictureRecordersCreatedDuringPreroll.length <
             SurfaceFactory.instance.maximumOverlays;
     // We need an overlay for the first platform view no matter what. The first
     // visible platform view doesn't need to create a new one if we already
     // created one.
     final bool needNewOverlay = (platformViewManager.isVisible(viewId) &&
-            _seenFirstVisibleViewInPreroll) ||
-        _pictureRecordersCreatedDuringPreroll.isEmpty;
+            _context.seenFirstVisibleViewInPreroll) ||
+        _context.pictureRecordersCreatedDuringPreroll.isEmpty;
     if (platformViewManager.isVisible(viewId)) {
-      _seenFirstVisibleViewInPreroll = true;
+      _context.seenFirstVisibleViewInPreroll = true;
     }
     if (needNewOverlay && hasAvailableOverlay) {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
       pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
-      _pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
+      _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
     }
 
     // Do nothing if the params didn't change.
@@ -173,24 +155,24 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
-    final int overlayIndex = _visibleViewCount;
+    final int overlayIndex = _context.visibleViewCount;
     _compositionOrder.add(viewId);
-    if (platformViewManager.isVisible(viewId) || _pictureRecorders.isEmpty) {
-      _visibleViewCount++;
+    if (platformViewManager.isVisible(viewId) || _context.pictureRecorders.isEmpty) {
+      _context.visibleViewCount++;
     }
     // We need a new overlay if this is a visible view or if we don't have one yet.
-    final bool needNewOverlay =
-        (platformViewManager.isVisible(viewId) && _seenFirstVisibleView) ||
-            _pictureRecorders.isEmpty;
+    final bool needNewOverlay = (platformViewManager.isVisible(viewId) &&
+            _context.seenFirstVisibleView) ||
+        _context.pictureRecorders.isEmpty;
     if (platformViewManager.isVisible(viewId)) {
-      _seenFirstVisibleView = true;
+      _context.seenFirstVisibleView = true;
     }
     CkPictureRecorder? recorderToUseForRendering;
     if (needNewOverlay) {
-      if (overlayIndex < _pictureRecordersCreatedDuringPreroll.length) {
+      if (overlayIndex < _context.pictureRecordersCreatedDuringPreroll.length) {
         recorderToUseForRendering =
-            _pictureRecordersCreatedDuringPreroll[overlayIndex];
-        _pictureRecorders.add(recorderToUseForRendering);
+            _context.pictureRecordersCreatedDuringPreroll[overlayIndex];
+        _context.pictureRecorders.add(recorderToUseForRendering);
       }
     }
 
@@ -424,7 +406,7 @@ class HtmlViewEmbedder {
             ? null
             : diffViewList(_activeCompositionOrder, _compositionOrder);
     _updateOverlays(diffResult);
-    assert(_pictureRecorders.length == _overlays.length);
+    assert(_context.pictureRecorders.length == _overlays.length);
     int pictureRecorderIndex = 0;
 
     for (int i = 0; i < _compositionOrder.length; i++) {
@@ -433,24 +415,21 @@ class HtmlViewEmbedder {
         final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
         final CkCanvas canvas = frame.skiaCanvas;
         canvas.drawPicture(
-          _pictureRecorders[pictureRecorderIndex++].endRecording(),
+          _context.pictureRecorders[pictureRecorderIndex++].endRecording(),
         );
         frame.submit();
       }
     }
     for (final CkPictureRecorder recorder
-        in _pictureRecordersCreatedDuringPreroll) {
+        in _context.pictureRecordersCreatedDuringPreroll) {
       if (recorder.isRecording) {
         recorder.endRecording();
       }
     }
-    _pictureRecordersCreatedDuringPreroll.clear();
-    _pictureRecorders.clear();
-    _seenFirstVisibleViewInPreroll = false;
-    _seenFirstVisibleView = false;
+    // Reset the context.
+    _context = EmbedderFrameContext();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
-      _visibleViewCount = 0;
       return;
     }
 
@@ -543,7 +522,6 @@ class HtmlViewEmbedder {
     }
 
     _compositionOrder.clear();
-    _visibleViewCount = 0;
 
     disposeViews(unusedViews);
 
@@ -708,7 +686,7 @@ class HtmlViewEmbedder {
   void debugClear() {
     final Set<int> allViews = platformViewManager.debugClear();
     disposeViews(allViews);
-    _pictureRecorders.clear();
+    _context = EmbedderFrameContext();
     _currentCompositionParams.clear();
     debugCleanupSvgClipPaths();
     _currentCompositionParams.clear();
@@ -717,7 +695,6 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.clear();
     _activeCompositionOrder.clear();
     _compositionOrder.clear();
-    _visibleViewCount = 0;
   }
 }
 
@@ -1053,4 +1030,30 @@ ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
   } else {
     return null;
   }
+}
+
+/// The state for the current frame.
+class EmbedderFrameContext {
+  /// Whether or not we have seen a visible platform view in this frame yet.
+  bool seenFirstVisibleViewInPreroll = false;
+
+  /// Whether or not we have seen a visible platform view in this frame yet.
+  bool seenFirstVisibleView = false;
+
+  /// Picture recorders which were created during the preroll phase.
+  ///
+  /// These picture recorders will be "claimed" in the paint phase by platform
+  /// views being composited into the scene.
+  final List<CkPictureRecorder> pictureRecordersCreatedDuringPreroll =
+      <CkPictureRecorder>[];
+
+  /// Picture recorders which were actually used in the paint phase.
+  ///
+  /// This is a subset of [_pictureRecordersCreatedDuringPreroll].
+  final List<CkPictureRecorder> pictureRecorders = <CkPictureRecorder>[];
+
+  /// The number of platform views in this frame which are visible.
+  ///
+  /// These platform views will require overlays.
+  int visibleViewCount = 0;
 }
