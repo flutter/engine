@@ -686,7 +686,7 @@ struct DrawSkVerticesOp final : DLOp {
         : point(point), sampling(sampling), image(std::move(image)) {} \
                                                                        \
     const SkPoint point;                                               \
-    DlImageSampling sampling;                                          \
+    const DlImageSampling sampling;                                    \
     const sk_sp<DlImage> image;                                        \
                                                                        \
     void dispatch(Dispatcher& dispatcher) const {                      \
@@ -717,7 +717,7 @@ struct DrawImageRectOp final : DLOp {
 
   const SkRect src;
   const SkRect dst;
-  DlImageSampling sampling;
+  const DlImageSampling sampling;
   const bool render_with_attributes;
   const SkCanvas::SrcRectConstraint constraint;
   const sk_sp<DlImage> image;
@@ -825,7 +825,7 @@ struct DrawAtlasBaseOp : DLOp {
   const uint16_t mode_index;
   const uint8_t has_colors;
   const uint8_t render_with_attributes;
-  DlImageSampling sampling;
+  const DlImageSampling sampling;
   const sk_sp<DlImage> atlas;
 };
 

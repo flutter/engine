@@ -43,9 +43,6 @@ inline DlImageSampling ToDl(const SkSamplingOptions& so) {
       return DlImageSampling::kMipmapLinear;
     }
   }
-  if (so.filter == SkFilterMode::kNearest && so.mipmap == SkMipmapMode::kNone) {
-    return DlImageSampling::kNearestNeighbor;
-  }
   return DlImageSampling::kNearestNeighbor;
 }
 

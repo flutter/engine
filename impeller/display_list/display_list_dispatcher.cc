@@ -720,7 +720,7 @@ void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
                                       const SkPoint point,
-                                      const flutter::DlImageSampling sampling,
+                                      flutter::DlImageSampling sampling,
                                       bool render_with_attributes) {
   if (!image) {
     return;
@@ -769,7 +769,7 @@ void DisplayListDispatcher::drawImageRect(
     const sk_sp<flutter::DlImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const flutter::DlImageSampling sampling,
+    flutter::DlImageSampling sampling,
     bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
   canvas_.DrawImageRect(
@@ -809,7 +809,7 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       const flutter::DlColor colors[],
                                       int count,
                                       flutter::DlBlendMode mode,
-                                      const flutter::DlImageSampling sampling,
+                                      flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
                                       bool render_with_attributes) {
   // Needs https://github.com/flutter/flutter/issues/95434
