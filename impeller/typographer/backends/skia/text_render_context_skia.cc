@@ -4,6 +4,7 @@
 
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/renderer/allocator.h"
@@ -159,6 +160,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     return nullptr;
   }
 
+  FML_DCHECK(bitmap != nullptr);
   const auto& pixmap = bitmap->pixmap();
 
   TextureDescriptor texture_descriptor;
