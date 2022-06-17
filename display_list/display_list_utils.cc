@@ -175,34 +175,22 @@ void SkMatrixDispatchHelper::reset() {
 void ClipBoundsDispatchHelper::clipRect(const SkRect& rect,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  switch (clip_op) {
-    case SkClipOp::kIntersect:
-      intersect(rect, is_aa);
-      break;
-    case SkClipOp::kDifference:
-      break;
+  if (clip_op == SkClipOp::kIntersect) {
+    intersect(rect, is_aa);
   }
 }
 void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
                                          SkClipOp clip_op,
                                          bool is_aa) {
-  switch (clip_op) {
-    case SkClipOp::kIntersect:
-      intersect(rrect.getBounds(), is_aa);
-      break;
-    case SkClipOp::kDifference:
-      break;
+  if (clip_op == SkClipOp::kIntersect) {
+    intersect(rrect.getBounds(), is_aa);
   }
 }
 void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  switch (clip_op) {
-    case SkClipOp::kIntersect:
-      intersect(path.getBounds(), is_aa);
-      break;
-    case SkClipOp::kDifference:
-      break;
+  if (clip_op == SkClipOp::kIntersect) {
+    intersect(path.getBounds(), is_aa);
   }
 }
 void ClipBoundsDispatchHelper::intersect(const SkRect& rect, bool is_aa) {
