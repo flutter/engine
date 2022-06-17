@@ -92,7 +92,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     super.waitUntilFlutterRendered();
 
     try {
-      firstFrameLatch.await();
+      firstFrameLatch.await(10, java.util.concurrent.TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -410,7 +410,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         // If the output surface disconnects, this method will be interrupted with an
         // IllegalStateException.
         // Simply log and return.
-        Log.i(TAG, "Surface disconnected from ImageWriter");
+        Log.i(TAG, "Surface disconnected from ImageWriter", e);
+        image.close();
         return;
       }
 
