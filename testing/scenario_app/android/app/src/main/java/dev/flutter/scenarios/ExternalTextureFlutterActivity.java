@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Shader.TileMode;
 import android.graphics.SurfaceTexture;
@@ -171,6 +172,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
       return true;
     }
 
+    int getFrameImageFormat();
+
     void repaint();
 
     void destroy();
@@ -187,6 +190,11 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.surface = surface;
       this.onFirstFrame = onFirstFrame;
+    }
+
+    @Override
+    public int getFrameImageFormat() {
+      return PixelFormat.RGBA_8888;
     }
 
     @Override
@@ -257,6 +265,11 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
       decodeThread = new Thread(this::decodeThreadMain);
       decodeThread.start();
+    }
+
+    @Override
+    public int getFrameImageFormat() {
+      return ImageFormat.YUV_420_888;
     }
 
     @Override
@@ -369,14 +382,14 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     @Override
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.onFirstFrame = onFirstFrame;
+      int format = getFrameImageFormat();
       if (VERSION.SDK_INT >= VERSION_CODES.Q) {
         // /!\ Fun Android Behavior Change /!\
-        writer = ImageWriter.newInstance(surface, 3, ImageFormat.PRIVATE);
+        writer = ImageWriter.newInstance(surface, 3, format);
       } else {
         writer = ImageWriter.newInstance(surface, 3);
       }
-      reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, writer.getFormat(), 2);
-
+      reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, format, 2);
       inner.attach(reader.getSurface(), null);
 
       handlerThread = new HandlerThread("image reader/writer thread");
@@ -385,6 +398,11 @@ public class ExternalTextureFlutterActivity extends TestActivity {
       handler = new Handler(handlerThread.getLooper());
       reader.setOnImageAvailableListener(this::onImageAvailable, handler);
       writer.setOnImageReleasedListener(this::onImageReleased, handler);
+    }
+
+    @Override
+    public int getFrameImageFormat() {
+      return inner.getFrameImageFormat();
     }
 
     private void onImageAvailable(ImageReader reader) {
@@ -460,7 +478,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     }
 
     private void destroyReaderWriter() {
-      writer.close();
+      if (writer != null) writer.close();
       Log.i(TAG, "ImageWriter destroyed");
       reader.close();
       Log.i(TAG, "ImageReader destroyed");
