@@ -19,12 +19,12 @@ class NSDataMapping : public fml::Mapping {
   }
 
   uint8_t* GetMutableMapping() const override {
-    // This is safe because the NSData instances we are wrapping all live in RAM
-    // and are short lived objects that live for the purpose of responding to
-    // messages.  We could convert the API to use NSMutableData but that is a
-    // breaking change and allocating a NSMutableData is much slower than NSData
-    // unfortunately.
-    return const_cast<uint8_t*>(static_cast<const uint8_t*>([data_.get() bytes]));
+    // TODO(tbd): Implement this so ownership can be passed to Dart.
+    // Previously this was attempted with a const_cast of the mapping.  That is
+    // safe in most cases since the data is ephemeral and we are the creaters
+    // and the sole owners of the data. That is not the case when the
+    // BinaryCodec is used however.
+    return nullptr;
   }
 
   bool IsDontNeedSafe() const override { return false; }
