@@ -7,9 +7,7 @@ package dev.flutter.scenarios;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterEngine;
 
-public class TextPlatformViewActivity extends TestActivity {
-  static final String TAG = "Scenarios";
-
+public class PlatformViewsActivity extends TestActivity {
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
     super.configureFlutterEngine(flutterEngine);
@@ -17,5 +15,15 @@ public class TextPlatformViewActivity extends TestActivity {
         .getPlatformViewsController()
         .getRegistry()
         .registerViewFactory("scenarios/textPlatformView", new TextPlatformViewFactory());
+
+    flutterEngine
+        .getPlatformViewsController()
+        .getRegistry()
+        .registerViewFactory("scenarios/surfacePlatformView", new SurfacePlatformViewFactory());
+
+    flutterEngine
+        .getPlatformViewsController()
+        .getRegistry()
+        .registerViewFactory("scenarios/texturePlatformView", new TexturePlatformViewFactory());
   }
 }

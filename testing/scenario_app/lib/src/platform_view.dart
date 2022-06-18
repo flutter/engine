@@ -1047,9 +1047,16 @@ void addPlatformView(
   String text = 'platform view',
   double width = 500,
   double height = 500,
-  String viewType = 'scenarios/textPlatformView',
+  String? viewType,
 }) {
+  if (viewType == null && scenarioParams['view_type'] is String) {
+    viewType = scenarioParams['view_type'];
+  }
+
+  assert(viewType != null, 'view type not set');
+
   final String platformViewKey = '$viewType-$id';
+
   if (_createdPlatformViews.containsKey(platformViewKey)) {
     addPlatformViewToSceneBuilder(
       id,
@@ -1060,9 +1067,10 @@ void addPlatformView(
     );
     return;
   }
+
   bool usesAndroidHybridComposition = false;
-  if (scenarioParams['use_android_view'] != null) {
-    usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
+  if (scenarioParams['use_android_view'] is bool) {
+    usesAndroidHybridComposition = scenarioParams['use_android_view'];
   }
 
   const int _valueTrue = 1;
@@ -1091,8 +1099,8 @@ void addPlatformView(
     'viewType'.length,
     ...utf8.encode('viewType'),
     _valueString,
-    viewType.length,
-    ...utf8.encode(viewType),
+    viewType!.length,
+    ...utf8.encode(viewType!),
     if (Platform.isAndroid && !usesAndroidHybridComposition) ...<int>[
       _valueString,
       'width'.length,
