@@ -29,6 +29,7 @@ public class MemoryLeakTests {
     Intent intent = new Intent(Intent.ACTION_MAIN);
     intent.putExtra("scenario_name", "platform_view");
     intent.putExtra("use_android_view", true);
+    intent.putExtra("view_type", PlatformViewsActivity.TEXT_VIEW_PV);
 
     activityRule.launchActivity(intent);
   }

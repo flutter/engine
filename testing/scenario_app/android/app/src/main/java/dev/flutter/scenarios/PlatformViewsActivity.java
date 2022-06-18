@@ -8,9 +8,9 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterEngine;
 
 public class PlatformViewsActivity extends TestActivity {
-  static final String TEXT_VIEW_PV = "scenarios/textPlatformView";
-  static final String SURFACE_VIEW_PV = "scenarios/surfacePlatformView";
-  static final String TEXTURE_VIEW_PV = "scenarios/texturePlatformView";
+  public static final String TEXT_VIEW_PV = "scenarios/textPlatformView";
+  public static final String SURFACE_VIEW_PV = "scenarios/surfacePlatformView";
+  public static final String TEXTURE_VIEW_PV = "scenarios/texturePlatformView";
 
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
