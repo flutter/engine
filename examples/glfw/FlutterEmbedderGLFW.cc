@@ -4,7 +4,6 @@
 
 #include <cassert>
 #include <chrono>
-#include <cstring>
 #include <iostream>
 
 #include "GLFW/glfw3.h"
