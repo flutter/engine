@@ -157,7 +157,9 @@ int main(int argc, const char* argv[]) {
     return EXIT_FAILURE;
   }
 
+#if defined(__linux__)
   glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+#endif
 
   GLFWwindow* window = glfwCreateWindow(
       kInitialWindowWidth, kInitialWindowHeight, "Flutter", NULL, NULL);
