@@ -1047,13 +1047,11 @@ void addPlatformView(
   String text = 'platform view',
   double width = 500,
   double height = 500,
-  String? viewType,
+  String viewType = 'scenarios/textPlatformView',
 }) {
-  if (viewType == null && scenarioParams['view_type'] is String) {
+  if (scenarioParams['view_type'] is String) {
     viewType = scenarioParams['view_type'];
   }
-
-  assert(viewType != null, 'view type not set');
 
   final String platformViewKey = '$viewType-$id';
 
@@ -1099,8 +1097,8 @@ void addPlatformView(
     'viewType'.length,
     ...utf8.encode('viewType'),
     _valueString,
-    viewType!.length,
-    ...utf8.encode(viewType!),
+    viewType.length,
+    ...utf8.encode(viewType),
     if (Platform.isAndroid && !usesAndroidHybridComposition) ...<int>[
       _valueString,
       'width'.length,
