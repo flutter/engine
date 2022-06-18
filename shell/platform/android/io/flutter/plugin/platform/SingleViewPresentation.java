@@ -185,7 +185,9 @@ class SingleViewPresentation extends Presentation {
       currentContext.setBaseContext(baseContext);
     } else {
       throw new IllegalStateException(
-          "embedded view context must be a MutableContextWrapper: " + viewId);
+          "Unexpected platform view context. "
+              + "When constructing a platform view in the factory, use the context from PlatformViewFactory#create, view id: "
+              + viewId);
     }
 
     container.addView(embeddedView);

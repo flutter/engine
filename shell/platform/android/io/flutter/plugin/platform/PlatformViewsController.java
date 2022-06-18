@@ -11,6 +11,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -251,13 +252,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                   || Build.VERSION.SDK_INT < 23;
 
           if (!usesSoftwareRendering && shouldUseVD) {
+            validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
+
             Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
             // API level 20 is required to use VirtualDisplay#setSurface.
             ensureValidAndroidVersion(20);
 
             final TextureRegistry.SurfaceTextureEntry textureEntry =
                 textureRegistry.createSurfaceTexture();
-            VirtualDisplayController vdController =
+
+            final VirtualDisplayController vdController =
                 VirtualDisplayController.create(
                     context,
                     accessibilityEventsDelegate,
@@ -272,6 +276,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                         platformViewsChannel.invokeViewFocused(request.viewId);
                       }
                     });
+
             if (vdController == null) {
               throw new IllegalStateException(
                   "Failed creating virtual display for a "
@@ -358,22 +363,25 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void dispose(int viewId) {
-          final PlatformView platformView = platformViews.get(viewId);
-          if (platformView != null) {
-            platformViews.remove(viewId);
-            platformView.dispose();
-          }
-          final VirtualDisplayController vdController = vdControllers.get(viewId);
-          // The platform view is displayed using TextureLayer and a virtual display.
-          if (vdController != null) {
-            final View embeddedView = platformView.getView();
+          if (usesVirtualDisplay(viewId)) {
+            final VirtualDisplayController vdController = vdControllers.get(viewId);
+            final View embeddedView = vdController.getView();
             if (embeddedView != null) {
               contextToEmbeddedView.remove(embeddedView.getContext());
             }
+            contextToEmbeddedView.remove(vdController.getView().getContext());
             vdController.dispose();
             vdControllers.remove(viewId);
             return;
           }
+
+          final PlatformView platformView = platformViews.get(viewId);
+          if (platformView == null) {
+            Log.e(TAG, "Disposing unknown platform view with id: " + viewId);
+            return;
+          }
+          platformViews.remove(viewId);
+          platformView.dispose();
           // The platform view is displayed using a TextureLayer and is inserted in the view
           // hierarchy.
           final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
@@ -405,8 +413,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void offset(int viewId, double top, double left) {
-          // Virtual displays don't need an accessibility offset.
-          if (vdControllers.containsKey(viewId)) {
+          if (usesVirtualDisplay(viewId)) {
+            // Virtual displays don't need an accessibility offset.
             return;
           }
           // For platform views that use TextureView and are in the view hierarchy, set
@@ -437,8 +445,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final int physicalWidth = toPhysicalPixels(request.newLogicalWidth);
           final int physicalHeight = toPhysicalPixels(request.newLogicalHeight);
           final int viewId = request.viewId;
-          final VirtualDisplayController vdController = vdControllers.get(viewId);
-          if (vdController != null) {
+
+          if (usesVirtualDisplay(viewId)) {
+            final VirtualDisplayController vdController = vdControllers.get(viewId);
             // Resizing involved moving the platform view to a new virtual display. Doing so
             // potentially results in losing an active input connection. To make sure we preserve
             // the input connection when resizing we lock it here and unlock after the resize is
@@ -497,13 +506,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         @Override
         public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
           final int viewId = touch.viewId;
-          final VirtualDisplayController vdController = vdControllers.get(viewId);
           final float density = context.getResources().getDisplayMetrics().density;
-          if (vdController != null) {
+
+          if (usesVirtualDisplay(viewId)) {
+            final VirtualDisplayController vdController = vdControllers.get(viewId);
             final MotionEvent event = toMotionEvent(density, touch, true);
             vdController.dispatchTouchEvent(event);
             return;
           }
+
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView == null) {
             Log.e(TAG, "Sending touch to an unknown view with id: " + viewId);
@@ -529,12 +540,20 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + viewId
                     + ")");
           }
-          final PlatformView platformView = platformViews.get(viewId);
-          if (platformView == null) {
-            Log.e(TAG, "Setting direction to an unknown view with id: " + viewId);
-            return;
+
+          View embeddedView;
+
+          if (usesVirtualDisplay(viewId)) {
+            final VirtualDisplayController controller = vdControllers.get(viewId);
+            embeddedView = controller.getView();
+          } else {
+            final PlatformView platformView = platformViews.get(viewId);
+            if (platformView == null) {
+              Log.e(TAG, "Setting direction to an unknown view with id: " + viewId);
+              return;
+            }
+            embeddedView = platformView.getView();
           }
-          final View embeddedView = platformView.getView();
           if (embeddedView == null) {
             Log.e(TAG, "Setting direction to a null view with id: " + viewId);
             return;
@@ -544,12 +563,19 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void clearFocus(int viewId) {
-          final PlatformView platformView = platformViews.get(viewId);
-          if (platformView == null) {
-            Log.e(TAG, "Clearing focus on an unknown view with id: " + viewId);
-            return;
+          View embeddedView;
+
+          if (usesVirtualDisplay(viewId)) {
+            final VirtualDisplayController controller = vdControllers.get(viewId);
+            embeddedView = controller.getView();
+          } else {
+            final PlatformView platformView = platformViews.get(viewId);
+            if (platformView == null) {
+              Log.e(TAG, "Clearing focus on an unknown view with id: " + viewId);
+              return;
+            }
+            embeddedView = platformView.getView();
           }
-          final View embeddedView = platformView.getView();
           if (embeddedView == null) {
             Log.e(TAG, "Clearing focus on a null view with id: " + viewId);
             return;
@@ -794,6 +820,29 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     textInputPlugin = null;
   }
 
+  /**
+   * Returns true if Flutter should perform input connection proxying for the view.
+   *
+   * <p>If the view is a platform view managed by this platform views controller returns true. Else
+   * if the view was created in a platform view's VD, delegates the decision to the platform view's
+   * {@link View#checkInputConnectionProxy(View)} method. Else returns false.
+   */
+  public boolean checkInputConnectionProxy(@Nullable View view) {
+    // View can be null on some devices
+    // See: https://github.com/flutter/flutter/issues/36517
+    if (view == null) {
+      return false;
+    }
+    if (!contextToEmbeddedView.containsKey(view.getContext())) {
+      return false;
+    }
+    View platformView = contextToEmbeddedView.get(view.getContext());
+    if (platformView == view) {
+      return true;
+    }
+    return platformView.checkInputConnectionProxy(view);
+  }
+
   public PlatformViewRegistry getRegistry() {
     return registry;
   }
@@ -821,11 +870,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   @Override
   @Nullable
   public View getPlatformViewById(int viewId) {
+    if (usesVirtualDisplay(viewId)) {
+      final VirtualDisplayController controller = vdControllers.get(viewId);
+      return controller.getView();
+    }
+
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
       return null;
     }
     return platformView.getView();
+  }
+
+  @Override
+  public boolean usesVirtualDisplay(int id) {
+    return vdControllers.containsKey(id);
   }
 
   private void lockInputConnection(@NonNull VirtualDisplayController controller) {
@@ -891,6 +950,29 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     coords.x = (float) (double) coordsList.get(7) * density;
     coords.y = (float) (double) coordsList.get(8) * density;
     return coords;
+  }
+
+  // Creating a VirtualDisplay larger than the size of the device screen size
+  // could cause the device to restart: https://github.com/flutter/flutter/issues/28978
+  private void validateVirtualDisplayDimensions(int width, int height) {
+    DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+    if (height > metrics.heightPixels || width > metrics.widthPixels) {
+      String message =
+          "Creating a virtual display of size: "
+              + "["
+              + width
+              + ", "
+              + height
+              + "] may result in problems"
+              + "(https://github.com/flutter/flutter/issues/2897)."
+              + "It is larger than the device screen size: "
+              + "["
+              + metrics.widthPixels
+              + ", "
+              + metrics.heightPixels
+              + "].";
+      Log.w(TAG, message);
+    }
   }
 
   private float getDisplayDensity() {
