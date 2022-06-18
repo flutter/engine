@@ -107,7 +107,7 @@ bool RunFlutter(GLFWwindow* window,
   config.open_gl.gl_proc_resolver = [](void*, const char* name) -> void* {
     if (strcmp(name, "eglGetCurrentDisplay") == 0) {
       // Skia attempts to resolve the EGL display and its extensions even if
-      // desktop GL is being used. Normally this isn't be a problem, but the
+      // desktop GL is being used. Normally this isn't a problem, but the
       // Linux vertio driver behaves in a non-standard way on some VMs:
       // Both `eglGetCurrentDisplay` and `eglQueryString` return invalid
       // non-null/non-error values.
@@ -164,10 +164,6 @@ int main(int argc, const char* argv[]) {
     std::cout << "Could not initialize GLFW." << std::endl;
     return EXIT_FAILURE;
   }
-
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   GLFWwindow* window = glfwCreateWindow(
       kInitialWindowWidth, kInitialWindowHeight, "Flutter", NULL, NULL);
