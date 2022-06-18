@@ -104,6 +104,11 @@ bool RunFlutter(GLFWwindow* window,
     return 0;  // FBO0
   };
   config.open_gl.gl_proc_resolver = [](void*, const char* name) -> void* {
+    if (strcmp(name, "eglQueryString") == 0) {
+      // Skia always attempts to resolve and use this proc to lookup
+      // extensions, even when desktop GL is in use.
+      return nullptr;
+    }
     return reinterpret_cast<void*>(glfwGetProcAddress(name));
   };
 
