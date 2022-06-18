@@ -8,22 +8,26 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterEngine;
 
 public class PlatformViewsActivity extends TestActivity {
+  static final String TEXT_VIEW_PV = "scenarios/textPlatformView";
+  static final String SURFACE_VIEW_PV = "scenarios/surfacePlatformView";
+  static final String TEXTURE_VIEW_PV = "scenarios/texturePlatformView";
+
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
     super.configureFlutterEngine(flutterEngine);
     flutterEngine
         .getPlatformViewsController()
         .getRegistry()
-        .registerViewFactory("scenarios/textPlatformView", new TextPlatformViewFactory());
+        .registerViewFactory(TEXT_VIEW_PV, new TextPlatformViewFactory());
 
     flutterEngine
         .getPlatformViewsController()
         .getRegistry()
-        .registerViewFactory("scenarios/surfacePlatformView", new SurfacePlatformViewFactory());
+        .registerViewFactory(SURFACE_VIEW_PV, new SurfacePlatformViewFactory());
 
     flutterEngine
         .getPlatformViewsController()
         .getRegistry()
-        .registerViewFactory("scenarios/texturePlatformView", new TexturePlatformViewFactory());
+        .registerViewFactory(TEXTURE_VIEW_PV, new TexturePlatformViewFactory());
   }
 }
