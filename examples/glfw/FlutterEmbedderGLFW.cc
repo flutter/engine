@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstring>
 #include <iostream>
 
 #include "GLFW/glfw3.h"
@@ -104,9 +105,12 @@ bool RunFlutter(GLFWwindow* window,
     return 0;  // FBO0
   };
   config.open_gl.gl_proc_resolver = [](void*, const char* name) -> void* {
-    if (strcmp(name, "eglQueryString") == 0) {
-      // Skia always attempts to resolve and use this proc to lookup
-      // extensions, even when desktop GL is in use.
+    if (strcmp(name, "eglGetCurrentDisplay") == 0) {
+      // Skia attempts to resolve the EGL display and its extensions even if
+      // desktop GL is being used. Normally this isn't be a problem, but the
+      // Linux vertio driver behaves in a non-standard way on some VMs:
+      // Both `eglGetCurrentDisplay` and `eglQueryString` return invalid
+      // non-null/non-error values.
       return nullptr;
     }
     return reinterpret_cast<void*>(glfwGetProcAddress(name));
