@@ -1085,9 +1085,9 @@ void addPlatformView(
     _valueMap,
     if (Platform.isIOS) 3, // 3 entries in map for iOS.
     if (Platform.isAndroid && !usesAndroidHybridComposition)
-      6, // 6 entries in map for virtual displays on Android.
+      6, // 6 entries in map for texture on Android.
     if (Platform.isAndroid && usesAndroidHybridComposition)
-      5, // 5 entries in map for Android views.
+      5, // 5 entries in map for hybrid composition on Android.
     _valueString,
     'id'.length,
     ...utf8.encode('id'),

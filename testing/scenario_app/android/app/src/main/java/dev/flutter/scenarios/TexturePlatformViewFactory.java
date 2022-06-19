@@ -67,7 +67,7 @@ public final class TexturePlatformViewFactory extends PlatformViewFactory {
               canvas.drawColor(Color.WHITE);
 
               final Paint paint = new Paint();
-              paint.setColor(Color.RED);
+              paint.setColor(Color.GREEN);
               canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, 20, paint);
               textureView.unlockCanvasAndPost(canvas);
             }
