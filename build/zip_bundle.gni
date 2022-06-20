@@ -105,3 +105,43 @@ template("zip_bundle_from_file") {
     ]
   }
 }
+
+template("zip_bundle_with_entitlements") {
+  assert(defined(invoker.output), "output must be defined")
+  assert(defined(invoker.files), "files must be defined as a list of scopes")
+  action(target_name) {
+    script = "//flutter/build/zip.py"
+    outputs = [ "$root_build_dir/zip_archives/${invoker.output}" ]
+    sources = []
+    forward_variables_from(invoker, [ "visibility" ])
+    deps = invoker.deps
+
+    write_file("$target_gen_dir/entitlements.txt", invoker.file_with_entitlements)
+    write_file("$target_gen_dir/without_entitlements.txt", invoker.file_without_entitlements)
+    copy_files = invoker.files
+    copy_files += [
+      {
+        source = "$target_gen_dir/entitlements.txt"
+        destination = "entitlements.txt"
+      },
+      {
+        source = "$target_gen_dir/without_entitlements.txt"
+        destination = "without_entitlements.txt"
+      }
+    ]
+
+    args = [
+      "-o",
+      rebase_path(outputs[0]),
+    ]
+
+    foreach(input, copy_files) {
+      args += [
+        "-i",
+        rebase_path(input.source),
+        input.destination,
+      ]
+      sources += [ input.source ]
+    }
+  }
+}

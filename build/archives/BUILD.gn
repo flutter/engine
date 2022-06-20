@@ -6,7 +6,7 @@ import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 
 if (build_engine_artifacts) {
-  zip_bundle("artifacts") {
+  zip_bundle_with_entitlements("artifacts") {
     deps = [
       "//flutter/flutter_frontend_server:frontend_server",
       "//flutter/impeller/compiler:impellerc",
@@ -15,6 +15,8 @@ if (build_engine_artifacts) {
       "//flutter/shell/testing:testing",
       "//flutter/shell/testing:testing_fractional_translation",
     ]
+    file_with_entitlements = []
+    file_without_entitlements = []
     prefix = "$full_target_platform_name/"
     if (flutter_runtime_mode != "debug") {
       prefix = "$full_platform_name-$flutter_runtime_mode/"
@@ -67,6 +69,19 @@ if (build_engine_artifacts) {
         destination = "libtessellator$dll"
       },
     ]
+    if (host_os == "mac" && full_target_platform_name == "darwin-x64") {
+      if (flutter_runtime_mode == "debug") {
+        file_with_entitlements = [
+          "flutter_tester",
+          "gen_snapshot",
+          "impellerc",
+          "libtessellator.dylib",
+        ]
+      } else if (flutter_runtime_mode == "profile" ||
+                 flutter_runtime_mode == "release") {
+        file_with_entitlements = [ "gen_snapshot" ]
+      }
+    }
   }
 }
 
