@@ -116,8 +116,10 @@ template("zip_bundle_with_entitlements") {
     forward_variables_from(invoker, [ "visibility" ])
     deps = invoker.deps
 
-    write_file("$target_gen_dir/entitlements.txt", invoker.file_with_entitlements)
-    write_file("$target_gen_dir/without_entitlements.txt", invoker.file_without_entitlements)
+    write_file("$target_gen_dir/entitlements.txt",
+               invoker.file_with_entitlements)
+    write_file("$target_gen_dir/without_entitlements.txt",
+               invoker.file_without_entitlements)
     copy_files = invoker.files
     copy_files += [
       {
@@ -127,7 +129,7 @@ template("zip_bundle_with_entitlements") {
       {
         source = "$target_gen_dir/without_entitlements.txt"
         destination = "without_entitlements.txt"
-      }
+      },
     ]
 
     args = [
