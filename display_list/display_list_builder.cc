@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
+
 #include "flutter/display_list/display_list_builder.h"
 
 #include "flutter/display_list/display_list_blend_mode.h"
@@ -47,11 +49,64 @@ void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   return op + 1;
 }
 
+//bool CompareVirtualLayerInfo(DisplayVirtualLayerInfo i1, DisplayVirtualLayerInfo i2) {
+//  return i1.index < i2.index;
+//}
+
 sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
   auto indexes = virtual_layer_indexes_;
+  
+  if(!indexes.empty()) {
+  
+    // 1. tree shake.
+    std::vector<int> garbage;
+    for(uint32_t i = 1; i < indexes.size(); i++) {
+      if(indexes[i].isStart) {
+          
+      }else{
+        if(indexes[i-1].isStart) {
+          if(indexes[i].index == indexes[i-1].index) {
+            // del []
+            garbage.push_back(i-1);
+            garbage.push_back(i);
+          }
+        }
+      }
+    }
+    std::sort(garbage.begin(), garbage.end());
+    for(int i = garbage.size()-1; i >= 0; i--) {
+      indexes.erase(indexes.begin()+garbage[i]);
+    }
+    
+    
+    // 2. addDepth.
+    uint32_t currDepth = 0;
+    for(uint32_t i = 1; i < indexes.size(); i++) {
+      if(indexes[i].isStart) {
+        if(indexes[i-1].isStart) {
+          // [[
+          currDepth += 1;
+          indexes[i].depth = currDepth;
+        }else{
+          // ][
+          indexes[i].depth = currDepth;
+        }
+      }else{
+        if(indexes[i-1].isStart) {
+          // []
+          indexes[i].depth = currDepth;
+        }else{
+          // ]]
+          currDepth -= 1;
+          indexes[i].depth = currDepth;
+        }
+      }
+    }
+  }
+  
   size_t bytes = used_;
   int count = op_count_;
   size_t nested_bytes = nested_bytes_;
@@ -67,33 +122,34 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
 }
 
 void DisplayListBuilder::startRecordVirtualLayer(std::string type) {
-  if (!virtual_layer_indexes_.empty() &&
-      storage_op_count_ == virtual_layer_indexes_.back().index &&
-      virtual_layer_indexes_.back().isStart) {
-    virtual_layer_indexes_.back().type = type;
-  } else {
+//  if (!virtual_layer_indexes_.empty() &&
+//      storage_op_count_ == virtual_layer_indexes_.back().index &&
+//      virtual_layer_indexes_.back().isStart) {
+//    virtual_layer_indexes_.back().type = type;
+//  } else {
     virtual_layer_indexes_.push_back(
-        DisplayVirtualLayerInfo{storage_op_count_, type, true});
-  }
+        DisplayVirtualLayerInfo{storage_op_count_, type, true, 0});
+//  }
 }
 
 void DisplayListBuilder::saveVirtualLayer(std::string type) {
+//  FML_DCHECK(!virtual_layer_indexes_.empty());
   if (virtual_layer_indexes_.empty()) {
     return;
   }
 
-  if (storage_op_count_ == virtual_layer_indexes_.back().index &&
-      type == virtual_layer_indexes_.back().type) {
-    virtual_layer_indexes_.pop_back();
-    return;
-  }
-
-  if (storage_op_count_ != virtual_layer_indexes_.back().index &&
-      virtual_layer_indexes_.back().isStart) {
+//  if (storage_op_count_ == virtual_layer_indexes_.back().index &&
+//      type == virtual_layer_indexes_.back().type) {
+//    virtual_layer_indexes_.pop_back();
+//    return;
+//  }
+//
+//  if (storage_op_count_ != virtual_layer_indexes_.back().index &&
+//      virtual_layer_indexes_.back().isStart) {
     virtual_layer_indexes_.push_back(
         DisplayVirtualLayerInfo{storage_op_count_, type, false});
-    return;
-  }
+//    return;
+//  }
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)

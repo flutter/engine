@@ -213,12 +213,10 @@ class SaveLayerOptions {
 };
 
 struct DisplayVirtualLayerInfo {
-  // public:
-  int index;
+  uint32_t index;
   std::string type;
   bool isStart;
-  //  DisplayVirtualLayerInfo(int index, std::string type, bool isStart) :
-  //  index(index), type(type), isStart(isStart) {}
+  uint32_t depth;
 };
 
 // The base class that contains a sequence of rendering operations

@@ -259,46 +259,236 @@ void DisplayList::Compare(DisplayList* dl) {
   }
 
   // 0. Diff alg.
+
   SkRect damage;
+  auto newTree = virtual_layer_indexes();
+  auto oldTree = dl->virtual_layer_indexes();
+  
+  if(newTree.empty() || oldTree.empty() || newTree[0].type != oldTree[0].type) {
+    damage = bounds();
+    setVirtualBounds(damage);
+    virtual_bounds_valid_ = true;
+    return;
+  }
+  
+  std::vector<std::string> stack;
+  bool isLegal = true;
+  for(unsigned long i = 0; i< oldTree.size(); i++) {
+    if(oldTree[i].isStart) {
+      stack.push_back(oldTree[i].type);
+    }else{
+      std::string t = stack[stack.size()-1];
+      stack.pop_back();
+      if(t != oldTree[i].type) {
+        isLegal = false;
 
-  const auto current = virtual_layer_indexes();
-  const auto old = dl->virtual_layer_indexes();
-
-  uint8_t* currentOpHead = storage_.get();
-  uint8_t* currentOpTail = currentOpHead + byte_count_;
-  uint8_t* oldOpHead = dl->storage_.get();
-  uint8_t* oldOpTail = dl->storage_.get() + dl->byte_count_;
-
-  // 1. 算法实现1 简易的深搜.
-  std::set<int> oldUsage;
-  for (unsigned long i = 0; i < current.size(); i += 2) {
-    for (unsigned long j = 0; j < old.size(); j += 2) {
-      if (oldUsage.find(i) == oldUsage.end() &&
-          current[i].type == old[j].type) {
-        auto curH = getNPtr(currentOpHead, currentOpTail, current[i].index);
-        auto curE = getNPtr(currentOpHead, currentOpTail, current[i + 1].index);
-        auto oldH = getNPtr(oldOpHead, oldOpTail, old[j].index);
-        auto oldE = getNPtr(oldOpHead, oldOpTail, old[j + 1].index);
-        if (curE - curH == oldE - oldH && CompareOps(curH, curE, oldH, oldE)) {
-          oldUsage.insert(j);
-          break;
-        } else {
-          auto rect = partBounds(current[i].index, current[i + 1].index);
-          damage.join(rect);
-          break;
-        }
       }
     }
   }
-
-  for (unsigned long i = 0; i < old.size(); i += 2) {
-    if (oldUsage.find(i) == oldUsage.end()) {
-      auto rect = partBounds(old[i].index, current[i + 1].index);
-      damage.join(rect);
-    }
+  if(!isLegal || !stack.empty()) {
+    damage = bounds();
+    setVirtualBounds(damage);
+    virtual_bounds_valid_ = true;
+    return;
   }
+  
+//  newTree.insert(newTree.begin(), DisplayVirtualLayerInfo{0, "_kDisplayVirtualLayerInfo", true, 0});
+//  auto end1 = newTree.end()->index;
+//  newTree.insert(newTree.end(), DisplayVirtualLayerInfo{end1, "_kDisplayVirtualLayerInfo", false, 0});
+//
+//  oldTree.insert(oldTree.begin(), DisplayVirtualLayerInfo{0, "_kDisplayVirtualLayerInfo", true, 0});
+//  auto end2 = oldTree.end()->index;
+//  oldTree.insert(oldTree.end(), DisplayVirtualLayerInfo{end2, "_kDisplayVirtualLayerInfo", false, 0});
+  
+  // input: two layer indexes
+  // output: diff of two layerTress
 
-  // 3. Fake
+  uint8_t* newOpHead = storage_.get();
+  uint8_t* newOpTail = newOpHead + byte_count_;
+  uint8_t* oldOpHead = dl->storage_.get();
+  uint8_t* oldOpTail = dl->storage_.get() + dl->byte_count_;
+
+  
+  // 1.1 算法实现1 简易的深搜.
+//  for (unsigned long i = 0; i < newTree.size(); i += 2) {
+//    for (unsigned long j = 0; j < oldTree.size(); j += 2) {
+//      if (oldUsage.find(i) == oldUsage.end() &&
+//          newTree[i].type == oldTree[j].type) {
+//        auto curH = getNPtr(newOpHead, newOpTail, newTree[i].index);
+//        auto curE = getNPtr(newOpHead, newOpTail, newTree[i + 1].index);
+//        auto oldH = getNPtr(oldOpHead, oldOpTail, oldTree[j].index);
+//        auto oldE = getNPtr(oldOpHead, oldOpTail, oldTree[j + 1].index);
+//        if (curE - curH == oldE - oldH && CompareOps(curH, curE, oldH, oldE)) {
+//          oldUsage.insert(j);
+//          break;
+//        } else {
+//          auto rect = partBounds(newTree[i].index, newTree[i + 1].index);
+//          damage.join(rect);
+//          break;
+//        }
+//      }
+//    }
+//  }
+//
+//  for (unsigned long i = 0; i < oldTree.size(); i += 2) {
+////   找不到就标脏
+//    if (oldUsage.find(i) == oldUsage.end()) {
+//      auto rect = dl->partBounds(oldTree[i].index, oldTree[i + 1].index);
+//      damage.join(rect);
+//    }
+//  }
+  
+  // 1.2 算法实现2 从左右分别进行深搜
+  
+  // TODO: 把比较放到Compare上层.
+
+  
+  // 给定tail返回head
+  std::function<int(int,const std::vector<DisplayVirtualLayerInfo>&)> findHeadWithTail = [&] (int tailIndex, const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    for (int i = tailIndex - 1; i >= 0; i--) {
+      if(vec[i].isStart && vec[i].type == vec[tailIndex].type && vec[i].depth == vec[tailIndex].depth) {
+        return i;
+      }
+    }
+    return 0;
+  };
+
+  // 给定head找到对应tail
+  std::function<int(int,const std::vector<DisplayVirtualLayerInfo>&)> findTailWithHead = [&] (int headIndex, const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    for(unsigned long i = headIndex+1; i < vec.size();i++) {
+      if(!vec[i].isStart && vec[i].type == vec[headIndex].type && vec[i].depth == vec[headIndex].depth) {
+        return i;
+      }
+    }
+    return 0;
+  };
+
+  // 给定Head或者Tail 进行jump.
+  std::function<int(int, bool,const std::vector<DisplayVirtualLayerInfo>&)> treeJump = [&] (int index, bool isHead,const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    if(isHead) {
+      for (unsigned long i = index+1; i < vec.size(); i++) {
+        if(vec[i].depth == vec[index].depth && vec[i].isStart) {
+          return i;
+        }
+      }
+    }else{
+      for (int i = index-1; i > 0; i--) {
+        if(vec[i].depth == vec[index].depth && !vec[i].isStart) {
+          return i;
+        }
+      }
+    }
+    return 0;
+  };
+
+  // 递归的主函数，将new old 中的子树进行diff，获得差异化部分.
+  // 传入 []
+  std::function<void(int, int, int, int)> diffTree = [&] (int newH, int newT, int oldH, int oldT) -> void {
+    
+    // 比较父节点.
+    auto h1 = getNPtr(newOpHead, newOpTail, newTree[newH].index);
+    auto t1 = getNPtr(newOpHead, newOpTail, newTree[newH+1].index);
+    auto h2 = getNPtr(oldOpHead, oldOpTail, oldTree[oldH].index);
+    auto t2 = getNPtr(oldOpHead, oldOpTail, oldTree[oldH+1].index);
+
+    if (!(t1 - h1 == t2 - h2 && CompareOps(h1, t1, h2, t2))) {
+      // 父节点不一致直接寄.
+      auto r1 = partBounds(newTree[newH].index, newTree[newT].index);
+      auto r2 = dl->partBounds(oldTree[oldH].index, oldTree[oldT].index);
+      damage.join(r1);
+      damage.join(r2);
+      return;
+    }
+    
+    // 新树没有子树
+    if (newT - newH == 1 && oldT - oldH != 1) {
+      auto r1 = dl->partBounds(oldTree[oldH+1].index, oldTree[oldT-1].index);
+      damage.join(r1);
+      return;
+    }
+
+    // 旧树没有子树
+    if (oldT - oldH == 1 && oldT - oldH != 1) {
+      auto r1 = partBounds(newTree[newH+1].index, newTree[newT-1].index);
+      damage.join(r1);
+      return;
+    }
+    
+    if (oldT - oldH == 1 && newT - oldH == 1) {
+      // 子节点在这里 return
+      return;
+    }
+
+    // op一致后比较子树
+    int newTreeHead = 0;
+    int newTreeTail = 0;
+    int oldTreeHead = 0;
+    int oldTreeTail = 0;
+
+    // 1. 从左往右递归子树
+    while(newTreeTail != newT-1 && oldTreeTail != oldT-1) {
+      if(newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
+        if(newTreeHead == 0) {
+          newTreeHead = newH + 1;
+          oldTreeHead = oldH + 1;
+        }else{
+          newTreeHead = treeJump(newTreeHead, true, newTree);
+          oldTreeHead = treeJump(oldTreeHead, true, oldTree);
+        }
+        newTreeTail = findTailWithHead(newTreeHead, newTree);
+        oldTreeTail = findTailWithHead(oldTreeHead, oldTree);
+        diffTree(newTreeHead, newTreeTail, oldTreeHead, oldTreeTail);
+      }else{
+        break;
+      }
+    }
+
+    // 2. 从右往左递归子树
+
+    int edgeNewTreeTail = newTreeTail;
+    int edgeOldTreeTail = oldTreeTail;
+
+    oldTreeTail = 0;
+    newTreeTail = 0;
+    newTreeHead = 0;
+    oldTreeHead = 0;
+    
+    while(newTreeHead > edgeNewTreeTail && oldTreeHead > edgeOldTreeTail) {
+      if(newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
+        if(oldTreeTail == 0) {
+          oldTreeTail = oldT-1;
+          newTreeTail = newT-1;
+        }else{
+          oldTreeTail = oldTreeHead - 1;
+          newTreeTail = newTreeHead - 1;
+        }
+        newTreeHead = findHeadWithTail(newTreeTail, newTree);
+        oldTreeHead = findHeadWithTail(oldTreeTail, oldTree);
+        diffTree(newTreeHead, newTreeTail, oldTreeHead, oldTreeTail);
+      }else{
+        break;
+      }
+    }
+
+    // 3. 中间的都寄了
+    if(newTreeHead - edgeNewTreeTail > 1) {
+      int garbageNewTreeHead = edgeNewTreeTail + 1;
+      int garbageNewTreeTail = newTreeHead - 1;
+      auto r1 = partBounds(newTree[garbageNewTreeHead].index, newTree[garbageNewTreeTail].index);
+      damage.join(r1);
+    }
+    
+    if(oldTreeHead - edgeOldTreeTail > 1) {
+      int garbageOldTreeHead = edgeOldTreeTail + 1;
+      int garbageOldTreeTail = oldTreeHead - 1;
+      auto r1 = dl->partBounds(oldTree[garbageOldTreeHead].index, oldTree[garbageOldTreeTail].index);
+      damage.join(r1);
+    }
+  };
+  
+  diffTree(0, newTree.size()-1, 0, oldTree.size()-1);
+
+  // 2. Fake
   //  damage = partBounds(current[0].index, current[current.size()-1].index);
 
   // 2. Add damage.
