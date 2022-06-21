@@ -778,6 +778,7 @@ public class FlutterFragment extends Fragment
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }
+    context.registerComponentCallbacks(this);
   }
 
   @Override
@@ -874,6 +875,7 @@ public class FlutterFragment extends Fragment
   @Override
   public void onDetach() {
     super.onDetach();
+    requireContext().unregisterComponentCallbacks(this);
     if (delegate != null) {
       delegate.onDetach();
       delegate.release();
