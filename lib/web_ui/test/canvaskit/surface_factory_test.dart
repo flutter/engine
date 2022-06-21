@@ -26,20 +26,20 @@ void testMain() {
       expect(SurfaceFactory(2).maximumSurfaces, 2);
     });
 
-    test('getSurface', () {
+    test('getOverlay', () {
       final SurfaceFactory factory = SurfaceFactory(3);
       expect(factory.baseSurface, isNotNull);
 
       expect(factory.debugSurfaceCount, equals(1));
 
       // Get a surface from the factory, it should be unique.
-      final Surface? newSurface = factory.getSurface();
+      final Surface? newSurface = factory.getOverlay();
       expect(newSurface, isNot(equals(factory.baseSurface)));
 
       expect(factory.debugSurfaceCount, equals(2));
 
       // Get another surface from the factory. Now we are at maximum capacity.
-      final Surface? anotherSurface = factory.getSurface();
+      final Surface? anotherSurface = factory.getOverlay();
       expect(anotherSurface, isNot(equals(factory.baseSurface)));
 
       expect(factory.debugSurfaceCount, equals(3));
@@ -49,12 +49,12 @@ void testMain() {
       final SurfaceFactory factory = SurfaceFactory(3);
 
       // Create a new surface and immediately release it.
-      final Surface? surface = factory.getSurface();
+      final Surface? surface = factory.getOverlay();
       factory.releaseSurface(surface!);
 
       // If we create a new surface, it should be the same as the one we
       // just created.
-      final Surface? newSurface = factory.getSurface();
+      final Surface? newSurface = factory.getOverlay();
       expect(newSurface, equals(surface));
     });
 
@@ -63,7 +63,7 @@ void testMain() {
 
       expect(factory.isLive(factory.baseSurface), isTrue);
 
-      final Surface? surface = factory.getSurface();
+      final Surface? surface = factory.getOverlay();
       expect(factory.isLive(surface!), isTrue);
 
       factory.releaseSurface(surface);
@@ -86,7 +86,7 @@ void testMain() {
       // Create a few overlay surfaces
       final List<Surface> overlays = <Surface>[];
       for (int i = 0; i < 3; i++) {
-        overlays.add(originalFactory.getSurface()!
+        overlays.add(originalFactory.getOverlay()!
           ..acquireFrame(const ui.Size(10, 10))
           ..addToScene());
       }

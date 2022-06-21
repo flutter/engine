@@ -79,10 +79,6 @@ class SurfaceFactory {
   /// Useful in tests.
   int get debugCacheSize => _cache.length;
 
-  /// Whether or not we have already emitted a warning about creating too many
-  /// surfaces.
-  bool _warnedAboutTooManySurfaces = false;
-
   /// Gets an overlay surface from the cache or creates a new one if it wouldn't
   /// exceed the maximum. If there are no available surfaces, returns `null`.
   Surface? getOverlay() {
@@ -97,27 +93,6 @@ class SurfaceFactory {
     } else {
       return null;
     }
-  }
-
-  /// Gets a [Surface] which is ready to paint to.
-  ///
-  /// If there are available surfaces in the cache, then this will return one of
-  /// them. If this factory hasn't yet created [maximumSurfaces] surfaces, then a
-  /// new one will be created. If this factory has already created [maximumSurfaces]
-  /// surfaces, then this will return null.
-  Surface? getSurface() {
-    final Surface? surface = getOverlay();
-    if (surface != null) {
-      return surface;
-    }
-    if (!_warnedAboutTooManySurfaces) {
-      _warnedAboutTooManySurfaces = true;
-      printWarning('Flutter was unable to create enough overlay surfaces. '
-          'This is usually caused by too many platform views being '
-          'displayed at once. '
-          'You may experience incorrect rendering.');
-    }
-    return null;
   }
 
   /// Releases all surfaces so they can be reused in the next frame.
@@ -158,7 +133,7 @@ class SurfaceFactory {
 
   /// Returns [true] if [surface] is currently being used to paint content.
   ///
-  /// The base surface and backup surface always count as live.
+  /// The base surface always counts as live.
   ///
   /// If a surface is not live, then it must be in the cache and ready to be
   /// reused.
