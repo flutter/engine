@@ -8,7 +8,7 @@
                     "base_path": "out/android_jit_release_x86/zip_archives/",
                     "include_paths": [
                         "out/android_jit_release_x86/zip_archives/android-x86-jit-release/artifacts.zip",
-                        "out/android_jit_release_x86/zip_archives/flutter_download_io"
+                        "out/android_jit_release_x86/zip_archives/download.flutter.io"
                     ]
                 }
             ],
@@ -86,8 +86,8 @@
                     "base_path": "out/android_debug/zip_archives/",
                     "include_paths": [
                         "out/android_debug/zip_archives/android-arm/symbols.zip",
-                        "out/android_debug/zip_archives/flutter_download_io",
-                        "out/android_debug/zip_archives/android-arm/sky_engine.zip",
+                        "out/android_debug/zip_archives/download.flutter.io",
+                        "out/android_debug/zip_archives/sky_engine.zip",
                         "out/android_debug/zip_archives/android-javadoc.zip"
                     ]
                 }
@@ -106,7 +106,7 @@
                 "config": "android_debug",
                 "targets": [
                     "flutter",
-                    "flutter/sky/dist:zip",
+                    "flutter/sky/dist:zip_old_location",
                     "flutter/shell/platform/android:embedding_jars",
                     "flutter/shell/platform/android:abi_jars",
                     "flutter/shell/platform/android:robolectric_tests"
@@ -139,7 +139,7 @@
                     "include_paths": [
                         "out/android_debug_arm64/zip_archives/android-arm64/artifacts.zip",
                         "out/android_debug_arm64/zip_archives/android-arm64/symbols.zip",
-                        "out/android_debug_arm64/zip_archives/flutter_download_io"
+                        "out/android_debug_arm64/zip_archives/download.flutter.io"
                     ]
                 }
             ],
@@ -174,7 +174,7 @@
                     "include_paths": [
                         "out/android_debug_x86/zip_archives/android-x86/artifacts.zip",
                         "out/android_debug_x86/zip_archives/android-x86/symbols.zip",
-                        "out/android_debug_x86/zip_archives/flutter_download_io"
+                        "out/android_debug_x86/zip_archives/download.flutter.io"
                     ]
                 }
             ],
@@ -209,7 +209,7 @@
                     "include_paths": [
                         "out/android_debug_x64/zip_archives/android-x64/artifacts.zip",
                         "out/android_debug_x64/zip_archives/android-x64/symbols.zip",
-                        "out/android_debug_x64/zip_archives/flutter_download_io"
+                        "out/android_debug_x64/zip_archives/download.flutter.io"
                     ]
                 }
             ],
