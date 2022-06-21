@@ -478,15 +478,29 @@ void main() {
     final Canvas canvas = Canvas(recorder);
     canvas.drawPaint(Paint()..color = color);
     final Picture picture = recorder.endRecording();
-    final Image image = picture.toGpuImage(30, 40);
+    final Image image = picture.toGpuImage(6, 8);
     picture.dispose();
+
+    expect(image.width, 6);
+    expect(image.height, 8);
 
     final ByteData? data = await image.toByteData();
 
     expect(data, isNotNull);
-    expect(data!.lengthInBytes, 30 * 40 * 4);
-    // The tester is using a mock GrDirectContext, so the actual image color
-    // data returned is not real and cannot be tested here.
+    expect(data!.lengthInBytes, 6 * 8 * 4);
+    final Uint32List bytes = data.buffer.asUint32List();
+    const int white = 0xFFFFFFFF;
+    const int grey  = 0xFFCCCCCC;
+    expect(bytes, const <int>[
+      white, white, white, grey,  grey,  grey,
+      white, white, white, grey,  grey,  grey,
+      white, white, white, grey,  grey,  grey,
+      white, white, white, grey,  grey,  grey,
+      grey,  grey,  grey,  white, white, white,
+      grey,  grey,  grey,  white, white, white,
+      grey,  grey,  grey,  white, white, white,
+      grey,  grey,  grey,  white, white, white,
+    ]);
   });
 
   test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {

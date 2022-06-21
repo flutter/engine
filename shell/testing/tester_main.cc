@@ -66,19 +66,12 @@ class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
  public:
   TesterGPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
                            bool render_to_surface)
-      : GPUSurfaceSoftware(delegate, render_to_surface),
-        context_(GrDirectContext::MakeMock(nullptr)) {}
+      : GPUSurfaceSoftware(delegate, render_to_surface) {}
 
 #if SUPPORT_FRACTIONAL_TRANSLATION
   // |Surface|
   bool EnableRasterCache() const override { return false; }
 #endif  // SUPPORT_FRACTIONAL_TRANSLATION
-
-  // |Surface|
-  GrDirectContext* GetContext() override { return context_.get(); }
-
- private:
-  sk_sp<GrDirectContext> context_;
 };
 
 class TesterPlatformView : public PlatformView,
@@ -245,7 +238,8 @@ int RunTester(const flutter::Settings& settings,
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell);
+    return std::make_unique<Rasterizer>(
+        shell, Rasterizer::MakeGpuImageBehavior::kBitmap);
   };
 
   auto shell = Shell::Create(flutter::PlatformData(),  //

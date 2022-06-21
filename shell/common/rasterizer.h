@@ -100,14 +100,28 @@ class Rasterizer final : public SnapshotDelegate,
   };
 
   //----------------------------------------------------------------------------
+  /// @brief     How to handle calls to MakeGpuImage.
+  enum class MakeGpuImageBehavior {
+    /// MakeGpuImage returns a GPU resident image, if possible.
+    kGpu,
+    /// MakeGpuImage returns a checkerboard bitmap. This is useful in test
+    /// contexts where no GPU surface is available.
+    kBitmap,
+  };
+
+  //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
   ///             be created on the raster task runner. Rasterizers are
   ///             currently only created by the shell (which also sets itself up
   ///             as the rasterizer delegate).
   ///
   /// @param[in]  delegate                   The rasterizer delegate.
+  /// @param[in]  gpu_image_behavior         How to handle calls to
+  ///                                        MakeGpuImage.
   ///
-  explicit Rasterizer(Delegate& delegate);
+  explicit Rasterizer(Delegate& delegate,
+                      MakeGpuImageBehavior gpu_image_behavior =
+                          MakeGpuImageBehavior::kGpu);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
@@ -504,6 +518,7 @@ class Rasterizer final : public SnapshotDelegate,
   static bool ShouldResubmitFrame(const RasterStatus& raster_status);
 
   Delegate& delegate_;
+  MakeGpuImageBehavior gpu_image_behavior_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;

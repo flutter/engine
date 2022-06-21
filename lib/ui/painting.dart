@@ -1846,8 +1846,6 @@ class _Image extends NativeFieldWrapperClass1 {
 
   int get height native 'Image_height';
 
-  String? get errorState native 'Image_errorState';
-
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     return _futurize((_Callback<ByteData> callback) {
       return _toByteData(format.index, (Uint8List? encoded) {
@@ -5386,6 +5384,9 @@ class Picture extends NativeFieldWrapperClass1 {
   /// The image object is created and returned synchronously, but is rasterized
   /// asynchronously. If the rasterization fails, an exception will be thrown
   /// when the image is drawn to a [Canvas].
+  ///
+  /// In the flutter_tester, this will always created a light gray and white
+  /// checkerboard bitmap with the requested dimensions.
   Image toGpuImage(int width, int height) {
     assert(!_disposed);
     if (width <= 0 || height <= 0) {
