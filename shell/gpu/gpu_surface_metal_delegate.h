@@ -94,6 +94,12 @@ class GPUSurfaceMetalDelegate {
   ///
   virtual bool AllowsDrawingWhenGpuDisabled() const;
 
+  //------------------------------------------------------------------------------
+  /// @brief Provide opportunity to run code in main thread when thread merge done
+  ///
+  virtual void DrawThreadWillLeaveMain() const;
+  
+  
   MTLRenderTargetType GetRenderTargetType();
 
  private:

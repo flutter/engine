@@ -55,6 +55,9 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   // |Surface|
   bool AllowsDrawingWhenGpuDisabled() const override;
 
+  // |Surface|
+  void DrawThreadWillLeaveMain() const override;
+  
   std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
       const SkISize& frame_info);
 

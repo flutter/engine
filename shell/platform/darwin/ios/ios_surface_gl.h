@@ -49,6 +49,9 @@ class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
   // |GPUSurfaceGLDelegate|
   bool AllowsDrawingWhenGpuDisabled() const override;
 
+  // |GPUSurfaceMetalDelegate|
+  void DrawThreadWillLeaveMain() const override;
+  
  private:
   std::unique_ptr<IOSRenderTargetGL> render_target_;
 

@@ -96,4 +96,9 @@ bool IOSSurfaceGL::AllowsDrawingWhenGpuDisabled() const {
   return false;
 }
 
+// |GPUSurfaceMetalDelegate|
+void IOSSurfaceGL::DrawThreadWillLeaveMain() const {
+  
+}
+
 }  // namespace flutter

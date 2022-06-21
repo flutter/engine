@@ -53,6 +53,9 @@ class GPUSurfaceGL : public Surface {
   // |Surface|
   bool AllowsDrawingWhenGpuDisabled() const override;
 
+  // |Surface|
+  void DrawThreadWillLeaveMain() const override;
+  
  private:
   bool CreateOrUpdateSurfaces(const SkISize& size);
 

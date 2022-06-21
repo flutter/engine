@@ -34,6 +34,8 @@ class Surface {
   virtual bool ClearRenderContext();
 
   virtual bool AllowsDrawingWhenGpuDisabled() const;
+  
+  virtual void DrawThreadWillLeaveMain() const;
 
   virtual bool EnableRasterCache() const;
 

@@ -110,4 +110,8 @@ bool GPUSurfaceGLDelegate::AllowsDrawingWhenGpuDisabled() const {
   return true;
 }
 
+void GPUSurfaceGLDelegate::DrawThreadWillLeaveMain() const {
+  
+}
+
 }  // namespace flutter

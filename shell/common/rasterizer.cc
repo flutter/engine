@@ -482,6 +482,7 @@ RasterStatus Rasterizer::DoDraw(
   if (raster_thread_merger_) {
     if (raster_thread_merger_->DecrementLease() ==
         fml::RasterThreadStatus::kUnmergedNow) {
+      surface_->DrawThreadWillLeaveMain();
       return RasterStatus::kEnqueuePipeline;
     }
   }
