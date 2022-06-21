@@ -15,7 +15,6 @@ import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
-import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -52,12 +51,18 @@ import java.util.List;
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
 
-  // These view types allow out-of-band drawing operation that don't notify the Android view
+  // These view types allow out-of-band drawing commands that don't notify the Android view
   // hierarchy.
   // To support these cases, Flutter hosts the embedded view in a VirtualDisplay,
   // and binds the VirtualDisplay to a GL texture that is then composed by the engine.
+  // However, there are a few issues with Virtual Displays. For example, they don't fully support
+  // accessibility due to https://github.com/flutter/flutter/issues/29717,
+  // and keyboard interactions may have non-derterministic behavior.
+  // Views that issue out-of-band drawing commands that aren't included in this array are
+  // required to call `View#invalidate()` to notify Flutter about the update.
+  // This isn't ideal, but given all the other limitations it's a reasonable tradeoff.
   // Related issue: https://github.com/flutter/flutter/issues/103630
-  private static Class[] VIEW_TYPES_REQUIRE_VD = {SurfaceView.class, TextureView.class};
+  private static Class[] VIEW_TYPES_REQUIRE_VD = {SurfaceView.class};
 
   private final PlatformViewRegistryImpl registry;
 
