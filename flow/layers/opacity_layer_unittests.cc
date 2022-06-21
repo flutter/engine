@@ -200,17 +200,17 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
   SkRect opacity_bounds;
   expected_layer_bounds.makeOffset(-layer_offset.fX, -layer_offset.fY)
       .roundOut(&opacity_bounds);
-  auto expected_draw_calls = std::vector(
-      {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{
-           1, MockCanvas::ConcatMatrixData{SkM44(layer_transform)}},
-       MockCanvas::DrawCall{
-           1, MockCanvas::SaveLayerData{opacity_bounds, opacity_paint, nullptr,
-                                        2}},
-       MockCanvas::DrawCall{2,
-                            MockCanvas::DrawPathData{child_path, child_paint}},
-       MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-       MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
+  auto expected_draw_calls =
+      std::vector({MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::ConcatMatrixData{SkM44(layer_transform)}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::SaveLayerData{opacity_bounds,
+                                                    opacity_paint, nullptr, 2}},
+                   MockCanvas::DrawCall{
+                       2, MockCanvas::DrawPathData{child_path, child_paint}},
+                   MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
