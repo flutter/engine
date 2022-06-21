@@ -496,7 +496,7 @@ Dart_Handle Canvas::drawImage(const CanvasImage* image,
       return Dart_Null();
     }
     SkPaint sk_paint;
-    canvas_->drawImage(sk_image, x, y, sampling, paint.paint(sk_paint));
+    canvas_->drawImage(sk_image, x, y, ToSk(sampling), paint.paint(sk_paint));
   }
   return Dart_Null();
 }
@@ -541,7 +541,8 @@ Dart_Handle Canvas::drawImageRect(const CanvasImage* image,
       return Dart_Null();
     }
     SkPaint sk_paint;
-    canvas_->drawImageRect(sk_image, src, dst, sampling, paint.paint(sk_paint),
+    canvas_->drawImageRect(sk_image, src, dst, ToSk(sampling),
+                           paint.paint(sk_paint),
                            SkCanvas::kFast_SrcRectConstraint);
   }
   return Dart_Null();
@@ -588,7 +589,7 @@ Dart_Handle Canvas::drawImageNine(const CanvasImage* image,
       return Dart_Null();
     }
     SkPaint sk_paint;
-    canvas_->drawImageNine(sk_image.get(), icenter, dst, filter,
+    canvas_->drawImageNine(sk_image.get(), icenter, dst, ToSk(filter),
                            paint.paint(sk_paint));
   }
   return Dart_Null();
@@ -737,7 +738,7 @@ Dart_Handle Canvas::drawAtlas(const Paint& paint,
                        reinterpret_cast<const SkRect*>(rects.data()),
                        reinterpret_cast<const SkColor*>(colors.data()),
                        rects.num_elements() / 4,  // SkRect have four floats.
-                       ToSk(blend_mode), sampling,
+                       ToSk(blend_mode), ToSk(sampling),
                        reinterpret_cast<const SkRect*>(cull_rect.data()),
                        paint.paint(sk_paint));
   }
