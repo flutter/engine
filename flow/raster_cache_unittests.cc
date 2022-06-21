@@ -330,8 +330,6 @@ TEST(RasterCache, DeviceRectRoundOutForSkPicture) {
   ASSERT_TRUE(cache.Draw(*picture, canvas));
 }
 
-// The device rect is pixel snapped if SUPPORT_FRACTIONAL_TRANSLATION
-// is disabled.
 TEST(RasterCache, ComputeDeviceRectBasedOnFractionalTranslation) {
   SkRect logical_rect = SkRect::MakeLTRB(0, 0, 300.2, 300.3);
   SkMatrix ctm = SkMatrix::MakeAll(2.0, 0, 0, 0, 2.0, 0, 0, 0, 1);
