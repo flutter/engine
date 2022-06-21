@@ -106,6 +106,52 @@ template("zip_bundle_from_file") {
   }
 }
 
+# Output: 
+# Creates a zip file in the $root_build_dir/zip_archives folder, 
+# with two files named "entitlements.txt" and "without_entitlements.txt".
+# 
+# Background: 
+# All Mac engine binaries need to be codesigned, either with entilements 
+# ( run on host ), or without entitlements (run on device).
+# entitlement.txt contains the file paths of Mac binaries that should be
+# code signed [with] entitlements.
+# without_entitlement.txt contains the file paths of Mac binaries that 
+# should be code signed [without] entitlements.
+#
+# Variables:
+# The output variable specifies the name of the zip file to create.
+# The files variable is an array of scopes that specify a source file or
+# directory and a destination path in the archive to create.
+# The file_with_entitlements variable specifies the list of file paths of
+# mac engine binaries that should be code signed with entitlements.
+# The file_without_entitlements variable specifies the list of file paths 
+# of mac engine binaries that should be code signed without entitlements.
+# 
+#
+# For example, to create a zip file named archive.zip 
+#   1. with all files in the root directory of the archive
+#   2. set entitlements.txt to contain two file paths, "flutter_tester"
+#      and "gen_snapshot"
+#   3. set without_entitlements.txt to contain one file path, 
+#      "FlutterMacOS.framework.zip/Versions/A/FlutterMacOS"
+#
+# zip_bundle_with_entitlements("sample") {
+#   output = "archive.zip"
+#   files = [
+#     {
+#       source = rebase_path("$root_build_dir/some/path/to/lib.so")
+#       destination = "lib.so"
+#     },
+#     {
+#       source = rebase_path("$root_build_dir/some/other/path/with/files")
+#       destination = "other_files"
+#     },
+#   ]
+#   file_with_entitlements = [ "flutter_tester", "gen_snapshot" ]
+#   file_without_entitlements = [ 
+#     "FlutterMacOS.framework.zip/Versions/A/FlutterMacOS" 
+#   ]
+# }
 template("zip_bundle_with_entitlements") {
   assert(defined(invoker.output), "output must be defined")
   assert(defined(invoker.files), "files must be defined as a list of scopes")
