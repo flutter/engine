@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <set>
-#include <stack>
 #include <type_traits>
 
 #include "flutter/display_list/display_list.h"
@@ -271,31 +269,38 @@ void DisplayList::Compare(DisplayList* dl) {
     virtual_bounds_valid_ = true;
     return;
   }
-  {
-    std::stack<std::string> stack;
-    bool isLegal = true;
-    for(unsigned long i = 0; i< oldTree.size(); i++) {
-      if(oldTree[i].isStart) {
-        stack.push(oldTree[i].type);
+  
+  // debug check virtual_indexes_.
+  
+  std::function<bool(const std::vector<DisplayVirtualLayerInfo>& tree)> checkTree = [&] (const std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
+    std::vector<std::string> stack;
+//    bool isLegal = true;
+    for(unsigned long i = 0; i< tree.size(); i++) {
+      if(tree[i].isStart) {
+        stack.push_back(tree[i].type);
       }else{
         if(stack.empty()) {
-          isLegal = false;
-          break;
+          return false;
         }
-        std::string t = stack.top();
-        stack.pop();
-        if(t != oldTree[i].type) {
-          isLegal = false;
-          break;
+        std::string t = stack[stack.size()-1];
+        stack.pop_back();
+        if(t != tree[i].type) {
+          return false;
         }
       }
     }
-    if(!isLegal || !stack.empty()) {
-      damage = bounds();
-      setVirtualBounds(damage);
-      virtual_bounds_valid_ = true;
-      return;
+    if(!stack.empty()) {
+      return false;
     }
+    return true;
+  };
+  
+  
+  if(!checkTree(newTree) || !checkTree(oldTree)){
+    damage = bounds();
+    setVirtualBounds(damage);
+    virtual_bounds_valid_ = true;
+    return;
   }
 
   uint8_t* newOpHead = storage_.get();
@@ -432,7 +437,7 @@ void DisplayList::Compare(DisplayList* dl) {
       }
       newTreeHead = findHeadWithTail(newTreeTail, newTree);
       oldTreeHead = findHeadWithTail(oldTreeTail, oldTree);
-      if(newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
+      if(newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead && newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
         rEdgeNewTreeHead = newTreeHead;
         rEdgeOldTreeHead = oldTreeHead;
         diffTree(newTreeHead, newTreeTail, oldTreeHead, oldTreeTail);
