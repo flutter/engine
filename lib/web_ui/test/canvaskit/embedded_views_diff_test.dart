@@ -115,10 +115,6 @@ void testMain() {
       expect(result.addToBeginning, isFalse);
 
       // Move last view to the beginning
-      // (The algo explores the diff from left to right, but in this case, it'd
-      // more efficient to add [1] at the beginning. Maybe we should compute both
-      // diffs, from left and right, and return the one that results in fewer
-      // add/remove operations?)
       result = diffViewList(<int>[2, 3, 4, 1], <int>[1, 2, 3, 4]);
       expect(result, isNotNull);
       expect(result!.viewsToAdd, <int>[1]);
