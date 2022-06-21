@@ -226,6 +226,7 @@ executable("flutter_linux_unittests") {
     "testing/mock_binary_messenger_response_handle.cc",
     "testing/mock_engine.cc",
     "testing/mock_epoxy.cc",
+    "testing/mock_im_context.cc",
     "testing/mock_plugin_registrar.cc",
     "testing/mock_renderer.cc",
     "testing/mock_settings.cc",
@@ -271,7 +272,7 @@ copy("publish_headers_linux") {
 }
 
 zip_bundle("flutter_gtk") {
-  prefix = ""
+  prefix = "$full_target_platform_name/"
   if (flutter_runtime_mode != "debug" ||
       (flutter_runtime_mode == "debug" && target_cpu != "x64")) {
     prefix = "$full_target_platform_name-$flutter_runtime_mode/"
