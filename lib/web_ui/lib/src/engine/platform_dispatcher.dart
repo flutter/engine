@@ -35,7 +35,38 @@ ui.VoidCallback? scheduleFrameCallback;
 
 typedef _KeyDataResponseCallback = void Function(bool handled);
 
-const String highContrastMediaQuery = '(forced-colors: active)';
+// ignore: avoid_classes_with_only_static_members
+class HighContrastSupport {
+  static HighContrastSupport instance = HighContrastSupport();
+
+  static const String highContrastMediaQueryString = '(forced-colors: active)';
+
+  /// Reference to css media query that indicates whether high contrast is on.
+  final html.MediaQueryList highContrastMediaQuery =
+      html.window.matchMedia(highContrastMediaQueryString);
+
+  EngineAccessibilityFeatures setAccessibilityFeatures() {
+    final EngineAccessibilityFeaturesBuilder builder =
+        EngineAccessibilityFeaturesBuilder(0);
+
+    if (matchHighContrastMediaQuery()) {
+      builder.highContrast = true;
+    }
+    return builder.build();
+  }
+
+  bool matchHighContrastMediaQuery() {
+    return highContrastMediaQuery.matches;
+  }
+
+  void addListener(dynamic listener) {
+    highContrastMediaQuery.addListener(listener);
+  }
+
+  void removeListener(dynamic listener) {
+    highContrastMediaQuery.removeListener(listener);
+  }
+}
 
 /// Platform event dispatcher.
 ///
@@ -60,19 +91,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
-    accessibilityFeatures: setAccessibilityFeatures(),
+    accessibilityFeatures:
+        HighContrastSupport.instance.setAccessibilityFeatures(),
   );
-
-  static EngineAccessibilityFeatures setAccessibilityFeatures() {
-    final EngineAccessibilityFeaturesBuilder builder =
-        EngineAccessibilityFeaturesBuilder(0);
-    final html.MediaQueryList _highContrastMediaQuery =
-        html.window.matchMedia(highContrastMediaQuery);
-    if (_highContrastMediaQuery.matches) {
-      builder.highContrast = true;
-    }
-    return builder.build();
-  }
 
   /// Receives all events related to platform configuration changes.
   @override
@@ -916,34 +937,26 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
   }
 
-  /// Reference to css media query that indicates whether high contrast is on.
-  final html.MediaQueryList _highContrastMediaQuery =
-      html.window.matchMedia(highContrastMediaQuery);
-
-  /// A callback that is invoked whenever [_highContrastMediaQuery] changes value.
+  /// A callback that is invoked whenever [highContrastMediaQuery] changes value.
   ///
   /// Updates the [_highContrast] with the new user preference.
   html.EventListener? _highContrastMediaQueryListener;
 
-  /// Set the callback function for listening changes in [_highContrastMediaQuery] value.
+  /// Set the callback function for listening changes in [highContrastMediaQuery] value.
   void _addHighContrastMediaQueryListener() {
-    _updateHighContrast(_highContrastMediaQuery.matches);
+    final HighContrastSupport instance = HighContrastSupport.instance;
+    _updateHighContrast(instance.matchHighContrastMediaQuery());
 
     _highContrastMediaQueryListener = (html.Event event) {
       final html.MediaQueryListEvent mqEvent =
           event as html.MediaQueryListEvent;
       _updateHighContrast(mqEvent.matches!);
     };
-    _highContrastMediaQuery.addListener(_highContrastMediaQueryListener);
-    registerHotRestartListener(() {
-      _removeHighContrastMediaQueryListener();
-    });
-  }
 
-  /// Remove the callback function for listening changes in [_highContrastMediaQuery] value.
-  void _removeHighContrastMediaQueryListener() {
-    _highContrastMediaQuery.removeListener(_highContrastMediaQueryListener);
-    _highContrastMediaQueryListener = null;
+    instance.addListener(_highContrastMediaQueryListener);
+    registerHotRestartListener(() {
+      HighContrastSupport.instance.removeListener(_highContrastMediaQueryListener);
+    });
   }
 
   /// A callback that is invoked whenever [highContrastMode] changes value.
@@ -965,12 +978,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   //   _onPlatformBrightnessChanged = callback;
   //   _onPlatformBrightnessChangedZone = Zone.current;
   //}
-
-  /// Engine code should use this method instead of the callback directly.
-  /// Otherwise zones won't work properly.
-  void invokeOnHighContrastModeChanged() {
-    invoke(_onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
-  }
 
   /// Reference to css media query that indicates the user theme preference on the web.
   final DomMediaQueryList _brightnessMediaQuery =
