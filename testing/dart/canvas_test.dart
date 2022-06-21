@@ -489,6 +489,7 @@ void main() {
     expect(data, isNotNull);
     expect(data!.lengthInBytes, 6 * 8 * 4);
     final Uint32List bytes = data.buffer.asUint32List();
+    // Draws a checkerboard due to flutter_tester not having a GPU context.
     const int white = 0xFFFFFFFF;
     const int grey  = 0xFFCCCCCC;
     expect(bytes, const <int>[

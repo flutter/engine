@@ -119,9 +119,9 @@ class Rasterizer final : public SnapshotDelegate,
   /// @param[in]  gpu_image_behavior         How to handle calls to
   ///                                        MakeGpuImage.
   ///
-  explicit Rasterizer(Delegate& delegate,
-                      MakeGpuImageBehavior gpu_image_behavior =
-                          MakeGpuImageBehavior::kGpu);
+  explicit Rasterizer(
+      Delegate& delegate,
+      MakeGpuImageBehavior gpu_image_behavior = MakeGpuImageBehavior::kGpu);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
