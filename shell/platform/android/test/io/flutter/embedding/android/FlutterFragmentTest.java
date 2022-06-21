@@ -301,4 +301,20 @@ public class FlutterFragmentTest {
     verify(mockDelegate, never()).onBackPressed();
     assertTrue(onBackPressedCalled.get());
   }
+
+  @Test
+  public void itRegistersComponentCallbacks() {
+    FlutterFragment fragment =
+        FlutterFragment.withNewEngine().shouldDelayFirstAndroidViewDraw(true).build();
+
+    Context mockContext = mock(Context.class);
+
+    fragment.onAttach();
+    verify(mockContext, times(1)).registerComponentCallbacks();
+    verify(mockContext, never()).unregisterComponentCallbacks();
+
+    fragment.onDetach();
+    verify(mockContext, times(1)).registerComponentCallbacks();
+    verify(mockContext, times(1)).unregisterComponentCallbacks();
+  }
 }
