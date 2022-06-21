@@ -582,9 +582,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     //
     // See the case down below for how hybrid composition is handled.
     if (semanticsNode.platformViewId != -1) {
-      View embeddedView =
-          platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
       if (platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
+        View embeddedView =
+            platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
+        if (embeddedView == null) {
+          return null;
+        }
         Rect bounds = semanticsNode.getGlobalRect();
         return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
       }
@@ -902,8 +905,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         View embeddedView =
             platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
 
-        // Add the embedded view as a child of the current accessibility node if it's using
-        // hybrid composition.
+        // Add the embedded view as a child of the current accessibility node if it's not
+        // using a virtual display.
         //
         // In this case, the view is in the Activity's view hierarchy, so it doesn't need to be
         // mirrored.
@@ -913,8 +916,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           result.addChild(embeddedView);
           continue;
         }
-        result.addChild(rootAccessibilityView, child.id);
       }
+      result.addChild(rootAccessibilityView, child.id);
     }
     return result;
   }
