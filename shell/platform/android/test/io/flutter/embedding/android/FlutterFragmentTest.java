@@ -6,9 +6,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -304,17 +306,23 @@ public class FlutterFragmentTest {
 
   @Test
   public void itRegistersComponentCallbacks() {
-    FlutterFragment fragment =
-        FlutterFragment.withNewEngine().shouldDelayFirstAndroidViewDraw(true).build();
+    Context spyCtx = spy(ctx);
+    // We need to mock FlutterJNI to avoid triggering native code.
+    FlutterJNI flutterJNI = mock(FlutterJNI.class);
+    when(flutterJNI.isAttached()).thenReturn(true);
 
-    Context mockContext = mock(Context.class);
+    FlutterEngine flutterEngine =
+        new FlutterEngine(spyCtx, new FlutterLoader(), flutterJNI, null, false);
+    FlutterEngineCache.getInstance().put("my_cached_engine", flutterEngine);
 
-    fragment.onAttach();
-    verify(mockContext, times(1)).registerComponentCallbacks();
-    verify(mockContext, never()).unregisterComponentCallbacks();
+    FlutterFragment fragment = FlutterFragment.withCachedEngine("my_cached_engine").build();
+
+    fragment.onAttach(spyCtx);
+    verify(spyCtx, times(1)).registerComponentCallbacks(any());
+    verify(spyCtx, never()).unregisterComponentCallbacks(any());
 
     fragment.onDetach();
-    verify(mockContext, times(1)).registerComponentCallbacks();
-    verify(mockContext, times(1)).unregisterComponentCallbacks();
+    verify(spyCtx, times(1)).registerComponentCallbacks(any());
+    verify(spyCtx, times(1)).unregisterComponentCallbacks(any());
   }
 }
