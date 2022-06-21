@@ -10,7 +10,7 @@
                         "out/android_profile/zip_archives/android-arm-profile/artifacts.zip",
                         "out/android_profile/zip_archives/android-arm-profile/linux-x64.zip",
                         "out/android_profile/zip_archives/android-arm-profile/symbols.zip",
-                        "out/android_profile/zip_archives/flutter_download_io"
+                        "out/android_profile/zip_archives/download.flutter.io"
                     ]
                 }
             ],
@@ -50,7 +50,7 @@
                         "out/android_release/zip_archives/android-arm-release/artifacts.zip",
                         "out/android_release/zip_archives/android-arm-release/linux-x64.zip",
                         "out/android_release/zip_archives/android-arm-release/symbols.zip",
-                        "out/android_release/zip_archives/flutter_download_io"
+                        "out/android_release/zip_archives/download.flutter.io"
                     ]
                 }
             ],
@@ -90,7 +90,7 @@
                         "out/android_release_arm64/zip_archives/android-arm64-release/artifacts.zip",
                         "out/android_release_arm64/zip_archives/android-arm64-release/linux-x64.zip",
                         "out/android_release_arm64/zip_archives/android-arm64-release/symbols.zip",
-                        "out/android_release_arm64/zip_archives/flutter_download_io"
+                        "out/android_release_arm64/zip_archives/download.flutter.io"
                     ]
                 }
             ],
@@ -122,6 +122,43 @@
         {
             "archives": [
                 {
+                    "name": "android_profile_arm64",
+                    "type": "gcs",
+                    "base_path": "out/android_profile_arm64/zip_archives/",
+                    "include_paths": [
+                        "out/android_profile_arm64/zip_archives/android-arm64-profile/linux-x64.zip",
+                        "out/android_release_arm64/zip_archives/download.flutter.io"
+                    ]
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gclient_custom_vars": {
+                "download_android_deps": false
+            },
+            "gn": [
+                "--android",
+                "--runtime-mode",
+                "profile",
+                "--android-cpu",
+                "arm64"
+            ],
+            "name": "android_profile_arm64",
+            "ninja": {
+                "config": "android_profile_arm64",
+                "targets": [
+                    "default",
+                    "clang_x64/gen_snapshot",
+                    "flutter/shell/platform/android:abi_jars"
+                ]
+            },
+            "tests": []
+        },
+        {
+            "archives": [
+                {
                     "name": "android_profile_x64",
                     "type": "gcs",
                     "base_path": "out/android_profile_x64/zip_archives/",
@@ -129,7 +166,7 @@
                         "out/android_profile_x64/zip_archives/android-x64-profile/artifacts.zip",
                         "out/android_profile_x64/zip_archives/android-x64-profile/linux-x64.zip",
                         "out/android_profile_x64/zip_archives/android-x64-profile/symbols.zip",
-                        "out/android_profile_x64/zip_archives/flutter_download_io"
+                        "out/android_profile_x64/zip_archives/download.flutter.io"
                     ]
                 }
             ],
@@ -168,7 +205,7 @@
                         "out/android_release_x64/zip_archives/android-x64-release/artifacts.zip",
                         "out/android_release_x64/zip_archives/android-x64-release/linux-x64.zip",
                         "out/android_release_x64/zip_archives/android-x64-release/symbols.zip",
-                        "out/android_release_x64/zip_archives/flutter_download_io"
+                        "out/android_release_x64/zip_archives/download.flutter.io"
                     ]
                 }
             ],

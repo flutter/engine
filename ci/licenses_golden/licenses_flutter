@@ -100,6 +100,7 @@ FILE: ../../../flutter/display_list/display_list_paint_unittests.cc
 FILE: ../../../flutter/display_list/display_list_path_effect.cc
 FILE: ../../../flutter/display_list/display_list_path_effect.h
 FILE: ../../../flutter/display_list/display_list_path_effect_unittests.cc
+FILE: ../../../flutter/display_list/display_list_sampling_options.h
 FILE: ../../../flutter/display_list/display_list_test_utils.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.h
 FILE: ../../../flutter/display_list/display_list_tile_mode.h
@@ -568,6 +569,8 @@ FILE: ../../../flutter/impeller/entity/entity_pass_delegate.h
 FILE: ../../../flutter/impeller/entity/entity_playground.cc
 FILE: ../../../flutter/impeller/entity/entity_playground.h
 FILE: ../../../flutter/impeller/entity/entity_unittests.cc
+FILE: ../../../flutter/impeller/entity/inline_pass_context.cc
+FILE: ../../../flutter/impeller/entity/inline_pass_context.h
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_color.frag
