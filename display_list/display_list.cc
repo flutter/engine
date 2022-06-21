@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <set>
+#include <stack>
 #include <type_traits>
 
 #include "flutter/display_list/display_list.h"
@@ -270,78 +271,39 @@ void DisplayList::Compare(DisplayList* dl) {
     virtual_bounds_valid_ = true;
     return;
   }
-  
-  std::vector<std::string> stack;
-  bool isLegal = true;
-  for(unsigned long i = 0; i< oldTree.size(); i++) {
-    if(oldTree[i].isStart) {
-      stack.push_back(oldTree[i].type);
-    }else{
-      std::string t = stack[stack.size()-1];
-      stack.pop_back();
-      if(t != oldTree[i].type) {
-        isLegal = false;
-
+  {
+    std::stack<std::string> stack;
+    bool isLegal = true;
+    for(unsigned long i = 0; i< oldTree.size(); i++) {
+      if(oldTree[i].isStart) {
+        stack.push(oldTree[i].type);
+      }else{
+        if(stack.empty()) {
+          isLegal = false;
+          break;
+        }
+        std::string t = stack.top();
+        stack.pop();
+        if(t != oldTree[i].type) {
+          isLegal = false;
+          break;
+        }
       }
     }
+    if(!isLegal || !stack.empty()) {
+      damage = bounds();
+      setVirtualBounds(damage);
+      virtual_bounds_valid_ = true;
+      return;
+    }
   }
-  if(!isLegal || !stack.empty()) {
-    damage = bounds();
-    setVirtualBounds(damage);
-    virtual_bounds_valid_ = true;
-    return;
-  }
-  
-//  newTree.insert(newTree.begin(), DisplayVirtualLayerInfo{0, "_kDisplayVirtualLayerInfo", true, 0});
-//  auto end1 = newTree.end()->index;
-//  newTree.insert(newTree.end(), DisplayVirtualLayerInfo{end1, "_kDisplayVirtualLayerInfo", false, 0});
-//
-//  oldTree.insert(oldTree.begin(), DisplayVirtualLayerInfo{0, "_kDisplayVirtualLayerInfo", true, 0});
-//  auto end2 = oldTree.end()->index;
-//  oldTree.insert(oldTree.end(), DisplayVirtualLayerInfo{end2, "_kDisplayVirtualLayerInfo", false, 0});
-  
-  // input: two layer indexes
-  // output: diff of two layerTress
 
   uint8_t* newOpHead = storage_.get();
   uint8_t* newOpTail = newOpHead + byte_count_;
   uint8_t* oldOpHead = dl->storage_.get();
   uint8_t* oldOpTail = dl->storage_.get() + dl->byte_count_;
-
-  
-  // 1.1 算法实现1 简易的深搜.
-//  for (unsigned long i = 0; i < newTree.size(); i += 2) {
-//    for (unsigned long j = 0; j < oldTree.size(); j += 2) {
-//      if (oldUsage.find(i) == oldUsage.end() &&
-//          newTree[i].type == oldTree[j].type) {
-//        auto curH = getNPtr(newOpHead, newOpTail, newTree[i].index);
-//        auto curE = getNPtr(newOpHead, newOpTail, newTree[i + 1].index);
-//        auto oldH = getNPtr(oldOpHead, oldOpTail, oldTree[j].index);
-//        auto oldE = getNPtr(oldOpHead, oldOpTail, oldTree[j + 1].index);
-//        if (curE - curH == oldE - oldH && CompareOps(curH, curE, oldH, oldE)) {
-//          oldUsage.insert(j);
-//          break;
-//        } else {
-//          auto rect = partBounds(newTree[i].index, newTree[i + 1].index);
-//          damage.join(rect);
-//          break;
-//        }
-//      }
-//    }
-//  }
-//
-//  for (unsigned long i = 0; i < oldTree.size(); i += 2) {
-////   找不到就标脏
-//    if (oldUsage.find(i) == oldUsage.end()) {
-//      auto rect = dl->partBounds(oldTree[i].index, oldTree[i + 1].index);
-//      damage.join(rect);
-//    }
-//  }
   
   // 1.2 算法实现2 从左右分别进行深搜
-  
-  // TODO: 把比较放到Compare上层.
-
   
   // 给定tail返回head
   std::function<int(int,const std::vector<DisplayVirtualLayerInfo>&)> findHeadWithTail = [&] (int tailIndex, const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
@@ -488,12 +450,11 @@ void DisplayList::Compare(DisplayList* dl) {
   
   diffTree(0, newTree.size()-1, 0, oldTree.size()-1);
 
-  // 2. Fake
-  //  damage = partBounds(current[0].index, current[current.size()-1].index);
-
   // 2. Add damage.
   setVirtualBounds(damage);
   virtual_bounds_valid_ = true;
+  
+  newTree.clear();
+  oldTree.clear();
 }
-
 }  // namespace flutter
