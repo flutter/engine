@@ -53,6 +53,9 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalSkia final : public IOSSurf
   // |GPUSurfaceMetalDelegate|
   bool AllowsDrawingWhenGpuDisabled() const override;
 
+  // |GPUSurfaceMetalDelegate|
+  void DrawThreadWillLeaveMain() const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceMetalSkia);
 };
 

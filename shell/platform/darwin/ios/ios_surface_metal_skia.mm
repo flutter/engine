@@ -65,9 +65,12 @@ GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_
 
   // When there are platform views in the scene, the drawable needs to be presented in the same
   // transaction as the one created for platform views. When the drawable are being presented from
-  // the raster thread, there is no such transaction.
-  layer.presentsWithTransaction = [[NSThread currentThread] isMainThread];
-
+  // the raster thread, there is no such transaction. Set layer.presentsWithTransaction will create
+  // implicit transaction which risk crash unless in main thread. Restore this value on main thread
+  // when thread merge done.
+  if ([[NSThread currentThread] isMainThread]) {
+    layer.presentsWithTransaction = YES;
+  }
   return layer;
 }
 
@@ -102,6 +105,12 @@ bool IOSSurfaceMetalSkia::PresentTexture(GPUMTLTextureInfo texture) const {
 // |GPUSurfaceMetalDelegate|
 bool IOSSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
   return false;
+}
+
+// |GPUSurfaceMetalDelegate|
+void IOSSurfaceMetalSkia::DrawThreadWillLeaveMain() const {
+  CAMetalLayer* layer = layer_.get();
+  layer.presentsWithTransaction = NO;
 }
 
 }  // namespace flutter

@@ -90,6 +90,9 @@ class GPUSurfaceGLDelegate {
 
   // Whether to allow drawing to the surface when the GPU is disabled
   virtual bool AllowsDrawingWhenGpuDisabled() const;
+
+  // Provide opportunity to run code in main thread when thread merge done
+  virtual void DrawThreadWillLeaveMain() const;
 };
 
 }  // namespace flutter

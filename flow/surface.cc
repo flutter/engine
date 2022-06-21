@@ -26,4 +26,6 @@ bool Surface::EnableRasterCache() const {
   return true;
 }
 
+void Surface::DrawThreadWillLeaveMain() const {}
+
 }  // namespace flutter

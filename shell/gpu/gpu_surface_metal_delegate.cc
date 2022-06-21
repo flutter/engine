@@ -20,4 +20,6 @@ bool GPUSurfaceMetalDelegate::AllowsDrawingWhenGpuDisabled() const {
   return true;
 }
 
+void GPUSurfaceMetalDelegate::DrawThreadWillLeaveMain() const {}
+
 }  // namespace flutter

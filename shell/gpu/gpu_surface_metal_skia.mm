@@ -246,4 +246,9 @@ bool GPUSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
   return delegate_->AllowsDrawingWhenGpuDisabled();
 }
 
+// |Surface|
+void GPUSurfaceMetalSkia::DrawThreadWillLeaveMain() const {
+  delegate_->DrawThreadWillLeaveMain();
+}
+
 }  // namespace flutter
