@@ -456,7 +456,7 @@ def GatherDartTest(
   if not enable_observatory:
     command_args.append('--disable-observatory')
 
-  dart_file_contents = open(dart_file, 'r', encoding='utf-8')
+  dart_file_contents = open(dart_file, 'r')
   custom_options = re.findall(
       "// FlutterTesterOptions=(.*)", dart_file_contents.read()
   )
