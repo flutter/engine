@@ -65,9 +65,6 @@ TEST_F(ColorFilterLayerTest, EmptyFilter) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
                                                  nullptr, 1}},
@@ -98,9 +95,6 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
                                                  nullptr, 1}},
@@ -143,9 +137,6 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{children_bounds, filter_paint,
                                                  nullptr, 1}},
@@ -198,17 +189,11 @@ TEST_F(ColorFilterLayerTest, Nested) {
   layer1->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{children_bounds, filter_paint1,
                                                  nullptr, 1}},
                 MockCanvas::DrawCall{
                     1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     1, MockCanvas::SaveLayerData{child_path2.getBounds(),
                                                  filter_paint2, nullptr, 2}},
@@ -366,22 +351,11 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  auto opacity_integer_transform = RasterCache::GetIntegralTransCTM(
-      SkMatrix::Translate(offset.fX, offset.fY));
-#endif
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
     expected_builder.save();
     {
       expected_builder.translate(offset.fX, offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integer_transform);
-      /* Integer CTM in ColorFilterLayer::Paint() */
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integer_transform);
-#endif
       /* ColorFilterLayer::Paint() */ {
         expected_builder.setColor(opacity_alpha << 24);
         expected_builder.setColorFilter(&layer_filter);
