@@ -1006,6 +1006,47 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineSetupJITSnapshots(
+    FlutterProjectArgs* args,
+    const char* vm_snapshot,
+    const char* isolate_snapshot) {
+
+  // This function is only relevant in JIT mode.
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "JIT snapshots can only be specified in JIT mode.");
+  }
+
+  // Users are allowed to specify only certain snapshots if they so desire.
+  if (vm_snapshot != nullptr && SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
+    const auto vm_path =
+      fml::paths::JoinPaths({args->assets_path, vm_snapshot});
+    std::unique_ptr<fml::Mapping> mapping = fml::FileMapping::CreateReadOnly(vm_path.c_str());
+    if (mapping == nullptr) {
+      args->vm_snapshot_data = nullptr;
+      args->vm_snapshot_data_size = 0;
+    } else {
+      args->vm_snapshot_data = mapping->GetMapping();
+      args->vm_snapshot_data_size = mapping->GetSize();
+    }
+  }
+
+  if (isolate_snapshot != nullptr && SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
+    const auto isolate_path =
+      fml::paths::JoinPaths({args->assets_path, isolate_snapshot});
+    std::unique_ptr<fml::Mapping> mapping = fml::FileMapping::CreateReadOnly(isolate_path.c_str());
+    if (mapping == nullptr) {
+      args->isolate_snapshot_data = nullptr;
+      args->isolate_snapshot_data_size = 0;
+    } else {
+      args->isolate_snapshot_data = mapping->GetMapping();
+      args->isolate_snapshot_data_size = mapping->GetSize();
+    }
+  }
+
+  return kSuccess;
+}
+
 void PopulateSnapshotMappingCallbacks(
     const FlutterProjectArgs* args,
     flutter::Settings& settings) {  // NOLINT(google-runtime-references)
