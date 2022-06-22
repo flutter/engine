@@ -45,6 +45,9 @@ Picture::~Picture() = default;
 Dart_Handle Picture::toImage(uint32_t width,
                              uint32_t height,
                              Dart_Handle raw_image_callback) {
+  if (!display_list_.skia_object()) {
+    return tonic::ToDart("Picture is null");
+  }
   return RasterizeToImage(display_list_.skia_object(), width, height,
                           raw_image_callback);
 }
