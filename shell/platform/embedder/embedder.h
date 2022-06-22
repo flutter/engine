@@ -1790,6 +1790,12 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSetupJITSnapshots(
+    FlutterProjectArgs* args,
+    const char* vm_snapshot,
+    const char* isolate_snapshot);
+
 //------------------------------------------------------------------------------
 /// @brief      Initialize and run a Flutter engine instance and return a handle
 ///             to it. This is a convenience method for the pair of calls to
@@ -2435,6 +2441,10 @@ typedef FlutterEngineResult (*FlutterEngineCreateAOTDataFnPtr)(
     FlutterEngineAOTData* data_out);
 typedef FlutterEngineResult (*FlutterEngineCollectAOTDataFnPtr)(
     FlutterEngineAOTData data);
+typedef FlutterEngineResult (*FlutterEngineSetupJITSnapshotsFnPtr)(
+    FlutterProjectArgs* args,
+    const char* vm_snapshot,
+    const char* isolate_snapshot);
 typedef FlutterEngineResult (*FlutterEngineRunFnPtr)(
     size_t version,
     const FlutterRendererConfig* config,
@@ -2590,6 +2600,7 @@ typedef struct {
       PostCallbackOnAllNativeThreads;
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
   FlutterEngineScheduleFrameFnPtr ScheduleFrame;
+  FlutterEngineSetupJITSnapshotsFnPtr SetupJITSnapshots;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------
