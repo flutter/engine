@@ -105,7 +105,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
           @Override
           public void hide() {
-            if (inputTarget.type == InputTarget.Type.HC_PLATFORM_VIEW) {
+            if (inputTarget.type == InputTarget.Type.PHYSICAL_DISPLAY_PLATFORM_VIEW) {
               notifyViewExited();
             } else {
               hideTextInput(mView);
@@ -196,7 +196,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
    * display to another.
    */
   public void lockPlatformViewInputConnection() {
-    if (inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW) {
       isInputConnectionLocked = true;
     }
   }
@@ -207,7 +207,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
    * <p>See also: @{link lockPlatformViewInputConnection}.
    */
   public void unlockPlatformViewInputConnection() {
-    if (inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW) {
       isInputConnectionLocked = false;
     }
   }
@@ -295,11 +295,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return null;
     }
 
-    if (inputTarget.type == InputTarget.Type.HC_PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.PHYSICAL_DISPLAY_PLATFORM_VIEW) {
       return null;
     }
 
-    if (inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW) {
       if (isInputConnectionLocked) {
         return lastInputConnection;
       }
@@ -364,8 +364,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
    * input connection.
    */
   public void clearPlatformViewClient(int platformViewId) {
-    if ((inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW
-            || inputTarget.type == InputTarget.Type.HC_PLATFORM_VIEW)
+    if ((inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW
+            || inputTarget.type == InputTarget.Type.PHYSICAL_DISPLAY_PLATFORM_VIEW)
         && inputTarget.id == platformViewId) {
       inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
       notifyViewExited();
@@ -436,14 +436,15 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (usesVirtualDisplay) {
       // We need to make sure that the Flutter view is focused so that no imm operations get short
       // circuited.
-      // Not asking for focus here specifically manifested in a but on API 28 devices where the
+      // Not asking for focus here specifically manifested in a bug on API 28 devices where the
       // platform view's request to show a keyboard was ignored.
       mView.requestFocus();
-      inputTarget = new InputTarget(InputTarget.Type.VD_PLATFORM_VIEW, platformViewId);
+      inputTarget = new InputTarget(InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW, platformViewId);
       mImm.restartInput(mView);
       mRestartInputPending = false;
     } else {
-      inputTarget = new InputTarget(InputTarget.Type.HC_PLATFORM_VIEW, platformViewId);
+      inputTarget =
+          new InputTarget(InputTarget.Type.PHYSICAL_DISPLAY_PLATFORM_VIEW, platformViewId);
       lastInputConnection = null;
     }
   }
@@ -536,7 +537,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
   @VisibleForTesting
   void clearTextInputClient() {
-    if (inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW) {
       // This only applies to platform views that use a virtual display.
       // Focus changes in the framework tree have no guarantees on the order focus nodes are
       // notified. A node
@@ -574,12 +575,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       // InputConnection is managed by the TextInputPlugin, and events are forwarded to the Flutter
       // framework.
       FRAMEWORK_CLIENT,
-      // InputConnection is managed by an embedded platform view that is backed by a virtual
-      // display (VD).
-      VD_PLATFORM_VIEW,
-      // InputConnection is managed by an embedded platform view that is embeded in the Android view
-      // hierarchy, and uses hybrid composition (HC).
-      HC_PLATFORM_VIEW,
+      // InputConnection is managed by a platform view that is presented on a virtual display.
+      VIRTUAL_DISPLAY_PLATFORM_VIEW,
+      // InputConnection is managed by a platform view that is embedded in the activity's view
+      // hierarchy. This view hierarchy is displayed in a physical display within the aplication
+      // display area.
+      PHYSICAL_DISPLAY_PLATFORM_VIEW,
     }
 
     public InputTarget(@NonNull Type type, int id) {

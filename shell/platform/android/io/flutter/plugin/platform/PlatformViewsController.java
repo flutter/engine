@@ -57,12 +57,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // and binds the VirtualDisplay to a GL texture that is then composed by the engine.
   // However, there are a few issues with Virtual Displays. For example, they don't fully support
   // accessibility due to https://github.com/flutter/flutter/issues/29717,
-  // and keyboard interactions may have non-derterministic behavior.
+  // and keyboard interactions may have non-deterministic behavior.
   // Views that issue out-of-band drawing commands that aren't included in this array are
   // required to call `View#invalidate()` to notify Flutter about the update.
   // This isn't ideal, but given all the other limitations it's a reasonable tradeoff.
   // Related issue: https://github.com/flutter/flutter/issues/103630
-  private static Class[] VIEW_TYPES_REQUIRE_VD = {SurfaceView.class};
+  private static Class[] VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY = {SurfaceView.class};
 
   private final PlatformViewRegistryImpl registry;
 
@@ -246,17 +246,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final int physicalHeight = toPhysicalPixels(request.logicalHeight);
 
           // Case 1. Add the view to a virtual display if the embedded view contains any of the
-          // VIEW_TYPES_REQUIRE_VD view types.
+          // VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY view types.
           // These views allow out-of-band graphics operations that aren't notified to the Android
           // view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
           // The virtual display is wired up to a GL texture that is composed by the Flutter engine.
           // Also, use virtual display if the API level is 20, 21 or 22 since the Case 2. requires
           // at least API level 23.
-          final boolean shouldUseVD =
-              ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VD)
+          final boolean shouldUseVirtualDisplay =
+              ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY)
                   || Build.VERSION.SDK_INT < 23;
 
-          if (!usesSoftwareRendering && shouldUseVD) {
+          if (!usesSoftwareRendering && shouldUseVirtualDisplay) {
             validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
 
             Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
@@ -963,19 +963,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     DisplayMetrics metrics = context.getResources().getDisplayMetrics();
     if (height > metrics.heightPixels || width > metrics.widthPixels) {
       String message =
-          "Creating a virtual display of size: "
-              + "["
-              + width
-              + ", "
-              + height
-              + "] may result in problems"
-              + "(https://github.com/flutter/flutter/issues/2897)."
-              + "It is larger than the device screen size: "
-              + "["
-              + metrics.widthPixels
-              + ", "
-              + metrics.heightPixels
-              + "].";
+          String.format(
+              "Creating a virtual display of size: [%d, %d] "
+                  + "may result in problems (https://github.com/flutter/flutter/issues/2897). "
+                  + "It is larger than the device screen size: [%d, %d].",
+              width, height, metrics.widthPixels, metrics.heightPixels);
       Log.w(TAG, message);
     }
   }
