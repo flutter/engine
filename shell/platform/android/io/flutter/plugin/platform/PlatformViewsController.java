@@ -368,25 +368,28 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void dispose(int viewId) {
-          if (usesVirtualDisplay(viewId)) {
-            final VirtualDisplayController vdController = vdControllers.get(viewId);
-            final View embeddedView = vdController.getView();
-            if (embeddedView != null) {
-              contextToEmbeddedView.remove(embeddedView.getContext());
-            }
-            contextToEmbeddedView.remove(vdController.getView().getContext());
-            vdController.dispose();
-            vdControllers.remove(viewId);
-            return;
-          }
-
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView == null) {
             Log.e(TAG, "Disposing unknown platform view with id: " + viewId);
             return;
           }
           platformViews.remove(viewId);
-          platformView.dispose();
+
+          try {
+            platformView.dispose();
+          } catch (RuntimeException exception) {
+            Log.e(TAG, "Disposing platform view threw an exception", exception);
+          }
+
+          if (usesVirtualDisplay(viewId)) {
+            final VirtualDisplayController vdController = vdControllers.get(viewId);
+            final View embeddedView = vdController.getView();
+            if (embeddedView != null) {
+              contextToEmbeddedView.remove(embeddedView.getContext());
+            }
+            vdControllers.remove(viewId);
+            return;
+          }
           // The platform view is displayed using a TextureLayer and is inserted in the view
           // hierarchy.
           final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
@@ -756,9 +759,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       final PlatformView view = platformViews.valueAt(index);
       view.onFlutterViewAttached(flutterView);
     }
-    for (VirtualDisplayController controller : vdControllers.values()) {
-      controller.onFlutterViewAttached(flutterView);
-    }
   }
 
   /**
@@ -778,11 +778,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     for (int index = 0; index < platformViewParent.size(); index++) {
       final FlutterMutatorView view = platformViewParent.valueAt(index);
       flutterView.removeView(view);
-    }
-    // Inform all existing platform views that they are no longer associated with
-    // a Flutter View.
-    for (VirtualDisplayController controller : vdControllers.values()) {
-      controller.onFlutterViewDetached();
     }
 
     destroyOverlaySurfaces();
@@ -865,11 +860,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * PlatformViewsController} detaches from JNI.
    */
   public void onDetachedFromJNI() {
-    flushAllViews();
+    diposeAllViews();
   }
 
   public void onPreEngineRestart() {
-    flushAllViews();
+    diposeAllViews();
   }
 
   @Override
@@ -984,16 +979,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return (int) Math.round(physicalPixels / getDisplayDensity());
   }
 
-  private void flushAllViews() {
-    for (VirtualDisplayController controller : vdControllers.values()) {
-      controller.dispose();
-    }
-    vdControllers.clear();
-    contextToEmbeddedView.clear();
-
+  private void diposeAllViews() {
     while (platformViews.size() > 0) {
       final int viewId = platformViews.keyAt(0);
-      platformViews.remove(viewId);
+      // Dispose deletes the entry from platformViews and clears associated resources.
       channelHandler.dispose(viewId);
     }
   }
