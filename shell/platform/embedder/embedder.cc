@@ -1016,15 +1016,15 @@ FlutterEngineResult FlutterEngineSetupJITSnapshots(
         kInvalidArguments, "JIT snapshots can only be specified in JIT mode.");
   }
 
-  args->vm_snapshot_data = reinterpret_cast<const uint8_t *>(vm_snapshot);
-  args->isolate_snapshot_data = reinterpret_cast<const uint8_t *>(isolate_snapshot);
+  args->vm_snapshot_data = reinterpret_cast<const uint8_t*>(vm_snapshot);
+  args->isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot);
 
   return kSuccess;
 }
 
-void PopulateJITSnapshotMappingCallbacks(
-    const FlutterProjectArgs* args,
-    flutter::Settings& settings) {
+void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
+                                         flutter::Settings& settings) {
   auto make_mapping_callback = [](std::string path, bool executable) {
     return [path, executable]() {
       if (executable) {
@@ -1038,15 +1038,18 @@ void PopulateJITSnapshotMappingCallbacks(
   if (SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
     // Users are allowed to specify only certain snapshots if they so desire.
     if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      const auto vm_path =
-        fml::paths::JoinPaths({args->assets_path, reinterpret_cast<const char *>(args->vm_snapshot_data)});
+      const auto vm_path = fml::paths::JoinPaths(
+          {args->assets_path,
+           reinterpret_cast<const char*>(args->vm_snapshot_data)});
       settings.vm_snapshot_data = make_mapping_callback(vm_path, false);
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      const auto isolate_path =
-        fml::paths::JoinPaths({args->assets_path, reinterpret_cast<const char *>(args->isolate_snapshot_data)});
-      settings.isolate_snapshot_data = make_mapping_callback(isolate_path, false);
+      const auto isolate_path = fml::paths::JoinPaths(
+          {args->assets_path,
+           reinterpret_cast<const char*>(args->isolate_snapshot_data)});
+      settings.isolate_snapshot_data =
+          make_mapping_callback(isolate_path, false);
     }
   }
 }
