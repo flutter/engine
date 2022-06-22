@@ -1311,7 +1311,9 @@ TEST_F(EmbedderTest, CanRunEngineWithSpecifiedJITSnapshos) {
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(&(builder.GetProjectArgs()),
                                            "vm_snapshot_data",
-                                           "isolate_snapshot_data"),
+                                           "vm_snapshot_instructions",
+                                           "isolate_snapshot_data",
+                                           "isolate_snapshot_instructions"),
             kSuccess);
 
   auto engine = builder.LaunchEngine();
@@ -1338,6 +1340,12 @@ TEST_F(EmbedderTest, CanRunEngineWithUnspecifiedJITSnapshos) {
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
+
+// TODO(btrevisan): test if engine can runs when only certain snapshots are specified
+// TODO(btrevisan): Make sure to add a test that runs with a valid mock snapshot
+// TODO(btrevisan): Add tests that check if vm_snapshot_data has been set to the appropriate locations (before launching)
+// TODO(btrevisan): Add tests that check if vm_snapshot_data has been populated to the appropriate mapping callback (after launching)
+// TODO(btrevisan):Make sure to add snapshot instructions to the function
 
 TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
