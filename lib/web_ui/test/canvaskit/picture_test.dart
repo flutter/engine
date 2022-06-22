@@ -87,7 +87,7 @@ void testMain() {
     });
 
     test('toGpuImage', () async {
-      const ui.Color color = ui.Color(0xFFABCDEF);
+      const ui.Color color = ui.Color(0xFFAAAAAA);
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
       canvas.drawPaint(ui.Paint()..color = color);
