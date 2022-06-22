@@ -497,7 +497,7 @@ class HtmlViewEmbedder {
         final int view = _compositionOrder[i];
         if (_overlays[view] != null) {
           final DomElement overlayElement = _overlays[view]!.htmlElement;
-          if (!overlayElement.isConnected) {
+          if (!overlayElement.isConnected!) {
             // This overlay wasn't added to the DOM.
             if (i == _compositionOrder.length - 1) {
               skiaSceneHost!.append(overlayElement);

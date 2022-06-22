@@ -110,7 +110,7 @@ void _testEngineSemanticsOwner() {
 
     // On mobile semantics is enabled asynchronously.
     if (isMobile) {
-      while (placeholder.isConnected!) {
+      while (placeholder.isConnected) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       }
     }
