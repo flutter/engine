@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -484,7 +485,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
           contentManager: platformViewManager,
           contentHandler: (DomElement content) {
             // Remove cast to [html.Element] after migration.
-            flutterViewEmbedder.glassPaneElement!.append(content);
+            flutterViewEmbedder.glassPaneElement!.append(content as html.Element);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
@@ -607,7 +608,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement as html.Element?);
     }
     frameTimingsOnRasterFinish();
   }

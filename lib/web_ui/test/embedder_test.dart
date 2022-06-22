@@ -80,11 +80,11 @@ void testMain() {
   test('should add/remove global resource', () {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
     final html.DivElement resource = html.DivElement();
-    embedder.addResource(resource as DomHTMLDivElement);
+    embedder.addResource(resource);
     final html.Element? resourceRoot = resource.parent;
     expect(resourceRoot, isNotNull);
     expect(resourceRoot!.childNodes.length, 1);
-    embedder.removeResource(resource as DomHTMLDivElement);
+    embedder.removeResource(resource);
     expect(resourceRoot.childNodes.length, 0);
   });
 
@@ -92,7 +92,7 @@ void testMain() {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
     final html.InputElement regularTextField = html.InputElement();
     regularTextField.placeholder = 'Now you see me';
-    embedder.addResource(regularTextField as DomHTMLInputElement);
+    embedder.addResource(regularTextField);
 
     regularTextField.focus();
     html.CssStyleDeclaration? style = domWindow.getComputedStyle(
@@ -104,7 +104,7 @@ void testMain() {
     final html.InputElement textField = html.InputElement();
     textField.placeholder = 'Now you dont';
     textField.classes.add('flt-text-editing');
-    embedder.addResource(textField as DomHTMLInputElement);
+    embedder.addResource(textField);
 
     textField.focus();
     style = domWindow.getComputedStyle(

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:html' as html;
+
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'embedder.dart';
@@ -109,7 +111,7 @@ class ShadowDomHostNode implements HostNode {
 
     // TODO(dit): Apply only rules for the shadow root
     applyGlobalCssRulesToSheet(
-      shadowRootStyleElement.sheet! as DomCSSStyleSheet,
+      shadowRootStyleElement.sheet! as html.CssStyleSheet,
       browserEngine: browserEngine,
       hasAutofillOverlay: browserHasAutofillOverlay(),
     );

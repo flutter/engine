@@ -46,8 +46,7 @@ void main() {
 
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
-  final html.Element glassPane = flutterViewEmbedder.glassPaneElement! as
-      html.Element;
+  final html.Element glassPane = flutterViewEmbedder.glassPaneElement!;
   double dpi = 1.0;
 
   setUp(() {

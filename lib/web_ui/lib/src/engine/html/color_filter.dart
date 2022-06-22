@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:html' as html;
+
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
@@ -52,7 +54,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   @override
   void discard() {
     super.discard();
-    flutterViewEmbedder.removeResource(_filterElement);
+    flutterViewEmbedder.removeResource(_filterElement as html.Element?);
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -71,7 +73,7 @@ class PersistedColorFilter extends PersistedContainerSurface
 
   @override
   void apply() {
-    flutterViewEmbedder.removeResource(_filterElement);
+    flutterViewEmbedder.removeResource(_filterElement as html.Element?);
     _filterElement = null;
     final EngineColorFilter? engineValue = filter as EngineColorFilter?;
     if (engineValue == null) {
@@ -137,7 +139,7 @@ class PersistedColorFilter extends PersistedContainerSurface
     // Use SVG filter for blend mode.
     final SvgFilter svgFilter = svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
     _filterElement = svgFilter.element;
-    flutterViewEmbedder.addResource(_filterElement!);
+    flutterViewEmbedder.addResource(_filterElement! as html.Element);
     style.filter = 'url(#${svgFilter.id})';
     if (colorFilterBlendMode == ui.BlendMode.saturation ||
         colorFilterBlendMode == ui.BlendMode.multiply ||
@@ -149,7 +151,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void _applyMatrixColorFilter(CkMatrixColorFilter colorFilter) {
     final SvgFilter svgFilter = svgFilterFromColorMatrix(colorFilter.matrix);
     _filterElement = svgFilter.element;
-    flutterViewEmbedder.addResource(_filterElement!);
+    flutterViewEmbedder.addResource(_filterElement! as html.Element);
     childContainer!.style.filter = 'url(#${svgFilter.id})';
   }
 

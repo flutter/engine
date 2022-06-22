@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -1217,7 +1218,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     activeDomElement.addEventListener('beforeinput',
         allowInterop(handleBeforeInput));
 
-    addCompositionEventHandlers(activeDomElement);
+    addCompositionEventHandlers(activeDomElement as html.HtmlElement);
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
@@ -1257,7 +1258,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       subscriptions[i].cancel();
     }
     subscriptions.clear();
-    removeCompositionEventHandlers(activeDomElement);
+    removeCompositionEventHandlers(activeDomElement as html.HtmlElement);
 
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
@@ -1507,7 +1508,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     activeDomElement.addEventListener('beforeinput',
         allowInterop(handleBeforeInput));
 
-    addCompositionEventHandlers(activeDomElement);
+    addCompositionEventHandlers(activeDomElement as html.HtmlElement);
 
     // Position the DOM element after it is focused.
     subscriptions.add(DomSubscription(activeDomElement, 'focus',
@@ -1660,7 +1661,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     activeDomElement.addEventListener('beforeinput',
         allowInterop(handleBeforeInput));
 
-    addCompositionEventHandlers(activeDomElement);
+    addCompositionEventHandlers(activeDomElement as html.HtmlElement);
 
     subscriptions.add(
         DomSubscription(activeDomElement, 'blur',
@@ -1722,7 +1723,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     activeDomElement.addEventListener('beforeinput',
         allowInterop(handleBeforeInput));
 
-    addCompositionEventHandlers(activeDomElement);
+    addCompositionEventHandlers(activeDomElement as html.HtmlElement);
 
     // Detects changes in text selection.
     //

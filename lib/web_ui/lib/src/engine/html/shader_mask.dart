@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:html' as html;
+
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
@@ -38,7 +40,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
-  DomElement? _shaderElement;
+  html.Element? _shaderElement;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -160,7 +162,7 @@ class PersistedShaderMask extends PersistedContainerSurface
 
       final SvgFilter svgFilter = svgMaskFilterFromImageAndBlendMode(
           imageUrl, blendModeTemp, maskRect.width, maskRect.height);
-      _shaderElement = svgFilter.element;
+      _shaderElement = svgFilter.element as html.Element;
       if (isWebKit) {
         _childContainer!.style.filter = 'url(#${svgFilter.id})';
       } else {
