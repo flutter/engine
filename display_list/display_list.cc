@@ -487,6 +487,13 @@ void DisplayList::Compare(DisplayList* dl) {
   
   if(!newTree.empty() && !oldTree.empty() && newTree[0].type == oldTree[0].type) {
     diffTree(0, newTree.size()-1, 0, oldTree.size()-1);
+    // debug.
+    auto r1 = bounds();
+    auto r2 = dl->bounds();
+    r1.join(r2);
+    auto percent = (damage.width() * damage.height()) / ( r1.width() * r1.height() );
+    printf("DONG DIFF damage: %g %g | %g %g | %g \n", SkScalarToFloat(r1.width()), SkScalarToFloat(r1.height()),
+           SkScalarToFloat(damage.width()), SkScalarToFloat(damage.height()), percent);
   }else{
     damage = bounds();
   }

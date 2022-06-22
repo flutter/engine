@@ -49,30 +49,66 @@ void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   return op + 1;
 }
 
-//bool CompareVirtualLayerInfo(DisplayVirtualLayerInfo i1, DisplayVirtualLayerInfo i2) {
-//  return i1.index < i2.index;
-//}
-
 sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
   auto indexes = virtual_layer_indexes_;
   
-  if(!indexes.empty()) {
+  std::function<bool(const std::vector<DisplayVirtualLayerInfo>& tree)> checkTree = [&] (const std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
+    std::vector<std::string> stack;
+//    bool isLegal = true;
+    for(unsigned long i = 0; i< tree.size(); i++) {
+      if(tree[i].isStart) {
+        stack.push_back(tree[i].type);
+      }else{
+        if(stack.empty()) {
+          return false;
+        }
+        std::string t = stack[stack.size()-1];
+        stack.pop_back();
+        if(t != tree[i].type) {
+          return false;
+        }
+      }
+    }
+    if(!stack.empty()) {
+      return false;
+    }
+    return true;
+  };
   
+  if(!checkTree(indexes)) {
+    indexes.clear();
+  }
+  
+  if(!indexes.empty()) {
     // 1. tree shake.
     std::vector<int> garbage;
-    for(uint32_t i = 1; i < indexes.size(); i++) {
+    for(uint32_t i = 0; i < indexes.size(); i++) {
       if(indexes[i].isStart) {
-          
-      }else{
-        if(indexes[i-1].isStart) {
-          if(indexes[i].index == indexes[i-1].index) {
-            // del []
-            garbage.push_back(i-1);
-            garbage.push_back(i);
+        if(indexes[i+1].isStart && indexes[i].index == indexes[i+1].index) {
+          // [[
+          uint32_t flag = 0;
+          for(uint32_t j = i+1; j < indexes.size(); j++) {
+            if(indexes[j].type == indexes[i].type) {
+              if(indexes[j].isStart) {
+                flag += 1;
+              }else{
+                if(flag == 0) {
+                  garbage.push_back(i);
+                  garbage.push_back(j);
+                  break;
+                }else{
+                  flag -= 1;
+                }
+              }
+            }
           }
+        }else if(!indexes[i+1].isStart && indexes[i].index == indexes[i+1].index && indexes[i+1].type == indexes[i].type) {
+          // []
+          garbage.push_back(i);
+          garbage.push_back(i+1);
         }
       }
     }
@@ -81,9 +117,10 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
       indexes.erase(indexes.begin()+garbage[i]);
     }
     
-    
     // 2. addDepth.
-    uint32_t currDepth = 0;
+    indexes[0].depth = 1;
+    indexes[indexes.size()-1].depth = 1;
+    uint32_t currDepth = 1;
     for(uint32_t i = 1; i < indexes.size(); i++) {
       if(indexes[i].isStart) {
         if(indexes[i-1].isStart) {
@@ -105,6 +142,8 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
         }
       }
     }
+    indexes.insert(indexes.begin(), DisplayVirtualLayerInfo{0, "_k", true, 0});
+    indexes.push_back(DisplayVirtualLayerInfo{indexes[indexes.size()-1].index, "_k", false, 0});
   }
   
   size_t bytes = used_;
