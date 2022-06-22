@@ -174,3 +174,8 @@ enum PathOperation {
   xor,
   reverseDifference,
 }
+
+abstract class PictureRasterizationException implements Exception {
+  String get message;
+  StackTrace? stack;
+}

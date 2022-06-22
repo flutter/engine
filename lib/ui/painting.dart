@@ -5906,11 +5906,19 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   return completer.future;
 }
 
+/// An exception thrown by [Canvas.drawImage] and realted methods when drawing
+/// an [Image] created via [Picture.toGpuImage] that is in an invalid state.
+///
+/// This exception may be thrown if the requested image dimensions exceeded the
+/// maximum 2D texture size allowed by the GPU, or if no GPU surface or context
+/// was available for rasterization at request time.
 class PictureRasterizationException implements Exception {
   const PictureRasterizationException._(this.message, {this.stack});
 
+  /// A string containing details about the failure.
   final String message;
 
+  /// If available, the stack trace at the time [Picture.toGpuImage] was called.
   final StackTrace? stack;
 
   @override
