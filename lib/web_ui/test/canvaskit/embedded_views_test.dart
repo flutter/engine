@@ -41,10 +41,10 @@ void testMain() {
       // The platform view is now split in two parts. The contents live
       // as a child of the glassPane, and the slot lives in the glassPane
       // shadow root. The slot is the one that has pointer events auto.
-      final html.Element contents =
-          flutterViewEmbedder.glassPaneElement!.querySelector('#view-0')!;
-      final html.Element slot =
-          flutterViewEmbedder.sceneElement!.querySelector('slot')!;
+      final html.Element contents = flutterViewEmbedder.glassPaneElement!
+          .querySelector('#view-0')! as html.Element;
+      final html.Element slot = flutterViewEmbedder.sceneElement!
+          .querySelector('slot')! as html.Element;
       final html.Element contentsHost = contents.parent!;
       final html.Element slotHost = slot.parent!;
 
@@ -121,7 +121,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+          .querySelector('flt-platform-view-slot')! as html.Element;
 
       expect(
         slotHost.style.transform,
@@ -146,7 +146,7 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+          .querySelector('flt-platform-view-slot')! as html.Element;
       final html.CssStyleDeclaration style = slotHost.style;
 
       expect(style.transform, 'matrix(1, 0, 0, 1, 3, 4)');
@@ -191,7 +191,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+          .querySelector('flt-platform-view-slot')! as html.Element;
 
       expect(
         getTransformChain(slotHost),
@@ -212,7 +212,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+          .querySelector('flt-platform-view-slot')! as html.Element;
 
       expect(
         getTransformChain(slotHost),
@@ -243,7 +243,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+          .querySelector('flt-platform-view-slot')! as html.Element;
 
       expect(
         getTransformChain(slotHost),
@@ -272,7 +272,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+          .querySelector('flt-platform-view-slot')! as html.Element;
 
       expect(
         getTransformChain(slotHost),
@@ -704,8 +704,8 @@ void testMain() {
         dispatcher.rasterizer!.draw(sb.build().layerTree);
       }
 
-      final html.Node skPathDefs =
-          flutterViewEmbedder.sceneElement!.querySelector('#sk_path_defs')!;
+      final html.Node skPathDefs = flutterViewEmbedder.sceneElement!
+          .querySelector('#sk_path_defs')! as html.Node;
 
       expect(skPathDefs.childNodes, hasLength(0));
 
