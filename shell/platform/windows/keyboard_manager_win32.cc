@@ -97,12 +97,31 @@ static bool IsPrintable(uint32_t c) {
   return c >= kMinPrintable && c != kDelete;
 }
 
+static std::u16string EncodeUtf16(char32_t character) {
+  // Algorithm: https://en.wikipedia.org/wiki/UTF-16#Description
+  std::u16string result;
+  // Invalid value.
+  assert(!(character >= 0xD800 && character <= 0xDFFF) && !(character > 0x10FFFF));
+  if ((character >= 0xD800 && character <= 0xDFFF) || (character > 0x10FFFF)) {
+    return result;
+  }
+  if (character <= 0xD7FF || (character >= 0xE000 && character <= 0xFFFF)) {
+    result.push_back((char16_t)character);
+    return result;
+  }
+  uint32_t rem = character - 0x10000;
+  result.push_back((rem >> 10) + 0xD800);
+  result.push_back((rem & 0x3FF) + 0xDC00);
+  return result;
+}
+
 }  // namespace
 
 KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
     : window_delegate_(delegate),
       last_key_is_ctrl_left_down(false),
-      should_synthesize_ctrl_left_up(false) {}
+      should_synthesize_ctrl_left_up(false),
+      processing_event_(false) {}
 
 void KeyboardManagerWin32::RedispatchEvent(
     std::unique_ptr<PendingEvent> event) {
@@ -145,29 +164,6 @@ bool KeyboardManagerWin32::RemoveRedispatchedMessage(UINT const action,
 
 void KeyboardManagerWin32::OnKey(std::unique_ptr<PendingEvent> event,
                                  OnKeyCallback callback) {
-  if (IsKeyDownAltRight(event->action, event->key, event->extended)) {
-    if (last_key_is_ctrl_left_down) {
-      should_synthesize_ctrl_left_up = true;
-    }
-  }
-  if (IsKeyDownCtrlLeft(event->action, event->key)) {
-    last_key_is_ctrl_left_down = true;
-    ctrl_left_scancode = event->scancode;
-    should_synthesize_ctrl_left_up = false;
-  } else {
-    last_key_is_ctrl_left_down = false;
-  }
-  if (IsKeyUpAltRight(event->action, event->key, event->extended)) {
-    if (should_synthesize_ctrl_left_up) {
-      should_synthesize_ctrl_left_up = false;
-      const LPARAM lParam =
-          (1 /* repeat_count */ << 0) | (ctrl_left_scancode << 16) |
-          (0 /* extended */ << 24) | (1 /* prev_state */ << 30) |
-          (1 /* transition */ << 31);
-      window_delegate_->Win32DispatchMessage(WM_KEYUP, VK_CONTROL, lParam);
-    }
-  }
-
   const PendingEvent clone = *event;
   window_delegate_->OnKey(clone.key, clone.scancode, clone.action,
                           clone.character, clone.extended, clone.was_down,
@@ -176,34 +172,6 @@ void KeyboardManagerWin32::OnKey(std::unique_ptr<PendingEvent> event,
                             callback(std::unique_ptr<PendingEvent>(event),
                                      handled);
                           });
-}
-
-void KeyboardManagerWin32::DispatchReadyTexts() {
-  auto front = pending_texts_.begin();
-  for (; front != pending_texts_.end() && front->ready; ++front) {
-    window_delegate_->OnText(front->content);
-  }
-  pending_texts_.erase(pending_texts_.begin(), front);
-}
-
-void KeyboardManagerWin32::HandleOnKeyResult(
-    std::unique_ptr<PendingEvent> event,
-    bool handled,
-    std::list<PendingText>::iterator pending_text) {
-  if (pending_text != pending_texts_.end()) {
-    if (pending_text->placeholder || handled) {
-      pending_texts_.erase(pending_text);
-    } else {
-      pending_text->ready = true;
-    }
-    DispatchReadyTexts();
-  }
-
-  if (handled) {
-    return;
-  }
-
-  RedispatchEvent(std::move(event));
 }
 
 bool KeyboardManagerWin32::HandleMessage(UINT const action,
@@ -221,7 +189,6 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
           Win32Message{.action = action, .wparam = wparam, .lparam = lparam};
       current_session_.push_back(message);
 
-      std::u16string text;
       char32_t code_point;
       if (message.IsHighSurrogate()) {
         // A high surrogate is always followed by a low surrogate.  Process the
@@ -237,14 +204,11 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
         }
         // A low surrogate always follows a high surrogate, marking the end of
         // a char session. Process the session after the if clause.
-        text.push_back(static_cast<wchar_t>(last_message->wparam));
-        text.push_back(static_cast<wchar_t>(message.wparam));
         code_point =
             CodePointFromSurrogatePair(last_message->wparam, message.wparam);
       } else {
         // A non-surrogate character always appears alone. Process the session
         // after the if clause.
-        text.push_back(static_cast<wchar_t>(message.wparam));
         code_point = static_cast<wchar_t>(message.wparam);
       }
 
@@ -280,34 +244,13 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
             .was_down = was_down,
             .session = std::move(current_session_),
         });
-        // Compute the text that might be dispatched later.
-        //
-        // Of the messages handled here, only WM_CHAR should be treated as
-        // characters. WM_SYS*CHAR are not part of text input, and WM_DEADCHAR
-        // will be incorporated into a later WM_CHAR with the full character.
-        //
-        // Checking `character` filters out non-printable event characters.
-        std::list<PendingText>::iterator pending_text;
-        if (action == WM_CHAR) {
-          bool valid = character != 0 && IsPrintable(wparam);
-          pending_texts_.push_back(PendingText{
-              .ready = false,
-              .content = text,
-              .placeholder = !valid,
-          });
-          pending_text = std::prev(pending_texts_.end());
-        } else {
-          pending_text = pending_texts_.end();
-        }
+
         // SYS messages must not be handled by `HandleMessage` or be
         // redispatched.
+        pending_events_.push_back(std::move(event));
+        ProcessNextEvent();
+
         const bool is_syskey = action == WM_SYSCHAR || action == WM_SYSDEADCHAR;
-        OnKey(std::move(event),
-              [this, pending_text, is_syskey](
-                  std::unique_ptr<PendingEvent> event, bool handled) {
-                bool real_handled = handled || is_syskey;
-                HandleOnKeyResult(std::move(event), handled, pending_text);
-              });
         return !is_syskey;
       }
 
@@ -320,13 +263,14 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       //
       // Also filter out ASCII control characters, which are sent as WM_CHAR
       // events for all control key shortcuts.
-      current_session_.clear();
       if (action == WM_CHAR) {
-        pending_texts_.push_back(PendingText{
-            .ready = true,
-            .content = text,
+        auto event = std::make_unique<PendingEvent>(PendingEvent{
+            .action = WM_CHAR,
+            .character = code_point,
+            .session = std::move(current_session_),
         });
-        DispatchReadyTexts();
+        pending_events_.push_back(std::move(event));
+        ProcessNextEvent();
       }
       return true;
     }
@@ -338,6 +282,37 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       if (wparam == VK_PACKET) {
         return false;
       }
+
+      const uint8_t scancode = (lparam >> 16) & 0xff;
+      const bool extended = ((lparam >> 24) & 0x01) == 0x01;
+      // If the key is a modifier, get its side.
+      const uint16_t key_code = ResolveKeyCode(wparam, extended, scancode);
+      const bool was_down = lparam & 0x40000000;
+
+      // Possibly forge CtrlLeft up. See |IsKeyDownAltRight| for explanation.
+      if (IsKeyDownAltRight(action, key_code, extended)) {
+        if (last_key_is_ctrl_left_down) {
+          should_synthesize_ctrl_left_up = true;
+        }
+      }
+      if (IsKeyDownCtrlLeft(action, key_code)) {
+        last_key_is_ctrl_left_down = true;
+        ctrl_left_scancode = scancode;
+        should_synthesize_ctrl_left_up = false;
+      } else {
+        last_key_is_ctrl_left_down = false;
+      }
+      if (IsKeyUpAltRight(action, key_code, extended)) {
+        if (should_synthesize_ctrl_left_up) {
+          should_synthesize_ctrl_left_up = false;
+          const LPARAM lParam =
+              (1 /* repeat_count */ << 0) | (ctrl_left_scancode << 16) |
+              (0 /* extended */ << 24) | (1 /* prev_state */ << 30) |
+              (1 /* transition */ << 31);
+          window_delegate_->Win32DispatchMessage(WM_KEYUP, VK_CONTROL, lParam);
+        }
+      }
+
       current_session_.clear();
       current_session_.push_back(
           Win32Message{.action = action, .wparam = wparam, .lparam = lparam});
@@ -365,11 +340,6 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       }
 
       // Resolve session: A non-char key event.
-      const uint8_t scancode = (lparam >> 16) & 0xff;
-      const bool extended = ((lparam >> 24) & 0x01) == 0x01;
-      // If the key is a modifier, get its side.
-      const uint16_t key_code = ResolveKeyCode(wparam, extended, scancode);
-      const bool was_down = lparam & 0x40000000;
       auto event = std::make_unique<PendingEvent>(PendingEvent{
           .key = key_code,
           .scancode = scancode,
@@ -382,18 +352,82 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       // SYS messages must not be handled by `HandleMessage` or be
       // redispatched.
       const bool is_syskey = action == WM_SYSKEYDOWN || action == WM_SYSKEYUP;
-      OnKey(
-          std::move(event),
-          [this, is_syskey](std::unique_ptr<PendingEvent> event, bool handled) {
-            bool real_handled = handled || is_syskey;
-            HandleOnKeyResult(std::move(event), handled, pending_texts_.end());
-          });
+      pending_events_.push_back(std::move(event));
+      ProcessNextEvent();
       return !is_syskey;
     }
     default:
       assert(false);
   }
   return false;
+}
+
+void KeyboardManagerWin32::ProcessNextEvent() {
+  if (processing_event_ || pending_events_.empty()) {
+    return;
+  }
+  processing_event_ = true;
+  auto pending_event = std::move(pending_events_.front());
+  pending_events_.pop_front();
+  PerformProcessEvent(std::move(pending_event), [this] {
+    processing_event_ = false;
+    ProcessNextEvent();
+  });
+}
+
+void KeyboardManagerWin32::PerformProcessEvent(
+    std::unique_ptr<PendingEvent> event,
+    std::function<void()> callback) {
+
+  // Only WM_CHAR should be treated as characters. WM_SYS*CHAR are not part of
+  // text input, and WM_DEADCHAR will be incorporated into a later WM_CHAR with
+  // the full character.
+  //
+  // Checking `character` filters out non-printable event characters.
+  if (event->action == WM_CHAR) {
+    DispatchText(*event);
+    callback();
+    return;
+  }
+
+  OnKey(std::move(event),
+        [this, callback = std::move(callback)](std::unique_ptr<PendingEvent> event, bool handled) {
+          HandleOnKeyResult(std::move(event), handled);
+          callback();
+        });
+}
+
+void KeyboardManagerWin32::HandleOnKeyResult(
+    std::unique_ptr<PendingEvent> event,
+    bool framework_handled) {
+  const UINT last_action = event->session.back().action;
+  const bool is_syskey =
+      last_action == WM_SYSKEYDOWN || last_action == WM_SYSKEYUP ||
+      last_action == WM_SYSCHAR || last_action == WM_SYSDEADCHAR;
+  bool handled = framework_handled || is_syskey;
+
+  if (handled) {
+    return;
+  }
+
+  if (last_action == WM_CHAR) {
+    DispatchText(*event);
+  }
+
+  RedispatchEvent(std::move(event));
+}
+
+void KeyboardManagerWin32::DispatchText(const PendingEvent& event) {
+  // Check if the character is printable based on the last wparam, which works
+  // even if the last wparam is a low surrogate, because the only unprintable
+  // keys defined by `IsPrintable` are certain characters at lower ASCII range.
+  assert(!event.session.empty());
+  bool is_printable = IsPrintable(event.session.back().wparam);
+  bool valid = event.character != 0 && is_printable;
+  if (valid) {
+    auto text = EncodeUtf16(event.character);
+    window_delegate_->OnText(text);
+  }
 }
 
 UINT KeyboardManagerWin32::PeekNextMessageType(UINT wMsgFilterMin,

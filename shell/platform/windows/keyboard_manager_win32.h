@@ -141,6 +141,10 @@ class KeyboardManagerWin32 {
     bool placeholder = false;
   };
 
+  void ProcessNextEvent();
+
+  void PerformProcessEvent(std::unique_ptr<PendingEvent> event, std::function<void()> callback);
+
   // Returns true if it's a new event, or false if it's a redispatched event.
   void OnKey(std::unique_ptr<PendingEvent> event, OnKeyCallback callback);
 
@@ -154,8 +158,9 @@ class KeyboardManagerWin32 {
   // The `pending_text` is either a valid iterator of `pending_texts`, or its
   // end(). In the latter case, this OnKey message does not contain a text.
   void HandleOnKeyResult(std::unique_ptr<PendingEvent> event,
-                         bool handled,
-                         std::list<PendingText>::iterator pending_text);
+                         bool handled);
+
+  void DispatchText(const PendingEvent& event);
 
   // Returns the type of the next WM message.
   //
@@ -194,13 +199,9 @@ class KeyboardManagerWin32 {
   // This is used to resolve a corner case described in |IsKeyDownAltRight|.
   bool should_synthesize_ctrl_left_up;
 
-  // A queue of potential texts derived from char messages.
-  //
-  // The text might or might not be ready when they're added, and they might
-  // become ready or removed later. `DispatchReadyTexts` is used to dispatch all
-  // ready texts from the front to `OnText`. This queue is used to ensure
-  // they're dispatched in their arrival order.
-  std::list<PendingText> pending_texts_;
+  std::deque<std::unique_ptr<PendingEvent>> pending_events_;
+
+  bool processing_event_;
 
   // The queue of messages that have been redispatched to the system but have
   // not yet been received for a second time.
