@@ -714,11 +714,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return;
     }
 
-    final TextInputChannel.Configuration.Autofill currentAutofill = configuration.autofill;
-    if (currentAutofill == null || autofillConfiguration == null) {
+    if (configuration == null || autofillConfiguration == null || configuration.autofill == null) {
       return;
     }
 
+    final TextInputChannel.Configuration.Autofill currentAutofill = configuration.autofill;
     final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
     for (int i = 0; i < values.size(); i++) {
       int virtualId = values.keyAt(i);
