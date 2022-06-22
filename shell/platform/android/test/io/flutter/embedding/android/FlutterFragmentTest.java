@@ -310,7 +310,7 @@ public class FlutterFragmentTest {
         mock(FlutterActivityAndFragmentDelegate.class);
     isDelegateAttached = true;
     when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
-    doNothing().when(mockDelegate).onAttach(any())
+    doNothing().when(mockDelegate).onAttach(any());
     doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
 
     Context spyCtx = spy(ctx);
