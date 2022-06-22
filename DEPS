@@ -62,8 +62,8 @@ vars = {
   'dart_webdev_rev': '8c814f9d89915418d8abe354ff9befec8f2906b2',
   'dart_webkit_inspection_protocol_rev': 'e4965778e2837adc62354eec3a19123402997897',
   'dart_yaml_edit_rev': '0b74d85fac10b4fbf7d1a347debcf16c8f7b0e9c',
-  'dart_zlib_rev': '64bbf988543996eb8df9a86877b32917187eba8f',
 
+  'zlib_rev': '27c2f474b71d0d20764f86f60ef8b00da1a16cda',
   'ocmock_rev': 'c4ec0e3a7a9f56cfdbd0aa01f4f97bb4b75c5ef8', # v3.7.1
 
   # Download a prebuilt Dart SDK by default
@@ -458,7 +458,7 @@ deps = {
    Var('flutter_git') + '/third_party/libxml' + '@' + 'a143e452b5fc7d872813eeadc8db421694058098',
 
   'src/third_party/zlib':
-   Var('chromium_git') + '/chromium/src/third_party/zlib.git' + '@' + Var('dart_zlib_rev'),
+   Var('chromium_git') + '/chromium/src/third_party/zlib.git' + '@' + Var('zlib_rev'),
 
   'src/third_party/inja':
    Var('flutter_git') + '/third_party/inja' + '@' + '88bd6112575a80d004e551c98cf956f88ff4d445',
