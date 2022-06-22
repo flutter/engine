@@ -2,125 +2,134 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-// Two RTL strings, 5 characters each, to match the length of "$rtl1" and "$rtl2".
-const String rtl1 = 'واحدة';
-const String rtl2 = 'ثنتان';
+import '../html/paragraph/helper.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  group('$getDirectionalBlockEnd', () {
-
+  group('$BidiFragmenter', () {
     test('basic cases', () {
-      const String text = 'Lorem 12 $rtl1   ipsum34';
-      const LineBreakResult start = LineBreakResult.sameIndex(0, LineBreakType.prohibited);
-      const LineBreakResult end = LineBreakResult.sameIndex(text.length, LineBreakType.endOfText);
-      const LineBreakResult loremMiddle = LineBreakResult.sameIndex(3, LineBreakType.prohibited);
-      const LineBreakResult loremEnd = LineBreakResult.sameIndex(5, LineBreakType.prohibited);
-      const LineBreakResult twelveStart = LineBreakResult(6, 6, 5, LineBreakType.opportunity);
-      const LineBreakResult twelveEnd = LineBreakResult.sameIndex(8, LineBreakType.prohibited);
-      const LineBreakResult rtl1Start = LineBreakResult(9, 9, 8, LineBreakType.opportunity);
-      const LineBreakResult rtl1End = LineBreakResult.sameIndex(14, LineBreakType.prohibited);
-      const LineBreakResult ipsumStart = LineBreakResult(17, 17, 15, LineBreakType.opportunity);
-      const LineBreakResult ipsumEnd = LineBreakResult.sameIndex(22, LineBreakType.prohibited);
+      expect(split('Lorem 12 $rtlWord1   ipsum34', ltr), <_Bidi>[
+        _Bidi('Lorem 12 ', ltr),
+        _Bidi('$rtlWord1   ', rtl),
+        _Bidi('ipsum34', ltr),
+      ]);
+      expect(split('Lorem 12 $rtlWord1   ipsum34', rtl), <_Bidi>[
+        _Bidi('Lorem 12 ', ltr),
+        _Bidi('$rtlWord1   ', rtl),
+        _Bidi('ipsum34', ltr),
+      ]);
+    });
 
-      DirectionalPosition blockEnd;
+    test('spaces', () {
+      expect(split('    ', ltr), <_Bidi>[
+        _Bidi('    ', ltr),
+      ]);
+      expect(split('    ', rtl), <_Bidi>[
+        _Bidi('    ', rtl),
+      ]);
+    });
 
-      blockEnd = getDirectionalBlockEnd(text, start, end);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, TextDirection.ltr);
-      expect(blockEnd.lineBreak, loremEnd);
+    test('symbols', () {
+      expect(split('Calculate 2.2 + 4.5 and write the result', ltr), <_Bidi>[
+        _Bidi('Calculate 2.2 + 4.5 and write the result', ltr),
+      ]);
+      expect(split('Calculate 2.2 + 4.5 and write the result', rtl), <_Bidi>[
+        _Bidi('Calculate 2.2 + 4.5 and write the result', ltr),
+      ]);
 
-      blockEnd = getDirectionalBlockEnd(text, start, loremMiddle);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, TextDirection.ltr);
-      expect(blockEnd.lineBreak, loremMiddle);
+      expect(split('Calculate $rtlWord1 2.2 + 4.5 and write the result', ltr), <_Bidi>[
+        _Bidi('Calculate ', ltr),
+        _Bidi('$rtlWord1 2.2 + 4.5 ', rtl),
+        _Bidi('and write the result', ltr),
+      ]);
+      expect(split('Calculate $rtlWord1 2.2 + 4.5 and write the result', rtl), <_Bidi>[
+        _Bidi('Calculate ', ltr),
+        _Bidi('$rtlWord1 2.2 + 4.5 ', rtl),
+        _Bidi('and write the result', ltr),
+      ]);
 
-      blockEnd = getDirectionalBlockEnd(text, loremMiddle, loremEnd);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, TextDirection.ltr);
-      expect(blockEnd.lineBreak, loremEnd);
+      expect(split('$rtlWord1 2.2 + 4.5 foo', ltr), <_Bidi>[
+        _Bidi('$rtlWord1 2.2 + 4.5 ', rtl),
+        _Bidi('foo', ltr),
+      ]);
+      expect(split('$rtlWord1 2.2 + 4.5 foo', rtl), <_Bidi>[
+        _Bidi('$rtlWord1 2.2 + 4.5 ', rtl),
+        _Bidi('foo', ltr),
+      ]);
 
-      blockEnd = getDirectionalBlockEnd(text, loremEnd, twelveStart);
-      expect(blockEnd.isSpaceOnly, isTrue);
-      expect(blockEnd.textDirection, isNull);
-      expect(blockEnd.lineBreak, twelveStart);
-
-      blockEnd = getDirectionalBlockEnd(text, twelveStart, rtl1Start);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, isNull);
-      expect(blockEnd.lineBreak, twelveEnd);
-
-      blockEnd = getDirectionalBlockEnd(text, rtl1Start, end);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, TextDirection.rtl);
-      expect(blockEnd.lineBreak, rtl1End);
-
-      blockEnd = getDirectionalBlockEnd(text, ipsumStart, end);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, TextDirection.ltr);
-      expect(blockEnd.lineBreak, ipsumEnd);
-
-      blockEnd = getDirectionalBlockEnd(text, ipsumEnd, end);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, isNull);
-      expect(blockEnd.lineBreak, end);
+      expect(split('12 + 24 = 36', ltr), <_Bidi>[
+        _Bidi('12 + 24 = 36', ltr),
+      ]);
+      expect(split('12 + 24 = 36', rtl), <_Bidi>[
+        _Bidi('12 + 24 = 36', rtl),
+      ]);
     });
 
     test('handles new lines', () {
-      const String text = 'Lorem\n12\nipsum  \n';
-      const LineBreakResult start = LineBreakResult.sameIndex(0, LineBreakType.prohibited);
-      const LineBreakResult end = LineBreakResult(
-        text.length,
-        text.length - 1,
-        text.length - 3,
-        LineBreakType.mandatory,
-      );
-      const LineBreakResult loremEnd = LineBreakResult.sameIndex(5, LineBreakType.prohibited);
-      const LineBreakResult twelveStart = LineBreakResult(6, 5, 5, LineBreakType.mandatory);
-      const LineBreakResult twelveEnd = LineBreakResult.sameIndex(8, LineBreakType.prohibited);
-      const LineBreakResult ipsumStart = LineBreakResult(9, 8, 8, LineBreakType.mandatory);
-      const LineBreakResult ipsumEnd = LineBreakResult.sameIndex(14, LineBreakType.prohibited);
+      expect(split('Lorem\n12\nipsum  \n', ltr), <_Bidi>[
+        _Bidi('Lorem\n12\nipsum  \n', ltr),
+      ]);
+      expect(split('Lorem\n12\nipsum  \n', rtl), <_Bidi>[
+        _Bidi('Lorem\n12\nipsum  \n', ltr),
+      ]);
 
-      DirectionalPosition blockEnd;
-
-      blockEnd = getDirectionalBlockEnd(text, start, twelveStart);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, TextDirection.ltr);
-      expect(blockEnd.lineBreak, twelveStart);
-
-      blockEnd = getDirectionalBlockEnd(text, loremEnd, twelveStart);
-      expect(blockEnd.isSpaceOnly, isTrue);
-      expect(blockEnd.textDirection, isNull);
-      expect(blockEnd.lineBreak, twelveStart);
-
-      blockEnd = getDirectionalBlockEnd(text, twelveStart, ipsumStart);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, isNull);
-      expect(blockEnd.lineBreak, ipsumStart);
-
-      blockEnd = getDirectionalBlockEnd(text, twelveEnd, ipsumStart);
-      expect(blockEnd.isSpaceOnly, isTrue);
-      expect(blockEnd.textDirection, isNull);
-      expect(blockEnd.lineBreak, ipsumStart);
-
-      blockEnd = getDirectionalBlockEnd(text, ipsumStart, end);
-      expect(blockEnd.isSpaceOnly, isFalse);
-      expect(blockEnd.textDirection, TextDirection.ltr);
-      expect(blockEnd.lineBreak, ipsumEnd);
-
-      blockEnd = getDirectionalBlockEnd(text, ipsumEnd, end);
-      expect(blockEnd.isSpaceOnly, isTrue);
-      expect(blockEnd.textDirection, isNull);
-      expect(blockEnd.lineBreak, end);
+      expect(split('$rtlWord1\n  $rtlWord2 \n', ltr), <_Bidi>[
+        _Bidi('$rtlWord1\n  $rtlWord2 \n', rtl),
+      ]);
+      expect(split('$rtlWord1\n  $rtlWord2 \n', rtl), <_Bidi>[
+        _Bidi('$rtlWord1\n  $rtlWord2 \n', rtl),
+      ]);
     });
   });
+}
+
+/// Holds information about how a bidi region was split from a string.
+class _Bidi {
+  _Bidi(this.text, this.textDirection);
+
+  final String text;
+  final TextDirection textDirection;
+
+  factory _Bidi.fromBidiFragment(String text, BidiFragment bidiFragment) {
+    return _Bidi(
+      text.substring(bidiFragment.start, bidiFragment.end),
+      bidiFragment.textDirection,
+    );
+  }
+
+  @override
+  int get hashCode => Object.hash(text, textDirection);
+
+  @override
+  bool operator ==(Object other) {
+    return other is _Bidi &&
+        other.text == text &&
+        other.textDirection == textDirection;
+  }
+
+  @override
+  String toString() {
+    return '"$text" ($textDirection)';
+  }
+}
+
+List<_Bidi> split(String text, TextDirection textDirection) {
+  return <_Bidi>[
+    for (final BidiFragment bidiFragment in computeBidiFragments(text, textDirection))
+      _Bidi.fromBidiFragment(text, bidiFragment)
+  ];
+}
+
+List<BidiFragment> computeBidiFragments(String text, TextDirection textDirection) {
+  final CanvasParagraph paragraph = plain(EngineParagraphStyle(textDirection: textDirection), text);
+  final BidiFragmenter fragmenter = BidiFragmenter(paragraph);
+  return fragmenter.fragment();
 }

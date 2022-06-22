@@ -4,8 +4,40 @@
 
 import 'package:ui/ui.dart' as ui;
 
+import 'fragmenter.dart';
 import 'line_breaker.dart';
 import 'unicode_range.dart';
+
+class BidiFragmenter extends TextFragmenter {
+  const BidiFragmenter(super.paragraph);
+
+  @override
+  List<BidiFragment> fragment() {
+    return _computeBidiFragments(paragraph.toPlainText(), paragraph.paragraphStyle.effectiveTextDirection);
+  }
+}
+
+class BidiFragment extends TextFragment {
+  const BidiFragment(super.start, super.end, this.textDirection);
+
+  final ui.TextDirection textDirection;
+
+  @override
+  int get hashCode => Object.hash(start, end, textDirection);
+
+  @override
+  bool operator ==(Object other) {
+    return other is BidiFragment &&
+        other.start == start &&
+        other.end == end &&
+        other.textDirection == textDirection;
+  }
+
+  @override
+  String toString() {
+    return 'BidiFragment($start, $end, $textDirection)';
+  }
+}
 
 // This data was taken from the source code of the Closure library:
 //
@@ -75,44 +107,64 @@ class DirectionalPosition {
   }
 }
 
-/// Finds the end of the directional block of text that starts at [start] up
-/// until [end].
-///
-/// If the block goes beyond [end], the part after [end] is ignored.
-DirectionalPosition getDirectionalBlockEnd(
-  String text,
-  LineBreakResult start,
-  LineBreakResult end,
-) {
-  if (start.index == end.index) {
-    return DirectionalPosition(end, null, false);
-  }
+List<BidiFragment> _computeBidiFragments(String text, ui.TextDirection baseDirection) {
+  final List<BidiFragment> fragments = <BidiFragment>[];
 
-  // Check if we are in a space-only block.
-  if (start.index == end.indexWithoutTrailingSpaces) {
-    return DirectionalPosition(end, null, true);
-  }
+  int fragmentStart = 0;
+  ui.TextDirection fragmentDirection = _textDirectionLookup.find(text, 0) ?? baseDirection;
 
-  final ui.TextDirection? blockDirection = _textDirectionLookup.find(text, start.index);
-  int i = start.index + 1;
-
-  while (i < end.indexWithoutTrailingSpaces) {
-    final ui.TextDirection? direction = _textDirectionLookup.find(text, i);
-    if (direction != blockDirection) {
-      // Reached the next block.
-      break;
+  for (int i = 1; i < text.length; i++) {
+    final ui.TextDirection charDirection = _textDirectionLookup.find(text, i) ?? fragmentDirection;
+    if (charDirection != fragmentDirection) {
+      // We've reached the end of a text direction fragment.
+      fragments.add(BidiFragment(fragmentStart, i, fragmentDirection));
+      fragmentStart = i;
+      fragmentDirection = charDirection;
     }
-    i++;
   }
 
-  if (i == end.indexWithoutTrailingNewlines) {
-    // If all that remains before [end] is new lines, let's include them in the
-    // block.
-    return DirectionalPosition(end, blockDirection, false);
-  }
-  return DirectionalPosition(
-    LineBreakResult.sameIndex(i, LineBreakType.prohibited),
-    blockDirection,
-    false,
-  );
+  fragments.add(BidiFragment(fragmentStart, text.length, fragmentDirection));
+  return fragments;
 }
+
+// /// Finds the end of the directional block of text that starts at [start] up
+// /// until [end].
+// ///
+// /// If the block goes beyond [end], the part after [end] is ignored.
+// DirectionalPosition _getDirectionalBlockEnd(
+//   String text,
+//   LineBreakResult start,
+//   LineBreakResult end,
+// ) {
+//   if (start.index == end.index) {
+//     return DirectionalPosition(end, null, false);
+//   }
+
+//   // Check if we are in a space-only block.
+//   if (start.index == end.indexWithoutTrailingSpaces) {
+//     return DirectionalPosition(end, null, true);
+//   }
+
+//   final ui.TextDirection? blockDirection = _textDirectionLookup.find(text, start.index);
+//   int i = start.index + 1;
+
+//   while (i < end.indexWithoutTrailingSpaces) {
+//     final ui.TextDirection? direction = _textDirectionLookup.find(text, i);
+//     if (direction != blockDirection) {
+//       // Reached the next block.
+//       break;
+//     }
+//     i++;
+//   }
+
+//   if (i == end.indexWithoutTrailingNewlines) {
+//     // If all that remains before [end] is new lines, let's include them in the
+//     // block.
+//     return DirectionalPosition(end, blockDirection, false);
+//   }
+//   return DirectionalPosition(
+//     LineBreakResult.sameIndex(i, LineBreakType.prohibited),
+//     blockDirection,
+//     false,
+//   );
+// }
