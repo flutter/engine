@@ -738,8 +738,6 @@ static char markerKey;
         flutter::TextRange(replacementRange.location,
                            replacementRange.location + replacementRange.length),
         0);
-    _activeModel->SetSelection(
-        flutter::TextRange(selectedRange.location, selectedRange.location + selectedRange.length));
   }
 
   flutter::TextRange composingBeforeChange = _activeModel->composing_range();
