@@ -75,7 +75,10 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
       sk_sp<SkShader> shader = image->makeShader(
           SkTileMode::kRepeat, SkTileMode::kRepeat, sampling, transform);
 
-      SkPaint paintWithShader = *paint;
+      SkPaint paintWithShader;
+      if (paint) {
+        paintWithShader = *paint;
+      }
       paintWithShader.setShader(shader);
       canvas.drawRect(SkRect::MakeWH(1, 1), paintWithShader);
     } else {
