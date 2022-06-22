@@ -1790,6 +1790,23 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
+//------------------------------------------------------------------------------
+/// @brief      Explictly defines the JIT snapshots.
+///
+/// @warning    This is not a necessary step when runnning the engine in JIT
+///             mode as it should be able to resolve the location of snapshots.
+///             Still, it was implemented with the goals of giving users more
+///             flexibility and mainting consistency with the AOT
+///             implementation.
+///
+/// @param[in]  args               The enginee's project args.
+/// @param[in]  vm_snapshot        Location of the VM snapshot. If nullptr,
+///                                location will not be set.
+/// @param[in]  isolate_snapshot   Location of the Isolate snapshot. If nullptr,
+///                                location will not be set.
+///
+/// @return     Returns if the JIT snapshots were successfully specified.
+///
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSetupJITSnapshots(
     FlutterProjectArgs* args,
