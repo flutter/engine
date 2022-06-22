@@ -81,6 +81,7 @@ const Map<String, int> kWebToLogicalKey = <String, int>{
   'EndCall': 0x00100001004,
   'Enter': 0x0010000000d,
   'EraseEof': 0x00100000405,
+  'Esc': 0x0010000001b,
   'Escape': 0x0010000001b,
   'ExSel': 0x00100000406,
   'Execute': 0x00100000506,
@@ -364,6 +365,7 @@ const Map<String, int> kWebToPhysicalKey = <String, int>{
   'End': 0x0007004d, // end
   'Enter': 0x00070028, // enter
   'Equal': 0x0007002e, // equal
+  'Esc': 0x00070029, // escape
   'Escape': 0x00070029, // escape
   'F1': 0x0007003a, // f1
   'F10': 0x00070043, // f10
