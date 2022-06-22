@@ -243,15 +243,15 @@ void EmbedderTestContext::SetupJITSnapshots(const char* vm_snapshot,
   // Users are allowed to specify only certain snapshots if they so desire.
   if (vm_snapshot != nullptr) {
     const auto vm_path =
-      fml::paths::JoinPaths({GetFixturesPath(), vm_snapshot});
+        fml::paths::JoinPaths({GetFixturesPath(), vm_snapshot});
     vm_snapshot_data_ = fml::FileMapping::CreateReadOnly(vm_path.c_str());
   }
 
   if (isolate_snapshot != nullptr) {
     const auto isolate_path =
-      fml::paths::JoinPaths({GetFixturesPath(), isolate_snapshot});
+        fml::paths::JoinPaths({GetFixturesPath(), isolate_snapshot});
     isolate_snapshot_data_ =
-      fml::FileMapping::CreateReadOnly(isolate_path.c_str());
+        fml::FileMapping::CreateReadOnly(isolate_path.c_str());
   }
 }
 

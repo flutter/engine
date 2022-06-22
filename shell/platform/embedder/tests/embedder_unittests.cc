@@ -1309,7 +1309,10 @@ TEST_F(EmbedderTest, CanRunEngineWithSpecifiedJITSnapshos) {
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
 
-  ASSERT_EQ(FlutterEngineSetupJITSnapshots(&(builder.GetProjectArgs()), "vm_snapshot_data", "isolate_snapshot_data"), kSuccess);
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(&(builder.GetProjectArgs()),
+                                           "vm_snapshot_data",
+                                           "isolate_snapshot_data"),
+            kSuccess);
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
