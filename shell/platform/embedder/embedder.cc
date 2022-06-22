@@ -1016,38 +1016,39 @@ FlutterEngineResult FlutterEngineSetupJITSnapshots(
         kInvalidArguments, "JIT snapshots can only be specified in JIT mode.");
   }
 
-  // Users are allowed to specify only certain snapshots if they so desire.
-  if (vm_snapshot != nullptr &&
-      SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
-    const auto vm_path =
-        fml::paths::JoinPaths({args->assets_path, vm_snapshot});
-    std::unique_ptr<fml::Mapping> mapping =
-        fml::FileMapping::CreateReadOnly(vm_path.c_str());
-    if (mapping == nullptr) {
-      args->vm_snapshot_data = nullptr;
-      args->vm_snapshot_data_size = 0;
-    } else {
-      args->vm_snapshot_data = mapping->GetMapping();
-      args->vm_snapshot_data_size = mapping->GetSize();
-    }
-  }
-
-  if (isolate_snapshot != nullptr &&
-      SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
-    const auto isolate_path =
-        fml::paths::JoinPaths({args->assets_path, isolate_snapshot});
-    std::unique_ptr<fml::Mapping> mapping =
-        fml::FileMapping::CreateReadOnly(isolate_path.c_str());
-    if (mapping == nullptr) {
-      args->isolate_snapshot_data = nullptr;
-      args->isolate_snapshot_data_size = 0;
-    } else {
-      args->isolate_snapshot_data = mapping->GetMapping();
-      args->isolate_snapshot_data_size = mapping->GetSize();
-    }
-  }
+  args->vm_snapshot_data = reinterpret_cast<const uint8_t *>(vm_snapshot);
+  args->isolate_snapshot_data = reinterpret_cast<const uint8_t *>(isolate_snapshot);
 
   return kSuccess;
+}
+
+void PopulateJITSnapshotMappingCallbacks(
+    const FlutterProjectArgs* args,
+    flutter::Settings& settings) {
+  auto make_mapping_callback = [](std::string path, bool executable) {
+    return [path, executable]() {
+      if (executable) {
+        return fml::FileMapping::CreateReadExecute(path.c_str());
+      } else {
+        return fml::FileMapping::CreateReadOnly(path.c_str());
+      }
+    };
+  };
+
+  if (SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
+    // Users are allowed to specify only certain snapshots if they so desire.
+    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+      const auto vm_path =
+        fml::paths::JoinPaths({args->assets_path, reinterpret_cast<const char *>(args->vm_snapshot_data)});
+      settings.vm_snapshot_data = make_mapping_callback(vm_path, false);
+    }
+
+    if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+      const auto isolate_path =
+        fml::paths::JoinPaths({args->assets_path, reinterpret_cast<const char *>(args->isolate_snapshot_data)});
+      settings.isolate_snapshot_data = make_mapping_callback(isolate_path, false);
+    }
+  }
 }
 
 void PopulateSnapshotMappingCallbacks(
@@ -1099,17 +1100,7 @@ void PopulateSnapshotMappingCallbacks(
           SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
     }
   } else {
-    // If JIT snapshots have been explictly specified, set them accordingly.
-    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data = make_mapping_callback(
-          args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
-    }
-
-    if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      settings.isolate_snapshot_data = make_mapping_callback(
-          args->isolate_snapshot_data,
-          SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
-    }
+    PopulateJITSnapshotMappingCallbacks(args, settings);
   }
 
 #if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
