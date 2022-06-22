@@ -158,16 +158,16 @@ TEST_F(PictureLayerTest, OpacityInheritanceUncacheablePicture) {
 using PictureLayerDiffTest = DiffContextTest;
 
 TEST_F(PictureLayerDiffTest, SimplePicture) {
-  auto picture = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto picture = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
 
   MockLayerTree tree1;
-  tree1.root()->Add(CreatePictureLayer(picture));
+  tree1.root()->Add(CreateDisplayListLayer(picture));
 
   auto damage = DiffLayerTree(tree1, MockLayerTree());
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree2;
-  tree2.root()->Add(CreatePictureLayer(picture));
+  tree2.root()->Add(CreateDisplayListLayer(picture));
 
   damage = DiffLayerTree(tree2, tree1);
   EXPECT_TRUE(damage.frame_damage.isEmpty());
@@ -178,10 +178,10 @@ TEST_F(PictureLayerDiffTest, SimplePicture) {
 }
 
 TEST_F(PictureLayerDiffTest, FractionalTranslation) {
-  auto picture = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto picture = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
 
   MockLayerTree tree1;
-  tree1.root()->Add(CreatePictureLayer(picture, SkPoint::Make(0.5, 0.5)));
+  tree1.root()->Add(CreateDisplayListLayer(picture, SkPoint::Make(0.5, 0.5)));
 
   auto damage = DiffLayerTree(tree1, MockLayerTree());
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
@@ -193,31 +193,31 @@ TEST_F(PictureLayerDiffTest, FractionalTranslation) {
 
 TEST_F(PictureLayerDiffTest, PictureCompare) {
   MockLayerTree tree1;
-  auto picture1 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
-  tree1.root()->Add(CreatePictureLayer(picture1));
+  auto picture1 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  tree1.root()->Add(CreateDisplayListLayer(picture1));
 
   auto damage = DiffLayerTree(tree1, MockLayerTree());
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree2;
-  auto picture2 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
-  tree2.root()->Add(CreatePictureLayer(picture2));
+  auto picture2 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  tree2.root()->Add(CreateDisplayListLayer(picture2));
 
   damage = DiffLayerTree(tree2, tree1);
   EXPECT_TRUE(damage.frame_damage.isEmpty());
 
   MockLayerTree tree3;
-  auto picture3 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto picture3 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
   // add offset
-  tree3.root()->Add(CreatePictureLayer(picture3, SkPoint::Make(10, 10)));
+  tree3.root()->Add(CreateDisplayListLayer(picture3, SkPoint::Make(10, 10)));
 
   damage = DiffLayerTree(tree3, tree2);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 70, 70));
 
   MockLayerTree tree4;
   // different color
-  auto picture4 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 2);
-  tree4.root()->Add(CreatePictureLayer(picture4, SkPoint::Make(10, 10)));
+  auto picture4 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 2);
+  tree4.root()->Add(CreateDisplayListLayer(picture4, SkPoint::Make(10, 10)));
 
   damage = DiffLayerTree(tree4, tree3);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(20, 20, 70, 70));

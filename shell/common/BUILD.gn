@@ -274,10 +274,18 @@ if (enable_unittests) {
       "rasterizer_unittests.cc",
       "resource_cache_limit_calculator_unittests.cc",
       "shell_unittests.cc",
-      "skp_shader_warmup_unittests.cc",
       "switches_unittests.cc",
       "variable_refresh_rate_display_unittests.cc",
     ]
+
+    if (is_fuchsia) {
+      sources += [
+        "layers/picture_layer.cc",
+        "layers/picture_layer.h",
+        "layers/picture_layer_unittests.cc",
+        "skp_shader_warmup_unittests.cc",
+      ]
+    }
 
     deps = [
       ":shell_test_fixture_sources",

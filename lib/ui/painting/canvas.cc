@@ -589,13 +589,7 @@ void Canvas::drawPicture(Picture* picture) {
         ToDart("Canvas.drawPicture called with non-genuine Picture."));
     return;
   }
-  if (picture->picture()) {
-    if (display_list_recorder_) {
-      builder()->drawPicture(picture->picture(), nullptr, false);
-    } else if (canvas_) {
-      canvas_->drawPicture(picture->picture().get());
-    }
-  } else if (picture->display_list()) {
+  if (picture->display_list()) {
     if (display_list_recorder_) {
       builder()->drawDisplayList(picture->display_list());
     } else if (canvas_) {
