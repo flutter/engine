@@ -252,13 +252,15 @@ std::pair<sk_sp<SkImage>, std::string> MakeBitmapImage(SkISize picture_size) {
   // Use 16384 as a proxy for the maximum texture size for a GPU image.
   // This is meant to be large enough to avoid false positives in test contexts,
   // but not so artificially large to be completely unrealistic on any platform.
-  // This limit is taken from the Metal specification. D3D and GL generally have
-  // lower limits.
+  // This limit is taken from the Metal specification. D3D, Vulkan, and GL
+  // generally have lower limits.
   if (picture_size.width() > 16384 || picture_size.height() > 16384) {
-    return {nullptr, "unable to create render target at specified size."};
+    return {nullptr, "unable to create render target at specified size"};
   }
   SkBitmap bitmap;
-  bitmap.allocN32Pixels(picture_size.width(), picture_size.height());
+  if (!bitmap.tryAllocN32Pixels(picture_size.width(), picture_size.height())) {
+    return {nullptr, "unable to create render target at specified size"};
+  }
   bitmap.eraseColor(SK_ColorLTGRAY);
   uint32_t half_width = std::floor(picture_size.width() / 2);
   uint32_t half_height = std::floor(picture_size.height() / 2);
