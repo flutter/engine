@@ -1076,9 +1076,9 @@ _EmbeddedViewMarker get overlay => _EmbeddedViewMarker.overlay;
 _EmbeddedViewMarker get platformView => _EmbeddedViewMarker.platformView;
 
 void expectSceneMatches(List<_EmbeddedViewMarker> markers) {
-  final List<html.Element> sceneElements = flutterViewEmbedder
+  final List<DomElement> sceneElements = flutterViewEmbedder
       .sceneElement!.children
-      .where((html.Element element) => element.tagName != 'svg')
+      .where((DomElement element) => element.tagName != 'svg')
       .toList();
   expect(markers, hasLength(sceneElements.length));
   for (int i = 0; i < markers.length; i++) {
