@@ -282,9 +282,6 @@ bool RasterCache::Prepare(PrerollContext* context,
     // GetIntegralTransCTM effect for matrix which only contains scale,
     // translate, so it won't affect result of matrix decomposition and cache
     // key.
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    transformation_matrix = GetIntegralTransCTM(transformation_matrix);
-#endif
     entry.image = RasterizeDisplayList(
         display_list, context->gr_context, transformation_matrix,
         context->dst_color_space, checkerboard_images_);
