@@ -1799,10 +1799,14 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 ///             flexibility and mainting consistency with the AOT
 ///             implementation.
 ///
-/// @param[in]  args               The enginee's project args.
-/// @param[in]  vm_snapshot        Location of the VM snapshot. If nullptr,
+/// @param[in]  args                            The enginee's project args.
+/// @param[in]  vm_snapshot_data                Location of the VM snapshot data. If nullptr,
 ///                                location will not be set.
-/// @param[in]  isolate_snapshot   Location of the Isolate snapshot. If nullptr,
+/// @param[in]  vm_snapshot_instructions        Location of the VM snapshot instructions. If nullptr,
+///                                location will not be set.
+/// @param[in]  isolate_snapshot_data           Location of the isolate snapshot data. If nullptr,
+///                                location will not be set.
+/// @param[in]  isolate_snapshot_instructions   Location of the isolate snapshot instructions. If nullptr,
 ///                                location will not be set.
 ///
 /// @return     Returns if the JIT snapshots were successfully specified.
@@ -1810,8 +1814,10 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSetupJITSnapshots(
     FlutterProjectArgs* args,
-    const char* vm_snapshot,
-    const char* isolate_snapshot);
+    const char* vm_snapshot_data,
+    const char* vm_snapshot_instructions,
+    const char* isolate_snapshot_data,
+    const char* isolate_snapshot_instructions);
 
 //------------------------------------------------------------------------------
 /// @brief      Initialize and run a Flutter engine instance and return a handle
@@ -2460,8 +2466,10 @@ typedef FlutterEngineResult (*FlutterEngineCollectAOTDataFnPtr)(
     FlutterEngineAOTData data);
 typedef FlutterEngineResult (*FlutterEngineSetupJITSnapshotsFnPtr)(
     FlutterProjectArgs* args,
-    const char* vm_snapshot,
-    const char* isolate_snapshot);
+    const char* vm_snapshot_data,
+    const char* vm_snapshot_instructions,
+    const char* isolate_snapshot_data,
+    const char* isolate_snapshot_instructions);
 typedef FlutterEngineResult (*FlutterEngineRunFnPtr)(
     size_t version,
     const FlutterRendererConfig* config,
