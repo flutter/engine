@@ -692,20 +692,23 @@ static char markerKey;
     _pendingSelectors = [NSMutableArray array];
   }
   [_pendingSelectors addObject:name];
-  __weak NSMutableArray* selectors = _pendingSelectors;
-  __weak FlutterMethodChannel* channel = _channel;
-  __weak NSNumber* clientID = self.clientID;
 
-  CFStringRef runLoopMode = self.customRunLoopMode != nil
-                                ? (__bridge CFStringRef)self.customRunLoopMode
-                                : kCFRunLoopCommonModes;
+  if (_pendingSelectors.count == 1) {
+    __weak NSMutableArray* selectors = _pendingSelectors;
+    __weak FlutterMethodChannel* channel = _channel;
+    __weak NSNumber* clientID = self.clientID;
 
-  CFRunLoopPerformBlock(CFRunLoopGetMain(), runLoopMode, ^{
-    if (selectors.count > 0) {
-      [channel invokeMethod:kPerformSelectors arguments:@[ clientID, selectors ]];
-      [selectors removeAllObjects];
-    }
-  });
+    CFStringRef runLoopMode = self.customRunLoopMode != nil
+                                  ? (__bridge CFStringRef)self.customRunLoopMode
+                                  : kCFRunLoopCommonModes;
+
+    CFRunLoopPerformBlock(CFRunLoopGetMain(), runLoopMode, ^{
+      if (selectors.count > 0) {
+        [channel invokeMethod:kPerformSelectors arguments:@[ clientID, selectors ]];
+        [selectors removeAllObjects];
+      }
+    });
+  }
 }
 
 - (void)insertNewline:(id)sender {
