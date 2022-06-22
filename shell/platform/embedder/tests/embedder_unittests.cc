@@ -1315,6 +1315,27 @@ TEST_F(EmbedderTest, CanRunEngineWithSpecifiedJITSnapshos) {
   ASSERT_TRUE(engine.is_valid());
 }
 
+//------------------------------------------------------------------------------
+/// The embedder must be able to run even when the snapshots are not explicitly
+// defined in JIT mode. It must be able to resolve those snapshots.
+///
+TEST_F(EmbedderTest, CanRunEngineWithUnspecifiedJITSnapshos) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // TODO(btrevisan): Add an assert here to make sure the snapshots are empty.
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
 TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
