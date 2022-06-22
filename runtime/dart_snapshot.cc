@@ -59,7 +59,10 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
   // Ask the embedder. There is no fallback as we expect the embedders (via
   // their embedding APIs) to just specify the mappings directly.
   if (embedder_mapping_callback) {
-    return embedder_mapping_callback();
+    // TODO(btrevisan): Log error that specified mapping was invalid.
+    if (auto mapping = embedder_mapping_callback()) {
+      return mapping;
+    }
   }
 
   // Attempt to open file at path specified.
