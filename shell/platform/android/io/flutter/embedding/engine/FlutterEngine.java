@@ -350,7 +350,7 @@ public class FlutterEngine {
         new FlutterEngineConnectionRegistry(context.getApplicationContext(), this, flutterLoader);
 
     localizationPlugin.sendLocalesToFlutter(
-        context.getApplicationContect().getResources().getConfiguration());
+        context.getApplicationContext().getResources().getConfiguration());
 
     // Only automatically register plugins if both constructor parameter and
     // loaded AndroidManifest config turn this feature on.
