@@ -1786,7 +1786,7 @@ public class TextInputPluginTest {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
-    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     // Set up an autofill scenario with 2 fields.
