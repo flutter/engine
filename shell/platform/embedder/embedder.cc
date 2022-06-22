@@ -1008,21 +1008,28 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
 
 FlutterEngineResult FlutterEngineSetupJITSnapshots(
     FlutterProjectArgs* args,
-    const char* vm_snapshot,
-    const char* isolate_snapshot) {
+    const char* vm_snapshot_data,
+    const char* vm_snapshot_instructions,
+    const char* isolate_snapshot_data,
+    const char* isolate_snapshot_instructions) {
   // This function is only relevant in JIT mode.
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
     return LOG_EMBEDDER_ERROR(
         kInvalidArguments, "JIT snapshots can only be specified in JIT mode.");
   }
 
-  args->vm_snapshot_data = reinterpret_cast<const uint8_t*>(vm_snapshot);
+  args->vm_snapshot_data = reinterpret_cast<const uint8_t*>(vm_snapshot_data);
+  args->vm_snapshot_instructions = reinterpret_cast<const uint8_t*>(vm_snapshot_instructions);
   args->isolate_snapshot_data =
-      reinterpret_cast<const uint8_t*>(isolate_snapshot);
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_data);
+  args->isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_instructions);
 
   return kSuccess;
 }
 
+// Constructs appropriate mapping callbacks if JIT snapshot locations have been
+// explictly specified.
 void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
                                          flutter::Settings& settings) {
   auto make_mapping_callback = [](std::string path, bool executable) {
@@ -1038,18 +1045,32 @@ void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
   if (SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
     // Users are allowed to specify only certain snapshots if they so desire.
     if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      const auto vm_path = fml::paths::JoinPaths(
+      const auto vm_data_path = fml::paths::JoinPaths(
           {args->assets_path,
            reinterpret_cast<const char*>(args->vm_snapshot_data)});
-      settings.vm_snapshot_data = make_mapping_callback(vm_path, false);
+      settings.vm_snapshot_data = make_mapping_callback(vm_data_path, false);
+    }
+
+    if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+      const auto vm_instr_path = fml::paths::JoinPaths(
+          {args->assets_path,
+           reinterpret_cast<const char*>(args->vm_snapshot_instructions)});
+      settings.vm_snapshot_instr = make_mapping_callback(vm_instr_path, true);
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      const auto isolate_path = fml::paths::JoinPaths(
+      const auto isolate_data_path = fml::paths::JoinPaths(
           {args->assets_path,
            reinterpret_cast<const char*>(args->isolate_snapshot_data)});
       settings.isolate_snapshot_data =
-          make_mapping_callback(isolate_path, false);
+          make_mapping_callback(isolate_data_path, false);
+    }
+
+    if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+      const auto isolate_instr_path = fml::paths::JoinPaths(
+          {args->assets_path,
+           reinterpret_cast<const char*>(args->isolate_snapshot_instructions)});
+      settings.isolate_snapshot_instr = make_mapping_callback(isolate_instr_path, true);
     }
   }
 }
