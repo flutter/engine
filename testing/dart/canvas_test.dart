@@ -423,10 +423,19 @@ void main() {
 
     recorder = PictureRecorder();
     canvas = Canvas(recorder);
-    expect(
-      () => canvas.drawImage(image, Offset.zero, Paint()),
-      throwsException,
-    );
+
+    // On a slower CI machine, the raster thread may get behind the UI thread
+    // here. However, once the image is in an error state it will immediately
+    // throw on subsequent attempts.
+    while (true) {
+      try {
+        canvas.drawImage(image, Offset.zero, Paint());
+      } on PictureRasterizationException catch (e) {
+        expect(e.message, contains('unable to create render target at specified size'));
+        break;
+      }
+      await null;
+    }
     expect(
       () => canvas.drawImageRect(image, Rect.zero, Rect.zero, Paint()),
       throwsException,
