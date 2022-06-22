@@ -5,6 +5,7 @@
 package dev.flutter.scenariosui;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import androidx.annotation.NonNull;
 import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
@@ -96,7 +97,9 @@ public class PlatformViewUiTests {
   @Test
   public void testPlatformViewRotate() throws Exception {
     intent.putExtra("scenario_name", "platform_view_rotate");
-    ScreenshotUtil.capture(activityRule.launchActivity(intent), goldName("testPlatformViewRotate"));
+    PlatformViewsActivity activity = activityRule.launchActivity(intent);
+    activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    ScreenshotUtil.capture(activity, goldName("testPlatformViewRotate"));
   }
 
   @Test

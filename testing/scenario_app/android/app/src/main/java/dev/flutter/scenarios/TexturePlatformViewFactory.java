@@ -10,6 +10,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
+import android.view.Choreographer;
 import android.view.TextureView;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -70,7 +71,15 @@ public final class TexturePlatformViewFactory extends PlatformViewFactory {
               paint.setColor(Color.GREEN);
               canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, 20, paint);
               textureView.unlockCanvasAndPost(canvas);
-              textureView.invalidate();
+              Choreographer.getInstance()
+                  .postFrameCallbackDelayed(
+                      new Choreographer.FrameCallback() {
+                        @Override
+                        public void doFrame(long frameTimeNanos) {
+                          textureView.invalidate();
+                        }
+                      },
+                      500);
             }
 
             @Override
