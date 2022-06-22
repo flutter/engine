@@ -278,16 +278,6 @@ if (enable_unittests) {
       "variable_refresh_rate_display_unittests.cc",
     ]
 
-    if (is_fuchsia) {
-      # TODO(dnfield): Can we delete this harness? https://github.com/flutter/flutter/issues/106435
-      sources += [
-        "//flutter/flow/layers/picture_layer.cc",
-        "//flutter/flow/layers/picture_layer.h",
-        "//flutter/flow/layers/picture_layer_unittests.cc",
-        "skp_shader_warmup_unittests.cc",
-      ]
-    }
-
     deps = [
       ":shell_test_fixture_sources",
       ":shell_unittests_fixtures",
