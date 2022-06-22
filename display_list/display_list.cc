@@ -262,41 +262,43 @@ void DisplayList::Compare(DisplayList* dl) {
   SkRect damage;
   auto newTree = virtual_layer_indexes();
   auto oldTree = dl->virtual_layer_indexes();
-  
-  if(newTree.empty() || oldTree.empty() || newTree[0].type != oldTree[0].type) {
+
+  if (newTree.empty() || oldTree.empty() ||
+      newTree[0].type != oldTree[0].type) {
     damage = bounds();
     setVirtualBounds(damage);
     virtual_bounds_valid_ = true;
     return;
   }
-  
+
   // debug check virtual_indexes_.
-  
-  std::function<bool(const std::vector<DisplayVirtualLayerInfo>& tree)> checkTree = [&] (const std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
+
+  std::function<bool(const std::vector<DisplayVirtualLayerInfo>& tree)>
+      checkTree =
+          [&](const std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
     std::vector<std::string> stack;
-//    bool isLegal = true;
-    for(unsigned long i = 0; i< tree.size(); i++) {
-      if(tree[i].isStart) {
+    //    bool isLegal = true;
+    for (unsigned long i = 0; i < tree.size(); i++) {
+      if (tree[i].isStart) {
         stack.push_back(tree[i].type);
-      }else{
-        if(stack.empty()) {
+      } else {
+        if (stack.empty()) {
           return false;
         }
-        std::string t = stack[stack.size()-1];
+        std::string t = stack[stack.size() - 1];
         stack.pop_back();
-        if(t != tree[i].type) {
+        if (t != tree[i].type) {
           return false;
         }
       }
     }
-    if(!stack.empty()) {
+    if (!stack.empty()) {
       return false;
     }
     return true;
   };
-  
-  
-  if(!checkTree(newTree) || !checkTree(oldTree)){
+
+  if (!checkTree(newTree) || !checkTree(oldTree)) {
     damage = bounds();
     setVirtualBounds(damage);
     virtual_bounds_valid_ = true;
@@ -307,9 +309,9 @@ void DisplayList::Compare(DisplayList* dl) {
   uint8_t* newOpTail = newOpHead + byte_count_;
   uint8_t* oldOpHead = dl->storage_.get();
   uint8_t* oldOpTail = dl->storage_.get() + dl->byte_count_;
-  
+
   // 1.2 算法实现2 从左右分别进行深搜
-  
+
   // 给定tail返回head
   std::function<int(int,const std::vector<DisplayVirtualLayerInfo>&)> findHeadWithTail = [&] (int tailIndex, const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
     for (int i = tailIndex - 1; i >= 0; i--) {
@@ -350,7 +352,7 @@ void DisplayList::Compare(DisplayList* dl) {
 
   // 递归的主函数，将new old 中的子树进行diff，获得差异化部分. 已经保证父节点类型相同.
   std::function<void(int, int, int, int)> diffTree = [&] (int newH, int newT, int oldH, int oldT) -> void {
-    
+
     // 比较父节点.
     auto h1 = getNPtr(newOpHead, newOpTail, newTree[newH].index);
     auto t1 = getNPtr(newOpHead, newOpTail, newTree[newH+1].index);
@@ -365,7 +367,7 @@ void DisplayList::Compare(DisplayList* dl) {
       damage.join(r2);
       return;
     }
-    
+
     // 新树没有子树
     if (newT - newH == 1 && oldT - oldH != 1) {
       auto r1 = dl->partBounds(oldTree[oldH+1].index, oldTree[oldT-1].index);
@@ -379,7 +381,7 @@ void DisplayList::Compare(DisplayList* dl) {
       damage.join(r1);
       return;
     }
-    
+
     if (oldT - oldH == 1 && newT - oldH == 1) {
       // 子节点在这里 return
       return;
@@ -392,11 +394,11 @@ void DisplayList::Compare(DisplayList* dl) {
     int oldTreeTail = 0;
 
     // 1. 从左往右递归子树
-    
+
     // 相同type的最后一个树
     int lEdgeNewTreeHead = 0;
     int lEdgeOldTreeHead = 0;
-    
+
     while(newTreeTail != newT-1 && oldTreeTail != oldT-1) {
       if(newTreeHead == 0) {
         newTreeHead = newH + 1;
@@ -415,10 +417,10 @@ void DisplayList::Compare(DisplayList* dl) {
         break;
       }
     }
-    
-    
+
+
     // 2. 从右往左递归子树
-    
+
     int rEdgeNewTreeHead = 0;
     int rEdgeOldTreeHead = 0;
 
@@ -426,7 +428,7 @@ void DisplayList::Compare(DisplayList* dl) {
     newTreeTail = newT;
     newTreeHead = 0;
     oldTreeHead = 0;
-    
+
     while(newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead) {
       if(oldTreeTail == oldT) {
         oldTreeTail = oldT - 1;
@@ -445,11 +447,11 @@ void DisplayList::Compare(DisplayList* dl) {
         break;
       }
     }
-    
+
     //
 
     // 3. 中间的都寄了
-    
+
     if(rEdgeNewTreeHead - lEdgeNewTreeHead > 1) {
       int garbageNewTreeHead = 0;
       int garbageNewTreeTail = newTreeHead - 1;
@@ -466,7 +468,7 @@ void DisplayList::Compare(DisplayList* dl) {
       SkRect rect = partBounds(newTree[garbageNewTreeHead].index, newTree[garbageNewTreeTail].index);
       damage.join(rect);
     }
-    
+
     if(rEdgeOldTreeHead - lEdgeNewTreeHead > 1) {
       int garbageOldTreeHead = 0;
       int garbageOldTreeTail = oldTreeHead - 1;
@@ -484,7 +486,7 @@ void DisplayList::Compare(DisplayList* dl) {
       damage.join(rect);
     }
   };
-  
+
   if(!newTree.empty() && !oldTree.empty() && newTree[0].type == oldTree[0].type) {
     diffTree(0, newTree.size()-1, 0, oldTree.size()-1);
     // debug.
