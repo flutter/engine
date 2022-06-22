@@ -540,25 +540,18 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW) {
       // This only applies to platform views that use a virtual display.
       // Focus changes in the framework tree have no guarantees on the order focus nodes are
-      // notified. A node
-      // that lost focus may be notified before or after a node that gained focus.
+      // notified. A node that lost focus may be notified before or after a node that gained focus.
       // When moving the focus from a Flutter text field to an AndroidView, it is possible that the
-      // Flutter text
-      // field's focus node will be notified that it lost focus after the AndroidView was notified
-      // that it gained
-      // focus. When this happens the text field will send a clearTextInput command which we ignore.
+      // Flutter text field's focus node will be notified that it lost focus after the AndroidView
+      // was notified that it gained focus. When this happens the text field will send a
+      // clearTextInput command which we ignore.
       // By doing this we prevent the framework from clearing a platform view input client (the only
-      // way to do so
-      // is to set a new framework text client). I don't see an obvious use case for "clearing" a
-      // platform view's
-      // text input client, and it may be error prone as we don't know how the platform view manages
-      // the input
-      // connection and we probably shouldn't interfere.
+      // way to do so is to set a new framework text client). I don't see an obvious use case for
+      // "clearing" a platform view's text input client, and it may be error prone as we don't know
+      // how the platform view manages the input connection and we probably shouldn't interfere.
       // If we ever want to allow the framework to clear a platform view text client we should
-      // probably consider
-      // changing the focus manager such that focus nodes that lost focus are notified before focus
-      // nodes that
-      // gained focus as part of the same focus event.
+      // probably consider changing the focus manager such that focus nodes that lost focus are
+      // notified before focus nodes that gained focus as part of the same focus event.
       return;
     }
     mEditable.removeEditingStateListener(this);
