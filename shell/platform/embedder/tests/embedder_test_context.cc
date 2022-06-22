@@ -233,27 +233,5 @@ void EmbedderTestContext::RunVsyncCallback(intptr_t baton) {
   vsync_callback_(baton);
 }
 
-void EmbedderTestContext::SetupJITSnapshots(const char* vm_snapshot,
-                                            const char* isolate_snapshot) {
-  // This function is only relevant in JIT mode.
-  if (DartVM::IsRunningPrecompiledCode()) {
-    return;
-  }
-
-  // Users are allowed to specify only certain snapshots if they so desire.
-  if (vm_snapshot != nullptr) {
-    const auto vm_path =
-        fml::paths::JoinPaths({GetFixturesPath(), vm_snapshot});
-    vm_snapshot_data_ = fml::FileMapping::CreateReadOnly(vm_path.c_str());
-  }
-
-  if (isolate_snapshot != nullptr) {
-    const auto isolate_path =
-        fml::paths::JoinPaths({GetFixturesPath(), isolate_snapshot});
-    isolate_snapshot_data_ =
-        fml::FileMapping::CreateReadOnly(isolate_path.c_str());
-  }
-}
-
 }  // namespace testing
 }  // namespace flutter

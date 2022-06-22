@@ -99,9 +99,6 @@ class EmbedderTestContext {
   // Runs the vsync callback.
   void RunVsyncCallback(intptr_t baton);
 
-  // Explicitly specifies location of snapshots in JIT mode.
-  void SetupJITSnapshots(const char* vm_snapshot, const char* isolate_snapshot);
-
   // TODO(gw280): encapsulate these properly for subclasses to use
  protected:
   // This allows the builder to access the hooks.
