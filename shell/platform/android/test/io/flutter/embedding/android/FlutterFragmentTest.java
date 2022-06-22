@@ -306,6 +306,13 @@ public class FlutterFragmentTest {
 
   @Test
   public void itRegistersComponentCallbacks() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doNothing().when(mockDelegate).onAttach(any())
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+
     Context spyCtx = spy(ctx);
     // We need to mock FlutterJNI to avoid triggering native code.
     FlutterJNI flutterJNI = mock(FlutterJNI.class);
@@ -316,6 +323,7 @@ public class FlutterFragmentTest {
     FlutterEngineCache.getInstance().put("my_cached_engine", flutterEngine);
 
     FlutterFragment fragment = FlutterFragment.withCachedEngine("my_cached_engine").build();
+    fragment.setDelegate(mockDelegate);
 
     fragment.onAttach(spyCtx);
     verify(spyCtx, times(1)).registerComponentCallbacks(any());
