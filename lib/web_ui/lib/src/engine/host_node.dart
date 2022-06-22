@@ -93,7 +93,7 @@ class ShadowDomHostNode implements HostNode {
   /// This also calls [applyGlobalCssRulesToSheet], defined in dom_renderer.
   ShadowDomHostNode(DomElement root) :
     assert(
-    root.isConnected ?? true,
+    root.isConnected,
     'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.',
     ) {
     _shadow = root.attachShadow(<String, dynamic>{
