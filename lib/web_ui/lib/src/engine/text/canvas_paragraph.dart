@@ -8,6 +8,7 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import 'fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
@@ -287,23 +288,17 @@ abstract class ParagraphSpan {
 /// Instead of keeping spans and styles in a tree hierarchy like the framework
 /// does, we flatten the structure and resolve/merge all the styles from parent
 /// nodes.
-class FlatTextSpan implements ParagraphSpan {
+class FlatTextSpan extends TextFragment implements ParagraphSpan {
   /// Creates a [FlatTextSpan] with the given [style], representing the span of
   /// text in the range between [start] and [end].
   FlatTextSpan({
     required this.style,
-    required this.start,
-    required this.end,
-  });
+    required int start,
+    required int end,
+  }) : super(start, end);
 
   /// The resolved style of the span.
   final EngineTextStyle style;
-
-  @override
-  final int start;
-
-  @override
-  final int end;
 
   String textOf(CanvasParagraph paragraph) {
     final String text = paragraph.toPlainText();
