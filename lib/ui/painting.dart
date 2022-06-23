@@ -5377,6 +5377,7 @@ class Picture extends NativeFieldWrapperClass1 {
 
   /// Creates a GPU resident image from this picture.
   ///
+  /// {@template dart.ui.painting.Picture.toGpuImage}
   /// The returned image will be `width` pixels wide and `height` pixels high.
   /// The picture is rasterized within the 0 (left), 0 (top), `width` (right),
   /// `height` (bottom) bounds. Content outside these bounds is clipped.
@@ -5387,6 +5388,7 @@ class Picture extends NativeFieldWrapperClass1 {
   ///
   /// In the flutter_tester, this will always created a light gray and white
   /// checkerboard bitmap with the requested dimensions.
+  /// {@endtemplate}
   Image toGpuImage(int width, int height) {
     assert(!_disposed);
     if (width <= 0 || height <= 0) {

@@ -57,7 +57,14 @@ void Picture::toGpuImage(uint32_t width,
                          uint32_t height,
                          Dart_Handle raw_image_handle) {
   FML_DCHECK(display_list_.skia_object());
+  Picture::RasterizeToGpuImage(display_list_, width, height, raw_image_handle);
+}
 
+// static
+void RasterizeToGpuImage(sk_sp<DisplayList> display_list,
+                         uint32_t width,
+                         uint32_t height,
+                         Dart_Handle raw_image_handle) {
   auto* dart_state = UIDartState::Current();
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
@@ -70,7 +77,7 @@ void Picture::toGpuImage(uint32_t width,
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
       [snapshot_delegate, unref_queue, dl_image = std::move(dl_image),
-       display_list = display_list_.skia_object()]() {
+       display_list = display_list.skia_object()]() {
         sk_sp<SkImage> sk_image;
         std::string error;
         std::tie(sk_image, error) = snapshot_delegate->MakeGpuImage(
