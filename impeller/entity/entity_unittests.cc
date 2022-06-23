@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <memory>
+#include <optional>
 
 #include "flutter/testing/testing.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
@@ -88,11 +89,13 @@ TEST_P(EntityTest, EntityPassSubpassCoverageIsCorrect) {
         std::make_unique<TestPassDelegate>(Rect::MakeLTRB(800, 800, 900, 900)));
   }
 
-  auto subpass0_coverage = pass.GetSubpassCoverage(*subpass0.get());
+  auto subpass0_coverage =
+      pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
   ASSERT_TRUE(subpass0_coverage.has_value());
   ASSERT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(50, 50, 100, 100));
 
-  auto subpass1_coverage = pass.GetSubpassCoverage(*subpass1.get());
+  auto subpass1_coverage =
+      pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
   ASSERT_TRUE(subpass1_coverage.has_value());
   ASSERT_RECT_NEAR(subpass1_coverage.value(),
                    Rect::MakeLTRB(800, 800, 900, 900));
@@ -100,7 +103,7 @@ TEST_P(EntityTest, EntityPassSubpassCoverageIsCorrect) {
   pass.AddSubpass(std::move(subpass0));
   pass.AddSubpass(std::move(subpass1));
 
-  auto coverage = pass.GetElementsCoverage();
+  auto coverage = pass.GetElementsCoverage(std::nullopt);
   ASSERT_TRUE(coverage.has_value());
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
 }
