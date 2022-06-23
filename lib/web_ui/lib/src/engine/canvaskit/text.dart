@@ -45,7 +45,6 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           ellipsis,
           locale,
         ),
-        _textDirection = textDirection ?? ui.TextDirection.ltr,
         _fontFamily = ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
         _fontSize = fontSize,
         _height = height,
@@ -54,7 +53,6 @@ class CkParagraphStyle implements ui.ParagraphStyle {
         _fontStyle = fontStyle;
 
   final SkParagraphStyle skParagraphStyle;
-  final ui.TextDirection? _textDirection;
   final String? _fontFamily;
   final double? _fontSize;
   final double? _height;
