@@ -1126,6 +1126,7 @@ void PopulateSnapshotMappingCallbacks(
           SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
     }
   } else {
+    // In JIT mode, populate snapshot callbacks if any have been predetermined.
     PopulateJITSnapshotMappingCallbacks(args, settings);
   }
 
