@@ -138,8 +138,7 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
       .ui_time                       = unused_stopwatch,
       .texture_registry              = unused_texture_registry,
       .checkerboard_offscreen_layers = false,
-      .frame_device_pixel_ratio      = device_pixel_ratio_,
-      .leaf_nodes_builder            = builder.builder()
+      .frame_device_pixel_ratio      = device_pixel_ratio_
       // clang-format on
   };
 
@@ -161,6 +160,7 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
       .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = nullptr,
       .enable_leaf_layer_tracing     = false,
+      .leaf_nodes_builder            = builder.builder().get(),
       // clang-format on
   };
 
