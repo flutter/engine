@@ -80,6 +80,7 @@ source_set("flutter_windows_source") {
     "keyboard_manager_win32.cc",
     "keyboard_manager_win32.h",
     "keyboard_win32_common.h",
+    "keyboard_win32_common.cc",
     "platform_handler.cc",
     "platform_handler.h",
     "platform_handler_win32.cc",
