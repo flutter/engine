@@ -160,13 +160,6 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       raster_cache->MarkSeen(key_id_, transformation_matrix_) >=
           context.raster_cache->access_threshold()) {
     auto transformation_matrix = transformation_matrix_;
-// GetIntegralTransCTM effect for matrix which only contains scale,
-// translate, so it won't affect result of matrix decomposition and cache
-// key.
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    transformation_matrix =
-        RasterCacheUtil::GetIntegralTransCTM(transformation_matrix);
-#endif
     SkRect bounds =
         display_list_->bounds().makeOffset(offset_.x(), offset_.y());
     RasterCache::Context r_context = {

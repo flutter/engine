@@ -24,9 +24,6 @@ void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
     context->raster_cached_entries->push_back(this);
     child_items_ = context->raster_cached_entries->size();
     auto child_matrix = matrix;
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    child_matrix = RasterCacheUtil::GetIntegralTransCTM(matrix);
-#endif
     matrix_ = child_matrix;
   }
 }

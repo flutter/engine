@@ -32,12 +32,6 @@ class ClipShapeLayer : public CacheableContainerLayer {
         context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
       }
     }
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    if (UsesSaveLayer()) {
-      context->SetTransform(
-          RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
-    }
-#endif
     if (context->PushCullRect(clip_shape_bounds())) {
       DiffChildren(context, prev);
     }
@@ -92,12 +86,6 @@ class ClipShapeLayer : public CacheableContainerLayer {
       PaintChildren(context);
       return;
     }
-
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    context.internal_nodes_canvas->setMatrix(
-        RasterCacheUtil::GetIntegralTransCTM(
-            context.leaf_nodes_canvas->getTotalMatrix()));
-#endif
 
     AutoCachePaint cache_paint(context);
     if (context.raster_cache) {

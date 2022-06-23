@@ -124,12 +124,6 @@ PrerollContextHolder GetSamplePrerollContextHolder(
 PaintContextHolder GetSamplePaintContextHolder(
     RasterCache* raster_cache = nullptr);
 
-bool PictureRasterCacheItemTryToRasterCache(
-    SkPictureRasterCacheItem& picture_raster_cache_item,
-    PrerollContext& context,
-    PaintContext& paint_context,
-    const SkMatrix& matrix);
-
 bool DisplayListRasterCacheItemTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,
     PrerollContext& context,

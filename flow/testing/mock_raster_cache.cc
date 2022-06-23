@@ -4,8 +4,8 @@
 
 #include "flutter/flow/testing/mock_raster_cache.h"
 
+#include "flutter/flow/layers/display_list_raster_cache_item.h"
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/layers/picture_raster_cache_item.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "include/core/SkCanvas.h"
@@ -49,35 +49,34 @@ void MockRasterCache::AddMockLayer(int width, int height) {
 void MockRasterCache::AddMockPicture(int width, int height) {
   FML_DCHECK(access_threshold() > 0);
   SkMatrix ctm = SkMatrix::I();
-  SkPictureRecorder skp_recorder;
-  SkRTreeFactory rtree_factory;
+  DisplayListCanvasRecorder recorder(
+      SkRect::MakeLTRB(0, 0, 200 + width, 200 + height));
   SkPath path;
   path.addRect(100, 100, 100 + width, 100 + height);
-  SkCanvas* recorder_canvas = skp_recorder.beginRecording(
-      SkRect::MakeLTRB(0, 0, 200 + width, 200 + height), &rtree_factory);
-  recorder_canvas->drawPath(path, SkPaint());
-  sk_sp<SkPicture> picture = skp_recorder.finishRecordingAsPicture();
+  recorder.drawPath(path, SkPaint());
+  sk_sp<DisplayList> display_list = recorder.Build();
 
   PaintContextHolder holder = GetSamplePaintContextHolder(this);
   holder.paint_context.dst_color_space = color_space_;
 
-  SkPictureRasterCacheItem picture_item(picture.get(), SkPoint(), true, false);
+  DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
+                                               true, false);
   for (int i = 0; i < access_threshold(); i++) {
-    MarkSeen(picture_item.GetId().value(), ctm);
-    Draw(picture_item.GetId().value(), mock_canvas_, nullptr);
+    MarkSeen(display_list_item.GetId().value(), ctm);
+    Draw(display_list_item.GetId().value(), mock_canvas_, nullptr);
   }
-  MarkSeen(picture_item.GetId().value(), ctm);
+  MarkSeen(display_list_item.GetId().value(), ctm);
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = preroll_context_.gr_context,
       .dst_color_space    = preroll_context_.dst_color_space,
       .matrix             = ctm,
-      .logical_rect       = picture->cullRect(),
+      .logical_rect       = display_list->bounds(),
       .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
       // clang-format on
   };
   UpdateCacheEntry(
-      RasterCacheKeyID(picture->uniqueID(), RasterCacheKeyType::kPicture),
+      RasterCacheKeyID(display_list->unique_id(), RasterCacheKeyType::kPicture),
       r_context, [&](SkCanvas* canvas) {
         SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
             r_context.logical_rect, r_context.matrix);
@@ -143,20 +142,6 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
                                srgb};
 
   return holder;
-}
-
-bool PictureRasterCacheItemTryToRasterCache(
-    SkPictureRasterCacheItem& picture_raster_cache_item,
-    PrerollContext& context,
-    PaintContext& paint_context,
-    const SkMatrix& matrix) {
-  picture_raster_cache_item.PrerollSetup(&context, matrix);
-  picture_raster_cache_item.PrerollFinalize(&context, matrix);
-  if (picture_raster_cache_item.cache_state() ==
-      RasterCacheItem::CacheState::kCurrent) {
-    return picture_raster_cache_item.TryToPrepareRasterCache(paint_context);
-  }
-  return false;
 }
 
 bool DisplayListRasterCacheItemTryToRasterCache(

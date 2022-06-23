@@ -24,11 +24,6 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context->SetTransform(
-      RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
-#endif
-
   DiffChildren(context, prev);
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -51,11 +46,6 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   AutoCachePaint cache_paint(context);
-
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context.internal_nodes_canvas->setMatrix(RasterCacheUtil::GetIntegralTransCTM(
-      context.leaf_nodes_canvas->getTotalMatrix()));
-#endif
 
   if (context.raster_cache) {
     if (layer_raster_cache_item_->IsCacheChildren()) {
