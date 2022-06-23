@@ -1019,7 +1019,8 @@ FlutterEngineResult FlutterEngineSetupJITSnapshots(
   }
 
   args->vm_snapshot_data = reinterpret_cast<const uint8_t*>(vm_snapshot_data);
-  args->vm_snapshot_instructions = reinterpret_cast<const uint8_t*>(vm_snapshot_instructions);
+  args->vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions);
   args->isolate_snapshot_data =
       reinterpret_cast<const uint8_t*>(isolate_snapshot_data);
   args->isolate_snapshot_instructions =
@@ -1070,7 +1071,8 @@ void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
       const auto isolate_instr_path = fml::paths::JoinPaths(
           {args->assets_path,
            reinterpret_cast<const char*>(args->isolate_snapshot_instructions)});
-      settings.isolate_snapshot_instr = make_mapping_callback(isolate_instr_path, true);
+      settings.isolate_snapshot_instr =
+          make_mapping_callback(isolate_instr_path, true);
     }
   }
 }

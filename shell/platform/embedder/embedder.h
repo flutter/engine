@@ -1800,13 +1800,17 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 ///             implementation.
 ///
 /// @param[in]  args                            The enginee's project args.
-/// @param[in]  vm_snapshot_data                Location of the VM snapshot data. If nullptr,
+/// @param[in]  vm_snapshot_data                Location of the VM snapshot
+/// data. If nullptr,
 ///                                location will not be set.
-/// @param[in]  vm_snapshot_instructions        Location of the VM snapshot instructions. If nullptr,
+/// @param[in]  vm_snapshot_instructions        Location of the VM snapshot
+/// instructions. If nullptr,
 ///                                location will not be set.
-/// @param[in]  isolate_snapshot_data           Location of the isolate snapshot data. If nullptr,
+/// @param[in]  isolate_snapshot_data           Location of the isolate snapshot
+/// data. If nullptr,
 ///                                location will not be set.
-/// @param[in]  isolate_snapshot_instructions   Location of the isolate snapshot instructions. If nullptr,
+/// @param[in]  isolate_snapshot_instructions   Location of the isolate snapshot
+/// instructions. If nullptr,
 ///                                location will not be set.
 ///
 /// @return     Returns if the JIT snapshots were successfully specified.
