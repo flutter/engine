@@ -372,7 +372,7 @@ void KeyboardManagerWin32::HandleOnKeyResult(
   const UINT last_action = event->session.back().action;
   // SYS messages must not be redispached, and their text content is not
   // dispatched either.
-  bool handled = framework_handled || !IsSysAction(last_action);
+  bool handled = framework_handled || IsSysAction(last_action);
 
   if (handled) {
     return;

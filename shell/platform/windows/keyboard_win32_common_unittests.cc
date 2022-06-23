@@ -22,12 +22,12 @@ TEST(KeyboardWin32CommonTest, EncodeUtf16) {
   result = EncodeUtf16(0x10437);
   EXPECT_EQ(result.size(), 2);
   EXPECT_EQ(result[0], 0xD801);
-  EXPECT_EQ(result[0], 0xDC37);
+  EXPECT_EQ(result[1], 0xDC37);
 
   result = EncodeUtf16(0x24B62);
   EXPECT_EQ(result.size(), 2);
   EXPECT_EQ(result[0], 0xD852);
-  EXPECT_EQ(result[0], 0xDF62);
+  EXPECT_EQ(result[1], 0xDF62);
 }
 
 }  // namespace testing
