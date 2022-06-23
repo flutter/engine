@@ -502,7 +502,7 @@ void main() {
     const int white = 0xFFFFFFFF;
     const int grey  = 0xFFCCCCCC;
     expect(bytes, const <int>[
-      white, white, white, grey,  grey,  grey,
+      white, white, white, grey,  grey,  grey, //
       white, white, white, grey,  grey,  grey,
       white, white, white, grey,  grey,  grey,
       white, white, white, grey,  grey,  grey,
