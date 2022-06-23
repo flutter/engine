@@ -68,7 +68,6 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   set_paint_bounds(child_bounds);
 
-  transformed_filter_ = nullptr;
   transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
   if (transformed_filter_) {
     layer_raster_cache_item_->MarkCacheChildren();

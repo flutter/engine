@@ -524,7 +524,7 @@ TEST_F(ClipRRectLayerTest, LayerCached) {
                                    cache_canvas, &paint));
 }
 
-TEST_F(ClipRRectLayerTest, LayerShouldNotCached) {
+TEST_F(ClipRRectLayerTest, NoSaveLayerShouldNotCache) {
   auto path1 = SkPath().addRect({10, 10, 30, 30});
   SkPaint paint = SkPaint();
   auto mock1 = MockLayer::MakeOpacityCompatible(path1);

@@ -13,6 +13,7 @@ LayerRasterCacheItem::LayerRasterCacheItem(Layer* layer,
                                            bool can_cache_children)
     : RasterCacheItem(
           RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer),
+          // The layer raster_cache_item's cache state default value is none.
           CacheState::kNone),
       layer_(layer),
       layer_cached_threshold_(layer_cached_threshold),
@@ -20,6 +21,7 @@ LayerRasterCacheItem::LayerRasterCacheItem(Layer* layer,
 
 void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
                                         const SkMatrix& matrix) {
+  cache_state_ = CacheState::kNone;
   if (context->raster_cache && context->raster_cached_entries) {
     context->raster_cached_entries->push_back(this);
     child_items_ = context->raster_cached_entries->size();
@@ -38,7 +40,6 @@ std::unique_ptr<LayerRasterCacheItem> LayerRasterCacheItem::Make(
 
 void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
                                            const SkMatrix& matrix) {
-  cache_state_ = CacheState::kNone;
   if (!context->raster_cache || !context->raster_cached_entries) {
     return;
   }
@@ -109,9 +110,8 @@ bool LayerRasterCacheItem::Rasterize(const PaintContext& paint_context,
 
   switch (cache_state_) {
     case CacheState::kCurrent:
-      if (layer_->needs_painting(context)) {
-        layer_->Paint(context);
-      }
+      FML_DCHECK(layer_->needs_painting(context));
+      layer_->Paint(context);
       break;
     case CacheState::kChildren:
       FML_DCHECK(layer_->as_container_layer());

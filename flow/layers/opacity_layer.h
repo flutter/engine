@@ -50,7 +50,6 @@ class OpacityLayer : public CacheableContainerLayer {
  private:
   SkAlpha alpha_;
   SkPoint offset_;
-  SkMatrix child_matrix_;
   bool children_can_accept_opacity_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);

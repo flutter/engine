@@ -26,8 +26,7 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   path.addRect(100, 100, 100 + width, 100 + height);
   MockCacheableLayer layer = MockCacheableLayer(path);
   layer.Preroll(&preroll_context_, ctm);
-  MarkSeen(RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer),
-           ctm);
+  layer.raster_cache_item()->TryToPrepareRasterCache(paint_context_);
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = preroll_context_.gr_context,

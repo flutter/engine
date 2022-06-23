@@ -219,6 +219,18 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   auto cacheable_layer21 =
       std::make_shared<MockCacheableLayer>(child_path1, paint, 2);
 
+  // clang-format off
+//                                               layer
+//                                                 |
+//                 ________________________________ ________________________________
+//                 |                               |                                |
+//  cacheable_container_layer1                mock_layer2               cacheable_container_layer2
+//                 |                                                                |
+// cacheable_container_layer11                                             cacheable_layer21
+//                 |
+//        cacheable_layer111
+  // clang-format on
+
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(SkPath(), child_paint2);
   auto mock_layer3 = std::make_shared<MockLayer>(child_path2, paint);
@@ -238,7 +250,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   SkCanvas cache_canvas;
   cache_canvas.setMatrix(SkMatrix::I());
 
-  // frame1
+  // Initial Preroll for check the layer paint bounds
   layer->Preroll(preroll_context(), SkMatrix::I());
 
   EXPECT_EQ(mock_layer1->paint_bounds(),
@@ -254,7 +266,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   EXPECT_EQ(preroll_context()->raster_cached_entries->size(),
             static_cast<unsigned long>(0));
   {
-    // frame2
+    // frame1
     use_mock_raster_cache();
     preroll_context()->raster_cache->PrepareNewFrame();
     layer->Preroll(preroll_context(), SkMatrix::I());

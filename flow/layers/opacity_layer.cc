@@ -35,8 +35,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
   FML_DCHECK(!layers().empty());  // We can't be a leaf.
 
-  child_matrix_ = matrix;
-  child_matrix_.preTranslate(offset_.fX, offset_.fY);
+  SkMatrix child_matrix = matrix;
+  child_matrix.preTranslate(offset_.fX, offset_.fY);
 
   // Similar to what's done in TransformLayer::Preroll, we have to apply the
   // reverse transformation to the cull rect to properly cull child layers.
@@ -56,7 +56,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->subtree_can_inherit_opacity = true;
   // ContainerLayer will turn the flag off if any children are
   // incompatible or if they overlap
-  ContainerLayer::Preroll(context, child_matrix_);
+  ContainerLayer::Preroll(context, child_matrix);
   // We store the inheritance ability of our children for |Paint|
   set_children_can_accept_opacity(context->subtree_can_inherit_opacity);
 

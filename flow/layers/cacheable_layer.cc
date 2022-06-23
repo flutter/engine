@@ -14,18 +14,18 @@ AutoCache::AutoCache(RasterCacheItem* raster_cache_item,
     : raster_cache_item_(raster_cache_item),
       context_(context),
       matrix_(matrix) {
-  if (checked()) {
+  if (cacheEnable()) {
     raster_cache_item->PrerollSetup(context, matrix);
     current_index_ = context_->raster_cached_entries->size();
   }
 }
 
-bool AutoCache::checked() {
+bool AutoCache::cacheEnable() {
   return raster_cache_item_ && context_ && context_->raster_cache;
 }
 
 AutoCache::~AutoCache() {
-  if (checked()) {
+  if (cacheEnable()) {
     raster_cache_item_->PrerollFinalize(context_, matrix_);
   }
 }

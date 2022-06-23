@@ -24,7 +24,7 @@ class AutoCache {
   ~AutoCache();
 
  private:
-  inline bool checked();
+  inline bool cacheEnable();
   int current_index_;
   RasterCacheItem* raster_cache_item_ = nullptr;
   PrerollContext* context_ = nullptr;

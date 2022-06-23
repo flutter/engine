@@ -83,7 +83,8 @@ void LayerTree::TryToRasterCache(
     if (item->need_caching()) {
       // try to cache current layer
       // If parent failed to cache, just proceed to the next entry
-      if (item->TryToPrepareRasterCache(*paint_context)) {
+      // cache current entry, this entry's parent must not cache
+      if (item->TryToPrepareRasterCache(*paint_context, false)) {
         // if parent cached, then foreach child layer to touch them.
         for (unsigned j = 0; j < item->child_items(); j++) {
           auto* child_item = raster_cached_items[i + j + 1];

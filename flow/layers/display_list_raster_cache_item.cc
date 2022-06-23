@@ -104,21 +104,17 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   }
   auto* raster_cache = context->raster_cache;
   SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
-  // We've marked the cache entry that we would like to cache so it stays
-  // alive, but if the following conditions apply then we need to set our
-  // state back to !cacheable_ so that we don't populate the entry later.
-  if (!SkRect::Intersects(context->cull_rect, bounds)) {
+  // If the display_list bounds and the cull_rect don't intersect then we will
+  // return prematurely. Another we will check the access count, if the access
+  // count is less than access_threshold we shouldn't cache the display_list.
+  if (raster_cache->MarkSeen(key_id_, transformation_matrix_) <
+          raster_cache->access_threshold() ||
+      !SkRect::Intersects(context->cull_rect, bounds)) {
     cache_state_ = CacheState::kNone;
     return;
   }
-  // Frame threshold has not yet been reached.
-  if (raster_cache->MarkSeen(key_id_, transformation_matrix_) <
-      raster_cache->access_threshold()) {
-    cache_state_ = CacheState::kNone;
-  } else {
-    context->subtree_can_inherit_opacity = true;
-    cache_state_ = CacheState::kCurrent;
-  }
+  context->subtree_can_inherit_opacity = true;
+  cache_state_ = CacheState::kCurrent;
   return;
 }
 
@@ -151,31 +147,24 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
   // display_list or picture_list to calculate the memory they used, we
   // shouldn't cache the current node if the memory is more significant than the
   // limit.
-  if (!context.raster_cache || parent_cached ||
+  if (cache_state_ == kNone || !context.raster_cache || parent_cached ||
       !context.raster_cache->GenerateNewCacheInThisFrame()) {
     return false;
   }
-  auto* raster_cache = context.raster_cache;
-  if (cache_state_ != kNone &&
-      raster_cache->MarkSeen(key_id_, transformation_matrix_) >=
-          context.raster_cache->access_threshold()) {
-    auto transformation_matrix = transformation_matrix_;
-    SkRect bounds =
-        display_list_->bounds().makeOffset(offset_.x(), offset_.y());
-    RasterCache::Context r_context = {
-        // clang-format off
+  SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
+  RasterCache::Context r_context = {
+      // clang-format off
       .gr_context         = context.gr_context,
       .dst_color_space    = context.dst_color_space,
-      .matrix             = transformation_matrix,
+      .matrix             = transformation_matrix_,
       .logical_rect       = bounds,
       .flow_type          = flow_type,
       .checkerboard       = context.checkerboard_offscreen_layers,
-        // clang-format on
-    };
-    return context.raster_cache->UpdateCacheEntry(
-        GetId().value(), r_context,
-        [=](SkCanvas* canvas) { display_list_->RenderTo(canvas); });
-  }
+      // clang-format on
+  };
+  return context.raster_cache->UpdateCacheEntry(
+      GetId().value(), r_context,
+      [=](SkCanvas* canvas) { display_list_->RenderTo(canvas); });
   return false;
 }
 }  // namespace flutter
