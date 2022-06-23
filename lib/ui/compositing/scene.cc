@@ -81,7 +81,7 @@ Dart_Handle Scene::toGpuImage(uint32_t width,
     return tonic::ToDart("Could not flatten scene into a layer tree.");
   }
 
-  return Picture::RasterizeToGpuImage(picture, width, height, raw_image_handle);
+  Picture::RasterizeToGpuImage(picture, width, height, raw_image_handle);
 }
 
 Dart_Handle Scene::toImage(uint32_t width,
