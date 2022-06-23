@@ -2075,8 +2075,8 @@ TEST(KeyboardTest, SlowFrameworkResponseForIdenticalEvents) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
-  // Nothing more was dispatched because the first up event hasn't been responded
-  // yet.
+  // Nothing more was dispatched because the first up event hasn't been
+  // responded yet.
   EXPECT_EQ(recorded_callbacks.size(), 2);
   EXPECT_EQ(key_calls.size(), 0);
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);

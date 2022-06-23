@@ -101,7 +101,8 @@ static std::u16string EncodeUtf16(char32_t character) {
   // Algorithm: https://en.wikipedia.org/wiki/UTF-16#Description
   std::u16string result;
   // Invalid value.
-  assert(!(character >= 0xD800 && character <= 0xDFFF) && !(character > 0x10FFFF));
+  assert(!(character >= 0xD800 && character <= 0xDFFF) &&
+         !(character > 0x10FFFF));
   if ((character >= 0xD800 && character <= 0xDFFF) || (character > 0x10FFFF)) {
     return result;
   }
@@ -366,7 +367,6 @@ void KeyboardManagerWin32::ProcessNextEvent() {
 void KeyboardManagerWin32::PerformProcessEvent(
     std::unique_ptr<PendingEvent> event,
     std::function<void()> callback) {
-
   // PendingEvent::action being WM_CHAR means this is a char message without
   // a preceding key message, and should be dispatched immediately.
   if (event->action == WM_CHAR) {
@@ -376,12 +376,13 @@ void KeyboardManagerWin32::PerformProcessEvent(
   }
 
   PendingEvent* event_p = event.release();
-  window_delegate_->OnKey(event_p->key, event_p->scancode, event_p->action,
-                          event_p->character, event_p->extended, event_p->was_down,
-                          [this, event_p, callback = std::move(callback)](bool handled) {
-                            HandleOnKeyResult(std::unique_ptr<PendingEvent>(event_p), handled);
-                            callback();
-                          });
+  window_delegate_->OnKey(
+      event_p->key, event_p->scancode, event_p->action, event_p->character,
+      event_p->extended, event_p->was_down,
+      [this, event_p, callback = std::move(callback)](bool handled) {
+        HandleOnKeyResult(std::unique_ptr<PendingEvent>(event_p), handled);
+        callback();
+      });
 }
 
 void KeyboardManagerWin32::HandleOnKeyResult(

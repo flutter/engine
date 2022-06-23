@@ -158,9 +158,10 @@ class KeyboardManagerWin32 {
 
   // Process an event and call `callback` when it's completed.
   //
-  // The `callback` is constructed by |ProcessNextEvent| to start the next event,
-  // and must be called exactly once.
-  void PerformProcessEvent(std::unique_ptr<PendingEvent> event, std::function<void()> callback);
+  // The `callback` is constructed by |ProcessNextEvent| to start the next
+  // event, and must be called exactly once.
+  void PerformProcessEvent(std::unique_ptr<PendingEvent> event,
+                           std::function<void()> callback);
 
   // Handle the result of |WindowDelegate::OnKey|, possibly dispatching the text
   // result to |WindowDelegate::OnText| and then redispatching.
