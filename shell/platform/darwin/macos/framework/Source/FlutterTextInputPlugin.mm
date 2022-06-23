@@ -76,6 +76,30 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   return flutter::TextRange([base unsignedLongValue], [extent unsignedLongValue]);
 }
 
+@interface NSEvent (KeyEquivalentMarker)
+
+/// Internally marks the event as key equivalent.
+- (void)markAsKeyEquivalent;
+
+/// Returns YES if event is marked as key equivalent.
+- (BOOL)isKeyEquivalent;
+
+@end
+
+@implementation NSEvent (KeyEquivalentMarker)
+
+static char markerKey;
+
+- (void)markAsKeyEquivalent {
+  objc_setAssociatedObject(self, &markerKey, @true, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (BOOL)isKeyEquivalent {
+  return [objc_getAssociatedObject(self, &markerKey) boolValue] == YES;
+}
+
+@end
+
 /**
  * Private properties of FlutterTextInputPlugin.
  */
@@ -129,6 +153,11 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  * https://api.flutter.dev/flutter/services/TextInputAction-class.html
  */
 @property(nonatomic, nonnull) NSString* inputAction;
+
+/**
+ * Set to true if last event fed to input context has produced a text editing command.
+ */
+@property(nonatomic) BOOL eventProducedCommand;
 
 /**
  * Whether to enable the sending of text input updates from the engine to the
@@ -482,7 +511,16 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     return NO;
   }
 
-  return [_textInputContext handleEvent:event];
+  _eventProducedCommand = NO;
+  BOOL res = [_textInputContext handleEvent:event];
+  // TextInputContext seems to return YES even for events that don't produce
+  // any text editing command (i.e. CMD+Q). So if event received as key equivalent
+  // didn't produce an actual command, input plugin must report it as unhandled
+  // so that the next responder can handle it.
+  if (event.isKeyEquivalent && !_eventProducedCommand) {
+    return NO;
+  }
+  return res;
 }
 
 #pragma mark -
@@ -509,6 +547,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     // send the event back to [keyboardManager handleEvent:].
     return NO;
   }
+  [event markAsKeyEquivalent];
   [self.flutterViewController keyDown:event];
   return YES;
 }
@@ -612,6 +651,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (void)doCommandBySelector:(SEL)selector {
+  _eventProducedCommand |= selector != NSSelectorFromString(@"noop:");
   if ([self respondsToSelector:selector]) {
     // Note: The more obvious [self performSelector...] doesn't give ARC enough information to
     // handle retain semantics properly. See https://stackoverflow.com/questions/7017281/ for more
