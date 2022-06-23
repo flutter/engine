@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstddef>
 #define FML_USED_ON_EMBEDDER
 
 #include <string>
@@ -1295,10 +1296,63 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
 }
 
 //------------------------------------------------------------------------------
+/// FlutterEngineSetupJITSnapshots should successfully change the contents of
+/// the snapshots in project args.
+///
+TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+ ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+                &(builder.GetProjectArgs()), "vm_snapshot_data",
+                "vm_snapshot_instructions", "isolate_snapshot_data",
+                "isolate_snapshot_instructions"),
+            kSuccess);
+
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_data, reinterpret_cast<const uint8_t*>("vm_snapshot_data"));
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_instructions, reinterpret_cast<const uint8_t*>("vm_snapshot_instructions"));
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_data, reinterpret_cast<const uint8_t*>("isolate_snapshot_data"));
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_instructions, reinterpret_cast<const uint8_t*>("isolate_snapshot_instructions"));
+}
+
+//------------------------------------------------------------------------------
+/// FlutterEngineSetupJITSnapshots should successfully change the contents of
+/// the snapshots in project args.
+///
+TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+ ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+                &(builder.GetProjectArgs()), "vm_snapshot_data",
+                "vm_snapshot_instructions", "isolate_snapshot_data",
+                "isolate_snapshot_instructions"),
+            kSuccess);
+
+  auto engine = builder.LaunchEngine();
+  // TODO(btrevisan): Find a way to access the engine settings to check if the
+  // snapshots were successfully populated with their mapping callbacks.
+}
+
+//------------------------------------------------------------------------------
 /// The embedder must be able to run explicitly specified snapshots in JIT mode
 /// (i.e. when those are present in known locations).
 ///
-TEST_F(EmbedderTest, CanRunEngineWithSpecifiedJITSnapshos) {
+TEST_F(EmbedderTest, CanRunEngineWithSpecifiedJITSnapshots) {
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
     GTEST_SKIP();
@@ -1320,10 +1374,10 @@ TEST_F(EmbedderTest, CanRunEngineWithSpecifiedJITSnapshos) {
 }
 
 //------------------------------------------------------------------------------
-/// The embedder must be able to run even when the snapshots are not explicitly
-// defined in JIT mode. It must be able to resolve those snapshots.
+/// The embedder must be able to run in JIT mode when only some snapshots are
+/// specified.
 ///
-TEST_F(EmbedderTest, CanRunEngineWithUnspecifiedJITSnapshos) {
+TEST_F(EmbedderTest, CanRunEngineWithSomeSpecifiedJITSnapshots) {
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
     GTEST_SKIP();
@@ -1334,20 +1388,66 @@ TEST_F(EmbedderTest, CanRunEngineWithUnspecifiedJITSnapshos) {
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
 
-  // TODO(btrevisan): Add an assert here to make sure the snapshots are empty.
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+                &(builder.GetProjectArgs()), "vm_snapshot_data",
+                "vm_snapshot_instructions", nullptr,
+                nullptr),
+            kSuccess);
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
 
-// TODO(btrevisan): test if engine can runs when only certain snapshots are
-// specified
+//------------------------------------------------------------------------------
+/// The embedder must be able to run in JIT mode even when the specfied
+/// snapshots are invalid. It should be able to resolve them as it would when
+/// the snapshots are not specified.
+///
+TEST_F(EmbedderTest, CanRunEngineWithInvalidJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+                &(builder.GetProjectArgs()), nullptr, nullptr,
+                "invalid_snapshot_data", "invalid_snapshot_instructions"),
+            kSuccess);
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+//------------------------------------------------------------------------------
+/// The embedder must be able to run even when the snapshots are not explicitly
+// defined in JIT mode. It must be able to resolve those snapshots.
+///
+TEST_F(EmbedderTest, CanRunEngineWithUnspecifiedJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_data, nullptr);
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_instructions, nullptr);
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_data, nullptr);
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_instructions, nullptr);
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
 // TODO(btrevisan): Make sure to add a test that runs with a valid mock snapshot
-// TODO(btrevisan): Add tests that check if vm_snapshot_data has been set to the
-// appropriate locations (before launching)
-// TODO(btrevisan): Add tests that check if vm_snapshot_data has been populated
-// to the appropriate mapping callback (after launching)
-// TODO(btrevisan):Make sure to add snapshot instructions to the function
 
 TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
