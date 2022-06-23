@@ -34,37 +34,43 @@ import 'window.dart';
 ui.VoidCallback? scheduleFrameCallback;
 
 typedef _KeyDataResponseCallback = void Function(bool handled);
+typedef HighContrastListener = void Function(bool);
 
 // ignore: avoid_classes_with_only_static_members
 class HighContrastSupport {
   static HighContrastSupport instance = HighContrastSupport();
+  static const String _highContrastMediaQueryString = '(forced-colors: active)';
 
-  static const String highContrastMediaQueryString = '(forced-colors: active)';
+  final List<HighContrastListener> listeners = <HighContrastListener>[];
 
   /// Reference to css media query that indicates whether high contrast is on.
-  final html.MediaQueryList highContrastMediaQuery =
-      html.window.matchMedia(highContrastMediaQueryString);
+  final html.MediaQueryList _highContrastMediaQuery =
+      html.window.matchMedia(_highContrastMediaQueryString);
 
-  EngineAccessibilityFeatures setAccessibilityFeatures() {
-    final EngineAccessibilityFeaturesBuilder builder =
-        EngineAccessibilityFeaturesBuilder(0);
+  bool isHighContrastEnabled() {
+    return _highContrastMediaQuery.matches;
+  }
 
-    if (matchHighContrastMediaQuery()) {
-      builder.highContrast = true;
+  void addListener(HighContrastListener listener) {
+    if (listeners.isEmpty) {
+      _highContrastMediaQuery.addListener(_onHighContrastChange);
     }
-    return builder.build();
+    listeners.add(listener);
   }
 
-  bool matchHighContrastMediaQuery() {
-    return highContrastMediaQuery.matches;
+  void removeListener(HighContrastListener listener) {
+    listeners.remove(listener);
+    if (listeners.isEmpty) {
+      _highContrastMediaQuery.removeListener(_onHighContrastChange);
+  }
   }
 
-  void addListener(dynamic listener) {
-    highContrastMediaQuery.addListener(listener);
+  void _onHighContrastChange(html.Event event) {
+    final html.MediaQueryListEvent mqEvent = event as html.MediaQueryListEvent;
+    final bool isHighContrastEnabled = mqEvent.matches!;
+    for (final HighContrastListener listener in listeners) {
+      listener(isHighContrastEnabled);
   }
-
-  void removeListener(dynamic listener) {
-    highContrastMediaQuery.removeListener(listener);
   }
 }
 
@@ -75,25 +81,39 @@ class HighContrastSupport {
 class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Private constructor, since only dart:ui is supposed to create one of
   /// these.
-  EnginePlatformDispatcher._() {
+  EnginePlatformDispatcher() {
     _addBrightnessMediaQueryListener();
     _addHighContrastMediaQueryListener();
     _addFontSizeObserver();
+    registerHotRestartListener(dispose);
   }
 
   /// The [EnginePlatformDispatcher] singleton.
   static EnginePlatformDispatcher get instance => _instance;
-  static final EnginePlatformDispatcher _instance =
-      EnginePlatformDispatcher._();
+  static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher();
 
   /// The current platform configuration.
   @override
   ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
-    accessibilityFeatures:
-        HighContrastSupport.instance.setAccessibilityFeatures(),
+    accessibilityFeatures: setAccessibilityFeatures(),
   );
+
+  static EngineAccessibilityFeatures setAccessibilityFeatures() {
+    final EngineAccessibilityFeaturesBuilder builder =
+        EngineAccessibilityFeaturesBuilder(0);
+    if (HighContrastSupport.instance.isHighContrastEnabled()) {
+      builder.highContrast = true;
+    }
+    return builder.build();
+  }
+
+  void dispose() {
+    _removeBrightnessMediaQueryListener();
+    _disconnectFontSizeObserver();
+    HighContrastSupport.instance.removeListener(_updateHighContrast);
+  }
 
   /// Receives all events related to platform configuration changes.
   @override
@@ -857,9 +877,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       attributes: true,
       attributeFilter: <String>[styleAttribute],
     );
-    registerHotRestartListener(() {
-      _disconnectFontSizeObserver();
-    });
   }
 
   /// Remove the observer for font-size changes in the browser's <html> element.
@@ -937,26 +954,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
   }
 
-  /// A callback that is invoked whenever [highContrastMediaQuery] changes value.
-  ///
-  /// Updates the [_highContrast] with the new user preference.
-  html.EventListener? _highContrastMediaQueryListener;
-
   /// Set the callback function for listening changes in [highContrastMediaQuery] value.
   void _addHighContrastMediaQueryListener() {
     final HighContrastSupport instance = HighContrastSupport.instance;
-    _updateHighContrast(instance.matchHighContrastMediaQuery());
 
-    _highContrastMediaQueryListener = (html.Event event) {
-      final html.MediaQueryListEvent mqEvent =
-          event as html.MediaQueryListEvent;
-      _updateHighContrast(mqEvent.matches!);
-    };
-
-    instance.addListener(_highContrastMediaQueryListener);
-    registerHotRestartListener(() {
-      HighContrastSupport.instance.removeListener(_highContrastMediaQueryListener);
-    });
+    instance.addListener(_updateHighContrast);
   }
 
   /// A callback that is invoked whenever [highContrastMode] changes value.
@@ -1001,9 +1003,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
           mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
     });
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
-    registerHotRestartListener(() {
-      _removeBrightnessMediaQueryListener();
-    });
   }
 
   /// Remove the callback function for listening changes in [_brightnessMediaQuery] value.
