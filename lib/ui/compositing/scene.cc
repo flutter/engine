@@ -67,10 +67,10 @@ void Scene::dispose() {
   ClearDartWrapper();
 }
 
-void Scene::toGpuImage(uint32_t width,
-                       uint32_t height,
-                       Dart_Handle raw_image_handle) {
-  TRACE_EVENT0("flutter", "Scene::toImage");
+Dart_Handle Scene::toGpuImage(uint32_t width,
+                              uint32_t height,
+                              Dart_Handle raw_image_handle) {
+  TRACE_EVENT0("flutter", "Scene::toGpuImage");
 
   if (!layer_tree_) {
     return tonic::ToDart("Scene did not contain a layer tree.");
@@ -82,6 +82,7 @@ void Scene::toGpuImage(uint32_t width,
   }
 
   Picture::RasterizeToGpuImage(picture, width, height, raw_image_handle);
+  return Dart_Null();
 }
 
 Dart_Handle Scene::toImage(uint32_t width,

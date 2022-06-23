@@ -30,10 +30,13 @@ class Scene extends NativeFieldWrapperClass1 {
     }
 
     final _Image image = _Image._();
-    _toGpuImage(width, height, image);
+    final String? result =  _toGpuImage(width, height, image);
+    if (result != null) {
+      throw PictureRasterizationException._(result);
+    }
     return Image._(image, image.width, image.height);
   }
-  void _toGpuImage(int width, int height, _Image outImage) native 'Scene_toGpuImage';
+  String? _toGpuImage(int width, int height, _Image outImage) native 'Scene_toGpuImage';
 
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
