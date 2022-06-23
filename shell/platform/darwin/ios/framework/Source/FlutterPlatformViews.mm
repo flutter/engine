@@ -319,6 +319,13 @@ void FlutterPlatformViewsController::EndFrame(
   }
 }
 
+void FlutterPlatformViewsController::FilterPlatformViews(int64_t platform_view_id, sk_sp<SkImageFilter> filter) {
+  FML_DLOG(ERROR) << "FilterPlatformViews";
+  EmbeddedViewParams params = current_composition_params_[platform_view_id];
+  params.PushFilter(filter);
+  current_composition_params_[platform_view_id] = params;
+}
+
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
@@ -421,6 +428,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       case opacity:
         embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
+        break;
+      case backdrop_filter:
+        FML_DLOG(ERROR) << "SWITCH TEST";
         break;
     }
     ++iter;

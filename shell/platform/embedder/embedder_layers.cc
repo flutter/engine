@@ -147,6 +147,8 @@ void EmbedderLayers::PushPlatformViewLayer(
                     .get());
           }
         } break;
+        case MutatorType::backdrop_filter: {
+        } break;
       }
     }
 
@@ -159,8 +161,8 @@ void EmbedderLayers::PushPlatformViewLayer(
                 .emplace_back(ConvertMutation(root_surface_transformation_))
                 .get());
       }
-
-      auto mutations =
+      
+            auto mutations =
           std::make_unique<std::vector<const FlutterPlatformViewMutation*>>(
               mutations_array.rbegin(), mutations_array.rend());
       mutations_arrays_referenced_.emplace_back(std::move(mutations));

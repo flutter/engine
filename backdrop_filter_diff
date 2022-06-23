@@ -1,0 +1,95 @@
+diff --git a/flow/embedded_views.h b/flow/embedded_views.h
+index 7a5a34f330..76b002befd 100644
+--- a/flow/embedded_views.h
++++ b/flow/embedded_views.h
+@@ -345,6 +345,8 @@ class ExternalViewEmbedder {
+   // 'EndFrame', otherwise returns false.
+   bool GetUsedThisFrame() const { return used_this_frame_; }
+ 
++  void PushMutator() {}
++
+  private:
+   bool used_this_frame_ = false;
+ 
+diff --git a/flow/layers/backdrop_filter_layer.cc b/flow/layers/backdrop_filter_layer.cc
+index 8e8ef2628a..b059e427c3 100644
+--- a/flow/layers/backdrop_filter_layer.cc
++++ b/flow/layers/backdrop_filter_layer.cc
+@@ -43,6 +43,10 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
+   Layer::AutoPrerollSaveLayerState save =
+       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
+   SkRect child_paint_bounds = SkRect::MakeEmpty();
++  auto visited_platform_views = context->view_embedder->GetVisitedPlatformViews();
++  for (id in visited_platform_views) {
++    context->view_embedder->ApplyMutator(id, alpha);
++  }
+   PrerollChildren(context, matrix, &child_paint_bounds);
+   child_paint_bounds.join(context->cull_rect);
+   set_paint_bounds(child_paint_bounds);
+diff --git a/flow/layers/platform_view_layer.cc b/flow/layers/platform_view_layer.cc
+index 285db390cc..63b7827cf9 100644
+--- a/flow/layers/platform_view_layer.cc
++++ b/flow/layers/platform_view_layer.cc
+@@ -28,6 +28,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
+                                            context->mutators_stack);
+   context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
+                                                        std::move(params));
++  context->view_embedder->PushVisitedPlatformView(view_id_);
+ }
+ 
+ void PlatformViewLayer::Paint(PaintContext& context) const {
+diff --git a/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews.mm b/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews.mm
+index e5325aee85..a6992cca3f 100644
+--- a/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews.mm
++++ b/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews.mm
+@@ -319,6 +319,11 @@ void FlutterPlatformViewsController::EndFrame(
+   }
+ }
+ 
++void FlutterPlatformViewsController::PushMutator(flutter::Mutator mutator, int64_t platform_view_id) {
++  EmbeddedViewParams params = current_composition_params_[platform_view_id];
++  params.mutatorsStack().PushOpacity(20);
++}
++
+ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
+     int view_id,
+     std::unique_ptr<EmbeddedViewParams> params) {
+diff --git a/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h b/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h
+index fde21d23e2..522b847ef4 100644
+--- a/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h
++++ b/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h
+@@ -184,6 +184,8 @@ class FlutterPlatformViewsController {
+   // responder. Returns -1 if no such platform view is found.
+   long FindFirstResponderPlatformViewId();
+ 
++  void PushMutator(flutter::Mutator mutator, int64_t platform_view_id);
++
+  private:
+   static const size_t kMaxLayerAllocations = 2;
+ 
+diff --git a/shell/platform/darwin/ios/ios_external_view_embedder.h b/shell/platform/darwin/ios/ios_external_view_embedder.h
+index 6c023d1b79..da160dd023 100644
+--- a/shell/platform/darwin/ios/ios_external_view_embedder.h
++++ b/shell/platform/darwin/ios/ios_external_view_embedder.h
+@@ -64,6 +64,8 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
+   // |ExternalViewEmbedder|
+   bool SupportsDynamicThreadMerging() override;
+ 
++  void PushMutator() override;
++
+   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalViewEmbedder);
+ };
+ 
+diff --git a/shell/platform/darwin/ios/ios_external_view_embedder.mm b/shell/platform/darwin/ios/ios_external_view_embedder.mm
+index 1323fa4c2f..edd4a3adcd 100644
+--- a/shell/platform/darwin/ios/ios_external_view_embedder.mm
++++ b/shell/platform/darwin/ios/ios_external_view_embedder.mm
+@@ -92,4 +92,8 @@ bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
+   return true;
+ }
+ 
++void PushMutator(int alpha, int view_id) {
++  platform_views_controller_->PushMutator(alpha, view_id);
++}
++
+ }  // namespace flutter
