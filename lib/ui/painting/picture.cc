@@ -76,8 +76,9 @@ void Picture::RasterizeToGpuImage(sk_sp<DisplayList> display_list,
   image->set_image(dl_image);
 
   fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner, [snapshot_delegate, unref_queue,
-                           dl_image = std::move(dl_image), &display_list]() {
+      raster_task_runner,
+      [snapshot_delegate, unref_queue, dl_image = std::move(dl_image),
+       display_list = std::move(display_list)]() {
         sk_sp<SkImage> sk_image;
         std::string error;
         std::tie(sk_image, error) = snapshot_delegate->MakeGpuImage(
