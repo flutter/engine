@@ -2715,6 +2715,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
+  SET_PROC(SetupJITSnapshots, FlutterEngineSetupJITSnapshots);
 #undef SET_PROC
 
   return kSuccess;
