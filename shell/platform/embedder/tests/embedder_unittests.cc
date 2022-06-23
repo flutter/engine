@@ -1310,16 +1310,20 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
 
- ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), "vm_snapshot_data",
                 "vm_snapshot_instructions", "isolate_snapshot_data",
                 "isolate_snapshot_instructions"),
             kSuccess);
 
-  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_data, reinterpret_cast<const uint8_t*>("vm_snapshot_data"));
-  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_instructions, reinterpret_cast<const uint8_t*>("vm_snapshot_instructions"));
-  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_data, reinterpret_cast<const uint8_t*>("isolate_snapshot_data"));
-  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_instructions, reinterpret_cast<const uint8_t*>("isolate_snapshot_instructions"));
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_data,
+            reinterpret_cast<const uint8_t*>("vm_snapshot_data"));
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_instructions,
+            reinterpret_cast<const uint8_t*>("vm_snapshot_instructions"));
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_data,
+            reinterpret_cast<const uint8_t*>("isolate_snapshot_data"));
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_instructions,
+            reinterpret_cast<const uint8_t*>("isolate_snapshot_instructions"));
 }
 
 //------------------------------------------------------------------------------
@@ -1337,7 +1341,7 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
 
- ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), "vm_snapshot_data",
                 "vm_snapshot_instructions", "isolate_snapshot_data",
                 "isolate_snapshot_instructions"),
@@ -1390,8 +1394,7 @@ TEST_F(EmbedderTest, CanRunEngineWithSomeSpecifiedJITSnapshots) {
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), "vm_snapshot_data",
-                "vm_snapshot_instructions", nullptr,
-                nullptr),
+                "vm_snapshot_instructions", nullptr, nullptr),
             kSuccess);
 
   auto engine = builder.LaunchEngine();
@@ -1414,9 +1417,9 @@ TEST_F(EmbedderTest, CanRunEngineWithInvalidJITSnapshots) {
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
 
-  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                &(builder.GetProjectArgs()), nullptr, nullptr,
-                "invalid_snapshot_data", "invalid_snapshot_instructions"),
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(&(builder.GetProjectArgs()), nullptr,
+                                           nullptr, "invalid_snapshot_data",
+                                           "invalid_snapshot_instructions"),
             kSuccess);
 
   auto engine = builder.LaunchEngine();
