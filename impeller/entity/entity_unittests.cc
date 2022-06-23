@@ -64,30 +64,24 @@ class TestPassDelegate final : public EntityPassDelegate {
   const std::optional<Rect> coverage_;
 };
 
-TEST_P(EntityTest, EntityPassSubpassCoverageIsCorrect) {
+TEST_P(EntityTest, EntityPassCoverageRespectsBoundsHint) {
   EntityPass pass;
 
-  auto subpass0 = std::make_unique<EntityPass>();
-  {
+  auto create_pass_with_rect_path = [](Rect rect,
+                                       std::optional<Rect> bounds_hint) {
+    auto subpass = std::make_unique<EntityPass>();
     Entity entity;
     entity.SetContents(SolidColorContents::Make(
-        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath(),
-        Color::Red()));
-    subpass0->AddEntity(entity);
-    subpass0->SetDelegate(
-        std::make_unique<TestPassDelegate>(Rect::MakeLTRB(50, 50, 150, 150)));
-  }
+        PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
+    subpass->AddEntity(entity);
+    subpass->SetDelegate(std::make_unique<TestPassDelegate>(bounds_hint));
+    return subpass;
+  };
 
-  auto subpass1 = std::make_unique<EntityPass>();
-  {
-    Entity entity;
-    entity.SetContents(SolidColorContents::Make(
-        PathBuilder{}.AddRect(Rect::MakeLTRB(500, 500, 1000, 1000)).TakePath(),
-        Color::Red()));
-    subpass1->AddEntity(entity);
-    subpass1->SetDelegate(
-        std::make_unique<TestPassDelegate>(Rect::MakeLTRB(800, 800, 900, 900)));
-  }
+  auto subpass0 = create_pass_with_rect_path(Rect::MakeLTRB(0, 0, 100, 100),
+                                             Rect::MakeLTRB(50, 50, 150, 150));
+  auto subpass1 = create_pass_with_rect_path(
+      Rect::MakeLTRB(500, 500, 1000, 1000), Rect::MakeLTRB(800, 800, 900, 900));
 
   auto subpass0_coverage =
       pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
