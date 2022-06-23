@@ -38,15 +38,22 @@ def PrintDivider(char='='):
   print('\n')
 
 
-def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
+def RunCmd(
+    cmd,
+    forbidden_output=[],
+    expected_output=[],
+    expect_failure=False,
+    env=None,
+    **kwargs
+):
   command_string = ' '.join(cmd)
 
   PrintDivider('>')
   print('Running command "%s"' % command_string)
 
   start_time = time.time()
-  stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
-  stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
+  stdout_pipe = sys.stdout if not forbidden_output and not expected_output else subprocess.PIPE
+  stderr_pipe = sys.stderr if not forbidden_output and not expected_output else subprocess.PIPE
   process = subprocess.Popen(
       cmd,
       stdout=stdout_pipe,
@@ -58,12 +65,13 @@ def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
   stdout, stderr = process.communicate()
   end_time = time.time()
 
-  if process.returncode != 0 and not expect_failure:
+  if (expect_failure and process.returncode == 0) or (not expect_failure and
+                                                      process.returncode != 0):
     PrintDivider('!')
 
     print(
-        'Failed Command:\n\n%s\n\nExit Code: %d\n' %
-        (command_string, process.returncode)
+        'Failed Command:\n\n%s\n\nExit Code: %d\nExpected failure: %s\n' %
+        (command_string, process.returncode, expect_failure)
     )
 
     if stdout:
@@ -75,8 +83,8 @@ def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
     PrintDivider('!')
 
     raise Exception(
-        'Command "%s" exited with code %d.' %
-        (command_string, process.returncode)
+        'Command "%s" exited with code %d (failure expected: %s).' %
+        (command_string, process.returncode, expect_failure)
     )
 
   if stdout or stderr:
@@ -89,6 +97,17 @@ def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
       raise Exception(
           'command "%s" contained forbidden string %s' %
           (command_string, forbidden_string)
+      )
+
+  for expected_string in expected_output:
+    if (expected_string not in stdout) and (expected_string not in stderr):
+      print(
+          'command "%s" expected to contain string %s, but did not.' %
+          (command_string, expected_string)
+      )
+      raise Exception(
+          'command "%s" expected to contain string %s, but did not' %
+          (command_string, expected_string)
       )
 
   PrintDivider('<')
@@ -171,6 +190,7 @@ def RunEngineExecutable(
     flags=[],
     cwd=buildroot_dir,
     forbidden_output=[],
+    expected_output=[],
     expect_failure=False,
     coverage=False,
     extra_env={},
@@ -210,6 +230,7 @@ def RunEngineExecutable(
         test_command,
         cwd=cwd,
         forbidden_output=forbidden_output,
+        expected_output=expected_output,
         expect_failure=expect_failure,
         env=env
     )
@@ -249,6 +270,7 @@ class EngineExecutableTask(object):
       flags=[],
       cwd=buildroot_dir,
       forbidden_output=[],
+      expected_output=[],
       expect_failure=False,
       coverage=False,
       extra_env={}
@@ -259,6 +281,7 @@ class EngineExecutableTask(object):
     self.flags = flags
     self.cwd = cwd
     self.forbidden_output = forbidden_output
+    self.expected_output = expected_output
     self.expect_failure = expect_failure
     self.coverage = coverage
     self.extra_env = extra_env
@@ -271,6 +294,7 @@ class EngineExecutableTask(object):
         flags=self.flags,
         cwd=self.cwd,
         forbidden_output=self.forbidden_output,
+        expected_output=self.expected_output,
         expect_failure=self.expect_failure,
         coverage=self.coverage,
         extra_env=self.extra_env,
@@ -432,7 +456,7 @@ def GatherDartTest(
     multithreaded,
     enable_observatory=False,
     expect_failure=False,
-    alternative_tester=False
+    expected_output=[],
 ):
   kernel_file_name = os.path.basename(dart_file) + '.dill'
   kernel_file_output = os.path.join(build_dir, 'gen', kernel_file_name)
@@ -482,6 +506,7 @@ def GatherDartTest(
       command_args,
       forbidden_output=forbidden_output,
       expect_failure=expect_failure,
+      expected_output=expected_output,
   )
 
 
@@ -680,6 +705,19 @@ def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
   test_packages = os.path.join(
       dart_tests_dir, '.dart_tool', 'package_config.json'
+  )
+
+  # This task will fail on Windows because there is no crash handling support
+  # there yet.
+  yield GatherDartTest(
+      build_dir,
+      test_packages,
+      os.path.join(dart_tests_dir, 'abort.dart'),
+      verbose_dart_snapshot,
+      False,
+      False,
+      True,
+      expected_output=['dart::bin::', 'Frame 0:']
   )
 
   if 'release' not in build_dir:
