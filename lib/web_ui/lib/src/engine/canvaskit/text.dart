@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
@@ -728,9 +728,9 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
 
     for (int i = 0; i < skRects.length; i++) {
       final Float32List rect = skRects[i];
-      final Object? skTextDirection = js_util.getProperty(rect, 'direction');
+      final Object? skTextDirection = getJsProperty(rect, 'direction');
       final int skTextDirectionValue = skTextDirection != null
-          ? js_util.getProperty(skTextDirection, 'value')
+          ? getJsProperty(skTextDirection, 'value')
           : 0;
       result.add(ui.TextBox.fromLTRBD(
         rect[0],

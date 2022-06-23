@@ -26,7 +26,6 @@ const List<String> _jsAccessLibraries = <String>[
 // safely.
 const List<String> _auditedLibraries = <String>[
   'lib/web_ui/lib/src/engine/canvaskit/canvaskit_api.dart',
-  'lib/web_ui/lib/src/engine/canvaskit/text.dart',
   'lib/web_ui/lib/src/engine/safe_browser_api.dart',
 ];
 
