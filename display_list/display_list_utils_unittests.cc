@@ -27,10 +27,13 @@ class MockDispatchHelper final : public virtual Dispatcher,
   }
 };
 
+// Regression test for https://github.com/flutter/flutter/issues/100176.
 TEST(DisplayListUtils, OverRestore) {
   MockDispatchHelper helper;
   helper.save();
   helper.restore();
+  // There should be a protection here for over-restore to keep the program from
+  // crashing.
   helper.restore();
 }
 
