@@ -1,0 +1,10 @@
+shared_library("pathkit") {
+  sources = [
+    "pathkit.cc",
+    "pathkit.h",
+  ]
+  deps = [
+    "//third_party/skia",
+    "//third_party/skia:pathkit",
+  ]
+}
