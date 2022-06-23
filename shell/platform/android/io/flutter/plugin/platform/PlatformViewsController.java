@@ -11,7 +11,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.os.Build;
-import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -257,8 +256,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                   || Build.VERSION.SDK_INT < 23;
 
           if (!usesSoftwareRendering && shouldUseVirtualDisplay) {
-            validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
-
             Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
             // API level 20 is required to use VirtualDisplay#setSurface.
             ensureValidAndroidVersion(20);
@@ -950,21 +947,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     coords.x = (float) (double) coordsList.get(7) * density;
     coords.y = (float) (double) coordsList.get(8) * density;
     return coords;
-  }
-
-  // Creating a VirtualDisplay larger than the size of the device screen size
-  // could cause the device to restart: https://github.com/flutter/flutter/issues/28978
-  private void validateVirtualDisplayDimensions(int width, int height) {
-    DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-    if (height > metrics.heightPixels || width > metrics.widthPixels) {
-      String message =
-          String.format(
-              "Creating a virtual display of size: [%d, %d] "
-                  + "may result in problems (https://github.com/flutter/flutter/issues/2897). "
-                  + "It is larger than the device screen size: [%d, %d].",
-              width, height, metrics.widthPixels, metrics.heightPixels);
-      Log.w(TAG, message);
-    }
   }
 
   private float getDisplayDensity() {

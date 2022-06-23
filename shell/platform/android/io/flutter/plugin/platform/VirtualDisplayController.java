@@ -10,16 +10,20 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.view.TextureRegistry;
+import java.util.Locale;
 
 @TargetApi(20)
 class VirtualDisplayController {
+  private static String TAG = "VirtualDisplayController";
 
   public static VirtualDisplayController create(
       Context context,
@@ -31,14 +35,53 @@ class VirtualDisplayController {
       int viewId,
       Object createParams,
       OnFocusChangeListener focusChangeListener) {
-    textureEntry.surfaceTexture().setDefaultBufferSize(width, height);
+
+    int selectedWidth = width;
+    int selectedHeight = height;
+
+    DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+    if (selectedWidth == 0 || selectedHeight == 0) {
+      return null;
+    }
+    // Prevent https://github.com/flutter/flutter/issues/2897.
+    if (selectedWidth > metrics.widthPixels || selectedHeight > metrics.heightPixels) {
+      float aspectRatio = (float) selectedWidth / (float) selectedHeight;
+      int maybeWidth = (int) (metrics.heightPixels * aspectRatio);
+      int maybeHeight = (int) (metrics.widthPixels / aspectRatio);
+
+      if (maybeHeight <= metrics.heightPixels) {
+        selectedWidth = metrics.widthPixels;
+        selectedHeight = maybeHeight;
+      } else if (maybeWidth <= metrics.widthPixels) {
+        selectedHeight = metrics.heightPixels;
+        selectedWidth = maybeWidth;
+      } else {
+        return null;
+      }
+
+      String message =
+          String.format(
+              Locale.US,
+              "Resizing virtual display of size: [%d, %d] to size [%d, %d] "
+                  + "since it's larger than the device display size [%d, %d].",
+              width,
+              height,
+              selectedWidth,
+              selectedHeight,
+              metrics.widthPixels,
+              metrics.heightPixels);
+      Log.w(TAG, message);
+    }
+
+    textureEntry.surfaceTexture().setDefaultBufferSize(selectedWidth, selectedHeight);
     Surface surface = new Surface(textureEntry.surfaceTexture());
     DisplayManager displayManager =
         (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
 
     int densityDpi = context.getResources().getDisplayMetrics().densityDpi;
     VirtualDisplay virtualDisplay =
-        displayManager.createVirtualDisplay("flutter-vd", width, height, densityDpi, surface, 0);
+        displayManager.createVirtualDisplay(
+            "flutter-vd", selectedWidth, selectedHeight, densityDpi, surface, 0);
 
     if (virtualDisplay == null) {
       return null;
@@ -54,8 +97,8 @@ class VirtualDisplayController {
             focusChangeListener,
             viewId,
             createParams);
-    controller.bufferWidth = width;
-    controller.bufferHeight = height;
+    controller.bufferWidth = selectedWidth;
+    controller.bufferHeight = selectedHeight;
     return controller;
   }
 

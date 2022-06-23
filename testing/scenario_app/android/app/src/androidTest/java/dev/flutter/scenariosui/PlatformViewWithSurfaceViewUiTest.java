@@ -123,4 +123,12 @@ public class PlatformViewWithSurfaceViewUiTest {
         activityRule.launchActivity(intent),
         goldName("testPlatformViewWithoutOverlayIntersection"));
   }
+
+  @Test
+  public void testPlatformViewLargerThanDisplaySize() throws Exception {
+    // Regression test for https://github.com/flutter/flutter/issues/2897.
+    intent.putExtra("scenario_name", "platform_view_larger_than_display_size");
+    ScreenshotUtil.capture(
+        activityRule.launchActivity(intent), goldName("testPlatformViewLargerThanDisplaySize"));
+  }
 }
