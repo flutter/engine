@@ -45,7 +45,7 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   auto visited_platform_views = context->view_embedder->GetVisitedPlatformViews();
   for (int64_t id : visited_platform_views) {
-    context->view_embedder->PushMutator(id);
+    context->view_embedder->FilterPlatformViews(id, filter_);
   }
   
   PrerollChildren(context, matrix, &child_paint_bounds);

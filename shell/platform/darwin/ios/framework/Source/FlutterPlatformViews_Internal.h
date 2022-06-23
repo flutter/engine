@@ -184,7 +184,7 @@ class FlutterPlatformViewsController {
   // responder. Returns -1 if no such platform view is found.
   long FindFirstResponderPlatformViewId();
 
-  void PushMutator(int64_t platform_view_id); //flutter::Mutator mutator, 
+  void FilterPlatformViews(int64_t platform_view_id, sk_sp<SkImageFilter> filter);//, flutter::Mutator mutator
 
  private:
   static const size_t kMaxLayerAllocations = 2;
