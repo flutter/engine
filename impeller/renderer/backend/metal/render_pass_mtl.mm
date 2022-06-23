@@ -440,6 +440,16 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
           .zfar = v.depth_range.z_far,
       };
       [encoder setViewport:viewport];
+    } else {
+      MTLViewport viewport = {
+          .originX = 0.0,
+          .originY = 0.0,
+          .width = static_cast<double>(GetRenderTargetSize().width),
+          .height = static_cast<double>(GetRenderTargetSize().height),
+          .znear = 0.0,
+          .zfar = 1.0,
+      };
+      [encoder setViewport:viewport];
     }
     if (command.scissor.has_value()) {
       auto s = command.scissor.value();
@@ -449,6 +459,13 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
           .width = static_cast<NSUInteger>(s.size.width),
           .height = static_cast<NSUInteger>(s.size.height),
       };
+      [encoder setScissorRect:scissor];
+    } else {
+      MTLScissorRect scissor = {
+          .x = 0,
+          .y = 0,
+          .width = static_cast<NSUInteger>(GetRenderTargetSize().width),
+          .height = static_cast<NSUInteger>(GetRenderTargetSize().height)};
       [encoder setScissorRect:scissor];
     }
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {
