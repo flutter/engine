@@ -155,9 +155,10 @@ static char markerKey;
 @property(nonatomic, nonnull) NSString* inputAction;
 
 /**
- * Set to true if last event fed to input context has produced a text editing command.
+ * Set to true if last event fed to input context has produced a text editing command
+ * or output.
  */
-@property(nonatomic) BOOL eventProducedCommand;
+@property(nonatomic) BOOL eventProducedOutput;
 
 /**
  * Whether to enable the sending of text input updates from the engine to the
@@ -511,13 +512,13 @@ static char markerKey;
     return NO;
   }
 
-  _eventProducedCommand = NO;
+  _eventProducedOutput = NO;
   BOOL res = [_textInputContext handleEvent:event];
   // TextInputContext seems to return YES even for events that don't produce
   // any text editing command (i.e. CMD+Q). So if event received as key equivalent
   // didn't produce an actual command, input plugin must report it as unhandled
   // so that the next responder can handle it.
-  if (event.isKeyEquivalent && !_eventProducedCommand) {
+  if (event.isKeyEquivalent && !_eventProducedOutput) {
     return NO;
   }
   return res;
@@ -612,6 +613,8 @@ static char markerKey;
     return;
   }
 
+  _eventProducedOutput |= true;
+
   if (range.location != NSNotFound) {
     // The selected range can actually have negative numbers, since it can start
     // at the end of the range if the user selected the text going backwards.
@@ -651,7 +654,7 @@ static char markerKey;
 }
 
 - (void)doCommandBySelector:(SEL)selector {
-  _eventProducedCommand |= selector != NSSelectorFromString(@"noop:");
+  _eventProducedOutput |= selector != NSSelectorFromString(@"noop:");
   if ([self respondsToSelector:selector]) {
     // Note: The more obvious [self performSelector...] doesn't give ARC enough information to
     // handle retain semantics properly. See https://stackoverflow.com/questions/7017281/ for more
