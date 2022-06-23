@@ -436,7 +436,8 @@ void main() {
         expect(e.message, contains('unable to create render target at specified size'));
         break;
       }
-      await null;
+      // Let the event loop turn.
+      await Future<void>.delayed(const Duration(milliseconds: 1));
     }
     expect(caughtException, true);
     expect(
