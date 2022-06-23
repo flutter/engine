@@ -5908,7 +5908,7 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   return completer.future;
 }
 
-/// An exception thrown by [Canvas.drawImage] and realted methods when drawing
+/// An exception thrown by [Canvas.drawImage] and related methods when drawing
 /// an [Image] created via [Picture.toGpuImage] that is in an invalid state.
 ///
 /// This exception may be thrown if the requested image dimensions exceeded the

@@ -87,8 +87,9 @@ class DlImage : public SkRefCnt {
   SkIRect bounds() const;
 
   //----------------------------------------------------------------------------
-  /// @return     Whether the image method is only safe to use on the raster
-  ///             task runner.
+  /// @return     Specifies which context was used to create this image. The
+  ///             image must be collected on the same task runner as its
+  ///             context.
   virtual OwningContext owning_context() const { return OwningContext::kIO; }
 
   //----------------------------------------------------------------------------
