@@ -67,9 +67,9 @@ void Scene::dispose() {
   ClearDartWrapper();
 }
 
-Dart_Handle Scene::toGpuImage(uint32_t width,
-                              uint32_t height,
-                              Dart_Handle raw_image_handle) {
+void Scene::toGpuImage(uint32_t width,
+                       uint32_t height,
+                       Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toImage");
 
   if (!layer_tree_) {
