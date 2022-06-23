@@ -55,7 +55,8 @@ void testMain() {
       }
     });
 
-    test('works for https://github.com/flutter/flutter/issues/78550', () {
+    // Regression test for https://github.com/flutter/flutter/issues/78550
+    test('getBoxesForRange works for LTR text in an RTL paragraph', () {
       // Create builder for an RTL paragraph.
       final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
           ui.ParagraphStyle(fontSize: 16, textDirection: ui.TextDirection.rtl));
