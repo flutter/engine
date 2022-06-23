@@ -308,7 +308,7 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
         return true;
       }
 
-      // This key down message is not followed by a char message. Conslude this
+      // This key down message is not followed by a char message. Conclude this
       // session.
       auto event = std::make_unique<PendingEvent>(PendingEvent{
           .key = key_code,
@@ -356,6 +356,9 @@ void KeyboardManagerWin32::PerformProcessEvent(
     return;
   }
 
+  // A unique_ptr can't be sent into a lambda without C++23's
+  // move_only_function. Until then, `event` is sent as a raw pointer, hoping
+  // WindowDelegate::OnKey to correctly call it once and only once.
   PendingEvent* event_p = event.release();
   window_delegate_->OnKey(
       event_p->key, event_p->scancode, event_p->action, event_p->character,
@@ -378,6 +381,9 @@ void KeyboardManagerWin32::HandleOnKeyResult(
     return;
   }
 
+  // Only WM_CHAR should be treated as characters. WM_SYS*CHAR are not part of
+  // text input, and WM_DEADCHAR will be incorporated into a later WM_CHAR with
+  // the full character.
   if (last_action == WM_CHAR) {
     DispatchText(*event);
   }
