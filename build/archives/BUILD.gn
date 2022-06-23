@@ -89,7 +89,7 @@ zip_bundle("flutter_patched_sdk") {
     file_suffix = "_product"
     path_prefix = "flutter_patched_sdk_product/"
   }
-  output = "flutter_patched_sdk${file_suffix}.zip"
+  output = "$full_target_platform_name/flutter_patched_sdk${file_suffix}.zip"
   deps = [ "//flutter/lib/snapshot:strong_platform" ]
   files = [
     {
