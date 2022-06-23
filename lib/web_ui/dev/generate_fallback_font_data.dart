@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:convert' show jsonDecode;
-import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:http/http.dart' as http;
@@ -47,6 +46,35 @@ class GenerateFallbackFontDataCommand extends Command<bool>
       throw ToolExit('Failed to download Google Fonts list.');
     }
     final Map<String, dynamic> googleFontsResult = jsonDecode(response.body);
-    print(googleFontsResult);
+    final List<dynamic> fontDatas = googleFontsResult['items'] as List<dynamic>;
+    for (final Map<String, dynamic> fontData in fontDatas) {
+      print(fontData['family']);
+    }
   }
 }
+
+const List<String> fallbackFonts = <String>[
+  'Noto Sans',
+  'Noto Sans Adlam',
+  'Noto Sans Anatolian Hieroglyphs',
+  'Noto Sans Arabic',
+  'Noto Sans Armenian',
+  'Noto Sans Avestan',
+  'Noto Sans Balinese',
+  'Noto Sans Bamum',
+  'Noto Sans Bassa Vah',
+  'Noto Sans Batak',
+  'Noto Sans Bengali',
+  'Noto Sans Bhaiksuki',
+  'Noto Sans Brahmi',
+  'Noto Sans Buginese',
+  'Noto Sans Buhid',
+  'Noto Sans Canadian Aboriginal',
+  'Noto Sans Carian',
+  'Noto Sans Caucasian Albanian',
+  'Noto Sans Chakma',
+  'Noto Sans Cham',
+  'Noto Sans Cherokee',
+  // TODO(het): add more
+  'Noto Emoji',
+];
