@@ -97,6 +97,11 @@ static bool IsPrintable(uint32_t c) {
   return c >= kMinPrintable && c != kDelete;
 }
 
+static bool IsSysAction(UINT action) {
+  return action == WM_SYSKEYDOWN || action == WM_SYSKEYUP ||
+         action == WM_SYSCHAR || action == WM_SYSDEADCHAR;
+}
+
 }  // namespace
 
 KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
@@ -110,9 +115,7 @@ void KeyboardManagerWin32::RedispatchEvent(
   for (const Win32Message& message : event->session) {
     // Never redispatch sys keys, because their original messages have been
     // passed to the system default processor.
-    const bool is_syskey =
-        message.action == WM_SYSKEYDOWN || message.action == WM_SYSKEYUP;
-    if (is_syskey) {
+    if (IsSysAction(message.action)) {
       continue;
     }
     pending_redispatches_.push_back(message);
@@ -220,8 +223,7 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
 
         // SYS messages must not be consumed by `HandleMessage` so that they are
         // forwarded to the system.
-        const bool is_syskey = action == WM_SYSCHAR || action == WM_SYSDEADCHAR;
-        return !is_syskey;
+        return !IsSysAction(action);
       }
 
       // If the charcter session is not preceded by a key down message,
@@ -287,14 +289,11 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
           Win32Message{.action = action, .wparam = wparam, .lparam = lparam});
       const bool is_keydown_message =
           (action == WM_KEYDOWN || action == WM_SYSKEYDOWN);
-      // Check if this key produces a character. If so, the key press should
-      // be sent with the character produced at WM_CHAR. Store the produced
-      // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
-      //
-      // Messages with Control or Win modifiers down are never considered as
-      // character messages. This allows key combinations such as "CTRL + Digit"
-      // to properly produce key down events even though `MapVirtualKey` returns
-      // a valid character. See https://github.com/flutter/flutter/issues/85587.
+      // Check if this key produces a character by peeking if this key down
+      // message has a following char message. Certain key messages are not
+      // followed by char messages even though `MapVirtualKey` returns a valid
+      // character (such as Ctrl + Digit, see
+      // https://github.com/flutter/flutter/issues/85587 .)
       unsigned int character = window_delegate_->Win32MapVkToChar(wparam);
       UINT next_key_action = PeekNextMessageType(WM_KEYFIRST, WM_KEYLAST);
       bool has_char_action =
@@ -302,13 +301,15 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
            next_key_action == WM_SYSDEADCHAR || next_key_action == WM_CHAR ||
            next_key_action == WM_SYSCHAR);
       if (character > 0 && is_keydown_message && has_char_action) {
-        // This key down message has a following char message. Process later,
-        // because the character for the OnKey should be decided by the char
-        // events. Consider this event as handled.
+        // This key down message has a following char message. Process this
+        // session in the char message, because the character for the key call
+        // should be decided by the char events. Consider this message as
+        // handled.
         return true;
       }
 
-      // Resolve session: A non-char key event.
+      // This key down message is not followed by a char message. Conslude this
+      // session.
       auto event = std::make_unique<PendingEvent>(PendingEvent{
           .key = key_code,
           .scancode = scancode,
@@ -322,8 +323,7 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       ProcessNextEvent();
       // SYS messages must not be consumed by `HandleMessage` so that they are
       // forwarded to the system.
-      const bool is_syskey = action == WM_SYSKEYDOWN || action == WM_SYSKEYUP;
-      return !is_syskey;
+      return !IsSysAction(action);
     }
     default:
       assert(false);
@@ -370,12 +370,9 @@ void KeyboardManagerWin32::HandleOnKeyResult(
     std::unique_ptr<PendingEvent> event,
     bool framework_handled) {
   const UINT last_action = event->session.back().action;
-  // SYS messages must not be redispached, and their text contents are not
+  // SYS messages must not be redispached, and their text content is not
   // dispatched either.
-  const bool is_syskey =
-      last_action == WM_SYSKEYDOWN || last_action == WM_SYSKEYUP ||
-      last_action == WM_SYSCHAR || last_action == WM_SYSDEADCHAR;
-  bool handled = framework_handled || is_syskey;
+  bool handled = framework_handled || !IsSysAction(last_action);
 
   if (handled) {
     return;
@@ -392,8 +389,8 @@ void KeyboardManagerWin32::DispatchText(const PendingEvent& event) {
   // Check if the character is printable based on the last wparam, which works
   // even if the last wparam is a low surrogate, because the only unprintable
   // keys defined by `IsPrintable` are certain characters at lower ASCII range.
-  // These ASCII control characters are also sent as WM_CHAR events for all
-  // control key shortcuts.
+  // These ASCII control characters are sent as WM_CHAR events for all control
+  // key shortcuts.
   assert(!event.session.empty());
   bool is_printable = IsPrintable(event.session.back().wparam);
   bool valid = event.character != 0 && is_printable;
