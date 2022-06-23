@@ -1791,29 +1791,30 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
 //------------------------------------------------------------------------------
-/// @brief      Explictly defines the JIT snapshots.
+/// @brief      Explictly defines the JIT snapshot locations.
 ///
 /// @warning    This is not a necessary step when runnning the engine in JIT
 ///             mode as it should be able to resolve the location of snapshots.
-///             Still, it was implemented with the goals of giving users more
+///             Still, it was built with the goals of giving users more
 ///             flexibility and mainting consistency with the AOT
 ///             implementation.
 ///
 /// @param[in]  args                            The enginee's project args.
 /// @param[in]  vm_snapshot_data                Location of the VM snapshot
-/// data. If nullptr,
-///                                location will not be set.
+///                                             data. If nullptr, location will
+///                                             not be set.
 /// @param[in]  vm_snapshot_instructions        Location of the VM snapshot
-/// instructions. If nullptr,
-///                                location will not be set.
+///                                             instructions. If nullptr,
+///                                             location will not be set.
 /// @param[in]  isolate_snapshot_data           Location of the isolate snapshot
-/// data. If nullptr,
-///                                location will not be set.
+///                                             data. If nullptr, location will
+///                                             not be set.
 /// @param[in]  isolate_snapshot_instructions   Location of the isolate snapshot
-/// instructions. If nullptr,
-///                                location will not be set.
+///                                             instructions. If nullptr,
+///                                             location will not be set.
 ///
-/// @return     Returns if the JIT snapshots were successfully specified.
+/// @return     Returns if the JIT snapshots locations were successfully
+///             specified.
 ///
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSetupJITSnapshots(
