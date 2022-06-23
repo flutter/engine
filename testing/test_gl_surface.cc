@@ -90,7 +90,7 @@ static bool HasExtension(const char* extensions, const char* name) {
   return r != nullptr && (r[len] == ' ' || r[len] == 0);
 }
 
-static void ChecSwanglekExtensions() {
+static void CheckSwanglekExtensions() {
   const char* extensions = ::eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
   FML_CHECK(HasExtension(extensions, "EGL_EXT_platform_base")) << extensions;
   FML_CHECK(HasExtension(extensions, "EGL_ANGLE_platform_angle_vulkan"))
@@ -101,7 +101,7 @@ static void ChecSwanglekExtensions() {
 }
 
 static EGLDisplay CreateSwangleDisplay() {
-  ChecSwanglekExtensions();
+  CheckSwanglekExtensions();
 
   PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT =
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
@@ -118,11 +118,6 @@ static EGLDisplay CreateSwangleDisplay() {
       EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE,
       EGL_NONE,
   };
-
-  // We should be getting the display using eglGetDisplay, but this ends up
-  // confusing ANGLE on Windows. ANGLE has special handling for
-  // EGL_DEFAULT_DISPLAY on all platforms.
-  // See https://bugs.chromium.org/p/angleproject/issues/detail?id=7435
 
   return egl_get_platform_display_EXT(
       EGL_PLATFORM_ANGLE_ANGLE,

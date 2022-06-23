@@ -100,6 +100,7 @@ FILE: ../../../flutter/display_list/display_list_paint_unittests.cc
 FILE: ../../../flutter/display_list/display_list_path_effect.cc
 FILE: ../../../flutter/display_list/display_list_path_effect.h
 FILE: ../../../flutter/display_list/display_list_path_effect_unittests.cc
+FILE: ../../../flutter/display_list/display_list_sampling_options.h
 FILE: ../../../flutter/display_list/display_list_test_utils.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.h
 FILE: ../../../flutter/display_list/display_list_tile_mode.h
@@ -173,9 +174,6 @@ FILE: ../../../flutter/flow/layers/performance_overlay_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/physical_shape_layer.cc
 FILE: ../../../flutter/flow/layers/physical_shape_layer.h
 FILE: ../../../flutter/flow/layers/physical_shape_layer_unittests.cc
-FILE: ../../../flutter/flow/layers/picture_layer.cc
-FILE: ../../../flutter/flow/layers/picture_layer.h
-FILE: ../../../flutter/flow/layers/picture_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/platform_view_layer.cc
 FILE: ../../../flutter/flow/layers/platform_view_layer.h
 FILE: ../../../flutter/flow/layers/platform_view_layer_unittests.cc
@@ -396,7 +394,6 @@ FILE: ../../../flutter/fml/unique_fd.cc
 FILE: ../../../flutter/fml/unique_fd.h
 FILE: ../../../flutter/fml/unique_object.h
 FILE: ../../../flutter/fml/wakeable.h
-FILE: ../../../flutter/impeller/.clang-tidy
 FILE: ../../../flutter/impeller/aiks/aiks_context.cc
 FILE: ../../../flutter/impeller/aiks/aiks_context.h
 FILE: ../../../flutter/impeller/aiks/aiks_playground.cc
@@ -1024,6 +1021,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/canvaskit_api.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/canvaskit_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/embedded_views.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/embedded_views_diff.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/font_fallbacks.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/fonts.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/image.dart
@@ -1276,7 +1274,6 @@ FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
-FILE: ../../../flutter/shell/common/skp_shader_warmup_unittests.cc
 FILE: ../../../flutter/shell/common/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
@@ -1481,6 +1478,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewWrapper.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Predicate.java
