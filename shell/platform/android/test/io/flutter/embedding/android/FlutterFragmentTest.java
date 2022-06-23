@@ -8,7 +8,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -311,7 +310,6 @@ public class FlutterFragmentTest {
         mock(FlutterActivityAndFragmentDelegate.class);
     isDelegateAttached = true;
     when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
-    doNothing().when(mockDelegate).onAttach(any());
     doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
 
     Context spyCtx = spy(ctx);
