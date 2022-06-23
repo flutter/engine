@@ -46,8 +46,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           locale,
         ),
         _textDirection = textDirection ?? ui.TextDirection.ltr,
-        _fontFamily =
-            ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
+        _fontFamily = ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
         _fontSize = fontSize,
         _height = height,
         _leadingDistribution = textHeightBehavior?.leadingDistribution,
@@ -468,10 +467,8 @@ class CkStrutStyle implements ui.StrutStyle {
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
     bool? forceStrutHeight,
-  })  : _fontFamily =
-            ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
-        _fontFamilyFallback =
-            ui.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
+  })  : _fontFamily = ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
+        _fontFamilyFallback = ui.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
         _fontSize = fontSize,
         _height = height,
         _leadingDistribution = leadingDistribution,
@@ -616,8 +613,9 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         _maxIntrinsicWidth = paragraph.getMaxIntrinsicWidth();
         _minIntrinsicWidth = paragraph.getMinIntrinsicWidth();
         _width = paragraph.getMaxWidth();
-        _boxesForPlaceholders = skRectsToTextBoxes(
-            paragraph.getRectsForPlaceholders().cast<Float32List>());
+        _boxesForPlaceholders =
+            skRectsToTextBoxes(
+                paragraph.getRectsForPlaceholders().cast<Float32List>());
       } catch (e) {
         printWarning('CanvasKit threw an exception while laying '
             'out the paragraph. The font was "${_paragraphStyle._fontFamily}". '
@@ -717,14 +715,12 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     }
 
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final List<Float32List> skRects = paragraph
-        .getRectsForRange(
-          start,
-          end,
-          toSkRectHeightStyle(boxHeightStyle),
-          toSkRectWidthStyle(boxWidthStyle),
-        )
-        .cast<Float32List>();
+    final List<Float32List> skRects = paragraph.getRectsForRange(
+      start,
+      end,
+      toSkRectHeightStyle(boxHeightStyle),
+      toSkRectWidthStyle(boxWidthStyle),
+    ).cast<Float32List>();
 
     return skRectsToTextBoxes(skRects);
   }
@@ -875,8 +871,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     // Require a baseline to be specified if using a baseline-based alignment.
     assert(!(alignment == ui.PlaceholderAlignment.aboveBaseline ||
             alignment == ui.PlaceholderAlignment.belowBaseline ||
-            alignment == ui.PlaceholderAlignment.baseline) ||
-        baseline != null);
+            alignment == ui.PlaceholderAlignment.baseline) || baseline != null);
 
     _placeholderCount++;
     _placeholderScales.add(scale);
