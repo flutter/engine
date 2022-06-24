@@ -7,14 +7,19 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources;
+import android.content.res.Configuration;
+import android.os.LocaleList;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.FlutterInjector;
@@ -41,12 +46,22 @@ import org.robolectric.shadows.ShadowLog;
 @RunWith(AndroidJUnit4.class)
 public class FlutterEngineTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
+  private Context spyCtx = ApplicationProvider.getApplicationContext();
   @Mock FlutterJNI flutterJNI;
   boolean jniAttached;
 
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
+
+    // spyCtx = spy(ctx);
+    // Resources mockResources = mock(Resources.class);
+    // Configuration mockConfiguration = mock(Configuration.class);
+    // doReturn(spyCtx).when(spyCtx).getApplicationContext();
+    // doReturn(mockResources).when(spyCtx).getResources();
+    // doReturn(mockConfiguration).when(mockResources).getConfiguration();
+    // doReturn(LocaleList.getEmptyLocaleList()).when(mockConfiguration).getLocales();
+
     jniAttached = false;
     when(flutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
     doAnswer(
@@ -80,6 +95,16 @@ public class FlutterEngineTest {
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
     assertEquals(flutterEngine, registeredEngines.get(0));
+  }
+
+  @Test
+  public void itSendLocalesOnEngineInit() {
+    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
+    FlutterEngine flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, flutterJNI);
+
+    verify(flutterJNI, times(1)).dispatchPlatformMessage("flutter/localization", any(), any(), any());
   }
 
   // Helps show the root cause of MissingPluginException type errors like

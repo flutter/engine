@@ -5,6 +5,8 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.content.res.Configuration;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
@@ -349,8 +351,11 @@ public class FlutterEngine {
     this.pluginRegistry =
         new FlutterEngineConnectionRegistry(context.getApplicationContext(), this, flutterLoader);
 
+    // Context ctx = context.getApplicationContext();
+    // Resources r = context.getResources();
+    // Configuration c = r.getConfiguration();
     localizationPlugin.sendLocalesToFlutter(
-        context.getApplicationContext().getResources().getConfiguration());
+       context.getResources().getConfiguration());
 
     // Only automatically register plugins if both constructor parameter and
     // loaded AndroidManifest config turn this feature on.

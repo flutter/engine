@@ -1195,7 +1195,6 @@ public class FlutterView extends FrameLayout
             false,
             systemSettingsObserver);
 
-    localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
