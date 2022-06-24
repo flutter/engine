@@ -245,10 +245,10 @@ if (enable_unittests) {
 
     # For testing JIT snapshot setup.
     defines = [
-      "TEST_VM_SNAPSHOT_DATA=\"${vm_snapshot_data}\"",
-      "TEST_VM_SNAPSHOT_INSTRUCTIONS=\"${vm_snapshot_instructions}\"",
       "TEST_ISOLATE_SNAPSHOT_DATA=\"${isolate_snapshot_data}\"",
       "TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS=\"${isolate_snapshot_instructions}\"",
+      "TEST_VM_SNAPSHOT_DATA=\"${vm_snapshot_data}\"",
+      "TEST_VM_SNAPSHOT_INSTRUCTIONS=\"${vm_snapshot_instructions}\"",
     ]
 
     if (test_enable_gl) {
