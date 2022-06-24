@@ -27,11 +27,11 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
   if (filter_) {
     context->GetTransform().mapRect(&paint_bounds);
-    auto input_filter_bounds = paint_bounds.roundOut();
-    SkIRect filter_bounds;  // in screen coordinates
-    filter_->get_input_device_bounds(input_filter_bounds,
-                                     context->GetTransform(), filter_bounds);
-    context->AddReadbackRegion(filter_bounds);
+    auto filter_target_bounds = paint_bounds.roundOut();
+    SkIRect filter_input_bounds;  // in screen coordinates
+    filter_->get_input_device_bounds(
+        filter_target_bounds, context->GetTransform(), filter_input_bounds);
+    context->AddReadbackRegion(filter_input_bounds);
   }
 
   DiffChildren(context, prev);
