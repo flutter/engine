@@ -84,7 +84,7 @@ if (build_engine_artifacts) {
         destination = "libtessellator$dll"
       },
     ]
-    if (host_os == "mac") {  # && full_target_platform_name == "darwin-x64") {
+    if (host_os == "mac" && full_target_platform_name == "darwin-x64") {
       deps += [ ":artifacts_entitlement_config" ]
       files += [
         {
