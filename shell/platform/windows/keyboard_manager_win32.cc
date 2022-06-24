@@ -293,7 +293,7 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       // message has a following char message. Certain key messages are not
       // followed by char messages even though `MapVirtualKey` returns a valid
       // character (such as Ctrl + Digit, see
-      // https://github.com/flutter/flutter/issues/85587 .)
+      // https://github.com/flutter/flutter/issues/85587 ).
       unsigned int character = window_delegate_->Win32MapVkToChar(wparam);
       UINT next_key_action = PeekNextMessageType(WM_KEYFIRST, WM_KEYLAST);
       bool has_char_action =
