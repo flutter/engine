@@ -12,14 +12,13 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.Resources;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.LocaleList;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -106,7 +105,8 @@ public class FlutterEngineTest {
     when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
     FlutterEngine flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJNI);
 
-    verify(mockFlutterJNI, times(1)).dispatchPlatformMessage(eq("flutter/localization"), any(), anyInt(), anyInt());
+    verify(mockFlutterJNI, times(1))
+        .dispatchPlatformMessage(eq("flutter/localization"), any(), anyInt(), anyInt());
   }
 
   // Helps show the root cause of MissingPluginException type errors like
