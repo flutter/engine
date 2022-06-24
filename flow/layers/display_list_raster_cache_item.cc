@@ -104,17 +104,21 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   }
   auto* raster_cache = context->raster_cache;
   SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
-  // If the display_list bounds and the cull_rect don't intersect then we will
-  // return prematurely. Another we will check the access count, if the access
-  // count is less than access_threshold we shouldn't cache the display_list.
-  if (raster_cache->MarkSeen(key_id_, transformation_matrix_) <
-          raster_cache->access_threshold() ||
-      !SkRect::Intersects(context->cull_rect, bounds)) {
-    cache_state_ = CacheState::kNone;
-    return;
+  // We must to create an entry whenever if the react is intersect.
+  // if the rect is intersect we will get the entry access_count to confirm if
+  // it great than the threshold. Otherwise we only increase the entry
+  // access_count.
+  if (context->cull_rect.intersect(bounds)) {
+    if (raster_cache->MarkSeen(key_id_, transformation_matrix_) <
+        raster_cache->access_threshold()) {
+      cache_state_ = CacheState::kNone;
+      return;
+    }
+    context->subtree_can_inherit_opacity = true;
+    cache_state_ = CacheState::kCurrent;
+  } else {
+    raster_cache->Touch(key_id_, matrix);
   }
-  context->subtree_can_inherit_opacity = true;
-  cache_state_ = CacheState::kCurrent;
   return;
 }
 
@@ -129,10 +133,12 @@ bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
   if (!context.raster_cache || !canvas) {
     return false;
   }
-  context.raster_cache->Touch(key_id_, canvas->getTotalMatrix());
   if (cache_state_ == CacheState::kCurrent) {
     return context.raster_cache->Draw(key_id_, *canvas, paint);
   }
+  // This display_list doesn't cache itself, this only increase the entry
+  // access_count;
+  context.raster_cache->Touch(key_id_, canvas->getTotalMatrix());
   return false;
 }
 
