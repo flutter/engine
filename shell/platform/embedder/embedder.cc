@@ -1046,21 +1046,24 @@ void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
   if (SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
     // Users are allowed to specify only certain snapshots if they so desire.
     if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data = make_mapping_callback(reinterpret_cast<const char*>(args->vm_snapshot_data), false);
+      settings.vm_snapshot_data = make_mapping_callback(
+          reinterpret_cast<const char*>(args->vm_snapshot_data), false);
     }
 
     if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
-      settings.vm_snapshot_instr = make_mapping_callback(reinterpret_cast<const char*>(args->vm_snapshot_instructions), true);
+      settings.vm_snapshot_instr = make_mapping_callback(
+          reinterpret_cast<const char*>(args->vm_snapshot_instructions), true);
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      settings.isolate_snapshot_data =
-          make_mapping_callback(reinterpret_cast<const char*>(args->isolate_snapshot_data), false);
+      settings.isolate_snapshot_data = make_mapping_callback(
+          reinterpret_cast<const char*>(args->isolate_snapshot_data), false);
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
-      settings.isolate_snapshot_instr =
-          make_mapping_callback(reinterpret_cast<const char*>(args->isolate_snapshot_instructions), true);
+      settings.isolate_snapshot_instr = make_mapping_callback(
+          reinterpret_cast<const char*>(args->isolate_snapshot_instructions),
+          true);
     }
   }
 }
@@ -1102,9 +1105,9 @@ void PopulateAOTSnapshotMappingCallbacks(
   }
 
   if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-    settings.isolate_snapshot_data = make_mapping_callback(
-        args->isolate_snapshot_data,
-        SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
+    settings.isolate_snapshot_data =
+        make_mapping_callback(args->isolate_snapshot_data,
+                              SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
   }
 
   if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {

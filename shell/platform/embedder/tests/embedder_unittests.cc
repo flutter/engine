@@ -1347,10 +1347,14 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
 
   // Construct the location of valid JIT snapshots.
   const std::string src_path = GetSourcePath();
-  const std::string vm_snapshot_data = fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
-  const std::string vm_snapshot_instructions = fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
-  const std::string isolate_snapshot_data = fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
-  const std::string isolate_snapshot_instructions = fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  const std::string isolate_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
+  const std::string isolate_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
@@ -1386,10 +1390,14 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSpecifiedJITSnapshots) {
 
   // Construct the location of valid JIT snapshots.
   const std::string src_path = GetSourcePath();
-  const std::string vm_snapshot_data = fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
-  const std::string vm_snapshot_instructions = fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
-  const std::string isolate_snapshot_data = fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
-  const std::string isolate_snapshot_instructions = fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  const std::string isolate_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
+  const std::string isolate_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
@@ -1418,8 +1426,10 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
 
   // Construct the location of valid JIT snapshots.
   const std::string src_path = GetSourcePath();
-  const std::string vm_snapshot_data = fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
-  const std::string vm_snapshot_instructions = fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
