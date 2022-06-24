@@ -60,7 +60,7 @@ size_t CanvasImage::GetAllocationSize() const {
   // std::numeric_limits<intptr_t>::max().
   // https://github.com/dart-lang/sdk/issues/49332
   return std::clamp(
-      size, 0ul,
+      size, static_cast<size_t>(0),
       static_cast<size_t>(std::numeric_limits<intptr_t>::max() / 10));
 }
 }  // namespace flutter
