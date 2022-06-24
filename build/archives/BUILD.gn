@@ -7,16 +7,17 @@ import("//flutter/common/config.gni")
 
 generated_file("artifacts_entitlement_config") {
   outputs = [ "$target_gen_dir/entitlements.txt" ]
+
+  data_keys = [ "entitlement_file_path" ]
+
+  deps = ["//flutter/lib/snapshot:generate_snapshot_bin"]
   if (flutter_runtime_mode == "debug") {
-    contents = [
-      "flutter_tester",
-      "gen_snapshot",
-      "libtessellator.dylib",
-      "impellerc",
+    deps += [
+      "//flutter/impeller/compiler:impellerc",
+      "//flutter/impeller/tessellator:tessellator_shared",
+      "//flutter/shell/testing:testing",
     ]
-  } else {
-    contents = [ "gen_snapshot" ]
-  }
+  } 
 }
 
 if (build_engine_artifacts) {
@@ -88,7 +89,7 @@ if (build_engine_artifacts) {
         destination = "libtessellator$dll"
       },
     ]
-    if (host_os == "mac" && full_target_platform_name == "darwin-x64") {
+    if (host_os == "mac"){# && full_target_platform_name == "darwin-x64") {
       deps += [ ":artifacts_entitlement_config" ]
       files += [
         {
