@@ -45,6 +45,9 @@ size_t DlDeferredImageGPU::GetApproximateByteSize() const {
   // This call is accessed on the UI thread, and image_ may not be available
   // yet. The image is not mipmapped and it's created using N32 pixels, so this
   // is safe.
+  if (size_.isEmpty()) {
+    return sizeof(this);
+  }
   return sizeof(this) + size_.width() * size_.height() * 4;
 }
 
