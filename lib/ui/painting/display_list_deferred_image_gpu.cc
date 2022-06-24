@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
-#include "display_list_deferred_image_gpu.h"
 
 namespace flutter {
 
