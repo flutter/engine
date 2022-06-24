@@ -37,9 +37,7 @@ executable("testing") {
   ]
 
   metadata = {
-    entitlement_file_path = [
-      "flutter_tester"
-    ]
+    entitlement_file_path = [ "flutter_tester" ]
   }
 }
 

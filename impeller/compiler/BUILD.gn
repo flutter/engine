@@ -89,9 +89,7 @@ impeller_component("impellerc") {
   deps = [ ":compiler_lib" ]
 
   metadata = {
-    entitlement_file_path = [
-      "impellerc"
-    ]
+    entitlement_file_path = [ "impellerc" ]
   }
 }
 
