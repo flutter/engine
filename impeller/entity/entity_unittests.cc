@@ -114,11 +114,20 @@ TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
                      Rect::MakeLTRB(-200, -200, -100, -100));
   }
 
-  // With positive coverage limit.
+  // With limit that doesn't overlap.
   {
     auto pass_coverage =
         pass->GetElementsCoverage(Rect::MakeLTRB(0, 0, 100, 100));
     ASSERT_FALSE(pass_coverage.has_value());
+  }
+
+  // With limit that partially overlaps.
+  {
+    auto pass_coverage =
+        pass->GetElementsCoverage(Rect::MakeLTRB(-150, -150, 0, 0));
+    ASSERT_TRUE(pass_coverage.has_value());
+    ASSERT_RECT_NEAR(pass_coverage.value(),
+                     Rect::MakeLTRB(-150, -150, -100, -100));
   }
 }
 
