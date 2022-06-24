@@ -1,4 +1,4 @@
-Signature: af43c8d83ed1a1a4ba1f6fe36cc2c961
+Signature: f9a825cb11bd6aea9d20ebafaae2f151
 
 UNUSED LICENSES:
 
@@ -1341,6 +1341,7 @@ FILE: ../../../third_party/skia/src/sksl/sksl_rt_shader.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
 FILE: ../../../third_party/skia/src/sksl/tracing/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/transform/BUILD.bazel
+FILE: ../../../third_party/skia/src/text/BUILD.bazel
 FILE: ../../../third_party/skia/src/text/gpu/BUILD.bazel
 FILE: ../../../third_party/skia/src/utils/BUILD.bazel
 FILE: ../../../third_party/skia/src/xml/BUILD.bazel
@@ -1348,11 +1349,12 @@ FILE: ../../../third_party/skia/src/xps/BUILD.bazel
 FILE: ../../../third_party/skia/third_party/BUILD.bazel
 FILE: ../../../third_party/skia/toolchain/BUILD.bazel
 FILE: ../../../third_party/skia/toolchain/download_linux_amd64_toolchain.bzl
-FILE: ../../../third_party/skia/toolchain/download_mac_m1_toolchain.bzl
+FILE: ../../../third_party/skia/toolchain/download_mac_toolchain.bzl
 FILE: ../../../third_party/skia/toolchain/download_toolchains.bzl
 FILE: ../../../third_party/skia/toolchain/linux_amd64_toolchain_config.bzl
 FILE: ../../../third_party/skia/toolchain/linux_trampolines/IWYU_mapping.imp
-FILE: ../../../third_party/skia/toolchain/mac_m1_toolchain_config.bzl
+FILE: ../../../third_party/skia/toolchain/mac_toolchain_config.bzl
+FILE: ../../../third_party/skia/toolchain/utils.bzl
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011 Google Inc. All rights reserved.
 
@@ -7502,12 +7504,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/src/core/SkGlyphRun.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkGlyphRunPainter.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/src/core/SkGlyphRun.cpp
-FILE: ../../../third_party/skia/src/core/SkGlyphRun.h
 FILE: ../../../third_party/skia/src/core/SkGlyphRunPainter.cpp
 FILE: ../../../third_party/skia/src/core/SkGlyphRunPainter.h
+FILE: ../../../third_party/skia/src/text/GlyphRun.cpp
+FILE: ../../../third_party/skia/src/text/GlyphRun.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Android Open Source Project
 

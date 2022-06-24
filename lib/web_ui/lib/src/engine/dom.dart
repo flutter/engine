@@ -40,7 +40,13 @@ extension DomWindowExtension on DomWindow {
   external DomURL get URL;
   external bool dispatchEvent(DomEvent event);
   external DomMediaQueryList matchMedia(String? query);
-  external DomCSSStyleDeclaration getComputedStyle(DomElement elt);
+  DomCSSStyleDeclaration getComputedStyle(DomElement elt,
+          [String? pseudoElt]) =>
+      js_util.callMethod(this, 'getComputedStyle', <Object>[
+        elt,
+        if (pseudoElt != null) pseudoElt
+      ]) as DomCSSStyleDeclaration;
+  external DomScreen? get screen;
 }
 
 @JS()
@@ -88,6 +94,7 @@ extension DomDocumentExtension on DomDocument {
       String namespaceURI, String qualifiedName);
   external DomText createTextNode(String data);
   external DomEvent createEvent(String eventType);
+  external DomElement? get activeElement;
 }
 
 @JS()
@@ -196,6 +203,15 @@ extension DomNodeExtension on DomNode {
       js_util.setProperty<String?>(this, 'textContent', value);
   external DomNode cloneNode(bool? deep);
   external bool contains(DomNode? other);
+  external void append(DomNode node);
+  Iterable<DomNode> get childNodes => createDomListWrapper<DomElement>(
+      js_util.getProperty<_DomList>(this, 'childNodes'));
+  external DomDocument? get ownerDocument;
+  void clearChildren() {
+    while (firstChild != null) {
+      removeChild(firstChild!);
+    }
+  }
 }
 
 @JS()
@@ -255,7 +271,12 @@ extension DomElementExtension on DomElement {
           this, 'getElementsByClassName', <Object>[className]).cast<DomNode>();
   external void click();
   external bool hasAttribute(String name);
-  external DomNodeList get childNodes;
+  Iterable<DomNode> get childNodes => createDomListWrapper<DomElement>(
+      js_util.getProperty<_DomList>(this, 'childNodes'));
+  DomShadowRoot attachShadow(Map<Object?, Object?> initDict) => js_util
+          .callMethod(this, 'attachShadow', <Object?>[js_util.jsify(initDict)])
+      as DomShadowRoot;
+  external DomShadowRoot? get shadowRoot;
   void clearChildren() {
     while (firstChild != null) {
       removeChild(firstChild!);
@@ -506,7 +527,11 @@ class DomHTMLStyleElement extends DomHTMLElement {}
 
 extension DomHTMLStyleElementExtension on DomHTMLStyleElement {
   external set type(String? value);
+  external DomStyleSheet? get sheet;
 }
+
+DomHTMLStyleElement createDomHTMLStyleElement() =>
+    domDocument.createElement('style') as DomHTMLStyleElement;
 
 @JS()
 @staticInterop
@@ -549,8 +574,8 @@ extension DomCanvasElementExtension on DomCanvasElement {
   external int? get height;
   external set height(int? value);
   external bool? get isConnected;
-  String toDataURL([String? type]) =>
-      js_util.callMethod(this, 'toDataURL', <Object>[if (type != null) type]);
+  String toDataURL([String type = 'image/png']) =>
+      js_util.callMethod(this, 'toDataURL', <Object>[type]);
 
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     return js_util.callMethod(this, 'getContext', <Object?>[
@@ -634,6 +659,9 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
 @JS()
 @staticInterop
 class DomImageData {}
+
+DomImageData createDomImageData(Object? data, int sw, int sh) => js_util
+    .callConstructor(domGetConstructor('ImageData')!, <Object?>[data, sw, sh]);
 
 extension DomImageDataExtension on DomImageData {
   external Uint8ClampedList get data;
@@ -1068,6 +1096,14 @@ DomTouchEvent createDomTouchEvent(String type, [Map<dynamic, dynamic>? init]) =>
 
 @JS()
 @staticInterop
+class DomCompositionEvent {}
+
+extension DomCompositionEventExtension on DomCompositionEvent {
+  external String? get data;
+}
+
+@JS()
+@staticInterop
 class DomHTMLInputElement extends DomHTMLElement {}
 
 extension DomHTMLInputElementExtension on DomHTMLInputElement {
@@ -1126,10 +1162,98 @@ DomHTMLLabelElement createDomHTMLLabelElement() =>
 
 @JS()
 @staticInterop
-class DomNodeList {}
+class DomOffscreenCanvas extends DomEventTarget {}
 
-extension DomNodeListExtension on DomNodeList {
-  external DomNode? item(int index);
+extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
+  external int? get height;
+  external int? get width;
+  external set height(int? value);
+  external set width(int? value);
+  Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
+    return js_util.callMethod(this, 'getContext', <Object?>[
+      contextType,
+      if (attributes != null) js_util.jsify(attributes)
+    ]);
+  }
+
+  Future<DomBlob> convertToBlob([Map<Object?, Object?>? options]) =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'convertToBlob',
+          <Object>[if (options != null) js_util.jsify(options)]));
+}
+
+DomOffscreenCanvas createDomOffscreenCanvas(int width, int height) =>
+    js_util.callConstructor(
+        domGetConstructor('OffscreenCanvas')!, <Object>[width, height]);
+
+@JS()
+@staticInterop
+class DomFileReader extends DomEventTarget {}
+
+extension DomFileReaderExtension on DomFileReader {
+  external void readAsDataURL(DomBlob blob);
+}
+
+DomFileReader createDomFileReader() =>
+    js_util.callConstructor(domGetConstructor('FileReader')!, <Object>[])
+        as DomFileReader;
+
+@JS()
+@staticInterop
+class DomDocumentFragment extends DomNode {}
+
+extension DomDocumentFragmentExtension on DomDocumentFragment {
+  external DomElement? querySelector(String selectors);
+  Iterable<DomElement> querySelectorAll(String selectors) =>
+      createDomListWrapper<DomElement>(js_util
+          .callMethod<_DomList>(this, 'querySelectorAll', <Object>[selectors]));
+}
+
+@JS()
+@staticInterop
+class DomShadowRoot extends DomDocumentFragment {}
+
+extension DomShadowRootExtension on DomShadowRoot {
+  external DomElement? get activeElement;
+  external DomElement? get host;
+  external String? get mode;
+  external bool? get delegatesFocus;
+}
+
+@JS()
+@staticInterop
+class DomStyleSheet {}
+
+@JS()
+@staticInterop
+class DomCSSStyleSheet extends DomStyleSheet {}
+
+extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
+  List<DomCSSRule> get cssRules =>
+      js_util.getProperty<List<Object?>>(this, 'cssRules').cast<DomCSSRule>();
+  int insertRule(String rule, [int? index]) => js_util
+      .callMethod(this, 'insertRule', <Object>[rule, if (index != null) index]);
+}
+
+@JS()
+@staticInterop
+class DomCSSRule {}
+
+@JS()
+@staticInterop
+class DomScreen {}
+
+extension DomScreenExtension on DomScreen {
+  external DomScreenOrientation? get orientation;
+}
+
+@JS()
+@staticInterop
+class DomScreenOrientation extends DomEventTarget {}
+
+extension DomScreenOrientationExtension on DomScreenOrientation {
+  Future<dynamic> lock(String orientation) => js_util
+      .promiseToFuture(js_util.callMethod(this, 'lock', <String>[orientation]));
+  external void unlock();
 }
 
 // A helper class for managing a subscription. On construction it will add an

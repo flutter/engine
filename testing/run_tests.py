@@ -10,6 +10,7 @@ A top level harness to run all unit-tests in a specific engine build.
 
 import argparse
 import glob
+import errno
 import multiprocessing
 import os
 import re
@@ -182,10 +183,20 @@ def RunEngineExecutable(
 
   unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
   env = os.environ.copy()
-  # We cannot run the unstripped binaries directly when coverage is enabled.
-  if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
-    # Some tests depend on the EGL/GLES libraries placed in the build directory.
-    env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
+  if IsLinux():
+    env['LD_LIBRARY_PATH'] = build_dir
+    env['VK_DRIVER_FILES'] = os.path.join(build_dir, 'vk_swiftshader_icd.json')
+    if os.path.exists(unstripped_exe):
+      try:
+        os.symlink(
+            os.path.join(build_dir, 'lib.unstripped', 'libvulkan.so.1'),
+            os.path.join(build_dir, 'exe.unstripped', 'libvulkan.so.1')
+        )
+      except OSError as e:
+        if e.errno == errno.EEXIST:
+          pass
+        else:
+          raise
   elif IsMac():
     env['DYLD_LIBRARY_PATH'] = build_dir
   else:
@@ -468,8 +479,6 @@ def GatherDartTest(
     threading = 'single-threaded'
 
   tester_name = 'flutter_tester'
-  if alternative_tester:
-    tester_name = 'flutter_tester_fractional_translation'
   print(
       "Running test '%s' using '%s' (%s)" %
       (kernel_file_name, tester_name, threading)
@@ -595,7 +604,7 @@ def RunAndroidTests(android_variant='android_debug_unopt', adb_path=None):
   RunCmd([
       systrace_test, '--adb-path', adb_path, '--apk-path', scenario_apk,
       '--package-name', 'dev.flutter.scenarios', '--activity-name',
-      '.TextPlatformViewActivity'
+      '.PlatformViewsActivity'
   ])
 
 
@@ -680,7 +689,9 @@ def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
       '%s/observatory/*_test.dart' % dart_tests_dir
   )
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
-  test_packages = os.path.join(dart_tests_dir, '.packages')
+  test_packages = os.path.join(
+      dart_tests_dir, '.dart_tool', 'package_config.json'
+  )
 
   if 'release' not in build_dir:
     for dart_test_file in dart_observatory_tests:
@@ -697,11 +708,6 @@ def GatherDartTests(build_dir, filter, verbose_dart_snapshot):
         yield GatherDartTest(
             build_dir, test_packages, dart_test_file, verbose_dart_snapshot,
             False, True
-        )
-        # Smoke test with tester variant that has no raster cache and enabled fractional translation
-        yield GatherDartTest(
-            build_dir, test_packages, dart_test_file, verbose_dart_snapshot,
-            False, True, True
         )
 
   for dart_test_file in dart_tests:
@@ -723,7 +729,8 @@ def GatherDartSmokeTest(build_dir, verbose_dart_snapshot):
       "fail_test.dart"
   )
   test_packages = os.path.join(
-      buildroot_dir, "flutter", "testing", "smoke_test_failure", ".packages"
+      buildroot_dir, "flutter", "testing", "smoke_test_failure", ".dart_tool",
+      "package_config.json"
   )
   yield GatherDartTest(
       build_dir,
@@ -883,7 +890,7 @@ def RunEngineTasksInParallel(tasks):
   if len(failures) > 0:
     print("The following commands failed:")
     for task, exn in failures:
-      print("%s\n" % str(task))
+      print("%s\n%s\n" % (str(task), str(exn)))
     raise Exception()
 
 
@@ -1004,7 +1011,7 @@ def main():
     ]
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in process.stdout:
-      key, _, value = line.decode('ascii').strip().partition("=")
+      key, _, value = line.decode('utf8').strip().partition("=")
       os.environ[key] = value
     process.communicate()  # Avoid pipe deadlock while waiting for termination.
 

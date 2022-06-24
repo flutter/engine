@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -485,7 +484,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
           contentManager: platformViewManager,
           contentHandler: (DomElement content) {
             // Remove cast to [html.Element] after migration.
-            flutterViewEmbedder.glassPaneElement!.append(content as html.Element);
+            flutterViewEmbedder.glassPaneElement!.append(content);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
@@ -608,7 +607,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement as html.Element?);
+      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement);
     }
     frameTimingsOnRasterFinish();
   }
@@ -1184,7 +1183,6 @@ const double _defaultRootFontSize = 16.0;
 /// Finds the text scale factor of the browser by looking at the computed style
 /// of the browser's <html> element.
 double findBrowserTextScaleFactor() {
-  final num fontSize = parseFontSize(domDocument.documentElement! as
-      html.Element) ?? _defaultRootFontSize;
+  final num fontSize = parseFontSize(domDocument.documentElement!) ?? _defaultRootFontSize;
   return fontSize / _defaultRootFontSize;
 }
