@@ -43,7 +43,16 @@ API void DestroyPath(SkPath* path);
 
 API void Op(SkPath* one, SkPath* two, SkPathOp op);
 
-API void dump(SkPath* path);
+struct API PathData {
+  uint8_t* verbs;
+  size_t verb_count;
+  float* points;
+  size_t point_count;
+};
+
+API struct PathData* Data(SkPath* path);
+
+API void DestroyData(PathData* data);
 
 }  // namespace flutter
 }

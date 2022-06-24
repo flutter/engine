@@ -4,9 +4,6 @@
 
 #include "pathkit.h"
 
-#include "third_party/skia/include/core/SkString.h"
-#include "third_party/skia/include/utils/SkParsePath.h"
-
 namespace flutter {
 SkPath* CreatePath(SkPathFillType fill_type) {
   auto* path = new SkPath();
@@ -44,14 +41,29 @@ void Reset(SkPath* path) {
   path->reset();
 }
 
-void dump(SkPath* path) {
-  SkString string;
-  SkParsePath::ToSVGString(*path, &string);
-  printf("%s\n", string.c_str());
-}
-
 void Op(SkPath* one, SkPath* two, SkPathOp op) {
   Op(*one, *two, op, one);
+}
+
+struct PathData* Data(SkPath* path) {
+  int point_count = path->countPoints();
+  int verb_count = path->countVerbs();
+
+  auto data = new PathData();
+  data->points = new float[point_count * 2];
+  data->point_count = point_count * 2;
+  data->verbs = new uint8_t[verb_count];
+  data->verb_count = verb_count;
+
+  path->getVerbs(data->verbs, verb_count);
+  path->getPoints(reinterpret_cast<SkPoint*>(data->points), point_count);
+  return data;
+}
+
+void DestroyData(PathData* data) {
+  delete data->points;
+  delete data->verbs;
+  delete data;
 }
 
 }  // namespace flutter
