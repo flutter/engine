@@ -1329,116 +1329,119 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
             reinterpret_cast<const uint8_t*>("wrong_snapshot"));
 }
 
-#if defined(TEST_VM_SNAPSHOT_DATA) && defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) && defined(TEST_ISOLATE_SNAPSHOT_DATA) && defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
-  //------------------------------------------------------------------------------
-  /// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
-  /// of the snapshots in the engine's settings.
-  ///
-  TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
-    // This test is only relevant in JIT mode.
-    if (DartVM::IsRunningPrecompiledCode()) {
-      GTEST_SKIP();
-      return;
-    }
-
-    auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
-    EmbedderConfigBuilder builder(context);
-    builder.SetSoftwareRendererConfig();
-
-    // Construct the location of valid JIT snapshots.
-    const std::string src_path = GetSourcePath();
-    const std::string vm_snapshot_data =
-        fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
-    const std::string vm_snapshot_instructions =
-        fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
-    const std::string isolate_snapshot_data =
-        fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
-    const std::string isolate_snapshot_instructions =
-        fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
-
-    ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                  &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
-                  vm_snapshot_instructions.c_str(), isolate_snapshot_data.c_str(),
-                  isolate_snapshot_instructions.c_str()),
-              kSuccess);
-
-    auto engine = builder.LaunchEngine();
-
-    flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
-    const Settings settings = shell.GetSettings();
-
-    ASSERT_NE(settings.vm_snapshot_data(), nullptr);
-    ASSERT_NE(settings.vm_snapshot_instr(), nullptr);
-    ASSERT_NE(settings.isolate_snapshot_data(), nullptr);
-    ASSERT_NE(settings.isolate_snapshot_instr(), nullptr);
+#if defined(TEST_VM_SNAPSHOT_DATA) &&         \
+    defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) && \
+    defined(TEST_ISOLATE_SNAPSHOT_DATA) &&    \
+    defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
+//------------------------------------------------------------------------------
+/// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
+/// of the snapshots in the engine's settings.
+///
+TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
   }
 
-  //------------------------------------------------------------------------------
-  /// The embedder must be able to run explicitly specified snapshots in JIT mode
-  /// (i.e. when those are present in known locations).
-  ///
-  TEST_F(EmbedderTest, CanLaunchEngineWithSpecifiedJITSnapshots) {
-    // This test is only relevant in JIT mode.
-    if (DartVM::IsRunningPrecompiledCode()) {
-      GTEST_SKIP();
-      return;
-    }
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
 
-    auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
-    EmbedderConfigBuilder builder(context);
-    builder.SetSoftwareRendererConfig();
+  // Construct the location of valid JIT snapshots.
+  const std::string src_path = GetSourcePath();
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  const std::string isolate_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
+  const std::string isolate_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
-    // Construct the location of valid JIT snapshots.
-    const std::string src_path = GetSourcePath();
-    const std::string vm_snapshot_data =
-        fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
-    const std::string vm_snapshot_instructions =
-        fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
-    const std::string isolate_snapshot_data =
-        fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
-    const std::string isolate_snapshot_instructions =
-        fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+                &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
+                vm_snapshot_instructions.c_str(), isolate_snapshot_data.c_str(),
+                isolate_snapshot_instructions.c_str()),
+            kSuccess);
 
-    ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                  &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
-                  vm_snapshot_instructions.c_str(), isolate_snapshot_data.c_str(),
-                  isolate_snapshot_instructions.c_str()),
-              kSuccess);
+  auto engine = builder.LaunchEngine();
 
-    auto engine = builder.LaunchEngine();
-    ASSERT_TRUE(engine.is_valid());
+  flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
+  const Settings settings = shell.GetSettings();
+
+  ASSERT_NE(settings.vm_snapshot_data(), nullptr);
+  ASSERT_NE(settings.vm_snapshot_instr(), nullptr);
+  ASSERT_NE(settings.isolate_snapshot_data(), nullptr);
+  ASSERT_NE(settings.isolate_snapshot_instr(), nullptr);
+}
+
+//------------------------------------------------------------------------------
+/// The embedder must be able to run explicitly specified snapshots in JIT mode
+/// (i.e. when those are present in known locations).
+///
+TEST_F(EmbedderTest, CanLaunchEngineWithSpecifiedJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
   }
 
-  //------------------------------------------------------------------------------
-  /// The embedder must be able to run in JIT mode when only some snapshots are
-  /// specified.
-  ///
-  TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
-    // This test is only relevant in JIT mode.
-    if (DartVM::IsRunningPrecompiledCode()) {
-      GTEST_SKIP();
-      return;
-    }
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
 
-    auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
-    EmbedderConfigBuilder builder(context);
-    builder.SetSoftwareRendererConfig();
+  // Construct the location of valid JIT snapshots.
+  const std::string src_path = GetSourcePath();
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  const std::string isolate_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
+  const std::string isolate_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
-    // Construct the location of valid JIT snapshots.
-    const std::string src_path = GetSourcePath();
-    const std::string vm_snapshot_data =
-        fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
-    const std::string vm_snapshot_instructions =
-        fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+                &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
+                vm_snapshot_instructions.c_str(), isolate_snapshot_data.c_str(),
+                isolate_snapshot_instructions.c_str()),
+            kSuccess);
 
-    ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                  &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
-                  vm_snapshot_instructions.c_str(), nullptr, nullptr),
-              kSuccess);
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
 
-    auto engine = builder.LaunchEngine();
-    ASSERT_TRUE(engine.is_valid());
+//------------------------------------------------------------------------------
+/// The embedder must be able to run in JIT mode when only some snapshots are
+/// specified.
+///
+TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
   }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // Construct the location of valid JIT snapshots.
+  const std::string src_path = GetSourcePath();
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+
+  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
+                &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
+                vm_snapshot_instructions.c_str(), nullptr, nullptr),
+            kSuccess);
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
 #endif
 
 //------------------------------------------------------------------------------
