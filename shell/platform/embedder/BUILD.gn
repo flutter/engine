@@ -241,8 +241,7 @@ if (enable_unittests) {
     vm_snapshot_data = "${_gen_dir}/vm_isolate_snapshot.bin"
     vm_snapshot_instructions = "${_gen_dir}/vm_snapshot_instructions.bin"
     isolate_snapshot_data = "${_gen_dir}/isolate_snapshot.bin"
-    isolate_snapshot_instructions =
-      "${_gen_dir}/isolate_snapshot_instructions.bin"
+    isolate_snapshot_instructions = "${_gen_dir}/isolate_snapshot_instructions.bin"
 
     # For testing JIT snapshot setup.
     defines = [
