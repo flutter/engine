@@ -42,14 +42,10 @@ SkISize DlDeferredImageGPU::dimensions() const {
 
 // |DlImage|
 size_t DlDeferredImageGPU::GetApproximateByteSize() const {
-  auto size = sizeof(this);
-  if (auto image = skia_image()) {
-    const auto& info = image->imageInfo();
-    const auto kMipmapOverhead = 4.0 / 3.0;
-    const size_t image_byte_size = info.computeMinByteSize() * kMipmapOverhead;
-    size += image_byte_size;
-  }
-  return size;
+  // This call is accessed on the UI thread, and image_ may not be available
+  // yet. The image is not mipmapped and it's created using N32 pixels, so this
+  // is safe.
+  return sizeof(this) + size_.width() * size_.height() * 4;
 }
 
 void DlDeferredImageGPU::set_image(sk_sp<SkImage> image) {
