@@ -8,9 +8,10 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,7 +47,7 @@ import org.robolectric.shadows.ShadowLog;
 @RunWith(AndroidJUnit4.class)
 public class FlutterEngineTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
-  private Context spyCtx = ApplicationProvider.getApplicationContext();
+  private final Context mockContext = mock(Context.class);
   @Mock FlutterJNI flutterJNI;
   boolean jniAttached;
 
@@ -54,13 +55,11 @@ public class FlutterEngineTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
 
-    // spyCtx = spy(ctx);
-    // Resources mockResources = mock(Resources.class);
-    // Configuration mockConfiguration = mock(Configuration.class);
-    // doReturn(spyCtx).when(spyCtx).getApplicationContext();
-    // doReturn(mockResources).when(spyCtx).getResources();
-    // doReturn(mockConfiguration).when(mockResources).getConfiguration();
-    // doReturn(LocaleList.getEmptyLocaleList()).when(mockConfiguration).getLocales();
+    Resources mockResources = mock(Resources.class);
+    Configuration mockConfiguration = mock(Configuration.class);
+    doReturn(mockResources).when(mockContext).getResources();
+    doReturn(mockConfiguration).when(mockResources).getConfiguration();
+    doReturn(LocaleList.getEmptyLocaleList()).when(mockConfiguration).getLocales();
 
     jniAttached = false;
     when(flutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
@@ -99,12 +98,15 @@ public class FlutterEngineTest {
 
   @Test
   public void itSendLocalesOnEngineInit() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
     when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
-    FlutterEngine flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, flutterJNI);
+    FlutterEngine flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJNI);
 
-    verify(flutterJNI, times(1)).dispatchPlatformMessage("flutter/localization", any(), any(), any());
+    verify(mockFlutterJNI, times(1)).dispatchPlatformMessage(eq("flutter/localization"), any(), anyInt(), anyInt());
   }
 
   // Helps show the root cause of MissingPluginException type errors like
@@ -219,36 +221,34 @@ public class FlutterEngineTest {
 
   @Test
   public void itUsesApplicationContext() throws NameNotFoundException {
-    Context context = mock(Context.class);
     Context packageContext = mock(Context.class);
 
-    when(context.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
 
     new FlutterEngine(
-        context,
+        mockContext,
         mock(FlutterLoader.class),
         flutterJNI,
         /*dartVmArgs=*/ new String[] {},
         /*automaticallyRegisterPlugins=*/ false);
 
-    verify(context, atLeast(1)).getApplicationContext();
+    verify(mockContext, atLeast(1)).getApplicationContext();
   }
 
   @Test
   public void itUsesPackageContextForAssetManager() throws NameNotFoundException {
-    Context context = mock(Context.class);
     Context packageContext = mock(Context.class);
-    when(context.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
 
     new FlutterEngine(
-        context,
+        mockContext,
         mock(FlutterLoader.class),
         flutterJNI,
         /*dartVmArgs=*/ new String[] {},
         /*automaticallyRegisterPlugins=*/ false);
 
     verify(packageContext, atLeast(1)).getAssets();
-    verify(context, times(0)).getAssets();
+    verify(mockContext, times(0)).getAssets();
   }
 
   @Test
@@ -257,7 +257,6 @@ public class FlutterEngineTest {
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
     FlutterInjector.setInstance(
         new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
-    Context mockContext = mock(Context.class);
     Context packageContext = mock(Context.class);
 
     when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
@@ -271,14 +270,13 @@ public class FlutterEngineTest {
 
   @Test
   public void itNotifiesListenersForDestruction() throws NameNotFoundException {
-    Context context = mock(Context.class);
     Context packageContext = mock(Context.class);
 
-    when(context.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
 
     FlutterEngine engineUnderTest =
         new FlutterEngine(
-            context,
+            mockContext,
             mock(FlutterLoader.class),
             flutterJNI,
             /*dartVmArgs=*/ new String[] {},
@@ -292,15 +290,14 @@ public class FlutterEngineTest {
 
   @Test
   public void itDoesNotAttachAgainWhenBuiltWithAnAttachedJNI() throws NameNotFoundException {
-    Context context = mock(Context.class);
     Context packageContext = mock(Context.class);
 
-    when(context.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
     when(flutterJNI.isAttached()).thenReturn(true);
 
     FlutterEngine engineUnderTest =
         new FlutterEngine(
-            context,
+            mockContext,
             mock(FlutterLoader.class),
             flutterJNI,
             /*dartVmArgs=*/ new String[] {},
@@ -311,15 +308,14 @@ public class FlutterEngineTest {
 
   @Test
   public void itComesWithARunningDartExecutorIfJNIIsAlreadyAttached() throws NameNotFoundException {
-    Context context = mock(Context.class);
     Context packageContext = mock(Context.class);
 
-    when(context.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
     when(flutterJNI.isAttached()).thenReturn(true);
 
     FlutterEngine engineUnderTest =
         new FlutterEngine(
-            context,
+            mockContext,
             mock(FlutterLoader.class),
             flutterJNI,
             /*dartVmArgs=*/ new String[] {},
