@@ -1033,12 +1033,12 @@ FlutterEngineResult FlutterEngineSetupJITSnapshots(
 // explictly specified.
 void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
                                          flutter::Settings& settings) {
-  auto make_mapping_callback = [](std::string path, bool executable) {
+  auto make_mapping_callback = [](const char* path, bool executable) {
     return [path, executable]() {
       if (executable) {
-        return fml::FileMapping::CreateReadExecute(path.c_str());
+        return fml::FileMapping::CreateReadExecute(path);
       } else {
-        return fml::FileMapping::CreateReadOnly(path.c_str());
+        return fml::FileMapping::CreateReadOnly(path);
       }
     };
   };
@@ -1046,33 +1046,21 @@ void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
   if (SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
     // Users are allowed to specify only certain snapshots if they so desire.
     if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      const auto vm_data_path = fml::paths::JoinPaths(
-          {args->assets_path,
-           reinterpret_cast<const char*>(args->vm_snapshot_data)});
-      settings.vm_snapshot_data = make_mapping_callback(vm_data_path, false);
+      settings.vm_snapshot_data = make_mapping_callback(reinterpret_cast<const char*>(args->vm_snapshot_data), false);
     }
 
     if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
-      const auto vm_instr_path = fml::paths::JoinPaths(
-          {args->assets_path,
-           reinterpret_cast<const char*>(args->vm_snapshot_instructions)});
-      settings.vm_snapshot_instr = make_mapping_callback(vm_instr_path, true);
+      settings.vm_snapshot_instr = make_mapping_callback(reinterpret_cast<const char*>(args->vm_snapshot_instructions), true);
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      const auto isolate_data_path = fml::paths::JoinPaths(
-          {args->assets_path,
-           reinterpret_cast<const char*>(args->isolate_snapshot_data)});
       settings.isolate_snapshot_data =
-          make_mapping_callback(isolate_data_path, false);
+          make_mapping_callback(reinterpret_cast<const char*>(args->isolate_snapshot_data), false);
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
-      const auto isolate_instr_path = fml::paths::JoinPaths(
-          {args->assets_path,
-           reinterpret_cast<const char*>(args->isolate_snapshot_instructions)});
       settings.isolate_snapshot_instr =
-          make_mapping_callback(isolate_instr_path, true);
+          make_mapping_callback(reinterpret_cast<const char*>(args->isolate_snapshot_instructions), true);
     }
   }
 }
