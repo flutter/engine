@@ -104,7 +104,7 @@ class DlImageFilter
   //
   // The output bounds parameter must be supplied and the method will either
   // return a pointer to it with the result filled in, or it will set it to
-  // a copy of the |output_bounds| and return a nullptr if it cannot
+  // a copy of the |input_bounds| and return a nullptr if it cannot
   // determine the results.
   virtual SkRect* map_local_bounds(const SkRect& input_bounds,
                                    SkRect& output_bounds) const = 0;
@@ -118,7 +118,7 @@ class DlImageFilter
   //
   // The output bounds parameter must be supplied and the method will either
   // return a pointer to it with the result filled in, or it will set it to
-  // a copy of the |output_bounds| and return a nullptr if it cannot
+  // a copy of the |input_bounds| and return a nullptr if it cannot
   // determine the results.
   virtual SkIRect* map_device_bounds(const SkIRect& input_bounds,
                                      const SkMatrix& ctm,
@@ -129,36 +129,88 @@ class DlImageFilter
   // transformation matrix. Both output_bounds and input_bounds are taken to
   // be relative to the transformed coordinate space of the provided |ctm|.
   //
-  // The output bounds parameter must be supplied and the method will either
+  // The input bounds parameter must be supplied and the method will either
   // return a pointer to it with the result filled in, or it will set it to
   // a copy of the |output_bounds| and return a nullptr if it cannot
   // determine the results.
   virtual SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                            const SkMatrix& ctm,
                                            SkIRect& input_bounds) const = 0;
+
+ protected:
+  static SkVector map_vectors(const SkMatrix& ctm, SkScalar x, SkScalar y) {
+    FML_DCHECK(SkScalarIsFinite(x) && x >= 0);
+    FML_DCHECK(SkScalarIsFinite(y) && y >= 0);
+
+    // The x and y scalars would have been used to expand a local space
+    // rectangle which is then transformed by ctm. In order to do the
+    // expansion correctly, we should look at the relevant math. The
+    // 4 corners will be moved outward by the following vectors:
+    //     (UL,UR,LR,LL) = ((-x, -y), (+x, -y), (+x, +y), (-x, +y))
+    // After applying the transform, each of these vectors could be
+    // pointing in any direction so we need to examine each transformed
+    // delta vector and how it affected the bounds.
+    // Looking at just the affine 2x3 entries of the CTM we can delta
+    // transform these corner offsets and get the following:
+    //     UL = dCTM(-x, -y) = (- x*m00 - y*m01, - x*m10 - y*m11)
+    //     UR = dCTM(+x, -y) = (  x*m00 - y*m01,   x*m10 - y*m11)
+    //     LR = dCTM(+x, +y) = (  x*m00 + y*m01,   x*m10 + y*m11)
+    //     LL = dCTM(-x, +y) = (- x*m00 + y*m01, - x*m10 + y*m11)
+    // The X vectors are all some variation of adding or subtracting
+    // the sum of x*m00 and y*m01 or their difference. Similarly the Y
+    // vectors are +/- the associated sum/difference of x*m10 and y*m11.
+    // The largest displacements, both left/right or up/down, will
+    // happen when the signs of the m00/m01/m10/m11 matrix entries
+    // coincide with the signs of the scalars, i.e. are all positive.
+    if (ctm.isFinite() && !ctm.hasPerspective()) {
+      return {x * abs(ctm[0]) + y * abs(ctm[1]),
+              x * abs(ctm[3]) + y * abs(ctm[4])};
+    }
+
+    // If the matrix has perspective then we just transform all of the
+    // 4 vectors and look for the min/max as each will have a different
+    // homogenous factor to divide by and so no static analysis of the
+    // matrix entries will simplify the operation enough to be worthwhile.
+    // Note: that there is a fatal flaw here in that the homogenous
+    // divisor will be based on the absolute coordinate of the corners
+    // of the operation in the local space, but we have no access to
+    // those values to compute the proper divisors.
+    SkVector vectors[4] = {{x, y}, {-x, y}, {-x, -y}, {x, -y}};
+    ctm.mapVectors(vectors, 4);
+    SkScalar maxx = 0, maxy = 0;
+    for (auto v : vectors) {
+      if (SkScalarIsFinite(v.fX)) {
+        maxx = std::max(maxx, abs(v.fX));
+      }
+      if (SkScalarIsFinite(v.fY)) {
+        maxy = std::max(maxy, abs(v.fY));
+      }
+    }
+    return {maxx, maxy};
+  }
+
+  static SkIRect* inset_device_bounds(const SkIRect& input_bounds,
+                                      SkScalar radius_x,
+                                      SkScalar radius_y,
+                                      const SkMatrix& ctm,
+                                      SkIRect& output_bounds) {
+    SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
+    output_bounds = input_bounds.makeInset(floor(device_radius.fX),  //
+                                           floor(device_radius.fY));
+    return &output_bounds;
+  }
+
+  static SkIRect* outset_device_bounds(const SkIRect& input_bounds,
+                                       SkScalar radius_x,
+                                       SkScalar radius_y,
+                                       const SkMatrix& ctm,
+                                       SkIRect& output_bounds) {
+    SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
+    output_bounds = input_bounds.makeOutset(ceil(device_radius.fX),  //
+                                            ceil(device_radius.fY));
+    return &output_bounds;
+  }
 };
-
-static SkVector abs_finite(SkVector v) {
-  if (!SkScalarIsFinite(v.fX)) {
-    v.fX = 0;
-  } else if (v.fX < 0) {
-    v.fX = v.fX;
-  }
-  v.fX = ceil(v.fX);
-  if (!SkScalarIsFinite(v.fY)) {
-    v.fY = 0;
-  } else if (v.fY < 0) {
-    v.fY = -v.fY;
-  }
-  v.fY = ceil(v.fY);
-  return v;
-}
-
-static SkVector map_vectors(const SkMatrix& ctm, SkScalar x, SkScalar y) {
-  SkVector v_x = abs_finite(ctm.mapVector(x, 0));
-  SkVector v_y = abs_finite(ctm.mapVector(0, y));
-  return v_x + v_y;
-}
 
 class DlBlurImageFilter final : public DlImageFilter {
  public:
@@ -191,10 +243,8 @@ class DlBlurImageFilter final : public DlImageFilter {
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    SkVector device_sigma = map_vectors(ctm, sigma_x_ * 3.0, sigma_y_ * 3.0);
-    output_bounds =
-        input_bounds.makeOutset(ceil(device_sigma.fX), ceil(device_sigma.fY));
-    return &output_bounds;
+    return outset_device_bounds(input_bounds, sigma_x_ * 3.0, sigma_y_ * 3.0,
+                                ctm, output_bounds);
   }
 
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
@@ -225,28 +275,6 @@ class DlBlurImageFilter final : public DlImageFilter {
   SkScalar sigma_y_;
   DlTileMode tile_mode_;
 };
-
-static SkIRect* inset_device_bounds(const SkIRect& input_bounds,
-                                    SkScalar radius_x,
-                                    SkScalar radius_y,
-                                    const SkMatrix& ctm,
-                                    SkIRect& output_bounds) {
-  SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
-  output_bounds = input_bounds.makeInset(floor(abs(device_radius.fX)),
-                                         floor(abs(device_radius.fY)));
-  return &output_bounds;
-}
-
-static SkIRect* outset_device_bounds(const SkIRect& input_bounds,
-                                     SkScalar radius_x,
-                                     SkScalar radius_y,
-                                     const SkMatrix& ctm,
-                                     SkIRect& output_bounds) {
-  SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
-  output_bounds = input_bounds.makeOutset(ceil(abs(device_radius.fX)),
-                                          ceil(abs(device_radius.fY)));
-  return &output_bounds;
-}
 
 class DlDilateImageFilter final : public DlImageFilter {
  public:
@@ -414,21 +442,18 @@ class DlMatrixImageFilter final : public DlImageFilter {
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
-    SkMatrix full_matrix = SkMatrix::Concat(ctm, matrix_);
+    SkMatrix matrix = SkMatrix::Concat(ctm, matrix_);
     SkMatrix inverse;
-    SkIRect* ret = nullptr;
-    if (full_matrix.invert(&inverse)) {
-      SkRect bounds;
-      bounds.set(output_bounds);
-      if (inverse.mapRect(&bounds)) {
-        input_bounds = bounds.roundOut();
-        ret = &input_bounds;
-      }
-    }
-    if (!ret) {
+    if (!matrix.invert(&inverse)) {
       input_bounds = output_bounds;
+      return nullptr;
     }
-    return ret;
+    inverse.postConcat(ctm);
+    SkRect bounds;
+    bounds.set(output_bounds);
+    inverse.mapRect(&bounds);
+    input_bounds = bounds.roundOut();
+    return &input_bounds;
   }
 
   sk_sp<SkImageFilter> skia_object() const override {

@@ -360,7 +360,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
       filter.shared(), DlBlendMode::kSrcOver));
 
   auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(13, 13));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(35, 35));
 }
 
 }  // namespace testing
