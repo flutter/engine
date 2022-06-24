@@ -64,24 +64,23 @@ class TestPassDelegate final : public EntityPassDelegate {
   const std::optional<Rect> coverage_;
 };
 
-TEST_P(EntityTest, EntityPassCoverageRespectsBoundsHint) {
+auto CreatePassWithRectPath(Rect rect, std::optional<Rect> bounds_hint) {
+  auto subpass = std::make_unique<EntityPass>();
+  Entity entity;
+  entity.SetContents(SolidColorContents::Make(
+      PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
+  subpass->AddEntity(entity);
+  subpass->SetDelegate(std::make_unique<TestPassDelegate>(bounds_hint));
+  return subpass;
+}
+
+TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
   EntityPass pass;
 
-  auto create_pass_with_rect_path = [](Rect rect,
-                                       std::optional<Rect> bounds_hint) {
-    auto subpass = std::make_unique<EntityPass>();
-    Entity entity;
-    entity.SetContents(SolidColorContents::Make(
-        PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-    subpass->AddEntity(entity);
-    subpass->SetDelegate(std::make_unique<TestPassDelegate>(bounds_hint));
-    return subpass;
-  };
-
-  auto subpass0 = create_pass_with_rect_path(Rect::MakeLTRB(0, 0, 100, 100),
-                                             Rect::MakeLTRB(50, 50, 150, 150));
-  auto subpass1 = create_pass_with_rect_path(
-      Rect::MakeLTRB(500, 500, 1000, 1000), Rect::MakeLTRB(800, 800, 900, 900));
+  auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
+                                         Rect::MakeLTRB(50, 50, 150, 150));
+  auto subpass1 = CreatePassWithRectPath(Rect::MakeLTRB(500, 500, 1000, 1000),
+                                         Rect::MakeLTRB(800, 800, 900, 900));
 
   auto subpass0_coverage =
       pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
@@ -100,6 +99,27 @@ TEST_P(EntityTest, EntityPassCoverageRespectsBoundsHint) {
   auto coverage = pass.GetElementsCoverage(std::nullopt);
   ASSERT_TRUE(coverage.has_value());
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
+}
+
+TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
+  // Rect is drawn entirely in negative area.
+  auto pass = CreatePassWithRectPath(Rect::MakeLTRB(-200, -200, -100, -100),
+                                     std::nullopt);
+
+  // Without coverage limit.
+  {
+    auto pass_coverage = pass->GetElementsCoverage(std::nullopt);
+    ASSERT_TRUE(pass_coverage.has_value());
+    ASSERT_RECT_NEAR(pass_coverage.value(),
+                     Rect::MakeLTRB(-200, -200, -100, -100));
+  }
+
+  // With positive coverage limit.
+  {
+    auto pass_coverage =
+        pass->GetElementsCoverage(Rect::MakeLTRB(0, 0, 100, 100));
+    ASSERT_FALSE(pass_coverage.has_value());
+  }
 }
 
 TEST_P(EntityTest, CanDrawRect) {
