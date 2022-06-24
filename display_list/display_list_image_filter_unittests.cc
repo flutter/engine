@@ -243,11 +243,11 @@ static void TestBounds(const DlImageFilter& filter,
   ASSERT_TRUE(containsInclusive(localFilterBounds, expectedLocalOutputQuad));
 
   for (int scale = 1; scale <= 4; scale++) {
-    for (SkScalar skew = 0; skew < 1; skew += 0.125) {
+    for (int skew = 0; skew < 8; skew++) {
       for (int degrees = 0; degrees <= 360; degrees += 15) {
         SkMatrix matrix;
         matrix.setScale(scale, scale);
-        matrix.postSkew(skew, skew);
+        matrix.postSkew(skew / 8.0, skew / 8.0);
         matrix.postRotate(degrees);
         ASSERT_TRUE(matrix.invert(nullptr));
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
