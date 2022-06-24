@@ -865,9 +865,12 @@ def parse_args(args):
 
   parser.add_argument(
       '--fstack-protector',
-      default=False,
+      default=True,
       action='store_true',
       help='Whether the -fstack-protector flag should be passed unconditionally.'
+  )
+  parser.add_argument(
+      '--no-fstack-protector', dest='fstack_protector', action='store_false'
   )
 
   parser.add_argument(
