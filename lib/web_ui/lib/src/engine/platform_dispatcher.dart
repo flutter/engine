@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -36,7 +37,9 @@ ui.VoidCallback? scheduleFrameCallback;
 typedef _KeyDataResponseCallback = void Function(bool handled);
 typedef HighContrastListener = void Function(bool);
 
-// ignore: avoid_classes_with_only_static_members
+
+/// Determines if high contrast is enabled using media query 'forced-colors: active' for windows
+/// TODO(negarb): Add support for web on Mac/iOS/andriod
 class HighContrastSupport {
   static HighContrastSupport instance = HighContrastSupport();
   static const String _highContrastMediaQueryString = '(forced-colors: active)';
@@ -62,7 +65,7 @@ class HighContrastSupport {
     listeners.remove(listener);
     if (listeners.isEmpty) {
       _highContrastMediaQuery.removeListener(_onHighContrastChange);
-  }
+    }
   }
 
   void _onHighContrastChange(html.Event event) {
@@ -70,7 +73,7 @@ class HighContrastSupport {
     final bool isHighContrastEnabled = mqEvent.matches!;
     for (final HighContrastListener listener in listeners) {
       listener(isHighContrastEnabled);
-  }
+    }
   }
 }
 
@@ -97,10 +100,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
-    accessibilityFeatures: setAccessibilityFeatures(),
+    accessibilityFeatures: setHighContrastonAccessibilityFeatures(),
   );
 
-  static EngineAccessibilityFeatures setAccessibilityFeatures() {
+  /// Initialize accessibility features based on the current value of high contrast flag
+  static EngineAccessibilityFeatures setHighContrastonAccessibilityFeatures() {
     final EngineAccessibilityFeaturesBuilder builder =
         EngineAccessibilityFeaturesBuilder(0);
     if (HighContrastSupport.instance.isHighContrastEnabled()) {
@@ -954,7 +958,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
   }
 
-  /// Set the callback function for listening changes in [highContrastMediaQuery] value.
+  /// Set the callback function for listening changes in high contrast value.
   void _addHighContrastMediaQueryListener() {
     final HighContrastSupport instance = HighContrastSupport.instance;
 
