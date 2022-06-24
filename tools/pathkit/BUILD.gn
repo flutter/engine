@@ -3,8 +3,5 @@ shared_library("pathkit") {
     "pathkit.cc",
     "pathkit.h",
   ]
-  deps = [
-    "//third_party/skia",
-    "//third_party/skia:pathkit",
-  ]
+  deps = [ "//third_party/skia" ]
 }
