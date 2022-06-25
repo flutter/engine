@@ -101,10 +101,10 @@ class DlImageFilter
   // based on the supplied input bounds where both are measured in the local
   // (untransformed) coordinate space.
   //
-  // The output bounds parameter must be supplied and the method will either
-  // return a pointer to it with the result filled in, or it will set it to
-  // a copy of the |input_bounds| and return a nullptr if it cannot
-  // determine the results.
+  // The method will return a pointer to the output_bounds parameter if it
+  // can successfully compute the output bounds of the filter, otherwise the
+  // method will return a nullptr and the output_bounds will be filled with
+  // a best guess for the answer, even if just a copy of the input_bounds.
   virtual SkRect* map_local_bounds(const SkRect& input_bounds,
                                    SkRect& output_bounds) const = 0;
 
@@ -115,10 +115,10 @@ class DlImageFilter
   // is used in a rendering operation (for example, the blur radius of a
   // Blur filter will expand based on the ctm).
   //
-  // The output bounds parameter must be supplied and the method will either
-  // return a pointer to it with the result filled in, or it will set it to
-  // a copy of the |input_bounds| and return a nullptr if it cannot
-  // determine the results.
+  // The method will return a pointer to the output_bounds parameter if it
+  // can successfully compute the output bounds of the filter, otherwise the
+  // method will return a nullptr and the output_bounds will be filled with
+  // a best guess for the answer, even if just a copy of the input_bounds.
   virtual SkIRect* map_device_bounds(const SkIRect& input_bounds,
                                      const SkMatrix& ctm,
                                      SkIRect& output_bounds) const = 0;
@@ -128,18 +128,20 @@ class DlImageFilter
   // transformation matrix. Both output_bounds and input_bounds are taken to
   // be relative to the transformed coordinate space of the provided |ctm|.
   //
-  // The input bounds parameter must be supplied and the method will either
-  // return a pointer to it with the result filled in, or it will set it to
-  // a copy of the |output_bounds| and return a nullptr if it cannot
-  // determine the results.
+  // The method will return a pointer to the input_bounds parameter if it
+  // can successfully compute the required input bounds, otherwise the
+  // method will return a nullptr and the input_bounds will be filled with
+  // a best guess for the answer, even if just a copy of the output_bounds.
   virtual SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                            const SkMatrix& ctm,
                                            SkIRect& input_bounds) const = 0;
 
  protected:
-  static SkVector map_vectors(const SkMatrix& ctm, SkScalar x, SkScalar y) {
+  static SkVector map_vectors_affine(const SkMatrix& ctm,  //
+                                     SkScalar x, SkScalar y) {
     FML_DCHECK(SkScalarIsFinite(x) && x >= 0);
     FML_DCHECK(SkScalarIsFinite(y) && y >= 0);
+    FML_DCHECK(ctm.isFinite() && !ctm.hasPerspective());
 
     // The x and y scalars would have been used to expand a local space
     // rectangle which is then transformed by ctm. In order to do the
@@ -161,31 +163,8 @@ class DlImageFilter
     // The largest displacements, both left/right or up/down, will
     // happen when the signs of the m00/m01/m10/m11 matrix entries
     // coincide with the signs of the scalars, i.e. are all positive.
-    if (ctm.isFinite() && !ctm.hasPerspective()) {
-      return {x * abs(ctm[0]) + y * abs(ctm[1]),
-              x * abs(ctm[3]) + y * abs(ctm[4])};
-    }
-
-    // If the matrix has perspective then we just transform all of the
-    // 4 vectors and look for the min/max as each will have a different
-    // homogenous factor to divide by and so no static analysis of the
-    // matrix entries will simplify the operation enough to be worthwhile.
-    // Note: that there is a fatal flaw here in that the homogenous
-    // divisor will be based on the absolute coordinate of the corners
-    // of the operation in the local space, but we have no access to
-    // those values to compute the proper divisors.
-    SkVector vectors[4] = {{x, y}, {-x, y}, {-x, -y}, {x, -y}};
-    ctm.mapVectors(vectors, 4);
-    SkScalar maxx = 0, maxy = 0;
-    for (auto v : vectors) {
-      if (SkScalarIsFinite(v.fX)) {
-        maxx = std::max(maxx, abs(v.fX));
-      }
-      if (SkScalarIsFinite(v.fY)) {
-        maxy = std::max(maxy, abs(v.fY));
-      }
-    }
-    return {maxx, maxy};
+    return {x * abs(ctm[0]) + y * abs(ctm[1]),
+            x * abs(ctm[3]) + y * abs(ctm[4])};
   }
 
   static SkIRect* inset_device_bounds(const SkIRect& input_bounds,
@@ -193,10 +172,24 @@ class DlImageFilter
                                       SkScalar radius_y,
                                       const SkMatrix& ctm,
                                       SkIRect& output_bounds) {
-    SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
-    output_bounds = input_bounds.makeInset(floor(device_radius.fX),  //
-                                           floor(device_radius.fY));
-    return &output_bounds;
+    if (ctm.isFinite()) {
+      if (ctm.hasPerspective()) {
+        SkMatrix inverse;
+        if (ctm.invert(&inverse)) {
+          SkRect local_bounds = inverse.mapRect(SkRect::Make(input_bounds));
+          local_bounds.inset(radius_x, radius_y);
+          output_bounds = ctm.mapRect(local_bounds).roundOut();
+          return &output_bounds;
+        }
+      } else {
+        SkVector device_radius = map_vectors_affine(ctm, radius_x, radius_y);
+        output_bounds = input_bounds.makeInset(floor(device_radius.fX),  //
+                                               floor(device_radius.fY));
+        return &output_bounds;
+      }
+    }
+    output_bounds = input_bounds;
+    return nullptr;
   }
 
   static SkIRect* outset_device_bounds(const SkIRect& input_bounds,
@@ -204,10 +197,24 @@ class DlImageFilter
                                        SkScalar radius_y,
                                        const SkMatrix& ctm,
                                        SkIRect& output_bounds) {
-    SkVector device_radius = map_vectors(ctm, radius_x, radius_y);
-    output_bounds = input_bounds.makeOutset(ceil(device_radius.fX),  //
-                                            ceil(device_radius.fY));
-    return &output_bounds;
+    if (ctm.isFinite()) {
+      if (ctm.hasPerspective()) {
+        SkMatrix inverse;
+        if (ctm.invert(&inverse)) {
+          SkRect local_bounds = inverse.mapRect(SkRect::Make(input_bounds));
+          local_bounds.outset(radius_x, radius_y);
+          output_bounds = ctm.mapRect(local_bounds).roundOut();
+          return &output_bounds;
+        }
+      } else {
+        SkVector device_radius = map_vectors_affine(ctm, radius_x, radius_y);
+        output_bounds = input_bounds.makeOutset(ceil(device_radius.fX),  //
+                                                ceil(device_radius.fY));
+        return &output_bounds;
+      }
+    }
+    output_bounds = input_bounds;
+    return nullptr;
   }
 };
 
@@ -511,61 +518,61 @@ class DlComposeImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    SkRect* ret = &output_bounds;
+    SkRect cur_bounds = input_bounds;
+    // We set this result in case neither filter is present.
+    output_bounds = input_bounds;
     if (inner_) {
-      if (!inner_->map_local_bounds(input_bounds, output_bounds)) {
-        ret = nullptr;
+      if (!inner_->map_local_bounds(cur_bounds, output_bounds)) {
+        return nullptr;
+      }
+      cur_bounds = output_bounds;
+    }
+    if (outer_) {
+      if (!outer_->map_local_bounds(cur_bounds, output_bounds)) {
+        return nullptr;
       }
     }
-    if (ret && outer_) {
-      if (!outer_->map_local_bounds(output_bounds, output_bounds)) {
-        ret = nullptr;
-      }
-    }
-    if (!ret) {
-      output_bounds = input_bounds;
-    }
-    return ret;
+    return &output_bounds;
   }
 
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    SkIRect* ret = &output_bounds;
+    SkIRect cur_bounds = input_bounds;
+    // We set this result in case neither filter is present.
+    output_bounds = input_bounds;
     if (inner_) {
-      if (!inner_->map_device_bounds(input_bounds, ctm, output_bounds)) {
-        ret = nullptr;
+      if (!inner_->map_device_bounds(cur_bounds, ctm, output_bounds)) {
+        return nullptr;
+      }
+      cur_bounds = output_bounds;
+    }
+    if (outer_) {
+      if (!outer_->map_device_bounds(cur_bounds, ctm, output_bounds)) {
+        return nullptr;
       }
     }
-    if (ret && outer_) {
-      if (!outer_->map_device_bounds(output_bounds, ctm, output_bounds)) {
-        ret = nullptr;
-      }
-    }
-    if (!ret) {
-      output_bounds = input_bounds;
-    }
-    return ret;
+    return &output_bounds;
   }
 
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
-    SkIRect* ret = &input_bounds;
+    SkIRect cur_bounds = output_bounds;
+    // We set this result in case neither filter is present.
+    input_bounds = output_bounds;
     if (outer_) {
-      if (!outer_->get_input_device_bounds(output_bounds, ctm, input_bounds)) {
-        ret = nullptr;
+      if (!outer_->get_input_device_bounds(cur_bounds, ctm, input_bounds)) {
+        return nullptr;
+      }
+      cur_bounds = output_bounds;
+    }
+    if (inner_) {
+      if (!inner_->get_input_device_bounds(cur_bounds, ctm, input_bounds)) {
+        return nullptr;
       }
     }
-    if (ret && inner_) {
-      if (!inner_->get_input_device_bounds(input_bounds, ctm, input_bounds)) {
-        ret = nullptr;
-      }
-    }
-    if (!ret) {
-      input_bounds = output_bounds;
-    }
-    return ret;
+    return &input_bounds;
   }
 
   sk_sp<SkImageFilter> skia_object() const override {
