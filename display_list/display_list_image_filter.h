@@ -138,8 +138,9 @@ class DlImageFilter
                                            SkIRect& input_bounds) const = 0;
 
  protected:
-  static SkVector map_vectors_affine(const SkMatrix& ctm,  //
-                                     SkScalar x, SkScalar y) {
+  static SkVector map_vectors_affine(const SkMatrix& ctm,
+                                     SkScalar x,
+                                     SkScalar y) {
     FML_DCHECK(SkScalarIsFinite(x) && x >= 0);
     FML_DCHECK(SkScalarIsFinite(y) && y >= 0);
     FML_DCHECK(ctm.isFinite() && !ctm.hasPerspective());
