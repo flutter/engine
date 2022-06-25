@@ -22,9 +22,15 @@ def get_repository_version(repository):
   if not os.path.exists(repository):
     raise IOError('path does not exist')
 
-  git = 'git'
-  if is_windows():
-    git = 'git.bat'
+  # Natively supported since python 3.3
+  from shutil import which
+
+  git_candidates = ['git', 'git.sh', 'git.bat']
+  git = next(filter(which, git_candidates), None)
+  if git is None:
+    candidates = "', '".join(git_candidates)
+    raise IOError(f"Looks like GIT is not on the path. Tried '{candidates}'")
+
   version = subprocess.check_output([
       git,
       '-C',
