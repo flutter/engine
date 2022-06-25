@@ -253,6 +253,11 @@ static void TestBounds(const DlImageFilter& filter,
         ASSERT_TRUE(matrix.invert(nullptr));
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
+        matrix.setPerspX(0.01);
+        matrix.setPerspY(0.01);
+        ASSERT_TRUE(matrix.invert(nullptr));
+        TestBoundsWithMatrix(filter, matrix, sourceBounds,
+                             expectedLocalOutputQuad);
       }
     }
   }
