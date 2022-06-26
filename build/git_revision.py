@@ -10,6 +10,7 @@ import sys
 import subprocess
 import os
 import argparse
+from shutil import which # Natively supported since python 3.3
 
 
 def is_windows():
@@ -21,9 +22,6 @@ def get_repository_version(repository):
   'Returns the Git HEAD for the supplied repository path as a string.'
   if not os.path.exists(repository):
     raise IOError('path does not exist')
-
-  # Natively supported since python 3.3
-  from shutil import which
 
   git_candidates = ['git', 'git.sh', 'git.bat']
   git = next(filter(which, git_candidates), None)
