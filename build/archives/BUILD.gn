@@ -221,3 +221,18 @@ if (is_mac) {
     ]
   }
 }
+
+if (is_windows) {
+  zip_bundle("archive_gen_snapshot") {
+    deps = [ "//gen_snapshot" ]
+    suffix = "-$flutter_runtime_mode"
+    android-arm-profile/windows-x64.zip
+    output = "$full_platform_name$suffix/${target_host}-${target-cpu}.zip"
+    files = [
+      {
+        source = "$root_out_dir/gen_snapshot.exe"
+        destination = "gen_snapshot.exe"
+      },
+    ]
+  }
+}
