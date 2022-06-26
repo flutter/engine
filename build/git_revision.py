@@ -10,12 +10,7 @@ import sys
 import subprocess
 import os
 import argparse
-from shutil import which # Natively supported since python 3.3
-
-
-def is_windows():
-  os_id = sys.platform
-  return os_id.startswith('win32') or os_id.startswith('cygwin')
+from shutil import which  # Natively supported since python 3.3
 
 
 def get_repository_version(repository):
