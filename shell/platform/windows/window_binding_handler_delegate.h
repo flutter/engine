@@ -22,6 +22,10 @@ class WindowBindingHandlerDelegate {
   // called on the platform thread.
   virtual void OnWindowSizeChanged(size_t width, size_t height) = 0;
 
+  // Notifies delegate that backing window needs to be repainted.
+  // Typically called by currently configured WindowBindingHandler
+  virtual void OnWindowRepaint() = 0;
+
   // Notifies delegate that backing window mouse has moved.
   // Typically called by currently configured WindowBindingHandler
   virtual void OnPointerMove(double x,
