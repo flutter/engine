@@ -487,7 +487,7 @@ TEST(DisplayListImageFilter, MatrixBounds) {
                                       0.0, 0.0, 1);
   SkMatrix inverse;
   ASSERT_TRUE(matrix.invert(&inverse));
-  DlMatrixImageFilter filter(matrix, DisplayList::LinearSampling);
+  DlMatrixImageFilter filter(matrix, DlImageSampling::kLinear);
   SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
   SkPoint expectedOutputQuad[4] = {
       {50, 77},    // (20,20) => (20*2 + 10, 20/2 + 20*3 + 7) == (50, 77)
