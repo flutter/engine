@@ -52,6 +52,17 @@ TEST(MutatorsStack, PushClipRect) {
   ASSERT_TRUE(iter->get()->GetRect() == rect);
 }
 
+TEST(MutatorsStack, PushBackdropFilter) {
+  MutatorsStack stack;
+  sk_sp<SkImageFilter> filter;
+  filter->filterBounds(SkIRect::MakeWH(10, 10), SkMatrix::I(),
+                       SkImageFilter::kForward_MapDirection);
+  stack.PushBackdropFilter(filter);
+  auto iter = stack.Bottom();
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdrop_filter);
+  ASSERT_TRUE(iter->get()->GetFilter() == filter);
+}
+
 TEST(MutatorsStack, PushClipRRect) {
   MutatorsStack stack;
   auto rrect = SkRRect::MakeEmpty();
