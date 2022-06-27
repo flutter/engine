@@ -64,8 +64,9 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
 
-  void FilterPlatformViews(int64_t view_id, sk_sp<SkImageFilter> filter) override;//, flutter::Mutator mutator
-  
+  void FilterPlatformViews(int64_t view_id, sk_sp<SkImageFilter> filter)
+      override;  //, flutter::Mutator mutator
+
   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalViewEmbedder);
 };
 
