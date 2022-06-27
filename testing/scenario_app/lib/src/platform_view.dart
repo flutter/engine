@@ -114,42 +114,6 @@ class PlatformViewNoOverlayIntersectionScenario extends Scenario
   }
 }
 
-
-/// A platform view that is larger than the display size.
-/// This is only applicable on Android while using virtual displays.
-/// Related issue: https://github.com/flutter/flutter/issues/2897.
-class PlatformViewLargerThanDisplaySize extends Scenario
-    with _BasePlatformViewScenarioMixin {
-  /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
-  PlatformViewLargerThanDisplaySize(
-    PlatformDispatcher dispatcher, {
-    required this.id,
-  })  : assert(dispatcher != null),
-        super(dispatcher);
-
-  /// The platform view identifier.
-  final int id;
-
-  @override
-  void onBeginFrame(Duration duration) {
-    final SceneBuilder builder = SceneBuilder();
-
-    addPlatformView(
-      id,
-      dispatcher: dispatcher,
-      sceneBuilder: builder,
-      width: 15000,
-      height: 60000,
-    );
-
-    finishBuilder(
-      builder,
-    );
-  }
-}
-
 /// A simple platform view with an overlay that partially intersects with the platform view.
 class PlatformViewPartialIntersectionScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
@@ -1085,12 +1049,7 @@ void addPlatformView(
   double height = 500,
   String viewType = 'scenarios/textPlatformView',
 }) {
-  if (scenarioParams['view_type'] is String) {
-    viewType = scenarioParams['view_type'];
-  }
-
   final String platformViewKey = '$viewType-$id';
-
   if (_createdPlatformViews.containsKey(platformViewKey)) {
     addPlatformViewToSceneBuilder(
       id,
@@ -1101,10 +1060,9 @@ void addPlatformView(
     );
     return;
   }
-
   bool usesAndroidHybridComposition = false;
-  if (scenarioParams['use_android_view'] is bool) {
-    usesAndroidHybridComposition = scenarioParams['use_android_view'];
+  if (scenarioParams['use_android_view'] != null) {
+    usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool;
   }
 
   const int _valueTrue = 1;
@@ -1121,9 +1079,9 @@ void addPlatformView(
     _valueMap,
     if (Platform.isIOS) 3, // 3 entries in map for iOS.
     if (Platform.isAndroid && !usesAndroidHybridComposition)
-      6, // 6 entries in map for texture on Android.
+      6, // 6 entries in map for virtual displays on Android.
     if (Platform.isAndroid && usesAndroidHybridComposition)
-      5, // 5 entries in map for hybrid composition on Android.
+      5, // 5 entries in map for Android views.
     _valueString,
     'id'.length,
     ...utf8.encode('id'),

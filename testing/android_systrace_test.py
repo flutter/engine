@@ -127,7 +127,7 @@ def main():
       dest='activity_name',
       action='store',
       help='The activity to launch as it appears in AndroidManifest.xml, '
-      'e.g. .PlatformViewsActivity'
+      'e.g. .TextPlatformViewActivity'
   )
   parser.add_argument(
       '--adb-path',
