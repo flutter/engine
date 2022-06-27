@@ -21,7 +21,7 @@
 namespace flutter {
 
 // TODO(chinmaygarde): Make these enum names match the style guide.
-enum MutatorType { clip_rect, clip_rrect, clip_path, transform, opacity };
+enum MutatorType { clip_rect, clip_rrect, clip_path, transform, opacity, backdrop_filter };
 
 // Stores mutation information like clipping or transform.
 //
@@ -49,6 +49,9 @@ class Mutator {
       case opacity:
         alpha_ = other.alpha_;
         break;
+      case backdrop_filter:
+        filter_ = other.filter_;
+        break;
       default:
         break;
     }
@@ -61,12 +64,14 @@ class Mutator {
   explicit Mutator(const SkMatrix& matrix)
       : type_(transform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(opacity), alpha_(alpha) {}
+  explicit Mutator(const sk_sp<SkImageFilter>& filter) : type_(backdrop_filter), filter_(filter) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
+  const sk_sp<SkImageFilter>& GetFilter() const {return filter_; }
   const int& GetAlpha() const { return alpha_; }
   float GetAlphaFloat() const { return (alpha_ / 255.0); }
 
@@ -85,6 +90,8 @@ class Mutator {
         return matrix_ == other.matrix_;
       case opacity:
         return alpha_ == other.alpha_;
+      case backdrop_filter:
+        return filter_ == other.filter_;
     }
 
     return false;
@@ -111,6 +118,7 @@ class Mutator {
     SkMatrix matrix_;
     SkPath* path_;
     int alpha_;
+    sk_sp<SkImageFilter> filter_;
   };
 
 };  // Mutator
@@ -133,6 +141,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
+  void PushBackdropFilter(const sk_sp<SkImageFilter>& filter);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.
@@ -223,6 +232,10 @@ class EmbeddedViewParams {
   //
   // Clippings are ignored.
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
+
+  void PushFilter(sk_sp<SkImageFilter> filter) {
+    mutators_stack_.PushBackdropFilter(filter);
+  }
 
   bool operator==(const EmbeddedViewParams& other) const {
     return size_points_ == other.size_points_ &&
@@ -345,8 +358,20 @@ class ExternalViewEmbedder {
   // 'EndFrame', otherwise returns false.
   bool GetUsedThisFrame() const { return used_this_frame_; }
 
+  std::vector<int64_t> GetVisitedPlatformViews() {
+    return visited_platform_views_;
+  }
+
+  void PushVisitedPlatformView(int64_t view_id) {
+    visited_platform_views_.push_back(view_id);
+  }
+
+  virtual void FilterPlatformViews(int64_t view_id, sk_sp<SkImageFilter> filter) {}
+
  private:
   bool used_this_frame_ = false;
+
+  std::vector<int64_t> visited_platform_views_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
