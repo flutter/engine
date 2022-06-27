@@ -1342,6 +1342,10 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
 /// of the snapshots in the engine's settings.
 ///
 TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
+#endif  // OS_FUCHSIA
+
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
     GTEST_SKIP();
