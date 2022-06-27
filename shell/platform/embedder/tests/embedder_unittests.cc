@@ -1294,7 +1294,7 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   engine.reset();
 }
 
-#if !defined(OS_FUCHSIA)
+#if !OS_FUCHSIA
 //------------------------------------------------------------------------------
 /// FlutterEngineSetupJITSnapshots should successfully change the contents of
 /// the snapshots in project args.
