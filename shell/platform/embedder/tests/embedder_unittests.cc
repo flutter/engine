@@ -1294,6 +1294,7 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   engine.reset();
 }
 
+#if !defined(OS_FUCHSIA)
 //------------------------------------------------------------------------------
 /// FlutterEngineSetupJITSnapshots should successfully change the contents of
 /// the snapshots in project args.
@@ -1328,6 +1329,7 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
   ASSERT_NE(builder.GetProjectArgs().vm_snapshot_data,
             reinterpret_cast<const uint8_t*>("wrong_snapshot"));
 }
+#endif  // !OS_FUCHSIA
 
 #if defined(TEST_VM_SNAPSHOT_DATA) &&         \
     defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) && \
@@ -1442,7 +1444,8 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
-#endif
+#endif  // TEST_VM_SNAPSHOT_DATA && TEST_VM_SNAPSHOT_INSTRUCTIONS &&
+        // TEST_ISOLATE_SNAPSHOT_DATA && TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS
 
 //------------------------------------------------------------------------------
 /// The embedder must be able to run in JIT mode even when the specfied
