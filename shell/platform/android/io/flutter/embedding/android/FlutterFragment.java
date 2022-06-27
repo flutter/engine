@@ -770,9 +770,6 @@ public class FlutterFragment extends Fragment
     return delegate;
   }
 
-  // We track the attached context so we can unregister component callbacks when detaching.
-  private Context attachedContext;
-
   @Override
   public void onAttach(@NonNull Context context) {
     super.onAttach(context);
@@ -783,8 +780,7 @@ public class FlutterFragment extends Fragment
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }
-    attachedContext = context;
-    attachedContext.registerComponentCallbacks(this);
+    context.registerComponentCallbacks(this);
   }
 
   @Override
@@ -880,10 +876,7 @@ public class FlutterFragment extends Fragment
 
   @Override
   public void onDetach() {
-    if (attachedContext != null) {
-      attachedContext.unregisterComponentCallbacks(this);
-      attachedContext = null;
-    }
+    getContext().unregisterComponentCallbacks(this);
     super.onDetach();
     if (delegate != null) {
       delegate.onDetach();

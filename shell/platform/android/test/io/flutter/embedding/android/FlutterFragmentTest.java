@@ -205,9 +205,10 @@ public class FlutterFragmentTest {
     doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
 
     FlutterFragment fragment =
-        FlutterFragment.withCachedEngine("my_cached_engine")
+        spy(FlutterFragment.withCachedEngine("my_cached_engine")
             .destroyEngineWithFragment(true)
-            .build();
+            .build());
+    when(fragment.getContext()).thenReturn(mock(Context.class));
 
     fragment.setDelegate(mockDelegate);
     fragment.onStart();
@@ -321,7 +322,8 @@ public class FlutterFragmentTest {
         new FlutterEngine(spyCtx, new FlutterLoader(), flutterJNI, null, false);
     FlutterEngineCache.getInstance().put("my_cached_engine", flutterEngine);
 
-    FlutterFragment fragment = FlutterFragment.withCachedEngine("my_cached_engine").build();
+    FlutterFragment fragment = spy(FlutterFragment.withCachedEngine("my_cached_engine").build());
+    when(fragment.getContext()).thenReturn(spyCtx);
     fragment.setDelegate(mockDelegate);
 
     fragment.onAttach(spyCtx);
