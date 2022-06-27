@@ -1294,12 +1294,15 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   engine.reset();
 }
 
-#if !OS_FUCHSIA
 //------------------------------------------------------------------------------
 /// FlutterEngineSetupJITSnapshots should successfully change the contents of
 /// the snapshots in project args.
 ///
 TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
+#endif  // OS_FUCHSIA
+
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
     GTEST_SKIP();
@@ -1329,7 +1332,6 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
   ASSERT_NE(builder.GetProjectArgs().vm_snapshot_data,
             reinterpret_cast<const uint8_t*>("wrong_snapshot"));
 }
-#endif  // !OS_FUCHSIA
 
 #if defined(TEST_VM_SNAPSHOT_DATA) &&         \
     defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) && \
