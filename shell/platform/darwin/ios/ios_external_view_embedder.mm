@@ -92,8 +92,8 @@ bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return true;
 }
 
-void IOSExternalViewEmbedder::FilterPlatformViews(int64_t view_id, sk_sp<SkImageFilter> filter) { //, flutter::Mutator mutator
-  platform_views_controller_->FilterPlatformViews(view_id, filter);//, mutator
+void IOSExternalViewEmbedder::FilterPlatformViews(int64_t view_id, sk_sp<SkImageFilter> filter) {
+  platform_views_controller_->FilterPlatformViews(view_id, filter);
 }
 
 }  // namespace flutter
