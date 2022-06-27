@@ -1481,7 +1481,7 @@ TEST_F(EmbedderTest, CanLaunchEngineWithInvalidJITSnapshots) {
 
 //------------------------------------------------------------------------------
 /// The embedder must be able to launch even when the snapshots are not
-//  explicitly defined in JIT mode. It must be able to resolve those snapshots.
+/// explicitly defined in JIT mode. It must be able to resolve those snapshots.
 ///
 TEST_F(EmbedderTest, CanLaunchEngineWithUnspecifiedJITSnapshots) {
   // This test is only relevant in JIT mode.
