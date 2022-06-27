@@ -60,14 +60,31 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
   DartInvoke(callback->value(), {dart_data});
 }
 
+static void ConvertGpuImageToRaster(
+    sk_sp<DlImage> dl_image,
+    std::function<void(sk_sp<SkImage>)> encode_task,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner) {
+  fml::TaskRunner::RunNowOrPostTask(
+      raster_task_runner, [dl_image, encode_task = std::move(encode_task)]() {
+        auto image = dl_image->skia_image();
+        if (image == nullptr) {
+          encode_task(nullptr);
+          return;
+        }
+        encode_task(image->makeRasterImage());
+      });
+}
+
 void ConvertImageToRaster(
-    sk_sp<SkImage> image,
+    sk_sp<DlImage> dl_image,
     std::function<void(sk_sp<SkImage>)> encode_task,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<fml::TaskRunner> io_task_runner,
     fml::WeakPtr<GrDirectContext> resource_context,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
+  auto image = dl_image->skia_image();
+
   // Check validity of the image.
   if (image == nullptr) {
     FML_LOG(ERROR) << "Image was null.";
@@ -102,6 +119,14 @@ void ConvertImageToRaster(
   raster_task_runner->PostTask([image, encode_task = std::move(encode_task),
                                 resource_context, snapshot_delegate,
                                 io_task_runner, is_gpu_disabled_sync_switch]() {
+    if (!snapshot_delegate) {
+      io_task_runner->PostTask(
+          [encode_task = std::move(encode_task)]() mutable {
+            encode_task(nullptr);
+          });
+      return;
+    }
+
     sk_sp<SkImage> raster_image =
         snapshot_delegate->ConvertToRasterImage(image);
 
@@ -195,7 +220,7 @@ sk_sp<SkData> EncodeImage(sk_sp<SkImage> raster_image, ImageByteFormat format) {
 }
 
 void EncodeImageAndInvokeDataCallback(
-    sk_sp<SkImage> image,
+    sk_sp<DlImage> image,
     std::unique_ptr<DartPersistentValue> callback,
     ImageByteFormat format,
     fml::RefPtr<fml::TaskRunner> ui_task_runner,
@@ -218,9 +243,18 @@ void EncodeImageAndInvokeDataCallback(
     });
   };
 
-  ConvertImageToRaster(std::move(image), encode_task, raster_task_runner,
-                       io_task_runner, resource_context, snapshot_delegate,
-                       is_gpu_disabled_sync_switch);
+  FML_DCHECK(image);
+  switch (image->owning_context()) {
+    case DlImage::OwningContext::kRaster:
+      ConvertGpuImageToRaster(std::move(image), encode_task,
+                              raster_task_runner);
+      break;
+    case DlImage::OwningContext::kIO:
+      ConvertImageToRaster(std::move(image), encode_task, raster_task_runner,
+                           io_task_runner, resource_context, snapshot_delegate,
+                           is_gpu_disabled_sync_switch);
+      break;
+  }
 }
 
 }  // namespace

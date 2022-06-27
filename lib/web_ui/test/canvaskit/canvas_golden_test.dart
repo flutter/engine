@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -817,7 +816,7 @@ void testMain() {
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
-  }, skip: isIosSafari || isFirefox);
+  }, skip: isSafari || isFirefox);
 }
 
 Future<void> testSampleText(String language, String text,
@@ -1144,10 +1143,8 @@ void drawTestPicture(CkCanvas canvas) {
 }
 
 CkImage generateTestImage() {
-  final html.CanvasElement canvas = html.CanvasElement()
-    ..width = 20
-    ..height = 20;
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas = createDomCanvasElement(width: 20, height: 20);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#FF0000';
   ctx.fillRect(0, 0, 10, 10);
   ctx.fillStyle = '#00FF00';

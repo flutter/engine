@@ -173,7 +173,7 @@ class FontFeature {
   }
 
   @override
-  int get hashCode => hashValues(feature, value);
+  int get hashCode => Object.hash(feature, value);
 
   @override
   String toString() => "FontFeature('$feature', $value)";
@@ -200,7 +200,7 @@ class FontVariation {
   }
 
   @override
-  int get hashCode => hashValues(axis, value);
+  int get hashCode => Object.hash(axis, value);
 
   @override
   String toString() => "FontVariation('$axis', $value)";
@@ -301,7 +301,7 @@ class TextHeightBehavior {
 
   @override
   int get hashCode {
-    return hashValues(
+    return Object.hash(
       applyHeightToFirstAscent,
       applyHeightToLastDescent,
     );
@@ -339,8 +339,6 @@ abstract class TextStyle {
     Paint? foreground,
     List<Shadow>? shadows,
     List<FontFeature>? fontFeatures,
-    // TODO(jsimmons): implement fontVariations for web
-    // ignore: avoid_unused_constructor_parameters
     List<FontVariation>? fontVariations,
   }) {
     if (engine.useCanvasKit) {
@@ -387,6 +385,7 @@ abstract class TextStyle {
         foreground: foreground,
         shadows: shadows,
         fontFeatures: fontFeatures,
+        fontVariations: fontVariations,
       );
     }
   }
@@ -562,7 +561,7 @@ class TextBox {
   }
 
   @override
-  int get hashCode => hashValues(left, top, right, bottom, direction);
+  int get hashCode => Object.hash(left, top, right, bottom, direction);
 
   @override
   String toString() {
@@ -595,7 +594,7 @@ class TextPosition {
   }
 
   @override
-  int get hashCode => hashValues(offset, affinity);
+  int get hashCode => Object.hash(offset, affinity);
 
   @override
   String toString() {
@@ -643,7 +642,7 @@ class TextRange {
   }
 
   @override
-  int get hashCode => hashValues(
+  int get hashCode => Object.hash(
         start.hashCode,
         end.hashCode,
       );

@@ -11,6 +11,7 @@
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/time/time_point.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -33,6 +34,12 @@ class SurfaceFrame {
     // this means that the surface will provide valid existing damage.
     bool supports_partial_repaint = false;
 
+    // For some targets it may be beneficial or even required to snap clip
+    // rect to tile grid. I.e. repainting part of a tile may cause performance
+    // degradation if the tile needs to be decompressed first.
+    int vertical_clip_alignment = 1;
+    int horizontal_clip_alignment = 1;
+
     // This is the area of framebuffer that lags behind the front buffer.
     //
     // Correctly providing exiting_damage is necessary for supporting double and
@@ -50,9 +57,8 @@ class SurfaceFrame {
   SurfaceFrame(sk_sp<SkSurface> surface,
                FramebufferInfo framebuffer_info,
                const SubmitCallback& submit_callback,
-               std::unique_ptr<GLContextResult> context_result = nullptr);
-
-  ~SurfaceFrame();
+               std::unique_ptr<GLContextResult> context_result = nullptr,
+               bool display_list_fallback = false);
 
   struct SubmitInfo {
     // The frame damage for frame n is the difference between frame n and
@@ -67,6 +73,10 @@ class SurfaceFrame {
     //
     // Corresponds to EGL_KHR_partial_update
     std::optional<SkIRect> buffer_damage;
+
+    // Time at which this frame is scheduled to be presented. This is a hint
+    // that can be passed to the platform to drop queued frames.
+    std::optional<fml::TimePoint> presentation_time;
   };
 
   bool Submit();
@@ -83,6 +93,8 @@ class SurfaceFrame {
     submit_info_ = submit_info;
   }
   const SubmitInfo& submit_info() const { return submit_info_; }
+
+  sk_sp<DisplayListBuilder> GetDisplayListBuilder();
 
   sk_sp<DisplayList> BuildDisplayList();
 

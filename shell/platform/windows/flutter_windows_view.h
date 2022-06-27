@@ -120,8 +120,23 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                    FlutterPointerMouseButtons button) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+  void OnPointerLeave(double x,
+                      double y,
+                      FlutterPointerDeviceKind device_kind,
                       int32_t device_id = 0) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnPointerPanZoomStart(int32_t device_id) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnPointerPanZoomUpdate(int32_t device_id,
+                                      double pan_x,
+                                      double pan_y,
+                                      double scale,
+                                      double rotation) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnPointerPanZoomEnd(int32_t device_id) override;
 
   // |WindowBindingHandlerDelegate|
   void OnText(const std::u16string&) override;
@@ -155,9 +170,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                 int scroll_offset_multiplier,
                 FlutterPointerDeviceKind device_kind,
                 int32_t device_id) override;
-
-  // |WindowBindingHandlerDelegate|
-  void OnPlatformBrightnessChanged() override;
 
   // |WindowBindingHandlerDelegate|
   virtual void OnUpdateSemanticsEnabled(bool enabled) override;
@@ -208,6 +220,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
     // The currently pressed buttons, as represented in FlutterPointerEvent.
     uint64_t buttons = 0;
+
+    // The x position where the last pan/zoom started.
+    double pan_zoom_start_x = 0;
+
+    // The y position where the last pan/zoom started.
+    double pan_zoom_start_y = 0;
   };
 
   // States a resize event can be in.
@@ -246,7 +264,17 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Win32 api doesn't have "mouse enter" event. Therefore, there is no
   // SendPointerEnter method. A mouse enter event is tracked then the "move"
   // event is called.
-  void SendPointerLeave(PointerState* state);
+  void SendPointerLeave(double x, double y, PointerState* state);
+
+  void SendPointerPanZoomStart(int32_t device_id, double x, double y);
+
+  void SendPointerPanZoomUpdate(int32_t device_id,
+                                double pan_x,
+                                double pan_y,
+                                double scale,
+                                double rotation);
+
+  void SendPointerPanZoomEnd(int32_t device_id);
 
   // Reports a keyboard character to Flutter engine.
   void SendText(const std::u16string&);
@@ -308,9 +336,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // needed before passing on to engine.
   void SendPointerEventWithData(const FlutterPointerEvent& event_data,
                                 PointerState* state);
-
-  // Reports platform brightness change to Flutter engine.
-  void SendPlatformBrightnessChanged();
 
   // Currently configured WindowsRenderTarget for this view used by
   // surface_manager for creation of render surfaces and bound to the physical

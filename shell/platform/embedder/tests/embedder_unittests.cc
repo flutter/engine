@@ -151,6 +151,28 @@ TEST_F(EmbedderTest, CanTerminateCleanly) {
   ASSERT_TRUE(engine.is_valid());
 }
 
+TEST_F(EmbedderTest, ExecutableNameNotNull) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  // Supply a callback to Dart for the test fixture to pass Platform.executable
+  // back to us.
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "NotifyStringValue", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+        const auto dart_string = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        EXPECT_EQ("/path/to/binary", dart_string);
+        latch.Signal();
+      }));
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("executableNameNotNull");
+  builder.SetExecutableName("/path/to/binary");
+  auto engine = builder.LaunchEngine();
+  latch.Wait();
+}
+
 std::atomic_size_t EmbedderTestTaskRunner::sEmbedderTaskRunnerIdentifiers = {};
 
 TEST_F(EmbedderTest, CanSpecifyCustomPlatformTaskRunner) {
@@ -1179,7 +1201,7 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, nullptr), kInvalidArguments);
 
   // Invalid FlutterEngineAOTDataSourceType type specified.
-  data_in.type = FlutterEngineAOTDataSourceType(-1);
+  data_in.type = static_cast<FlutterEngineAOTDataSourceType>(-1);
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
   ASSERT_EQ(data_out, nullptr);
 
@@ -1362,8 +1384,9 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
     echoed_event.type =
         UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 0)));
-    echoed_event.timestamp = (double)tonic::DartConverter<uint64_t>::FromDart(
-        Dart_GetNativeArgument(args, 1));
+    echoed_event.timestamp =
+        static_cast<double>(tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 1)));
     echoed_event.physical = tonic::DartConverter<uint64_t>::FromDart(
         Dart_GetNativeArgument(args, 2));
     echoed_event.logical = tonic::DartConverter<uint64_t>::FromDart(
@@ -1450,8 +1473,9 @@ TEST_F(EmbedderTest, KeyDataAreBuffered) {
 
   auto native_echo_event = [&](Dart_NativeArguments args) {
     echoed_events.push_back(FlutterKeyEvent{
-        .timestamp = (double)tonic::DartConverter<uint64_t>::FromDart(
-            Dart_GetNativeArgument(args, 1)),
+        .timestamp =
+            static_cast<double>(tonic::DartConverter<uint64_t>::FromDart(
+                Dart_GetNativeArgument(args, 1))),
         .type =
             UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
                 Dart_GetNativeArgument(args, 0))),

@@ -12,6 +12,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isNotNull;
 import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -42,6 +43,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.android.KeyboardManager;
@@ -70,7 +72,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -84,6 +85,7 @@ import org.robolectric.shadows.ShadowInputMethodManager;
     shadows = {TextInputPluginTest.TestImm.class, TextInputPluginTest.TestAfm.class})
 @RunWith(AndroidJUnit4.class)
 public class TextInputPluginTest {
+  private final Context ctx = ApplicationProvider.getApplicationContext();
   @Mock FlutterJNI mockFlutterJni;
   @Mock FlutterLoader mockFlutterLoader;
 
@@ -120,11 +122,9 @@ public class TextInputPluginTest {
   public void textInputPlugin_RequestsReattachOnCreation() throws JSONException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
 
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
@@ -144,11 +144,9 @@ public class TextInputPluginTest {
   public void setTextInputEditingState_doesNotInvokeUpdateEditingState() {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -187,11 +185,9 @@ public class TextInputPluginTest {
   public void setTextInputEditingState_willNotThrowWithoutSetTextInputClient() {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -206,11 +202,9 @@ public class TextInputPluginTest {
   public void setTextInputEditingState_doesNotInvokeUpdateEditingStateWithDeltas() {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -255,11 +249,9 @@ public class TextInputPluginTest {
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -369,11 +361,9 @@ public class TextInputPluginTest {
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -499,11 +489,9 @@ public class TextInputPluginTest {
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -609,11 +597,9 @@ public class TextInputPluginTest {
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -720,11 +706,9 @@ public class TextInputPluginTest {
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -828,11 +812,9 @@ public class TextInputPluginTest {
   public void inputConnectionAdaptor_RepeatFilter() throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -922,11 +904,9 @@ public class TextInputPluginTest {
   public void setTextInputEditingState_doesNotRestartWhenTextIsIdentical() {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -961,11 +941,9 @@ public class TextInputPluginTest {
   public void setTextInputEditingState_alwaysSetEditableWhenDifferent() {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1009,11 +987,9 @@ public class TextInputPluginTest {
     // Initialize a TextInputPlugin that needs to be always restarted.
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1110,12 +1086,10 @@ public class TextInputPluginTest {
 
   @Test
   public void setTextInputEditingState_nullInputMethodSubtype() {
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(null);
 
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1141,7 +1115,7 @@ public class TextInputPluginTest {
 
   @Test
   public void destroy_clearTextInputMethodHandler() {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1152,11 +1126,9 @@ public class TextInputPluginTest {
 
   @Test
   public void inputConnection_createsActionFromEnter() throws JSONException {
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     TextInputPlugin textInputPlugin =
@@ -1216,15 +1188,13 @@ public class TextInputPluginTest {
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
     Settings.Secure.putString(
-        RuntimeEnvironment.application.getContentResolver(),
+        ctx.getContentResolver(),
         Settings.Secure.DEFAULT_INPUT_METHOD,
         "com.sec.android.inputmethod/.SamsungKeypad");
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     TextInputPlugin textInputPlugin =
@@ -1261,7 +1231,7 @@ public class TextInputPluginTest {
 
   @Test
   public void inputConnection_textInputTypeNone() {
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     DartExecutor dartExecutor = mock(DartExecutor.class);
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     TextInputPlugin textInputPlugin =
@@ -1289,10 +1259,8 @@ public class TextInputPluginTest {
 
   @Test
   public void showTextInput_textInputTypeNone() {
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
-    View testView = new View(RuntimeEnvironment.application);
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
+    View testView = new View(ctx);
     DartExecutor dartExecutor = mock(DartExecutor.class);
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     TextInputPlugin textInputPlugin =
@@ -1322,7 +1290,7 @@ public class TextInputPluginTest {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
-    FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView testView = new FlutterView(ctx);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1370,7 +1338,8 @@ public class TextInputPluginTest {
     verify(viewStructure).newChild(0);
 
     verify(children[0]).setAutofillId(any(), eq("1".hashCode()));
-    verify(children[0]).setAutofillHints(aryEq(new String[] {}));
+    // The flutter application sends an empty hint list, don't set hints.
+    verify(children[0], never()).setAutofillHints(aryEq(new String[] {}));
     verify(children[0]).setDimens(anyInt(), anyInt(), anyInt(), anyInt(), gt(0), gt(0));
   }
 
@@ -1379,7 +1348,7 @@ public class TextInputPluginTest {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
-    FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView testView = new FlutterView(ctx);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1415,7 +1384,7 @@ public class TextInputPluginTest {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
-    FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView testView = new FlutterView(ctx);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1540,7 +1509,7 @@ public class TextInputPluginTest {
   }
 
   @Test
-  public void autofill_onProvideVirtualViewStructure_single() {
+  public void autofill_onProvideVirtualViewStructure_singular_textfield() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
@@ -1595,8 +1564,7 @@ public class TextInputPluginTest {
       return;
     }
 
-    TestAfm testAfm =
-        Shadow.extract(RuntimeEnvironment.application.getSystemService(AutofillManager.class));
+    TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
     FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
@@ -1726,8 +1694,7 @@ public class TextInputPluginTest {
       return;
     }
 
-    TestAfm testAfm =
-        Shadow.extract(RuntimeEnvironment.application.getSystemService(AutofillManager.class));
+    TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
     FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
@@ -1815,13 +1782,59 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void autofill_doesNotCrashAfterClearClientCall() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return;
+    }
+    FlutterView testView = new FlutterView(ctx);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    // Set up an autofill scenario with 2 fields.
+    final TextInputChannel.Configuration.Autofill autofillConfig =
+        new TextInputChannel.Configuration.Autofill(
+            "1",
+            new String[] {"HINT1"},
+            "placeholder1",
+            new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+    final TextInputChannel.Configuration config =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            false,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofillConfig,
+            null);
+
+    textInputPlugin.setTextInputClient(0, config);
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+    textInputPlugin.clearTextInputClient();
+
+    final SparseArray<AutofillValue> autofillValues = new SparseArray();
+    autofillValues.append("1".hashCode(), AutofillValue.forText("focused field"));
+    autofillValues.append("2".hashCode(), AutofillValue.forText("unfocused field"));
+
+    // Autofill both fields.
+    textInputPlugin.autofill(autofillValues);
+
+    verify(textInputChannel, never()).updateEditingStateWithTag(anyInt(), any());
+    verify(textInputChannel, never())
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+  }
+
+  @Test
   public void autofill_testSetTextIpnutClientUpdatesSideFields() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
 
-    TestAfm testAfm =
-        Shadow.extract(RuntimeEnvironment.application.getSystemService(AutofillManager.class));
+    TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
     FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
@@ -1926,12 +1939,10 @@ public class TextInputPluginTest {
     TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
 
     EventHandler mockEventHandler = mock(EventHandler.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setEventHandler(mockEventHandler);
 
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
 
@@ -1957,12 +1968,10 @@ public class TextInputPluginTest {
     TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
 
     EventHandler mockEventHandler = mock(EventHandler.class);
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setEventHandler(mockEventHandler);
 
-    View testView = new View(RuntimeEnvironment.application);
+    View testView = new View(ctx);
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
 
@@ -1991,8 +2000,7 @@ public class TextInputPluginTest {
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
     testView.attachToFlutterEngine(flutterEngine);

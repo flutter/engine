@@ -1,0 +1,47 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("../tools/impeller.gni")
+
+impeller_component("aiks") {
+  sources = [
+    "aiks_context.cc",
+    "aiks_context.h",
+    "canvas.cc",
+    "canvas.h",
+    "image.cc",
+    "image.h",
+    "paint.cc",
+    "paint.h",
+    "paint_pass_delegate.cc",
+    "paint_pass_delegate.h",
+    "picture.cc",
+    "picture.h",
+    "picture_recorder.cc",
+    "picture_recorder.h",
+  ]
+
+  public_deps = [
+    "../base",
+    "../entity",
+    "../geometry",
+  ]
+
+  deps = [ "//flutter/fml" ]
+}
+
+impeller_component("aiks_unittests") {
+  testonly = true
+  sources = [
+    "aiks_playground.cc",
+    "aiks_playground.h",
+    "aiks_unittests.cc",
+  ]
+  deps = [
+    ":aiks",
+    "../geometry:geometry_unittests",
+    "../playground",
+    "//flutter/testing",
+  ]
+}

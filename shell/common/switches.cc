@@ -40,22 +40,20 @@ struct SwitchDesc {
 #if FLUTTER_RELEASE
 
 // clang-format off
-static const std::string gAllowedDartFlags[] = {
+static const std::string kAllowedDartFlags[] = {
     "--enable-isolate-groups",
     "--no-enable-isolate-groups",
-    "--lazy_async_stacks",
 };
 // clang-format on
 
 #else
 
 // clang-format off
-static const std::string gAllowedDartFlags[] = {
+static const std::string kAllowedDartFlags[] = {
     "--enable-isolate-groups",
     "--no-enable-isolate-groups",
     "--enable_mirrors",
     "--enable-service-port-fallback",
-    "--lazy_async_stacks",
     "--max_profile_depth",
     "--profile_period",
     "--random_seed",
@@ -167,8 +165,8 @@ static std::vector<std::string> ParseCommaDelimited(const std::string& input) {
 }
 
 static bool IsAllowedDartVMFlag(const std::string& flag) {
-  for (uint32_t i = 0; i < fml::size(gAllowedDartFlags); ++i) {
-    const std::string& allowed = gAllowedDartFlags[i];
+  for (uint32_t i = 0; i < fml::size(kAllowedDartFlags); ++i) {
+    const std::string& allowed = kAllowedDartFlags[i];
     // Check that the prefix of the flag matches one of the allowed flags. This
     // is to handle cases where flags take arguments, such as in
     // "--max_profile_depth 1".
@@ -232,6 +230,11 @@ std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
 
 Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   Settings settings = {};
+
+  // Set executable name.
+  if (command_line.has_argv0()) {
+    settings.executable_name = command_line.argv0();
+  }
 
   // Enable Observatory
   settings.enable_observatory =
@@ -372,11 +375,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       FlagForSwitch(Switch::IsolateSnapshotInstructions),
       &isolate_snapshot_instr_filename);
 
-  if (aot_shared_library_name.size() > 0) {
+  if (!aot_shared_library_name.empty()) {
     for (std::string_view name : aot_shared_library_name) {
       settings.application_library_path.emplace_back(name);
     }
-  } else if (snapshot_asset_path.size() > 0) {
+  } else if (!snapshot_asset_path.empty()) {
     settings.vm_snapshot_data_path =
         fml::paths::JoinPaths({snapshot_asset_path, vm_snapshot_data_filename});
     settings.vm_snapshot_instr_path = fml::paths::JoinPaths(
@@ -416,6 +419,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
+  settings.use_asset_fonts =
+      !command_line.HasOption(FlagForSwitch(Switch::DisableAssetFonts));
 
   std::string enable_skparagraph = command_line.GetOptionValueWithDefault(
       FlagForSwitch(Switch::EnableSkParagraph), "");
@@ -439,16 +444,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       settings.dart_flags.push_back(flag);
     }
   }
-  if (std::find(settings.dart_flags.begin(), settings.dart_flags.end(),
-                "--enable-display-list") != settings.dart_flags.end()) {
-    FML_LOG(ERROR) << "Manually enabling display lists";
-    settings.enable_display_list = true;
-  } else if (std::find(settings.dart_flags.begin(), settings.dart_flags.end(),
-                       "--no-enable-display-list") !=
-             settings.dart_flags.end()) {
-    FML_LOG(ERROR) << "Manually disabling display lists";
-    settings.enable_display_list = false;
-  }
 
 #if !FLUTTER_RELEASE
   command_line.GetOptionValue(FlagForSwitch(Switch::LogTag), &settings.log_tag);
@@ -468,6 +463,16 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     command_line.GetOptionValue(FlagForSwitch(Switch::OldGenHeapSize),
                                 &old_gen_heap_size);
     settings.old_gen_heap_size = std::stoi(old_gen_heap_size);
+  }
+
+  if (command_line.HasOption(
+          FlagForSwitch(Switch::ResourceCacheMaxBytesThreshold))) {
+    std::string resource_cache_max_bytes_threshold;
+    command_line.GetOptionValue(
+        FlagForSwitch(Switch::ResourceCacheMaxBytesThreshold),
+        &resource_cache_max_bytes_threshold);
+    settings.resource_cache_max_bytes_threshold =
+        std::stoi(resource_cache_max_bytes_threshold);
   }
 
   if (command_line.HasOption(FlagForSwitch(Switch::MsaaSamples))) {

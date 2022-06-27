@@ -125,16 +125,20 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @end
 
 @interface FlutterViewController (Tests)
+
+@property(nonatomic, assign) double targetViewInsetBottom;
+
 - (void)surfaceUpdated:(BOOL)appeared;
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
-- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
+- (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)goToApplicationLifecycle:(nonnull NSString*)state;
 - (void)keyboardWillChangeFrame:(NSNotification*)notification;
+- (void)keyboardWillBeHidden:(NSNotification*)notification;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateDisplayLink;
@@ -196,6 +200,30 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [viewControllerMock keyboardWillChangeFrame:notification];
   OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testEnsureBottomInsetIsZeroWhenKeyboardDismissed {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  CGRect keyboardFrame = CGRectMake(0, 0, 0, 0);
+  BOOL isLocal = YES;
+  NSNotification* fakeNotification = [NSNotification
+      notificationWithName:@""
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  viewControllerMock.targetViewInsetBottom = 10;
+  [viewControllerMock keyboardWillBeHidden:fakeNotification];
+  XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 0);
 }
 
 - (void)testEnsureViewportMetricsWillInvokeAndDisplayLinkWillInvalidateInViewDidDisappear {
@@ -904,25 +932,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   engine.viewController = nil;
 }
 
-- (void)testHideA11yElements {
-  FlutterDartProject* project = [[FlutterDartProject alloc] init];
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
-                                                                        nibName:nil
-                                                                         bundle:nil];
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationWillResignActiveNotification
-                    object:nil];
-  XCTAssertTrue(realVC.view.accessibilityElementsHidden);
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationDidBecomeActiveNotification
-                    object:nil];
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
-  engine.viewController = nil;
-}
-
 - (void)testNotifyLowMemory {
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -1101,7 +1110,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   id mockPanGestureRecognizer = OCMClassMock([UIPanGestureRecognizer class]);
   XCTAssertNotNil(mockPanGestureRecognizer);
 
-  [vc scrollEvent:mockPanGestureRecognizer];
+  [vc discreteScrollEvent:mockPanGestureRecognizer];
 
   [[[self.mockEngine verify] ignoringNonObjectArgs]
       dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];

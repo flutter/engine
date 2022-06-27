@@ -11,6 +11,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #import "flutter/testing/testing.h"
 
@@ -19,8 +20,9 @@
 - (bool)testKeyEventsArePropagatedIfNotHandled;
 - (bool)testKeyEventsAreNotPropagatedIfHandled;
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
-- (bool)testPerformKeyEquivalentSynthesizesKeyUp;
 - (bool)testKeyboardIsRestartedOnEngineRestart;
+- (bool)testTrackpadGesturesAreSentToFramework;
+- (bool)testViewWillAppearCalledMultipleTimes;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -49,47 +51,8 @@ NSResponder* mockResponder() {
 }
 }  // namespace
 
-TEST(FlutterViewController, HasStringsWhenPasteboardEmpty) {
-  // Mock FlutterViewController so that it behaves like the pasteboard is empty.
-  id viewControllerMock = CreateMockViewController(nil);
-
-  // Call hasStrings and expect it to be false.
-  __block bool calledAfterClear = false;
-  __block bool valueAfterClear;
-  FlutterResult resultAfterClear = ^(id result) {
-    calledAfterClear = true;
-    NSNumber* valueNumber = [result valueForKey:@"value"];
-    valueAfterClear = [valueNumber boolValue];
-  };
-  FlutterMethodCall* methodCallAfterClear =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
-  [viewControllerMock handleMethodCall:methodCallAfterClear result:resultAfterClear];
-  EXPECT_TRUE(calledAfterClear);
-  EXPECT_FALSE(valueAfterClear);
-}
-
-TEST(FlutterViewController, HasStringsWhenPasteboardFull) {
-  // Mock FlutterViewController so that it behaves like the pasteboard has a
-  // valid string.
-  id viewControllerMock = CreateMockViewController(@"some string");
-
-  // Call hasStrings and expect it to be true.
-  __block bool called = false;
-  __block bool value;
-  FlutterResult result = ^(id result) {
-    called = true;
-    NSNumber* valueNumber = [result valueForKey:@"value"];
-    value = [valueNumber boolValue];
-  };
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
-  [viewControllerMock handleMethodCall:methodCall result:result];
-  EXPECT_TRUE(called);
-  EXPECT_TRUE(value);
-}
-
 TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
-  FlutterViewController* viewControllerMock = CreateMockViewController(nil);
+  FlutterViewController* viewControllerMock = CreateMockViewController();
 
   [viewControllerMock loadView];
   auto subViews = [viewControllerMock.view subviews];
@@ -109,7 +72,13 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
 }
 
-TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabled) {
+TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
+  FlutterViewController* viewControllerMock = CreateMockViewController();
+  [viewControllerMock loadView];
+  EXPECT_EQ([viewControllerMock.flutterView acceptsFirstMouse:nil], YES);
+}
+
+TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -124,21 +93,17 @@ TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabl
                                                    backing:NSBackingStoreBuffered
                                                      defer:NO];
   window.contentView = viewController.view;
+  NSView* dummyView = [[NSView alloc] initWithFrame:CGRectZero];
+  [viewController.view addSubview:dummyView];
   // Attaches FlutterTextInputPlugin to the view;
-  [viewController.view addSubview:viewController.textInputPlugin];
+  [dummyView addSubview:viewController.textInputPlugin];
   // Makes sure the textInputPlugin can be the first responder.
   EXPECT_TRUE([window makeFirstResponder:viewController.textInputPlugin]);
   EXPECT_EQ([window firstResponder], viewController.textInputPlugin);
-  // Sends a notification to turn off the accessibility.
-  NSDictionary* userInfo = @{
-    @"AXEnhancedUserInterface" : @(NO),
-  };
-  NSNotification* accessibilityOff = [NSNotification notificationWithName:@""
-                                                                   object:nil
-                                                                 userInfo:userInfo];
-  [viewController onAccessibilityStatusChanged:accessibilityOff];
-  // FlutterView becomes the first responder.
-  EXPECT_EQ([window firstResponder], viewController.flutterView);
+  EXPECT_FALSE(viewController.textInputPlugin.superview == viewController.view);
+  [viewController onAccessibilityStatusChanged:NO];
+  // FlutterView becomes child of view controller
+  EXPECT_TRUE(viewController.textInputPlugin.superview == viewController.view);
 }
 
 TEST(FlutterViewController, CanSetMouseTrackingModeBeforeViewLoaded) {
@@ -168,12 +133,16 @@ TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled)
       [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
 }
 
-TEST(FlutterViewControllerTest, TestPerformKeyEquivalentSynthesizesKeyUp) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testPerformKeyEquivalentSynthesizesKeyUp]);
-}
-
 TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyboardIsRestartedOnEngineRestart]);
+}
+
+TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testTrackpadGesturesAreSentToFramework]);
+}
+
+TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewWillAppearCalledMultipleTimes]);
 }
 
 }  // namespace flutter::testing
@@ -381,86 +350,6 @@ TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
   return true;
 }
 
-- (bool)testPerformKeyEquivalentSynthesizesKeyUp {
-  id engineMock = OCMClassMock([FlutterEngine class]);
-  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(binaryMessengerMock);
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
-                                                  callback:nil
-                                                  userData:nil])
-      .andCall([FlutterViewControllerTestObjC class],
-               @selector(respondFalseForSendEvent:callback:userData:));
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
-                                                                                nibName:@""
-                                                                                 bundle:nil];
-  id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
-  NSDictionary* expectedKeyDownEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keydown",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyDownEvent =
-      [[FlutterJSONMessageCodec sharedInstance] encode:expectedKeyDownEvent];
-  NSDictionary* expectedKeyUpEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keyup",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyUpEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedKeyUpEvent];
-  CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 65, TRUE);
-  NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyDownEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(true),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyUpEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(true),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  [viewController viewWillAppear];  // Initializes the event channel.
-  [viewController performKeyEquivalent:event];
-  @try {
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyDownEvent
-                               binaryReply:[OCMArg any]]);
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyUpEvent
-                               binaryReply:[OCMArg any]]);
-  } @catch (...) {
-    return false;
-  }
-  return true;
-}
-
 - (bool)testKeyboardIsRestartedOnEngineRestart {
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
@@ -521,6 +410,133 @@ TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
   if (callback != nullptr) {
     callback(false, userData);
   }
+}
+
+- (bool)testTrackpadGesturesAreSentToFramework {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  // Need to return a real renderer to allow view controller to load.
+  id renderer_ = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engineMock];
+  OCMStub([engineMock renderer]).andReturn(renderer_);
+  __block bool called = false;
+  __block FlutterPointerEvent last_event;
+  OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:FlutterPointerEvent{}])
+      .andDo((^(NSInvocation* invocation) {
+        FlutterPointerEvent* event;
+        [invocation getArgument:&event atIndex:2];
+        called = true;
+        last_event = *event;
+      }));
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewController loadView];
+
+  // Start gesture.
+  CGEventRef cgEventStart = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
+  CGEventSetType(cgEventStart, kCGEventScrollWheel);
+  CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventScrollPhase, kCGScrollPhaseBegan);
+  CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventIsContinuous, 1);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventStart]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomStart);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // Update gesture.
+  CGEventRef cgEventUpdate = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventScrollPhase, kCGScrollPhaseChanged);
+  CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis2, 1);  // pan_x
+  CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis1, 2);  // pan_y
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 8 * viewController.flutterView.layer.contentsScale);
+  EXPECT_EQ(last_event.pan_y, 16 * viewController.flutterView.layer.contentsScale);
+
+  // Make sure the pan values accumulate.
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 16 * viewController.flutterView.layer.contentsScale);
+  EXPECT_EQ(last_event.pan_y, 32 * viewController.flutterView.layer.contentsScale);
+
+  // End gesture.
+  CGEventRef cgEventEnd = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventEnd, kCGScrollWheelEventScrollPhase, kCGScrollPhaseEnded);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventEnd]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomEnd);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // May-begin and cancel are used while macOS determines which type of gesture to choose.
+  CGEventRef cgEventMayBegin = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventMayBegin, kCGScrollWheelEventScrollPhase,
+                              kCGScrollPhaseMayBegin);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventMayBegin]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomStart);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // Cancel gesture.
+  CGEventRef cgEventCancel = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventCancel, kCGScrollWheelEventScrollPhase,
+                              kCGScrollPhaseCancelled);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventCancel]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomEnd);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // A discrete scroll event should use the PointerSignal system.
+  CGEventRef cgEventDiscrete = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
+  CGEventSetType(cgEventDiscrete, kCGEventScrollWheel);
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventIsContinuous, 0);
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis2, 1);  // scroll_delta_x
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis1, 2);  // scroll_delta_y
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventDiscrete]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindScroll);
+  // pixelsPerLine is 40.0 and direction is reversed.
+  EXPECT_EQ(last_event.scroll_delta_x, -40 * viewController.flutterView.layer.contentsScale);
+  EXPECT_EQ(last_event.scroll_delta_y, -80 * viewController.flutterView.layer.contentsScale);
+
+  return true;
+}
+
+- (bool)testViewWillAppearCalledMultipleTimes {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewController viewWillAppear];
+  [viewController viewWillAppear];
+  return true;
 }
 
 @end

@@ -84,8 +84,6 @@ source_set("fml") {
     "thread.h",
     "thread_local.cc",
     "thread_local.h",
-    "time/dart_timestamp_provider.cc",
-    "time/dart_timestamp_provider.h",
     "time/time_delta.h",
     "time/time_point.cc",
     "time/time_point.h",
@@ -98,7 +96,7 @@ source_set("fml") {
     "wakeable.h",
   ]
 
-  if (is_mac || is_ios || is_linux) {
+  if (is_mac || is_linux || (is_ios && is_debug)) {
     sources += [ "backtrace.cc" ]
   } else {
     sources += [ "backtrace_stub.cc" ]
@@ -111,12 +109,16 @@ source_set("fml") {
   ]
 
   deps = [
-    "//third_party/abseil-cpp/absl/debugging:symbolize",
     "//third_party/dart/runtime:dart_api",
 
     # These need to be in sync with the Fuchsia buildroot.
     "//third_party/icu",
   ]
+
+  if (is_mac || is_linux || (is_ios && is_debug)) {
+    # This abseil dependency is only used by backtrace.cc.
+    deps += [ "//third_party/abseil-cpp/absl/debugging:symbolize" ]
+  }
 
   configs += [ "//third_party/icu:icu_config" ]
 
@@ -291,7 +293,6 @@ if (enable_unittests) {
     deps = [
       "//flutter/benchmarking",
       "//flutter/fml",
-      "//flutter/runtime:libdart",
     ]
   }
 
@@ -349,10 +350,12 @@ if (enable_unittests) {
       ":fml_fixtures",
       "//flutter/fml",
       "//flutter/fml/dart",
+      "//flutter/runtime",
       "//flutter/runtime:libdart",
       "//flutter/testing",
     ]
 
+    # This is needed for //third_party/googletest for linking zircon symbols.
     if (is_fuchsia) {
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]

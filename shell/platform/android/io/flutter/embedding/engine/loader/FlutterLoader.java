@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,6 +40,8 @@ public class FlutterLoader {
       "io.flutter.embedding.android.OldGenHeapSize";
   private static final String ENABLE_SKPARAGRAPH_META_DATA_KEY =
       "io.flutter.embedding.android.EnableSkParagraph";
+  private static final String ENABLE_IMPELLER_META_DATA_KEY =
+      "io.flutter.embedding.android.EnableImpeller";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -302,14 +305,24 @@ public class FlutterLoader {
         activityManager.getMemoryInfo(memInfo);
         oldGenHeapSizeMegaBytes = (int) (memInfo.totalMem / 1e6 / 2);
       }
-
       shellArgs.add("--old-gen-heap-size=" + oldGenHeapSizeMegaBytes);
+
+      DisplayMetrics displayMetrics = applicationContext.getResources().getDisplayMetrics();
+      int screenWidth = displayMetrics.widthPixels;
+      int screenHeight = displayMetrics.heightPixels;
+      // This is the formula Android uses.
+      // https://android.googlesource.com/platform/frameworks/base/+/39ae5bac216757bc201490f4c7b8c0f63006c6cd/libs/hwui/renderthread/CacheManager.cpp#45
+      int resourceCacheMaxBytesThreshold = screenWidth * screenHeight * 12 * 4;
+      shellArgs.add("--resource-cache-max-bytes-threshold=" + resourceCacheMaxBytesThreshold);
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      if (metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true)) {
+      boolean enableSkParagraph =
+          metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true);
+      shellArgs.add("--enable-skparagraph=" + enableSkParagraph);
 
-        shellArgs.add("--enable-skparagraph");
+      if (metaData != null && metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
+        shellArgs.add("--enable-impeller");
       }
 
       final String leakVM = isLeakVM(metaData) ? "true" : "false";

@@ -30,6 +30,7 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.ViewUtils;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Delegate that implements all Flutter logic that is the same between a {@link FlutterActivity} and
@@ -450,7 +451,7 @@ import java.util.Arrays;
                 appBundlePathOverride, host.getDartEntrypointFunctionName())
             : new DartExecutor.DartEntrypoint(
                 appBundlePathOverride, libraryUri, host.getDartEntrypointFunctionName());
-    flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
+    flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint, host.getDartEntrypointArgs());
   }
 
   private String maybeGetInitialRouteFromIntent(Intent intent) {
@@ -843,22 +844,8 @@ import java.util.Arrays;
         flutterEngine.getDartExecutor().notifyLowMemoryWarning();
         flutterEngine.getSystemChannel().sendMemoryPressureWarning();
       }
+      flutterEngine.getRenderer().onTrimMemory(level);
     }
-  }
-
-  /**
-   * Invoke this from {@link android.app.Activity#onLowMemory()}.
-   *
-   * <p>A {@code Fragment} host must have its containing {@code Activity} forward this call so that
-   * the {@code Fragment} can then invoke this method.
-   *
-   * <p>This method sends a "memory pressure warning" message to Flutter over the "system channel".
-   */
-  void onLowMemory() {
-    Log.v(TAG, "Forwarding onLowMemory() to FlutterEngine.");
-    ensureAlive();
-    flutterEngine.getDartExecutor().notifyLowMemoryWarning();
-    flutterEngine.getSystemChannel().sendMemoryPressureWarning();
   }
 
   /**
@@ -952,6 +939,10 @@ import java.util.Arrays;
      */
     @Nullable
     String getDartEntrypointLibraryUri();
+
+    /** Returns arguments that passed as a list of string to Dart's entrypoint function. */
+    @Nullable
+    List<String> getDartEntrypointArgs();
 
     /** Returns the path to the app bundle where the Dart code exists. */
     @NonNull

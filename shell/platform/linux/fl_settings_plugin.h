@@ -5,7 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_SETTINGS_PLUGIN_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_SETTINGS_PLUGIN_H_
 
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
+#include "flutter/shell/platform/linux/fl_settings.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 
 G_BEGIN_DECLS
 
@@ -24,13 +25,13 @@ G_DECLARE_FINAL_TYPE(FlSettingsPlugin,
 
 /**
  * fl_settings_plugin_new:
- * @messenger: an #FlBinaryMessenger
+ * @messenger: an #FlEngine
  *
  * Creates a new plugin that sends user settings to the Flutter engine.
  *
  * Returns: a new #FlSettingsPlugin
  */
-FlSettingsPlugin* fl_settings_plugin_new(FlBinaryMessenger* messenger);
+FlSettingsPlugin* fl_settings_plugin_new(FlEngine* engine);
 
 /**
  * fl_settings_plugin_start:
@@ -38,7 +39,7 @@ FlSettingsPlugin* fl_settings_plugin_new(FlBinaryMessenger* messenger);
  *
  * Sends the current settings to the engine and updates when they change.
  */
-void fl_settings_plugin_start(FlSettingsPlugin* plugin);
+void fl_settings_plugin_start(FlSettingsPlugin* plugin, FlSettings* settings);
 
 G_END_DECLS
 

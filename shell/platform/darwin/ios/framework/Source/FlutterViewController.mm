@@ -41,7 +41,7 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
-// Struct holding the mouse state.
+// Struct holding data to help adapt system mouse/trackpad events to embedder events.
 typedef struct MouseState {
   // Current coordinate of the mouse cursor in physical device pixels.
   CGPoint location = CGPointZero;
@@ -63,6 +63,25 @@ typedef struct MouseState {
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) CADisplayLink* displayLink;
+
+/*
+ * Mouse and trackpad gesture recognizers
+ */
+// Mouse and trackpad hover
+@property(nonatomic, retain)
+    UIHoverGestureRecognizer* hoverGestureRecognizer API_AVAILABLE(ios(13.4));
+// Mouse wheel scrolling
+@property(nonatomic, retain)
+    UIPanGestureRecognizer* discreteScrollingPanGestureRecognizer API_AVAILABLE(ios(13.4));
+// Trackpad and Magic Mouse scrolling
+@property(nonatomic, retain)
+    UIPanGestureRecognizer* continuousScrollingPanGestureRecognizer API_AVAILABLE(ios(13.4));
+// Trackpad pinching
+@property(nonatomic, retain)
+    UIPinchGestureRecognizer* pinchGestureRecognizer API_AVAILABLE(ios(13.4));
+// Trackpad rotating
+@property(nonatomic, retain)
+    UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -107,8 +126,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // UIScrollView with height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
-  fml::scoped_nsobject<UIHoverGestureRecognizer> _hoverGestureRecognizer API_AVAILABLE(ios(13.4));
-  fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
   MouseState _mouseState;
 }
@@ -196,6 +213,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -207,7 +225,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   _viewOpaque = YES;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   _engine = std::move(engine);
   _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
   [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
@@ -682,17 +699,37 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   }
 
   if (@available(iOS 13.4, *)) {
-    _hoverGestureRecognizer.reset(
-        [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)]);
-    _hoverGestureRecognizer.get().delegate = self;
-    [_flutterView.get() addGestureRecognizer:_hoverGestureRecognizer.get()];
+    _hoverGestureRecognizer =
+        [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
+    _hoverGestureRecognizer.delegate = self;
+    [_flutterView.get() addGestureRecognizer:_hoverGestureRecognizer];
 
-    _panGestureRecognizer.reset(
-        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(scrollEvent:)]);
-    _panGestureRecognizer.get().delegate = self;
-    _panGestureRecognizer.get().allowedScrollTypesMask = UIScrollTypeMaskAll;
-    _panGestureRecognizer.get().allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
-    [_flutterView.get() addGestureRecognizer:_panGestureRecognizer.get()];
+    _discreteScrollingPanGestureRecognizer =
+        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(discreteScrollEvent:)];
+    _discreteScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskDiscrete;
+    // Disallowing all touch types. If touch events are allowed here, touches to the screen will be
+    // consumed by the UIGestureRecognizer instead of being passed through to flutter via
+    // touchesBegan. Trackpad and mouse scrolls are sent by the platform as scroll events rather
+    // than touch events, so they will still be received.
+    _discreteScrollingPanGestureRecognizer.allowedTouchTypes = @[];
+    _discreteScrollingPanGestureRecognizer.delegate = self;
+    [_flutterView.get() addGestureRecognizer:_discreteScrollingPanGestureRecognizer];
+    _continuousScrollingPanGestureRecognizer =
+        [[UIPanGestureRecognizer alloc] initWithTarget:self
+                                                action:@selector(continuousScrollEvent:)];
+    _continuousScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskContinuous;
+    _continuousScrollingPanGestureRecognizer.allowedTouchTypes = @[];
+    _continuousScrollingPanGestureRecognizer.delegate = self;
+    [_flutterView.get() addGestureRecognizer:_continuousScrollingPanGestureRecognizer];
+    _pinchGestureRecognizer =
+        [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchEvent:)];
+    _pinchGestureRecognizer.allowedTouchTypes = @[];
+    _pinchGestureRecognizer.delegate = self;
+    [_flutterView.get() addGestureRecognizer:_pinchGestureRecognizer];
+    _rotationGestureRecognizer = [[UIRotationGestureRecognizer alloc] init];
+    _rotationGestureRecognizer.allowedTouchTypes = @[];
+    _rotationGestureRecognizer.delegate = self;
+    [_flutterView.get() addGestureRecognizer:_rotationGestureRecognizer];
   }
 
   [super viewDidLoad];
@@ -823,8 +860,16 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
   [_displayLink release];
   _scrollView.get().delegate = nil;
-  _hoverGestureRecognizer.get().delegate = nil;
-  _panGestureRecognizer.get().delegate = nil;
+  _hoverGestureRecognizer.delegate = nil;
+  [_hoverGestureRecognizer release];
+  _discreteScrollingPanGestureRecognizer.delegate = nil;
+  [_discreteScrollingPanGestureRecognizer release];
+  _continuousScrollingPanGestureRecognizer.delegate = nil;
+  [_continuousScrollingPanGestureRecognizer release];
+  _pinchGestureRecognizer.delegate = nil;
+  [_pinchGestureRecognizer release];
+  _rotationGestureRecognizer.delegate = nil;
+  [_rotationGestureRecognizer release];
   [super dealloc];
 }
 
@@ -833,12 +878,14 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
   self.view.accessibilityElementsHidden = NO;
+  if (_viewportMetrics.physical_width) {
+    [self surfaceUpdated:YES];
+  }
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
-  self.view.accessibilityElementsHidden = YES;
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
@@ -924,8 +971,36 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
+  // If the UIApplicationSupportsIndirectInputEvents in Info.plist returns YES, then the platform
+  // dispatches indirect pointer touches (trackpad clicks) as UITouch with a type of
+  // UITouchTypeIndirectPointer and different identifiers for each click. They are translated into
+  // Flutter pointer events with type of kMouse and different device IDs. These devices must be
+  // terminated with kRemove events when the touches end, otherwise they will keep triggering hover
+  // events.
+  //
+  // If the UIApplicationSupportsIndirectInputEvents in Info.plist returns NO, then the platform
+  // dispatches indirect pointer touches (trackpad clicks) as UITouch with a type of
+  // UITouchTypeIndirectPointer and different identifiers for each click. They are translated into
+  // Flutter pointer events with type of kTouch and different device IDs. Removing these devices is
+  // neither necessary nor harmful.
+  //
+  // Therefore Flutter always removes these devices. The touches_to_remove_count tracks how many
+  // remove events are needed in this group of touches to properly allocate space for the packet.
+  // The remove event of a touch is synthesized immediately after its normal event.
+  //
+  // See also:
+  // https://developer.apple.com/documentation/uikit/pointer_interactions?language=objc
+  // https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc
+  NSUInteger touches_to_remove_count = 0;
+  for (UITouch* touch in touches) {
+    if (touch.phase == UITouchPhaseEnded || touch.phase == UITouchPhaseCancelled) {
+      touches_to_remove_count++;
+    }
+  }
+
   const CGFloat scale = [UIScreen mainScreen].scale;
-  auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
+  auto packet =
+      std::make_unique<flutter::PointerDataPacket>(touches.count + touches_to_remove_count);
 
   size_t pointer_index = 0;
 
@@ -1047,6 +1122,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
 
     packet->SetPointerData(pointer_index++, pointer_data);
+
+    if (touch.phase == UITouchPhaseEnded || touch.phase == UITouchPhaseCancelled) {
+      flutter::PointerData remove_pointer_data = pointer_data;
+      remove_pointer_data.change = flutter::PointerData::Change::kRemove;
+      packet->SetPointerData(pointer_index++, remove_pointer_data);
+    }
   }
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
@@ -1196,8 +1277,30 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  // When keyboard hide, the keyboardWillChangeFrame function will be called to update viewport
-  // metrics. So do not call [self updateViewportMetrics] here again.
+  NSDictionary* info = [notification userInfo];
+
+  if (@available(iOS 9, *)) {
+    // Ignore keyboard notifications related to other apps.
+    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+    if (isLocal && ![isLocal boolValue]) {
+      return;
+    }
+  }
+
+  // Ignore keyboard notifications if engine’s viewController is not current viewController.
+  if ([_engine.get() viewController] != self) {
+    return;
+  }
+
+  if (self.targetViewInsetBottom != 0) {
+    // Ensure the keyboard will be dismissed. Just like the keyboardWillChangeFrame,
+    // keyboardWillBeHidden is also in an animation block in iOS sdk, so we don't need to set the
+    // animation curve. Related issue: https://github.com/flutter/flutter/issues/99951
+    self.targetViewInsetBottom = 0;
+    NSTimeInterval duration =
+        [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+    [self startKeyBoardAnimation:duration];
+  }
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration {
@@ -1712,6 +1815,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return _engine;
 }
 
++ (BOOL)isUIAccessibilityIsVoiceOverRunning {
+  return UIAccessibilityIsVoiceOverRunning();
+}
+
 #pragma mark - FlutterPluginRegistry
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
@@ -1744,13 +1851,31 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
-- (flutter::PointerData)generatePointerDataForMouse API_AVAILABLE(ios(13.4)) {
+- (flutter::PointerData)generatePointerDataAtLastMouseLocation API_AVAILABLE(ios(13.4)) {
   flutter::PointerData pointer_data;
-
   pointer_data.Clear();
+  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
+  pointer_data.physical_x = _mouseState.location.x;
+  pointer_data.physical_y = _mouseState.location.y;
+  return pointer_data;
+}
 
+- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
+    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer
+    API_AVAILABLE(ios(13.4)) {
+  return YES;
+}
+
+- (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+  CGPoint location = [recognizer locationInView:self.view];
+  CGFloat scale = [UIScreen mainScreen].scale;
+  _mouseState.location = {location.x * scale, location.y * scale};
+
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
-  switch (_hoverGestureRecognizer.get().state) {
+
+  switch (_hoverGestureRecognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kAdd;
       break;
@@ -1767,45 +1892,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       pointer_data.change = flutter::PointerData::Change::kHover;
       break;
   }
-  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
-  pointer_data.device = reinterpret_cast<int64_t>(_hoverGestureRecognizer.get());
 
-  pointer_data.physical_x = _mouseState.location.x;
-  pointer_data.physical_y = _mouseState.location.y;
-
-  return pointer_data;
-}
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
-    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer
-    API_AVAILABLE(ios(13.4)) {
-  return YES;
-}
-
-- (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  CGPoint location = [recognizer locationInView:self.view];
-  CGFloat scale = [UIScreen mainScreen].scale;
-  _mouseState.location = {location.x * scale, location.y * scale};
-
-  flutter::PointerData pointer_data = [self generatePointerDataForMouse];
-
-  pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
   packet->SetPointerData(/*index=*/0, pointer_data);
-
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
-- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+- (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   CGPoint translation = [recognizer translationInView:self.view];
   const CGFloat scale = [UIScreen mainScreen].scale;
 
   translation.x *= scale;
   translation.y *= scale;
 
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-
-  flutter::PointerData pointer_data = [self generatePointerDataForMouse];
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
   pointer_data.scroll_delta_x = (translation.x - _mouseState.last_translation.x);
   pointer_data.scroll_delta_y = -(translation.y - _mouseState.last_translation.y);
@@ -1820,8 +1922,72 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     _mouseState.last_translation = CGPointZero;
   }
 
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
   packet->SetPointerData(/*index=*/0, pointer_data);
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
 
+- (void)continuousScrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+  CGPoint translation = [recognizer translationInView:self.view];
+  const CGFloat scale = [UIScreen mainScreen].scale;
+
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  switch (recognizer.state) {
+    case UIGestureRecognizerStateBegan:
+      pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
+      break;
+    case UIGestureRecognizerStateChanged:
+      pointer_data.change = flutter::PointerData::Change::kPanZoomUpdate;
+      pointer_data.pan_x = translation.x * scale;
+      pointer_data.pan_y = translation.y * scale;
+      pointer_data.pan_delta_x = 0;  // Delta will be generated in pointer_data_packet_converter.cc.
+      pointer_data.pan_delta_y = 0;  // Delta will be generated in pointer_data_packet_converter.cc.
+      pointer_data.scale = 1;
+      break;
+    case UIGestureRecognizerStateEnded:
+    case UIGestureRecognizerStateCancelled:
+      pointer_data.change = flutter::PointerData::Change::kPanZoomEnd;
+      break;
+    default:
+      // continuousScrollEvent: should only ever be triggered with the above phases
+      NSAssert(false, @"Trackpad pan event occured with unexpected phase 0x%lx",
+               (long)recognizer.state);
+      break;
+  }
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
+
+- (void)pinchEvent:(UIPinchGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  switch (recognizer.state) {
+    case UIGestureRecognizerStateBegan:
+      pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
+      break;
+    case UIGestureRecognizerStateChanged:
+      pointer_data.change = flutter::PointerData::Change::kPanZoomUpdate;
+      pointer_data.scale = recognizer.scale;
+      pointer_data.rotation = _rotationGestureRecognizer.rotation;
+      break;
+    case UIGestureRecognizerStateEnded:
+    case UIGestureRecognizerStateCancelled:
+      pointer_data.change = flutter::PointerData::Change::kPanZoomEnd;
+      break;
+    default:
+      // pinchEvent: should only ever be triggered with the above phases
+      NSAssert(false, @"Trackpad pinch event occured with unexpected phase 0x%lx",
+               (long)recognizer.state);
+      break;
+  }
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 

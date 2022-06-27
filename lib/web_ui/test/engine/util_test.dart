@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -107,13 +106,13 @@ void testMain() {
   });
 
   test('can set style properties on elements', () {
-    final html.Element element = html.document.createElement('div');
+    final DomElement element = domDocument.createElement('div');
     setElementStyle(element, 'color', 'red');
     expect(element.style.color, 'red');
   });
 
   test('can remove style properties from elements', () {
-    final html.Element element = html.document.createElement('div');
+    final DomElement element = domDocument.createElement('div');
     setElementStyle(element, 'color', 'blue');
     expect(element.style.color, 'blue');
     setElementStyle(element, 'color', null);
@@ -132,7 +131,7 @@ void testMain() {
 
   test('futurize converts error string to exception', () async {
     try {
-      futurize((Callback<String> callback) {
+      await futurize((Callback<String> callback) {
         return 'this is an error';
       });
       fail('Expected it to throw');
@@ -159,7 +158,7 @@ void testMain() {
 
   test('futurize converts sync null into a sync operation failure', () async {
     try {
-      futurize((Callback<String?> callback) {
+      await futurize((Callback<String?> callback) {
         callback(null);
         return null;
       });

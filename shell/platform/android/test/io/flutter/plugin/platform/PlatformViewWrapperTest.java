@@ -13,23 +13,26 @@ import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.accessibility.AccessibilityEvent;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
 @TargetApi(31)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
+  private final Context ctx = ApplicationProvider.getApplicationContext();
+
   @Test
   public void invalidateChildInParent_callsInvalidate() {
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper = spy(new PlatformViewWrapper(ctx));
 
     // Mock Android framework calls.
@@ -42,7 +45,6 @@ public class PlatformViewWrapperTest {
   @Test
   public void setTexture_writesToBuffer() {
     final Surface surface = mock(Surface.class);
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
           @Override
@@ -71,7 +73,6 @@ public class PlatformViewWrapperTest {
   @Test
   public void draw_writesToBuffer() {
     final Surface surface = mock(Surface.class);
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
           @Override
@@ -125,7 +126,6 @@ public class PlatformViewWrapperTest {
         ShadowView.class,
       })
   public void draw_withoutSurface() {
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
           @Override
@@ -144,7 +144,6 @@ public class PlatformViewWrapperTest {
   @Test
   public void release() {
     final Surface surface = mock(Surface.class);
-    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
           @Override
@@ -178,7 +177,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -207,7 +206,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -233,7 +232,7 @@ public class PlatformViewWrapperTest {
   @Test
   public void focusChangeListener_viewTreeObserverIsAliveFalseDoesNotThrow() {
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             final ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
@@ -250,7 +249,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -277,7 +276,7 @@ public class PlatformViewWrapperTest {
     when(viewTreeObserver.isAlive()).thenReturn(true);
 
     final PlatformViewWrapper view =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           public ViewTreeObserver getViewTreeObserver() {
             return viewTreeObserver;
@@ -299,6 +298,56 @@ public class PlatformViewWrapperTest {
     verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
   }
 
+  @Test
+  @Config(
+      shadows = {
+        ShadowViewGroup.class,
+      })
+  public void ignoreAccessibilityEvents() {
+    final PlatformViewWrapper wrapperView = new PlatformViewWrapper(ctx);
+
+    final View embeddedView = mock(View.class);
+    wrapperView.addView(embeddedView);
+
+    when(embeddedView.getImportantForAccessibility())
+        .thenReturn(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+    final boolean eventSent =
+        wrapperView.requestSendAccessibilityEvent(embeddedView, mock(AccessibilityEvent.class));
+    assertFalse(eventSent);
+  }
+
+  @Test
+  @Config(
+      shadows = {
+        ShadowViewGroup.class,
+      })
+  public void sendAccessibilityEvents() {
+    final PlatformViewWrapper wrapperView = new PlatformViewWrapper(ctx);
+
+    final View embeddedView = mock(View.class);
+    wrapperView.addView(embeddedView);
+
+    when(embeddedView.getImportantForAccessibility())
+        .thenReturn(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+    boolean eventSent =
+        wrapperView.requestSendAccessibilityEvent(embeddedView, mock(AccessibilityEvent.class));
+    assertTrue(eventSent);
+
+    when(embeddedView.getImportantForAccessibility())
+        .thenReturn(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+    eventSent =
+        wrapperView.requestSendAccessibilityEvent(embeddedView, mock(AccessibilityEvent.class));
+    assertTrue(eventSent);
+  }
+
   @Implements(View.class)
   public static class ShadowView {}
+
+  @Implements(ViewGroup.class)
+  public static class ShadowViewGroup extends org.robolectric.shadows.ShadowView {
+    @Implementation
+    public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+      return true;
+    }
+  }
 }

@@ -25,6 +25,7 @@
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
 
@@ -99,14 +100,28 @@ class Rasterizer final : public SnapshotDelegate,
   };
 
   //----------------------------------------------------------------------------
+  /// @brief     How to handle calls to MakeGpuImage.
+  enum class MakeGpuImageBehavior {
+    /// MakeGpuImage returns a GPU resident image, if possible.
+    kGpu,
+    /// MakeGpuImage returns a checkerboard bitmap. This is useful in test
+    /// contexts where no GPU surface is available.
+    kBitmap,
+  };
+
+  //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
   ///             be created on the raster task runner. Rasterizers are
   ///             currently only created by the shell (which also sets itself up
   ///             as the rasterizer delegate).
   ///
   /// @param[in]  delegate                   The rasterizer delegate.
+  /// @param[in]  gpu_image_behavior         How to handle calls to
+  ///                                        MakeGpuImage.
   ///
-  explicit Rasterizer(Delegate& delegate);
+  explicit Rasterizer(
+      Delegate& delegate,
+      MakeGpuImageBehavior gpu_image_behavior = MakeGpuImageBehavior::kGpu);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
@@ -241,10 +256,8 @@ class Rasterizer final : public SnapshotDelegate,
   /// @param[in]  discard_callback if specified and returns true, the layer tree
   ///                             is discarded instead of being rendered
   ///
-  RasterStatus Draw(
-      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-      std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-      LayerTreeDiscardCallback discard_callback = NoDiscard);
+  RasterStatus Draw(std::shared_ptr<LayerTreePipeline> pipeline,
+                    LayerTreeDiscardCallback discard_callback = NoDiscard);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
@@ -457,6 +470,11 @@ class Rasterizer final : public SnapshotDelegate,
 
  private:
   // |SnapshotDelegate|
+  std::pair<sk_sp<SkImage>, std::string> MakeGpuImage(
+      sk_sp<DisplayList> display_list,
+      SkISize picture_size) override;
+
+  // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(
       std::function<void(SkCanvas*)> draw_callback,
       SkISize picture_size) override;
@@ -500,6 +518,7 @@ class Rasterizer final : public SnapshotDelegate,
   static bool ShouldResubmitFrame(const RasterStatus& raster_status);
 
   Delegate& delegate_;
+  MakeGpuImageBehavior gpu_image_behavior_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
@@ -509,6 +528,7 @@ class Rasterizer final : public SnapshotDelegate,
   // has not successfully rasterized. This can happen due to the change in the
   // thread configuration. This will be inserted to the front of the pipeline.
   std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
+  std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;

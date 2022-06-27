@@ -57,16 +57,6 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
       });
 }
 
-// This Parity is used by the timeline component to correctly align
-// GPU Workloads events with their respective Framework Workload.
-const char* Animator::FrameParity() {
-  if (!frame_timings_recorder_) {
-    return "even";
-  }
-  uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
-  return (frame_number % 2) ? "even" : "odd";
-}
-
 static fml::TimePoint FxlToDartOrEarlier(fml::TimePoint time) {
   auto dart_now = fml::TimeDelta::FromMicroseconds(Dart_TimelineGetMicros());
   fml::TimePoint fxl_now = fml::TimePoint::Now();
@@ -121,12 +111,8 @@ void Animator::BeginFrame(
   const fml::TimePoint frame_target_time =
       frame_timings_recorder_->GetVsyncTargetTime();
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
-  {
-    TRACE_EVENT2("flutter", "Framework Workload", "mode", "basic", "frame",
-                 FrameParity());
-    uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
-    delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
-  }
+  uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
+  delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
 
   if (!frame_scheduled_ && has_rendered_) {
     // Under certain workloads (such as our parent view resizing us, which is
@@ -177,26 +163,25 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
+  auto layer_tree_item = std::make_unique<LayerTreeItem>(
+      std::move(layer_tree), std::move(frame_timings_recorder_));
   // Commit the pending continuation.
   PipelineProduceResult result =
-      producer_continuation_.Complete(std::move(layer_tree));
+      producer_continuation_.Complete(std::move(layer_tree_item));
 
   if (!result.success) {
-    frame_timings_recorder_.reset();
     FML_DLOG(INFO) << "No pending continuation to commit";
     return;
   }
 
   if (!result.is_first_item) {
-    frame_timings_recorder_.reset();
     // It has been successfully pushed to the pipeline but not as the first
     // item. Eventually the 'Rasterizer' will consume it, so we don't need to
     // notify the delegate.
     return;
   }
 
-  delegate_.OnAnimatorDraw(layer_tree_pipeline_,
-                           std::move(frame_timings_recorder_));
+  delegate_.OnAnimatorDraw(layer_tree_pipeline_);
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {

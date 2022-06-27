@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/lib/ui/painting/image_decoder.h"
-
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_decoder_impeller.h"
+#include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
@@ -34,7 +35,8 @@ class TestIOManager final : public IOManager {
                 : nullptr),
         unref_queue_(fml::MakeRefCounted<SkiaUnrefQueue>(
             task_runner,
-            fml::TimeDelta::FromNanoseconds(0))),
+            fml::TimeDelta::FromNanoseconds(0),
+            gl_context_)),
         runner_(task_runner),
         is_gpu_disabled_sync_switch_(std::make_shared<fml::SyncSwitch>()),
         weak_factory_(this) {
@@ -137,8 +139,11 @@ TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
 
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     TestIOManager manager(runners.GetIOTaskRunner());
-    ImageDecoder decoder(std::move(runners), loop->GetTaskRunner(),
-                         manager.GetWeakIOManager());
+    Settings settings;
+    auto decoder =
+        ImageDecoder::Make(settings, std::move(runners), loop->GetTaskRunner(),
+                           manager.GetWeakIOManager());
+    ASSERT_NE(decoder, nullptr);
   });
 }
 
@@ -186,8 +191,9 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
   fml::AutoResetWaitableEvent latch;
   thread_task_runner->PostTask([&]() {
     TestIOManager manager(runners.GetIOTaskRunner());
-    ImageDecoder decoder(runners, loop->GetTaskRunner(),
-                         manager.GetWeakIOManager());
+    Settings settings;
+    auto decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                      manager.GetWeakIOManager());
 
     auto data = OpenFixtureAsSkData("ThisDoesNotExist.jpg");
     ASSERT_FALSE(data);
@@ -196,12 +202,12 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
         fml::MakeRefCounted<ImageDescriptor>(
             std::move(data), std::make_unique<UnknownImageGenerator>());
 
-    ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
+    ImageDecoder::ImageResult callback = [&](sk_sp<DlImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_FALSE(image.skia_object());
+      ASSERT_FALSE(image);
       latch.Signal();
     };
-    decoder.Decode(image_descriptor, 0, 0, callback);
+    decoder->Decode(image_descriptor, 0, 0, callback);
   });
   latch.Wait();
 }
@@ -224,9 +230,10 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     latch.Signal();
   };
   auto decode_image = [&]() {
+    Settings settings;
     std::unique_ptr<ImageDecoder> image_decoder =
-        std::make_unique<ImageDecoder>(runners, loop->GetTaskRunner(),
-                                       io_manager->GetWeakIOManager());
+        ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                           io_manager->GetWeakIOManager());
 
     auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
@@ -241,9 +248,9 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
+    ImageDecoder::ImageResult callback = [&](sk_sp<DlImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_TRUE(image.skia_object());
+      ASSERT_TRUE(image && image->skia_image());
       EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
@@ -281,9 +288,10 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
 
   SkISize decoded_size = SkISize::MakeEmpty();
   auto decode_image = [&]() {
+    Settings settings;
     std::unique_ptr<ImageDecoder> image_decoder =
-        std::make_unique<ImageDecoder>(runners, loop->GetTaskRunner(),
-                                       io_manager->GetWeakIOManager());
+        ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                           io_manager->GetWeakIOManager());
 
     auto data = OpenFixtureAsSkData("Horizontal.jpg");
 
@@ -298,10 +306,10 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
+    ImageDecoder::ImageResult callback = [&](sk_sp<DlImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_TRUE(image.skia_object());
-      decoded_size = image.skia_object()->dimensions();
+      ASSERT_TRUE(image && image->skia_image());
+      decoded_size = image->skia_image()->dimensions();
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
     image_decoder->Decode(descriptor, descriptor->width(), descriptor->height(),
@@ -340,9 +348,10 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
   };
 
   auto decode_image = [&]() {
+    Settings settings;
     std::unique_ptr<ImageDecoder> image_decoder =
-        std::make_unique<ImageDecoder>(runners, loop->GetTaskRunner(),
-                                       io_manager->GetWeakIOManager());
+        ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                           io_manager->GetWeakIOManager());
 
     auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
@@ -357,9 +366,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
         std::move(data), std::move(generator));
 
-    ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
+    ImageDecoder::ImageResult callback = [&](sk_sp<DlImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_TRUE(image.skia_object());
+      ASSERT_TRUE(image && image->skia_image());
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
     image_decoder->Decode(descriptor, descriptor->width(), descriptor->height(),
@@ -405,8 +414,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
 
   // Setup the image decoder.
   PostTaskSync(runners.GetUITaskRunner(), [&]() {
-    image_decoder = std::make_unique<ImageDecoder>(
-        runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
+    Settings settings;
+    image_decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                       io_manager->GetWeakIOManager());
   });
 
   // Setup a generic decoding utility that gives us the final decoded size.
@@ -427,10 +437,10 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
           std::move(data), std::move(generator));
 
-      ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
+      ImageDecoder::ImageResult callback = [&](sk_sp<DlImage> image) {
         ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-        ASSERT_TRUE(image.skia_object());
-        final_size = image.skia_object()->dimensions();
+        ASSERT_TRUE(image && image->skia_image());
+        final_size = image->skia_image()->dimensions();
         latch.Signal();
       };
       image_decoder->Decode(descriptor, target_width, target_height, callback);
@@ -497,8 +507,9 @@ TEST_F(ImageDecoderFixtureTest, DISABLED_CanResizeWithoutDecode) {
 
   // Setup the image decoder.
   PostTaskSync(runners.GetUITaskRunner(), [&]() {
-    image_decoder = std::make_unique<ImageDecoder>(
-        runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
+    Settings settings;
+    image_decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                       io_manager->GetWeakIOManager());
   });
 
   // Setup a generic decoding utility that gives us the final decoded size.
@@ -512,10 +523,10 @@ TEST_F(ImageDecoderFixtureTest, DISABLED_CanResizeWithoutDecode) {
       auto descriptor = fml::MakeRefCounted<ImageDescriptor>(decompressed_data,
                                                              info, row_bytes);
 
-      ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
+      ImageDecoder::ImageResult callback = [&](sk_sp<DlImage> image) {
         ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-        ASSERT_TRUE(image.skia_object());
-        final_size = image.skia_object()->dimensions();
+        ASSERT_TRUE(image && image->skia_image());
+        final_size = image->skia_image()->dimensions();
         latch.Signal();
       };
       image_decoder->Decode(descriptor, target_width, target_height, callback);
@@ -572,8 +583,13 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
                                                          std::move(generator));
 
-  ASSERT_EQ(ImageFromCompressedData(descriptor.get(), 6, 2,
-                                    fml::tracing::TraceFlow(""))
+  ASSERT_EQ(ImageDecoderSkia::ImageFromCompressedData(
+                descriptor.get(), 6, 2, fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(6, 2));
+
+  ASSERT_EQ(ImageDecoderImpeller::DecompressTexture(descriptor.get(),
+                                                    SkISize::Make(6, 2))
                 ->dimensions(),
             SkISize::Make(6, 2));
 }
@@ -593,8 +609,9 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
   auto decode = [descriptor](uint32_t target_width, uint32_t target_height) {
-    return ImageFromCompressedData(descriptor.get(), target_width,
-                                   target_height, fml::tracing::TraceFlow(""));
+    return ImageDecoderSkia::ImageFromCompressedData(
+        descriptor.get(), target_width, target_height,
+        fml::tracing::TraceFlow(""));
   };
 
   auto expected_data = OpenFixtureAsSkData("Horizontal.png");

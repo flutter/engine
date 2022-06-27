@@ -7,6 +7,7 @@
 #include "flutter/display_list/display_list_complexity.h"
 #include "flutter/display_list/display_list_complexity_gl.h"
 #include "flutter/display_list/display_list_complexity_metal.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -110,12 +111,12 @@ TEST(DisplayListComplexity, StrokeWidth) {
 
 TEST(DisplayListComplexity, Style) {
   DisplayListBuilder builder_filled;
-  builder_filled.setStyle(SkPaint::Style::kFill_Style);
+  builder_filled.setStyle(DlDrawStyle::kFill);
   builder_filled.drawRect(SkRect::MakeXYWH(10, 10, 80, 80));
   auto display_list_filled = builder_filled.Build();
 
   DisplayListBuilder builder_stroked;
-  builder_stroked.setStyle(SkPaint::Style::kStroke_Style);
+  builder_stroked.setStyle(DlDrawStyle::kStroke);
   builder_stroked.drawRect(SkRect::MakeXYWH(10, 10, 80, 80));
   auto display_list_stroked = builder_stroked.Build();
 
@@ -283,9 +284,8 @@ TEST(DisplayListComplexity, DrawArc) {
 
 TEST(DisplayListComplexity, DrawVertices) {
   auto points = GetTestPoints();
-  auto vertices =
-      SkVertices::MakeCopy(SkVertices::VertexMode::kTriangles_VertexMode,
-                           points.size(), points.data(), nullptr, nullptr);
+  auto vertices = DlVertices::Make(DlVertexMode::kTriangles, points.size(),
+                                   points.data(), nullptr, nullptr);
   DisplayListBuilder builder;
   builder.drawVertices(vertices, DlBlendMode::kSrc);
   auto display_list = builder.Build();
@@ -351,7 +351,8 @@ TEST(DisplayListComplexity, DrawImage) {
   auto image = SkImage::MakeFromBitmap(bitmap);
 
   DisplayListBuilder builder;
-  builder.drawImage(image, SkPoint::Make(0, 0), SkSamplingOptions(), false);
+  builder.drawImage(DlImage::Make(image), SkPoint::Make(0, 0),
+                    DlImageSampling::kNearestNeighbor, false);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -372,7 +373,8 @@ TEST(DisplayListComplexity, DrawImageNine) {
   SkRect dest = SkRect::MakeXYWH(0, 0, 50, 50);
 
   DisplayListBuilder builder;
-  builder.drawImageNine(image, center, dest, SkFilterMode::kNearest, true);
+  builder.drawImageNine(DlImage::Make(image), center, dest,
+                        DlFilterMode::kNearest, true);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -393,7 +395,8 @@ TEST(DisplayListComplexity, DrawImageRect) {
   SkRect dest = SkRect::MakeXYWH(0, 0, 50, 50);
 
   DisplayListBuilder builder;
-  builder.drawImageRect(image, src, dest, SkSamplingOptions(), true);
+  builder.drawImageRect(DlImage::Make(image), src, dest,
+                        DlImageSampling::kNearestNeighbor, true);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -418,8 +421,9 @@ TEST(DisplayListComplexity, DrawAtlas) {
   }
 
   DisplayListBuilder builder;
-  builder.drawAtlas(image, xforms.data(), rects.data(), nullptr, 10,
-                    DlBlendMode::kSrc, SkSamplingOptions(), nullptr, true);
+  builder.drawAtlas(DlImage::Make(image), xforms.data(), rects.data(), nullptr,
+                    10, DlBlendMode::kSrc, DlImageSampling::kNearestNeighbor,
+                    nullptr, true);
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();

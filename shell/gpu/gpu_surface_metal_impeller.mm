@@ -10,39 +10,28 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/impeller/display_list/display_list_dispatcher.h"
-#include "flutter/impeller/entity/entity_shaders.h"
-#include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 #include "flutter/impeller/renderer/backend/metal/surface_mtl.h"
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
 namespace flutter {
 
-static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer() {
-  std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
-      std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
-                                             impeller_entity_shaders_length),
-  };
-  auto context = impeller::ContextMTL::Create(shader_mappings, "Impeller Library");
-  if (!context) {
-    FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
-    return nullptr;
-  }
-
+static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
+    std::shared_ptr<impeller::Context> context) {
   auto renderer = std::make_shared<impeller::Renderer>(std::move(context));
   if (!renderer->IsValid()) {
     FML_LOG(ERROR) << "Could not create valid Impeller Renderer.";
     return nullptr;
   }
-
   return renderer;
 }
 
-GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate)
+GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
+                                                 std::shared_ptr<impeller::Context> context)
     : delegate_(delegate),
-      impeller_renderer_(CreateImpellerRenderer()),
-      aiks_context_(std::make_shared<impeller::AiksContext>(
-          impeller_renderer_ ? impeller_renderer_->GetContext() : nullptr)) {}
+      impeller_renderer_(CreateImpellerRenderer(context)),
+      aiks_context_(
+          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr)) {}
 
 GPUSurfaceMetalImpeller::~GPUSurfaceMetalImpeller() = default;
 
@@ -88,15 +77,20 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
         display_list->Dispatch(impeller_dispatcher);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
-        return renderer->Render(std::move(surface),
-                                fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                                      impeller::RenderPass& pass) -> bool {
-                                  return aiks_context->Render(picture, pass);
-                                }));
+        return renderer->Render(
+            std::move(surface),
+            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
+                                  impeller::RenderTarget& render_target) -> bool {
+              return aiks_context->Render(picture, render_target);
+            }));
       });
 
-  return std::make_unique<SurfaceFrame>(nullptr, SurfaceFrame::FramebufferInfo{}, submit_callback,
-                                        nullptr);
+  return std::make_unique<SurfaceFrame>(nullptr,                          // surface
+                                        SurfaceFrame::FramebufferInfo{},  // framebuffer info
+                                        submit_callback,                  // submit callback
+                                        nullptr,                          // context result
+                                        true                              // display list fallback
+  );
 }
 
 // |Surface|

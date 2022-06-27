@@ -78,6 +78,8 @@ const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 // - lib/ui/platform_dispatcher.dart, _kFlutterKeyDataChannel
 // - shell/platform/darwin/ios/framework/Source/FlutterEngine.mm,
 //   FlutterKeyDataChannel
+// - io/flutter/embedding/android/KeyData.java,
+//   CHANNEL
 //
 // Not to be confused with "flutter/keyevent", which is used to send raw
 // key event data in a platform-dependent format.
@@ -621,7 +623,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       config.size.width,   // width
       config.size.height,  // height
       1,                   // sample count
-      8,                   // stencil bits
+      0,                   // stencil bits
       framebuffer_info     // framebuffer info
   );
 
@@ -1499,7 +1501,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   if (SAFE_ACCESS(args, custom_dart_entrypoint, nullptr) != nullptr) {
     auto dart_entrypoint = std::string{args->custom_dart_entrypoint};
-    if (dart_entrypoint.size() != 0) {
+    if (!dart_entrypoint.empty()) {
       run_configuration.SetEntrypoint(std::move(dart_entrypoint));
     }
   }
@@ -2257,7 +2259,7 @@ static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
                                             engine,
                                         rapidjson::Document document,
                                         const std::string& channel_name) {
-  if (channel_name.size() == 0) {
+  if (channel_name.empty()) {
     return false;
   }
 

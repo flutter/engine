@@ -74,6 +74,43 @@ TEST(FlEngineTest, MousePointer) {
   EXPECT_TRUE(called);
 }
 
+// Checks sending pan/zoom events works.
+TEST(FlEngineTest, PointerPanZoom) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+
+  bool called = false;
+  embedder_api->SendPointerEvent = MOCK_ENGINE_PROC(
+      SendPointerEvent,
+      ([&called](auto engine, const FlutterPointerEvent* events,
+                 size_t events_count) {
+        called = true;
+        EXPECT_EQ(events_count, static_cast<size_t>(1));
+        EXPECT_EQ(events[0].phase, kPanZoomUpdate);
+        EXPECT_EQ(events[0].timestamp, static_cast<size_t>(1234567890));
+        EXPECT_EQ(events[0].x, 800);
+        EXPECT_EQ(events[0].y, 600);
+        EXPECT_EQ(events[0].device, static_cast<int32_t>(1));
+        EXPECT_EQ(events[0].signal_kind, kFlutterPointerSignalKindNone);
+        EXPECT_EQ(events[0].pan_x, 1.5);
+        EXPECT_EQ(events[0].pan_y, 2.5);
+        EXPECT_EQ(events[0].scale, 3.5);
+        EXPECT_EQ(events[0].rotation, 4.5);
+        EXPECT_EQ(events[0].device_kind, kFlutterPointerDeviceKindTrackpad);
+        EXPECT_EQ(events[0].buttons, 0);
+
+        return kSuccess;
+      }));
+
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_engine_start(engine, &error));
+  EXPECT_EQ(error, nullptr);
+  fl_engine_send_pointer_pan_zoom_event(engine, 1234567890, 800, 600,
+                                        kPanZoomUpdate, 1.5, 2.5, 3.5, 4.5);
+
+  EXPECT_TRUE(called);
+}
+
 // Checks dispatching a semantics action works.
 TEST(FlEngineTest, DispatchSemanticsAction) {
   g_autoptr(FlEngine) engine = make_mock_engine();
@@ -240,7 +277,7 @@ void on_pre_engine_restart_destroy_notify(gpointer user_data) {
 
 // Checks restarting the engine invokes the correct callback.
 TEST(FlEngineTest, OnPreEngineRestart) {
-  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlEngine* engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
   OnPreEngineRestartCallback callback;
@@ -271,7 +308,10 @@ TEST(FlEngineTest, OnPreEngineRestart) {
 
   int count = 0;
 
-  // Set a handler, and the call should has an effect.
+  // Set handler so that:
+  //
+  //  * When the engine restarts, count += 1;
+  //  * When the engine is freed, count += 10.
   fl_engine_set_on_pre_engine_restart_handler(
       engine, on_pre_engine_restart_cb, &count,
       on_pre_engine_restart_destroy_notify);

@@ -11,7 +11,6 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
 
 #if FML_OS_MACOSX
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
@@ -56,7 +55,6 @@ MessageLoopImpl::~MessageLoopImpl() {
 
 void MessageLoopImpl::PostTask(const fml::closure& task,
                                fml::TimePoint target_time) {
-  FML_DCHECK(task != nullptr);
   FML_DCHECK(task != nullptr);
   if (terminated_) {
     // If the message loop has already been terminated, PostTask should destruct
@@ -118,8 +116,6 @@ void MessageLoopImpl::DoTerminate() {
 }
 
 void MessageLoopImpl::FlushTasks(FlushType type) {
-  TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
-
   const auto now = fml::TimePoint::Now();
   fml::closure invocation;
   do {

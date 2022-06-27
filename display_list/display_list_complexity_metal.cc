@@ -64,9 +64,16 @@ DisplayListMetalComplexityCalculator::MetalHelper::BatchedComplexity() {
 
 void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
     const SkRect* bounds,
-    const SaveLayerOptions options) {
+    const SaveLayerOptions options,
+    const DlImageFilter* backdrop) {
   if (IsComplex()) {
     return;
+  }
+  if (backdrop) {
+    // Flutter does not offer this operation so this value can only ever be
+    // non-null for a frame-wide builder which is not currently evaluated for
+    // complexity.
+    AccumulateComplexity(Ceiling());
   }
   save_layer_count_++;
 }
@@ -428,9 +435,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPoints(
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
+void DisplayListMetalComplexityCalculator::MetalHelper::drawSkVertices(
     const sk_sp<SkVertices> vertices,
-    DlBlendMode mode) {
+    SkBlendMode mode) {
   // There is currently no way for us to get the VertexMode from the SkVertices
   // object, but for future reference:
   //
@@ -456,10 +463,29 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
   AccumulateComplexity(complexity);
 }
 
+void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
+    const DlVertices* vertices,
+    DlBlendMode mode) {
+  // There is currently no way for us to get the VertexMode from the SkVertices
+  // object, but for future reference:
+  //
+  // TriangleStrip is roughly 25% more expensive than TriangleFan.
+  // TriangleFan is roughly 5% more expensive than Triangles.
+
+  // For the baseline, it's hard to identify the trend. It might be O(n^1/2).
+  // For now, treat it as linear as an approximation.
+  //
+  // m = 1/4000
+  // c = 1
+  unsigned int complexity = (vertices->vertex_count() + 4000) * 50;
+
+  AccumulateComplexity(complexity);
+}
+
 void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
-    const sk_sp<SkImage> image,
+    const sk_sp<DlImage> image,
     const SkPoint point,
-    const SkSamplingOptions& sampling,
+    DlImageSampling sampling,
     bool render_with_attributes) {
   if (IsComplex()) {
     return;
@@ -538,10 +564,10 @@ void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
-    const sk_sp<SkImage> image,
+    const sk_sp<DlImage> image,
     const SkIRect& center,
     const SkRect& dst,
-    SkFilterMode filter,
+    DlFilterMode filter,
     bool render_with_attributes) {
   if (IsComplex()) {
     return;
@@ -585,7 +611,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawTextBlob(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawShadow(
     const SkPath& path,
-    const SkColor color,
+    const DlColor color,
     const SkScalar elevation,
     bool transparent_occluder,
     SkScalar dpr) {

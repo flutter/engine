@@ -33,6 +33,9 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   }
 
   if (status_ == Status::kComplete) {
+    if (!cached_image_->image()) {
+      return tonic::ToDart("Decoded image has been disposed");
+    }
     tonic::DartInvoke(callback_handle,
                       {tonic::ToDart(cached_image_), tonic::ToDart(0)});
     return Dart_Null();
@@ -81,7 +84,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
         tonic::DartState::Scope scope(state.get());
 
-        if (image.skia_object()) {
+        if (image) {
           auto canvas_image = fml::MakeRefCounted<CanvasImage>();
           canvas_image->set_image(std::move(image));
 

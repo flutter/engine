@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -114,7 +113,7 @@ Future<void> testMain() async {
   });
 
   test('respects alignment in DOM mode', () {
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     Offset offset = Offset.zero;
     CanvasParagraph paragraph;
@@ -192,7 +191,7 @@ Future<void> testMain() async {
   });
 
   test('alignment and transform (DOM)', () {
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testAlignAndTransform(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_transform_dom');
   });
@@ -221,7 +220,7 @@ Future<void> testMain() async {
 
   test('giant paragraph style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testGiantParagraphStyles(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_paragraph_style_dom');
   });
@@ -230,10 +229,10 @@ Future<void> testMain() async {
     const Rect bounds = Rect.fromLTWH(0, 0, 600, 200);
 
     // Store the old font size value on the body, and set a gaint font size.
-    final String oldBodyFontSize = html.document.body!.style.fontSize;
-    html.document.body!.style.fontSize = '100px';
+    final String oldBodyFontSize = domDocument.body!.style.fontSize;
+    domDocument.body!.style.fontSize = '100px';
 
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     Offset offset = const Offset(10.0, 10.0);
 
     final CanvasParagraph paragraph = rich(
@@ -280,7 +279,7 @@ Future<void> testMain() async {
     await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
 
     // Restore the old font size value.
-    html.document.body!.style.fontSize = oldBodyFontSize;
+    domDocument.body!.style.fontSize = oldBodyFontSize;
   });
 
   test('paints spans with varying heights/baselines', () {
@@ -462,9 +461,52 @@ Future<void> testMain() async {
 
   test('font features (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testFontFeatures(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_features_dom');
+  });
+
+  void testFontVariations(EngineCanvas canvas) {
+    const String text = 'ABCDE 12345\n';
+    FontVariation weight(double w) => FontVariation('wght', w);
+
+    final CanvasParagraph paragraph = rich(
+      EngineParagraphStyle(fontFamily: 'RobotoVariable'),
+      (CanvasParagraphBuilder builder) {
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 48.0,
+        ));
+        builder.addText(text);
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 48.0,
+          fontVariations: <FontVariation>[weight(900)],
+        ));
+        builder.addText(text);
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 48.0,
+          fontVariations: <FontVariation>[weight(200)],
+        ));
+        builder.addText(text);
+        builder.pop();
+        builder.pop();
+        builder.pop();
+      },
+    )..layout(constrain(double.infinity));
+    canvas.drawParagraph(paragraph, Offset.zero);
+  }
+
+  test('font variations', () {
+    const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
+    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    testFontVariations(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_variations');
+  });
+
+  test('font variations (DOM)', () {
+    const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    testFontVariations(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_variations_dom');
   });
 
   void testBackgroundStyle(EngineCanvas canvas) {
@@ -498,7 +540,7 @@ Future<void> testMain() async {
 
   test('background style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testBackgroundStyle(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_background_style_dom');
   });
@@ -536,8 +578,65 @@ Future<void> testMain() async {
 
   test('foreground style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testForegroundStyle(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_foreground_style_dom');
+  });
+
+  test('paragraph bounds hug the text inside the paragraph', () async {
+    const Rect bounds = Rect.fromLTWH(0, 0, 150, 100);
+
+    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(EngineParagraphStyle(
+      fontFamily: 'Ahem',
+      fontSize: 20,
+      textAlign: TextAlign.center,
+    ));
+
+    // Expected layout with center-alignment is something like this:
+    //
+    // _________________
+    // |       A       |
+    // |    |AAAAA|    |
+    // |    | AAA |    |
+    // |----|-----|----|
+    // |    |<--->|    |
+    // |      100      |
+    // |               |
+    // |<------------->|
+    //        110
+    //
+    // The width of the paragraph is bigger than the actual content because the
+    // longest line "AAAAA" is 100px, which is smaller than 110px specified in
+    // the constraint. After the layout and centering the paint bounds would
+    // "hug" the text inside the paragraph more tightly than the box allocated
+    // for the paragraph.
+    builder.addText('A AAAAA AAA');
+
+    final CanvasParagraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 110));
+    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    canvas.translate(20, 20);
+    canvas.drawParagraph(paragraph, Offset.zero);
+    canvas.drawRect(
+      Rect.fromLTRB(
+        0,
+        0,
+        paragraph.width,
+        paragraph.height,
+      ),
+      SurfacePaintData()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+
+    canvas.drawRect(
+      paragraph.paintBounds,
+      SurfacePaintData()
+        ..color = const Color(0xFF00FF00)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+
+    await takeScreenshot(canvas, bounds, 'canvas_paragraph_bounds');
   });
 }

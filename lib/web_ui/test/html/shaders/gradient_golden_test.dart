@@ -5,6 +5,7 @@
 import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:web_gl';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -13,7 +14,6 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../../common.dart';
 import '../paragraph/text_scuba.dart';
 
 // TODO(yjbanov): unskip Firefox tests when Firefox implements WebGL in headless mode.
@@ -39,7 +39,7 @@ Future<void> testMain() async {
     rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -48,7 +48,7 @@ Future<void> testMain() async {
     }
     try {
       sceneElement.append(engineCanvas.rootElement);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       await matchGoldenFile('$fileName.png',
           region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
     } finally {
@@ -389,6 +389,38 @@ Future<void> testMain() async {
     canvas.endRecording();
     canvas.apply(engineCanvas, screenRect);
   });
+
+  test('Creating lots of gradients doesn\'t create too many webgl contexts',
+      () async {
+    final html.CanvasElement sideCanvas =
+        html.CanvasElement(width: 5, height: 5);
+    final RenderingContext? context =
+        sideCanvas.getContext('webgl') as RenderingContext?;
+    expect(context, isNotNull);
+
+    final EngineCanvas engineCanvas =
+        BitmapCanvas(const Rect.fromLTRB(0, 0, 100, 100), RenderStrategy());
+    for (double x = 0; x < 100; x += 10) {
+      for (double y = 0; y < 100; y += 10) {
+        const List<Color> colors = <Color>[
+          Color(0xFFFF0000),
+          Color(0xFF0000FF),
+        ];
+
+        final GradientLinear linearGradient = GradientLinear(
+            const Offset(0, 0),
+            const Offset(10, 10),
+            colors,
+            null,
+            TileMode.clamp,
+            Matrix4.identity().storage);
+        engineCanvas.drawRect(Rect.fromLTWH(x, y, 10, 10),
+            SurfacePaintData()..shader = linearGradient);
+      }
+    }
+
+    expect(context!.isContextLost(), isFalse);
+  }, skip: isFirefox);
 
   test('Paints clamped, rotated and shifted linear gradient', () async {
     final RecordingCanvas canvas =

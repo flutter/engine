@@ -34,7 +34,8 @@ bool InvokeDartPluginRegistrantIfAvailable(Dart_Handle library_handle) {
   if (Dart_IsError(plugin_registrant)) {
     return false;
   }
-  tonic::LogIfError(tonic::DartInvokeField(plugin_registrant, "register", {}));
+  tonic::CheckAndHandleError(
+      tonic::DartInvokeField(plugin_registrant, "register", {}));
   return true;
 }
 
@@ -58,7 +59,6 @@ bool FindAndInvokeDartPluginRegistrant() {
   std::string registrant_file_uri_string =
       tonic::DartConverter<std::string>::FromDart(registrant_file_uri);
   if (registrant_file_uri_string.empty()) {
-    FML_LOG(ERROR) << "Unexpected empty dartPluginRegistrantLibrary.";
     return false;
   }
 

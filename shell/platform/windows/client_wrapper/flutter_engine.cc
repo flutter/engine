@@ -28,7 +28,7 @@ FlutterEngine::FlutterEngine(const DartProject& project) {
   c_engine_properties.dart_entrypoint_argc =
       static_cast<int>(entrypoint_argv.size());
   c_engine_properties.dart_entrypoint_argv =
-      entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
+      entrypoint_argv.empty() ? nullptr : entrypoint_argv.data();
 
   engine_ = FlutterDesktopEngineCreate(&c_engine_properties);
 
@@ -64,18 +64,12 @@ void FlutterEngine::ShutDown() {
   engine_ = nullptr;
 }
 
-#ifndef WINUWP
 std::chrono::nanoseconds FlutterEngine::ProcessMessages() {
   return std::chrono::nanoseconds(FlutterDesktopEngineProcessMessages(engine_));
 }
-#endif
 
 void FlutterEngine::ReloadSystemFonts() {
   FlutterDesktopEngineReloadSystemFonts(engine_);
-}
-
-void FlutterEngine::ReloadPlatformBrightness() {
-  FlutterDesktopEngineReloadPlatformBrightness(engine_);
 }
 
 FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(

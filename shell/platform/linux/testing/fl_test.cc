@@ -9,6 +9,18 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
+namespace {
+class ImModuleEnv : public ::testing::Environment {
+ public:
+  void SetUp() override {
+    setenv("GTK_IM_MODULE", "gtk-im-context-simple", true);
+  }
+};
+
+testing::Environment* const kEnv =
+    testing::AddGlobalTestEnvironment(new ImModuleEnv);
+}  // namespace
+
 static uint8_t hex_digit_to_int(char value) {
   if (value >= '0' && value <= '9') {
     return value - '0';
@@ -61,4 +73,9 @@ FlEngine* make_mock_engine_with_project(FlDartProject* project) {
   EXPECT_EQ(engine_error, nullptr);
 
   return static_cast<FlEngine*>(g_object_ref(engine));
+}
+
+void PrintTo(FlValue* v, std::ostream* os) {
+  g_autofree gchar* s = fl_value_to_string(v);
+  *os << s;
 }

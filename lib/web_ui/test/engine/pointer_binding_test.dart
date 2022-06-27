@@ -9,6 +9,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show flutterViewEmbedder, window;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/ui.dart' as ui;
@@ -38,8 +39,6 @@ void _testEach<T extends _BasicEventContext>(
 
 /// Some methods in this class are skipped for iOS-Safari.
 // TODO(mdebbar): https://github.com/flutter/flutter/issues/60033
-bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
-    operatingSystem == OperatingSystem.iOs;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -47,13 +46,23 @@ void main() {
 
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
-  final html.Element glassPane = flutterViewEmbedder.glassPaneElement!;
+  final html.Element glassPane = flutterViewEmbedder.glassPaneElement! as
+      html.Element;
   double dpi = 1.0;
 
   setUp(() {
     ui.window.onPointerDataPacket = null;
     dpi = window.devicePixelRatio;
   });
+
+  test('ios workaround', () {
+    final MockSafariPointerEventWorkaround mockSafariPointer =
+        MockSafariPointerEventWorkaround();
+    SafariPointerEventWorkaround.instance = mockSafariPointer;
+    final PointerBinding instance = PointerBinding(createDomHTMLDivElement());
+    expect(mockSafariPointer.workAroundInvoked, isIosSafari);
+    instance.dispose();
+  }, skip: !isIosSafari);
 
   test('_PointerEventContext generates expected events', () {
     if (!_PointerEventContext().isSupported) {
@@ -160,6 +169,14 @@ void testMain() {
     expect(events[1].buttons, equals(1));
     expect(events[1].client.x, equals(222));
     expect(events[1].client.y, equals(223));
+
+    event = expectCorrectType(context.mouseLeave(clientX: 1000, clientY: 2000, buttons: 6));
+    expect(event.type, equals('pointerleave'));
+    expect(event.pointerId, equals(1));
+    expect(event.button, equals(0));
+    expect(event.buttons, equals(6));
+    expect(event.client.x, equals(1000));
+    expect(event.client.y, equals(2000));
 
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('pointerup'));
@@ -377,6 +394,13 @@ void testMain() {
     expect(event.buttons, equals(1));
     expect(event.client.x, equals(214));
     expect(event.client.y, equals(215));
+
+    event = expectCorrectType(context.mouseLeave(clientX: 1000, clientY: 2000, buttons: 6));
+    expect(event.type, equals('mouseleave'));
+    expect(event.button, equals(0));
+    expect(event.buttons, equals(6));
+    expect(event.client.x, equals(1000));
+    expect(event.client.y, equals(2000));
 
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('mouseup'));
@@ -835,7 +859,7 @@ void testMain() {
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
-    'correctly converts buttons of down, move and up events',
+    'correctly converts buttons of down, move, leave, and up events',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -995,6 +1019,30 @@ void testMain() {
       expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40 * dpi));
       expect(packets[0].data[0].physicalY, equals(41 * dpi));
+      expect(packets[0].data[0].buttons, equals(0));
+      packets.clear();
+
+      // Leave
+
+      glassPane.dispatchEvent(context.mouseLeave(
+        buttons: 1,
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, isEmpty);
+      packets.clear();
+
+      glassPane.dispatchEvent(context.mouseLeave(
+        buttons: 0,
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[0].synthesized, isFalse);
+      expect(packets[0].data[0].physicalX, equals(1000 * dpi));
+      expect(packets[0].data[0].physicalY, equals(2000 * dpi));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
@@ -1226,7 +1274,7 @@ void testMain() {
       _PointerEventContext(),
     ],
     'correctly handles missing right mouse button up when followed by move',
-        (_ButtonedEventMixin context) {
+    (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
@@ -1787,8 +1835,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].physicalX,
-          equals(900.0  * dpi));
+      expect(packets[0].data[0].physicalX, equals(900.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(1900.0 * dpi));
       packets.clear();
 
@@ -2241,6 +2288,15 @@ void testMain() {
   );
 }
 
+class MockSafariPointerEventWorkaround implements SafariPointerEventWorkaround {
+  bool workAroundInvoked = false;
+
+  @override
+  void workAroundMissingPointerEvents() {
+    workAroundInvoked = true;
+  }
+}
+
 abstract class _BasicEventContext implements PointerSupportDetector {
   String get name;
 
@@ -2275,10 +2331,17 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   //
   // If there is no button change, assign `button` with _kNoButtonChange.
   html.Event mouseMove(
-      {double? clientX, double? clientY, required int button, required int buttons});
+      {double? clientX,
+      double? clientY,
+      required int button,
+      required int buttons});
+
+  // Generate an event that moves the mouse outside of the tracked area.
+  html.Event mouseLeave({double? clientX, double? clientY, required int buttons});
 
   // Generate an event that releases all mouse buttons.
-  html.Event mouseUp({double? clientX, double? clientY, int? button, int? buttons});
+  html.Event mouseUp(
+      {double? clientX, double? clientY, int? button, int? buttons});
 
   html.Event hover({double? clientX, double? clientY}) {
     return mouseMove(
@@ -2325,7 +2388,8 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? deltaX,
     required double? deltaY,
   }) {
-    final Function jsWheelEvent = js_util.getProperty<Function>(html.window, 'WheelEvent');
+    final Function jsWheelEvent =
+        js_util.getProperty<Function>(html.window, 'WheelEvent');
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
       <String, dynamic>{
@@ -2396,8 +2460,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
 class _TouchEventContext extends _BasicEventContext
     with _MultiPointerEventMixin
     implements PointerSupportDetector {
-  _TouchEventContext() :
-    _target = html.document.createElement('div');
+  _TouchEventContext() : _target = html.document.createElement('div');
 
   @override
   String get name => 'TouchAdapter';
@@ -2518,12 +2581,29 @@ class _MouseEventContext extends _BasicEventContext
         hasButtonChange && (buttons & convertButtonToButtons(button)) != 0;
     final String adjustedType = !hasButtonChange
         ? 'mousemove'
-        : changeIsButtonDown ? 'mousedown' : 'mouseup';
+        : changeIsButtonDown
+            ? 'mousedown'
+            : 'mouseup';
     final int adjustedButton = hasButtonChange ? button : 0;
     return _createMouseEvent(
       adjustedType,
       buttons: buttons,
       button: adjustedButton,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  html.Event mouseLeave({
+    double? clientX,
+    double? clientY,
+    required int buttons,
+  }) {
+    return _createMouseEvent(
+      'mouseleave',
+      buttons: buttons,
+      button: 0,
       clientX: clientX,
       clientY: clientY,
     );
@@ -2683,6 +2763,41 @@ class _PointerEventContext extends _BasicEventContext
     String? pointerType,
   }) {
     return html.PointerEvent('pointermove', <String, dynamic>{
+      'pointerId': pointer,
+      'button': button,
+      'buttons': buttons,
+      'clientX': clientX,
+      'clientY': clientY,
+      'pointerType': pointerType,
+    });
+  }
+
+  @override
+  html.Event mouseLeave({
+    double? clientX,
+    double? clientY,
+    required int buttons,
+    int pointerId = 1,
+  }) {
+    return _leaveWithFullDetails(
+      pointer: pointerId,
+      buttons: buttons,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+      pointerType: 'mouse',
+    );
+  }
+
+  html.Event _leaveWithFullDetails({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointer,
+    String? pointerType,
+  }) {
+    return html.PointerEvent('pointerleave', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,

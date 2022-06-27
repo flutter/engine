@@ -14,9 +14,9 @@ TEST(FlAccessibleNodeTest, BuildTree) {
 
   g_autoptr(FlAccessibleNode) root = fl_accessible_node_new(engine, 0);
   g_autoptr(FlAccessibleNode) child1 = fl_accessible_node_new(engine, 1);
-  fl_accessible_node_set_parent(child1, ATK_OBJECT(root));
+  fl_accessible_node_set_parent(child1, ATK_OBJECT(root), 0);
   g_autoptr(FlAccessibleNode) child2 = fl_accessible_node_new(engine, 1);
-  fl_accessible_node_set_parent(child2, ATK_OBJECT(root));
+  fl_accessible_node_set_parent(child2, ATK_OBJECT(root), 1);
   g_autoptr(GPtrArray) children =
       g_ptr_array_new_with_free_func(g_object_unref);
   g_ptr_array_add(children, g_object_ref(child1));
@@ -24,6 +24,7 @@ TEST(FlAccessibleNodeTest, BuildTree) {
   fl_accessible_node_set_children(root, children);
 
   EXPECT_EQ(atk_object_get_n_accessible_children(ATK_OBJECT(root)), 2);
+  EXPECT_EQ(atk_object_get_index_in_parent(ATK_OBJECT(root)), 0);
   g_autoptr(AtkObject) c1 =
       atk_object_ref_accessible_child(ATK_OBJECT(root), 0);
   EXPECT_EQ(ATK_OBJECT(child1), c1);
@@ -33,9 +34,11 @@ TEST(FlAccessibleNodeTest, BuildTree) {
   EXPECT_EQ(atk_object_get_parent(ATK_OBJECT(root)), nullptr);
 
   EXPECT_EQ(atk_object_get_parent(ATK_OBJECT(child1)), ATK_OBJECT(root));
+  EXPECT_EQ(atk_object_get_index_in_parent(ATK_OBJECT(child1)), 0);
   EXPECT_EQ(atk_object_get_n_accessible_children(ATK_OBJECT(child1)), 0);
 
   EXPECT_EQ(atk_object_get_parent(ATK_OBJECT(child2)), ATK_OBJECT(root));
+  EXPECT_EQ(atk_object_get_index_in_parent(ATK_OBJECT(child2)), 1);
   EXPECT_EQ(atk_object_get_n_accessible_children(ATK_OBJECT(child2)), 0);
 }
 
@@ -69,14 +72,50 @@ TEST(FlAccessibleNodeTest, SetFlags) {
 
   g_autoptr(FlAccessibleNode) node = fl_accessible_node_new(engine, 0);
   fl_accessible_node_set_flags(
-      node, static_cast<FlutterSemanticsFlag>(kFlutterSemanticsFlagIsFocusable |
+      node, static_cast<FlutterSemanticsFlag>(kFlutterSemanticsFlagIsEnabled |
+                                              kFlutterSemanticsFlagIsFocusable |
                                               kFlutterSemanticsFlagIsFocused));
 
   AtkStateSet* state = atk_object_ref_state_set(ATK_OBJECT(node));
+  EXPECT_TRUE(atk_state_set_contains_state(state, ATK_STATE_ENABLED));
+  EXPECT_TRUE(atk_state_set_contains_state(state, ATK_STATE_SENSITIVE));
   EXPECT_TRUE(atk_state_set_contains_state(state, ATK_STATE_FOCUSABLE));
   EXPECT_TRUE(atk_state_set_contains_state(state, ATK_STATE_FOCUSED));
   EXPECT_TRUE(!atk_state_set_contains_state(state, ATK_STATE_CHECKED));
   g_object_unref(state);
+}
+
+// Checks Flutter flags are mapped to appropriate ATK roles.
+TEST(FlAccessibleNodeTest, GetRole) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+
+  g_autoptr(FlAccessibleNode) node = fl_accessible_node_new(engine, 0);
+
+  fl_accessible_node_set_flags(
+      node, static_cast<FlutterSemanticsFlag>(kFlutterSemanticsFlagIsButton));
+  EXPECT_EQ(atk_object_get_role(ATK_OBJECT(node)), ATK_ROLE_PUSH_BUTTON);
+
+  fl_accessible_node_set_flags(node, static_cast<FlutterSemanticsFlag>(
+                                         kFlutterSemanticsFlagHasCheckedState));
+  EXPECT_EQ(atk_object_get_role(ATK_OBJECT(node)), ATK_ROLE_CHECK_BOX);
+
+  fl_accessible_node_set_flags(
+      node, static_cast<FlutterSemanticsFlag>(
+                kFlutterSemanticsFlagHasCheckedState |
+                kFlutterSemanticsFlagIsInMutuallyExclusiveGroup));
+  EXPECT_EQ(atk_object_get_role(ATK_OBJECT(node)), ATK_ROLE_RADIO_BUTTON);
+
+  fl_accessible_node_set_flags(node, static_cast<FlutterSemanticsFlag>(
+                                         kFlutterSemanticsFlagHasToggledState));
+  EXPECT_EQ(atk_object_get_role(ATK_OBJECT(node)), ATK_ROLE_TOGGLE_BUTTON);
+
+  fl_accessible_node_set_flags(node, kFlutterSemanticsFlagIsTextField);
+  EXPECT_EQ(atk_object_get_role(ATK_OBJECT(node)), ATK_ROLE_TEXT);
+
+  fl_accessible_node_set_flags(
+      node, static_cast<FlutterSemanticsFlag>(kFlutterSemanticsFlagIsTextField |
+                                              kFlutterSemanticsFlagIsObscured));
+  EXPECT_EQ(atk_object_get_role(ATK_OBJECT(node)), ATK_ROLE_PASSWORD_TEXT);
 }
 
 // Checks Flutter actions are mapped to the appropriate ATK actions.

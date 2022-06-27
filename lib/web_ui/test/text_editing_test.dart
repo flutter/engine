@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart' show flutterViewEmbedder;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
@@ -104,7 +105,8 @@ Future<void> testMain() async {
         defaultTextEditingRoot.querySelectorAll('input'),
         hasLength(1),
       );
-      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      final Element input = defaultTextEditingRoot.querySelector('input')! as
+          Element;
       // Now the editing element should have focus.
 
       expect(document.activeElement, flutterViewEmbedder.glassPaneElement);
@@ -136,7 +138,8 @@ Future<void> testMain() async {
         onAction: trackInputAction,
       );
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
-      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      final Element input = defaultTextEditingRoot.querySelector('input')! as
+          Element;
       expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('readonly'), 'readonly');
 
@@ -153,7 +156,8 @@ Future<void> testMain() async {
         onAction: trackInputAction,
       );
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
-      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      final Element input = defaultTextEditingRoot.querySelector('input')! as
+          Element;
       expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('type'), 'password');
 
@@ -170,7 +174,8 @@ Future<void> testMain() async {
         onAction: trackInputAction,
       );
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
-      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      final Element input = defaultTextEditingRoot.querySelector('input')! as
+          Element;
       expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('autocorrect'), 'off');
 
@@ -187,7 +192,8 @@ Future<void> testMain() async {
         onAction: trackInputAction,
       );
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
-      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      final Element input = defaultTextEditingRoot.querySelector('input')! as
+          Element;
       expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('autocorrect'), 'on');
 
@@ -204,7 +210,8 @@ Future<void> testMain() async {
         onAction: trackInputAction,
       );
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
-      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      final Element input = defaultTextEditingRoot.querySelector('input')! as
+          Element;
       expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('autocomplete'), 'off');
 
@@ -262,14 +269,14 @@ Future<void> testMain() async {
       );
       expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(1));
 
-      final TextAreaElement textarea =
-          defaultTextEditingRoot.querySelector('textarea')! as TextAreaElement;
+      final DomHTMLTextAreaElement textarea =
+          defaultTextEditingRoot.querySelector('textarea')! as DomHTMLTextAreaElement;
       // Now the textarea should have focus.
       expect(defaultTextEditingRoot.activeElement, textarea);
       expect(editingStrategy!.domElement, textarea);
 
       textarea.value = 'foo\nbar';
-      textarea.dispatchEvent(Event.eventType('Event', 'input'));
+      textarea.dispatchEvent(createDomEvent('Event', 'input'));
       textarea.setSelectionRange(4, 6);
       document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       // Can read textarea state correctly (and preserves new lines).
@@ -353,7 +360,7 @@ Future<void> testMain() async {
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
 
-    test('Does not trigger input action in multi-line mode', () {
+    test('Triggers input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
         inputType: EngineInputType.multiline,
         inputAction: 'TextInputAction.done',
@@ -367,14 +374,14 @@ Future<void> testMain() async {
       // No input action so far.
       expect(lastInputAction, isNull);
 
-      final KeyboardEvent event = dispatchKeyboardEvent(
+      final DomKeyboardEvent event = dispatchKeyboardEvent(
         editingStrategy!.domElement!,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
 
-      // Still no input action.
-      expect(lastInputAction, isNull);
+      // Input action is triggered!
+      expect(lastInputAction, 'TextInputAction.done');
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
@@ -450,8 +457,8 @@ Future<void> testMain() async {
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
     }
 
-    String getEditingInputMode() {
-      return textEditing!.strategy.domElement!.getAttribute('inputmode')!;
+    String? getEditingInputMode() {
+      return textEditing!.strategy.domElement!.getAttribute('inputmode');
     }
 
     setUp(() {
@@ -611,7 +618,7 @@ Future<void> testMain() async {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final Element element = textEditing!.strategy.domElement!;
+      final DomElement element = textEditing!.strategy.domElement!;
       expect(element.getAttribute('readonly'), 'readonly');
 
       // Update the read-only config.
@@ -1310,7 +1317,7 @@ Future<void> testMain() async {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final Element domElement = textEditing!.strategy.domElement!;
+      final DomElement domElement = textEditing!.strategy.domElement!;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1370,7 +1377,7 @@ Future<void> testMain() async {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
-      final HtmlElement domElement = textEditing!.strategy.domElement!;
+      final DomHTMLElement domElement = textEditing!.strategy.domElement!;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1393,12 +1400,11 @@ Future<void> testMain() async {
       if (browserEngine == BrowserEngine.blink ||
           browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
-        expect(textEditing!.strategy.domElement!.classes,
-            contains('transparentTextEditing'));
+        expect(textEditing!.strategy.domElement!.classList.contains('transparentTextEditing'),
+            isTrue);
       } else {
         expect(
-            textEditing!.strategy.domElement!.classes.any(
-                (String element) => element.toString() == 'transparentTextEditing'),
+            textEditing!.strategy.domElement!.classList.contains('transparentTextEditing'),
             isFalse);
       }
 
@@ -1433,7 +1439,7 @@ Future<void> testMain() async {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final HtmlElement domElement = textEditing!.strategy.domElement!;
+      final DomHTMLElement domElement = textEditing!.strategy.domElement!;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1455,7 +1461,7 @@ Future<void> testMain() async {
     test('Canonicalizes font family', () {
       showKeyboard(inputType: 'text');
 
-      final HtmlElement input = textEditing!.strategy.domElement!;
+      final DomHTMLElement input = textEditing!.strategy.domElement!;
 
       MethodCall setStyle;
 
@@ -1551,7 +1557,9 @@ Future<void> testMain() async {
           <String, dynamic>{
             'text': 'something',
             'selectionBase': 9,
-            'selectionExtent': 9
+            'selectionExtent': 9,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1560,7 +1568,7 @@ Future<void> testMain() async {
       input.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
         final Event keyup = KeyboardEvent('keyup');
-        textEditing!.strategy.domElement!.dispatchEvent(keyup);
+        textEditing!.strategy.domElement!.dispatchEvent(keyup as DomEvent);
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       }
@@ -1575,7 +1583,9 @@ Future<void> testMain() async {
           <String, dynamic>{
             'text': 'something',
             'selectionBase': 2,
-            'selectionExtent': 5
+            'selectionExtent': 5,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1610,7 +1620,7 @@ Future<void> testMain() async {
       input.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
         final Event keyup = KeyboardEvent('keyup');
-        textEditing!.strategy.domElement!.dispatchEvent(keyup);
+        textEditing!.strategy.domElement!.dispatchEvent(keyup as DomEvent);
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       }
@@ -1631,6 +1641,8 @@ Future<void> testMain() async {
                 'deltaEnd': -1,
                 'selectionBase': 2,
                 'selectionExtent': 5,
+                'composingBase': null,
+                'composingExtent': null
               }
             ],
           }
@@ -1709,7 +1721,9 @@ Future<void> testMain() async {
             hintForFirstElement: <String, dynamic>{
               'text': 'something',
               'selectionBase': 9,
-              'selectionExtent': 9
+              'selectionExtent': 9,
+              'composingBase': null,
+              'composingExtent': null
             }
           },
         ],
@@ -1739,7 +1753,8 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      final TextAreaElement textarea = textEditing!.strategy.domElement! as TextAreaElement;
+      final DomHTMLTextAreaElement textarea = textEditing!.strategy.domElement!
+          as DomHTMLTextAreaElement;
       checkTextAreaEditingState(textarea, '', 0, 0);
 
       // Can set editing state and preserve new lines.
@@ -1748,17 +1763,19 @@ Future<void> testMain() async {
         'text': 'foo\nbar',
         'selectionBase': 2,
         'selectionExtent': 3,
+        'composingBase': null,
+        'composingExtent': null
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
       checkTextAreaEditingState(textarea, 'foo\nbar', 2, 3);
 
       textarea.value = 'something\nelse';
 
-      textarea.dispatchEvent(Event.eventType('Event', 'input'));
+      textarea.dispatchEvent(createDomEvent('Event', 'input'));
       textarea.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
         textEditing!.strategy.domElement!
-            .dispatchEvent(KeyboardEvent('keyup'));
+            .dispatchEvent(createDomEvent('Event', 'keyup'));
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       }
@@ -1777,6 +1794,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 14,
             'selectionExtent': 14,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1791,6 +1810,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 2,
             'selectionExtent': 5,
+            'composingBase': null,
+            'composingExtent': null
           }
         ],
       );
@@ -1815,7 +1836,7 @@ Future<void> testMain() async {
       textEditing = HybridTextEditing();
 
       showKeyboard(inputType: 'text');
-      expect(getEditingInputMode(), 'text');
+      expect(getEditingInputMode(), null);
 
       showKeyboard(inputType: 'number');
       expect(getEditingInputMode(), 'numeric');
@@ -1850,7 +1871,7 @@ Future<void> testMain() async {
         textEditing = HybridTextEditing();
 
         showKeyboard(inputType: 'text');
-        expect(getEditingInputMode(), 'text');
+        expect(getEditingInputMode(), null);
 
         showKeyboard(inputType: 'number');
         expect(getEditingInputMode(), 'numeric');
@@ -1903,20 +1924,26 @@ Future<void> testMain() async {
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
 
-    test('does not send input action in multi-line mode', () {
+    test('sends input action in multi-line mode', () {
       showKeyboard(
         inputType: 'multiline',
         inputAction: 'TextInputAction.next',
       );
 
-      final KeyboardEvent event = dispatchKeyboardEvent(
+      final DomKeyboardEvent event = dispatchKeyboardEvent(
         textEditing!.strategy.domElement!,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
 
-      // No input action and no platform message have been sent.
-      expect(spy.messages, isEmpty);
+      // Input action is sent as a platform message.
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.performAction');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[clientId, 'TextInputAction.next'],
+      );
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
@@ -1943,12 +1970,13 @@ Future<void> testMain() async {
 
       expect(autofillForm.formIdentifier, 'field1*field2*field3');
 
-      final FormElement form = autofillForm.formElement;
+      final DomHTMLFormElement form = autofillForm.formElement;
       // Note that we also add a submit button. Therefore the form element has
       // 3 child nodes.
       expect(form.childNodes, hasLength(3));
 
-      final InputElement firstElement = form.childNodes.first as InputElement;
+      final DomHTMLInputElement firstElement = form.childNodes.toList()[0] as
+          DomHTMLInputElement;
       // Autofill value is applied to the element.
       expect(firstElement.name,
           BrowserAutofillHints.instance.flutterToEngine('password'));
@@ -1969,7 +1997,7 @@ Future<void> testMain() async {
       expect(firstElement.selectionEnd, 0);
 
       // Element is hidden.
-      final CssStyleDeclaration css = firstElement.style;
+      final CssStyleDeclaration css = firstElement.style as CssStyleDeclaration;
       expect(css.color, 'transparent');
       expect(css.backgroundColor, 'transparent');
 
@@ -1977,11 +2005,9 @@ Future<void> testMain() async {
       if (browserEngine == BrowserEngine.blink ||
           browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
-        expect(firstElement.classes, contains('transparentTextEditing'));
+        expect(firstElement.classList.contains('transparentTextEditing'), isTrue);
       } else {
-        expect(
-            firstElement.classes.any(
-                (String element) => element.toString() == 'transparentTextEditing'),
+        expect(firstElement.classList.contains('transparentTextEditing'),
             isFalse);
       }
     });
@@ -2007,12 +2033,12 @@ Future<void> testMain() async {
           EngineAutofillForm.fromFrameworkMessage(
               createAutofillInfo('username', 'field1'), fields)!;
 
-      final InputElement testInputElement = InputElement();
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
       autofillForm.placeForm(testInputElement);
 
       // The focused element is appended to the form, form also has the button
       // so in total it shoould have 4 elements.
-      final FormElement form = autofillForm.formElement;
+      final DomHTMLFormElement form = autofillForm.formElement;
       expect(form.childNodes, hasLength(4));
 
       final FormElement formOnDom = defaultTextEditingRoot.querySelector('form')! as FormElement;
@@ -2039,10 +2065,10 @@ Future<void> testMain() async {
       expect(autofillForm.items, isEmpty);
       expect(autofillForm.formElement, isNotNull);
 
-      final FormElement form = autofillForm.formElement;
+      final DomHTMLFormElement form = autofillForm.formElement;
       // Submit button is added to the form.
       expect(form.childNodes, isNotEmpty);
-      final InputElement inputElement = form.childNodes.first as InputElement;
+      final InputElement inputElement = form.childNodes.toList()[0] as InputElement;
       expect(inputElement.type, 'submit');
 
       // The submit button should have class `submitBtn`.
@@ -2085,7 +2111,7 @@ Future<void> testMain() async {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
           createAutofillInfo(testHint, testId));
 
-      final InputElement testInputElement = InputElement();
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
       autofillInfo.applyToDomElement(testInputElement);
 
       // Hint sent from the framework is converted to the hint compatible with
@@ -2108,7 +2134,7 @@ Future<void> testMain() async {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
           createAutofillInfo(testHint, testId));
 
-      final TextAreaElement testInputElement = TextAreaElement();
+      final DomHTMLTextAreaElement testInputElement = createDomHTMLTextAreaElement();
       autofillInfo.applyToDomElement(testInputElement);
 
       // Hint sent from the framework is converted to the hint compatible with
@@ -2125,7 +2151,7 @@ Future<void> testMain() async {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
           createAutofillInfo(testPasswordHint, testId));
 
-      final InputElement testInputElement = InputElement();
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
       autofillInfo.applyToDomElement(testInputElement);
 
       // Hint sent from the framework is converted to the hint compatible with
@@ -2143,7 +2169,7 @@ Future<void> testMain() async {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
           createAutofillInfo(null, testId));
 
-      final InputElement testInputElement = InputElement();
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
       autofillInfo.applyToDomElement(testInputElement);
 
       expect(testInputElement.autocomplete,'on');
@@ -2154,7 +2180,7 @@ Future<void> testMain() async {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
           createAutofillInfo(null, testId));
 
-      final TextAreaElement testInputElement = TextAreaElement();
+      final DomHTMLTextAreaElement testInputElement = createDomHTMLTextAreaElement();
       autofillInfo.applyToDomElement(testInputElement);
 
       expect(testInputElement.getAttribute('autocomplete'),'on');
@@ -2165,7 +2191,7 @@ Future<void> testMain() async {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
           createAutofillInfo(null, testId, placeholder: 'enter your password'));
 
-      final TextAreaElement testInputElement = TextAreaElement();
+      final DomHTMLTextAreaElement testInputElement = createDomHTMLTextAreaElement();
       autofillInfo.applyToDomElement(testInputElement);
 
       expect(testInputElement.getAttribute('autocomplete'),'on');
@@ -2209,7 +2235,7 @@ Future<void> testMain() async {
       _editingState =
           EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
-      _editingState.applyToDomElement(input);
+      _editingState.applyToDomElement(input as DomHTMLInputElement);
 
       expect(input.value, 'Test');
       expect(input.selectionStart, 1);
@@ -2229,7 +2255,7 @@ Future<void> testMain() async {
       _editingState =
           EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
-      _editingState.applyToDomElement(textArea);
+      _editingState.applyToDomElement(textArea as DomHTMLTextAreaElement);
 
       expect(textArea.value, 'Test');
       expect(textArea.selectionStart, 1);
@@ -2242,7 +2268,7 @@ Future<void> testMain() async {
       input.selectionStart = 1;
       input.selectionEnd = 2;
 
-      _editingState = EditingState.fromDomElement(input);
+      _editingState = EditingState.fromDomElement(input as DomHTMLInputElement);
 
       expect(_editingState.text, 'Test');
       expect(_editingState.baseOffset, 1);
@@ -2262,28 +2288,40 @@ Future<void> testMain() async {
       input.selectionStart = 1;
       input.selectionEnd = 2;
 
-      _editingState = EditingState.fromDomElement(input);
+      _editingState = EditingState.fromDomElement(input as
+          DomHTMLTextAreaElement);
 
       expect(_editingState.text, 'Test');
       expect(_editingState.baseOffset, 1);
       expect(_editingState.extentOffset, 2);
     });
 
-    test('Compare two editing states', () {
-      final InputElement input = defaultTextEditingRoot.querySelector('input')! as InputElement;
-      input.value = 'Test';
-      input.selectionStart = 1;
-      input.selectionEnd = 2;
+    group('comparing editing states', () {
+      test('From dom element', () {
+        final InputElement input = defaultTextEditingRoot.querySelector('input')! as InputElement;
+        input.value = 'Test';
+        input.selectionStart = 1;
+        input.selectionEnd = 2;
 
-      final EditingState editingState1 = EditingState.fromDomElement(input);
-      final EditingState editingState2 = EditingState.fromDomElement(input);
+        final EditingState editingState1 = EditingState.fromDomElement(input as DomHTMLInputElement);
+        final EditingState editingState2 = EditingState.fromDomElement(input as DomHTMLInputElement);
 
-      input.setSelectionRange(1, 3);
+        input.setSelectionRange(1, 3);
 
-      final EditingState editingState3 = EditingState.fromDomElement(input);
+        final EditingState editingState3 = EditingState.fromDomElement(input as DomHTMLInputElement);
 
-      expect(editingState1 == editingState2, isTrue);
-      expect(editingState1 != editingState3, isTrue);
+        expect(editingState1 == editingState2, isTrue);
+        expect(editingState1 != editingState3, isTrue);
+      });
+
+      test('takes composition range into account', () {
+          final EditingState editingState1 = EditingState(composingBaseOffset: 1, composingExtentOffset: 2);
+          final EditingState editingState2 = EditingState(composingBaseOffset: 1, composingExtentOffset: 2);
+          final EditingState editingState3 = EditingState(composingBaseOffset: 4, composingExtentOffset: 8);
+
+          expect(editingState1, editingState2);
+          expect(editingState1, isNot(editingState3));
+      });
     });
   });
 
@@ -2377,8 +2415,8 @@ Future<void> testMain() async {
   });
 }
 
-KeyboardEvent dispatchKeyboardEvent(
-  EventTarget target,
+DomKeyboardEvent dispatchKeyboardEvent(
+  DomEventTarget target,
   String type, {
   required int keyCode,
 }) {
@@ -2390,7 +2428,7 @@ KeyboardEvent dispatchKeyboardEvent(
       'cancelable': true,
     }
   ];
-  final KeyboardEvent event = js_util.callConstructor<KeyboardEvent>(
+  final DomKeyboardEvent event = js_util.callConstructor<DomKeyboardEvent>(
     jsKeyboardEvent,
     js_util.jsify(eventArgs) as List<Object?>?,
   );
@@ -2434,10 +2472,10 @@ void cleanTestFlags() {
 }
 
 void checkInputEditingState(
-    Element? element, String text, int start, int end) {
+    DomElement? element, String text, int start, int end) {
   expect(element, isNotNull);
-  expect(element, isA<InputElement>());
-  final InputElement input = element! as InputElement;
+  expect(domInstanceOfString(element, 'HTMLInputElement'), true);
+  final DomHTMLInputElement input = element! as DomHTMLInputElement;
   expect(defaultTextEditingRoot.activeElement, input);
   expect(input.value, text);
   expect(input.selectionStart, start);
@@ -2446,20 +2484,20 @@ void checkInputEditingState(
 
 /// In case of an exception backup DOM element(s) can still stay on the DOM.
 void clearBackUpDomElementIfExists() {
-  final List<Node> domElementsToRemove = <Node>[];
+  final List<DomElement> domElementsToRemove = <DomElement>[];
   if (defaultTextEditingRoot.querySelectorAll('input').isNotEmpty) {
-    domElementsToRemove.addAll(defaultTextEditingRoot.querySelectorAll('input'));
+    domElementsToRemove.addAll(defaultTextEditingRoot.querySelectorAll('input').cast<DomElement>());
   }
   if (defaultTextEditingRoot.querySelectorAll('textarea').isNotEmpty) {
-    domElementsToRemove.addAll(defaultTextEditingRoot.querySelectorAll('textarea'));
+    domElementsToRemove.addAll(defaultTextEditingRoot.querySelectorAll('textarea').cast<DomElement>());
   }
   domElementsToRemove.forEach(_removeNode);
 }
 
-void _removeNode(Node n)=> n.remove();
+void _removeNode(DomElement n)=> n.remove();
 
 void checkTextAreaEditingState(
-  TextAreaElement textarea,
+  DomHTMLTextAreaElement textarea,
   String text,
   int start,
   int end,

@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -15,6 +14,7 @@ import 'canvaskit/initialization.dart';
 import 'canvaskit/layer_scene_builder.dart';
 import 'canvaskit/rasterizer.dart';
 import 'clipboard.dart';
+import 'dom.dart';
 import 'embedder.dart';
 import 'html/scene.dart';
 import 'mouse_cursor.dart';
@@ -54,8 +54,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The current platform configuration.
   @override
-  ui.PlatformConfiguration get configuration => _configuration;
-  ui.PlatformConfiguration _configuration = ui.PlatformConfiguration(
+  ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
   );
@@ -130,7 +129,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Returns device pixel ratio returned by browser.
   static double get browserDevicePixelRatio {
-    final double? ratio = html.window.devicePixelRatio as double?;
+    final double? ratio = domWindow.devicePixelRatio as double?;
     // Guard against WebOS returning 0 and other browsers returning null.
     return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
@@ -429,7 +428,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(ferhat): Find more appropriate defaults? Or noop when values are null?
             final String label = arguments['label'] as String? ?? '';
             final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
-            html.document.title = label;
+            domDocument.title = label;
             setThemeColor(ui.Color(primaryColor));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
@@ -455,7 +454,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       // Dispatched by the bindings to delay service worker initialization.
       case 'flutter/service_worker':
-        html.window.dispatchEvent(html.Event('flutter-first-frame'));
+        domWindow.dispatchEvent(createDomEvent('Event', 'flutter-first-frame'));
         return;
 
       case 'flutter/textinput':
@@ -483,7 +482,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/platform_views':
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
-          contentHandler: (html.Element content) {
+          contentHandler: (DomElement content) {
+            // Remove cast to [html.Element] after migration.
             flutterViewEmbedder.glassPaneElement!.append(content);
           },
         );
@@ -607,7 +607,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      flutterViewEmbedder.renderScene(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.addSceneToSceneHost(surfaceScene.webOnlyRootElement);
     }
     frameTimingsOnRasterFinish();
   }
@@ -725,17 +725,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The empty list is not a valid value for locales. This is only used for
   /// testing locale update logic.
   void debugResetLocales() {
-    _configuration = _configuration.copyWith(locales: const <ui.Locale>[]);
+    configuration = configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
   // Called by FlutterViewEmbedder when browser languages change.
   void updateLocales() {
-    _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
+    configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
 
   static List<ui.Locale> parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
-    final List<String>? languages = html.window.navigator.languages;
+    final List<String>? languages = domWindow.navigator.languages;
     if (languages == null || languages.isEmpty) {
       // To make it easier for the app code, let's not leave the locales list
       // empty. This way there's fewer corner cases for apps to handle.
@@ -788,7 +788,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// [onPlatformConfigurationChanged] callbacks if [textScaleFactor] changed.
   void _updateTextScaleFactor(double value) {
     if (configuration.textScaleFactor != value) {
-      _configuration = configuration.copyWith(textScaleFactor: value);
+      configuration = configuration.copyWith(textScaleFactor: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnTextScaleFactorChanged();
     }
@@ -798,26 +798,26 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// recalculate [textScaleFactor].
   ///
   /// Updates [textScaleFactor] with the new value.
-  html.MutationObserver? _fontSizeObserver;
+  DomMutationObserver? _fontSizeObserver;
 
   /// Set the callback function for updating [textScaleFactor] based on
   /// font-size changes in the browser's <html> element.
   void _addFontSizeObserver() {
     const String styleAttribute = 'style';
 
-    _fontSizeObserver = html.MutationObserver(
-        (List<dynamic> mutations, html.MutationObserver _) {
+    _fontSizeObserver = createDomMutationObserver(allowInterop(
+        (List<dynamic> mutations, DomMutationObserver _) {
       for (final dynamic mutation in mutations) {
-        final html.MutationRecord record = mutation as html.MutationRecord;
+        final DomMutationRecord record = mutation as DomMutationRecord;
         if (record.type == 'attributes' &&
             record.attributeName == styleAttribute) {
           final double newTextScaleFactor = findBrowserTextScaleFactor();
           _updateTextScaleFactor(newTextScaleFactor);
         }
       }
-    });
+    }));
     _fontSizeObserver!.observe(
-      html.document.documentElement!,
+      domDocument.documentElement!,
       attributes: true,
       attributeFilter: <String>[styleAttribute],
     );
@@ -859,7 +859,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   void updateSemanticsEnabled(bool semanticsEnabled) {
     if (semanticsEnabled != this.semanticsEnabled) {
-      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled);
+      configuration = configuration.copyWith(semanticsEnabled: semanticsEnabled);
       if (_onSemanticsEnabledChanged != null) {
         invokeOnSemanticsEnabledChanged();
       }
@@ -875,7 +875,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// callback if [_platformBrightness] changed.
   void _updatePlatformBrightness(ui.Brightness value) {
     if (configuration.platformBrightness != value) {
-      _configuration = configuration.copyWith(platformBrightness: value);
+      configuration = configuration.copyWith(platformBrightness: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnPlatformBrightnessChanged();
     }
@@ -886,13 +886,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   String? get systemFontFamily => configuration.systemFontFamily;
 
   /// Reference to css media query that indicates the user theme preference on the web.
-  final html.MediaQueryList _brightnessMediaQuery =
-      html.window.matchMedia('(prefers-color-scheme: dark)');
+  final DomMediaQueryList _brightnessMediaQuery =
+      domWindow.matchMedia('(prefers-color-scheme: dark)');
 
   /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
   ///
   /// Updates the [_platformBrightness] with the new user preference.
-  html.EventListener? _brightnessMediaQueryListener;
+  DomEventListener? _brightnessMediaQueryListener;
 
   /// Set the callback function for listening changes in [_brightnessMediaQuery] value.
   void _addBrightnessMediaQueryListener() {
@@ -900,12 +900,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         ? ui.Brightness.dark
         : ui.Brightness.light);
 
-    _brightnessMediaQueryListener = (html.Event event) {
-      final html.MediaQueryListEvent mqEvent =
-          event as html.MediaQueryListEvent;
+    _brightnessMediaQueryListener = allowInterop((DomEvent event) {
+      final DomMediaQueryListEvent mqEvent =
+          event as DomMediaQueryListEvent;
       _updatePlatformBrightness(
           mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
-    };
+    });
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
     registerHotRestartListener(() {
       _removeBrightnessMediaQueryListener();
@@ -1022,6 +1022,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       int id, ui.SemanticsAction action, ByteData? args) {
     invoke3<int, ui.SemanticsAction, ByteData?>(
         _onSemanticsAction, _onSemanticsActionZone, id, action, args);
+  }
+
+  // TODO(dnfield): make this work on web.
+  // https://github.com/flutter/flutter/issues/100277
+  ui.ErrorCallback? _onError;
+  // ignore: unused_field
+  Zone? _onErrorZone;
+  @override
+  ui.ErrorCallback? get onError => _onError;
+  @override
+  set onError(ui.ErrorCallback? callback) {
+    _onError = callback;
+    _onErrorZone = Zone.current;
   }
 
   /// The route or path that the embedder requested when the application was
@@ -1170,6 +1183,6 @@ const double _defaultRootFontSize = 16.0;
 /// Finds the text scale factor of the browser by looking at the computed style
 /// of the browser's <html> element.
 double findBrowserTextScaleFactor() {
-  final num fontSize = parseFontSize(html.document.documentElement!) ?? _defaultRootFontSize;
+  final num fontSize = parseFontSize(domDocument.documentElement!) ?? _defaultRootFontSize;
   return fontSize / _defaultRootFontSize;
 }

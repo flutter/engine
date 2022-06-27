@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
@@ -97,6 +98,11 @@ class PlatformConfigurationClient {
   ///             collections of them. MinikinFontForTest is used for FontFamily
   ///             creation.
   virtual FontCollection& GetFontCollection() = 0;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Returns the current collection of assets available on the
+  ///             platform.
+  virtual std::shared_ptr<AssetManager> GetAssetManager() = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Notifies this client of the name of the root isolate and its
@@ -420,8 +426,11 @@ class PlatformConfiguration final {
   ///
   void CompletePlatformMessageEmptyResponse(int response_id);
 
+  Dart_Handle on_error() { return on_error_.Get(); }
+
  private:
   PlatformConfigurationClient* client_;
+  tonic::DartPersistentValue on_error_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_lifecycle_state_;

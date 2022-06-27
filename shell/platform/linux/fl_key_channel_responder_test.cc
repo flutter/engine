@@ -29,20 +29,6 @@ static void responder_callback(bool handled, gpointer user_data) {
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 }
 
-// Clone string onto the heap.
-//
-// If #string is nullptr, returns nullptr.  Otherwise, the returned pointer must
-// be freed with g_free.
-static char* clone_string(const char* string) {
-  if (string == nullptr) {
-    return nullptr;
-  }
-  size_t len = strlen(string);
-  char* result = g_new(char, len + 1);
-  strncpy(result, string, len + 1);
-  return result;
-}
-
 namespace {
 // A global variable to store new event. It is a global variable so that it can
 // be returned by #fl_key_event_new_by_mock for easy use.
@@ -69,7 +55,7 @@ static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
   _g_key_event.time = time_in_milliseconds;
   _g_key_event.state = state;
   _g_key_event.keyval = keyval;
-  _g_key_event.string = clone_string(string);
+  _g_key_event.string = g_strdup(string);
   _g_key_event.keycode = keycode;
   _g_key_event.origin = nullptr;
   _g_key_event.dispose_origin = nullptr;
@@ -199,6 +185,33 @@ TEST(FlKeyChannelResponderTest, TestKeyEventHandledByFramework) {
   expected_value =
       "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
       "keyCode: 65, modifiers: 0, unicodeScalarValues: 65}";
+
+  // Blocks here until echo_response_cb is called.
+  g_main_loop_run(loop);
+}
+
+TEST(FlKeyChannelResponderTest, UseSpecifiedLogicalKey) {
+  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
+  FlKeyChannelResponderMock mock{
+      .value_converter = echo_response_cb,
+      .channel_name = "test/echo",
+  };
+  g_autoptr(FlKeyResponder) responder =
+      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+
+  fl_key_responder_handle_event(
+      responder,
+      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04, 0x0, nullptr,
+                               false),
+      responder_callback, loop, 888);
+  expected_handled = TRUE;
+  expected_value =
+      "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
+      "keyCode: 65, modifiers: 0, unicodeScalarValues: 65, "
+      "specifiedLogicalKey: 888}";
 
   // Blocks here until echo_response_cb is called.
   g_main_loop_run(loop);

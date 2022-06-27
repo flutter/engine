@@ -107,11 +107,6 @@ void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
   EngineFromHandle(engine)->ReloadSystemFonts();
 }
 
-void FlutterDesktopEngineReloadPlatformBrightness(
-    FlutterDesktopEngineRef engine) {
-  EngineFromHandle(engine)->ReloadPlatformBrightness();
-}
-
 FlutterDesktopPluginRegistrarRef FlutterDesktopEngineGetPluginRegistrar(
     FlutterDesktopEngineRef engine,
     const char* plugin_name) {
@@ -133,20 +128,9 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
       EngineFromHandle(engine)->texture_registrar());
 }
 
-#ifdef WINUWP
-ABI::Windows::ApplicationModel::Core::CoreApplicationView*
-FlutterDesktopViewGetCoreApplicationView(FlutterDesktopViewRef view) {
-  return static_cast<
-      ABI::Windows::ApplicationModel::Core::CoreApplicationView*>(
-      winrt::get_abi(ViewFromHandle(view)->GetPlatformWindow()));
-}
-#endif
-
-#ifndef WINUWP
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return ViewFromHandle(view)->GetPlatformWindow();
 }
-#endif
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {

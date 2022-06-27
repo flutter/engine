@@ -6,8 +6,9 @@
 
 #include "flutter/fml/logging.h"
 #include "fml/trace_event.h"
+#include "include/core/SkColorSpace.h"
 #include "include/core/SkSize.h"
-#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
+#include "vulkan/vulkan_core.h"
 
 namespace flutter {
 

@@ -189,6 +189,16 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_y,
                                         int64_t buttons);
 
+void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
+                                           size_t timestamp,
+                                           double x,
+                                           double y,
+                                           FlutterPointerPhase phase,
+                                           double pan_x,
+                                           double pan_y,
+                                           double scale,
+                                           double rotation);
+
 /**
  * fl_engine_send_key_event:
  */
@@ -316,6 +326,15 @@ gboolean fl_engine_register_external_texture(FlEngine* engine,
  */
 gboolean fl_engine_unregister_external_texture(FlEngine* engine,
                                                int64_t texture_id);
+
+/**
+ * fl_engine_update_accessibility_features:
+ * @engine: an #FlEngine.
+ * @flags: the features to enable in the accessibility tree.
+ *
+ * Tells the Flutter engine to update the flags on the accessibility tree.
+ */
+void fl_engine_update_accessibility_features(FlEngine* engine, int32_t flags);
 
 G_END_DECLS
 

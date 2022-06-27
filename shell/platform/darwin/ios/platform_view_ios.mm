@@ -55,13 +55,15 @@ PlatformViewIOS::PlatformViewIOS(
     IOSRenderingAPI rendering_api,
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
     flutter::TaskRunners task_runners)
-    : PlatformViewIOS(delegate,
-                      IOSContext::Create(rendering_api,
-                                         delegate.OnPlatformViewGetSettings().enable_impeller
-                                             ? IOSRenderingBackend::kImpeller
-                                             : IOSRenderingBackend::kSkia),
-                      platform_views_controller,
-                      task_runners) {}
+    : PlatformViewIOS(
+          delegate,
+          IOSContext::Create(
+              rendering_api,
+              delegate.OnPlatformViewGetSettings().enable_impeller ? IOSRenderingBackend::kImpeller
+                                                                   : IOSRenderingBackend::kSkia,
+              static_cast<MsaaSampleCount>(delegate.OnPlatformViewGetSettings().msaa_samples)),
+          platform_views_controller,
+          task_runners) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -155,6 +157,11 @@ std::shared_ptr<ExternalViewEmbedder> PlatformViewIOS::CreateExternalViewEmbedde
 // |PlatformView|
 sk_sp<GrDirectContext> PlatformViewIOS::CreateResourceContext() const {
   return ios_context_->CreateResourceContext();
+}
+
+// |PlatformView|
+std::shared_ptr<impeller::Context> PlatformViewIOS::GetImpellerContext() const {
+  return ios_context_->GetImpellerContext();
 }
 
 // |PlatformView|

@@ -12,10 +12,7 @@ import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/src/engine.dart' show flutterViewEmbedder;
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/semantics.dart';
-import 'package:ui/src/engine/vector_math.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'semantics_tester.dart';
@@ -25,12 +22,17 @@ DateTime _testTime = DateTime(2018, 12, 17);
 EngineSemanticsOwner semantics() => EngineSemanticsOwner.instance;
 
 void main() {
-  internalBootstrapBrowserTest(() => testMain);
+  internalBootstrapBrowserTest(() {
+    return testMain;
+  });
 }
 
 Future<void> testMain() async {
   await ui.webOnlyInitializePlatform();
+  runSemanticsTests();
+}
 
+void runSemanticsTests() {
   setUp(() {
     EngineSemanticsOwner.debugResetSemantics();
   });
@@ -71,6 +73,9 @@ Future<void> testMain() async {
   group('live region', () {
     _testLiveRegion();
   });
+  group('platform view', () {
+    _testPlatformView();
+  });
 }
 
 void _testEngineSemanticsOwner() {
@@ -92,7 +97,7 @@ void _testEngineSemanticsOwner() {
 
     // Synthesize a click on the placeholder.
     final html.Element placeholder =
-        appHostNode.querySelector('flt-semantics-placeholder')!;
+        appHostNode.querySelector('flt-semantics-placeholder')! as html.Element;
 
     expect(placeholder.isConnected, isTrue);
 
@@ -113,12 +118,82 @@ void _testEngineSemanticsOwner() {
     expect(placeholder.isConnected, isFalse);
   });
 
+  test('accessibilityFeatures copyWith function works', () {
+    const EngineAccessibilityFeatures original = EngineAccessibilityFeatures(0);
+    EngineAccessibilityFeatures copy = original.copyWith(accessibleNavigation: true);
+    expect(copy.accessibleNavigation, true);
+    expect(copy.boldText, false);
+    expect(copy.disableAnimations, false);
+    expect(copy.highContrast, false);
+    expect(copy.invertColors, false);
+    expect(copy.onOffSwitchLabels, false);
+    expect(copy.reduceMotion, false);
+
+    copy = original.copyWith(boldText: true);
+    expect(copy.accessibleNavigation, false);
+    expect(copy.boldText, true);
+    expect(copy.disableAnimations, false);
+    expect(copy.highContrast, false);
+    expect(copy.invertColors, false);
+    expect(copy.onOffSwitchLabels, false);
+    expect(copy.reduceMotion, false);
+
+    copy = original.copyWith(disableAnimations: true);
+    expect(copy.accessibleNavigation, false);
+    expect(copy.boldText, false);
+    expect(copy.disableAnimations, true);
+    expect(copy.highContrast, false);
+    expect(copy.invertColors, false);
+    expect(copy.onOffSwitchLabels, false);
+    expect(copy.reduceMotion, false);
+
+    copy = original.copyWith(highContrast: true);
+    expect(copy.accessibleNavigation, false);
+    expect(copy.boldText, false);
+    expect(copy.disableAnimations, false);
+    expect(copy.highContrast, true);
+    expect(copy.invertColors, false);
+    expect(copy.onOffSwitchLabels, false);
+    expect(copy.reduceMotion, false);
+
+    copy = original.copyWith(invertColors: true);
+    expect(copy.accessibleNavigation, false);
+    expect(copy.boldText, false);
+    expect(copy.disableAnimations, false);
+    expect(copy.highContrast, false);
+    expect(copy.invertColors, true);
+    expect(copy.onOffSwitchLabels, false);
+    expect(copy.reduceMotion, false);
+
+    copy = original.copyWith(onOffSwitchLabels: true);
+    expect(copy.accessibleNavigation, false);
+    expect(copy.boldText, false);
+    expect(copy.disableAnimations, false);
+    expect(copy.highContrast, false);
+    expect(copy.invertColors, false);
+    expect(copy.onOffSwitchLabels, true);
+    expect(copy.reduceMotion, false);
+
+    copy = original.copyWith(reduceMotion: true);
+    expect(copy.accessibleNavigation, false);
+    expect(copy.boldText, false);
+    expect(copy.disableAnimations, false);
+    expect(copy.highContrast, false);
+    expect(copy.invertColors, false);
+    expect(copy.onOffSwitchLabels, false);
+    expect(copy.reduceMotion, true);
+  });
+
   test('auto-enables semantics', () async {
     flutterViewEmbedder.reset(); // triggers `autoEnableOnTap` to be called
     expect(semantics().semanticsEnabled, isFalse);
+    expect(
+        EnginePlatformDispatcher
+            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+        isFalse);
 
     final html.Element placeholder =
-        appHostNode.querySelector('flt-semantics-placeholder')!;
+        appHostNode.querySelector('flt-semantics-placeholder')! as html.Element;
 
     expect(placeholder.isConnected, isTrue);
 
@@ -128,6 +203,10 @@ void _testEngineSemanticsOwner() {
     semantics().updateSemantics(builder.build());
 
     expect(semantics().semanticsEnabled, isTrue);
+    expect(
+        EnginePlatformDispatcher
+            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+        isTrue);
 
     // The placeholder should be removed
     expect(placeholder.isConnected, isFalse);
@@ -277,7 +356,7 @@ void _testEngineSemanticsOwner() {
         ..debugOverrideTimestampFunction(fakeAsync.getClock(_testTime).now)
         ..semanticsEnabled = true;
       expect(semantics().shouldAcceptBrowserGesture('click'), isTrue);
-      semantics().receiveGlobalEvent(html.Event('pointermove'));
+      semantics().receiveGlobalEvent(createDomEvent('Event', 'pointermove'));
       expect(semantics().shouldAcceptBrowserGesture('click'), isFalse);
 
       // After 1 second of inactivity a browser gestures counts as standalone.
@@ -289,21 +368,21 @@ void _testEngineSemanticsOwner() {
   test('checks shouldEnableSemantics for every global event', () {
     final MockSemanticsEnabler mockSemanticsEnabler = MockSemanticsEnabler();
     semantics().semanticsHelper.semanticsEnabler = mockSemanticsEnabler;
-    final html.Event pointerEvent = html.Event('pointermove');
+    final DomEvent pointerEvent = createDomEvent('Event', 'pointermove');
 
     semantics().receiveGlobalEvent(pointerEvent);
 
     // Verify the interactions.
     expect(
       mockSemanticsEnabler.shouldEnableSemanticsEvents,
-      <html.Event>[pointerEvent],
+      <DomEvent>[pointerEvent],
     );
   });
 
   test('forwards events to framework if shouldEnableSemantics returns true', () {
     final MockSemanticsEnabler mockSemanticsEnabler = MockSemanticsEnabler();
     semantics().semanticsHelper.semanticsEnabler = mockSemanticsEnabler;
-    final html.Event pointerEvent = html.Event('pointermove');
+    final DomEvent pointerEvent = createDomEvent('Event', 'pointermove');
     mockSemanticsEnabler.shouldEnableSemanticsReturnValue = true;
     expect(semantics().receiveGlobalEvent(pointerEvent), isTrue);
   });
@@ -318,21 +397,21 @@ class MockSemanticsEnabler implements SemanticsEnabler {
   bool get isWaitingToEnableSemantics => throw UnimplementedError();
 
   @override
-  html.Element prepareAccessibilityPlaceholder() {
+  DomElement prepareAccessibilityPlaceholder() {
     throw UnimplementedError();
   }
 
   bool shouldEnableSemanticsReturnValue = false;
-  final List<html.Event> shouldEnableSemanticsEvents = <html.Event>[];
+  final List<DomEvent> shouldEnableSemanticsEvents = <DomEvent>[];
 
   @override
-  bool shouldEnableSemantics(html.Event event) {
+  bool shouldEnableSemantics(DomEvent event) {
     shouldEnableSemanticsEvents.add(event);
     return shouldEnableSemanticsReturnValue;
   }
 
   @override
-  bool tryEnableSemantics(html.Event event) {
+  bool tryEnableSemantics(DomEvent event) {
     throw UnimplementedError();
   }
 }
@@ -422,12 +501,16 @@ void _testContainer() {
     updateNode(
       builder,
       id: 0,
-      actions: 0,
-      flags: 0,
       transform: Matrix4.identity().toFloat64(),
       rect: zeroOffsetRect,
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: zeroOffsetRect,
     );
 
     semantics().updateSemantics(builder.build());
@@ -439,9 +522,9 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        appHostNode.querySelector('flt-semantics')!;
+        appHostNode.querySelector('flt-semantics')! as html.Element;
     final html.Element container =
-        appHostNode.querySelector('flt-semantics-container')!;
+        appHostNode.querySelector('flt-semantics-container')! as html.Element;
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -477,6 +560,12 @@ void _testContainer() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
@@ -487,9 +576,9 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        appHostNode.querySelector('flt-semantics')!;
+        appHostNode.querySelector('flt-semantics')! as html.Element;
     final html.Element container =
-        appHostNode.querySelector('flt-semantics-container')!;
+        appHostNode.querySelector('flt-semantics-container')! as html.Element;
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     expect(parentElement.style.transformOrigin, '0px 0px 0px');
@@ -514,28 +603,25 @@ void _testContainer() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
-    if (browserEngine == BrowserEngine.edge) {
-      expectSemanticsTree('''
-<sem style="color: rgba(0, 0, 0, 0); filter: opacity(0%)">
-  <sem-c>
-    <sem></sem>
-  </sem-c>
-</sem>''');
-    } else {
-      expectSemanticsTree('''
+    expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
     <sem></sem>
   </sem-c>
 </sem>''');
-    }
 
     final html.Element parentElement =
-        appHostNode.querySelector('flt-semantics')!;
+        appHostNode.querySelector('flt-semantics')! as html.Element;
     final html.Element container =
-        appHostNode.querySelector('flt-semantics-container')!;
+        appHostNode.querySelector('flt-semantics-container')! as html.Element;
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -552,6 +638,134 @@ void _testContainer() {
     expect(parentElement.style.transformOrigin, '');
     expect(container.style.transform, '');
     expect(container.style.transformOrigin, '');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('renders in traversal order, hit-tests in reverse z-index order', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    // State 1: render initial tree with middle elements swapped hit-test wise
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
+      );
+
+      for (int id = 1; id <= 4; id++) {
+        updateNode(builder, id: id);
+      }
+
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 4"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    // State 2: update z-index
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+      );
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 4"></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    // State 3: update traversal order
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[4, 2, 3, 1]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+      );
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 1"></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 4"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    // State 3: update both orders
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        childrenInTraversalOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
+        childrenInHitTestOrder: Int32List.fromList(<int>[3, 4, 1, 2]),
+      );
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 4"></sem>
+    <sem style="z-index: 1"></sem>
+    <sem style="z-index: 3"></sem>
+  </sem-c>
+</sem>''');
+    }
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('container nodes are transparent and leaf children are opaque hit-test wise', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+    );
+    updateNode(builder, id: 1);
+    updateNode(builder, id: 2);
+
+    semantics().updateSemantics(builder.build());
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final DomElement root = appHostNode.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'none');
+
+    final DomElement child1 = appHostNode.querySelector('#flt-semantic-node-1')!;
+    expect(child1.style.pointerEvents, 'all');
+
+    final DomElement child2 = appHostNode.querySelector('#flt-semantic-node-2')!;
+    expect(child2.style.pointerEvents, 'all');
 
     semantics().semanticsEnabled = false;
   });
@@ -596,6 +810,12 @@ void _testVerticalScrolling() {
       rect: const ui.Rect.fromLTRB(0, 0, 50, 100),
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+    );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
     );
 
     semantics().updateSemantics(builder.build());
@@ -670,9 +890,9 @@ void _testVerticalScrolling() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle; touch-action: none; overflow-y: scroll">
   <sem-c>
-    <sem></sem>
-    <sem></sem>
-    <sem></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
   </sem-c>
 </sem>''');
 
@@ -749,6 +969,12 @@ void _testHorizontalScrolling() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
@@ -803,9 +1029,9 @@ void _testHorizontalScrolling() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle; touch-action: none; overflow-x: scroll">
   <sem-c>
-    <sem></sem>
-    <sem></sem>
-    <sem></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
   </sem-c>
 </sem>''');
 
@@ -933,9 +1159,7 @@ void _testIncrementables() {
     expect(await logger.actionLog.first, ui.SemanticsAction.decrease);
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a node that can both increment and decrement', () async {
     semantics()
@@ -964,9 +1188,7 @@ void _testIncrementables() {
 </sem>''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 }
 
 void _testTextField() {
@@ -993,9 +1215,7 @@ void _testTextField() {
 </sem>''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   // TODO(yjbanov): this test will need to be adjusted for Safari when we add
   //                Safari testing.
@@ -1019,7 +1239,8 @@ void _testTextField() {
     semantics().updateSemantics(builder.build());
 
     final html.Element textField =
-        appHostNode.querySelector('input[data-semantics-role="text-field"]')!;
+        appHostNode.querySelector('input[data-semantics-role="text-field"]')! as
+        html.Element;
 
     expect(appHostNode.activeElement, isNot(textField));
 
@@ -1062,9 +1283,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a switched on disabled switch element', () async {
     semantics()
@@ -1090,9 +1309,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a switched off switch element', () async {
     semantics()
@@ -1118,9 +1335,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a checked checkbox', () async {
     semantics()
@@ -1147,9 +1362,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a checked disabled checkbox', () async {
     semantics()
@@ -1175,9 +1388,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders an unchecked checkbox', () async {
     semantics()
@@ -1203,9 +1414,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a checked radio button', () async {
     semantics()
@@ -1233,9 +1442,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a checked disabled radio button', () async {
     semantics()
@@ -1262,9 +1469,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders an unchecked checkbox', () async {
     semantics()
@@ -1291,9 +1496,7 @@ void _testCheckables() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 }
 
 void _testTappable() {
@@ -1320,9 +1523,7 @@ void _testTappable() {
     expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders a disabled tappable widget', () async {
     semantics()
@@ -1347,9 +1548,40 @@ void _testTappable() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
+
+  test('can switch tappable between enabled and disabled', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    void updateTappable({required bool enabled}) {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        hasTap: true,
+        hasEnabledState: true,
+        isEnabled: enabled,
+        isButton: true,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+    }
+
+    updateTappable(enabled: false);
+    expectSemanticsTree('<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
+
+    updateTappable(enabled: true);
+    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
+
+    updateTappable(enabled: false);
+    expectSemanticsTree('<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
+
+    updateTappable(enabled: true);
+    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
+
+    semantics().semanticsEnabled = false;
+  });
 }
 
 void _testImage() {
@@ -1375,9 +1607,7 @@ void _testImage() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders an image with a child node and with a label', () async {
     semantics()
@@ -1396,6 +1626,12 @@ void _testImage() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
@@ -1408,9 +1644,7 @@ void _testImage() {
 </sem>''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders an image with no child nodes without a label', () async {
     semantics()
@@ -1432,9 +1666,7 @@ void _testImage() {
         '''<sem role="img" style="$rootSemanticStyle"></sem>''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('renders an image with a child node and without a label', () async {
     semantics()
@@ -1452,6 +1684,12 @@ void _testImage() {
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
       childrenInTraversalOrder: Int32List.fromList(<int>[1]),
     );
+    updateNode(
+      builder,
+      id: 1,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(10, 10, 20, 20),
+    );
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
@@ -1464,9 +1702,7 @@ void _testImage() {
 </sem>''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 }
 
 void _testLiveRegion() {
@@ -1492,9 +1728,7 @@ void _testLiveRegion() {
 ''');
 
     semantics().semanticsEnabled = false;
-  },
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+  });
 
   test('does not render a live region if there is no label', () async {
     semantics()
@@ -1520,6 +1754,190 @@ void _testLiveRegion() {
   });
 }
 
+void _testPlatformView() {
+  test('is transparent w.r.t. hit testing', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      platformViewId: 5,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    semantics().updateSemantics(builder.build());
+
+    expectSemanticsTree('<sem style="$rootSemanticStyle"></sem>');
+    final DomElement element = appHostNode.querySelector('flt-semantics')!;
+    expect(element.style.pointerEvents, 'none');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  // This test simulates the scenario of three child semantic nodes contained by
+  // a common parent. The first and the last nodes are plain leaf nodes. The
+  // middle node is a platform view node. Nodes overlap. The test hit tests
+  // various points and verifies that the correct DOM element receives the
+  // event. The test does this using `documentOrShadow.elementFromPoint`, which,
+  // if browsers are to be trusted, should do the same thing as if a pointer
+  // event landed at the given location.
+  //
+  // 0px   -------------
+  //       |           |
+  //       |           | <- plain semantic node
+  //       |     1     |
+  // 15px  | -------------
+  //       | |           |
+  // 25px  --|           |
+  //         |     2     |  <- platform view
+  //         |           |
+  // 35px    | -------------
+  //         | |           |
+  // 45px    --|           |
+  //           |     3     |  <- plain semantic node
+  //           |           |
+  //           |           |
+  // 60px      -------------
+  test('is reachable via a hit test', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    ui.platformViewRegistry.registerViewFactory(
+      'test-platform-view',
+      (int viewId) => html.DivElement()
+        ..id = 'view-0'
+        ..style.width = '100%'
+        ..style.height = '100%',
+    );
+    await createPlatformView(0, 'test-platform-view');
+
+    final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+    sceneBuilder.addPlatformView(
+      0,
+      offset: const ui.Offset(0, 15),
+      width: 20,
+      height: 30,
+    );
+    ui.window.render(sceneBuilder.build());
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      rect: const ui.Rect.fromLTRB(0, 0, 20, 60),
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3]),
+      transform: Float64List.fromList(Matrix4.diagonal3Values(ui.window.devicePixelRatio, ui.window.devicePixelRatio, 1).storage)
+    );
+    updateNode(
+      builder,
+      id: 1,
+      rect: const ui.Rect.fromLTRB(0, 0, 20, 25),
+    );
+    updateNode(
+      builder,
+      id: 2,
+      // This has to match the values passed to `addPlatformView` above.
+      rect: const ui.Rect.fromLTRB(0, 15, 20, 45),
+      platformViewId: 0,
+    );
+    updateNode(
+      builder,
+      id: 3,
+      rect: const ui.Rect.fromLTRB(0, 35, 20, 60),
+    );
+
+    semantics().updateSemantics(builder.build());
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final DomElement root = appHostNode.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'none');
+
+    final html.Element child1 =
+        appHostNode.querySelector('#flt-semantic-node-1')! as html.Element;
+    expect(child1.style.pointerEvents, 'all');
+    final html.Rectangle<num> child1Rect = child1.getBoundingClientRect();
+    expect(child1Rect.left, 0);
+    expect(child1Rect.top, 0);
+    expect(child1Rect.right, 20);
+    expect(child1Rect.bottom, 25);
+
+    final html.Element child2 =
+        appHostNode.querySelector('#flt-semantic-node-2')! as html.Element;
+    expect(child2.style.pointerEvents, 'none');
+    final html.Rectangle<num> child2Rect = child2.getBoundingClientRect();
+    expect(child2Rect.left, 0);
+    expect(child2Rect.top, 15);
+    expect(child2Rect.right, 20);
+    expect(child2Rect.bottom, 45);
+
+    final html.Element child3 =
+        appHostNode.querySelector('#flt-semantic-node-3')! as html.Element;
+    expect(child3.style.pointerEvents, 'all');
+    final html.Rectangle<num> child3Rect = child3.getBoundingClientRect();
+    expect(child3Rect.left, 0);
+    expect(child3Rect.top, 35);
+    expect(child3Rect.right, 20);
+    expect(child3Rect.bottom, 60);
+
+    final html.Element platformViewElement =
+        flutterViewEmbedder.glassPaneElement!.querySelector('#view-0')! as
+        html.Element;
+    final html.Rectangle<num> platformViewRect = platformViewElement.getBoundingClientRect();
+    expect(platformViewRect.left, 0);
+    expect(platformViewRect.top, 15);
+    expect(platformViewRect.right, 20);
+    expect(platformViewRect.bottom, 45);
+
+    // This test is only relevant for shadow DOM because we only really support
+    // proper platform view embedding in browsers that support shadow DOM.
+    final html.ShadowRoot shadowRoot = appHostNode.node as html.ShadowRoot;
+
+    // Hit test child 1
+    expect(shadowRoot.elementFromPoint(10, 10)!, child1);
+
+    // Hit test overlap between child 1 and 2
+    // TODO(yjbanov): this is a known limitation, see https://github.com/flutter/flutter/issues/101439
+    expect(shadowRoot.elementFromPoint(10, 20)!, child1);
+
+    // Hit test child 2
+    // Clicking at the location of the middle semantics node should allow the
+    // event to go through the semantic tree and hit the platform view. Since
+    // platform views are projected into the shadow DOM from outside the shadow
+    // root, it would be reachable both from the shadow root (by hitting the
+    // corresponding <slot> tag) and from the document (by hitting the platform
+    // view element itself).
+
+    // Browsers disagree about which element should be returned when hit testing
+    // a shadow root. However, they do agree when hit testing `document`.
+    //
+    // See:
+    //   * https://github.com/w3c/csswg-drafts/issues/556
+    //   * https://bugzilla.mozilla.org/show_bug.cgi?id=1502369
+    expect(html.document.elementFromPoint(10, 30)!, platformViewElement);
+
+    // Hit test overlap between child 2 and 3
+    expect(shadowRoot.elementFromPoint(10, 40)!, child3);
+
+    // Hit test child 3
+    expect(shadowRoot.elementFromPoint(10, 50)!, child3);
+
+    semantics().semanticsEnabled = false;
+    // TODO(yjbanov): unable to debug this test on iOS Safari as hacking on a
+    //                Linux machine. iOS Safari returns getBoundingClientRect
+    //                values that are half of desktop browsers, possibly due to
+    //                devicePixelRatio but need to confirm.
+  }, skip: isIosSafari);
+}
+
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that
 /// supplies default values for semantics attributes.
 // TODO(yjbanov): move this to TestSemanticsBuilder
@@ -1532,7 +1950,7 @@ void updateNode(
   int currentValueLength = 0,
   int textSelectionBase = 0,
   int textSelectionExtent = 0,
-  int platformViewId = 0,
+  int platformViewId = -1, // -1 means not a platform view
   int scrollChildren = 0,
   int scrollIndex = 0,
   double scrollPosition = 0.0,
@@ -1596,4 +2014,34 @@ void updateNode(
     childrenInHitTestOrder: childrenInHitTestOrder,
     additionalActions: additionalActions,
   );
+}
+
+const MethodCodec codec = StandardMethodCodec();
+
+/// Sends a platform message to create a Platform View with the given id and viewType.
+Future<void> createPlatformView(int id, String viewType) {
+  final Completer<void> completer = Completer<void>();
+  ui.window.sendPlatformMessage(
+    'flutter/platform_views',
+    codec.encodeMethodCall(MethodCall(
+      'create',
+      <String, dynamic>{
+        'id': id,
+        'viewType': viewType,
+      },
+    )),
+    (dynamic _) => completer.complete(),
+  );
+  return completer.future;
+}
+
+/// Disposes of the platform view with the given [id].
+Future<void> disposePlatformView(int id) {
+  final Completer<void> completer = Completer<void>();
+  window.sendPlatformMessage(
+    'flutter/platform_views',
+    codec.encodeMethodCall(MethodCall('dispose', id)),
+    (dynamic _) => completer.complete(),
+  );
+  return completer.future;
 }

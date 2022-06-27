@@ -60,8 +60,19 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 
   flutter::TextureRegistry unused_texture_registry;
   flutter::Layer::PaintContext paintContext = {
-      nullptr,        surface->getCanvas(),    nullptr, nullptr, mock_stopwatch,
-      mock_stopwatch, unused_texture_registry, nullptr, false};
+      // clang-format off
+      .internal_nodes_canvas         = nullptr,
+      .leaf_nodes_canvas             = surface->getCanvas(),
+      .gr_context                    = nullptr,
+      .view_embedder                 = nullptr,
+      .raster_time                   = mock_stopwatch,
+      .ui_time                       = mock_stopwatch,
+      .texture_registry              = unused_texture_registry,
+      .raster_cache                  = nullptr,
+      .checkerboard_offscreen_layers = false,
+      .frame_device_pixel_ratio      = 1.0f,
+      // clang-format on
+  };
 
   // Specify font file to ensure the same font across different operation
   // systems.
@@ -178,6 +189,31 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
             std::vector({MockCanvas::DrawCall{
                 0, MockCanvas::DrawTextData{overlay_text_data, text_paint,
                                             text_position}}}));
+}
+
+TEST_F(PerformanceOverlayLayerTest, MarkAsDirtyWhenResized) {
+  // Regression test for https://github.com/flutter/flutter/issues/54188
+
+  // Create a PerformanceOverlayLayer.
+  const uint64_t overlay_opts = kVisualizeRasterizerStatistics;
+  auto layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
+  layer->set_paint_bounds(SkRect::MakeLTRB(0.0f, 0.0f, 48.0f, 48.0f));
+  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Paint(paint_context());
+  auto data = mock_canvas().draw_calls().front().data;
+  auto imageData = std::get<MockCanvas::DrawImageDataNoPaint>(data);
+  auto first_draw_width = imageData.image->width();
+
+  // Create a second PerformanceOverlayLayer with different bounds.
+  layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
+  layer->set_paint_bounds(SkRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f));
+  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Paint(paint_context());
+  data = mock_canvas().draw_calls().back().data;
+  imageData = std::get<MockCanvas::DrawImageDataNoPaint>(data);
+  auto refreshed_draw_width = imageData.image->width();
+
+  EXPECT_NE(first_draw_width, refreshed_draw_width);
 }
 
 TEST(PerformanceOverlayLayerDefault, Gold) {

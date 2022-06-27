@@ -155,7 +155,15 @@ typedef void (*TimelineEventHandler)(const char*,
                                      const char**,
                                      const char**);
 
+using TimelineMicrosSource = int64_t (*)();
+
 void TraceSetTimelineEventHandler(TimelineEventHandler handler);
+
+bool TraceHasTimelineEventHandler();
+
+void TraceSetTimelineMicrosSource(TimelineMicrosSource source);
+
+int64_t TraceGetTimelineMicros();
 
 void TraceTimelineEvent(TraceArg category_group,
                         TraceArg name,

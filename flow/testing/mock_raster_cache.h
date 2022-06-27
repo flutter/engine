@@ -9,8 +9,9 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/testing/mock_canvas.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
 namespace testing {
@@ -24,11 +25,13 @@ namespace testing {
  */
 class MockRasterCacheResult : public RasterCacheResult {
  public:
-  explicit MockRasterCacheResult(SkIRect device_rect);
+  explicit MockRasterCacheResult(SkRect device_rect);
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override{};
 
-  SkISize image_dimensions() const override { return device_rect_.size(); };
+  SkISize image_dimensions() const override {
+    return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
+  };
 
   int64_t image_bytes() const override {
     return image_dimensions().area() *
@@ -36,7 +39,7 @@ class MockRasterCacheResult : public RasterCacheResult {
   }
 
  private:
-  SkIRect device_rect_;
+  SkRect device_rect_;
 };
 
 /**
@@ -47,15 +50,13 @@ class MockRasterCacheResult : public RasterCacheResult {
  */
 class MockRasterCache : public RasterCache {
  public:
-  explicit MockRasterCache(
-      size_t access_threshold = 3,
-      size_t picture_and_display_list_cache_limit_per_frame =
-          kDefaultPictureAndDispLayListCacheLimitPerFrame)
-      : RasterCache(access_threshold,
-                    picture_and_display_list_cache_limit_per_frame) {}
+  explicit MockRasterCache(size_t access_threshold = 3,
+                           size_t display_list_cache_limit_per_frame =
+                               kDefaultDispLayListCacheLimitPerFrame)
+      : RasterCache(access_threshold, display_list_cache_limit_per_frame) {}
 
-  std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
+  std::unique_ptr<RasterCacheResult> RasterizeDisplayList(
+      DisplayList* display_list,
       GrDirectContext* context,
       const SkMatrix& ctm,
       SkColorSpace* dst_color_space,
@@ -64,6 +65,7 @@ class MockRasterCache : public RasterCache {
   std::unique_ptr<RasterCacheResult> RasterizeLayer(
       PrerollContext* context,
       Layer* layer,
+      RasterCacheLayerStrategy stategy,
       const SkMatrix& ctm,
       bool checkerboard) const override;
 
@@ -78,20 +80,22 @@ class MockRasterCache : public RasterCache {
   FixedRefreshRateStopwatch ui_time_;
   TextureRegistry texture_registry_;
   PrerollContext preroll_context_ = {
-      nullptr,           /* raster_cache */
-      nullptr,           /* gr_context */
-      nullptr,           /* external_view_embedder */
-      mutators_stack_,   /* mutators_stack */
-      color_space_,      /* color_space */
-      kGiantRect,        /* cull_rect */
-      false,             /* layer reads from surface */
-      raster_time_,      /* raster stopwatch */
-      ui_time_,          /* frame build stopwatch */
-      texture_registry_, /* texture_registry */
-      false,             /* checkerboard_offscreen_layers */
-      1.0f,              /* frame_device_pixel_ratio */
-      false,             /* has_platform_view */
-      false,             /* has_texture_layer */
+      // clang-format off
+      .raster_cache                  = nullptr,
+      .gr_context                    = nullptr,
+      .view_embedder                 = nullptr,
+      .mutators_stack                = mutators_stack_,
+      .dst_color_space               = color_space_,
+      .cull_rect                     = kGiantRect,
+      .surface_needs_readback        = false,
+      .raster_time                   = raster_time_,
+      .ui_time                       = ui_time_,
+      .texture_registry              = texture_registry_,
+      .checkerboard_offscreen_layers = false,
+      .frame_device_pixel_ratio      = 1.0f,
+      .has_platform_view             = false,
+      .has_texture_layer             = false,
+      // clang-format on
   };
 };
 

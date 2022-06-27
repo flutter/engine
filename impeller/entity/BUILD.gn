@@ -1,0 +1,120 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_shaders("entity_shaders") {
+  name = "entity"
+
+  shaders = [
+    "shaders/blending/advanced_blend.vert",
+    "shaders/blending/advanced_blend_color.frag",
+    "shaders/blending/advanced_blend_colorburn.frag",
+    "shaders/blending/advanced_blend_colordodge.frag",
+    "shaders/blending/advanced_blend_darken.frag",
+    "shaders/blending/advanced_blend_difference.frag",
+    "shaders/blending/advanced_blend_exclusion.frag",
+    "shaders/blending/advanced_blend_hardlight.frag",
+    "shaders/blending/advanced_blend_hue.frag",
+    "shaders/blending/advanced_blend_lighten.frag",
+    "shaders/blending/advanced_blend_luminosity.frag",
+    "shaders/blending/advanced_blend_multiply.frag",
+    "shaders/blending/advanced_blend_overlay.frag",
+    "shaders/blending/advanced_blend_saturation.frag",
+    "shaders/blending/advanced_blend_screen.frag",
+    "shaders/blending/advanced_blend_softlight.frag",
+    "shaders/blending/blend.frag",
+    "shaders/blending/blend.vert",
+    "shaders/border_mask_blur.frag",
+    "shaders/border_mask_blur.vert",
+    "shaders/gaussian_blur.frag",
+    "shaders/gaussian_blur.vert",
+    "shaders/glyph_atlas.frag",
+    "shaders/glyph_atlas.vert",
+    "shaders/gradient_fill.frag",
+    "shaders/gradient_fill.vert",
+    "shaders/solid_fill.frag",
+    "shaders/solid_fill.vert",
+    "shaders/solid_stroke.frag",
+    "shaders/solid_stroke.vert",
+    "shaders/texture_fill.frag",
+    "shaders/texture_fill.vert",
+    "shaders/vertices.vert",
+    "shaders/vertices.frag",
+  ]
+}
+
+impeller_component("entity") {
+  sources = [
+    "contents/clip_contents.cc",
+    "contents/clip_contents.h",
+    "contents/content_context.cc",
+    "contents/content_context.h",
+    "contents/contents.cc",
+    "contents/contents.h",
+    "contents/filters/blend_filter_contents.cc",
+    "contents/filters/blend_filter_contents.h",
+    "contents/filters/border_mask_blur_filter_contents.cc",
+    "contents/filters/border_mask_blur_filter_contents.h",
+    "contents/filters/filter_contents.cc",
+    "contents/filters/filter_contents.h",
+    "contents/filters/gaussian_blur_filter_contents.cc",
+    "contents/filters/gaussian_blur_filter_contents.h",
+    "contents/filters/inputs/contents_filter_input.cc",
+    "contents/filters/inputs/contents_filter_input.h",
+    "contents/filters/inputs/filter_contents_filter_input.cc",
+    "contents/filters/inputs/filter_contents_filter_input.h",
+    "contents/filters/inputs/filter_input.cc",
+    "contents/filters/inputs/filter_input.h",
+    "contents/filters/inputs/texture_filter_input.cc",
+    "contents/filters/inputs/texture_filter_input.h",
+    "contents/linear_gradient_contents.cc",
+    "contents/linear_gradient_contents.h",
+    "contents/solid_color_contents.cc",
+    "contents/solid_color_contents.h",
+    "contents/solid_stroke_contents.cc",
+    "contents/solid_stroke_contents.h",
+    "contents/text_contents.cc",
+    "contents/text_contents.h",
+    "contents/texture_contents.cc",
+    "contents/texture_contents.h",
+    "contents/vertices_contents.cc",
+    "contents/vertices_contents.h",
+    "entity.cc",
+    "entity.h",
+    "entity_pass.cc",
+    "entity_pass.h",
+    "entity_pass_delegate.cc",
+    "entity_pass_delegate.h",
+    "inline_pass_context.cc",
+    "inline_pass_context.h",
+  ]
+
+  public_deps = [
+    ":entity_shaders",
+    "../archivist",
+    "../image",
+    "../renderer",
+    "../typographer",
+  ]
+
+  deps = [ "//flutter/fml" ]
+}
+
+impeller_component("entity_unittests") {
+  testonly = true
+
+  sources = [
+    "contents/filters/inputs/filter_input_unittests.cc",
+    "entity_playground.cc",
+    "entity_playground.h",
+    "entity_unittests.cc",
+  ]
+
+  deps = [
+    ":entity",
+    "../geometry:geometry_unittests",
+    "../playground",
+  ]
+}

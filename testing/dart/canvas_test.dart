@@ -107,6 +107,10 @@ void testNoCrashes() {
     testCanvas((Canvas canvas) => canvas.skew(double.nan, double.nan));
     testCanvas((Canvas canvas) => canvas.transform(Float64List(16)));
     testCanvas((Canvas canvas) => canvas.translate(double.nan, double.nan));
+    testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[],
+                                                               textureCoordinates: null,
+                                                               colors: null,
+                                                               indices: <int>[]), BlendMode.screen, paint));
   });
 }
 
@@ -150,8 +154,8 @@ Future<bool> fuzzyGoldenImageCompare(
 
     final Codec codec = await instantiateImageCodec(goldenData);
     final FrameInfo frame = await codec.getNextFrame();
-    expect(frame.image.height, equals(image.width));
-    expect(frame.image.width, equals(image.height));
+    expect(frame.image.height, equals(image.height));
+    expect(frame.image.width, equals(image.width));
 
     areEqual = await fuzzyCompareImages(frame.image, image);
   }
@@ -266,8 +270,8 @@ void main() {
   });
 
   test('Canvas preserves perspective data in Matrix4', () async {
-    final double rotateAroundX = pi / 6;  // 30 degrees
-    final double rotateAroundY = pi / 9;  // 20 degrees
+    const double rotateAroundX = pi / 6;  // 30 degrees
+    const double rotateAroundY = pi / 9;  // 20 degrees
     const int width = 150;
     const int height = 150;
     const Color black = Color.fromARGB(255, 0, 0, 0);
@@ -311,5 +315,490 @@ void main() {
       saveTestImage(combinedMatrixImage, 'combined_3D_transform_test_image.png');
     }
     expect(areEqual, true);
+  });
+
+  test('Path effects from Paragraphs do not affect further rendering', () async {
+    void drawText(Canvas canvas, String content, Offset offset,
+        {TextDecorationStyle style = TextDecorationStyle.solid}) {
+      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+      builder.pushStyle(TextStyle(
+        decoration: TextDecoration.underline,
+        decorationColor: const Color(0xFF0000FF),
+        fontSize: 10,
+        color: const Color(0xFF000000),
+        decorationStyle: style,
+      ));
+      builder.addText(content);
+      final Paragraph paragraph = builder.build();
+      paragraph.layout(const ParagraphConstraints(width: 100));
+      canvas.drawParagraph(paragraph, offset);
+    }
+
+    final Image image = await toImage((Canvas canvas) {
+      canvas.drawColor(const Color(0xFFFFFFFF), BlendMode.srcOver);
+      final Paint paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5;
+      drawText(canvas, 'Hello World', const Offset(20, 10));
+      canvas.drawCircle(const Offset(150, 25), 15, paint..color = const Color(0xFF00FF00));
+      drawText(canvas, 'Regular text', const Offset(20, 60));
+      canvas.drawCircle(const Offset(150, 75), 15, paint..color = const Color(0xFFFFFF00));
+      drawText(canvas, 'Dotted text', const Offset(20, 110), style: TextDecorationStyle.dotted);
+      canvas.drawCircle(const Offset(150, 125), 15, paint..color = const Color(0xFFFF0000));
+      drawText(canvas, 'Dashed text', const Offset(20, 160), style: TextDecorationStyle.dashed);
+      canvas.drawCircle(const Offset(150, 175), 15, paint..color = const Color(0xFFFF0000));
+      drawText(canvas, 'Wavy text', const Offset(20, 210), style: TextDecorationStyle.wavy);
+      canvas.drawCircle(const Offset(150, 225), 15, paint..color = const Color(0xFFFF0000));
+    }, 200, 250);
+    expect(image.width, equals(200));
+    expect(image.height, equals(250));
+
+    final bool areEqual =
+        await fuzzyGoldenImageCompare(image, 'dotted_path_effect_mixed_with_stroked_geometry.png');
+    expect(areEqual, true);
+  }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
+
+  test('Gradients with matrices in Paragraphs render correctly', () async {
+    final Image image = await toImage((Canvas canvas) {
+      final Paint p = Paint();
+      final Float64List transform = Float64List.fromList(<double>[
+        86.80000129342079,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        94.5,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        60.0,
+        224.310302734375,
+        0.0,
+        1.0
+      ]);
+      p.shader = Gradient.radial(
+          const Offset(2.5, 0.33),
+          0.8,
+          <Color>[
+            const Color(0xffff0000),
+            const Color(0xff00ff00),
+            const Color(0xff0000ff),
+            const Color(0xffff00ff)
+          ],
+          <double>[0.0, 0.3, 0.7, 0.9],
+          TileMode.mirror,
+          transform,
+          const Offset(2.55, 0.4));
+      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+      builder.pushStyle(TextStyle(
+        foreground: p,
+        fontSize: 200,
+      ));
+      builder.addText('Woodstock!');
+      final Paragraph paragraph = builder.build();
+      paragraph.layout(const ParagraphConstraints(width: 1000));
+      canvas.drawParagraph(paragraph, const Offset(10, 150));
+    }, 600, 400);
+    expect(image.width, equals(600));
+    expect(image.height, equals(400));
+
+    final bool areEqual =
+    await fuzzyGoldenImageCompare(image, 'text_with_gradient_with_matrix.png');
+    expect(areEqual, true);
+  }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
+
+  test('toGpuImage - too big', () async {
+    PictureRecorder recorder = PictureRecorder();
+    Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = const Color(0xFF123456));
+    final Picture picture = recorder.endRecording();
+    final Image image = picture.toGpuImage(300000, 4000000);
+    picture.dispose();
+
+    expect(image.width, 300000);
+    expect(image.height, 4000000);
+
+    recorder = PictureRecorder();
+    canvas = Canvas(recorder);
+
+    // On a slower CI machine, the raster thread may get behind the UI thread
+    // here. However, once the image is in an error state it will immediately
+    // throw on subsequent attempts.
+    bool caughtException = false;
+    for (int iterations = 0; iterations < 1000; iterations += 1) {
+      try {
+        canvas.drawImage(image, Offset.zero, Paint());
+      } on PictureRasterizationException catch (e) {
+        caughtException = true;
+        expect(e.message, contains('unable to create render target at specified size'));
+        break;
+      }
+      // Let the event loop turn.
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    expect(caughtException, true);
+    expect(
+      () => canvas.drawImageRect(image, Rect.zero, Rect.zero, Paint()),
+      throwsException,
+    );
+    expect(
+      () => canvas.drawImageNine(image, Rect.zero, Rect.zero, Paint()),
+      throwsException,
+    );
+    expect(
+      () => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
+      throwsException,
+    );
+  });
+
+  test('toGpuImage - succeeds', () async {
+    PictureRecorder recorder = PictureRecorder();
+    Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = const Color(0xFF123456));
+    final Picture picture = recorder.endRecording();
+    final Image image = picture.toGpuImage(30, 40);
+    picture.dispose();
+
+    expect(image.width, 30);
+    expect(image.height, 40);
+
+    recorder = PictureRecorder();
+    canvas = Canvas(recorder);
+    expect(
+      () => canvas.drawImage(image, Offset.zero, Paint()),
+      returnsNormally,
+    );
+    expect(
+      () => canvas.drawImageRect(image, Rect.zero, Rect.zero, Paint()),
+      returnsNormally,
+    );
+    expect(
+      () => canvas.drawImageNine(image, Rect.zero, Rect.zero, Paint()),
+      returnsNormally,
+    );
+    expect(
+      () => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
+      returnsNormally,
+    );
+  });
+
+  test('toGpuImage - toByteData', () async {
+    const Color color = Color(0xFF123456);
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = color);
+    final Picture picture = recorder.endRecording();
+    final Image image = picture.toGpuImage(6, 8);
+    picture.dispose();
+
+    expect(image.width, 6);
+    expect(image.height, 8);
+
+    final ByteData? data = await image.toByteData();
+
+    expect(data, isNotNull);
+    expect(data!.lengthInBytes, 6 * 8 * 4);
+    final Uint32List bytes = data.buffer.asUint32List();
+    // Draws a checkerboard due to flutter_tester not having a GPU context.
+    const int white = 0xFFFFFFFF;
+    const int grey  = 0xFFCCCCCC;
+    expect(bytes, const <int>[
+      white, white, white, grey,  grey,  grey, //
+      white, white, white, grey,  grey,  grey,
+      white, white, white, grey,  grey,  grey,
+      white, white, white, grey,  grey,  grey,
+      grey,  grey,  grey,  white, white, white,
+      grey,  grey,  grey,  white, white, white,
+      grey,  grey,  grey,  white, white, white,
+      grey,  grey,  grey,  white, white, white,
+    ]);
+  });
+
+  test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
+    // Regression test for https://github.com/flutter/flutter/issues/97172
+    bool assertsEnabled = false;
+    assert(() {
+      assertsEnabled = true;
+      return true;
+    }());
+
+    Object? error;
+    try {
+      await toImage((Canvas canvas) {
+        final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+        builder.addText('Woodstock!');
+        final Paragraph woodstock = builder.build();
+        canvas.drawParagraph(woodstock, const Offset(0, 50));
+      }, 100, 100);
+    } catch (e) {
+      error = e;
+    }
+    if (assertsEnabled) {
+      expect(error, isNotNull);
+    } else {
+      expect(error, isNull);
+    }
+  });
+
+  Matcher closeToTransform(Float64List expected) => (dynamic v) {
+    Expect.type<Float64List>(v);
+    final Float64List value = v;
+    expect(expected.length, equals(16));
+    expect(value.length, equals(16));
+    for (int r = 0; r < 4; r++) {
+      for (int c = 0; c < 4; c++) {
+        final double vActual = value[r*4 + c];
+        final double vExpected = expected[r*4 + c];
+        if ((vActual - vExpected).abs() > 1e-10) {
+          Expect.fail('matrix mismatch at $r, $c, $vActual not close to $vExpected');
+        }
+      }
+    }
+  };
+
+  Matcher notCloseToTransform(Float64List expected) => (dynamic v) {
+    Expect.type<Float64List>(v);
+    final Float64List value = v;
+    expect(expected.length, equals(16));
+    expect(value.length, equals(16));
+    for (int r = 0; r < 4; r++) {
+      for (int c = 0; c < 4; c++) {
+        final double vActual = value[r*4 + c];
+        final double vExpected = expected[r*4 + c];
+        if ((vActual - vExpected).abs() > 1e-10) {
+          return;
+        }
+      }
+    }
+    Expect.fail('$value is too close to $expected');
+  };
+
+  test('Canvas.translate affects canvas.getTransform', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.translate(12, 14.5);
+    final Float64List matrix = Matrix4.translationValues(12, 14.5, 0).storage;
+    final Float64List curMatrix = canvas.getTransform();
+    expect(curMatrix, closeToTransform(matrix));
+    canvas.translate(10, 10);
+    final Float64List newCurMatrix = canvas.getTransform();
+    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(curMatrix, closeToTransform(matrix));
+  });
+
+  test('Canvas.scale affects canvas.getTransform', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.scale(12, 14.5);
+    final Float64List matrix = Matrix4.diagonal3Values(12, 14.5, 1).storage;
+    final Float64List curMatrix = canvas.getTransform();
+    expect(curMatrix, closeToTransform(matrix));
+    canvas.scale(10, 10);
+    final Float64List newCurMatrix = canvas.getTransform();
+    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(curMatrix, closeToTransform(matrix));
+  });
+
+  test('Canvas.rotate affects canvas.getTransform', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.rotate(pi);
+    final Float64List matrix = Matrix4.rotationZ(pi).storage;
+    final Float64List curMatrix = canvas.getTransform();
+    expect(curMatrix, closeToTransform(matrix));
+    canvas.rotate(pi / 2);
+    final Float64List newCurMatrix = canvas.getTransform();
+    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(curMatrix, closeToTransform(matrix));
+  });
+
+  test('Canvas.skew affects canvas.getTransform', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.skew(12, 14.5);
+    final Float64List matrix = (Matrix4.identity()..setEntry(0, 1, 12)..setEntry(1, 0, 14.5)).storage;
+    final Float64List curMatrix = canvas.getTransform();
+    expect(curMatrix, closeToTransform(matrix));
+    canvas.skew(10, 10);
+    final Float64List newCurMatrix = canvas.getTransform();
+    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(curMatrix, closeToTransform(matrix));
+  });
+
+  test('Canvas.transform affects canvas.getTransform', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    final Float64List matrix = (Matrix4.identity()..translate(12.0, 14.5)..scale(12.0, 14.5)).storage;
+    canvas.transform(matrix);
+    final Float64List curMatrix = canvas.getTransform();
+    expect(curMatrix, closeToTransform(matrix));
+    canvas.translate(10, 10);
+    final Float64List newCurMatrix = canvas.getTransform();
+    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(curMatrix, closeToTransform(matrix));
+  });
+
+  Matcher closeToRect(Rect expected) => (dynamic v) {
+    Expect.type<Rect>(v);
+    final Rect value = v;
+    expect(value.left,   closeTo(expected.left,   1e-6));
+    expect(value.top,    closeTo(expected.top,    1e-6));
+    expect(value.right,  closeTo(expected.right,  1e-6));
+    expect(value.bottom, closeTo(expected.bottom, 1e-6));
+  };
+
+  Matcher notCloseToRect(Rect expected) => (dynamic v) {
+    Expect.type<Rect>(v);
+    final Rect value = v;
+    if ((value.left - expected.left).abs() > 1e-6 ||
+        (value.top - expected.top).abs() > 1e-6 ||
+        (value.right - expected.right).abs() > 1e-6 ||
+        (value.bottom - expected.bottom).abs() > 1e-6) {
+      return;
+    }
+    Expect.fail('$value is too close to $expected');
+  };
+
+  test('Canvas.clipRect affects canvas.getClipBounds', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
+    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
+    canvas.clipRect(clipBounds);
+
+    // Save initial return values for testing restored values
+    final Rect initialLocalBounds = canvas.getLocalClipBounds();
+    final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
+    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialDestinationBounds, closeToRect(clipBounds));
+
+    canvas.save();
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
+    // Both clip bounds have changed
+    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
+    // Previous return values have not changed
+    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialDestinationBounds, closeToRect(clipBounds));
+    canvas.restore();
+
+    // save/restore returned the values to their original values
+    expect(canvas.getLocalClipBounds(), initialLocalBounds);
+    expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+
+    canvas.save();
+    canvas.scale(2, 2);
+    const Rect scaledExpandedBounds = Rect.fromLTRB(5, 5.5, 10.5, 13);
+    expect(canvas.getLocalClipBounds(), closeToRect(scaledExpandedBounds));
+    // Destination bounds are unaffected by transform
+    expect(canvas.getDestinationClipBounds(), closeToRect(clipBounds));
+    canvas.restore();
+
+    // save/restore returned the values to their original values
+    expect(canvas.getLocalClipBounds(), initialLocalBounds);
+    expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+  });
+
+  test('Canvas.clipRRect affects canvas.getClipBounds', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
+    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
+    final RRect clip = RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
+    canvas.clipRRect(clip);
+
+    // Save initial return values for testing restored values
+    final Rect initialLocalBounds = canvas.getLocalClipBounds();
+    final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
+    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialDestinationBounds, closeToRect(clipBounds));
+
+    canvas.save();
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
+    // Both clip bounds have changed
+    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
+    // Previous return values have not changed
+    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialDestinationBounds, closeToRect(clipBounds));
+    canvas.restore();
+
+    // save/restore returned the values to their original values
+    expect(canvas.getLocalClipBounds(), initialLocalBounds);
+    expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+
+    canvas.save();
+    canvas.scale(2, 2);
+    const Rect scaledExpandedBounds = Rect.fromLTRB(5, 5.5, 10.5, 13);
+    expect(canvas.getLocalClipBounds(), closeToRect(scaledExpandedBounds));
+    // Destination bounds are unaffected by transform
+    expect(canvas.getDestinationClipBounds(), closeToRect(clipBounds));
+    canvas.restore();
+
+    // save/restore returned the values to their original values
+    expect(canvas.getLocalClipBounds(), initialLocalBounds);
+    expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+  });
+
+  test('Canvas.clipPath affects canvas.getClipBounds', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
+    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
+    final Path clip = Path()..addRect(clipBounds)..addOval(clipBounds);
+    canvas.clipPath(clip);
+
+    // Save initial return values for testing restored values
+    final Rect initialLocalBounds = canvas.getLocalClipBounds();
+    final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
+    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialDestinationBounds, closeToRect(clipBounds));
+
+    canvas.save();
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
+    // Both clip bounds have changed
+    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
+    // Previous return values have not changed
+    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialDestinationBounds, closeToRect(clipBounds));
+    canvas.restore();
+
+    // save/restore returned the values to their original values
+    expect(canvas.getLocalClipBounds(), initialLocalBounds);
+    expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+
+    canvas.save();
+    canvas.scale(2, 2);
+    const Rect scaledExpandedBounds = Rect.fromLTRB(5, 5.5, 10.5, 13);
+    expect(canvas.getLocalClipBounds(), closeToRect(scaledExpandedBounds));
+    // Destination bounds are unaffected by transform
+    expect(canvas.getDestinationClipBounds(), closeToRect(clipBounds));
+    canvas.restore();
+
+    // save/restore returned the values to their original values
+    expect(canvas.getLocalClipBounds(), initialLocalBounds);
+    expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+  });
+
+  test('Canvas.clipRect(diff) does not affect canvas.getClipBounds', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
+    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
+    canvas.clipRect(clipBounds);
+
+    // Save initial return values for testing restored values
+    final Rect initialLocalBounds = canvas.getLocalClipBounds();
+    final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
+    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialDestinationBounds, closeToRect(clipBounds));
+
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), clipOp: ClipOp.difference);
+    expect(canvas.getLocalClipBounds(), initialLocalBounds);
+    expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
 }

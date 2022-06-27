@@ -7,6 +7,8 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_attributes.h"
+#include "flutter/display_list/display_list_color.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
@@ -66,7 +68,7 @@ class DlColorSource
       const SkPoint start_point,
       const SkPoint end_point,
       uint32_t stop_count,
-      const uint32_t* colors,
+      const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
@@ -75,7 +77,7 @@ class DlColorSource
       SkPoint center,
       SkScalar radius,
       uint32_t stop_count,
-      const uint32_t* colors,
+      const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
@@ -86,7 +88,7 @@ class DlColorSource
       SkPoint end_center,
       SkScalar end_radius,
       uint32_t stop_count,
-      const uint32_t* colors,
+      const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
@@ -96,7 +98,7 @@ class DlColorSource
       SkScalar start,
       SkScalar end,
       uint32_t stop_count,
-      const uint32_t* colors,
+      const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
@@ -104,7 +106,7 @@ class DlColorSource
   virtual bool is_opaque() const = 0;
 
   virtual std::shared_ptr<DlColorSource> with_sampling(
-      const SkSamplingOptions& options) const {
+      DlImageSampling options) const {
     return shared();
   }
 
@@ -149,7 +151,7 @@ class DlColorSource
 
 class DlColorColorSource final : public DlColorSource {
  public:
-  DlColorColorSource(uint32_t color) : color_(color) {}
+  DlColorColorSource(DlColor color) : color_(color) {}
 
   std::shared_ptr<DlColorSource> shared() const override {
     return std::make_shared<DlColorColorSource>(color_);
@@ -162,7 +164,7 @@ class DlColorColorSource final : public DlColorSource {
 
   bool is_opaque() const override { return (color_ >> 24) == 255; }
 
-  uint32_t color() const { return color_; }
+  DlColor color() const { return color_; }
 
   sk_sp<SkShader> skia_object() const override {
     return SkShaders::Color(color_);
@@ -176,7 +178,7 @@ class DlColorColorSource final : public DlColorSource {
   }
 
  private:
-  uint32_t color_;
+  DlColor color_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlColorColorSource);
 };
@@ -199,10 +201,11 @@ class DlMatrixColorSourceBase : public DlColorSource {
 class DlImageColorSource final : public SkRefCnt,
                                  public DlMatrixColorSourceBase {
  public:
+  // TODO(100984): Color sources must be DlImages instead of SkImages.
   DlImageColorSource(sk_sp<const SkImage> image,
                      DlTileMode horizontal_tile_mode,
                      DlTileMode vertical_tile_mode,
-                     SkSamplingOptions sampling = DisplayList::LinearSampling,
+                     DlImageSampling sampling = DlImageSampling::kLinear,
                      const SkMatrix* matrix = nullptr)
       : DlMatrixColorSourceBase(matrix),
         sk_image_(image),
@@ -217,7 +220,7 @@ class DlImageColorSource final : public SkRefCnt,
   }
 
   std::shared_ptr<DlColorSource> with_sampling(
-      const SkSamplingOptions& sampling) const override {
+      DlImageSampling sampling) const override {
     return std::make_shared<DlImageColorSource>(
         sk_image_, horizontal_tile_mode_, vertical_tile_mode_, sampling,
         matrix_ptr());
@@ -231,11 +234,11 @@ class DlImageColorSource final : public SkRefCnt,
   sk_sp<const SkImage> image() const { return sk_image_; }
   DlTileMode horizontal_tile_mode() const { return horizontal_tile_mode_; }
   DlTileMode vertical_tile_mode() const { return vertical_tile_mode_; }
-  SkSamplingOptions sampling() const { return sampling_; }
+  DlImageSampling sampling() const { return sampling_; }
 
   virtual sk_sp<SkShader> skia_object() const override {
     return sk_image_->makeShader(ToSk(horizontal_tile_mode_),
-                                 ToSk(vertical_tile_mode_), sampling_,
+                                 ToSk(vertical_tile_mode_), ToSk(sampling_),
                                  matrix_ptr());
   }
 
@@ -253,7 +256,7 @@ class DlImageColorSource final : public SkRefCnt,
   sk_sp<const SkImage> sk_image_;
   DlTileMode horizontal_tile_mode_;
   DlTileMode vertical_tile_mode_;
-  SkSamplingOptions sampling_;
+  DlImageSampling sampling_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlImageColorSource);
 };
@@ -264,7 +267,7 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
     if (mode_ == DlTileMode::kDecal) {
       return false;
     }
-    const uint32_t* my_colors = colors();
+    const DlColor* my_colors = colors();
     for (uint32_t i = 0; i < stop_count_; i++) {
       if ((my_colors[i] >> 24) < 255) {
         return false;
@@ -275,8 +278,8 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
 
   DlTileMode tile_mode() const { return mode_; }
   int stop_count() const { return stop_count_; }
-  const uint32_t* colors() const {
-    return reinterpret_cast<const uint32_t*>(pod());
+  const DlColor* colors() const {
+    return reinterpret_cast<const DlColor*>(pod());
   }
   const float* stops() const {
     return reinterpret_cast<const float*>(colors() + stop_count());
@@ -291,7 +294,7 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
         stop_count_(stop_count) {}
 
   size_t vector_sizes() const {
-    return stop_count_ * (sizeof(uint32_t) + sizeof(float));
+    return stop_count_ * (sizeof(DlColor) + sizeof(float));
   }
 
   virtual const void* pod() const = 0;
@@ -301,22 +304,17 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
         stop_count_ != other_base->stop_count_) {
       return false;
     }
-    const uint32_t* my_colors = colors();
-    const float* my_stops = stops();
-    const uint32_t* other_colors = other_base->colors();
-    const float* other_stops = other_base->stops();
-    for (uint32_t i = 0; i < stop_count_; i++) {
-      if (my_colors[i] != other_colors[i] || my_stops[i] != other_stops[i]) {
-        return false;
-      }
-    }
-    return true;
+    static_assert(sizeof(colors()[0]) == 4);
+    static_assert(sizeof(stops()[0]) == 4);
+    int num_bytes = stop_count_ * 4;
+    return (memcmp(colors(), other_base->colors(), num_bytes) == 0 &&
+            memcmp(stops(), other_base->stops(), num_bytes) == 0);
   }
 
   void store_color_stops(void* pod,
-                         const uint32_t* color_data,
+                         const DlColor* color_data,
                          const float* stop_data) {
-    uint32_t* color_storage = reinterpret_cast<uint32_t*>(pod);
+    DlColor* color_storage = reinterpret_cast<DlColor*>(pod);
     memcpy(color_storage, color_data, stop_count_ * sizeof(*color_data));
     float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
     if (stop_data) {
@@ -360,7 +358,8 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
 
   sk_sp<SkShader> skia_object() const override {
     SkPoint pts[] = {start_point_, end_point_};
-    return SkGradientShader::MakeLinear(pts, colors(), stops(), stop_count(),
+    const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors());
+    return SkGradientShader::MakeLinear(pts, sk_colors, stops(), stop_count(),
                                         ToSk(tile_mode()), 0, matrix_ptr());
   }
 
@@ -378,7 +377,7 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
   DlLinearGradientColorSource(const SkPoint start_point,
                               const SkPoint end_point,
                               uint32_t stop_count,
-                              const uint32_t* colors,
+                              const DlColor* colors,
                               const float* stops,
                               DlTileMode tile_mode,
                               const SkMatrix* matrix = nullptr)
@@ -426,7 +425,8 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar radius() const { return radius_; }
 
   sk_sp<SkShader> skia_object() const override {
-    return SkGradientShader::MakeRadial(center_, radius_, colors(), stops(),
+    const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors());
+    return SkGradientShader::MakeRadial(center_, radius_, sk_colors, stops(),
                                         stop_count(), ToSk(tile_mode()), 0,
                                         matrix_ptr());
   }
@@ -445,7 +445,7 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
   DlRadialGradientColorSource(SkPoint center,
                               SkScalar radius,
                               uint32_t stop_count,
-                              const uint32_t* colors,
+                              const DlColor* colors,
                               const float* stops,
                               DlTileMode tile_mode,
                               const SkMatrix* matrix = nullptr)
@@ -496,8 +496,9 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar end_radius() const { return end_radius_; }
 
   sk_sp<SkShader> skia_object() const override {
+    const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors());
     return SkGradientShader::MakeTwoPointConical(
-        start_center_, start_radius_, end_center_, end_radius_, colors(),
+        start_center_, start_radius_, end_center_, end_radius_, sk_colors,
         stops(), stop_count(), ToSk(tile_mode()), 0, matrix_ptr());
   }
 
@@ -519,7 +520,7 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
                                SkPoint end_center,
                                SkScalar end_radius,
                                uint32_t stop_count,
-                               const uint32_t* colors,
+                               const DlColor* colors,
                                const float* stops,
                                DlTileMode tile_mode,
                                const SkMatrix* matrix = nullptr)
@@ -574,7 +575,8 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar end() const { return end_; }
 
   sk_sp<SkShader> skia_object() const override {
-    return SkGradientShader::MakeSweep(center_.x(), center_.y(), colors(),
+    const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors());
+    return SkGradientShader::MakeSweep(center_.x(), center_.y(), sk_colors,
                                        stops(), stop_count(), ToSk(tile_mode()),
                                        start_, end_, 0, matrix_ptr());
   }
@@ -594,7 +596,7 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
                              SkScalar start,
                              SkScalar end,
                              uint32_t stop_count,
-                             const uint32_t* colors,
+                             const DlColor* colors,
                              const float* stops,
                              DlTileMode tile_mode,
                              const SkMatrix* matrix = nullptr)

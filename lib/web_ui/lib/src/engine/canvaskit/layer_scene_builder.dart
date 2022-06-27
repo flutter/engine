@@ -6,7 +6,6 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show toMatrix32;
 import '../vector_math.dart';
 import 'layer.dart';
 import 'layer_tree.dart';
@@ -25,6 +24,12 @@ class LayerScene implements ui.Scene {
   Future<ui.Image> toImage(int width, int height) {
     final ui.Picture picture = layerTree.flatten();
     return picture.toImage(width, height);
+  }
+
+  @override
+  ui.Image toGpuImage(int width, int height) {
+    final ui.Picture picture = layerTree.flatten();
+    return picture.toGpuImage(width, height);
   }
 }
 

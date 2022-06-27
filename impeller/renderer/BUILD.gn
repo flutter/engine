@@ -1,0 +1,100 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("renderer") {
+  sources = [
+    "allocator.cc",
+    "allocator.h",
+    "buffer.cc",
+    "buffer.h",
+    "buffer_view.cc",
+    "buffer_view.h",
+    "command.cc",
+    "command.h",
+    "command_buffer.cc",
+    "command_buffer.h",
+    "context.cc",
+    "context.h",
+    "device_buffer.cc",
+    "device_buffer.h",
+    "formats.cc",
+    "formats.h",
+    "host_buffer.cc",
+    "host_buffer.h",
+    "pipeline.cc",
+    "pipeline.h",
+    "pipeline_builder.cc",
+    "pipeline_builder.h",
+    "pipeline_descriptor.cc",
+    "pipeline_descriptor.h",
+    "pipeline_library.cc",
+    "pipeline_library.h",
+    "platform.cc",
+    "platform.h",
+    "range.cc",
+    "range.h",
+    "render_pass.cc",
+    "render_pass.h",
+    "render_target.cc",
+    "render_target.h",
+    "renderer.cc",
+    "renderer.h",
+    "sampler.cc",
+    "sampler.h",
+    "sampler_descriptor.cc",
+    "sampler_descriptor.h",
+    "sampler_library.cc",
+    "sampler_library.h",
+    "shader_function.cc",
+    "shader_function.h",
+    "shader_key.cc",
+    "shader_key.h",
+    "shader_library.cc",
+    "shader_library.h",
+    "shader_types.cc",
+    "shader_types.h",
+    "snapshot.cc",
+    "snapshot.h",
+    "surface.cc",
+    "surface.h",
+    "texture.cc",
+    "texture.h",
+    "texture_descriptor.cc",
+    "texture_descriptor.h",
+    "vertex_buffer.cc",
+    "vertex_buffer.h",
+    "vertex_buffer_builder.cc",
+    "vertex_buffer_builder.h",
+    "vertex_descriptor.cc",
+    "vertex_descriptor.h",
+  ]
+
+  public_deps = [
+    "../base",
+    "../geometry",
+    "../image",
+    "../tessellator",
+  ]
+
+  deps = [ "//flutter/fml" ]
+}
+
+impeller_component("renderer_unittests") {
+  testonly = true
+
+  sources = [
+    "device_buffer_unittests.cc",
+    "host_buffer_unittests.cc",
+    "renderer_unittests.cc",
+  ]
+
+  deps = [
+    ":renderer",
+    "../fixtures",
+    "../playground",
+    "//flutter/testing:testing_lib",
+  ]
+}

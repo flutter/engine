@@ -4,6 +4,9 @@
 
 #include "flutter/lib/ui/painting/image.h"
 
+#include <algorithm>
+#include <limits>
+
 #include "flutter/lib/ui/painting/image_encoding.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -49,14 +52,15 @@ void CanvasImage::dispose() {
 }
 
 size_t CanvasImage::GetAllocationSize() const {
-  if (auto image = image_.skia_object()) {
-    const auto& info = image->imageInfo();
-    const auto kMipmapOverhead = 4.0 / 3.0;
-    const size_t image_byte_size = info.computeMinByteSize() * kMipmapOverhead;
-    return image_byte_size + sizeof(this);
-  } else {
-    return sizeof(CanvasImage);
+  auto size = sizeof(this);
+  if (image_) {
+    size += image_->GetApproximateByteSize();
   }
+  // The VM will assert if we set a value larger than or close to
+  // std::numeric_limits<intptr_t>::max().
+  // https://github.com/dart-lang/sdk/issues/49332
+  return std::clamp(
+      size, static_cast<size_t>(0),
+      static_cast<size_t>(std::numeric_limits<intptr_t>::max() / 10));
 }
-
 }  // namespace flutter

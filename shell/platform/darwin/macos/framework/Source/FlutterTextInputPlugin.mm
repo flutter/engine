@@ -57,8 +57,8 @@ static NSString* const kTransformKey = @"transform";
  * or at the beginning of the next (downstream).
  */
 typedef NS_ENUM(NSUInteger, FlutterTextAffinity) {
-  FlutterTextAffinityUpstream,
-  FlutterTextAffinityDownstream
+  kFlutterTextAffinityUpstream,
+  kFlutterTextAffinityDownstream
 };
 
 /*
@@ -216,8 +216,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _textInputContext = [[NSTextInputContext alloc] initWithClient:unsafeSelf];
     _previouslyPressedFlags = 0;
 
-    _flutterViewController = viewController;
-
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
@@ -235,14 +233,19 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
 - (void)dealloc {
   [_channel setMethodCallHandler:nil];
-  if (_textInputContext) {
-    [_textInputContext deactivate];
-    [_textInputContext discardMarkedText];
-    _textInputContext = nil;
-  }
 }
 
 #pragma mark - Private
+
+- (void)resignAndRemoveFromSuperview {
+  if (self.superview != nil) {
+    // With accessiblity enabled TextInputPlugin is inside _client, so take the
+    // nextResponder from the _client.
+    NSResponder* nextResponder = _client != nil ? _client.nextResponder : self.nextResponder;
+    [self.window makeFirstResponder:nextResponder];
+    [self removeFromSuperview];
+  }
+}
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   BOOL handled = YES;
@@ -264,17 +267,24 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       _enableDeltaModel = [config[kEnableDeltaModel] boolValue];
       NSDictionary* inputTypeInfo = config[kTextInputType];
       _inputType = inputTypeInfo[kTextInputTypeName];
-      self.textAffinity = FlutterTextAffinityUpstream;
+      self.textAffinity = kFlutterTextAffinityUpstream;
 
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }
   } else if ([method isEqualToString:kShowMethod]) {
+    // Ensure the plugin is in hierarchy. Only do this with accessibility disabled.
+    // When accessibility is enabled cocoa will reparent the plugin inside
+    // FlutterTextField in [FlutterTextField startEditing].
+    if (_client == nil) {
+      [_flutterViewController.view addSubview:self];
+    }
+    [self.window makeFirstResponder:self];
     _shown = TRUE;
-    [_textInputContext activate];
   } else if ([method isEqualToString:kHideMethod]) {
+    [self resignAndRemoveFromSuperview];
     _shown = FALSE;
-    [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
+    [self resignAndRemoveFromSuperview];
     // If there's an active mark region, commit it, end composing, and clear the IME's mark text.
     if (_activeModel && _activeModel->composing()) {
       _activeModel->CommitComposing();
@@ -351,8 +361,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   NSString* selectionAffinity = state[kSelectionAffinityKey];
   if (selectionAffinity != nil) {
     _textAffinity = [selectionAffinity isEqualToString:kTextAffinityUpstream]
-                        ? FlutterTextAffinityUpstream
-                        : FlutterTextAffinityDownstream;
+                        ? kFlutterTextAffinityUpstream
+                        : kFlutterTextAffinityDownstream;
   }
 
   NSString* text = state[kTextKey];
@@ -369,7 +379,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (composing_range.collapsed() && wasComposing) {
     [_textInputContext discardMarkedText];
   }
-  [_client becomeFirstResponder];
+  [_client startEditing];
+
   [self updateTextAndSelection];
 }
 
@@ -453,8 +464,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (NSString*)textAffinityString {
-  return (self.textAffinity == FlutterTextAffinityUpstream) ? kTextAffinityUpstream
-                                                            : kTextAffinityDownstream;
+  return (self.textAffinity == kFlutterTextAffinityUpstream) ? kTextAffinityUpstream
+                                                             : kTextAffinityDownstream;
 }
 
 - (BOOL)isComposing {
@@ -471,12 +482,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     return NO;
   }
 
-  // NSTextInputContext sometimes deactivates itself without calling
-  // deactivate. One such example is when the composing region is deleted.
-  // TODO(LongCatIsLooong): put FlutterTextInputPlugin in the view hierarchy and
-  // request/resign first responder when needed. Activate/deactivate shouldn't
-  // be called by the application.
-  [_textInputContext activate];
   return [_textInputContext handleEvent:event];
 }
 
@@ -492,7 +497,20 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (BOOL)performKeyEquivalent:(NSEvent*)event {
-  return [self.flutterViewController performKeyEquivalent:event];
+  if ([_flutterViewController isDispatchingKeyEvent:event]) {
+    // When NSWindow is nextResponder, keyboard manager will send to it
+    // unhandled events (through [NSWindow keyDown:]). If event has has both
+    // control and cmd modifiers set (i.e. cmd+control+space - emoji picker)
+    // NSWindow will then send this event as performKeyEquivalent: to first
+    // responder, which is FlutterTextInputPlugin. If that's the case, the
+    // plugin must not handle the event, otherwise the emoji picker would not
+    // work (due to first responder returning YES from performKeyEquivalent:)
+    // and there would be endless loop, because FlutterViewController will
+    // send the event back to [keyboardManager handleEvent:].
+    return NO;
+  }
+  [self.flutterViewController keyDown:event];
+  return YES;
 }
 
 - (void)flagsChanged:(NSEvent*)event {
@@ -570,19 +588,22 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
 
   flutter::TextRange oldSelection = _activeModel->selection();
+  flutter::TextRange composingBeforeChange = _activeModel->composing_range();
+  flutter::TextRange replacedRange(-1, -1);
 
   std::string textBeforeChange = _activeModel->GetText().c_str();
   std::string utf8String = [string UTF8String];
   _activeModel->AddText(utf8String);
   if (_activeModel->composing()) {
+    replacedRange = composingBeforeChange;
     _activeModel->CommitComposing();
     _activeModel->EndComposing();
+  } else {
+    replacedRange = range.location == NSNotFound
+                        ? flutter::TextRange(oldSelection.base(), oldSelection.extent())
+                        : flutter::TextRange(range.location, range.location + range.length);
   }
   if (_enableDeltaModel) {
-    flutter::TextRange replacedRange =
-        range.location == NSNotFound
-            ? flutter::TextRange(oldSelection.base(), oldSelection.extent())
-            : flutter::TextRange(range.location, range.location + range.length);
     [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, replacedRange,
                                                              utf8String)];
   } else {
@@ -625,6 +646,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (!_activeModel->composing()) {
     _activeModel->BeginComposing();
   }
+  flutter::TextRange composingBeforeChange = _activeModel->composing_range();
+  flutter::TextRange selectionBeforeChange = _activeModel->selection();
 
   // Input string may be NSString or NSAttributedString.
   BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
@@ -641,8 +664,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->SetSelection(flutter::TextRange(base, extent));
 
   if (_enableDeltaModel) {
-    flutter::TextRange composing = _activeModel->composing_range();
-    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, composing,
+    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange,
+                                                             selectionBeforeChange.collapsed()
+                                                                 ? composingBeforeChange
+                                                                 : selectionBeforeChange,
                                                              marked_text)];
   } else {
     [self updateEditState];
@@ -713,7 +738,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (NSUInteger)characterIndexForPoint:(NSPoint)point {
-  // TODO: Implement.
+  // TODO(cbracken): Implement.
   // Note: This function can't easily be implemented under the system-message architecture.
   return 0;
 }

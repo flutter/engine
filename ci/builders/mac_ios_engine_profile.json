@@ -5,7 +5,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "mac_model=Macmini8,1",
-                "os=Mac"
+                "os=Mac-12"
             ],
             "gn": [
                 "--ios",
@@ -14,7 +14,7 @@
                 "--simulator",
                 "--no-lto"
             ],
-            "name": "ios_debug_sym",
+            "name": "ios_debug_sim",
             "ninja": {
                 "config": "ios_debug_sim",
                 "targets": []
@@ -26,7 +26,31 @@
             "drone_dimensions": [
                 "device_type=none",
                 "mac_model=Macmini8,1",
-                "os=Mac"
+                "os=Mac-12"
+            ],
+            "generators": {},
+            "gn": [
+                "--ios",
+                "--runtime-mode",
+                "debug",
+                "--simulator",
+                "--simulator-cpu=arm64",
+                "--no-lto",
+                "--no-goma"
+            ],
+            "name": "ios_debug_sim_arm64",
+            "ninja": {
+                "config": "ios_debug_sim_arm64",
+                "targets": []
+            },
+            "tests": []
+        },
+        {
+            "archives": [],
+            "drone_dimensions": [
+                "device_type=none",
+                "mac_model=Macmini8,1",
+                "os=Mac-12"
             ],
             "gn": [
                 "--ios",
@@ -40,28 +64,7 @@
                 "targets": []
             },
             "tests": []
-        },
-        {
-            "archives": [],
-            "drone_dimensions": [
-                "device_type=none",
-                "mac_model=Macmini8,1",
-                "os=Mac"
-            ],
-            "generators": {},
-            "gn": [
-                "--ios",
-                "--runtime-mode",
-                "profile",
-                "--bitcode",
-                "--ios-cpu=arm"
-            ],
-            "name": "ios_profile_arm",
-            "ninja": {
-                "config": "ios_profile_arm",
-                "targets": []
-            },
-            "tests": []
         }
-    ]
+    ],
+    "tests": []
 }

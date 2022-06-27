@@ -47,18 +47,34 @@ class WindowBindingHandlerDelegate {
 
   // Notifies delegate that backing window mouse pointer has left the window.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+  virtual void OnPointerLeave(double x,
+                              double y,
+                              FlutterPointerDeviceKind device_kind,
                               int32_t device_id) = 0;
+
+  // Notifies delegate that a pan/zoom gesture has started.
+  // Typically called by DirectManipulationEventHandler
+  virtual void OnPointerPanZoomStart(int32_t device_id) = 0;
+
+  // Notifies delegate that a pan/zoom gesture has updated.
+  // Typically called by DirectManipulationEventHandler
+  virtual void OnPointerPanZoomUpdate(int32_t device_id,
+                                      double pan_x,
+                                      double pan_y,
+                                      double scale,
+                                      double rotation) = 0;
+
+  // Notifies delegate that a pan/zoom gesture has ended.
+  // Typically called by DirectManipulationEventHandler
+  virtual void OnPointerPanZoomEnd(int32_t device_id) = 0;
 
   // Notifies delegate that backing window has received text.
   // Typically called by currently configured WindowBindingHandler
   virtual void OnText(const std::u16string&) = 0;
 
-  // TODO(clarkezone) refactor delegate to avoid needing win32 magic values in
-  // UWP implementation https://github.com/flutter/flutter/issues/70202 Notifies
-  // delegate that backing window size has received key press. Should return
-  // true if the event was handled and should not be propagated. Typically
-  // called by currently configured WindowBindingHandler.
+  // Notifies delegate that backing window size has received key press. Should
+  // return true if the event was handled and should not be propagated.
+  // Typically called by currently configured WindowBindingHandler.
   virtual void OnKey(int key,
                      int scancode,
                      int action,
@@ -101,9 +117,6 @@ class WindowBindingHandlerDelegate {
                         int scroll_offset_multiplier,
                         FlutterPointerDeviceKind device_kind,
                         int32_t device_id) = 0;
-
-  // Notifies delegate that backing window has received brightness change event.
-  virtual void OnPlatformBrightnessChanged() = 0;
 
   // Notifies delegate that the Flutter semantics tree should be enabled or
   // disabled.

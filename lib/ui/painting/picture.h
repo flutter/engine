@@ -25,13 +25,10 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
  public:
   ~Picture() override;
-  static fml::RefPtr<Picture> Create(Dart_Handle dart_handle,
-                                     flutter::SkiaGPUObject<SkPicture> picture);
   static fml::RefPtr<Picture> Create(
       Dart_Handle dart_handle,
       flutter::SkiaGPUObject<DisplayList> display_list);
 
-  sk_sp<SkPicture> picture() const { return picture_.skia_object(); }
   sk_sp<DisplayList> display_list() const {
     return display_list_.skia_object();
   }
@@ -40,13 +37,22 @@ class Picture : public RefCountedDartWrappable<Picture> {
                       uint32_t height,
                       Dart_Handle raw_image_callback);
 
+  void toGpuImage(uint32_t width,
+                  uint32_t height,
+                  Dart_Handle raw_image_handle);
+
   void dispose();
 
   size_t GetAllocationSize() const override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  static Dart_Handle RasterizeToImage(sk_sp<SkPicture> picture,
+  static void RasterizeToGpuImage(sk_sp<DisplayList> display_list,
+                                  uint32_t width,
+                                  uint32_t height,
+                                  Dart_Handle raw_image_handle);
+
+  static Dart_Handle RasterizeToImage(sk_sp<DisplayList> display_list,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback);
@@ -58,10 +64,8 @@ class Picture : public RefCountedDartWrappable<Picture> {
       Dart_Handle raw_image_callback);
 
  private:
-  explicit Picture(flutter::SkiaGPUObject<SkPicture> picture);
   explicit Picture(flutter::SkiaGPUObject<DisplayList> display_list);
 
-  flutter::SkiaGPUObject<SkPicture> picture_;
   flutter::SkiaGPUObject<DisplayList> display_list_;
 };
 

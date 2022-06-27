@@ -383,7 +383,7 @@ class MaskFilter {
   }
 
   @override
-  int get hashCode => hashValues(_style, _sigma);
+  int get hashCode => Object.hash(_style, _sigma);
 
   @override
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
@@ -403,6 +403,20 @@ class ImageFilter {
     }
     // TODO(ferhat): implement TileMode.
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
+  }
+
+  // ignore: avoid_unused_constructor_parameters
+  factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) {
+    // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
+    throw UnimplementedError(
+        'ImageFilter.dilate not implemented for web platform.');
+  }
+
+  // ignore: avoid_unused_constructor_parameters
+  factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) {
+    // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
+    throw UnimplementedError(
+        'ImageFilter.erode not implemented for web platform.');
   }
 
   factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
@@ -465,7 +479,21 @@ Future<Codec> instantiateImageCodec(
   if (engine.useCanvasKit) {
     return engine.skiaInstantiateImageCodec(list, targetWidth, targetHeight);
   } else {
-    final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
+    final engine.DomBlob blob = engine.createDomBlob(<dynamic>[list.buffer]);
+    return engine.HtmlBlobCodec(blob);
+  }
+}
+
+Future<Codec> instantiateImageCodecFromBuffer(
+  ImmutableBuffer buffer, {
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
+}) async {
+  if (engine.useCanvasKit) {
+    return engine.skiaInstantiateImageCodec(buffer._list!, targetWidth, targetHeight);
+  } else {
+    final engine.DomBlob blob = engine.createDomBlob(<dynamic>[buffer._list!.buffer]);
     return engine.HtmlBlobCodec(blob);
   }
 }
@@ -706,7 +734,7 @@ class Shadow {
   }
 
   @override
-  int get hashCode => hashValues(color, offset, blurRadius);
+  int get hashCode => Object.hash(color, offset, blurRadius);
 
   @override
   String toString() => 'TextShadow($color, $offset, $blurRadius)';
@@ -721,15 +749,21 @@ class ImageShader extends Shader {
 }
 
 class ImmutableBuffer {
-  ImmutableBuffer._(this.length);
+  ImmutableBuffer._(this._length);
   static Future<ImmutableBuffer> fromUint8List(Uint8List list) async {
     final ImmutableBuffer instance = ImmutableBuffer._(list.length);
     instance._list = list;
     return instance;
   }
 
+  static Future<ImmutableBuffer> fromAsset(String assetKey) async {
+    throw UnsupportedError('ImmutableBuffer.fromAsset is not supported on the web.');
+  }
+
   Uint8List? _list;
-  final int length;
+
+  int get length => _length;
+  int _length;
 
   bool get debugDisposed {
     late bool disposed;

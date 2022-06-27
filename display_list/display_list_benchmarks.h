@@ -6,6 +6,8 @@
 #define FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKS_H_
 
 #include "flutter/display_list/display_list_benchmarks_canvas_provider.h"
+#include "flutter/display_list/display_list_sampling_options.h"
+#include "flutter/display_list/display_list_vertices.h"
 
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -76,22 +78,22 @@ void BM_DrawPoints(benchmark::State& state,
 void BM_DrawVertices(benchmark::State& state,
                      BackendType backend_type,
                      unsigned attributes,
-                     SkVertices::VertexMode mode);
+                     DlVertexMode mode);
 void BM_DrawImage(benchmark::State& state,
                   BackendType backend_type,
                   unsigned attributes,
-                  const SkSamplingOptions& options,
+                  DlImageSampling options,
                   bool upload_bitmap);
 void BM_DrawImageRect(benchmark::State& state,
                       BackendType backend_type,
                       unsigned attributes,
-                      const SkSamplingOptions& options,
+                      DlImageSampling options,
                       SkCanvas::SrcRectConstraint constraint,
                       bool upload_bitmap);
 void BM_DrawImageNine(benchmark::State& state,
                       BackendType backend_type,
                       unsigned attributes,
-                      const SkFilterMode filter,
+                      const DlFilterMode filter,
                       bool upload_bitmap);
 void BM_DrawTextBlob(benchmark::State& state,
                      BackendType backend_type,
@@ -238,7 +240,7 @@ void BM_SaveLayer(benchmark::State& state,
                     TriangleStrip/BACKEND,                              \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkVertices::VertexMode::kTriangleStrip_VertexMode)  \
+                    DlVertexMode::kTriangleStrip)                       \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 2048)                                                 \
       ->UseRealTime()                                                   \
@@ -249,7 +251,7 @@ void BM_SaveLayer(benchmark::State& state,
                     TriangleFan/BACKEND,                                \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkVertices::VertexMode::kTriangleFan_VertexMode)    \
+                    DlVertexMode::kTriangleFan)                         \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 2048)                                                 \
       ->UseRealTime()                                                   \
@@ -260,7 +262,7 @@ void BM_SaveLayer(benchmark::State& state,
                     Triangles/BACKEND,                                  \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkVertices::VertexMode::kTriangles_VertexMode)      \
+                    DlVertexMode::kTriangles)                           \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 2048)                                                 \
       ->UseRealTime()                                                   \
@@ -330,7 +332,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImage, Texture/BACKEND,                      \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkSamplingOptions(), false)                         \
+                    DlImageSampling::kNearestNeighbor, false)                         \
       ->RangeMultiplier(2)                                              \
       ->Range(128, 512)                                                 \
       ->UseRealTime()                                                   \
@@ -339,7 +341,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImage, Upload/BACKEND,                       \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkSamplingOptions(), true)                          \
+                    DlImageSampling::kNearestNeighbor, true)                          \
       ->RangeMultiplier(2)                                              \
       ->Range(128, 512)                                                 \
       ->UseRealTime()                                                   \
@@ -351,7 +353,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Texture/Strict/BACKEND,                         \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      SkSamplingOptions(),                                              \
+      DlImageSampling::kNearestNeighbor,                                              \
       SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint, false)    \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
@@ -362,7 +364,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Texture/Fast/BACKEND,                           \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      SkSamplingOptions(),                                              \
+      DlImageSampling::kNearestNeighbor,                                              \
       SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint, false)      \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
@@ -373,7 +375,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Upload/Strict/BACKEND,                          \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      SkSamplingOptions(),                                              \
+      DlImageSampling::kNearestNeighbor,                                              \
       SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint, true)     \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
@@ -384,7 +386,7 @@ void BM_SaveLayer(benchmark::State& state,
       BM_DrawImageRect, Upload/Fast/BACKEND,                            \
       BackendType::k##BACKEND##_Backend,                                \
       ATTRIBUTES,                                                       \
-      SkSamplingOptions(),                                              \
+      DlImageSampling::kNearestNeighbor,                                              \
       SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint, true)       \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
@@ -396,7 +398,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImageNine, Texture/Nearest/BACKEND,          \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkFilterMode::kNearest, false)                      \
+                    DlFilterMode::kNearest, false)                      \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
       ->UseRealTime()                                                   \
@@ -405,7 +407,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImageNine, Upload/Nearest/BACKEND,           \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkFilterMode::kNearest, true)                       \
+                    DlFilterMode::kNearest, true)                       \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
       ->UseRealTime()                                                   \
@@ -414,7 +416,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImageNine, Texture/Linear/BACKEND,           \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkFilterMode::kLinear, false)                       \
+                    DlFilterMode::kLinear, false)                       \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
       ->UseRealTime()                                                   \
@@ -423,7 +425,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawImageNine, Upload/Linear/BACKEND,            \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkFilterMode::kLinear, true)                        \
+                    DlFilterMode::kLinear, true)                        \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
       ->UseRealTime()                                                   \

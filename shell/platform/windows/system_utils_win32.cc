@@ -50,7 +50,7 @@ std::vector<std::wstring> GetPreferredLanguages() {
     }
     // Read the next null-terminated language.
     std::wstring language(buffer.c_str() + start);
-    if (language.size() == 0) {
+    if (language.empty()) {
       break;
     }
     languages.push_back(language);
@@ -104,24 +104,6 @@ std::wstring GetUserTimeFormat() {
 
 bool Prefer24HourTime(std::wstring time_format) {
   return time_format.find(L"H") != std::wstring::npos;
-}
-
-std::wstring GetPreferredBrightness() {
-  DWORD use_light_theme;
-  DWORD use_light_theme_size = sizeof(use_light_theme);
-  LONG result = RegGetValue(
-      HKEY_CURRENT_USER,
-      L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-      L"AppsUseLightTheme", RRF_RT_REG_DWORD, nullptr, &use_light_theme,
-      &use_light_theme_size);
-
-  if (result == 0) {
-    return use_light_theme ? kPlatformBrightnessLight : kPlatformBrightnessDark;
-  } else {
-    // The current OS does not support dark mode. (Older Windows 10 or before
-    // Windows 10)
-    return kPlatformBrightnessLight;
-  }
 }
 
 }  // namespace flutter

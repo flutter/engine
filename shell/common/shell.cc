@@ -107,7 +107,7 @@ void PerformInitializationTasks(Settings& settings) {
     }
 
     if (settings.icu_initialization_required) {
-      if (settings.icu_data_path.size() != 0) {
+      if (!settings.icu_data_path.empty()) {
         fml::icu::InitializeICU(settings.icu_data_path);
       } else if (settings.icu_mapper) {
         fml::icu::InitializeICUFromMapping(settings.icu_mapper());
@@ -147,10 +147,14 @@ std::unique_ptr<Shell> Shell::Create(
   if (!isolate_snapshot) {
     isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
   }
+  auto resource_cache_limit_calculator =
+      std::make_shared<ResourceCacheLimitCalculator>(
+          settings.resource_cache_max_bytes_threshold);
   return CreateWithSnapshot(std::move(platform_data),            //
                             std::move(task_runners),             //
                             /*parent_merger=*/nullptr,           //
                             /*parent_io_manager=*/nullptr,       //
+                            resource_cache_limit_calculator,     //
                             std::move(settings),                 //
                             std::move(vm),                       //
                             std::move(isolate_snapshot),         //
@@ -163,6 +167,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     fml::RefPtr<fml::RasterThreadMerger> parent_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
+    const std::shared_ptr<ResourceCacheLimitCalculator>&
+        resource_cache_limit_calculator,
     TaskRunners task_runners,
     const PlatformData& platform_data,
     Settings settings,
@@ -177,7 +183,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   }
 
   auto shell = std::unique_ptr<Shell>(
-      new Shell(std::move(vm), task_runners, parent_merger, settings,
+      new Shell(std::move(vm), task_runners, parent_merger,
+                resource_cache_limit_calculator, settings,
                 std::make_shared<VolatilePathTracker>(
                     task_runners.GetUITaskRunner(),
                     !settings.skia_deterministic_rendering_on_cpu),
@@ -244,8 +251,11 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
           io_manager = parent_io_manager;
         } else {
           io_manager = std::make_shared<ShellIOManager>(
-              platform_view_ptr->CreateResourceContext(),
-              is_backgrounded_sync_switch, io_task_runner);
+              platform_view_ptr->CreateResourceContext(),  // resource context
+              is_backgrounded_sync_switch,                 // sync switch
+              io_task_runner,  // unref queue task runner
+              platform_view_ptr->GetImpellerContext()  // impeller context
+          );
         }
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
@@ -310,6 +320,8 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
     TaskRunners task_runners,
     fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
     std::shared_ptr<ShellIOManager> parent_io_manager,
+    const std::shared_ptr<ResourceCacheLimitCalculator>&
+        resource_cache_limit_calculator,
     Settings settings,
     DartVMRef vm,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -337,6 +349,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
            &shell,                                                        //
            parent_thread_merger,                                          //
            parent_io_manager,                                             //
+           resource_cache_limit_calculator,                               //
            task_runners = std::move(task_runners),                        //
            platform_data = std::move(platform_data),                      //
            settings = std::move(settings),                                //
@@ -350,6 +363,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
                 std::move(vm),                       //
                 parent_thread_merger,                //
                 parent_io_manager,                   //
+                resource_cache_limit_calculator,     //
                 std::move(task_runners),             //
                 std::move(platform_data),            //
                 std::move(settings),                 //
@@ -366,11 +380,14 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 Shell::Shell(DartVMRef vm,
              TaskRunners task_runners,
              fml::RefPtr<fml::RasterThreadMerger> parent_merger,
+             const std::shared_ptr<ResourceCacheLimitCalculator>&
+                 resource_cache_limit_calculator,
              Settings settings,
              std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
              bool is_gpu_disabled)
     : task_runners_(std::move(task_runners)),
       parent_raster_thread_merger_(parent_merger),
+      resource_cache_limit_calculator_(resource_cache_limit_calculator),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
@@ -382,6 +399,8 @@ Shell::Shell(DartVMRef vm,
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   display_manager_ = std::make_unique<DisplayManager>();
+  resource_cache_limit_calculator->AddResourceCacheLimitItem(
+      weak_factory_.GetWeakPtr());
 
   // Generate a WeakPtrFactory for use with the raster thread. This does not
   // need to wait on a latch because it can only ever be used from the raster
@@ -429,6 +448,11 @@ Shell::Shell(DartVMRef vm,
       [ServiceProtocol::kEstimateRasterCacheMemoryExtensionName] = {
           task_runners_.GetRasterTaskRunner(),
           std::bind(&Shell::OnServiceProtocolEstimateRasterCacheMemory, this,
+                    std::placeholders::_1, std::placeholders::_2)};
+  service_protocol_handlers_
+      [ServiceProtocol::kRenderFrameWithRasterStatsExtensionName] = {
+          task_runners_.GetRasterTaskRunner(),
+          std::bind(&Shell::OnServiceProtocolRenderFrameWithRasterStats, this,
                     std::placeholders::_1, std::placeholders::_2)};
 }
 
@@ -499,8 +523,9 @@ std::unique_ptr<Shell> Shell::Spawn(
           .SetIfTrue([&is_gpu_disabled] { is_gpu_disabled = true; }));
   std::unique_ptr<Shell> result = CreateWithSnapshot(
       PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
-      io_manager_, GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
-      on_create_platform_view, on_create_rasterizer,
+      io_manager_, resource_cache_limit_calculator_, GetSettings(), vm_,
+      vm_->GetVMData()->GetIsolateSnapshot(), on_create_platform_view,
+      on_create_rasterizer,
       [engine = this->engine_.get(), initial_route](
           Engine::Delegate& delegate,
           const PointerDataDispatcherMaker& dispatcher_maker, DartVM& vm,
@@ -519,7 +544,6 @@ std::unique_ptr<Shell> Shell::Spawn(
                              /*io_manager=*/std::move(io_manager));
       },
       is_gpu_disabled);
-  result->shared_resource_context_ = io_manager_->GetSharedResourceContext();
   result->RunEngine(std::move(run_configuration));
   return result;
 }
@@ -778,16 +802,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
-                  shared_resource_context = shared_resource_context_,
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),
                   raster_task, should_post_raster_task, &latch] {
     if (io_manager && !io_manager->GetResourceContext()) {
-      sk_sp<GrDirectContext> resource_context;
-      if (shared_resource_context) {
-        resource_context = shared_resource_context;
-      } else {
-        resource_context = platform_view->CreateResourceContext();
-      }
+      sk_sp<GrDirectContext> resource_context =
+          platform_view->CreateResourceContext();
       io_manager->NotifyResourceContextAvailable(resource_context);
     }
     // Step 1: Post a task on the UI thread to tell the engine that it has
@@ -899,21 +918,20 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 
   if (metrics.device_pixel_ratio <= 0 || metrics.physical_width <= 0 ||
       metrics.physical_height <= 0) {
-    FML_DLOG(ERROR)
-        << "Embedding reported invalid ViewportMetrics, ignoring update."
-        << "\nphysical_width: " << metrics.physical_width
-        << "\nphysical_height: " << metrics.physical_height
-        << "\ndevice_pixel_ratio: " << metrics.device_pixel_ratio;
+    // Ignore invalid view-port metrics.
     return;
   }
 
   // This is the formula Android uses.
-  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
-  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  // https://android.googlesource.com/platform/frameworks/base/+/39ae5bac216757bc201490f4c7b8c0f63006c6cd/libs/hwui/renderthread/CacheManager.cpp#45
+  resource_cache_limit_ =
+      metrics.physical_width * metrics.physical_height * 12 * 4;
+  size_t resource_cache_max_bytes =
+      resource_cache_limit_calculator_->GetResourceCacheMaxBytes();
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+      [rasterizer = rasterizer_->GetWeakPtr(), resource_cache_max_bytes] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+          rasterizer->SetResourceCacheMaxBytes(resource_cache_max_bytes, false);
         }
       });
 
@@ -928,6 +946,7 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
     expected_frame_size_ =
         SkISize::Make(metrics.physical_width, metrics.physical_height);
+    device_pixel_ratio_ = metrics.device_pixel_ratio;
   }
 }
 
@@ -1127,9 +1146,7 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(
-    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
   FML_DCHECK(is_setup_);
 
   auto discard_callback = [this](flutter::LayerTree& tree) {
@@ -1142,14 +1159,12 @@ void Shell::OnAnimatorDraw(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
-       weak_pipeline = std::weak_ptr<Pipeline<LayerTree>>(pipeline),
-       discard_callback = std::move(discard_callback),
-       frame_timings_recorder = std::move(frame_timings_recorder)]() mutable {
+       weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline),
+       discard_callback = std::move(discard_callback)]() mutable {
         if (rasterizer) {
-          std::shared_ptr<Pipeline<LayerTree>> pipeline = weak_pipeline.lock();
+          std::shared_ptr<LayerTreePipeline> pipeline = weak_pipeline.lock();
           if (pipeline) {
-            rasterizer->Draw(std::move(frame_timings_recorder),
-                             std::move(pipeline), std::move(discard_callback));
+            rasterizer->Draw(std::move(pipeline), std::move(discard_callback));
           }
 
           if (waiting_for_first_frame.load()) {
@@ -1787,6 +1802,90 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   FML_DCHECK(false);
   return false;
+}
+
+static rapidjson::Value SerializeLayerSnapshot(
+    double device_pixel_ratio,
+    const LayerSnapshotData& snapshot,
+    rapidjson::Document* response) {
+  auto& allocator = response->GetAllocator();
+  rapidjson::Value result;
+  result.SetObject();
+  result.AddMember("layer_unique_id", snapshot.GetLayerUniqueId(), allocator);
+  result.AddMember("duration_micros", snapshot.GetDuration().ToMicroseconds(),
+                   allocator);
+
+  const SkRect bounds = snapshot.GetBounds();
+  result.AddMember("top", bounds.top(), allocator);
+  result.AddMember("left", bounds.left(), allocator);
+  result.AddMember("width", bounds.width(), allocator);
+  result.AddMember("height", bounds.height(), allocator);
+
+  sk_sp<SkData> snapshot_bytes = snapshot.GetSnapshot();
+  if (snapshot_bytes) {
+    rapidjson::Value image;
+    image.SetArray();
+    const uint8_t* data =
+        reinterpret_cast<const uint8_t*>(snapshot_bytes->data());
+    for (size_t i = 0; i < snapshot_bytes->size(); i++) {
+      image.PushBack(data[i], allocator);
+    }
+    result.AddMember("snapshot", image, allocator);
+  }
+  return result;
+}
+
+bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document* response) {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (auto last_layer_tree = rasterizer_->GetLastLayerTree()) {
+    auto& allocator = response->GetAllocator();
+    response->SetObject();
+    response->AddMember("type", "RenderFrameWithRasterStats", allocator);
+
+    // When rendering the last layer tree, we do not need to build a frame,
+    // invariants in FrameTimingRecorder enforce that raster timings can not be
+    // set before build-end.
+    auto frame_timings_recorder = std::make_unique<FrameTimingsRecorder>();
+    const auto now = fml::TimePoint::Now();
+    frame_timings_recorder->RecordVsync(now, now);
+    frame_timings_recorder->RecordBuildStart(now);
+    frame_timings_recorder->RecordBuildEnd(now);
+
+    last_layer_tree->enable_leaf_layer_tracing(true);
+    rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder));
+    last_layer_tree->enable_leaf_layer_tracing(false);
+
+    rapidjson::Value snapshots;
+    snapshots.SetArray();
+
+    LayerSnapshotStore& store =
+        rasterizer_->compositor_context()->snapshot_store();
+    for (const LayerSnapshotData& data : store) {
+      snapshots.PushBack(
+          SerializeLayerSnapshot(device_pixel_ratio_, data, response),
+          allocator);
+    }
+
+    response->AddMember("snapshots", snapshots, allocator);
+
+    const auto& frame_size = expected_frame_size_;
+    response->AddMember("frame_width", frame_size.width(), allocator);
+    response->AddMember("frame_height", frame_size.height(), allocator);
+
+    return true;
+  } else {
+    const char* error =
+        "Failed to render the last frame with raster stats."
+        " Rasterizer does not hold a valid last layer tree."
+        " This could happen if this method was invoked before a frame was "
+        "rendered";
+    FML_DLOG(ERROR) << error;
+    ServiceProtocolFailureError(response, error);
+    return false;
+  }
 }
 
 Rasterizer::Screenshot Shell::Screenshot(

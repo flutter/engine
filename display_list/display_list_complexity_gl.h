@@ -38,7 +38,8 @@ class DisplayListGLComplexityCalculator
           draw_text_blob_count_(0) {}
 
     void saveLayer(const SkRect* bounds,
-                   const SaveLayerOptions options) override;
+                   const SaveLayerOptions options,
+                   const DlImageFilter* backdrop) override;
 
     void drawLine(const SkPoint& p0, const SkPoint& p1) override;
     void drawRect(const SkRect& rect) override;
@@ -54,23 +55,23 @@ class DisplayListGLComplexityCalculator
     void drawPoints(SkCanvas::PointMode mode,
                     uint32_t count,
                     const SkPoint points[]) override;
-    void drawVertices(const sk_sp<SkVertices> vertices,
-                      DlBlendMode mode) override;
-    void drawImage(const sk_sp<SkImage> image,
+    void drawSkVertices(const sk_sp<SkVertices>, SkBlendMode mode) override;
+    void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+    void drawImage(const sk_sp<DlImage> image,
                    const SkPoint point,
-                   const SkSamplingOptions& sampling,
+                   DlImageSampling sampling,
                    bool render_with_attributes) override;
-    void drawImageNine(const sk_sp<SkImage> image,
+    void drawImageNine(const sk_sp<DlImage> image,
                        const SkIRect& center,
                        const SkRect& dst,
-                       SkFilterMode filter,
+                       DlFilterMode filter,
                        bool render_with_attributes) override;
     void drawDisplayList(const sk_sp<DisplayList> display_list) override;
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
                       SkScalar x,
                       SkScalar y) override;
     void drawShadow(const SkPath& path,
-                    const SkColor color,
+                    const DlColor color,
                     const SkScalar elevation,
                     bool transparent_occluder,
                     SkScalar dpr) override;

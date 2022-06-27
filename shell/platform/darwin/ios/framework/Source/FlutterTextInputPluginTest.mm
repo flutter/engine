@@ -20,6 +20,7 @@ FLUTTER_ASSERT_ARC
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
 - (void)setEditableTransform:(NSArray*)matrix;
+- (void)setTextInputClient:(int)client;
 - (void)setTextInputState:(NSDictionary*)state;
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
@@ -87,7 +88,7 @@ FLUTTER_ASSERT_ARC
 
   textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
 
-  viewController = [FlutterViewController new];
+  viewController = [[FlutterViewController alloc] init];
   textInputPlugin.viewController = viewController;
 
   // Clear pasteboard between tests.
@@ -166,7 +167,7 @@ FLUTTER_ASSERT_ARC
 #pragma mark - Tests
 - (void)testNoDanglingEnginePointer {
   __weak FlutterTextInputPlugin* weakFlutterTextInputPlugin;
-  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   __weak FlutterEngine* weakFlutterEngine;
 
   FlutterTextInputView* currentView;
@@ -1071,6 +1072,41 @@ FLUTTER_ASSERT_ARC
                                }]]);
 }
 
+- (void)testInputViewsHasNonNilInputDelegate {
+  if (@available(iOS 13.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+    [UIApplication.sharedApplication.keyWindow addSubview:inputView];
+
+    [inputView setTextInputClient:123];
+    [inputView reloadInputViews];
+    [inputView becomeFirstResponder];
+    NSAssert(inputView.isFirstResponder, @"inputView is not first responder");
+    inputView.inputDelegate = nil;
+
+    FlutterTextInputView* mockInputView = OCMPartialMock(inputView);
+    [mockInputView setTextInputState:@{
+      @"text" : @"COMPOSING",
+      @"composingBase" : @1,
+      @"composingExtent" : @3
+    }];
+    OCMVerify([mockInputView setInputDelegate:[OCMArg isNotNil]]);
+  }
+}
+
+- (void)testInputViewsDoNotHaveUITextInteractions {
+  if (@available(iOS 13.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+    BOOL hasTextInteraction = NO;
+    for (id interaction in inputView.interactions) {
+      hasTextInteraction = [interaction isKindOfClass:[UITextInteraction class]];
+      if (hasTextInteraction) {
+        break;
+      }
+    }
+    XCTAssertFalse(hasTextInteraction);
+  }
+}
+
 #pragma mark - UITextInput methods - Tests
 
 - (void)testUpdateFirstRectForRange {
@@ -1243,13 +1279,6 @@ FLUTTER_ASSERT_ARC
 }
 
 #pragma mark - Floating Cursor - Tests
-
-- (void)testInputViewsHaveUIInteractions {
-  if (@available(iOS 13.0, *)) {
-    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
-    XCTAssertGreaterThan(inputView.interactions.count, 0ul);
-  }
-}
 
 - (void)testFloatingCursorDoesNotThrow {
   // The keyboard implementation may send unbalanced calls to the input view.
@@ -1796,7 +1825,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
-  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
   myInputPlugin.viewController = flutterViewController;
 
@@ -1829,12 +1858,34 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputPluginHostViewNotNil {
-  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
   [flutterEngine runWithEntrypoint:nil];
   flutterEngine.viewController = flutterViewController;
   XCTAssertNotNil(flutterEngine.textInputPlugin.viewController);
   XCTAssertNotNil([flutterEngine.textInputPlugin hostView]);
+}
+
+- (void)testSetPlatformViewClient {
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
+  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
+  myInputPlugin.viewController = flutterViewController;
+
+  FlutterMethodCall* setClientCall = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setClient"
+                     arguments:@[ [NSNumber numberWithInt:123], self.mutablePasswordTemplateCopy ]];
+  [myInputPlugin handleMethodCall:setClientCall
+                           result:^(id _Nullable result){
+                           }];
+  UIView* activeView = myInputPlugin.textInputView;
+  XCTAssertNotNil(activeView.superview, @"activeView must be added to the view hierarchy.");
+  FlutterMethodCall* setPlatformViewClientCall = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setPlatformViewClient"
+                     arguments:@{@"platformViewId" : [NSNumber numberWithLong:456]}];
+  [myInputPlugin handleMethodCall:setPlatformViewClientCall
+                           result:^(id _Nullable result){
+                           }];
+  XCTAssertNil(activeView.superview, @"activeView must be removed from view hierarchy.");
 }
 
 @end

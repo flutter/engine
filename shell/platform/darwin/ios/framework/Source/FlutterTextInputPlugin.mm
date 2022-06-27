@@ -10,8 +10,8 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
 
-static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
-static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
+static const char kTextAffinityDownstream[] = "TextAffinity.downstream";
+static const char kTextAffinityUpstream[] = "TextAffinity.upstream";
 // A delay before enabling the accessibility of FlutterTextInputView after
 // it is activated.
 static constexpr double kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
@@ -39,12 +39,14 @@ const CGRect kSpacePanBounds = {{-2500, -2500}, {5000, 5000}};
 static NSString* const kShowMethod = @"TextInput.show";
 static NSString* const kHideMethod = @"TextInput.hide";
 static NSString* const kSetClientMethod = @"TextInput.setClient";
+static NSString* const kSetPlatformViewClientMethod = @"TextInput.setPlatformViewClient";
 static NSString* const kSetEditingStateMethod = @"TextInput.setEditingState";
 static NSString* const kClearClientMethod = @"TextInput.clearClient";
 static NSString* const kSetEditableSizeAndTransformMethod =
     @"TextInput.setEditableSizeAndTransform";
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
+static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -343,30 +345,30 @@ static NSString* AutofillIdFromDictionary(NSDictionary* dictionary) {
 // The text input plugin then tries to determine which kind of autofill the text
 // field needs. If the AutofillGroup the text field belongs to contains an
 // autofillable text field that's password related, this text 's autofill type
-// will be FlutterAutofillTypePassword. If autofill is disabled for a text field,
-// then its type will be FlutterAutofillTypeNone. Otherwise the text field will
-// have an autofill type of FlutterAutofillTypeRegular.
+// will be kFlutterAutofillTypePassword. If autofill is disabled for a text field,
+// then its type will be kFlutterAutofillTypeNone. Otherwise the text field will
+// have an autofill type of kFlutterAutofillTypeRegular.
 //
-// The text input plugin creates a new UIView for every FlutterAutofillTypeNone
+// The text input plugin creates a new UIView for every kFlutterAutofillTypeNone
 // text field. The UIView instance is never reused for other flutter text fields
 // since the software keyboard often uses the identity of a UIView to distinguish
 // different views and provides the same predictive text suggestions or restore
 // the composing region if a UIView is reused for a different flutter text field.
 //
 // The text input plugin creates a new "autofill context" if the text field has
-// the type of FlutterAutofillTypePassword, to represent the AutofillGroup of
+// the type of kFlutterAutofillTypePassword, to represent the AutofillGroup of
 // the text field, and creates one FlutterTextInputView for every text field in
 // the AutofillGroup.
 //
 // The text input plugin will try to reuse a UIView if a flutter text field's
-// type is FlutterAutofillTypeRegular, and has the same autofill id.
+// type is kFlutterAutofillTypeRegular, and has the same autofill id.
 typedef NS_ENUM(NSInteger, FlutterAutofillType) {
   // The field does not have autofillable content. Additionally if
   // the field is currently in the autofill context, it will be
   // removed from the context without triggering autofill save.
-  FlutterAutofillTypeNone,
-  FlutterAutofillTypeRegular,
-  FlutterAutofillTypePassword,
+  kFlutterAutofillTypeNone,
+  kFlutterAutofillTypeRegular,
+  kFlutterAutofillTypePassword,
 };
 
 static BOOL IsFieldPasswordRelated(NSDictionary* configuration) {
@@ -403,22 +405,22 @@ static BOOL IsFieldPasswordRelated(NSDictionary* configuration) {
 static FlutterAutofillType AutofillTypeOf(NSDictionary* configuration) {
   for (NSDictionary* field in configuration[kAssociatedAutofillFields]) {
     if (IsFieldPasswordRelated(field)) {
-      return FlutterAutofillTypePassword;
+      return kFlutterAutofillTypePassword;
     }
   }
 
   if (IsFieldPasswordRelated(configuration)) {
-    return FlutterAutofillTypePassword;
+    return kFlutterAutofillTypePassword;
   }
 
   if (@available(iOS 10.0, *)) {
     NSDictionary* autofill = configuration[kAutofillProperties];
     UITextContentType contentType = ToUITextContentType(autofill[kAutofillHints]);
-    return !autofill || [contentType isEqualToString:@""] ? FlutterAutofillTypeNone
-                                                          : FlutterAutofillTypeRegular;
+    return !autofill || [contentType isEqualToString:@""] ? kFlutterAutofillTypeNone
+                                                          : kFlutterAutofillTypeRegular;
   }
 
-  return FlutterAutofillTypeNone;
+  return kFlutterAutofillTypeNone;
 }
 
 static BOOL IsApproximatelyEqual(float x, float y, float delta) {
@@ -711,7 +713,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
-@property(nonatomic, retain) UITextInteraction* textInteraction API_AVAILABLE(ios(13.0));
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -734,6 +735,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // allowed to access its textInputDelegate.
   BOOL _decommissioned;
   bool _enableInteractiveSelection;
+  UITextInteraction* _textInteraction API_AVAILABLE(ios(13.0));
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -743,7 +745,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (self) {
     _textInputPlugin = textInputPlugin.weakPtr;
     _textInputClient = 0;
-    _selectionAffinity = _kTextAffinityUpstream;
+    _selectionAffinity = kTextAffinityUpstream;
 
     // UITextInput
     _text = [[NSMutableString alloc] init];
@@ -905,7 +907,27 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _hasPlaceholder = NO;
 }
 
+- (UITextInteraction*)textInteraction API_AVAILABLE(ios(13.0)) {
+  if (!_textInteraction) {
+    _textInteraction =
+        [[UITextInteraction textInteractionForMode:UITextInteractionModeEditable] retain];
+    _textInteraction.textInput = self;
+  }
+  return _textInteraction;
+}
+
 - (void)setTextInputState:(NSDictionary*)state {
+  if (@available(iOS 13.0, *)) {
+    // [UITextInteraction willMoveToView:] sometimes sets the textInput's inputDelegate
+    // to nil. This is likely a bug in UIKit. In order to inform the keyboard of text
+    // and selection changes when that happens, add a dummy UITextInteraction to this
+    // view so it sets a valid inputDelegate that we can call textWillChange et al. on.
+    // See https://github.com/flutter/engine/pull/32881.
+    if (!self.inputDelegate && self.isFirstResponder) {
+      [self addInteraction:self.textInteraction];
+    }
+  }
+
   NSString* newText = state[@"text"];
   BOOL textChanged = ![self.text isEqualToString:newText];
   if (textChanged) {
@@ -931,15 +953,21 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
     [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
 
-    _selectionAffinity = _kTextAffinityDownstream;
-    if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)]) {
-      _selectionAffinity = _kTextAffinityUpstream;
+    _selectionAffinity = kTextAffinityDownstream;
+    if ([state[@"selectionAffinity"] isEqualToString:@(kTextAffinityUpstream)]) {
+      _selectionAffinity = kTextAffinityUpstream;
     }
     [self.inputDelegate selectionDidChange:self];
   }
 
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
+  }
+
+  if (@available(iOS 13.0, *)) {
+    if (_textInteraction) {
+      [self removeInteraction:_textInteraction];
+    }
   }
 }
 
@@ -1046,6 +1074,14 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // from changing focus by itself (the framework
   // focus will be out of sync if that happens).
   return _textInputClient != 0;
+}
+
+- (BOOL)resignFirstResponder {
+  BOOL success = [super resignFirstResponder];
+  if (success) {
+    [self.textInputDelegate flutterTextInputViewDidResignFirstResponder:self];
+  }
+  return success;
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
@@ -1327,7 +1363,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (toIndex >= fromIndex) {
     return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
   } else {
-    // toIndex may be less than fromIndex, because
+    // toIndex can be smaller than fromIndex, because
     // UITextInputStringTokenizer does not handle CJK characters
     // well in some cases. See:
     // https://github.com/flutter/flutter/issues/58750#issuecomment-644469521
@@ -1698,14 +1734,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
   // (1, 2, -3, -4) would become (-2, -2, 3, 4).
   _isFloatingCursorActive = true;
-  // This makes sure UITextSelectionView.interactionAssistant is not nil so
-  // UITextSelectionView has access to this view (and its bounds). Otherwise
-  // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
-  if (@available(iOS 13.0, *)) {
-    self.textInteraction = [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
-    self.textInteraction.textInput = self;
-    [self addInteraction:_textInteraction];
-  }
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                     withClient:_textInputClient
@@ -1722,12 +1750,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (void)endFloatingCursor {
   _isFloatingCursorActive = false;
-  if (@available(iOS 13.0, *)) {
-    if (_textInteraction != NULL) {
-      [self removeInteraction:_textInteraction];
-      self.textInteraction = NULL;
-    }
-  }
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                     withClient:_textInputClient
@@ -1835,7 +1857,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [self resetScribbleInteractionStatusIfEnding];
   self.selectionRects = copiedRects;
   [copiedRects release];
-  _selectionAffinity = _kTextAffinityDownstream;
+  _selectionAffinity = kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
 }
 
@@ -1853,7 +1875,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)deleteBackward {
-  _selectionAffinity = _kTextAffinityDownstream;
+  _selectionAffinity = kTextAffinityDownstream;
   _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
   [self resetScribbleInteractionStatusIfEnding];
 
@@ -2058,6 +2080,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kSetClientMethod]) {
     [self setTextInputClient:[args[0] intValue] withConfiguration:args[1]];
     result(nil);
+  } else if ([method isEqualToString:kSetPlatformViewClientMethod]) {
+    // This method call has a `platformViewId` argument, but we do not need it for iOS for now.
+    [self setPlatformViewTextInputClient];
+    result(nil);
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
     [self setTextInputEditingState:args];
     result(nil);
@@ -2073,7 +2099,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.setSelectionRects"]) {
+  } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];
     result(nil);
   } else {
@@ -2174,6 +2200,16 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [self addToInputParentViewIfNeeded:_activeView];
 }
 
+- (void)setPlatformViewTextInputClient {
+  // No need to track the platformViewID (unlike in Android). When a platform view
+  // becomes the first responder, simply hide this dummy text input view (`_activeView`)
+  // for the previously focused widget.
+  [self removeEnableFlutterTextInputViewAccessibilityTimer];
+  _activeView.accessibilityEnabled = NO;
+  [_activeView removeFromSuperview];
+  [_inputHider removeFromSuperview];
+}
+
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
   [self resetAllClientIds];
   // Hide all input views from autofill, only make those in the new configuration visible
@@ -2182,17 +2218,17 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
   // Update the current active view.
   switch (AutofillTypeOf(configuration)) {
-    case FlutterAutofillTypeNone:
+    case kFlutterAutofillTypeNone:
       self.activeView = [self createInputViewWith:configuration];
       break;
-    case FlutterAutofillTypeRegular:
+    case kFlutterAutofillTypeRegular:
       // If the group does not involve password autofill, only install the
       // input view that's being focused.
       self.activeView = [self updateAndShowAutofillViews:nil
                                             focusedField:configuration
                                        isPasswordRelated:NO];
       break;
-    case FlutterAutofillTypePassword:
+    case kFlutterAutofillTypePassword:
       self.activeView = [self updateAndShowAutofillViews:configuration[kAssociatedAutofillFields]
                                             focusedField:configuration
                                        isPasswordRelated:YES];
@@ -2230,7 +2266,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
   for (NSDictionary* field in configuration[kAssociatedAutofillFields]) {
     NSString* autofillId = AutofillIdFromDictionary(field);
-    if (autofillId && AutofillTypeOf(field) == FlutterAutofillTypeNone) {
+    if (autofillId && AutofillTypeOf(field) == kFlutterAutofillTypeNone) {
       [_autofillContext removeObjectForKey:autofillId];
     }
   }
@@ -2255,7 +2291,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     NSString* autofillId = AutofillIdFromDictionary(field);
     NSAssert(autofillId, @"autofillId must not be null for field: %@", field);
 
-    BOOL hasHints = AutofillTypeOf(field) != FlutterAutofillTypeNone;
+    BOOL hasHints = AutofillTypeOf(field) != kFlutterAutofillTypeNone;
     BOOL isFocused = [focusedId isEqualToString:autofillId];
 
     if (isFocused) {

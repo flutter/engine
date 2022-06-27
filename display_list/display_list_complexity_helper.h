@@ -103,16 +103,16 @@ class ComplexityCalculatorHelper
 
   void setDither(bool dither) override {}
   void setInvertColors(bool invert) override {}
-  void setStrokeCap(SkPaint::Cap cap) override {}
-  void setStrokeJoin(SkPaint::Join join) override {}
+  void setStrokeCap(DlStrokeCap cap) override {}
+  void setStrokeJoin(DlStrokeJoin join) override {}
   void setStrokeMiter(SkScalar limit) override {}
-  void setColor(SkColor color) override {}
+  void setColor(DlColor color) override {}
   void setBlendMode(DlBlendMode mode) override {}
   void setBlender(sk_sp<SkBlender> blender) override {}
   void setColorSource(const DlColorSource* source) override {}
   void setImageFilter(const DlImageFilter* filter) override {}
   void setColorFilter(const DlColorFilter* filter) override {}
-  void setPathEffect(sk_sp<SkPathEffect> effect) override {}
+  void setPathEffect(const DlPathEffect* effect) override {}
   void setMaskFilter(const DlMaskFilter* filter) override {}
 
   void save() override {}
@@ -121,15 +121,15 @@ class ComplexityCalculatorHelper
 
   void setAntiAlias(bool aa) override { current_paint_.setAntiAlias(aa); }
 
-  void setStyle(SkPaint::Style style) override {
-    current_paint_.setStyle(style);
+  void setStyle(DlDrawStyle style) override {
+    current_paint_.setStyle(ToSk(style));
   }
 
   void setStrokeWidth(SkScalar width) override {
     current_paint_.setStrokeWidth(width);
   }
 
-  void drawColor(SkColor color, DlBlendMode mode) override {
+  void drawColor(DlColor color, DlBlendMode mode) override {
     if (IsComplex()) {
       return;
     }
@@ -146,10 +146,10 @@ class ComplexityCalculatorHelper
     AccumulateComplexity(50);
   }
 
-  void drawImageRect(const sk_sp<SkImage> image,
+  void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling,
+                     DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override {
     if (IsComplex()) {
@@ -159,10 +159,10 @@ class ComplexityCalculatorHelper
               render_with_attributes, constraint);
   }
 
-  void drawImageLattice(const sk_sp<SkImage> image,
+  void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter,
+                        DlFilterMode filter,
                         bool render_with_attributes) override {
     if (IsComplex()) {
       return;
@@ -175,13 +175,13 @@ class ComplexityCalculatorHelper
               SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
   }
 
-  void drawAtlas(const sk_sp<SkImage> atlas,
+  void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
-                 const SkColor colors[],
+                 const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override {
     if (IsComplex()) {

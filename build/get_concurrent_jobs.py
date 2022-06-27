@@ -28,45 +28,46 @@ import sys
 UNITS = {'B': 1, 'KB': 2**10, 'MB': 2**20, 'GB': 2**30, 'TB': 2**40}
 
 
+# pylint: disable=line-too-long
 # See https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-globalmemorystatusex
 # and https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-memorystatusex
+# pylint: enable=line-too-long
 class MEMORYSTATUSEX(ctypes.Structure):
   _fields_ = [
-      ("dwLength", ctypes.c_ulong),
-      ("dwMemoryLoad", ctypes.c_ulong),
-      ("ullTotalPhys", ctypes.c_ulonglong),
-      ("ullAvailPhys", ctypes.c_ulonglong),
-      ("ullTotalPageFile", ctypes.c_ulonglong),
-      ("ullAvailPageFile", ctypes.c_ulonglong),
-      ("ullTotalVirtual", ctypes.c_ulonglong),
-      ("ullAvailVirtual", ctypes.c_ulonglong),
-      ("sullAvailExtendedVirtual", ctypes.c_ulonglong),
+      ('dwLength', ctypes.c_ulong),
+      ('dwMemoryLoad', ctypes.c_ulong),
+      ('ullTotalPhys', ctypes.c_ulonglong),
+      ('ullAvailPhys', ctypes.c_ulonglong),
+      ('ullTotalPageFile', ctypes.c_ulonglong),
+      ('ullAvailPageFile', ctypes.c_ulonglong),
+      ('ullTotalVirtual', ctypes.c_ulonglong),
+      ('ullAvailVirtual', ctypes.c_ulonglong),
+      ('sullAvailExtendedVirtual', ctypes.c_ulonglong),
   ]
 
 
-def GetTotalMemory():
+def get_total_memory():
   if sys.platform in ('win32', 'cygwin'):
     stat = MEMORYSTATUSEX(dwLength=ctypes.sizeof(MEMORYSTATUSEX))
     success = ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
     return stat.ullTotalPhys if success else 0
-  elif sys.platform.startswith('linux'):
-    if os.path.exists("/proc/meminfo"):
-      with open("/proc/meminfo") as meminfo:
+  if sys.platform.startswith('linux'):
+    if os.path.exists('/proc/meminfo'):
+      with open('/proc/meminfo') as meminfo:
         memtotal_re = re.compile(r'^MemTotal:\s*(\d*)\s*kB')
         for line in meminfo:
           match = memtotal_re.match(line)
           if match:
             return float(match.group(1)) * 2**10
-  elif sys.platform == 'darwin':
+  if sys.platform == 'darwin':
     try:
       return int(subprocess.check_output(['sysctl', '-n', 'hw.memsize']))
-    except Exception:
+    except:  # pylint: disable=bare-except
       return 0
-  else:
-    return 0
+  return 0
 
 
-def ParseSize(string):
+def parse_size(string):
   i = next(i for (i, c) in enumerate(string) if not c.isdigit())
   number = string[:i].strip()
   unit = string[i:].strip()
@@ -78,50 +79,52 @@ class ParseSizeAction(argparse.Action):
   def __call__(self, parser, args, values, option_string=None):
     sizes = getattr(args, self.dest, [])
     for value in values:
-      (k, v) = value.split('=', 1)
-      sizes.append((k, ParseSize(v)))
+      (k, val) = value.split('=', 1)
+      sizes.append((k, parse_size(val)))
     setattr(args, self.dest, sizes)
 
 
-def Main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
+def main():
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
       '--memory-per-job',
       action=ParseSizeAction,
       default=[],
       nargs='*',
       help='Key value pairings (dart=1GB) giving an estimate of the amount of '
-           'memory needed for the class of job.')
-    parser.add_argument(
+      'memory needed for the class of job.'
+  )
+  parser.add_argument(
       '--reserve-memory',
-      type=ParseSize,
+      type=parse_size,
       default=0,
-      help='The amount of memory to be held out of the amount for jobs to use.')
-    args = parser.parse_args()
+      help='The amount of memory to be held out of the amount for jobs to use.'
+  )
+  args = parser.parse_args()
 
-    total_memory = GetTotalMemory()
+  total_memory = get_total_memory()
 
-    # Ensure the total memory used in the calculation below is at least 0
-    mem_total_bytes = max(0, total_memory - args.reserve_memory)
+  # Ensure the total memory used in the calculation below is at least 0
+  mem_total_bytes = max(0, total_memory - args.reserve_memory)
 
-    # Ensure the number of cpus used in the calculation below is at least 1
-    try:
-      cpu_cap = multiprocessing.cpu_count()
-    except:
-      cpu_cap = 1
+  # Ensure the number of cpus used in the calculation below is at least 1
+  try:
+    cpu_cap = multiprocessing.cpu_count()
+  except:  # pylint: disable=bare-except
+    cpu_cap = 1
 
-    concurrent_jobs = {}
-    for job, memory_per_job in args.memory_per_job:
-      # Calculate the number of jobs that will fit in memory. Ensure the
-      # value is at least 1.
-      num_concurrent_jobs = int(max(1, mem_total_bytes / memory_per_job))
-      # Cap the number of jobs by the number of cpus available.
-      concurrent_jobs[job] = min(num_concurrent_jobs, cpu_cap)
+  concurrent_jobs = {}
+  for job, memory_per_job in args.memory_per_job:
+    # Calculate the number of jobs that will fit in memory. Ensure the
+    # value is at least 1.
+    num_concurrent_jobs = int(max(1, mem_total_bytes / memory_per_job))
+    # Cap the number of jobs by the number of cpus available.
+    concurrent_jobs[job] = min(num_concurrent_jobs, cpu_cap)
 
-    print(json.dumps(concurrent_jobs))
+  print(json.dumps(concurrent_jobs))
 
-    return 0
+  return 0
 
 
 if __name__ == '__main__':
-  sys.exit(Main())
+  sys.exit(main())

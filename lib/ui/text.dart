@@ -927,7 +927,7 @@ class FontFeature {
   }
 
   @override
-  int get hashCode => hashValues(feature, value);
+  int get hashCode => Object.hash(feature, value);
 
   @override
   String toString() => "FontFeature('$feature', $value)";
@@ -988,7 +988,7 @@ class FontVariation {
   }
 
   @override
-  int get hashCode => hashValues(axis, value);
+  int get hashCode => Object.hash(axis, value);
 
   @override
   String toString() => "FontVariation('$axis', $value)";
@@ -1236,7 +1236,7 @@ class TextHeightBehavior {
 
   @override
   int get hashCode {
-    return hashValues(
+    return Object.hash(
       applyHeightToFirstAscent,
       applyHeightToLastDescent,
       leadingDistribution.index,
@@ -1540,7 +1540,23 @@ class TextStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _leadingDistribution, _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, hashList(_shadows), _decorationThickness, hashList(_fontFeatures), hashList(_fontVariations));
+  int get hashCode => Object.hash(
+    Object.hashAll(_encoded),
+    _leadingDistribution,
+    _fontFamily,
+    _fontFamilyFallback,
+    _fontSize,
+    _letterSpacing,
+    _wordSpacing,
+    _height,
+    _locale,
+    _background,
+    _foreground,
+    _shadows == null ? null : Object.hashAll(_shadows!),
+    _decorationThickness,
+    _fontFeatures == null ? null : Object.hashAll(_fontFeatures!),
+    _fontVariations == null ? null : Object.hashAll(_fontVariations!),
+  );
 
   @override
   String toString() {
@@ -1785,7 +1801,7 @@ class ParagraphStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale, _leadingDistribution);
+  int get hashCode => Object.hash(Object.hashAll(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale, _leadingDistribution);
 
   @override
   String toString() {
@@ -1979,7 +1995,7 @@ class StrutStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded.buffer.asInt8List()), _fontFamily, _leadingDistribution);
+  int get hashCode => Object.hash(Object.hashAll(_encoded.buffer.asInt8List()), _fontFamily, _leadingDistribution);
 
 }
 
@@ -2145,7 +2161,7 @@ class TextBox {
   }
 
   @override
-  int get hashCode => hashValues(left, top, right, bottom, direction);
+  int get hashCode => Object.hash(left, top, right, bottom, direction);
 
   @override
   String toString() => 'TextBox.fromLTRBD(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)}, $direction)';
@@ -2252,7 +2268,7 @@ class TextPosition {
   }
 
   @override
-  int get hashCode => hashValues(offset, affinity);
+  int get hashCode => Object.hash(offset, affinity);
 
   @override
   String toString() {
@@ -2336,7 +2352,7 @@ class TextRange {
   }
 
   @override
-  int get hashCode => hashValues(
+  int get hashCode => Object.hash(
     start.hashCode,
     end.hashCode,
   );
@@ -2619,7 +2635,7 @@ class LineMetrics {
   }
 
   @override
-  int get hashCode => hashValues(hardBreak, ascent, descent, unscaledAscent, height, width, left, baseline, lineNumber);
+  int get hashCode => Object.hash(hardBreak, ascent, descent, unscaledAscent, height, width, left, baseline, lineNumber);
 
   @override
   String toString() {
@@ -2652,6 +2668,8 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// To create a [Paragraph] object, use a [ParagraphBuilder].
   @pragma('vm:entry-point')
   Paragraph._();
+
+  bool _needsLayout = true;
 
   /// The amount of horizontal space this paragraph occupies.
   ///
@@ -2701,7 +2719,13 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// Computes the size and position of each glyph in the paragraph.
   ///
   /// The [ParagraphConstraints] control how wide the text is allowed to be.
-  void layout(ParagraphConstraints constraints) => _layout(constraints.width);
+  void layout(ParagraphConstraints constraints) {
+    _layout(constraints.width);
+    assert(() {
+      _needsLayout = false;
+      return true;
+    }());
+  }
   void _layout(double width) native 'Paragraph_layout';
 
   List<TextBox> _decodeTextBoxes(Float32List encoded) {
@@ -2883,11 +2907,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
       _constructor(
         style._encoded,
         encodedStrutStyle,
-        style._fontFamily,
+        style._fontFamily ?? '',
         strutFontFamilies,
-        style._fontSize,
-        style._height,
-        style._ellipsis,
+        style._fontSize ?? 0,
+        style._height ?? 0,
+        style._ellipsis ?? '',
         _encodeLocale(style._locale)
       );
   }
@@ -2895,11 +2919,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   void _constructor(
     Int32List encoded,
     ByteData? strutData,
-    String? fontFamily,
+    String fontFamily,
     List<Object?>? strutFontFamily,
-    double? fontSize,
-    double? height,
-    String? ellipsis,
+    double fontSize,
+    double height,
+    String ellipsis,
     String locale
   ) native 'ParagraphBuilder_constructor';
 
@@ -2955,11 +2979,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     _pushStyle(
       encoded,
       fullFontFamilies,
-      style._fontSize,
-      style._letterSpacing,
-      style._wordSpacing,
-      style._height,
-      style._decorationThickness,
+      style._fontSize ?? 0,
+      style._letterSpacing ?? 0,
+      style._wordSpacing ?? 0,
+      style._height ?? 0,
+      style._decorationThickness ?? 0,
       _encodeLocale(style._locale),
       style._background?._objects,
       style._background?._data,
@@ -2974,11 +2998,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   void _pushStyle(
     Int32List encoded,
     List<Object?> fontFamilies,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    double? decorationThickness,
+    double fontSize,
+    double letterSpacing,
+    double wordSpacing,
+    double height,
+    double decorationThickness,
     String locale,
     List<Object?>? backgroundObjects,
     ByteData? backgroundData,
@@ -3068,11 +3092,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline?.index);
+    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, (baseline ?? TextBaseline.alphabetic).index);
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
-  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline) native 'ParagraphBuilder_addPlaceholder';
+  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
@@ -3095,7 +3119,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   return _futurize(
     (_Callback<void> callback) {
-      _loadFontFromList(list, callback, fontFamily);
+      _loadFontFromList(list, callback, fontFamily ?? '');
     }
   ).then((_) => _sendFontChangeMessage());
 }
@@ -3119,4 +3143,4 @@ FutureOr<void> _sendFontChangeMessage() async {
   }
 }
 
-void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
+void _loadFontFromList(Uint8List list, _Callback<void> callback, String fontFamily) native 'loadFontFromList';

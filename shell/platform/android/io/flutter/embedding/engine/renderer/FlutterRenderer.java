@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.engine.renderer;
 
-import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
@@ -13,12 +12,17 @@ import android.os.Handler;
 import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -34,7 +38,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>{@link io.flutter.embedding.android.FlutterSurfaceView} and {@link
  * io.flutter.embedding.android.FlutterTextureView} are implementations of {@link RenderSurface}.
  */
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FlutterRenderer implements TextureRegistry {
   private static final String TAG = "FlutterRenderer";
 
@@ -43,6 +46,10 @@ public class FlutterRenderer implements TextureRegistry {
   @Nullable private Surface surface;
   private boolean isDisplayingFlutterUi = false;
   private Handler handler = new Handler();
+
+  @NonNull
+  private final Set<WeakReference<TextureRegistry.OnTrimMemoryListener>> onTrimMemoryListeners =
+      new HashSet<>();
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -91,6 +98,39 @@ public class FlutterRenderer implements TextureRegistry {
     flutterJNI.removeIsDisplayingFlutterUiListener(listener);
   }
 
+  private void clearDeadListeners() {
+    final Iterator<WeakReference<OnTrimMemoryListener>> iterator = onTrimMemoryListeners.iterator();
+    while (iterator.hasNext()) {
+      WeakReference<OnTrimMemoryListener> listenerRef = iterator.next();
+      final OnTrimMemoryListener listener = listenerRef.get();
+      if (listener == null) {
+        iterator.remove();
+      }
+    }
+  }
+
+  /** Adds a listener that is invoked when a memory pressure warning was forward. */
+  @VisibleForTesting
+  /* package */ void addOnTrimMemoryListener(@NonNull OnTrimMemoryListener listener) {
+    // Purge dead listener to avoid accumulating.
+    clearDeadListeners();
+    onTrimMemoryListeners.add(new WeakReference<>(listener));
+  }
+
+  /**
+   * Removes a {@link OnTrimMemoryListener} that was added with {@link
+   * #addOnTrimMemoryListener(OnTrimMemoryListener)}.
+   */
+  @VisibleForTesting
+  /* package */ void removeOnTrimMemoryListener(@NonNull OnTrimMemoryListener listener) {
+    for (WeakReference<OnTrimMemoryListener> listenerRef : onTrimMemoryListeners) {
+      if (listenerRef.get() == listener) {
+        onTrimMemoryListeners.remove(listenerRef);
+        break;
+      }
+    }
+  }
+
   // ------ START TextureRegistry IMPLEMENTATION -----
   /**
    * Creates and returns a new {@link SurfaceTexture} managed by the Flutter engine that is also
@@ -114,20 +154,38 @@ public class FlutterRenderer implements TextureRegistry {
         new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
     Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), entry.textureWrapper());
+    addOnTrimMemoryListener(entry);
     return entry;
   }
 
-  final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
+  @Override
+  public void onTrimMemory(int level) {
+    final Iterator<WeakReference<OnTrimMemoryListener>> iterator = onTrimMemoryListeners.iterator();
+    while (iterator.hasNext()) {
+      WeakReference<OnTrimMemoryListener> listenerRef = iterator.next();
+      final OnTrimMemoryListener listener = listenerRef.get();
+      if (listener != null) {
+        listener.onTrimMemory(level);
+      } else {
+        // Purge cleared refs to avoid accumulating a lot of dead listener
+        iterator.remove();
+      }
+    }
+  }
+
+  final class SurfaceTextureRegistryEntry
+      implements TextureRegistry.SurfaceTextureEntry, TextureRegistry.OnTrimMemoryListener {
     private final long id;
     @NonNull private final SurfaceTextureWrapper textureWrapper;
     private boolean released;
-    @Nullable private OnFrameConsumedListener listener;
+    @Nullable private OnTrimMemoryListener trimMemoryListener;
+    @Nullable private OnFrameConsumedListener frameConsumedListener;
     private final Runnable onFrameConsumed =
         new Runnable() {
           @Override
           public void run() {
-            if (listener != null) {
-              listener.onFrameConsumed();
+            if (frameConsumedListener != null) {
+              frameConsumedListener.onFrameConsumed();
             }
           }
         };
@@ -151,6 +209,13 @@ public class FlutterRenderer implements TextureRegistry {
       }
     }
 
+    @Override
+    public void onTrimMemory(int level) {
+      if (trimMemoryListener != null) {
+        trimMemoryListener.onTrimMemory(level);
+      }
+    }
+
     private SurfaceTexture.OnFrameAvailableListener onFrameListener =
         new SurfaceTexture.OnFrameAvailableListener() {
           @Override
@@ -165,6 +230,10 @@ public class FlutterRenderer implements TextureRegistry {
             markTextureFrameAvailable(id);
           }
         };
+
+    private void removeListener() {
+      removeOnTrimMemoryListener(this);
+    }
 
     @NonNull
     public SurfaceTextureWrapper textureWrapper() {
@@ -190,6 +259,7 @@ public class FlutterRenderer implements TextureRegistry {
       Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
       textureWrapper.release();
       unregisterTexture(id);
+      removeListener();
       released = true;
     }
 
@@ -208,7 +278,12 @@ public class FlutterRenderer implements TextureRegistry {
 
     @Override
     public void setOnFrameConsumedListener(@Nullable OnFrameConsumedListener listener) {
-      this.listener = listener;
+      frameConsumedListener = listener;
+    }
+
+    @Override
+    public void setOnTrimMemoryListener(@Nullable OnTrimMemoryListener listener) {
+      trimMemoryListener = listener;
     }
   }
 

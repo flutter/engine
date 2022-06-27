@@ -2,6 +2,8 @@
 Checks: "google-*,\
 clang-analyzer-*,\
 clang-diagnostic-*,\
+modernize-use-default-member-init,\
+readability-identifier-naming,\
 -google-objc-global-variable-declaration,\
 -google-objc-avoid-throwing-exception,\
 -clang-analyzer-nullability.NullPassedToNonnull,\
@@ -15,6 +17,21 @@ clang-diagnostic-*,\
 # to prevent new warnings being introduced.
 # https://github.com/flutter/flutter/issues/93279
 WarningsAsErrors: "clang-analyzer-*,\
+readability-identifier-naming,\
 clang-diagnostic-*,\
 google-objc-*,\
 google-explicit-constructor"
+
+CheckOptions:
+  - key:    modernize-use-default-member-init.UseAssignment
+    value:  true
+  - key:    readability-identifier-naming.EnumConstantCase
+    value:  'CamelCase'
+  - key:    readability-identifier-naming.EnumConstantPrefix
+    value:  'k'
+  - key:    readability-identifier-naming.GlobalConstantPrefix
+    value:  'k'
+  - key:    readability-identifier-naming.PrivateMemberCase
+    value:  'lower_case'
+  - key:    readability-identifier-naming.PrivateMemberSuffix
+    value:  '_'

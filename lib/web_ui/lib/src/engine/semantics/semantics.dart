@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -12,6 +11,7 @@ import '../../engine.dart'  show registerHotRestartListener;
 import '../alarm_clock.dart';
 import '../browser_detection.dart';
 import '../configuration.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
@@ -25,6 +25,108 @@ import 'scrollable.dart';
 import 'semantics_helper.dart';
 import 'tappable.dart';
 import 'text_field.dart';
+
+class EngineAccessibilityFeatures implements ui.AccessibilityFeatures {
+  const EngineAccessibilityFeatures(this._index);
+
+  static const int _kAccessibleNavigation = 1 << 0;
+  static const int _kInvertColorsIndex = 1 << 1;
+  static const int _kDisableAnimationsIndex = 1 << 2;
+  static const int _kBoldTextIndex = 1 << 3;
+  static const int _kReduceMotionIndex = 1 << 4;
+  static const int _kHighContrastIndex = 1 << 5;
+  static const int _kOnOffSwitchLabelsIndex = 1 << 6;
+
+  // A bitfield which represents each enabled feature.
+  final int _index;
+
+  @override
+  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
+  @override
+  bool get invertColors => _kInvertColorsIndex & _index != 0;
+  @override
+  bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
+  @override
+  bool get boldText => _kBoldTextIndex & _index != 0;
+  @override
+  bool get reduceMotion => _kReduceMotionIndex & _index != 0;
+  @override
+  bool get highContrast => _kHighContrastIndex & _index != 0;
+  @override
+  bool get onOffSwitchLabels => _kOnOffSwitchLabelsIndex & _index != 0;
+
+  @override
+  String toString() {
+    final List<String> features = <String>[];
+    if (accessibleNavigation) {
+      features.add('accessibleNavigation');
+    }
+    if (invertColors) {
+      features.add('invertColors');
+    }
+    if (disableAnimations) {
+      features.add('disableAnimations');
+    }
+    if (boldText) {
+      features.add('boldText');
+    }
+    if (reduceMotion) {
+      features.add('reduceMotion');
+    }
+    if (highContrast) {
+      features.add('highContrast');
+    }
+    if (onOffSwitchLabels) {
+      features.add('onOffSwitchLabels');
+    }
+    return 'AccessibilityFeatures$features';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is EngineAccessibilityFeatures && other._index == _index;
+  }
+
+  @override
+  int get hashCode => _index.hashCode;
+
+  EngineAccessibilityFeatures copyWith({
+      bool? accessibleNavigation,
+      bool? invertColors,
+      bool? disableAnimations,
+      bool? boldText,
+      bool? reduceMotion,
+      bool? highContrast,
+      bool? onOffSwitchLabels})
+  {
+    int value = 0;
+    if (accessibleNavigation ?? this.accessibleNavigation) {
+      value = value | _kAccessibleNavigation;
+    }
+    if (invertColors ?? this.invertColors) {
+      value = value | _kInvertColorsIndex;
+    }
+    if (disableAnimations ?? this.disableAnimations) {
+      value = value | _kDisableAnimationsIndex;
+    }
+    if (boldText ?? this.boldText) {
+      value = value | _kBoldTextIndex;
+    }
+    if (reduceMotion ?? this.reduceMotion) {
+      value = value | _kReduceMotionIndex;
+    }
+    if (highContrast ?? this.highContrast) {
+      value = value | _kHighContrastIndex;
+    }
+    if (onOffSwitchLabels ?? this.onOffSwitchLabels) {
+      value = value | _kOnOffSwitchLabelsIndex;
+    }
+    return EngineAccessibilityFeatures(value);
+  }
+}
 
 /// Contains updates for the semantics tree.
 ///
@@ -274,14 +376,15 @@ class SemanticsObject {
     // DOM nodes created for semantics objects are positioned absolutely using
     // transforms.
     element.style.position = 'absolute';
+    element.setAttribute('id', 'flt-semantic-node-$id');
 
     // The root node has some properties that other nodes do not.
     if (id == 0 && !configuration.debugShowSemanticsNodes) {
-      // Make all semantics transparent. We use `filter` instead of `opacity`
+      // Make all semantics transparent. Use `filter` instead of `opacity`
       // attribute because `filter` is stronger. `opacity` does not apply to
       // some elements, particularly on iOS, such as the slider thumb and track.
       //
-      // We use transparency instead of "visibility:hidden" or "display:none"
+      // Use transparency instead of "visibility:hidden" or "display:none"
       // so that a screen reader does not ignore these elements.
       element.style.filter = 'opacity(0%)';
 
@@ -291,7 +394,7 @@ class SemanticsObject {
     }
 
     // Make semantic elements visible for debugging by outlining them using a
-    // green border. We do not use `border` attribute because it affects layout
+    // green border. Do not use `border` attribute because it affects layout
     // (`outline` does not).
     if (configuration.debugShowSemanticsNodes) {
       element.style.outline = '1px solid green';
@@ -601,6 +704,19 @@ class SemanticsObject {
     _dirtyFields |= _tooltipIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  int get platformViewId => _platformViewId;
+  int _platformViewId = -1;
+
+  /// Whether this object represents a platform view.
+  bool get isPlatformView => _platformViewId != -1;
+
+  static const int _platformViewIdIndex = 1 << 23;
+
+  void _markPlatformViewIdDirty() {
+    _dirtyFields |= _platformViewIdIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -608,7 +724,7 @@ class SemanticsObject {
   final EngineSemanticsOwner owner;
 
   /// The DOM element used to convey semantics information to the browser.
-  final html.Element element = html.Element.tag('flt-semantics');
+  final DomElement element = domDocument.createElement('flt-semantics');
 
   /// Bitfield showing which fields have been updated but have not yet been
   /// applied to the DOM.
@@ -629,10 +745,14 @@ class SemanticsObject {
   /// is not created. This is necessary for "aria-label" to function correctly.
   /// The browser will ignore the [label] of HTML element that contain child
   /// elements.
-  html.Element? getOrCreateChildContainer() {
+  DomElement? getOrCreateChildContainer() {
     if (_childContainerElement == null) {
-      _childContainerElement = html.Element.tag('flt-semantics-container');
-      _childContainerElement!.style.position = 'absolute';
+      _childContainerElement = createDomElement('flt-semantics-container');
+      _childContainerElement!.style
+        ..position = 'absolute'
+        // Ignore pointer events on child container so that platform views
+        // behind it can be reached.
+        ..pointerEvents = 'none';
       element.append(_childContainerElement!);
     }
     return _childContainerElement;
@@ -643,7 +763,7 @@ class SemanticsObject {
   ///
   /// This element is used to correct for [_rect] offsets. It is only non-`null`
   /// when there are non-zero children (i.e. when [hasChildren] is `true`).
-  html.Element? _childContainerElement;
+  DomElement? _childContainerElement;
 
   /// The parent of this semantics object.
   SemanticsObject? _parent;
@@ -702,9 +822,9 @@ class SemanticsObject {
 
   /// Updates this object from data received from a semantics [update].
   ///
-  /// This method creates [SemanticsObject]s for the direct children of this
-  /// object. However, it does not recursively populate them.
-  void updateWith(SemanticsNodeUpdate update) {
+  /// Does not update children. Children are updated in a separate pass because
+  /// at this point children's self information is not ready yet.
+  void updateSelf(SemanticsNodeUpdate update) {
     // Update all field values and their corresponding dirty flags before
     // applying the updates to the DOM.
     assert(update.flags != null); // ignore: unnecessary_null_comparison
@@ -838,9 +958,13 @@ class SemanticsObject {
       _markAdditionalActionsDirty();
     }
 
+    if (_platformViewId != update.platformViewId) {
+      _platformViewId = update.platformViewId;
+      _markPlatformViewIdDirty();
+    }
+
     // Apply updates to the DOM.
     _updateRoles();
-    _updateChildrenInTraversalOrder();
 
     // All properties that affect positioning and sizing are checked together
     // any one of them triggers position and size recomputation.
@@ -848,9 +972,193 @@ class SemanticsObject {
       recomputePositionAndSize();
     }
 
-    // Make sure we create a child container only when there are children.
-    assert(_childContainerElement == null || hasChildren);
-    _dirtyFields = 0;
+    // Ignore pointer events on all container nodes and all platform view nodes.
+    // This is so that the platform views are not obscured by semantic elements
+    // and can be reached by inspecting the web page.
+    if (!hasChildren && !isPlatformView) {
+      element.style.pointerEvents = 'all';
+    } else {
+      element.style.pointerEvents = 'none';
+    }
+  }
+
+  /// The order children are currently rendered in.
+  List<SemanticsObject>? _currentChildrenInRenderOrder;
+
+  /// Updates direct children of this node, if any.
+  ///
+  /// Specifies two orders of direct children:
+  ///
+  /// * Traversal order: the logical order of child nodes that establishes the
+  ///   next and previous relationship between UI widgets. When the user
+  ///   traverses the UI using next/previous gestures the accessibility focus
+  ///   follows the traversal order.
+  /// * Hit-test order: determines the top/bottom relationship between widgets.
+  ///   When the user is inspecting the UI using the drag gesture, the widgets
+  ///   that appear "on top" hit-test order wise take the focus. This order is
+  ///   communicated in the DOM using the inverse paint order, specified by the
+  ///   z-index CSS style attribute.
+  void updateChildren() {
+    // Trivial case: remove all children.
+    if (_childrenInHitTestOrder == null ||
+        _childrenInHitTestOrder!.isEmpty) {
+      if (_currentChildrenInRenderOrder == null ||
+          _currentChildrenInRenderOrder!.isEmpty) {
+        // A container element must not have been created when child list is empty.
+        assert(_childContainerElement == null);
+        _currentChildrenInRenderOrder = null;
+        return;
+      }
+
+      // A container element must have been created when child list is not empty.
+      assert(_childContainerElement != null);
+
+      // Remove all children from this semantics object.
+      final int len = _currentChildrenInRenderOrder!.length;
+      for (int i = 0; i < len; i++) {
+        owner._detachObject(_currentChildrenInRenderOrder![i].id);
+      }
+      _childContainerElement!.remove();
+      _childContainerElement = null;
+      _currentChildrenInRenderOrder = null;
+      return;
+    }
+
+    // At this point it is guaranteed to have at least one child.
+    final Int32List childrenInTraversalOrder = _childrenInTraversalOrder!;
+    final Int32List childrenInHitTestOrder = _childrenInHitTestOrder!;
+    final int childCount = childrenInHitTestOrder.length;
+    final DomElement? containerElement = getOrCreateChildContainer();
+
+    assert(childrenInTraversalOrder.length == childrenInHitTestOrder.length);
+
+    // Always render in traversal order, because the accessibility traversal
+    // is determined by the DOM order of elements.
+    final List<SemanticsObject> childrenInRenderOrder = <SemanticsObject>[];
+    for (int i = 0; i < childCount; i++) {
+      childrenInRenderOrder.add(owner._semanticsTree[childrenInTraversalOrder[i]]!);
+    }
+
+    // The z-index determines hit testing. Technically, it also affects paint
+    // order. However, this does not matter because our ARIA tree is invisible.
+    // On top of that, it is a bad UI practice when hit test order does not match
+    // paint order, because human eye must be able to predict hit test order
+    // simply by looking at the UI (if a dialog is painted on top of a dismiss
+    // barrier, then tapping on anything inside the dialog should not land on
+    // the barrier).
+    final bool zIndexMatters = childCount > 1;
+    if (zIndexMatters) {
+      for (int i = 0; i < childCount; i++) {
+        final SemanticsObject child = owner._semanticsTree[childrenInHitTestOrder[i]]!;
+
+        // Invert the z-index because hit-test order is inverted with respect to
+        // paint order.
+        child.element.style.zIndex = '${childCount - i}';
+      }
+    }
+
+    // Trivial case: previous list was empty => just populate the container.
+    if (_currentChildrenInRenderOrder == null ||
+        _currentChildrenInRenderOrder!.isEmpty) {
+      for (final SemanticsObject child in childrenInRenderOrder) {
+        containerElement!.append(child.element);
+        owner._attachObject(parent: this, child: child);
+      }
+      _currentChildrenInRenderOrder = childrenInRenderOrder;
+      return;
+    }
+
+    // At this point it is guaranteed to have had a non-empty previous child list.
+    final List<SemanticsObject> previousChildrenInRenderOrder = _currentChildrenInRenderOrder!;
+    final int previousCount = previousChildrenInRenderOrder.length;
+
+    // Both non-empty case.
+
+    // Problem: child nodes have been added, removed, and/or reordered. On the
+    //          web, many assistive technologies cannot track DOM elements
+    //          moving around, losing focus. The best approach is to try to keep
+    //          child elements as stable as possible.
+    // Solution: find all common elements in both lists and record their indices
+    //           in the old list (in the `intersectionIndicesOld` variable). The
+    //           longest increases subsequence provides the longest chain of
+    //           semantics nodes that didn't move relative to each other. Those
+    //           nodes (represented by the `stationaryIds` variable) are kept
+    //           stationary, while all others are moved/inserted/deleted around
+    //           them. This gives the maximum node stability, and covers most
+    //           use-cases, including scrolling in any direction, insertions,
+    //           deletions, drag'n'drop, etc.
+
+    // Indices into the old child list pointing at children that also exist in
+    // the new child list.
+    final List<int> intersectionIndicesOld = <int>[];
+
+    int newIndex = 0;
+
+    // The smallest of the two child list lengths.
+    final int minLength = math.min(previousCount, childCount);
+
+    // Scan forward until first discrepancy.
+    while (newIndex < minLength &&
+        previousChildrenInRenderOrder[newIndex] ==
+            childrenInRenderOrder[newIndex]) {
+      intersectionIndicesOld.add(newIndex);
+      newIndex += 1;
+    }
+
+    // Trivial case: child lists are identical both in length and order => do nothing.
+    if (previousCount == childrenInRenderOrder.length && newIndex == childCount) {
+      return;
+    }
+
+    // If child lists are not identical, continue computing the intersection
+    // between the two lists.
+    while (newIndex < childCount) {
+      for (int oldIndex = 0; oldIndex < previousCount; oldIndex += 1) {
+        if (previousChildrenInRenderOrder[oldIndex] ==
+            childrenInRenderOrder[newIndex]) {
+          intersectionIndicesOld.add(oldIndex);
+          break;
+        }
+      }
+      newIndex += 1;
+    }
+
+    // The longest sub-sequence in the old list maximizes the number of children
+    // that do not need to be moved.
+    final List<int?> longestSequence = longestIncreasingSubsequence(intersectionIndicesOld);
+    final List<int> stationaryIds = <int>[];
+    for (int i = 0; i < longestSequence.length; i += 1) {
+      stationaryIds.add(
+        previousChildrenInRenderOrder[intersectionIndicesOld[longestSequence[i]!]].id
+      );
+    }
+
+    // Remove children that are no longer in the list.
+    for (int i = 0; i < previousCount; i++) {
+      if (!intersectionIndicesOld.contains(i)) {
+        // Child not in the intersection. Must be removed.
+        final int childId = previousChildrenInRenderOrder[i].id;
+        owner._detachObject(childId);
+      }
+    }
+
+    DomElement? refNode;
+    for (int i = childCount - 1; i >= 0; i -= 1) {
+      final SemanticsObject child = childrenInRenderOrder[i];
+      if (!stationaryIds.contains(child.id)) {
+        if (refNode == null) {
+          containerElement!.append(child.element);
+        } else {
+          containerElement!.insertBefore(child.element, refNode);
+        }
+        owner._attachObject(parent: this, child: child);
+      } else {
+        assert(child._parent == this);
+      }
+      refNode = child.element;
+    }
+
+    _currentChildrenInRenderOrder = childrenInRenderOrder;
   }
 
   /// Populates the HTML "role" attribute based on a [condition].
@@ -859,15 +1167,15 @@ class SemanticsObject {
   ///
   /// If [condition] is false, removes the HTML "role" attribute from [element]
   /// if the current role is set to [ariaRoleName]. Otherwise, leaves the value
-  /// unchanged. This is done so we gracefully handle multiple competing roles.
+  /// unchanged. This is done to gracefully handle multiple competing roles.
   /// For example, if the role changes from "button" to "img" and tappable role
   /// manager attempts to clean up after the image role manager applied the new
-  /// role, we do not want it to erase the new role.
+  /// role, semantics avoids erasing the new role.
   void setAriaRole(String ariaRoleName, bool condition) {
     if (condition) {
       element.setAttribute('role', ariaRoleName);
     } else if (element.getAttribute('role') == ariaRoleName) {
-      element.attributes.remove('role');
+      element.removeAttribute('role');
     }
   }
 
@@ -893,8 +1201,8 @@ class SemanticsObject {
 
     final bool shouldUseTappableRole =
       (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
-      // Text fields manage their own focus/tap interactions. We don't need the
-      // tappable role manager. It only confuses AT.
+      // Text fields manage their own focus/tap interactions. Tappable role
+      // manager is not needed. It only confuses AT.
       !isTextField;
 
     _updateRole(Role.tappable, shouldUseTappableRole);
@@ -921,8 +1229,8 @@ class SemanticsObject {
       manager.dispose();
       _roleManagers.remove(role);
     }
-    // Nothing to do in the "else case" as it means that we want to disable a
-    // role that we don't currently have in the first place.
+    // Nothing to do in the "else case". There's no existing role manager to
+    // disable.
   }
 
   /// Whether the object represents an UI element with "increase" or "decrease"
@@ -957,7 +1265,7 @@ class SemanticsObject {
       ..width = '${_rect!.width}px'
       ..height = '${_rect!.height}px';
 
-    final html.Element? containerElement =
+    final DomElement? containerElement =
         hasChildren ? getOrCreateChildContainer() : null;
 
     final bool hasZeroRectOffset = _rect!.top == 0.0 && _rect!.left == 0.0;
@@ -1025,7 +1333,7 @@ class SemanticsObject {
   /// handle traversal order.
   ///
   /// See https://github.com/flutter/flutter/issues/73347.
-  static void _clearSemanticElementTransform(html.Element element) {
+  static void _clearSemanticElementTransform(DomElement element) {
     element.style
       ..removeProperty('transform-origin')
       ..removeProperty('transform');
@@ -1038,144 +1346,6 @@ class SemanticsObject {
         ..removeProperty('top')
         ..removeProperty('left');
     }
-  }
-
-  Int32List? _previousChildrenInTraversalOrder;
-
-  /// Updates the traversal child list of [object] from the given [update].
-  ///
-  /// This method does not recursively update child elements' properties or
-  /// their grandchildren. This is handled by [updateSemantics] method walking
-  /// all the update nodes.
-  void _updateChildrenInTraversalOrder() {
-    // Remove all children case.
-    if (_childrenInTraversalOrder == null ||
-        _childrenInTraversalOrder!.isEmpty) {
-      if (_previousChildrenInTraversalOrder == null ||
-          _previousChildrenInTraversalOrder!.isEmpty) {
-        // We must not have created a container element when child list is empty.
-        assert(_childContainerElement == null);
-        _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-        return;
-      }
-
-      // We must have created a container element when child list is not empty.
-      assert(_childContainerElement != null);
-
-      // Remove all children from this semantics object.
-      final int len = _previousChildrenInTraversalOrder!.length;
-      for (int i = 0; i < len; i++) {
-        owner._detachObject(_previousChildrenInTraversalOrder![i]);
-      }
-      _previousChildrenInTraversalOrder = null;
-      _childContainerElement!.remove();
-      _childContainerElement = null;
-      _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-      return;
-    }
-
-    final html.Element? containerElement = getOrCreateChildContainer();
-
-    // Empty case.
-    if (_previousChildrenInTraversalOrder == null ||
-        _previousChildrenInTraversalOrder!.isEmpty) {
-      _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-      for (final int id in _previousChildrenInTraversalOrder!) {
-        final SemanticsObject child = owner.getOrCreateObject(id);
-        containerElement!.append(child.element);
-        owner._attachObject(parent: this, child: child);
-      }
-      _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-      return;
-    }
-
-    // Both non-empty case.
-
-    // Indices into the new child list pointing at children that also exist in
-    // the old child list.
-    final List<int> intersectionIndicesNew = <int>[];
-
-    // Indices into the old child list pointing at children that also exist in
-    // the new child list.
-    final List<int> intersectionIndicesOld = <int>[];
-
-    int newIndex = 0;
-
-    // The smallest of the two child list lengths.
-    final int minLength = math.min(
-      _previousChildrenInTraversalOrder!.length,
-      _childrenInTraversalOrder!.length,
-    );
-
-    // Scan forward until first discrepancy.
-    while (newIndex < minLength &&
-        _previousChildrenInTraversalOrder![newIndex] ==
-            _childrenInTraversalOrder![newIndex]) {
-      intersectionIndicesNew.add(newIndex);
-      intersectionIndicesOld.add(newIndex);
-      newIndex += 1;
-    }
-
-    // If child lists are identical, do nothing.
-    if (_previousChildrenInTraversalOrder!.length ==
-            _childrenInTraversalOrder!.length &&
-        newIndex == _childrenInTraversalOrder!.length) {
-      return;
-    }
-
-    // If child lists are not identical, continue computing the intersection
-    // between the two lists.
-    while (newIndex < _childrenInTraversalOrder!.length) {
-      for (int oldIndex = 0;
-          oldIndex < _previousChildrenInTraversalOrder!.length;
-          oldIndex += 1) {
-        if (_previousChildrenInTraversalOrder![oldIndex] ==
-            _childrenInTraversalOrder![newIndex]) {
-          intersectionIndicesNew.add(newIndex);
-          intersectionIndicesOld.add(oldIndex);
-          break;
-        }
-      }
-      newIndex += 1;
-    }
-
-    // The longest sub-sequence in the old list maximizes the number of children
-    // that do not need to be moved.
-    final List<int?> longestSequence =
-        longestIncreasingSubsequence(intersectionIndicesOld);
-    final List<int> stationaryIds = <int>[];
-    for (int i = 0; i < longestSequence.length; i += 1) {
-      stationaryIds.add(_previousChildrenInTraversalOrder![
-          intersectionIndicesOld[longestSequence[i]!]]);
-    }
-
-    // Remove children that are no longer in the list.
-    for (int i = 0; i < _previousChildrenInTraversalOrder!.length; i++) {
-      if (!intersectionIndicesOld.contains(i)) {
-        // Child not in the intersection. Must be removed.
-        final int childId = _previousChildrenInTraversalOrder![i];
-        owner._detachObject(childId);
-      }
-    }
-
-    html.Element? refNode;
-    for (int i = _childrenInTraversalOrder!.length - 1; i >= 0; i -= 1) {
-      final int childId = _childrenInTraversalOrder![i];
-      final SemanticsObject child = owner.getOrCreateObject(childId);
-      if (!stationaryIds.contains(childId)) {
-        if (refNode == null) {
-          containerElement!.append(child.element);
-        } else {
-          containerElement!.insertBefore(child.element, refNode);
-        }
-        owner._attachObject(parent: this, child: child);
-      } else {
-        assert(child._parent == this);
-      }
-      refNode = child.element;
-    }
-
-    _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
   }
 
   @override
@@ -1195,15 +1365,15 @@ class SemanticsObject {
 /// Controls how pointer events and browser-detected gestures are treated by
 /// the Web Engine.
 enum AccessibilityMode {
-  /// We are not told whether the assistive technology is enabled or not.
+  /// Flutter is not told whether the assistive technology is enabled or not.
   ///
   /// This is the default mode.
   ///
-  /// In this mode we use a gesture recognition system that deduplicates
+  /// In this mode a gesture recognition system is used that deduplicates
   /// gestures detected by Flutter with gestures detected by the browser.
   unknown,
 
-  /// We are told whether the assistive technology is enabled.
+  /// Flutter is told whether the assistive technology is enabled.
   known,
 }
 
@@ -1309,7 +1479,7 @@ class EngineSemanticsOwner {
         object.element.remove();
       } else {
         assert(object._parent == parent);
-        assert(object.element.parent == parent._childContainerElement);
+        assert(object.element.parentNode == parent._childContainerElement);
       }
     }
     _detachments = <SemanticsObject?>[];
@@ -1336,7 +1506,7 @@ class EngineSemanticsOwner {
   }
 
   /// The top-level DOM element of the semantics DOM element tree.
-  html.Element? _rootSemanticsElement;
+  DomElement? _rootSemanticsElement;
 
   // ignore: prefer_function_declarations_over_variables
   TimestampFunction _now = () => DateTime.now();
@@ -1365,10 +1535,19 @@ class EngineSemanticsOwner {
     if (value == _semanticsEnabled) {
       return;
     }
+    final EngineAccessibilityFeatures original =
+        EnginePlatformDispatcher.instance.configuration.accessibilityFeatures
+        as EngineAccessibilityFeatures;
+    final ui.PlatformConfiguration newConfiguration =
+        EnginePlatformDispatcher.instance.configuration.copyWith(
+            accessibilityFeatures:
+                original.copyWith(accessibleNavigation: value));
+    EnginePlatformDispatcher.instance.configuration = newConfiguration;
+
     _semanticsEnabled = value;
 
     if (!_semanticsEnabled) {
-      // We do not process browser events at all when semantics is explicitly
+      // Do not process browser events at all when semantics is explicitly
       // disabled. All gestures are handled by the framework-level gesture
       // recognizers from pointer events.
       if (_gestureMode != GestureMode.pointerEvents) {
@@ -1426,8 +1605,7 @@ class EngineSemanticsOwner {
     return _gestureModeClock;
   }
 
-  /// Disables browser gestures temporarily because we have detected pointer
-  /// events.
+  /// Disables browser gestures temporarily because pointer events were detected.
   ///
   /// This is used to deduplicate gestures detected by Flutter and gestures
   /// detected by the browser. Flutter-detected gestures have higher precedence.
@@ -1447,36 +1625,37 @@ class EngineSemanticsOwner {
   /// The browser sends us both raw pointer events and gestures from
   /// [SemanticsObject.element]s. There could be three possibilities:
   ///
-  /// 1. Assistive technology is enabled and we know that it is.
-  /// 2. Assistive technology is disabled and we know that it isn't.
-  /// 3. We do not know whether an assistive technology is enabled.
+  /// 1. Assistive technology is enabled and Flutter knows that it is.
+  /// 2. Assistive technology is disabled and Flutter knows that it isn't.
+  /// 3. Flutter does not know whether an assistive technology is enabled.
   ///
   /// If [autoEnableOnTap] was called, this will automatically enable semantics
   /// if the user requests it.
   ///
-  /// In the first case we can ignore raw pointer events and only interpret
+  /// In the first case ignore raw pointer events and only interpret
   /// high-level gestures, e.g. "click".
   ///
-  /// In the second case we can ignore high-level gestures and interpret the raw
+  /// In the second case ignore high-level gestures and interpret the raw
   /// pointer events directly.
   ///
-  /// Finally, in a mode when we do not know if an assistive technology is
-  /// enabled or not we do a best-effort estimate which to respond to, raw
-  /// pointer or high-level gestures. We avoid doing both because that will
+  /// Finally, in a mode when Flutter does not know if an assistive technology
+  /// is enabled or not do a best-effort estimate which to respond to, raw
+  /// pointer or high-level gestures. Avoid doing both because that will
   /// result in double-firing of event listeners, such as `onTap` on a button.
-  /// An approach we use is to measure the distance between the last pointer
+  /// The approach is to measure the distance between the last pointer
   /// event and a gesture event. If a gesture is receive "soon" after the last
   /// received pointer event (determined by a heuristic), it is debounced as it
   /// is likely that the gesture detected from the pointer even will do the
-  /// right thing. However, if we receive a standalone gesture we will map it
-  /// onto a [ui.SemanticsAction] to be processed by the framework.
-  bool receiveGlobalEvent(html.Event event) {
+  /// right thing. However, if a standalone gesture is received, map it onto a
+  /// [ui.SemanticsAction] to be processed by the framework.
+  bool receiveGlobalEvent(DomEvent event) {
     // For pointer event reference see:
     //
     // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events
     const List<String> _pointerEventTypes = <String>[
       'pointerdown',
       'pointermove',
+      'pointerleave',
       'pointerup',
       'pointercancel',
       'touchstart',
@@ -1485,6 +1664,7 @@ class EngineSemanticsOwner {
       'touchcancel',
       'mousedown',
       'mousemove',
+      'mouseleave',
       'mouseup',
       'keyup',
       'keydown',
@@ -1536,7 +1716,7 @@ class EngineSemanticsOwner {
   /// [semanticsEnabled] is `false`.
   ///
   /// If [mode] is [AccessibilityMode.unknown] the gesture is accepted if it is
-  /// not accompanied by pointer events. In the presence of pointer events we
+  /// not accompanied by pointer events. In the presence of pointer events,
   /// delegate to Flutter's gesture detection system to produce gestures.
   bool shouldAcceptBrowserGesture(String eventType) {
     if (_mode == AccessibilityMode.known) {
@@ -1586,9 +1766,21 @@ class EngineSemanticsOwner {
     }
 
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
+
+    // First, update each object's information about itself. This information is
+    // later used to fix the parent-child and sibling relationships between
+    // objects.
     for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
       final SemanticsObject object = getOrCreateObject(nodeUpdate.id);
-      object.updateWith(nodeUpdate);
+      object.updateSelf(nodeUpdate);
+    }
+
+    // Second, fix the tree structure. This is moved out into its own loop,
+    // because each object's own information must be updated first.
+    for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
+      final SemanticsObject object = _semanticsTree[nodeUpdate.id]!;
+      object.updateChildren();
+      object._dirtyFields = 0;
     }
 
     if (_rootSemanticsElement == null) {
@@ -1602,11 +1794,18 @@ class EngineSemanticsOwner {
     assert(_semanticsTree.containsKey(0)); // must contain root node
     assert(() {
       // Validate tree
-      _semanticsTree.forEach((int? id, SemanticsObject? object) {
-        assert(id == object!.id);
+      _semanticsTree.forEach((int? id, SemanticsObject object) {
+        assert(id == object.id);
+
+        // Dirty fields should be cleared after the tree has been finalized.
+        assert(object._dirtyFields == 0);
+
+        // Make sure a child container is created only when there are children.
+        assert(object._childContainerElement == null || object.hasChildren);
+
         // Ensure child ID list is consistent with the parent-child
         // relationship of the semantics tree.
-        if (object!._childrenInTraversalOrder != null) {
+        if (object._childrenInTraversalOrder != null) {
           for (final int childId in object._childrenInTraversalOrder!) {
             final SemanticsObject? child = _semanticsTree[childId];
             if (child == null) {
@@ -1673,8 +1872,7 @@ List<int> longestIncreasingSubsequence(List<int> list) {
       mins[expansionIndex] = i;
     }
     if (expansionIndex > longest) {
-      // If we found a subsequence longer than any we've
-      // found yet, update `longest`
+      // Record the longest subsequence found so far.
       longest = expansionIndex;
     }
   }

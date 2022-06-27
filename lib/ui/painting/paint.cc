@@ -55,7 +55,7 @@ constexpr double kStrokeMiterLimitDefault = 4.0;
 
 // A color matrix which inverts colors.
 // clang-format off
-constexpr float invert_colors[20] = {
+constexpr float kInvertColors[20] = {
   -1.0,    0,    0, 1.0, 0,
      0, -1.0,    0, 1.0, 0,
      0,    0, -1.0, 1.0, 0,
@@ -64,7 +64,7 @@ constexpr float invert_colors[20] = {
 // clang-format on
 
 // Must be kept in sync with the MaskFilter private constants in painting.dart.
-enum MaskFilterType { Null, Blur };
+enum MaskFilterType { kNull, kBlur };
 
 Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data)
     : paint_objects_(paint_objects), paint_data_(paint_data) {}
@@ -156,7 +156,7 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   }
 
   if (uint_data[kInvertColorIndex]) {
-    sk_sp<SkColorFilter> invert_filter = SkColorFilters::Matrix(invert_colors);
+    sk_sp<SkColorFilter> invert_filter = SkColorFilters::Matrix(kInvertColors);
     sk_sp<SkColorFilter> current_filter = paint.refColorFilter();
     if (current_filter) {
       invert_filter = invert_filter->makeComposed(current_filter);
@@ -169,9 +169,9 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   }
 
   switch (uint_data[kMaskFilterIndex]) {
-    case Null:
+    case kNull:
       break;
-    case Blur:
+    case kBlur:
       SkBlurStyle blur_style =
           static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
       double sigma = float_data[kMaskFilterSigmaIndex];
@@ -267,7 +267,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
 
   if (flags.applies_style()) {
     uint32_t style = uint_data[kStyleIndex];
-    builder->setStyle(static_cast<SkPaint::Style>(style));
+    builder->setStyle(static_cast<DlDrawStyle>(style));
   }
 
   if (flags.is_stroked(builder->getStyle())) {
@@ -278,10 +278,10 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     builder->setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
 
     uint32_t stroke_cap = uint_data[kStrokeCapIndex];
-    builder->setStrokeCap(static_cast<SkPaint::Cap>(stroke_cap));
+    builder->setStrokeCap(static_cast<DlStrokeCap>(stroke_cap));
 
     uint32_t stroke_join = uint_data[kStrokeJoinIndex];
-    builder->setStrokeJoin(static_cast<SkPaint::Join>(stroke_join));
+    builder->setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
   }
 
   if (flags.applies_color_filter()) {
@@ -292,12 +292,18 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     builder->setDither(uint_data[kDitherIndex] != 0);
   }
 
+  if (flags.applies_path_effect()) {
+    // The paint API exposed to Dart does not support path effects.  But other
+    // operations such as text may set a path effect, which must be cleared.
+    builder->setPathEffect(nullptr);
+  }
+
   if (flags.applies_mask_filter()) {
     switch (uint_data[kMaskFilterIndex]) {
-      case Null:
+      case kNull:
         builder->setMaskFilter(nullptr);
         break;
-      case Blur:
+      case kBlur:
         SkBlurStyle blur_style =
             static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
         double sigma = float_data[kMaskFilterSigmaIndex];
@@ -323,10 +329,10 @@ flutter::Paint DartConverter<flutter::Paint>::FromArguments(
     int index,
     Dart_Handle& exception) {
   Dart_Handle paint_objects = Dart_GetNativeArgument(args, index);
-  FML_DCHECK(!LogIfError(paint_objects));
+  FML_DCHECK(!CheckAndHandleError(paint_objects));
 
   Dart_Handle paint_data = Dart_GetNativeArgument(args, index + 1);
-  FML_DCHECK(!LogIfError(paint_data));
+  FML_DCHECK(!CheckAndHandleError(paint_data));
 
   return flutter::Paint(paint_objects, paint_data);
 }
