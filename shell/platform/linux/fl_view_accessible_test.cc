@@ -10,9 +10,6 @@
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/mock_signal_handler.h"
 
-static const FlutterSemanticsNode kBatchEndNode = {
-    .id = kFlutterSemanticsNodeIdBatchEnd};
-
 TEST(FlViewAccessibleTest, BuildTree) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   g_autoptr(FlViewAccessible) accessible = FL_VIEW_ACCESSIBLE(
@@ -32,8 +29,6 @@ TEST(FlViewAccessibleTest, BuildTree) {
 
   const FlutterSemanticsNode child2_node = {.id = 222, .label = "child 2"};
   fl_view_accessible_handle_update_semantics_node(accessible, &child2_node);
-
-  fl_view_accessible_handle_update_semantics_node(accessible, &kBatchEndNode);
 
   AtkObject* root_object =
       atk_object_ref_accessible_child(ATK_OBJECT(accessible), 0);
@@ -66,8 +61,6 @@ TEST(FlViewAccessibleTest, AddRemoveChildren) {
   };
   fl_view_accessible_handle_update_semantics_node(accessible, &root_node);
 
-  fl_view_accessible_handle_update_semantics_node(accessible, &kBatchEndNode);
-
   AtkObject* root_object =
       atk_object_ref_accessible_child(ATK_OBJECT(accessible), 0);
   EXPECT_EQ(atk_object_get_n_accessible_children(root_object), 0);
@@ -87,8 +80,6 @@ TEST(FlViewAccessibleTest, AddRemoveChildren) {
 
     const FlutterSemanticsNode child1_node = {.id = 111, .label = "child 1"};
     fl_view_accessible_handle_update_semantics_node(accessible, &child1_node);
-
-    fl_view_accessible_handle_update_semantics_node(accessible, &kBatchEndNode);
   }
 
   EXPECT_EQ(atk_object_get_n_accessible_children(root_object), 1);
@@ -114,8 +105,6 @@ TEST(FlViewAccessibleTest, AddRemoveChildren) {
 
     const FlutterSemanticsNode child2_node = {.id = 222, .label = "child 2"};
     fl_view_accessible_handle_update_semantics_node(accessible, &child2_node);
-
-    fl_view_accessible_handle_update_semantics_node(accessible, &kBatchEndNode);
   }
 
   EXPECT_EQ(atk_object_get_n_accessible_children(root_object), 2);
@@ -143,8 +132,6 @@ TEST(FlViewAccessibleTest, AddRemoveChildren) {
     root_node.child_count = 1;
     root_node.children_in_traversal_order = children;
     fl_view_accessible_handle_update_semantics_node(accessible, &root_node);
-
-    fl_view_accessible_handle_update_semantics_node(accessible, &kBatchEndNode);
   }
 
   EXPECT_EQ(atk_object_get_n_accessible_children(root_object), 1);
@@ -164,8 +151,6 @@ TEST(FlViewAccessibleTest, AddRemoveChildren) {
 
     root_node.child_count = 0;
     fl_view_accessible_handle_update_semantics_node(accessible, &root_node);
-
-    fl_view_accessible_handle_update_semantics_node(accessible, &kBatchEndNode);
   }
 
   EXPECT_EQ(atk_object_get_n_accessible_children(root_object), 0);
