@@ -82,9 +82,6 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
 }
 
 - (NSString*)applicationLibraryPath {
-  if (_dartBundle == nil) {
-    return nil;
-  }
   return [_dartBundle executablePath];
 }
 
