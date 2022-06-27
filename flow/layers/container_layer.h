@@ -28,7 +28,7 @@ class ContainerLayer : public Layer {
   virtual void DiffChildren(DiffContext* context,
                             const ContainerLayer* old_layer);
 
-  void PaintChildren(PaintContext& context) const;
+  void PaintChildren(PaintContext& context) const override;
 
   const ContainerLayer* as_container_layer() const override { return this; }
 

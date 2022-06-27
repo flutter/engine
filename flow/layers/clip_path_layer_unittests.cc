@@ -497,7 +497,7 @@ TEST_F(ClipPathLayerTest, LayerCached) {
   auto layer =
       std::make_shared<ClipPathLayer>(layer_clip, Clip::antiAliasWithSaveLayer);
   layer->Add(mock1);
-  SkPaint paint;
+
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   SkMatrix cache_ctm = initial_transform;
   SkCanvas cache_canvas;
@@ -525,6 +525,7 @@ TEST_F(ClipPathLayerTest, LayerCached) {
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_EQ(clip_cache_item->cache_state(),
             RasterCacheItem::CacheState::kCurrent);
+  SkPaint paint;
   EXPECT_TRUE(raster_cache()->Draw(clip_cache_item->GetId().value(),
                                    cache_canvas, &paint));
 }

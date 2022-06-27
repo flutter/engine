@@ -68,6 +68,10 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   set_paint_bounds(child_bounds);
 
+  // CacheChildren only when the transformed_filter_ doesn't equal null.
+  // So in here we reset the LayerRasterCacheItem cache state.
+  layer_raster_cache_item_->MarkNotCacheChildren();
+
   transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
   if (transformed_filter_) {
     layer_raster_cache_item_->MarkCacheChildren();

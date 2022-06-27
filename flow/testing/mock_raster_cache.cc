@@ -74,13 +74,13 @@ void MockRasterCache::AddMockPicture(int width, int height) {
       .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
       // clang-format on
   };
-  UpdateCacheEntry(
-      RasterCacheKeyID(display_list->unique_id(), RasterCacheKeyType::kPicture),
-      r_context, [&](SkCanvas* canvas) {
-        SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
-            r_context.logical_rect, r_context.matrix);
-        return std::make_unique<MockRasterCacheResult>(cache_rect);
-      });
+  UpdateCacheEntry(RasterCacheKeyID(display_list->unique_id(),
+                                    RasterCacheKeyType::kDisplayList),
+                   r_context, [&](SkCanvas* canvas) {
+                     SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+                         r_context.logical_rect, r_context.matrix);
+                     return std::make_unique<MockRasterCacheResult>(cache_rect);
+                   });
 }
 
 static std::vector<RasterCacheItem*> raster_cache_items_;

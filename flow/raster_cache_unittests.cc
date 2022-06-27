@@ -531,7 +531,6 @@ TEST(RasterCache, RasterCacheKeyHashFunction) {
   SkMatrix matrix = SkMatrix::I();
   uint64_t id = 5;
   RasterCacheKey layer_key(id, RasterCacheKeyType::kLayer, matrix);
-  RasterCacheKey picture_key(id, RasterCacheKeyType::kPicture, matrix);
   RasterCacheKey display_list_key(id, RasterCacheKeyType::kDisplayList, matrix);
   RasterCacheKey layer_children_key(id, RasterCacheKeyType::kLayerChildren,
                                     matrix);
@@ -539,11 +538,6 @@ TEST(RasterCache, RasterCacheKeyHashFunction) {
   auto layer_cache_key_id = RasterCacheKeyID(id, RasterCacheKeyType::kLayer);
   auto layer_hash_code = hash_function(layer_key);
   ASSERT_EQ(layer_hash_code, layer_cache_key_id.GetHash());
-
-  auto picture_cache_key_id =
-      RasterCacheKeyID(id, RasterCacheKeyType::kPicture);
-  auto picture_hash_code = hash_function(picture_key);
-  ASSERT_EQ(picture_hash_code, picture_cache_key_id.GetHash());
 
   auto display_list_cache_key_id =
       RasterCacheKeyID(id, RasterCacheKeyType::kDisplayList);
@@ -561,17 +555,14 @@ TEST(RasterCache, RasterCacheKeySameID) {
   SkMatrix matrix = SkMatrix::I();
   uint64_t id = 5;
   RasterCacheKey layer_key(id, RasterCacheKeyType::kLayer, matrix);
-  RasterCacheKey picture_key(id, RasterCacheKeyType::kPicture, matrix);
   RasterCacheKey display_list_key(id, RasterCacheKeyType::kDisplayList, matrix);
   RasterCacheKey layer_children_key(id, RasterCacheKeyType::kLayerChildren,
                                     matrix);
   map[layer_key] = 100;
-  map[picture_key] = 200;
   map[display_list_key] = 300;
   map[layer_children_key] = 400;
 
   ASSERT_EQ(map[layer_key], 100);
-  ASSERT_EQ(map[picture_key], 200);
   ASSERT_EQ(map[display_list_key], 300);
   ASSERT_EQ(map[layer_children_key], 400);
 }
@@ -591,7 +582,7 @@ TEST(RasterCache, RasterCacheKeySameType) {
   ASSERT_EQ(map[layer_second_key], 100);
   ASSERT_EQ(map[layer_third_key], 150);
 
-  type = RasterCacheKeyType::kPicture;
+  type = RasterCacheKeyType::kDisplayList;
   RasterCacheKey picture_first_key(20, type, matrix);
   RasterCacheKey picture_second_key(25, type, matrix);
   RasterCacheKey picture_third_key(30, type, matrix);

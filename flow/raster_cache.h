@@ -186,9 +186,8 @@ class RasterCache {
 
   bool GenerateNewCacheInThisFrame() const {
     // Disabling caching when access_threshold is zero is historic behavior.
-    return access_threshold_ != 0 &&
-           picture_cached_this_frame_ + display_list_cached_this_frame_ <
-               picture_and_display_list_cache_limit_per_frame_;
+    return access_threshold_ != 0 && display_list_cached_this_frame_ <
+                                         display_list_cache_limit_per_frame_;
   }
 
   /**
@@ -217,8 +216,7 @@ class RasterCache {
                                RasterCacheMetrics& layer_metrics);
 
   const size_t access_threshold_;
-  const size_t picture_and_display_list_cache_limit_per_frame_;
-  mutable size_t picture_cached_this_frame_ = 0;
+  const size_t display_list_cache_limit_per_frame_;
   mutable size_t display_list_cached_this_frame_ = 0;
   RasterCacheMetrics layer_metrics_;
   RasterCacheMetrics picture_metrics_;

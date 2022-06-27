@@ -49,6 +49,8 @@ class LayerRasterCacheItem : public RasterCacheItem {
 
   void MarkCacheChildren() { can_cache_children_ = true; }
 
+  void MarkNotCacheChildren() { can_cache_children_ = false; }
+
   bool IsCacheChildren() const { return cache_state_ == CacheState::kChildren; }
 
  protected:

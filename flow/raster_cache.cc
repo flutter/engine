@@ -43,10 +43,9 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 }
 
 RasterCache::RasterCache(size_t access_threshold,
-                         size_t picture_and_display_list_cache_limit_per_frame)
+                         size_t display_list_cache_limit_per_frame)
     : access_threshold_(access_threshold),
-      picture_and_display_list_cache_limit_per_frame_(
-          picture_and_display_list_cache_limit_per_frame),
+      display_list_cache_limit_per_frame_(display_list_cache_limit_per_frame),
       checkerboard_images_(false) {}
 
 /// @note Procedure doesn't copy all closures.
@@ -100,10 +99,6 @@ bool RasterCache::UpdateCacheEntry(
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {
           display_list_cached_this_frame_++;
-          break;
-        }
-        case RasterCacheKeyType::kPicture: {
-          picture_cached_this_frame_++;
           break;
         }
         default:
@@ -165,7 +160,6 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
 }
 
 void RasterCache::PrepareNewFrame() {
-  picture_cached_this_frame_ = 0;
   display_list_cached_this_frame_ = 0;
 }
 
@@ -182,7 +176,7 @@ void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
     } else if (entry.image) {
       RasterCacheKeyKind kind = it->first.kind();
       switch (kind) {
-        case RasterCacheKeyKind::kPictureMetrics:
+        case RasterCacheKeyKind::kDisplayListMetrics:
           picture_metrics.in_use_count++;
           picture_metrics.in_use_bytes += entry.image->image_bytes();
           break;
@@ -199,7 +193,7 @@ void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
     if (it->second.image) {
       RasterCacheKeyKind kind = it->first.kind();
       switch (kind) {
-        case RasterCacheKeyKind::kPictureMetrics:
+        case RasterCacheKeyKind::kDisplayListMetrics:
           picture_metrics.eviction_count++;
           picture_metrics.eviction_bytes += it->second.image->image_bytes();
           break;
@@ -241,13 +235,13 @@ size_t RasterCache::GetLayerCachedEntriesCount() const {
 }
 
 size_t RasterCache::GetPictureCachedEntriesCount() const {
-  size_t picture_cached_entries_count = 0;
+  size_t display_list_cached_entries_count = 0;
   for (const auto& item : cache_) {
-    if (item.first.kind() == RasterCacheKeyKind::kPictureMetrics) {
-      picture_cached_entries_count++;
+    if (item.first.kind() == RasterCacheKeyKind::kDisplayListMetrics) {
+      display_list_cached_entries_count++;
     }
   }
-  return picture_cached_entries_count;
+  return display_list_cached_entries_count;
 }
 
 void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
@@ -289,7 +283,7 @@ size_t RasterCache::EstimateLayerCacheByteSize() const {
 size_t RasterCache::EstimatePictureCacheByteSize() const {
   size_t picture_cache_bytes = 0;
   for (const auto& item : cache_) {
-    if (item.first.kind() == RasterCacheKeyKind::kPictureMetrics &&
+    if (item.first.kind() == RasterCacheKeyKind::kDisplayListMetrics &&
         item.second.image) {
       picture_cache_bytes += item.second.image->image_bytes();
     }

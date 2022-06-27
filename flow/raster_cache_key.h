@@ -18,12 +18,7 @@ namespace flutter {
 
 class Layer;
 
-enum class RasterCacheKeyType {
-  kLayer,
-  kPicture,
-  kDisplayList,
-  kLayerChildren
-};
+enum class RasterCacheKeyType { kLayer, kDisplayList, kLayerChildren };
 
 class RasterCacheKeyID {
  public:
@@ -60,7 +55,7 @@ class RasterCacheKeyID {
   const RasterCacheKeyType type_;
 };
 
-enum class RasterCacheKeyKind { kLayerMetrics, kPictureMetrics };
+enum class RasterCacheKeyKind { kLayerMetrics, kDisplayListMetrics };
 
 class RasterCacheKey {
  public:
@@ -79,9 +74,8 @@ class RasterCacheKey {
 
   RasterCacheKeyKind kind() const {
     switch (id_.type()) {
-      case RasterCacheKeyType::kPicture:
       case RasterCacheKeyType::kDisplayList:
-        return RasterCacheKeyKind::kPictureMetrics;
+        return RasterCacheKeyKind::kDisplayListMetrics;
       case RasterCacheKeyType::kLayer:
       case RasterCacheKeyType::kLayerChildren:
         return RasterCacheKeyKind::kLayerMetrics;

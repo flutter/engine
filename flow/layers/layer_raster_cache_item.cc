@@ -25,8 +25,7 @@ void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
   if (context->raster_cache && context->raster_cached_entries) {
     context->raster_cached_entries->push_back(this);
     child_items_ = context->raster_cached_entries->size();
-    auto child_matrix = matrix;
-    matrix_ = child_matrix;
+    matrix_ = matrix;
   }
 }
 
@@ -114,8 +113,7 @@ bool LayerRasterCacheItem::Rasterize(const PaintContext& paint_context,
       layer_->Paint(context);
       break;
     case CacheState::kChildren:
-      FML_DCHECK(layer_->as_container_layer());
-      layer_->as_container_layer()->PaintChildren(context);
+      layer_->PaintChildren(context);
       break;
     case CacheState::kNone:
       FML_DCHECK(cache_state_ != CacheState::kNone);
@@ -144,7 +142,7 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
     };
     return context.raster_cache->UpdateCacheEntry(
         GetId().value(), r_context,
-        [=](SkCanvas* canvas) { Rasterize(context, canvas); });
+        [ctx = context, this](SkCanvas* canvas) { Rasterize(ctx, canvas); });
   }
   return false;
 }

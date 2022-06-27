@@ -341,17 +341,26 @@ TEST_F(ColorFilterLayerTest, CacheColorFilterLayerSelf) {
   layer->Paint(paint_context());
   // frame 2.
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  // ColorFilterLayer default cache children.
+  EXPECT_EQ(cacheable_color_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kChildren);
+  EXPECT_TRUE(raster_cache()->Draw(cacheable_color_filter_item->GetId().value(),
+                                   cache_canvas, &paint));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cacheable_color_filter_item->GetId().value(), other_canvas, &paint));
   layer->Paint(paint_context());
+
   // frame 3.
   layer->Preroll(preroll_context(), initial_transform);
   layer->Paint(paint_context());
 
   LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
-  // frame1,2 cache the ImageFilter's children layer, frame3 cache the
-  // ImageFilterLayer
+  // frame1,2 cache the ColorFilterLayer's children layer, frame3 cache the
+  // ColorFilterLayer
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)2);
 
-  // ImageFilterLayer default cache itself.
+  // ColorFilterLayer default cache itself.
   EXPECT_EQ(cacheable_color_filter_item->cache_state(),
             RasterCacheItem::CacheState::kCurrent);
   EXPECT_EQ(cacheable_color_filter_item->GetId(),
@@ -382,7 +391,7 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
   PrerollContext* context = preroll_context();
   context->subtree_can_inherit_opacity = false;
   color_filter_layer->Preroll(preroll_context(), initial_transform);
-  // ImageFilterLayers can always inherit opacity whether or not their
+  // ColorFilterLayer can always inherit opacity whether or not their
   // children are compatible.
   EXPECT_TRUE(context->subtree_can_inherit_opacity);
 

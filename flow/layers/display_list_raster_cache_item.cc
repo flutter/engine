@@ -170,7 +170,9 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
   };
   return context.raster_cache->UpdateCacheEntry(
       GetId().value(), r_context,
-      [=](SkCanvas* canvas) { display_list_->RenderTo(canvas); });
+      [display_list = display_list_](SkCanvas* canvas) {
+        display_list->RenderTo(canvas);
+      });
   return false;
 }
 }  // namespace flutter

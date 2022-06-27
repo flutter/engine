@@ -480,7 +480,6 @@ TEST_F(ClipRectLayerTest, OpacityInheritanceSaveLayerPainting) {
 TEST_F(ClipRectLayerTest, LayerCached) {
   auto path1 = SkPath().addRect({10, 10, 30, 30});
   auto mock1 = MockLayer::MakeOpacityCompatible(path1);
-  SkPaint paint;
   SkRect clip_rect = SkRect::MakeWH(500, 500);
   auto layer =
       std::make_shared<ClipRectLayer>(clip_rect, Clip::antiAliasWithSaveLayer);
@@ -511,6 +510,7 @@ TEST_F(ClipRectLayerTest, LayerCached) {
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_EQ(clip_cache_item->cache_state(),
             RasterCacheItem::CacheState::kCurrent);
+  SkPaint paint;
   EXPECT_TRUE(raster_cache()->Draw(clip_cache_item->GetId().value(),
                                    cache_canvas, &paint));
 }

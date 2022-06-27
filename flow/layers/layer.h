@@ -302,6 +302,8 @@ class Layer {
 
   virtual void Paint(PaintContext& context) const = 0;
 
+  virtual void PaintChildren(PaintContext& context) const { FML_DCHECK(false); }
+
   bool subtree_has_platform_view() const { return subtree_has_platform_view_; }
   void set_subtree_has_platform_view(bool value) {
     subtree_has_platform_view_ = value;
