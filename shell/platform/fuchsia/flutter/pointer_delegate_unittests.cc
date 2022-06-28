@@ -37,6 +37,12 @@ constexpr fup_TouchIxnId kIxnOne = {.device_id = 1u,
                                     .pointer_id = 1u,
                                     .interaction_id = 2u};
 
+constexpr uint32_t kMouseDeviceId = 123;
+constexpr std::array<int64_t, 2> kNoScrollDelta = {0, 0};
+constexpr std::array<int64_t, 2> kNoScrollInPhysicalPixelDelta = {0, 0};
+const bool kNotPrecisionScroll = false;
+const bool kPrecisionScroll = true;
+
 // Fixture to exercise Flutter runner's implementation for
 // fuchsia.ui.pointer.TouchSource.
 class PointerDelegateTest : public ::testing::Test {
@@ -673,6 +679,167 @@ TEST_F(PointerDelegateTest, Protocol_PointersAreIndependent) {
   EXPECT_EQ(pointers.value()[1].pointer_identifier, 0);  // reserved for PDPC
   EXPECT_EQ(pointers.value()[1].device, (int64_t)((1ul << 32) | 1u));
   EXPECT_EQ(pointers.value()[1].change, flutter::PointerData::Change::kDown);
+  pointers = {};
+}
+
+TEST_F(PointerDelegateTest, MouseWheel_TickBased) {
+  std::optional<std::vector<flutter::PointerData>> pointers;
+  pointer_delegate_->WatchLoop(
+      [&pointers](std::vector<flutter::PointerData> events) {
+        pointers = std::move(events);
+      });
+  RunLoopUntilIdle();  // Server gets watch call.
+
+  std::vector<fup::MouseEvent> events =
+      MouseEventBuilder()
+          .AddTime(1111789u)
+          .AddViewParameters(kRect, kRect, kIdentity)
+          .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {0, 1},
+                     kNoScrollInPhysicalPixelDelta, kNotPrecisionScroll)
+          .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
+          .BuildAsVector();
+  mouse_source_->ScheduleCallback(std::move(events));
+  RunLoopUntilIdle();
+
+  ASSERT_TRUE(pointers.has_value());
+  ASSERT_EQ(pointers.value().size(), 1u);
+  EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
+  EXPECT_EQ(pointers.value()[0].signal_kind,
+            flutter::PointerData::SignalKind::kScroll);
+  EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
+  EXPECT_EQ(pointers.value()[0].buttons, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_x, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 20);
+  pointers = {};
+
+  // receive a horizontal scroll
+  events = MouseEventBuilder()
+               .AddTime(1111789u)
+               .AddViewParameters(kRect, kRect, kIdentity)
+               .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {1, 0},
+                          kNoScrollInPhysicalPixelDelta, kNotPrecisionScroll)
+               .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
+               .BuildAsVector();
+  mouse_source_->ScheduleCallback(std::move(events));
+  RunLoopUntilIdle();
+
+  ASSERT_TRUE(pointers.has_value());
+  ASSERT_EQ(pointers.value().size(), 1u);
+  EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
+  EXPECT_EQ(pointers.value()[0].signal_kind,
+            flutter::PointerData::SignalKind::kScroll);
+  EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
+  EXPECT_EQ(pointers.value()[0].buttons, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_x, 20);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 0);
+  pointers = {};
+}
+
+TEST_F(PointerDelegateTest, MouseWheel_PixelBased) {
+  std::optional<std::vector<flutter::PointerData>> pointers;
+  pointer_delegate_->WatchLoop(
+      [&pointers](std::vector<flutter::PointerData> events) {
+        pointers = std::move(events);
+      });
+  RunLoopUntilIdle();  // Server gets watch call.
+
+  std::vector<fup::MouseEvent> events =
+      MouseEventBuilder()
+          .AddTime(1111789u)
+          .AddViewParameters(kRect, kRect, kIdentity)
+          .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {0, 1}, {0, 120},
+                     kNotPrecisionScroll)
+          .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
+          .BuildAsVector();
+  mouse_source_->ScheduleCallback(std::move(events));
+  RunLoopUntilIdle();
+
+  ASSERT_TRUE(pointers.has_value());
+  ASSERT_EQ(pointers.value().size(), 1u);
+  EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
+  EXPECT_EQ(pointers.value()[0].signal_kind,
+            flutter::PointerData::SignalKind::kScroll);
+  EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
+  EXPECT_EQ(pointers.value()[0].buttons, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_x, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 120);
+  pointers = {};
+
+  // receive a horizontal scroll
+  events = MouseEventBuilder()
+               .AddTime(1111789u)
+               .AddViewParameters(kRect, kRect, kIdentity)
+               .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {1, 0}, {120, 0},
+                          kNotPrecisionScroll)
+               .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
+               .BuildAsVector();
+  mouse_source_->ScheduleCallback(std::move(events));
+  RunLoopUntilIdle();
+
+  ASSERT_TRUE(pointers.has_value());
+  ASSERT_EQ(pointers.value().size(), 1u);
+  EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
+  EXPECT_EQ(pointers.value()[0].signal_kind,
+            flutter::PointerData::SignalKind::kScroll);
+  EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
+  EXPECT_EQ(pointers.value()[0].buttons, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_x, 120);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 0);
+  pointers = {};
+}
+
+TEST_F(PointerDelegateTest, MouseWheel_TouchpadPixelBased) {
+  std::optional<std::vector<flutter::PointerData>> pointers;
+  pointer_delegate_->WatchLoop(
+      [&pointers](std::vector<flutter::PointerData> events) {
+        pointers = std::move(events);
+      });
+  RunLoopUntilIdle();  // Server gets watch call.
+
+  std::vector<fup::MouseEvent> events =
+      MouseEventBuilder()
+          .AddTime(1111789u)
+          .AddViewParameters(kRect, kRect, kIdentity)
+          .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {0, 1}, {0, 120},
+                     kNotPrecisionScroll)
+          .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
+          .BuildAsVector();
+  mouse_source_->ScheduleCallback(std::move(events));
+  RunLoopUntilIdle();
+
+  ASSERT_TRUE(pointers.has_value());
+  ASSERT_EQ(pointers.value().size(), 1u);
+  EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
+  EXPECT_EQ(pointers.value()[0].signal_kind,
+            flutter::PointerData::SignalKind::kScroll);
+  EXPECT_EQ(pointers.value()[0].kind,
+            flutter::PointerData::DeviceKind::kTrackpad);
+  EXPECT_EQ(pointers.value()[0].buttons, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_x, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 120);
+  pointers = {};
+
+  // receive a horizontal scroll
+  events = MouseEventBuilder()
+               .AddTime(1111789u)
+               .AddViewParameters(kRect, kRect, kIdentity)
+               .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {1, 0}, {120, 0},
+                          kNotPrecisionScroll)
+               .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
+               .BuildAsVector();
+  mouse_source_->ScheduleCallback(std::move(events));
+  RunLoopUntilIdle();
+
+  ASSERT_TRUE(pointers.has_value());
+  ASSERT_EQ(pointers.value().size(), 1u);
+  EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
+  EXPECT_EQ(pointers.value()[0].signal_kind,
+            flutter::PointerData::SignalKind::kScroll);
+  EXPECT_EQ(pointers.value()[0].kind,
+            flutter::PointerData::DeviceKind::kTrackpad);
+  EXPECT_EQ(pointers.value()[0].buttons, 0);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_x, 120);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 0);
   pointers = {};
 }
 
