@@ -34,12 +34,14 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
   // can always apply opacity in those cases.
   context->subtree_can_inherit_opacity = true;
 
+  SkMatrix child_matrix(matrix);
+
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, matrix,
+    TryToPrepareRasterCache(context, this, child_matrix,
                             RasterCacheLayerStrategy::kLayer);
   } else {
     render_count_++;
-    TryToPrepareRasterCache(context, this, matrix,
+    TryToPrepareRasterCache(context, this, child_matrix,
                             RasterCacheLayerStrategy::kLayerChildren);
   }
 }

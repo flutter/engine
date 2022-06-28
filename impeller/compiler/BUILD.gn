@@ -6,6 +6,8 @@ import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/version/version.gni")
 
 impeller_component("compiler_lib") {
+  include_dirs = [ "//third_party/vulkan-deps/spirv-cross/src/" ]
+
   sources = [
     "code_gen_template.h",
     "compiler.cc",
@@ -18,6 +20,8 @@ impeller_component("compiler_lib") {
     "logger.h",
     "reflector.cc",
     "reflector.h",
+    "runtime_stage_data.cc",
+    "runtime_stage_data.h",
     "source_options.cc",
     "source_options.h",
     "switches.cc",
@@ -31,6 +35,7 @@ impeller_component("compiler_lib") {
   public_deps = [
     "../base",
     "../geometry",
+    "../runtime_stage",
     "//flutter/fml",
 
     # All third_party deps must be reflected below in the impellerc_license
@@ -74,7 +79,7 @@ generated_file("impellerc_license") {
     "",
     "### spirv_cross",
     "",
-    read_file("//third_party/spirv_cross/LICENSE", "string"),
+    read_file("//third_party/vulkan-deps/spirv-cross/src/LICENSE", "string"),
   ]
 }
 
@@ -84,6 +89,10 @@ impeller_component("impellerc") {
   sources = [ "impellerc_main.cc" ]
 
   deps = [ ":compiler_lib" ]
+
+  metadata = {
+    entitlement_file_path = [ "impellerc" ]
+  }
 }
 
 group("compiler") {

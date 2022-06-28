@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
@@ -40,7 +38,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
-  html.Element? _shaderElement;
+  DomElement? _shaderElement;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override

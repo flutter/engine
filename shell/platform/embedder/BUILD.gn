@@ -142,7 +142,7 @@ source_set("embedder_headers") {
 
 source_set("embedder_test_utils") {
   public = [
-    "test_utils/key_codes.h",
+    "test_utils/key_codes.g.h",
     "test_utils/proc_table_replacement.h",
   ]
 
@@ -244,7 +244,10 @@ if (enable_unittests) {
         "tests/embedder_unittests_gl.cc",
       ]
 
-      deps += [ "//flutter/testing:opengl" ]
+      deps += [
+        "//flutter/testing:opengl",
+        "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
+      ]
     }
 
     if (test_enable_metal) {

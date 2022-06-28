@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -24,14 +23,14 @@ Future<void> testMain() async {
 
   void appendToScene() {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
-    final html.Element testScene = html.Element.tag('flt-scene');
+    final DomElement testScene = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       testScene.style.position = 'absolute';
       testScene.style.transformOrigin = '0 0 0';
       testScene.style.transform = 'scale(0.3)';
     }
-    testScene.append(canvas.rootElement as html.Node);
+    testScene.append(canvas.rootElement);
     flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
   }
 
@@ -260,7 +259,7 @@ Future<void> testMain() async {
     }
 
     sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
-    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement as html.Node);
+    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
 
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',

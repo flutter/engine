@@ -401,25 +401,17 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  auto opacity_integer_transform = RasterCache::GetIntegralTransCTM(
-      SkMatrix::Translate(offset.fX, offset.fY));
-#endif
   auto dl_image_filter = DlImageFilter::From(layer_filter);
   DisplayListBuilder expected_builder;
-  /* opacity_layer::Paint() */ {
+  /* OpacityLayer::Paint() */ {
     expected_builder.save();
     {
       expected_builder.translate(offset.fX, offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integer_transform);
-#endif
-      /* image_filter_layer::Paint() */ {
+      /* ImageFilterLayer::Paint() */ {
         expected_builder.setColor(opacity_alpha << 24);
         expected_builder.setImageFilter(dl_image_filter.get());
         expected_builder.saveLayer(&child_path.getBounds(), true);
-        /* mock_layer::Paint() */ {
+        /* MockLayer::Paint() */ {
           expected_builder.setColor(child_paint.getColor());
           expected_builder.setImageFilter(nullptr);
           expected_builder.drawPath(child_path);

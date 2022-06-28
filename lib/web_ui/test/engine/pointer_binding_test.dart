@@ -9,6 +9,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show flutterViewEmbedder, window;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/ui.dart' as ui;
@@ -45,7 +46,8 @@ void main() {
 
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
-  final html.Element glassPane = flutterViewEmbedder.glassPaneElement!;
+  final html.Element glassPane = flutterViewEmbedder.glassPaneElement! as
+      html.Element;
   double dpi = 1.0;
 
   setUp(() {
@@ -57,7 +59,7 @@ void testMain() {
     final MockSafariPointerEventWorkaround mockSafariPointer =
         MockSafariPointerEventWorkaround();
     SafariPointerEventWorkaround.instance = mockSafariPointer;
-    final PointerBinding instance = PointerBinding(html.DivElement());
+    final PointerBinding instance = PointerBinding(createDomHTMLDivElement());
     expect(mockSafariPointer.workAroundInvoked, isIosSafari);
     instance.dispose();
   }, skip: !isIosSafari);

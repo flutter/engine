@@ -10,8 +10,8 @@
 
 #include "flutter/fml/macros.h"
 #include "shaderc/shaderc.hpp"
-#include "third_party/spirv_cross/spirv_cross.hpp"
-#include "third_party/spirv_cross/spirv_msl.hpp"
+#include "spirv_cross.hpp"
+#include "spirv_msl.hpp"
 
 namespace impeller {
 namespace compiler {
@@ -32,6 +32,8 @@ enum class TargetPlatform {
   kFlutterSPIRV,
   kOpenGLES,
   kOpenGLDesktop,
+  kRuntimeStageMetal,
+  kRuntimeStageGLES,
 };
 
 bool TargetPlatformIsMetal(TargetPlatform platform);

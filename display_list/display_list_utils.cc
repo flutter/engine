@@ -33,6 +33,9 @@ void SkPaintDispatchHelper::save_opacity(SkScalar child_opacity) {
   set_opacity(child_opacity);
 }
 void SkPaintDispatchHelper::restore_opacity() {
+  if (save_stack_.empty()) {
+    return;
+  }
   set_opacity(save_stack_.back().opacity);
   save_stack_.pop_back();
 }
@@ -163,6 +166,9 @@ void SkMatrixDispatchHelper::save() {
   saved_.push_back(matrix_);
 }
 void SkMatrixDispatchHelper::restore() {
+  if (saved_.empty()) {
+    return;
+  }
   matrix_ = saved_.back();
   matrix33_ = matrix_.asM33();
   saved_.pop_back();
@@ -175,22 +181,34 @@ void SkMatrixDispatchHelper::reset() {
 void ClipBoundsDispatchHelper::clipRect(const SkRect& rect,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rect, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rect, is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
                                          SkClipOp clip_op,
                                          bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rrect.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rrect.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(path.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(path.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::intersect(const SkRect& rect, bool is_aa) {
@@ -221,6 +239,9 @@ void ClipBoundsDispatchHelper::save() {
   }
 }
 void ClipBoundsDispatchHelper::restore() {
+  if (saved_.empty()) {
+    return;
+  }
   bounds_ = saved_.back();
   saved_.pop_back();
   has_clip_ = (bounds_.fLeft <= bounds_.fRight &&  //
@@ -464,7 +485,7 @@ void DisplayListBoundsCalculator::drawVertices(const DlVertices* vertices,
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             bool render_with_attributes) {
   SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
                                    image->width(), image->height());
@@ -477,7 +498,7 @@ void DisplayListBoundsCalculator::drawImageRect(
     const sk_sp<DlImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const SkSamplingOptions& sampling,
+    DlImageSampling sampling,
     bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
   DisplayListAttributeFlags flags = render_with_attributes
@@ -488,7 +509,7 @@ void DisplayListBoundsCalculator::drawImageRect(
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
-                                                SkFilterMode filter,
+                                                DlFilterMode filter,
                                                 bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageNineWithPaintFlags
@@ -499,7 +520,7 @@ void DisplayListBoundsCalculator::drawImageLattice(
     const sk_sp<DlImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
-    SkFilterMode filter,
+    DlFilterMode filter,
     bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageLatticeWithPaintFlags
@@ -512,7 +533,7 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             const SkRect* cullRect,
                                             bool render_with_attributes) {
   SkPoint quad[4];

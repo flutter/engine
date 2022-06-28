@@ -12,7 +12,6 @@
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
 namespace testing {
@@ -26,11 +25,13 @@ namespace testing {
  */
 class MockRasterCacheResult : public RasterCacheResult {
  public:
-  explicit MockRasterCacheResult(SkIRect device_rect);
+  explicit MockRasterCacheResult(SkRect device_rect);
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override{};
 
-  SkISize image_dimensions() const override { return device_rect_.size(); };
+  SkISize image_dimensions() const override {
+    return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
+  };
 
   int64_t image_bytes() const override {
     return image_dimensions().area() *
@@ -38,7 +39,7 @@ class MockRasterCacheResult : public RasterCacheResult {
   }
 
  private:
-  SkIRect device_rect_;
+  SkRect device_rect_;
 };
 
 /**
@@ -49,19 +50,10 @@ class MockRasterCacheResult : public RasterCacheResult {
  */
 class MockRasterCache : public RasterCache {
  public:
-  explicit MockRasterCache(
-      size_t access_threshold = 3,
-      size_t picture_and_display_list_cache_limit_per_frame =
-          kDefaultPictureAndDispLayListCacheLimitPerFrame)
-      : RasterCache(access_threshold,
-                    picture_and_display_list_cache_limit_per_frame) {}
-
-  std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const override;
+  explicit MockRasterCache(size_t access_threshold = 3,
+                           size_t display_list_cache_limit_per_frame =
+                               kDefaultDispLayListCacheLimitPerFrame)
+      : RasterCache(access_threshold, display_list_cache_limit_per_frame) {}
 
   std::unique_ptr<RasterCacheResult> RasterizeDisplayList(
       DisplayList* display_list,
