@@ -21,7 +21,14 @@
 namespace flutter {
 
 // TODO(chinmaygarde): Make these enum names match the style guide.
-enum MutatorType { clip_rect, clip_rrect, clip_path, transform, opacity, backdrop_filter };
+enum MutatorType {
+  clip_rect,
+  clip_rrect,
+  clip_path,
+  transform,
+  opacity,
+  backdrop_filter
+};
 
 // Stores mutation information like clipping or transform.
 //
@@ -64,14 +71,15 @@ class Mutator {
   explicit Mutator(const SkMatrix& matrix)
       : type_(transform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(opacity), alpha_(alpha) {}
-  explicit Mutator(const sk_sp<SkImageFilter>& filter) : type_(backdrop_filter), filter_(filter) {}
+  explicit Mutator(const sk_sp<SkImageFilter>& filter)
+      : type_(backdrop_filter), filter_(filter) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
-  const sk_sp<SkImageFilter>& GetFilter() const {return filter_; }
+  const sk_sp<SkImageFilter>& GetFilter() const { return filter_; }
   const int& GetAlpha() const { return alpha_; }
   float GetAlphaFloat() const { return (alpha_ / 255.0); }
 
@@ -366,7 +374,8 @@ class ExternalViewEmbedder {
     visited_platform_views_.push_back(view_id);
   }
 
-  virtual void FilterPlatformViews(int64_t view_id, sk_sp<SkImageFilter> filter) {}
+  virtual void FilterPlatformViews(int64_t view_id,
+                                   sk_sp<SkImageFilter> filter) {}
 
  private:
   bool used_this_frame_ = false;

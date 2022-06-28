@@ -319,7 +319,8 @@ void FlutterPlatformViewsController::EndFrame(
   }
 }
 
-void FlutterPlatformViewsController::FilterPlatformViews(int64_t platform_view_id, sk_sp<SkImageFilter> filter) {
+void FlutterPlatformViewsController::FilterPlatformViews(int64_t platform_view_id,
+                                                         sk_sp<SkImageFilter> filter) {
   EmbeddedViewParams params = current_composition_params_[platform_view_id];
   params.PushFilter(filter);
   current_composition_params_[platform_view_id] = params;
