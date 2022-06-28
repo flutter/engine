@@ -736,9 +736,7 @@ public class FlutterFragment extends Fragment
 
   @NonNull private FlutterActivityAndFragmentDelegate.DelegateFactory delegateFactory = this;
 
-  /**
-   * Default delegate factory that creates a simple FlutterActivityAndFragmentDelegate instance.
-   */
+  /** Default delegate factory that creates a simple FlutterActivityAndFragmentDelegate instance. */
   public FlutterActivityAndFragmentDelegate createDelegate(
       FlutterActivityAndFragmentDelegate.Host host) {
     return new FlutterActivityAndFragmentDelegate(host);
