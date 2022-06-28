@@ -154,7 +154,13 @@ std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
   Entity entity_with_local_transform = entity;
   entity_with_local_transform.SetTransformation(
       GetTransform(entity.GetTransformation()));
-  return GetFilterCoverage(inputs_, entity_with_local_transform);
+
+  auto coverage = GetFilterCoverage(inputs_, entity_with_local_transform);
+  if (coverage_crop_.has_value() && coverage.has_value()) {
+    coverage = coverage->Union(coverage_crop_.value());
+  }
+
+  return coverage;
 }
 
 std::optional<Rect> FilterContents::GetFilterCoverage(
@@ -179,9 +185,6 @@ std::optional<Rect> FilterContents::GetFilterCoverage(
       continue;
     }
     result = result->Union(coverage.value());
-  }
-  if (coverage_crop_.has_value() && result.has_value()) {
-    result->Union(coverage_crop_.value());
   }
   return result;
 }
