@@ -1333,10 +1333,20 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
             reinterpret_cast<const uint8_t*>("wrong_snapshot"));
 }
 
+constexpr std::array<const char*, 4> GetSnapshotPaths() {
 #if defined(TEST_VM_SNAPSHOT_DATA) &&         \
     defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) && \
     defined(TEST_ISOLATE_SNAPSHOT_DATA) &&    \
     defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
+  return {TEST_VM_SNAPSHOT_DATA, TEST_VM_SNAPSHOT_INSTRUCTIONS,
+          TEST_ISOLATE_SNAPSHOT_DATA, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS};
+#else
+  // These paths must be set by the build.
+  static_assert(false);  // NOLINT
+  return {};
+#endif
+}
+
 //------------------------------------------------------------------------------
 /// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
 /// of the snapshots in the engine's settings.
@@ -1345,6 +1355,9 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
 #endif  // OS_FUCHSIA
+
+  auto [vm_data, vm_instructions, isolate_data, isolate_instructions] =
+      GetSnapshotPaths();
 
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
@@ -1359,13 +1372,13 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   // Construct the location of valid JIT snapshots.
   const std::string src_path = GetSourcePath();
   const std::string vm_snapshot_data =
-      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+      fml::paths::JoinPaths({src_path, vm_data});
   const std::string vm_snapshot_instructions =
-      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+      fml::paths::JoinPaths({src_path, vm_instructions});
   const std::string isolate_snapshot_data =
-      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
+      fml::paths::JoinPaths({src_path, isolate_data});
   const std::string isolate_snapshot_instructions =
-      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
+      fml::paths::JoinPaths({src_path, isolate_instructions});
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
@@ -1384,6 +1397,10 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   ASSERT_NE(settings.isolate_snapshot_instr(), nullptr);
 }
 
+#if defined(TEST_VM_SNAPSHOT_DATA) &&         \
+    defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) && \
+    defined(TEST_ISOLATE_SNAPSHOT_DATA) &&    \
+    defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
 //------------------------------------------------------------------------------
 /// The embedder must be able to run explicitly specified snapshots in JIT mode
 /// (i.e. when those are present in known locations).
