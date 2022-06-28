@@ -1334,13 +1334,15 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
 }
 
 constexpr std::array<const char*, 4> GetSnapshotPaths() {
+// NOLINTBEGIN
 #if !defined(TEST_VM_SNAPSHOT_DATA) ||         \
     !defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) || \
     !defined(TEST_ISOLATE_SNAPSHOT_DATA) ||    \
     !defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
   // These paths must be set by the build.
-  static_assert(false);  // NOLINT
+  static_assert(false);
 #endif
+// NOLINTEND
   return {TEST_VM_SNAPSHOT_DATA, TEST_VM_SNAPSHOT_INSTRUCTIONS,
           TEST_ISOLATE_SNAPSHOT_DATA, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS};
 }
