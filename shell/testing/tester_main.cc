@@ -27,10 +27,6 @@
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
-#if defined(FML_OS_WIN)
-#include <combaseapi.h>
-#endif  // defined(FML_OS_WIN)
-
 #if defined(FML_OS_POSIX)
 #include <signal.h>
 #endif  // defined(FML_OS_POSIX)
@@ -417,11 +413,6 @@ int main(int argc, char* argv[]) {
     ::exit(1);
     return true;
   };
-
-#if defined(FML_OS_WIN)
-  CoInitializeEx(nullptr,
-                 COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-#endif  // defined(FML_OS_WIN)
 
   return flutter::RunTester(settings,
                             command_line.HasOption(flutter::FlagForSwitch(
