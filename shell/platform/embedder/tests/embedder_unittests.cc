@@ -1333,8 +1333,8 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
             reinterpret_cast<const uint8_t*>("wrong_snapshot"));
 }
 
-constexpr std::array<const char*, 4> GetSnapshotPaths() {
 // NOLINTBEGIN
+constexpr std::array<const char*, 4> GetSnapshotPaths() {
 #if !defined(TEST_VM_SNAPSHOT_DATA) ||         \
     !defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) || \
     !defined(TEST_ISOLATE_SNAPSHOT_DATA) ||    \
@@ -1342,10 +1342,10 @@ constexpr std::array<const char*, 4> GetSnapshotPaths() {
   // These paths must be set by the build.
   static_assert(false);
 #endif
-  // NOLINTEND
   return {TEST_VM_SNAPSHOT_DATA, TEST_VM_SNAPSHOT_INSTRUCTIONS,
           TEST_ISOLATE_SNAPSHOT_DATA, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS};
 }
+// NOLINTEND
 
 //------------------------------------------------------------------------------
 /// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
