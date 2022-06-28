@@ -7,6 +7,11 @@ import 'dom.dart';
 
 // Set this flag to true to see the details of detecting layouts.
 const bool _debugLogLayoutEvents = false;
+void _debugLog(String message) {
+  if (_debugLogLayoutEvents) {
+    print(_debugLogLayoutEvents);
+  }
+}
 
 class KeyboardLayoutDetector {
   void update(DomKeyboardEvent event) {
@@ -14,30 +19,64 @@ class KeyboardLayoutDetector {
       return;
     }
 
-    if (_candidates != null) {
-      _filterCandidates(_candidates!, event);
-      if (_candidates!.isNotEmpty) {
+    // There is an existing candidate list. Filter based on it.
+    if (_candidates.isEmpty) {
+      final bool validCue = _filterCandidates(_candidates, event);
+      if (validCue) {
+        _debugCues.add(event);
+      }
+      if (_candidates.isNotEmpty) {
+        // There are some candidates left. Move forward.
         return;
       } else {
-        print('[Debug] Keyboard layout: Candidate exhausted.');
+        _debugLog('[Debug] Keyboard layout: Candidates exhausted. Past cues:'
+          + _debugCuesToString(_debugCues));
       }
     }
 
-    _candidates = kLayouts;
-    _filterCandidates(_candidates!, event);
-    if (_candidates!.isEmpty) {
-      _candidates = null;
+    // Start anew: Filter based on the entire list.
+    _candidates.addAll(kLayouts);
+    _debugCues.clear();
+    final bool validCue = _filterCandidates(_candidates, event);
+    if (validCue) {
+      _debugCues.add(event);
+    }
+    if (_candidates.isEmpty) {
+      _debugLog('[Debug] Keyboard layout: Candidates exhausted on first try. Past cues:'
+        + _debugCuesToString(_debugCues));
     }
   }
 
-  static void _filterCandidates(List<LayoutInfo> candidates, DomEvent event) {
+  static bool _filterCandidates(List<LayoutInfo> candidates, DomKeyboardEvent event) {
+    final int beforeCandidateNum = candidates.length;
+    final bool thisIsDead = event.key == 'Dead';
+    final bool thisHasAltGr = event.getModifierState('AltGraph');
+    final bool thisHasShift = event.shiftKey;
+    candidates.where((LayoutInfo element) {
+      final bool candidateIsDead =
+    });
+    final int afterCandidateNum = candidates.length;
+    return afterCandidateNum < beforeCandidateNum;
   }
 
-  List<LayoutInfo>? _candidates;
+  final List<LayoutInfo> _candidates = <LayoutInfo>[];
+  final List<DomKeyboardEvent> _debugCues = <DomKeyboardEvent>[];
 
-  static String _printEvent(DomKeyboardEvent event) {
+  static String _debugEventToString(DomKeyboardEvent event) {
     final String flags = <String>[
-    ];
-    return 'Event(${event.code}, ${event.key}, )';
+      if (event.altKey) 'Alt',
+      if (event.shiftKey) 'Shift',
+    ].join(' | ');
+    final String parameters = <String>[
+      event.code ?? '',
+      event.key ?? '',
+      if (flags.isNotEmpty) flags,
+    ].join(', ');
+    return 'Event($parameters)';
+  }
+
+  static String _debugCuesToString(List<DomKeyboardEvent> cues) {
+    return cues.map((DomKeyboardEvent event) =>
+        '\n  ${_debugEventToString(event)}').join('');
   }
 }
