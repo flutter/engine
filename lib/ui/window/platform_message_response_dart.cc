@@ -29,12 +29,12 @@ void PostCompletion(Callback&& callback,
   FML_DCHECK(!*is_complete);
   *is_complete = true;
   uint64_t platform_message_id = platform_message_counter.fetch_add(1);
-  TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel:ScheduleResult",
+  TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel ScheduleResult",
                            platform_message_id, "channel", channel.c_str());
   ui_task_runner->PostTask(fml::MakeCopyable(
       [callback = std::move(callback), platform_message_id,
        result = std::move(result), channel = channel]() mutable {
-        TRACE_EVENT_ASYNC_END0("flutter", "PlatformChannel:ScheduleResult",
+        TRACE_EVENT_ASYNC_END0("flutter", "PlatformChannel ScheduleResult",
                                platform_message_id);
         std::shared_ptr<tonic::DartState> dart_state =
             callback.dart_state().lock();
