@@ -21,6 +21,10 @@ main(List<String> arguments) {
   checkNativeApi(flutterRoot);
 }
 
+/// Ensure a path uses the proper platform-specific path separator
+String platformize(String path) =>
+    path.replaceAll(RegExp(r'\/'), Platform.pathSeparator);
+
 /// Verify that duplicate Flutter API is consistent between implementations.
 ///
 /// Flutter contains API that is required to match between implementations.
@@ -39,26 +43,27 @@ checkApiConsistency(String flutterRoot) {
   test('AccessibilityFeatures enums match', () {
     // Dart values: _kFooBarIndex = 1 << N
     List<String> uiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/window.dart',
-      className:'AccessibilityFeatures',
+      sourcePath: platformize('$flutterRoot/lib/ui/window.dart'),
+      className: 'AccessibilityFeatures',
     );
     List<String> webuiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/window.dart',
-      className:'AccessibilityFeatures',
+      sourcePath: platformize('$flutterRoot/lib/ui/window.dart'),
+      className: 'AccessibilityFeatures',
     );
     // C values: kFlutterAccessibilityFeatureFooBar = 1 << N,
     List<String> embedderEnumValues = getCppEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/embedder/embedder.h',
+      sourcePath: platformize('$flutterRoot/shell/platform/embedder/embedder.h'),
       enumName: 'FlutterAccessibilityFeature',
     );
     // C++ values: kFooBar = 1 << N,
     List<String> internalEnumValues = getCppEnumClassValues(
-      sourcePath: '$flutterRoot/lib/ui/window/platform_configuration.h',
+      sourcePath: platformize('$flutterRoot/lib/ui/window/platform_configuration.h'),
       enumName: 'AccessibilityFeatureFlag',
     );
     // Java values: FOO_BAR(1 << N).
     List<String> javaEnumValues = getJavaEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java',
+      sourcePath:
+          platformize('$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java'),
       enumName: 'AccessibilityFeature',
     ).map(allCapsToCamelCase).toList();
 
@@ -71,26 +76,27 @@ checkApiConsistency(String flutterRoot) {
   test('SemanticsAction enums match', () {
     // Dart values: _kFooBarIndex = 1 << N.
     List<String> uiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsAction',
+      sourcePath: platformize('$flutterRoot/lib/ui/semantics.dart'),
+      className: 'SemanticsAction',
     );
     List<String> webuiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsAction',
+      sourcePath: platformize('$flutterRoot/lib/ui/semantics.dart'),
+      className: 'SemanticsAction',
     );
     // C values: kFlutterSemanticsActionFooBar = 1 << N.
     List<String> embedderEnumValues = getCppEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/embedder/embedder.h',
+      sourcePath: platformize('$flutterRoot/shell/platform/embedder/embedder.h'),
       enumName: 'FlutterSemanticsAction',
     );
     // C++ values: kFooBar = 1 << N.
     List<String> internalEnumValues = getCppEnumClassValues(
-      sourcePath: '$flutterRoot/lib/ui/semantics/semantics_node.h',
+      sourcePath: platformize('$flutterRoot/lib/ui/semantics/semantics_node.h'),
       enumName: 'SemanticsAction',
     );
     // Java values: FOO_BAR(1 << N).
     List<String> javaEnumValues = getJavaEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java',
+      sourcePath:
+          platformize('$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java'),
       enumName: 'Action',
     ).map(allCapsToCamelCase).toList();
 
@@ -103,26 +109,27 @@ checkApiConsistency(String flutterRoot) {
   test('SemanticsFlag enums match', () {
     // Dart values: _kFooBarIndex = 1 << N.
     List<String> uiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsFlag',
+      sourcePath: platformize('$flutterRoot/lib/ui/semantics.dart'),
+      className: 'SemanticsFlag',
     );
     List<String> webuiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsFlag',
+      sourcePath: platformize('$flutterRoot/lib/ui/semantics.dart'),
+      className: 'SemanticsFlag',
     );
     // C values: kFlutterSemanticsFlagFooBar = 1 << N.
     List<String> embedderEnumValues = getCppEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/embedder/embedder.h',
+      sourcePath: platformize('$flutterRoot/shell/platform/embedder/embedder.h'),
       enumName: 'FlutterSemanticsFlag',
     );
     // C++ values: kFooBar = 1 << N.
     List<String> internalEnumValues = getCppEnumClassValues(
-      sourcePath: '$flutterRoot/lib/ui/semantics/semantics_node.h',
+      sourcePath: platformize('$flutterRoot/lib/ui/semantics/semantics_node.h'),
       enumName: 'SemanticsFlags',
     );
     // Java values: FOO_BAR(1 << N).
     List<String> javaEnumValues = getJavaEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java',
+      sourcePath:
+          platformize('$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java'),
       enumName: 'Flag',
     ).map(allCapsToCamelCase).toList();
 
