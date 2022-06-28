@@ -9,6 +9,8 @@
 //     support for SamplerAddressMode::ClampToBorder in the texture sampler.
 //   * Sample from higher mipmap levels when the blur radius is high enough.
 
+#include <impeller/texture.glsl>
+
 uniform sampler2D texture_sampler;
 uniform sampler2D alpha_mask_sampler;
 
@@ -29,12 +31,6 @@ const float kSqrtTwoPi = 2.50662827463;
 float Gaussian(float x) {
   float variance = v_blur_sigma * v_blur_sigma;
   return exp(-0.5 * x * x / variance) / (kSqrtTwoPi * v_blur_sigma);
-}
-
-// Emulate SamplerAddressMode::ClampToBorder.
-vec4 SampleWithBorder(sampler2D tex, vec2 uv) {
-  float within_bounds = float(uv.x >= 0 && uv.y >= 0 && uv.x < 1 && uv.y < 1);
-  return texture(tex, uv) * within_bounds;
 }
 
 void main() {
