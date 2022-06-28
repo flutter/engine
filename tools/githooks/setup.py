@@ -19,6 +19,7 @@ SRC_ROOT = os.path.dirname(
 )
 FLUTTER_DIR = os.path.join(SRC_ROOT, 'flutter')
 
+
 def Main(argv):
   githooks = os.path.join(FLUTTER_DIR, 'tools', 'githooks')
   git_candidates = ['git', 'git.sh', 'git.bat']
