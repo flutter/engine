@@ -106,8 +106,8 @@ def main():
       # enabling these in optimize mode.
       # see https://github.com/flutter/flutter/issues/106066
       command += [
-        '--std=ios-metal1.2',
-        '-mios-version-min=10.0',
+          '--std=ios-metal1.2',
+          '-mios-version-min=10.0',
       ]
   else:
     command += [
