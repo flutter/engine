@@ -1339,10 +1339,10 @@ constexpr std::array<const char*, 4> GetSnapshotPaths() {
     !defined(TEST_ISOLATE_SNAPSHOT_DATA) ||    \
     !defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
   // These paths must be set by the build.
-  static_assert(false); // NOLINT
+  static_assert(false);  // NOLINT
 #endif
-return {TEST_VM_SNAPSHOT_DATA, TEST_VM_SNAPSHOT_INSTRUCTIONS,
-        TEST_ISOLATE_SNAPSHOT_DATA, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS};
+  return {TEST_VM_SNAPSHOT_DATA, TEST_VM_SNAPSHOT_INSTRUCTIONS,
+          TEST_ISOLATE_SNAPSHOT_DATA, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS};
 }
 
 //------------------------------------------------------------------------------
