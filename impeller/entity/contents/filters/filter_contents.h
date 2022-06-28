@@ -148,6 +148,8 @@ class FilterContents : public Contents {
                             RenderPass& pass,
                             const Rect& coverage) const = 0;
 
+  std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
+
   FilterInput::Vector inputs_;
   std::optional<Rect> coverage_crop_;
 

@@ -430,7 +430,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
       auto contents =
           FilterContents::MakeBlend(result.entity.GetBlendMode(), inputs);
       contents->SetCoverageCrop(result.entity.GetCoverage());
-
+      result.entity.SetContents(std::move(contents));
       result.entity.SetBlendMode(Entity::BlendMode::kSourceOver);
     }
 
