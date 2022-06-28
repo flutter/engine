@@ -71,6 +71,10 @@ import java.util.List;
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
   private static final int FLUTTER_SPLASH_VIEW_FALLBACK_ID = 486947586;
 
+  public interface DelegateFactory {
+    FlutterActivityAndFragmentDelegate createDelegate(FlutterActivityAndFragmentDelegate.Host host);
+  }
+
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
   // to this FlutterActivityAndFragmentDelegate.
   @NonNull private Host host;
