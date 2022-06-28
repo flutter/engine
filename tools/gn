@@ -535,10 +535,14 @@ def to_gn_args(args):
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
-  #  - Non-fuchsia host unit tests.
+  #  - Non-fuchsia host unit tests (is_host_build evaluates to false).
   # Setting these variables creates warnings otherwise.
   # If we add ANGLE usage on other platforms, include them here.
-  if is_host_build(args) and args.target_os != 'fuchsia':
+  # There is a special case for Android on Windows because there we _only_ build
+  # gen_snapshot, but the build defines otherwise make it look like the build is
+  # for a host Windows build and make GN think we will be building ANGLE.
+  if is_host_build(args) or (args.target_os == 'android' and
+                             get_host_os() == 'win'):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     # Requires RTTI. We may want to build this in debug modes, punting on that
