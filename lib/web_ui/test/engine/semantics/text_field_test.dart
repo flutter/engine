@@ -78,7 +78,8 @@ void testMain() {
     createTextFieldSemantics(value: 'hello');
 
     final html.Element textField = appHostNode
-        .querySelector('input[data-semantics-role="text-field"]')!;
+        .querySelector('input[data-semantics-role="text-field"]')! as
+        html.Element;
 
     expect(appHostNode.activeElement, isNot(textField));
 
@@ -303,7 +304,7 @@ void testMain() {
 
       strategy.disable();
       // It doesn't remove the textarea from the DOM.
-      expect(appHostNode.contains(textArea), isTrue);
+      expect(appHostNode.contains(textArea as DomNode), isTrue);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
       semantics().semanticsEnabled = false;

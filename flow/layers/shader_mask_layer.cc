@@ -39,8 +39,9 @@ void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // so we can always apply opacity in any of those cases.
   context->subtree_can_inherit_opacity = true;
 
+  SkMatrix child_matrix(matrix);
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, matrix,
+    TryToPrepareRasterCache(context, this, child_matrix,
                             RasterCacheLayerStrategy::kLayer);
   } else {
     render_count_++;

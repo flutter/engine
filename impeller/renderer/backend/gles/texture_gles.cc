@@ -11,6 +11,7 @@
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/formats_gles.h"
 
 namespace impeller {
 
@@ -89,7 +90,7 @@ struct TexImage2DData {
   GLenum type = GL_NONE;
   std::shared_ptr<const fml::Mapping> data;
 
-  TexImage2DData(PixelFormat pixel_format) {
+  explicit TexImage2DData(PixelFormat pixel_format) {
     switch (pixel_format) {
       case PixelFormat::kA8UNormInt:
         internal_format = GL_ALPHA;
@@ -346,18 +347,6 @@ void TextureGLES::InitializeContentsIfNecessary() const {
       }
       break;
   }
-}
-
-static std::optional<GLenum> ToTextureTarget(TextureType type) {
-  switch (type) {
-    case TextureType::kTexture2D:
-      return GL_TEXTURE_2D;
-    case TextureType::kTexture2DMultisample:
-      return std::nullopt;
-    case TextureType::kTextureCube:
-      return GL_TEXTURE_CUBE_MAP;
-  }
-  FML_UNREACHABLE();
 }
 
 bool TextureGLES::Bind() const {

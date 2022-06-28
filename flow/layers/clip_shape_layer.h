@@ -31,6 +31,7 @@ class ClipShapeLayer : public ContainerLayer {
         context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
       }
     }
+
     if (context->PushCullRect(clip_shape_bounds())) {
       DiffChildren(context, prev);
     }
@@ -61,7 +62,8 @@ class ClipShapeLayer : public ContainerLayer {
     if (UsesSaveLayer()) {
       context->subtree_can_inherit_opacity = true;
       if (render_count_ >= kMinimumRendersBeforeCachingLayer) {
-        TryToPrepareRasterCache(context, this, matrix,
+        SkMatrix child_matrix(matrix);
+        TryToPrepareRasterCache(context, this, child_matrix,
                                 RasterCacheLayerStrategy::kLayer);
       } else {
         render_count_++;

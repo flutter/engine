@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
@@ -56,7 +55,7 @@ void testMain() {
       );
     });
   // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  }, skip: isSafari);
 }
 
 void _testForImageCodecs({required bool useBrowserImageDecoder}) {
@@ -533,7 +532,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     test('the same image can be rendered on difference surfaces', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 

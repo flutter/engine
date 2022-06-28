@@ -71,6 +71,11 @@ import java.util.List;
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
   private static final int FLUTTER_SPLASH_VIEW_FALLBACK_ID = 486947586;
 
+  /** Factory to obtain a FlutterActivityAndFragmentDelegate instance. */
+  public interface DelegateFactory {
+    FlutterActivityAndFragmentDelegate createDelegate(FlutterActivityAndFragmentDelegate.Host host);
+  }
+
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
   // to this FlutterActivityAndFragmentDelegate.
   @NonNull private Host host;
@@ -844,22 +849,8 @@ import java.util.List;
         flutterEngine.getDartExecutor().notifyLowMemoryWarning();
         flutterEngine.getSystemChannel().sendMemoryPressureWarning();
       }
+      flutterEngine.getRenderer().onTrimMemory(level);
     }
-  }
-
-  /**
-   * Invoke this from {@link android.app.Activity#onLowMemory()}.
-   *
-   * <p>A {@code Fragment} host must have its containing {@code Activity} forward this call so that
-   * the {@code Fragment} can then invoke this method.
-   *
-   * <p>This method sends a "memory pressure warning" message to Flutter over the "system channel".
-   */
-  void onLowMemory() {
-    Log.v(TAG, "Forwarding onLowMemory() to FlutterEngine.");
-    ensureAlive();
-    flutterEngine.getDartExecutor().notifyLowMemoryWarning();
-    flutterEngine.getSystemChannel().sendMemoryPressureWarning();
   }
 
   /**

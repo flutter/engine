@@ -20,9 +20,9 @@
 - (bool)testKeyEventsArePropagatedIfNotHandled;
 - (bool)testKeyEventsAreNotPropagatedIfHandled;
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
-- (bool)testPerformKeyEquivalentSynthesizesKeyUp;
 - (bool)testKeyboardIsRestartedOnEngineRestart;
 - (bool)testTrackpadGesturesAreSentToFramework;
+- (bool)testViewWillAppearCalledMultipleTimes;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -72,7 +72,13 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
 }
 
-TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabled) {
+TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
+  FlutterViewController* viewControllerMock = CreateMockViewController();
+  [viewControllerMock loadView];
+  EXPECT_EQ([viewControllerMock.flutterView acceptsFirstMouse:nil], YES);
+}
+
+TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -87,14 +93,17 @@ TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabl
                                                    backing:NSBackingStoreBuffered
                                                      defer:NO];
   window.contentView = viewController.view;
+  NSView* dummyView = [[NSView alloc] initWithFrame:CGRectZero];
+  [viewController.view addSubview:dummyView];
   // Attaches FlutterTextInputPlugin to the view;
-  [viewController.view addSubview:viewController.textInputPlugin];
+  [dummyView addSubview:viewController.textInputPlugin];
   // Makes sure the textInputPlugin can be the first responder.
   EXPECT_TRUE([window makeFirstResponder:viewController.textInputPlugin]);
   EXPECT_EQ([window firstResponder], viewController.textInputPlugin);
+  EXPECT_FALSE(viewController.textInputPlugin.superview == viewController.view);
   [viewController onAccessibilityStatusChanged:NO];
-  // FlutterView becomes the first responder.
-  EXPECT_EQ([window firstResponder], viewController.flutterView);
+  // FlutterView becomes child of view controller
+  EXPECT_TRUE(viewController.textInputPlugin.superview == viewController.view);
 }
 
 TEST(FlutterViewController, CanSetMouseTrackingModeBeforeViewLoaded) {
@@ -124,16 +133,16 @@ TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled)
       [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
 }
 
-TEST(FlutterViewControllerTest, TestPerformKeyEquivalentSynthesizesKeyUp) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testPerformKeyEquivalentSynthesizesKeyUp]);
-}
-
 TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyboardIsRestartedOnEngineRestart]);
 }
 
 TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testTrackpadGesturesAreSentToFramework]);
+}
+
+TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewWillAppearCalledMultipleTimes]);
 }
 
 }  // namespace flutter::testing
@@ -341,86 +350,6 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   return true;
 }
 
-- (bool)testPerformKeyEquivalentSynthesizesKeyUp {
-  id engineMock = OCMClassMock([FlutterEngine class]);
-  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(binaryMessengerMock);
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
-                                                  callback:nil
-                                                  userData:nil])
-      .andCall([FlutterViewControllerTestObjC class],
-               @selector(respondFalseForSendEvent:callback:userData:));
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
-                                                                                nibName:@""
-                                                                                 bundle:nil];
-  id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
-  NSDictionary* expectedKeyDownEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keydown",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyDownEvent =
-      [[FlutterJSONMessageCodec sharedInstance] encode:expectedKeyDownEvent];
-  NSDictionary* expectedKeyUpEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keyup",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyUpEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedKeyUpEvent];
-  CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 65, TRUE);
-  NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyDownEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(true),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyUpEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(true),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  [viewController viewWillAppear];  // Initializes the event channel.
-  [viewController performKeyEquivalent:event];
-  @try {
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyDownEvent
-                               binaryReply:[OCMArg any]]);
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyUpEvent
-                               binaryReply:[OCMArg any]]);
-  } @catch (...) {
-    return false;
-  }
-  return true;
-}
-
 - (bool)testKeyboardIsRestartedOnEngineRestart {
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
@@ -597,6 +526,16 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   EXPECT_EQ(last_event.scroll_delta_x, -40 * viewController.flutterView.layer.contentsScale);
   EXPECT_EQ(last_event.scroll_delta_y, -80 * viewController.flutterView.layer.contentsScale);
 
+  return true;
+}
+
+- (bool)testViewWillAppearCalledMultipleTimes {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewController viewWillAppear];
+  [viewController viewWillAppear];
   return true;
 }
 

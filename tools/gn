@@ -303,7 +303,7 @@ def to_gn_args(args):
 
   if gn_args['target_os'] == 'ios':
     gn_args['use_ios_simulator'] = args.simulator
-  else:
+  elif get_host_os() == 'mac':
     gn_args['use_ios_simulator'] = False
 
   if args.dart_debug:
@@ -426,18 +426,13 @@ def to_gn_args(args):
   # features can't work on these platforms.
   if args.target_os not in ['android', 'ios', 'wasm']:
     gn_args['skia_use_vulkan'] = True
+    gn_args['skia_vulkan_memory_allocator_dir'
+           ] = '//third_party/vulkan_memory_allocator'
     gn_args['shell_enable_vulkan'] = True
     # Disable VMA's use of std::shared_mutex in environments where the
     # standard library doesn't support it.
     if args.target_os == 'ios' or sys.platform.startswith(('cygwin', 'win')):
       gn_args['skia_disable_vma_stl_shared_mutex'] = True
-
-  if sys.platform.startswith(('cygwin', 'win')):
-    # The buildroot currently isn't set up to support Vulkan in the
-    # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
-    gn_args['angle_enable_vulkan'] = False
-    # Don't build unnecessary portions of the ANGLE tree.
-    gn_args['angle_build_all'] = False
 
   # We should not need a special case for x86, but this seems to introduce text relocations
   # even with -fPIC everywhere.
@@ -500,6 +495,9 @@ def to_gn_args(args):
   if args.ubsan:
     gn_args['is_ubsan'] = True
 
+  if args.fstack_protector:
+    gn_args['use_fstack_protector'] = True
+
   if args.enable_vulkan_validation_layers:
     if args.target_os != 'fuchsia':
       print(
@@ -508,9 +506,10 @@ def to_gn_args(args):
       sys.exit(1)
     gn_args['enable_vulkan_validation_layers'] = True
 
-  # Enable pointer compression on 64-bit mobile targets.
-  if args.target_os in ['android', 'ios'
-                       ] and gn_args['target_cpu'] in ['x64', 'arm64']:
+  # Enable pointer compression on 64-bit mobile targets. iOS is excluded due to
+  # its inability to allocate address space without allocating memory.
+  if args.target_os in ['android'] and gn_args['target_cpu'] in ['x64', 'arm64'
+                                                                ]:
     gn_args['dart_use_compressed_pointers'] = True
 
   if args.fuchsia_target_api_level is not None:
@@ -533,6 +532,28 @@ def to_gn_args(args):
 
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
+
+  # ANGLE is exclusively used for:
+  #  - Windows at runtime
+  #  - Non-fuchsia host unit tests (is_host_build evaluates to false).
+  # Setting these variables creates warnings otherwise.
+  # If we add ANGLE usage on other platforms, include them here.
+  # There is a special case for Android on Windows because there we _only_ build
+  # gen_snapshot, but the build defines otherwise make it look like the build is
+  # for a host Windows build and make GN think we will be building ANGLE.
+  if is_host_build(args) or (args.target_os == 'android' and
+                             get_host_os() == 'win'):
+    # Do not build unnecessary parts of the ANGLE tree.
+    gn_args['angle_build_all'] = False
+    # Requires RTTI. We may want to build this in debug modes, punting on that
+    # for now.
+    gn_args['angle_enable_vulkan_validation_layers'] = False
+    gn_args['angle_vulkan_headers_dir'
+           ] = '//third_party/vulkan-deps/vulkan-headers/src'
+    gn_args['angle_vulkan_loader_dir'
+           ] = '//third_party/vulkan-deps/vulkan-loader/src'
+    gn_args['angle_vulkan_tools_dir'
+           ] = '//third_party/vulkan-deps/vulkan-tools/src'
 
   return gn_args
 
@@ -851,6 +872,13 @@ def parse_args(args):
   parser.add_argument('--msan', default=False, action='store_true')
   parser.add_argument('--tsan', default=False, action='store_true')
   parser.add_argument('--ubsan', default=False, action='store_true')
+
+  parser.add_argument(
+      '--fstack-protector',
+      default=False,
+      action='store_true',
+      help='Whether the -fstack-protector flag should be passed unconditionally.'
+  )
 
   parser.add_argument(
       '--trace-gn',

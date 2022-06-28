@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
@@ -26,14 +27,30 @@ extension DomWindowExtension on DomWindow {
   external DomConsole get console;
   external num get devicePixelRatio;
   external DomDocument get document;
+  external DomHistory get history;
   external int? get innerHeight;
   external int? get innerWidth;
+  external DomLocation get location;
   external DomNavigator get navigator;
   external DomVisualViewport? get visualViewport;
   external DomPerformance get performance;
   Future<Object?> fetch(String url) =>
       js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
+  // ignore: non_constant_identifier_names
+  external DomURL get URL;
+  external bool dispatchEvent(DomEvent event);
+  external DomMediaQueryList matchMedia(String? query);
+  DomCSSStyleDeclaration getComputedStyle(DomElement elt,
+          [String? pseudoElt]) =>
+      js_util.callMethod(this, 'getComputedStyle', <Object>[
+        elt,
+        if (pseudoElt != null) pseudoElt
+      ]) as DomCSSStyleDeclaration;
+  external DomScreen? get screen;
+  external int requestAnimationFrame(DomRequestAnimationFrameCallback callback);
 }
+
+typedef DomRequestAnimationFrameCallback = void Function(num highResTime);
 
 @JS()
 @staticInterop
@@ -57,18 +74,20 @@ extension DomNavigatorExtension on DomNavigator {
   external String get language;
   external String? get platform;
   external String get userAgent;
+  List<String>? get languages =>
+      js_util.getProperty<List<Object?>?>(this, 'languages')?.cast<String>();
 }
 
 @JS()
 @staticInterop
-class DomDocument {}
+class DomDocument extends DomNode {}
 
 extension DomDocumentExtension on DomDocument {
   external DomElement? get documentElement;
   external DomElement? querySelector(String selectors);
-  List<DomElement> querySelectorAll(String selectors) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'querySelectorAll', <Object>[selectors]).cast<DomElement>();
+  Iterable<DomElement> querySelectorAll(String selectors) =>
+      createDomListWrapper<DomElement>(js_util
+          .callMethod<_DomList>(this, 'querySelectorAll', <Object>[selectors]));
   DomElement createElement(String name, [Object? options]) =>
       js_util.callMethod(this, 'createElement',
           <Object>[name, if (options != null) options]) as DomElement;
@@ -77,6 +96,8 @@ extension DomDocumentExtension on DomDocument {
   external DomElement createElementNS(
       String namespaceURI, String qualifiedName);
   external DomText createTextNode(String data);
+  external DomEvent createEvent(String eventType);
+  external DomElement? get activeElement;
 }
 
 @JS()
@@ -87,6 +108,11 @@ extension DomHTMLDocumentExtension on DomHTMLDocument {
   external DomFontFaceSet? get fonts;
   external DomHTMLHeadElement? get head;
   external DomHTMLBodyElement? get body;
+  external set title(String? value);
+  Iterable<DomElement> getElementsByTagName(String tag) =>
+      createDomListWrapper<DomElement>(js_util
+          .callMethod<_DomList>(this, 'getElementsByTagName', <Object>[tag]));
+  external DomElement? get activeElement;
 }
 
 @JS('document')
@@ -112,6 +138,8 @@ extension DomEventTargetExtension on DomEventTarget {
           <Object>[type, listener, if (useCapture != null) useCapture]);
     }
   }
+
+  external bool dispatchEvent(DomEvent event);
 }
 
 typedef DomEventListener = void Function(DomEvent event);
@@ -126,6 +154,19 @@ extension DomEventExtension on DomEvent {
   external String get type;
   external void preventDefault();
   external void stopPropagation();
+  void initEvent(String type, [bool? bubbles, bool? cancelable]) =>
+      js_util.callMethod(this, 'initEvent', <Object>[
+        type,
+        if (bubbles != null) bubbles,
+        if (cancelable != null) cancelable
+      ]);
+  external bool get defaultPrevented;
+}
+
+DomEvent createDomEvent(String type, String name) {
+  final DomEvent event = domDocument.createEvent(type);
+  event.initEvent(name, true, true);
+  return event;
 }
 
 @JS()
@@ -142,6 +183,7 @@ extension DomProgressEventExtension on DomProgressEvent {
 class DomNode extends DomEventTarget {}
 
 extension DomNodeExtension on DomNode {
+  external String? get baseUri;
   external DomNode? get firstChild;
   external String get innerText;
   external DomNode? get lastChild;
@@ -163,6 +205,16 @@ extension DomNodeExtension on DomNode {
   set text(String? value) =>
       js_util.setProperty<String?>(this, 'textContent', value);
   external DomNode cloneNode(bool? deep);
+  external bool contains(DomNode? other);
+  external void append(DomNode node);
+  Iterable<DomNode> get childNodes => createDomListWrapper<DomElement>(
+      js_util.getProperty<_DomList>(this, 'childNodes'));
+  external DomDocument? get ownerDocument;
+  void clearChildren() {
+    while (firstChild != null) {
+      removeChild(firstChild!);
+    }
+  }
 }
 
 @JS()
@@ -172,8 +224,8 @@ class DomElement extends DomNode {}
 DomElement createDomElement(String tag) => domDocument.createElement(tag);
 
 extension DomElementExtension on DomElement {
-  List<DomElement> get children =>
-      js_util.getProperty<List<Object?>>(this, 'children').cast<DomElement>();
+  Iterable<DomElement> get children => createDomListWrapper<DomElement>(
+      js_util.getProperty<_DomList>(this, 'children'));
   external int get clientHeight;
   external int get clientWidth;
   external String get id;
@@ -188,12 +240,51 @@ extension DomElementExtension on DomElement {
   external DomRect getBoundingClientRect();
   external void prepend(DomNode node);
   external DomElement? querySelector(String selectors);
-  List<DomElement> querySelectorAll(String selectors) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'querySelectorAll', <Object>[selectors]).cast<DomElement>();
+  Iterable<DomElement> querySelectorAll(String selectors) =>
+      createDomListWrapper<DomElement>(js_util
+          .callMethod<_DomList>(this, 'querySelectorAll', <Object>[selectors]));
   external void remove();
   external void setAttribute(String name, Object value);
   void appendText(String text) => append(createDomText(text));
+  external void removeAttribute(String name);
+  external set tabIndex(int? value);
+  external int? get tabIndex;
+  external void focus();
+
+  /// [scrollTop] and [scrollLeft] can both return non-integers when using
+  /// display scaling.
+  ///
+  /// The setters have a spurious round just in case the supplied [int] flowed
+  /// from the non-static interop JS API. When all of Flutter Web has been
+  /// migrated to static interop we can probably remove the rounds.
+  int get scrollTop => js_util.getProperty(this, 'scrollTop').round();
+  set scrollTop(int value) =>
+      js_util.setProperty<num>(this, 'scrollTop', value.round());
+  int get scrollLeft => js_util.getProperty(this, 'scrollLeft').round();
+  set scrollLeft(int value) =>
+      js_util.setProperty<num>(this, 'scrollLeft', value.round());
+  external DomTokenList get classList;
+  external set className(String value);
+  external void blur();
+  List<DomNode> getElementsByTagName(String tag) =>
+      js_util.callMethod<List<Object?>>(
+          this, 'getElementsByTagName', <Object>[tag]).cast<DomNode>();
+  List<DomNode> getElementsByClassName(String className) =>
+      js_util.callMethod<List<Object?>>(
+          this, 'getElementsByClassName', <Object>[className]).cast<DomNode>();
+  external void click();
+  external bool hasAttribute(String name);
+  Iterable<DomNode> get childNodes => createDomListWrapper<DomElement>(
+      js_util.getProperty<_DomList>(this, 'childNodes'));
+  DomShadowRoot attachShadow(Map<Object?, Object?> initDict) => js_util
+          .callMethod(this, 'attachShadow', <Object?>[js_util.jsify(initDict)])
+      as DomShadowRoot;
+  external DomShadowRoot? get shadowRoot;
+  void clearChildren() {
+    while (firstChild != null) {
+      removeChild(firstChild!);
+    }
+  }
 }
 
 @JS()
@@ -207,16 +298,14 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set clip(String value) => setProperty('clip', value);
   set clipPath(String value) => setProperty('clip-path', value);
   set transform(String value) => setProperty('transform', value);
-  set transformOrigin(String value) =>
-      setProperty('transform-origin', value);
+  set transformOrigin(String value) => setProperty('transform-origin', value);
   set opacity(String value) => setProperty('opacity', value);
   set color(String value) => setProperty('color', value);
   set top(String value) => setProperty('top', value);
   set left(String value) => setProperty('left', value);
   set right(String value) => setProperty('right', value);
   set bottom(String value) => setProperty('bottom', value);
-  set backgroundColor(String value) =>
-      setProperty('background-color', value);
+  set backgroundColor(String value) => setProperty('background-color', value);
   set pointerEvents(String value) => setProperty('pointer-events', value);
   set filter(String value) => setProperty('filter', value);
   set zIndex(String value) => setProperty('z-index', value);
@@ -251,8 +340,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set borderRadius(String value) => setProperty('border-radius', value);
   set perspective(String value) => setProperty('perspective', value);
   set padding(String value) => setProperty('padding', value);
-  set backgroundImage(String value) =>
-      setProperty('background-image', value);
+  set backgroundImage(String value) => setProperty('background-image', value);
   set border(String value) => setProperty('border', value);
   set mixBlendMode(String value) => setProperty('mix-blend-mode', value);
   set backgroundSize(String value) => setProperty('background-size', value);
@@ -264,6 +352,14 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set alignItems(String value) => setProperty('align-items', value);
   set margin(String value) => setProperty('margin', value);
   set background(String value) => setProperty('background', value);
+  set touchAction(String value) => setProperty('touch-action', value);
+  set overflowY(String value) => setProperty('overflow-y', value);
+  set overflowX(String value) => setProperty('overflow-x', value);
+  set outline(String value) => setProperty('outline', value);
+  set resize(String value) => setProperty('resize', value);
+  set alignContent(String value) => setProperty('align-content', value);
+  set textAlign(String value) => setProperty('text-align', value);
+  set font(String value) => setProperty('font', value);
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -319,6 +415,14 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get alignItems => getPropertyValue('align-items');
   String get margin => getPropertyValue('margin');
   String get background => getPropertyValue('background');
+  String get touchAction => getPropertyValue('touch-action');
+  String get overflowY => getPropertyValue('overflow-y');
+  String get overflowX => getPropertyValue('overflow-x');
+  String get outline => getPropertyValue('outline');
+  String get resize => getPropertyValue('resize');
+  String get alignContent => getPropertyValue('align-content');
+  String get textAlign => getPropertyValue('text-align');
+  String get font => getPropertyValue('font');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -336,7 +440,6 @@ class DomHTMLElement extends DomElement {}
 
 extension DomHTMLElementExtension on DomHTMLElement {
   int get offsetWidth => js_util.getProperty<num>(this, 'offsetWidth') as int;
-  external void focus();
 }
 
 @JS()
@@ -347,7 +450,11 @@ extension DomHTMLMetaElementExtension on DomHTMLMetaElement {
   external String get name;
   external set name(String value);
   external String get content;
+  external set content(String value);
 }
+
+DomHTMLMetaElement createDomHTMLMetaElement() =>
+    domDocument.createElement('meta') as DomHTMLMetaElement;
 
 @JS()
 @staticInterop
@@ -359,15 +466,23 @@ class DomHTMLBodyElement extends DomHTMLElement {}
 
 @JS()
 @staticInterop
-class DomHTMLImageElement extends DomHTMLElement {}
+class DomHTMLImageElement extends DomHTMLElement
+    implements DomCanvasImageSource {}
 
 DomHTMLImageElement createDomHTMLImageElement() =>
     domDocument.createElement('img') as DomHTMLImageElement;
 
-extension DomHTMLImageElemenExtension on DomHTMLImageElement {
+extension DomHTMLImageElementExtension on DomHTMLImageElement {
   external String? get alt;
   external set alt(String? value);
-  external set src(String value);
+  external String? get src;
+  external set src(String? value);
+  external int get naturalWidth;
+  external int get naturalHeight;
+  external set width(int? value);
+  external set height(int? value);
+  Future<dynamic> decode() =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'decode', <Object>[]));
 }
 
 @JS()
@@ -415,7 +530,11 @@ class DomHTMLStyleElement extends DomHTMLElement {}
 
 extension DomHTMLStyleElementExtension on DomHTMLStyleElement {
   external set type(String? value);
+  external DomStyleSheet? get sheet;
 }
+
+DomHTMLStyleElement createDomHTMLStyleElement() =>
+    domDocument.createElement('style') as DomHTMLStyleElement;
 
 @JS()
 @staticInterop
@@ -425,6 +544,7 @@ extension DomPerformanceExtension on DomPerformance {
   external DomPerformanceEntry? mark(String markName);
   external DomPerformanceMeasure? measure(
       String measureName, String? startMark, String? endMark);
+  external double now();
 }
 
 @JS()
@@ -457,8 +577,8 @@ extension DomCanvasElementExtension on DomCanvasElement {
   external int? get height;
   external set height(int? value);
   external bool? get isConnected;
-  String toDataURL([String? type]) =>
-      js_util.callMethod(this, 'toDataURL', <Object>[if (type != null) type]);
+  String toDataURL([String type = 'image/png']) =>
+      js_util.callMethod(this, 'toDataURL', <Object>[type]);
 
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     return js_util.callMethod(this, 'getContext', <Object?>[
@@ -486,6 +606,7 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external set font(String value);
   external set lineWidth(num? value);
   external set strokeStyle(Object? value);
+  external Object? get strokeStyle;
   external void beginPath();
   external void closePath();
   external DomCanvasGradient createLinearGradient(
@@ -494,7 +615,8 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external DomCanvasGradient createRadialGradient(
       num x0, num y0, num r0, num x1, num y1, num r1);
   external void drawImage(DomCanvasImageSource source, num destX, num destY);
-  external void fill();
+  void fill([Object? pathOrWinding]) => js_util.callMethod(
+      this, 'fill', <Object?>[if (pathOrWinding != null) pathOrWinding]);
   external void fillRect(num x, num y, num width, num height);
   void fillText(String text, num x, num y, [num? maxWidth]) =>
       js_util.callMethod(this, 'fillText',
@@ -508,11 +630,41 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   external void rect(num x, num y, num width, num height);
   external void resetTransform();
   external void restore();
+  external void setTransform(num a, num b, num c, num d, num e, num f);
+  external void transform(num a, num b, num c, num d, num e, num f);
+  void clip([Object? pathOrWinding]) => js_util.callMethod(
+      this, 'clip', <Object?>[if (pathOrWinding != null) pathOrWinding]);
+  external void scale(num x, num y);
+  external void clearRect(num x, num y, num width, num height);
+  external void translate(num x, num y);
+  external void rotate(num angle);
+  external void bezierCurveTo(
+      num cp1x, num cp1y, num numcp2x, num cp2y, num x, num y);
+  external void quadraticCurveTo(num cpx, num cpy, num x, num y);
+  external set globalCompositeOperation(String value);
+  external set lineCap(String value);
+  external set lineJoin(String value);
+  external set shadowBlur(num value);
+  void arc(num x, num y, num radius, num startAngle, num endAngle,
+          [bool antiClockwise = false]) =>
+      js_util.callMethod(this, 'arc',
+          <Object>[x, y, radius, startAngle, endAngle, antiClockwise]);
+  external set filter(String? value);
+  external set shadowOffsetX(num? x);
+  external set shadowOffsetY(num? y);
+  external set shadowColor(String? value);
+  external void ellipse(num x, num y, num radiusX, num radiusY, num rotation,
+      num startAngle, num endAngle, bool? antiClockwise);
+  external void strokeText(String text, num x, num y);
+  external set globalAlpha(num? value);
 }
 
 @JS()
 @staticInterop
 class DomImageData {}
+
+DomImageData createDomImageData(Object? data, int sw, int sh) => js_util
+    .callConstructor(domGetConstructor('ImageData')!, <Object?>[data, sw, sh]);
 
 extension DomImageDataExtension on DomImageData {
   external Uint8ClampedList get data;
@@ -550,6 +702,33 @@ extension DomXMLHttpRequestExtension on DomXMLHttpRequest {
   void open(String method, String url, [bool? async]) => js_util.callMethod(
       this, 'open', <Object>[method, url, if (async != null) async]);
   external void send();
+}
+
+Future<DomXMLHttpRequest> domHttpRequest(String url, {String? responseType}) {
+  final Completer<DomXMLHttpRequest> completer = Completer<DomXMLHttpRequest>();
+  final DomXMLHttpRequest xhr = createDomXMLHttpRequest();
+  const String method = 'GET';
+  xhr.open(method, url, /* async */ true);
+  if (responseType != null) {
+    xhr.responseType = responseType;
+  }
+
+  xhr.addEventListener('load', allowInterop((DomEvent e) {
+    final int status = xhr.status!;
+    final bool accepted = status >= 200 && status < 300;
+    final bool fileUri = status == 0;
+    final bool notModified = status == 304;
+    final bool unknownRedirect = status > 307 && status < 400;
+    if (accepted || fileUri || notModified || unknownRedirect) {
+      completer.complete(xhr);
+    } else {
+      completer.completeError(e);
+    }
+  }));
+
+  xhr.addEventListener('error', allowInterop(completer.completeError));
+  xhr.send();
+  return completer.future;
 }
 
 @JS()
@@ -648,6 +827,16 @@ DomHTMLTextAreaElement createDomHTMLTextAreaElement() =>
 extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   external set value(String? value);
   external void select();
+  external set placeholder(String? value);
+  external set name(String value);
+  external int? get selectionStart;
+  external int? get selectionEnd;
+  external String? get value;
+  void setSelectionRange(int start, int end, [String? direction]) =>
+      js_util.callMethod(this, 'setSelectionRange',
+          <Object>[start, end, if (direction != null) direction]);
+  external String get name;
+  external String get placeholder;
 }
 
 @JS()
@@ -655,11 +844,11 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
 class DomClipboard extends DomEventTarget {}
 
 extension DomClipboardExtension on DomClipboard {
-  Future<String> readText() =>
-      js_util.promiseToFuture<String>(js_util.callMethod(this, 'readText', <Object>[]));
+  Future<String> readText() => js_util.promiseToFuture<String>(
+      js_util.callMethod(this, 'readText', <Object>[]));
 
-  Future<dynamic> writeText(String data) =>
-      js_util.promiseToFuture(js_util.callMethod(this, 'readText', <Object>[data]));
+  Future<dynamic> writeText(String data) => js_util
+      .promiseToFuture(js_util.callMethod(this, 'writeText', <Object>[data]));
 }
 
 extension DomResponseExtension on DomResponse {
@@ -694,6 +883,405 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external bool getModifierState(String keyArg);
 }
 
+@JS()
+@staticInterop
+class DomHistory {}
+
+extension DomHistoryExtension on DomHistory {
+  dynamic get state => js_util.dartify(js_util.getProperty(this, 'state'));
+  external void go([int? delta]);
+  void pushState(dynamic data, String title, String? url) =>
+      js_util.callMethod(this, 'pushState', <Object?>[
+        if (data is Map || data is Iterable) js_util.jsify(data) else data,
+        title,
+        url
+      ]);
+  void replaceState(dynamic data, String title, String? url) =>
+      js_util.callMethod(this, 'replaceState', <Object?>[
+        if (data is Map || data is Iterable) js_util.jsify(data) else data,
+        title,
+        url
+      ]);
+}
+
+@JS()
+@staticInterop
+class DomLocation {}
+
+extension DomLocationExtension on DomLocation {
+  external String? get pathname;
+  external String? get search;
+  // We have to change the name here because 'hash' is inherited from [Object].
+  String get locationHash => js_util.getProperty(this, 'hash');
+}
+
+@JS()
+@staticInterop
+class DomPopStateEvent extends DomEvent {}
+
+DomPopStateEvent createDomPopStateEvent(
+        String type, Map<Object?, Object?>? eventInitDict) =>
+    domCallConstructorString('PopStateEvent', <Object>[
+      type,
+      if (eventInitDict != null) js_util.jsify(eventInitDict)
+    ])! as DomPopStateEvent;
+
+extension DomPopStateEventExtension on DomPopStateEvent {
+  dynamic get state => js_util.dartify(js_util.getProperty(this, 'state'));
+}
+
+@JS()
+@staticInterop
+class DomURL {}
+
+extension DomURLExtension on DomURL {
+  external String createObjectURL(Object object);
+  external void revokeObjectURL(String url);
+}
+
+@JS()
+@staticInterop
+class DomBlob {}
+
+DomBlob createDomBlob(List<Object?> parts) =>
+    domCallConstructorString('Blob', <Object>[parts])! as DomBlob;
+
+typedef DomMutationCallback = void Function(
+    List<dynamic> mutation, DomMutationObserver observer);
+
+@JS()
+@staticInterop
+class DomMutationObserver {}
+
+DomMutationObserver createDomMutationObserver(DomMutationCallback callback) =>
+    domCallConstructorString('MutationObserver', <Object>[callback])!
+        as DomMutationObserver;
+
+extension DomMutationObserverExtension on DomMutationObserver {
+  external void disconnect();
+  void observe(DomNode target,
+      {bool? childList, bool? attributes, List<String>? attributeFilter}) {
+    final Map<String, dynamic> options = <String, dynamic>{
+      if (childList != null) 'childList': childList,
+      if (attributes != null) 'attributes': attributes,
+      if (attributeFilter != null) 'attributeFilter': attributeFilter
+    };
+    return js_util
+        .callMethod(this, 'observe', <Object>[target, js_util.jsify(options)]);
+  }
+}
+
+@JS()
+@staticInterop
+class DomMutationRecord {}
+
+extension DomMutationRecordExtension on DomMutationRecord {
+  Iterable<DomNode>? get addedNodes {
+    final _DomList? list = js_util.getProperty<_DomList?>(this, 'addedNodes');
+    if (list == null) {
+      return null;
+    }
+    return createDomListWrapper<DomNode>(list);
+  }
+
+  Iterable<DomNode>? get removedNodes {
+    final _DomList? list = js_util.getProperty<_DomList?>(this, 'removedNodes');
+    if (list == null) {
+      return null;
+    }
+    return createDomListWrapper<DomNode>(list);
+  }
+
+  external String? get attributeName;
+  external String? get type;
+}
+
+@JS()
+@staticInterop
+class DomMediaQueryList extends DomEventTarget {}
+
+extension DomMediaQueryListExtension on DomMediaQueryList {
+  external bool get matches;
+  external void addListener(DomEventListener? listener);
+  external void removeListener(DomEventListener? listener);
+}
+
+@JS()
+@staticInterop
+class DomMediaQueryListEvent extends DomEvent {}
+
+extension DomMediaQueryListEventExtension on DomMediaQueryListEvent {
+  external bool? get matches;
+}
+
+@JS()
+@staticInterop
+class DomPath2D {}
+
+DomPath2D createDomPath2D([Object? path]) =>
+    domCallConstructorString('Path2D', <Object>[if (path != null) path])!
+        as DomPath2D;
+
+@JS()
+@staticInterop
+class DomMouseEvent extends DomUIEvent {}
+
+extension DomMouseEventExtension on DomMouseEvent {
+  external num get clientX;
+  external num get clientY;
+  external num get offsetX;
+  external num get offsetY;
+  DomPoint get client => DomPoint(clientX, clientY);
+  DomPoint get offset => DomPoint(offsetX, offsetY);
+  external int get button;
+  external int? get buttons;
+  external bool getModifierState(String keyArg);
+}
+
+DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('MouseEvent')!,
+        <Object>[type, if (init != null) js_util.jsify(init)]);
+
+@JS()
+@staticInterop
+class DomPointerEvent extends DomMouseEvent {}
+
+extension DomPointerEventExtension on DomPointerEvent {
+  external int? get pointerId;
+  external String? get pointerType;
+  external num? get pressure;
+  external int? get tiltX;
+  external int? get tiltY;
+  List<DomPointerEvent> getCoalescedEvents() =>
+      js_util.callMethod<List<Object?>>(
+          this, 'getCoalescedEvents', <Object>[]).cast<DomPointerEvent>();
+}
+
+DomPointerEvent createDomPointerEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('PointerEvent')!,
+        <Object>[type, if (init != null) js_util.jsify(init)]);
+
+@JS()
+@staticInterop
+class DomWheelEvent extends DomMouseEvent {}
+
+extension DomWheelEventExtension on DomWheelEvent {
+  external num get deltaX;
+  external num get deltaY;
+  external int get deltaMode;
+}
+
+@JS()
+@staticInterop
+class DomTouchEvent extends DomUIEvent {}
+
+extension DomTouchEventExtension on DomTouchEvent {
+  List<DomTouch>? get changedTouches => js_util
+      .getProperty<List<Object?>?>(this, 'changedTouches')
+      ?.cast<DomTouch>();
+}
+
+@JS()
+@staticInterop
+class DomTouch {}
+
+extension DomTouchExtension on DomTouch {
+  external int? get identifier;
+  external num get clientX;
+  external num get clientY;
+  DomPoint get client => DomPoint(clientX, clientY);
+}
+
+DomTouchEvent createDomTouchEvent(String type, [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('TouchEvent')!,
+        <Object>[type, if (init != null) js_util.jsify(init)]);
+
+@JS()
+@staticInterop
+class DomCompositionEvent {}
+
+extension DomCompositionEventExtension on DomCompositionEvent {
+  external String? get data;
+}
+
+@JS()
+@staticInterop
+class DomHTMLInputElement extends DomHTMLElement {}
+
+extension DomHTMLInputElementExtension on DomHTMLInputElement {
+  external set type(String? value);
+  external set max(String? value);
+  external set min(String value);
+  external set value(String? value);
+  external String? get value;
+  external bool? get disabled;
+  external set disabled(bool? value);
+  external set placeholder(String? value);
+  external set name(String? value);
+  external set autocomplete(String value);
+  external int? get selectionStart;
+  external int? get selectionEnd;
+  void setSelectionRange(int start, int end, [String? direction]) =>
+      js_util.callMethod(this, 'setSelectionRange',
+          <Object>[start, end, if (direction != null) direction]);
+  external String get autocomplete;
+  external String? get name;
+  external String? get type;
+  external String get placeholder;
+}
+
+DomHTMLInputElement createDomHTMLInputElement() =>
+    domDocument.createElement('input') as DomHTMLInputElement;
+
+@JS()
+@staticInterop
+class DomTokenList {}
+
+extension DomTokenListExtension on DomTokenList {
+  external void add(String value);
+  external bool contains(String token);
+}
+
+@JS()
+@staticInterop
+class DomHTMLFormElement extends DomHTMLElement {}
+
+extension DomHTMLFormElementExtension on DomHTMLFormElement {
+  external set noValidate(bool? value);
+  external set method(String? value);
+  external set action(String? value);
+}
+
+DomHTMLFormElement createDomHTMLFormElement() =>
+    domDocument.createElement('form') as DomHTMLFormElement;
+
+@JS()
+@staticInterop
+class DomHTMLLabelElement extends DomHTMLElement {}
+
+DomHTMLLabelElement createDomHTMLLabelElement() =>
+    domDocument.createElement('label') as DomHTMLLabelElement;
+
+@JS()
+@staticInterop
+class DomOffscreenCanvas extends DomEventTarget {}
+
+extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
+  external int? get height;
+  external int? get width;
+  external set height(int? value);
+  external set width(int? value);
+  Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
+    return js_util.callMethod(this, 'getContext', <Object?>[
+      contextType,
+      if (attributes != null) js_util.jsify(attributes)
+    ]);
+  }
+
+  Future<DomBlob> convertToBlob([Map<Object?, Object?>? options]) =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'convertToBlob',
+          <Object>[if (options != null) js_util.jsify(options)]));
+}
+
+DomOffscreenCanvas createDomOffscreenCanvas(int width, int height) =>
+    js_util.callConstructor(
+        domGetConstructor('OffscreenCanvas')!, <Object>[width, height]);
+
+@JS()
+@staticInterop
+class DomFileReader extends DomEventTarget {}
+
+extension DomFileReaderExtension on DomFileReader {
+  external void readAsDataURL(DomBlob blob);
+}
+
+DomFileReader createDomFileReader() =>
+    js_util.callConstructor(domGetConstructor('FileReader')!, <Object>[])
+        as DomFileReader;
+
+@JS()
+@staticInterop
+class DomDocumentFragment extends DomNode {}
+
+extension DomDocumentFragmentExtension on DomDocumentFragment {
+  external DomElement? querySelector(String selectors);
+  Iterable<DomElement> querySelectorAll(String selectors) =>
+      createDomListWrapper<DomElement>(js_util
+          .callMethod<_DomList>(this, 'querySelectorAll', <Object>[selectors]));
+}
+
+@JS()
+@staticInterop
+class DomShadowRoot extends DomDocumentFragment {}
+
+extension DomShadowRootExtension on DomShadowRoot {
+  external DomElement? get activeElement;
+  external DomElement? get host;
+  external String? get mode;
+  external bool? get delegatesFocus;
+}
+
+@JS()
+@staticInterop
+class DomStyleSheet {}
+
+@JS()
+@staticInterop
+class DomCSSStyleSheet extends DomStyleSheet {}
+
+extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
+  List<DomCSSRule> get cssRules =>
+      js_util.getProperty<List<Object?>>(this, 'cssRules').cast<DomCSSRule>();
+  int insertRule(String rule, [int? index]) => js_util
+      .callMethod(this, 'insertRule', <Object>[rule, if (index != null) index]);
+}
+
+@JS()
+@staticInterop
+class DomCSSRule {}
+
+@JS()
+@staticInterop
+class DomScreen {}
+
+extension DomScreenExtension on DomScreen {
+  external DomScreenOrientation? get orientation;
+}
+
+@JS()
+@staticInterop
+class DomScreenOrientation extends DomEventTarget {}
+
+extension DomScreenOrientationExtension on DomScreenOrientation {
+  Future<dynamic> lock(String orientation) => js_util
+      .promiseToFuture(js_util.callMethod(this, 'lock', <String>[orientation]));
+  external void unlock();
+}
+
+// A helper class for managing a subscription. On construction it will add an
+// event listener of the requested type to the target. Calling [cancel] will
+// remove the listener. Caller is still responsible for calling [allowInterop]
+// on the listener before creating the subscription.
+class DomSubscription {
+  final String type;
+  final DomEventTarget target;
+  final DomEventListener listener;
+
+  DomSubscription(this.target, this.type, this.listener) {
+    target.addEventListener(type, listener);
+  }
+
+  void cancel() => target.removeEventListener(type, listener);
+}
+
+class DomPoint {
+  final num x;
+  final num y;
+
+  DomPoint(this.x, this.y);
+}
+
 Object? domGetConstructor(String constructorName) =>
     js_util.getProperty(domWindow, constructorName);
 
@@ -705,5 +1293,64 @@ Object? domCallConstructorString(String constructorName, List<Object?> args) {
   return js_util.callConstructor(constructor, args);
 }
 
+String? domGetConstructorName(Object o) {
+  final Object? constructor = js_util.getProperty(o, 'constructor');
+  if (constructor == null) {
+    return '';
+  }
+  return js_util.getProperty(constructor, 'name')?.toString();
+}
+
 bool domInstanceOfString(Object? element, String objectType) =>
     js_util.instanceof(element, domGetConstructor(objectType)!);
+
+/// [_DomElementList] is the shared interface for APIs that return either
+/// `NodeList` or `HTMLCollection`. Do *not* add any API to this class that
+/// isn't support by both JS objects. Furthermore, this is an internal class and
+/// should only be returned as a wrapped object to Dart.
+@JS()
+@staticInterop
+class _DomList {}
+
+extension DomListExtension on _DomList {
+  external int get length;
+  DomNode item(int index) =>
+      js_util.callMethod<DomNode>(this, 'item', <Object>[index]);
+}
+
+class _DomListIterator<T> extends Iterator<T> {
+  final _DomList list;
+  int index = -1;
+
+  _DomListIterator(this.list);
+
+  @override
+  bool moveNext() {
+    index++;
+    if (index > list.length) {
+      throw 'Iterator out of bounds';
+    }
+    return index < list.length;
+  }
+
+  @override
+  T get current => list.item(index) as T;
+}
+
+class _DomListWrapper<T> extends Iterable<T> {
+  final _DomList list;
+
+  _DomListWrapper._(this.list);
+
+  @override
+  Iterator<T> get iterator => _DomListIterator<T>(list);
+
+  /// Override the length to avoid iterating through the whole collection.
+  @override
+  int get length => list.length;
+}
+
+/// This is a work around for a `TypeError` which can be triggered by calling
+/// `toList` on the `Iterable`.
+Iterable<T> createDomListWrapper<T>(_DomList list) =>
+    _DomListWrapper<T>._(list).cast<T>();

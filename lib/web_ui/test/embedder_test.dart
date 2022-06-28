@@ -80,11 +80,11 @@ void testMain() {
   test('should add/remove global resource', () {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
     final html.DivElement resource = html.DivElement();
-    embedder.addResource(resource);
+    embedder.addResource(resource as DomHTMLDivElement);
     final html.Element? resourceRoot = resource.parent;
     expect(resourceRoot, isNotNull);
     expect(resourceRoot!.childNodes.length, 1);
-    embedder.removeResource(resource);
+    embedder.removeResource(resource as DomHTMLDivElement);
     expect(resourceRoot.childNodes.length, 0);
   });
 
@@ -92,20 +92,24 @@ void testMain() {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
     final html.InputElement regularTextField = html.InputElement();
     regularTextField.placeholder = 'Now you see me';
-    embedder.addResource(regularTextField);
+    embedder.addResource(regularTextField as DomHTMLInputElement);
 
     regularTextField.focus();
-    html.CssStyleDeclaration? style = embedder.glassPaneShadow?.querySelector('input')?.getComputedStyle('::placeholder');
+    html.CssStyleDeclaration? style = domWindow.getComputedStyle(
+        embedder.glassPaneShadow!.querySelector('input')!,
+        '::placeholder') as html.CssStyleDeclaration?;
     expect(style, isNotNull);
     expect(style?.opacity, isNot('0'));
 
     final html.InputElement textField = html.InputElement();
     textField.placeholder = 'Now you dont';
     textField.classes.add('flt-text-editing');
-    embedder.addResource(textField);
+    embedder.addResource(textField as DomHTMLInputElement);
 
     textField.focus();
-    style = embedder.glassPaneShadow?.querySelector('input.flt-text-editing')?.getComputedStyle('::placeholder');
+    style = domWindow.getComputedStyle(
+        embedder.glassPaneShadow!.querySelector('input.flt-text-editing')!,
+        '::placeholder') as html.CssStyleDeclaration?;
     expect(style, isNotNull);
     expect(style?.opacity, '0');
   }, skip: browserEngine != BrowserEngine.firefox);

@@ -918,11 +918,7 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 
   if (metrics.device_pixel_ratio <= 0 || metrics.physical_width <= 0 ||
       metrics.physical_height <= 0) {
-    FML_DLOG(ERROR)
-        << "Embedding reported invalid ViewportMetrics, ignoring update."
-        << "\nphysical_width: " << metrics.physical_width
-        << "\nphysical_height: " << metrics.physical_height
-        << "\ndevice_pixel_ratio: " << metrics.device_pixel_ratio;
+    // Ignore invalid view-port metrics.
     return;
   }
 
@@ -1819,7 +1815,7 @@ static rapidjson::Value SerializeLayerSnapshot(
   result.AddMember("duration_micros", snapshot.GetDuration().ToMicroseconds(),
                    allocator);
 
-  const SkIRect bounds = snapshot.GetBounds();
+  const SkRect bounds = snapshot.GetBounds();
   result.AddMember("top", bounds.top(), allocator);
   result.AddMember("left", bounds.left(), allocator);
   result.AddMember("width", bounds.width(), allocator);
