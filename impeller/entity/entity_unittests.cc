@@ -147,7 +147,7 @@ TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
 
   // With the crop rect.
   {
-    auto expected = Rect::MakeSize(Size(image->GetSize()));
+    auto expected = Rect::MakeLTRB(50, 50, 100, 100);
     filter->SetCoverageCrop(expected);
     auto actual = filter->GetCoverage({});
 
