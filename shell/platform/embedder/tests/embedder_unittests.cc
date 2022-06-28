@@ -1333,10 +1333,13 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
             reinterpret_cast<const uint8_t*>("wrong_snapshot"));
 }
 
-#if defined(TEST_VM_SNAPSHOT_DATA) &&         \
-    defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) && \
-    defined(TEST_ISOLATE_SNAPSHOT_DATA) &&    \
-    defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
+#if defined(__clang_analyzer__)
+#define TEST_VM_SNAPSHOT_DATA nullptr
+#define TEST_VM_SNAPSHOT_INSTRUCTIONS nullptr
+#define TEST_ISOLATE_SNAPSHOT_DATA nullptr
+#define TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS nullptr
+#endif
+
 //------------------------------------------------------------------------------
 /// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
 /// of the snapshots in the engine's settings.
@@ -1450,8 +1453,6 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
-#endif  // TEST_VM_SNAPSHOT_DATA && TEST_VM_SNAPSHOT_INSTRUCTIONS &&
-        // TEST_ISOLATE_SNAPSHOT_DATA && TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS
 
 //------------------------------------------------------------------------------
 /// The embedder must be able to run in JIT mode even when the specfied
