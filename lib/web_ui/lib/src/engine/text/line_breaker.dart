@@ -35,24 +35,31 @@ class LineBreakFragmenter extends TextFragmenter {
 }
 
 class LineBreakFragment extends TextFragment {
-  const LineBreakFragment(super.start, super.end, this.endBreak);
+  const LineBreakFragment(super.start, super.end, this.type, {
+    required this.trailingNewlines,
+    required this.trailingSpaces,
+  });
 
-  final LineBreakResult endBreak;
+  final LineBreakType type;
+  final int trailingNewlines;
+  final int trailingSpaces;
 
   @override
-  int get hashCode => Object.hash(start, end, endBreak);
+  int get hashCode => Object.hash(start, end, type, trailingNewlines, trailingSpaces);
 
   @override
   bool operator ==(Object other) {
     return other is LineBreakFragment &&
         other.start == start &&
         other.end == end &&
-        other.endBreak == endBreak;
+        other.type == type &&
+        other.trailingNewlines == trailingNewlines &&
+        other.trailingSpaces == trailingSpaces;
   }
 
   @override
   String toString() {
-    return 'LineBreakFragment($start, $end, ${endBreak.type})';
+    return 'LineBreakFragment($start, $end, $type)';
   }
 }
 
@@ -246,9 +253,13 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
       return;
     }
 
-    final LineBreakResult brk =
-        LineBreakResult(fragmentEnd, trailingNewlines, trailingSpaces, type);
-    fragments.add(LineBreakFragment(fragmentStart, fragmentEnd, brk));
+    fragments.add(LineBreakFragment(
+      fragmentStart,
+      fragmentEnd,
+      type,
+      trailingNewlines: trailingNewlines,
+      trailingSpaces: trailingSpaces,
+    ));
 
     fragmentStart = index;
 
@@ -502,6 +513,9 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
     // Break before and after unresolved CB.
     // LB20: ÷ CB
     //       CB ÷
+    //
+    // In flutter web, we use this as an object-replacement character for
+    // placeholders.
     if (prev1 == LineCharProperty.CB || curr == LineCharProperty.CB) {
       setBreak(LineBreakType.opportunity, 20);
       continue;

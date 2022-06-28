@@ -16,6 +16,8 @@ import 'word_breaker.dart';
 
 const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
 
+final String _placeholderChar = String.fromCharCode(0xFFFC);
+
 /// A paragraph made up of a flat list of text spans and placeholders.
 ///
 /// [CanvasParagraph] doesn't use a DOM element to represent the structure of
@@ -309,15 +311,14 @@ class FlatTextSpan extends TextFragment implements ParagraphSpan {
 
 class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
   PlaceholderSpan(
-    int index,
+    this.start,
+    this.end,
     double width,
     double height,
     ui.PlaceholderAlignment alignment, {
     required double baselineOffset,
     required ui.TextBaseline baseline,
-  })   : start = index,
-        end = index,
-        super(
+  }) : super(
           width,
           height,
           alignment,
@@ -599,10 +600,15 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
             alignment == ui.PlaceholderAlignment.belowBaseline ||
             alignment == ui.PlaceholderAlignment.baseline) || baseline != null);
 
+    final int start = _plainTextBuffer.length;
+    _plainTextBuffer.write(_placeholderChar);
+    final int end = _plainTextBuffer.length;
+
     _placeholderCount++;
     _placeholderScales.add(scale);
     _spans.add(PlaceholderSpan(
-      _plainTextBuffer.length,
+      start,
+      end,
       width * scale,
       height * scale,
       alignment,

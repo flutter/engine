@@ -117,13 +117,14 @@ class ParagraphLine {
     required this.ellipsis,
     required this.startIndex,
     required this.endIndex,
-    required this.endIndexWithoutNewlines,
+    required this.trailingNewlines,
     required this.widthWithTrailingSpaces,
     required this.boxes,
     required this.spaceBoxCount,
     required this.trailingSpaceBoxCount,
     this.displayText,
-  }) : lineMetrics = EngineLineMetrics(
+  }) : assert(trailingNewlines <= endIndex - startIndex),
+       lineMetrics = EngineLineMetrics(
           hardBreak: hardBreak,
           ascent: ascent,
           descent: descent,
@@ -153,9 +154,8 @@ class ParagraphLine {
   /// the text and doesn't stop at the overflow cutoff.
   final int endIndex;
 
-  /// The index (exclusive) in the text where this line ends, ignoring newline
-  /// characters.
-  final int endIndexWithoutNewlines;
+  /// The number of new line characters at the end of the line.
+  final int trailingNewlines;
 
   /// The full width of the line including all trailing space but not new lines.
   ///
@@ -182,6 +182,10 @@ class ParagraphLine {
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
 
+  /// The index (exclusive) in the text where this line ends, ignoring newline
+  /// characters.
+  int get endIndexWithoutNewlines => endIndex - trailingNewlines;
+
   /// The number of space-only boxes excluding trailing spaces.
   int get nonTrailingSpaceBoxCount => spaceBoxCount - trailingSpaceBoxCount;
 
@@ -207,7 +211,7 @@ class ParagraphLine {
         ellipsis,
         startIndex,
         endIndex,
-        endIndexWithoutNewlines,
+        trailingNewlines,
         widthWithTrailingSpaces,
         boxes,
         spaceBoxCount,
@@ -228,7 +232,7 @@ class ParagraphLine {
         other.ellipsis == ellipsis &&
         other.startIndex == startIndex &&
         other.endIndex == endIndex &&
-        other.endIndexWithoutNewlines == endIndexWithoutNewlines &&
+        other.trailingNewlines == trailingNewlines &&
         other.widthWithTrailingSpaces == widthWithTrailingSpaces &&
         other.boxes == boxes &&
         other.spaceBoxCount == spaceBoxCount &&

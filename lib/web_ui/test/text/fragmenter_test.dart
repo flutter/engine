@@ -24,9 +24,9 @@ Future<void> testMain() async {
       final CanvasParagraph paragraph =
           plain(EngineParagraphStyle(), 'Lorem 12 $rtlWord1   ipsum34');
       expect(split(paragraph), <_Fragment>[
-        _Fragment('Lorem ', opportunity, ltr, defaultStyle),
-        _Fragment('12 ', opportunity, ltr, defaultStyle),
-        _Fragment('$rtlWord1   ', opportunity, rtl, defaultStyle),
+        _Fragment('Lorem ', opportunity, ltr, defaultStyle, sp: 1),
+        _Fragment('12 ', opportunity, ltr, defaultStyle, sp: 1),
+        _Fragment('$rtlWord1   ', opportunity, rtl, defaultStyle, sp: 3),
         _Fragment('ipsum34', opportunity, ltr, defaultStyle),
       ]);
     });
@@ -49,11 +49,11 @@ Future<void> testMain() async {
 
       expect(split(paragraph), <_Fragment>[
         _Fragment('Lorem', prohibited, ltr, style1),
-        _Fragment(' ', opportunity, ltr, style2),
-        _Fragment('ipsum ', opportunity, ltr, style2),
-        _Fragment('12 ', prohibited, ltr, style2),
-        _Fragment(' ', opportunity, ltr, style3),
-        _Fragment('$rtlWord1 ', opportunity, rtl, style3),
+        _Fragment(' ', opportunity, ltr, style2, sp: 1),
+        _Fragment('ipsum ', opportunity, ltr, style2, sp: 1),
+        _Fragment('12 ', prohibited, ltr, style2, sp: 1),
+        _Fragment(' ', opportunity, ltr, style3, sp: 1),
+        _Fragment('$rtlWord1 ', opportunity, rtl, style3, sp: 1),
         _Fragment('foo.', endOfText, ltr, style3),
       ]);
     });
@@ -78,16 +78,74 @@ Future<void> testMain() async {
       );
 
       expect(split(paragraph), <_Fragment>[
-        _Fragment('Lor\n', mandatory, ltr, style1),
-        _Fragment('em \n', mandatory, ltr, style1),
-        _Fragment(' \n', mandatory, ltr, style2),
-        _Fragment('  ', opportunity, ltr, style2),
-        _Fragment('ipsum ', opportunity, ltr, style2),
-        _Fragment('12 ', prohibited, ltr, style2),
-        _Fragment(' ', opportunity, ltr, style3),
-        _Fragment('$rtlWord1 ', opportunity, rtl, style3),
+        _Fragment('Lor\n', mandatory, ltr, style1, nl: 1, sp: 1),
+        _Fragment('em \n', mandatory, ltr, style1, nl: 1, sp: 2),
+        _Fragment(' \n', mandatory, ltr, style2, nl: 1, sp: 2),
+        _Fragment('  ', opportunity, ltr, style2, sp: 2),
+        _Fragment('ipsum ', opportunity, ltr, style2, sp: 1),
+        _Fragment('12 ', prohibited, ltr, style2, sp: 1),
+        _Fragment(' ', opportunity, ltr, style3, sp: 1),
+        _Fragment('$rtlWord1 ', opportunity, rtl, style3, sp: 1),
         _Fragment('fo', prohibited, ltr, style3),
         _Fragment('o.', endOfText, ltr, style1),
+      ]);
+    });
+
+    test('last line is empty', () {
+      final CanvasParagraph paragraph = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.pushStyle(style1);
+          builder.addText('Lorem \n');
+          builder.pop();
+          builder.pushStyle(style2);
+          builder.addText(' \n  ipsum \n');
+          builder.pop();
+        },
+      );
+
+      expect(split(paragraph), <_Fragment>[
+        _Fragment('Lorem \n', mandatory, ltr, style1, nl: 1, sp: 2),
+        _Fragment(' \n', mandatory, ltr, style2, nl: 1, sp: 2),
+        _Fragment('  ', opportunity, ltr, style2, sp: 2),
+        _Fragment('ipsum \n', mandatory, ltr, style2, nl: 1, sp: 2),
+        _Fragment('', endOfText, ltr, style2),
+      ]);
+    });
+
+    test('placeholders', () {
+      final CanvasParagraph paragraph = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.pushStyle(style1);
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('Lorem');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('ipsum\n');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.pop();
+          builder.pushStyle(style2);
+          builder.addText('$rtlWord1 ');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('\nsit');
+          builder.pop();
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        },
+      );
+
+      final String placeholderChar = String.fromCharCode(0xFFFC);
+
+      expect(split(paragraph), <_Fragment>[
+        _Fragment(placeholderChar, opportunity, ltr, null),
+        _Fragment('Lorem', opportunity, ltr, style1),
+        _Fragment(placeholderChar, opportunity, ltr, null),
+        _Fragment('ipsum\n', mandatory, ltr, style1, nl: 1, sp: 1),
+        _Fragment(placeholderChar, opportunity, ltr, null),
+        _Fragment('$rtlWord1 ', opportunity, rtl, style2, sp: 1),
+        _Fragment(placeholderChar, prohibited, ltr, null),
+        _Fragment('\n', mandatory, ltr, style2, nl: 1, sp: 1),
+        _Fragment('sit', opportunity, ltr, style2),
+        _Fragment(placeholderChar, endOfText, ltr, null),
       ]);
     });
   });
@@ -95,20 +153,31 @@ Future<void> testMain() async {
 
 /// Holds information about how a fragment.
 class _Fragment {
-  _Fragment(this.text, this.type, this.textDirection, this.style);
+  _Fragment(this.text, this.type, this.textDirection, this.style, {
+    this.nl = 0,
+    this.sp = 0,
+  });
 
   final String text;
   final LineBreakType type;
   final TextDirection textDirection;
-  final EngineTextStyle style;
+  final EngineTextStyle? style;
 
-  factory _Fragment._fromLayoutFragment(
-      String text, LayoutFragment layoutFragment) {
+  /// The number of trailing new line characters.
+  final int nl;
+
+  /// The number of trailing spaces.
+  final int sp;
+
+  factory _Fragment._fromLayoutFragment(String text, LayoutFragment layoutFragment) {
+    final ParagraphSpan span = layoutFragment.span;
     return _Fragment(
       text.substring(layoutFragment.start, layoutFragment.end),
       layoutFragment.type,
       layoutFragment.textDirection,
-      layoutFragment.style,
+      span is FlatTextSpan ? span.style : null,
+      nl: layoutFragment.trailingNewlines,
+      sp: layoutFragment.trailingSpaces,
     );
   }
 

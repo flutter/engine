@@ -6,6 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import '../html/paragraph/helper.dart';
 import 'line_breaker_test_helper.dart';
@@ -161,18 +162,18 @@ void testMain() {
       expect(
         computeLineBreakFragments('foo bar  '),
         const <LineBreakFragment>[
-          LineBreakFragment(0, 4, LineBreakResult(4, 0, 1, opportunity)),
-          LineBreakFragment(4, 9, LineBreakResult(9, 0, 2, endOfText)),
+          LineBreakFragment(0, 4, opportunity, trailingNewlines: 0, trailingSpaces: 1),
+          LineBreakFragment(4, 9, endOfText, trailingNewlines: 0, trailingSpaces: 2),
         ],
       );
 
       expect(
         computeLineBreakFragments('foo  \nbar\nbaz   \n'),
         const <LineBreakFragment>[
-          LineBreakFragment(0, 6, LineBreakResult(6, 1, 3, mandatory)),
-          LineBreakFragment(6, 10, LineBreakResult(10, 1, 1, mandatory)),
-          LineBreakFragment(10, 17, LineBreakResult(17, 1, 4, mandatory)),
-          LineBreakFragment(17, 17, LineBreakResult(17, 0, 0, endOfText)),
+          LineBreakFragment(0, 6, mandatory, trailingNewlines: 1, trailingSpaces: 3),
+          LineBreakFragment(6, 10, mandatory, trailingNewlines: 1, trailingSpaces: 1),
+          LineBreakFragment(10, 17, mandatory, trailingNewlines: 1, trailingSpaces: 4),
+          LineBreakFragment(17, 17, endOfText, trailingNewlines: 0, trailingSpaces: 0),
         ],
       );
     });
@@ -181,34 +182,34 @@ void testMain() {
       expect(
         computeLineBreakFragments(' foo'),
         const <LineBreakFragment>[
-          LineBreakFragment(0, 1, LineBreakResult(1, 0, 1, opportunity)),
-          LineBreakFragment(1, 4, LineBreakResult(4, 0, 0, endOfText)),
+          LineBreakFragment(0, 1, opportunity, trailingNewlines: 0, trailingSpaces: 1),
+          LineBreakFragment(1, 4, endOfText, trailingNewlines: 0, trailingSpaces: 0),
         ],
       );
 
       expect(
         computeLineBreakFragments('   foo'),
         const <LineBreakFragment>[
-          LineBreakFragment(0, 3, LineBreakResult(3, 0, 3, opportunity)),
-          LineBreakFragment(3, 6, LineBreakResult(6, 0, 0, endOfText)),
+          LineBreakFragment(0, 3, opportunity, trailingNewlines: 0, trailingSpaces: 3),
+          LineBreakFragment(3, 6, endOfText, trailingNewlines: 0, trailingSpaces: 0),
         ],
       );
 
       expect(
         computeLineBreakFragments('  foo   bar'),
         const <LineBreakFragment>[
-          LineBreakFragment(0, 2, LineBreakResult(2, 0, 2, opportunity)),
-          LineBreakFragment(2, 8, LineBreakResult(8, 0, 3, opportunity)),
-          LineBreakFragment(8, 11, LineBreakResult(11, 0, 0, endOfText)),
+          LineBreakFragment(0, 2, opportunity, trailingNewlines: 0, trailingSpaces: 2),
+          LineBreakFragment(2, 8, opportunity, trailingNewlines: 0, trailingSpaces: 3),
+          LineBreakFragment(8, 11, endOfText, trailingNewlines: 0, trailingSpaces: 0),
         ],
       );
 
       expect(
         computeLineBreakFragments('  \n   foo'),
         const <LineBreakFragment>[
-          LineBreakFragment(0, 3, LineBreakResult(3, 1, 3, mandatory)),
-          LineBreakFragment(3, 6, LineBreakResult(6, 0, 3, opportunity)),
-          LineBreakFragment(6, 9, LineBreakResult(9, 0, 0, endOfText)),
+          LineBreakFragment(0, 3, mandatory, trailingNewlines: 1, trailingSpaces: 3),
+          LineBreakFragment(3, 6, opportunity, trailingNewlines: 0, trailingSpaces: 3),
+          LineBreakFragment(6, 9, endOfText, trailingNewlines: 0, trailingSpaces: 0),
         ],
       );
     });
@@ -217,9 +218,67 @@ void testMain() {
       expect(
         computeLineBreakFragments('Lorem sit .'),
         const <LineBreakFragment>[
-          LineBreakFragment(0, 6, LineBreakResult(6, 0, 1, opportunity)),
-          LineBreakFragment(6, 10, LineBreakResult(10, 0, 1, opportunity)),
-          LineBreakFragment(10, 11, LineBreakResult(11, 0, 0, endOfText)),
+          LineBreakFragment(0, 6, opportunity, trailingNewlines: 0, trailingSpaces: 1),
+          LineBreakFragment(6, 10, opportunity, trailingNewlines: 0, trailingSpaces: 1),
+          LineBreakFragment(10, 11, endOfText, trailingNewlines: 0, trailingSpaces: 0),
+        ],
+      );
+    });
+
+    test('placeholders', () {
+      final CanvasParagraph paragraph = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('Lorem');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('ipsum\n');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('dolor');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('\nsit');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        },
+      );
+
+      final String placeholderChar = String.fromCharCode(0xFFFC);
+
+      expect(splitParagraph(paragraph), <Line>[
+        Line(placeholderChar, opportunity),
+        Line('Lorem', opportunity),
+        Line(placeholderChar, opportunity),
+        Line('ipsum\n', mandatory),
+        Line(placeholderChar, opportunity),
+        Line('dolor', opportunity),
+        Line('$placeholderChar\n', mandatory),
+        Line('sit', opportunity),
+        Line(placeholderChar, endOfText),
+      ]);
+    });
+
+    test('placeholders surrounded by spaces and new lines', () {
+      final CanvasParagraph paragraph = rich(
+        EngineParagraphStyle(),
+        (CanvasParagraphBuilder builder) {
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('  Lorem  ');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('  \nipsum \n');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+          builder.addText('\n');
+          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        },
+      );
+
+      expect(
+        LineBreakFragmenter(paragraph).fragment(),
+        const <LineBreakFragment>[
+          LineBreakFragment(0, 3, opportunity, trailingNewlines: 0, trailingSpaces: 2),
+          LineBreakFragment(3, 10, opportunity, trailingNewlines: 0, trailingSpaces: 2),
+          LineBreakFragment(10, 14, mandatory, trailingNewlines: 1, trailingSpaces: 3),
+          LineBreakFragment(14, 21, mandatory, trailingNewlines: 1, trailingSpaces: 2),
+          LineBreakFragment(21, 23, mandatory, trailingNewlines: 1, trailingSpaces: 1),
+          LineBreakFragment(23, 24, endOfText, trailingNewlines: 0, trailingSpaces: 0),
         ],
       );
     });
@@ -285,7 +344,7 @@ void testMain() {
 
         // The last line break is an endOfText (or a hard break followed by
         // endOfText if the last character is a hard line break).
-        if (currentFragment.endBreak.type == mandatory) {
+        if (currentFragment.type == mandatory) {
           // When last character is a hard line break, there should be an
           // extra fragment to represent the empty line at the end.
           expect(
@@ -301,7 +360,7 @@ void testMain() {
         }
 
         expect(
-          currentFragment.endBreak.type,
+          currentFragment.type,
           endOfText,
           reason: 'Failed at test case number $t:\n'
               '${testCase.toString()}\n'
@@ -315,14 +374,6 @@ void testMain() {
               '${testCase.toString()}\n'
               '"$text"\n\n'
               'Expected an endOfText fragment ending at {${text.length}} but found: $currentFragment',
-        );
-        expect(
-          currentFragment.endBreak.index,
-          text.length,
-          reason: 'Failed at test case number $t:\n'
-              '${testCase.toString()}\n'
-              '"$text"\n\n'
-              'Expected an endOfText fragment with a break ending at {${text.length}} but found: $currentFragment',
         );
       }
     });
@@ -339,7 +390,7 @@ class Line {
   factory Line.fromLineBreakFragment(String text, LineBreakFragment fragment) {
     return Line(
       text.substring(fragment.start, fragment.end),
-      fragment.endBreak.type,
+      fragment.type,
     );
   }
 
@@ -375,8 +426,13 @@ List<Line> split(String text) {
   ];
 }
 
+List<Line> splitParagraph(CanvasParagraph paragraph) {
+  return <Line>[
+    for (final LineBreakFragment fragment in LineBreakFragmenter(paragraph).fragment())
+      Line.fromLineBreakFragment(paragraph.toPlainText(), fragment)
+  ];
+}
+
 List<LineBreakFragment> computeLineBreakFragments(String text) {
-  final CanvasParagraph paragraph = plain(EngineParagraphStyle(), text);
-  final LineBreakFragmenter fragmenter = LineBreakFragmenter(paragraph);
-  return fragmenter.fragment();
+  return LineBreakFragmenter(plain(EngineParagraphStyle(), text)).fragment();
 }
