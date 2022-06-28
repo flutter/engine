@@ -873,6 +873,8 @@ FILE: ../../../flutter/lib/ui/painting/codec.cc
 FILE: ../../../flutter/lib/ui/painting/codec.h
 FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu.cc
+FILE: ../../../flutter/lib/ui/painting/display_list_deferred_image_gpu.h
 FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.cc
 FILE: ../../../flutter/lib/ui/painting/display_list_image_gpu.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
@@ -2131,6 +2133,9 @@ FILE: ../../../flutter/shell/platform/linux/fl_accessibility_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_accessible_node.cc
 FILE: ../../../flutter/shell/platform/linux/fl_accessible_node.h
 FILE: ../../../flutter/shell/platform/linux/fl_accessible_node_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_accessible_text_field.cc
+FILE: ../../../flutter/shell/platform/linux/fl_accessible_text_field.h
+FILE: ../../../flutter/shell/platform/linux/fl_accessible_text_field_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_backing_store_provider.cc
 FILE: ../../../flutter/shell/platform/linux/fl_backing_store_provider.h
 FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel.cc
@@ -2333,7 +2338,9 @@ FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_manager_win32.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_manager_win32.h
+FILE: ../../../flutter/shell/platform/windows/keyboard_win32_common.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_win32_common.h
+FILE: ../../../flutter/shell/platform/windows/keyboard_win32_common_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_win32_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/platform_handler.cc
 FILE: ../../../flutter/shell/platform/windows/platform_handler.h

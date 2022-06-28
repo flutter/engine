@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -27,7 +26,7 @@ void testMain() {
     test('embeds interactive platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -41,12 +40,12 @@ void testMain() {
       // The platform view is now split in two parts. The contents live
       // as a child of the glassPane, and the slot lives in the glassPane
       // shadow root. The slot is the one that has pointer events auto.
-      final html.Element contents = flutterViewEmbedder.glassPaneElement!
-          .querySelector('#view-0')! as html.Element;
-      final html.Element slot = flutterViewEmbedder.sceneElement!
-          .querySelector('slot')! as html.Element;
-      final html.Element contentsHost = contents.parent!;
-      final html.Element slotHost = slot.parent!;
+      final DomElement contents = flutterViewEmbedder.glassPaneElement!
+          .querySelector('#view-0')!;
+      final DomElement slot = flutterViewEmbedder.sceneElement!
+          .querySelector('slot')!;
+      final DomElement contentsHost = contents.parent!;
+      final DomElement slotHost = slot.parent!;
 
       expect(contents, isNotNull,
           reason: 'The view from the factory is injected in the DOM.');
@@ -63,7 +62,7 @@ void testMain() {
     test('clips platform views with RRects', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -103,7 +102,7 @@ void testMain() {
     test('correctly transforms platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -120,8 +119,8 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
-      final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')! as html.Element;
+      final DomElement slotHost = flutterViewEmbedder.sceneElement!
+          .querySelector('flt-platform-view-slot')!;
 
       expect(
         slotHost.style.transform,
@@ -135,7 +134,7 @@ void testMain() {
     test('correctly offsets platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -145,15 +144,15 @@ void testMain() {
       sb.addPlatformView(0, offset: const ui.Offset(3, 4), width: 5, height: 6);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
-      final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')! as html.Element;
-      final html.CssStyleDeclaration style = slotHost.style;
+      final DomElement slotHost = flutterViewEmbedder.sceneElement!
+          .querySelector('flt-platform-view-slot')!;
+      final DomCSSStyleDeclaration style = slotHost.style;
 
       expect(style.transform, 'matrix(1, 0, 0, 1, 3, 4)');
       expect(style.width, '5px');
       expect(style.height, '6px');
 
-      final html.Rectangle<num> slotRect = slotHost.getBoundingClientRect();
+      final DomRect slotRect = slotHost.getBoundingClientRect();
       expect(slotRect.left, 3);
       expect(slotRect.top, 4);
       expect(slotRect.right, 8);
@@ -162,9 +161,9 @@ void testMain() {
 
     // Returns the list of CSS transforms applied to the ancestor chain of
     // elements starting from `viewHost`, up until and excluding <flt-scene>.
-    List<String> getTransformChain(html.Element viewHost) {
+    List<String> getTransformChain(DomElement viewHost) {
       final List<String> chain = <String>[];
-      html.Element? element = viewHost;
+      DomElement? element = viewHost;
       while (element != null && element.tagName.toLowerCase() != 'flt-scene') {
         chain.add(element.style.transform);
         element = element.parent;
@@ -175,7 +174,7 @@ void testMain() {
     test('correctly offsets when clip chain length is changed', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -190,8 +189,8 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
-      html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')! as html.Element;
+      DomElement slotHost = flutterViewEmbedder.sceneElement!
+          .querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -212,7 +211,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')! as html.Element;
+          .querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -228,7 +227,7 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(4);
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -242,8 +241,8 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
-      final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')! as html.Element;
+      final DomElement slotHost = flutterViewEmbedder.sceneElement!
+          .querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -255,7 +254,7 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(4);
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -271,8 +270,8 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       // Transformations happen on the slot element.
-      final html.Element slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')! as html.Element;
+      final DomElement slotHost = flutterViewEmbedder.sceneElement!
+          .querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -297,7 +296,7 @@ void testMain() {
       for (int i = 0; i < 16; i++) {
         ui.platformViewRegistry.registerViewFactory(
           'test-platform-view',
-          (int viewId) => html.DivElement()..id = 'view-$i',
+          (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
         );
         await createPlatformView(i, 'test-platform-view');
         platformViewIds.add(i);
@@ -453,7 +452,7 @@ void testMain() {
       for (int i = 0; i < 20; i++) {
         ui.platformViewRegistry.registerViewFactory(
           'test-platform-view',
-          (int viewId) => html.DivElement()..id = 'view-$i',
+          (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
         );
         await createPlatformView(i, 'test-platform-view');
         platformViewIds.add(i);
@@ -583,7 +582,7 @@ void testMain() {
     test('embeds and disposes of a platform view', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -626,7 +625,7 @@ void testMain() {
     test('removed the DOM node of an unrendered platform view', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -688,7 +687,7 @@ void testMain() {
         () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'test-view',
+        (int viewId) => createDomHTMLDivElement()..id = 'test-view',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -704,8 +703,8 @@ void testMain() {
         dispatcher.rasterizer!.draw(sb.build().layerTree);
       }
 
-      final html.Node skPathDefs = flutterViewEmbedder.sceneElement!
-          .querySelector('#sk_path_defs')! as html.Node;
+      final DomNode skPathDefs = flutterViewEmbedder.sceneElement!
+          .querySelector('#sk_path_defs')!;
 
       expect(skPathDefs.childNodes, hasLength(0));
 
@@ -725,7 +724,7 @@ void testMain() {
         () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -748,7 +747,7 @@ void testMain() {
       HtmlViewEmbedder.debugDisableOverlays = true;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
 
@@ -778,7 +777,7 @@ void testMain() {
 
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
       await createPlatformView(1, 'test-platform-view');
@@ -824,7 +823,7 @@ void testMain() {
       HtmlViewEmbedder.debugDisableOverlays = true;
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
-        (int viewId) => html.DivElement()..id = 'view-0',
+        (int viewId) => createDomHTMLDivElement()..id = 'view-0',
       );
       await createPlatformView(0, 'test-platform-view');
       await createPlatformView(1, 'test-platform-view');
@@ -863,11 +862,11 @@ void testMain() {
       ui.platformViewRegistry.registerViewFactory(
           'test-visible-view',
           (int viewId) =>
-              html.DivElement()..className = 'visible-platform-view');
+              createDomHTMLDivElement()..className = 'visible-platform-view');
       ui.platformViewRegistry.registerViewFactory(
         'test-invisible-view',
         (int viewId) =>
-            html.DivElement()..className = 'invisible-platform-view',
+            createDomHTMLDivElement()..className = 'invisible-platform-view',
         isVisible: false,
       );
       await createPlatformView(0, 'test-visible-view');
