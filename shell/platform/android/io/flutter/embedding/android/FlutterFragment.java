@@ -94,7 +94,9 @@ import java.util.List;
  * Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a {@code Fragment}.
  */
 public class FlutterFragment extends Fragment
-    implements FlutterActivityAndFragmentDelegate.Host, ComponentCallbacks2, FlutterActivityAndFragmentDelegate.DelegateFactory {
+    implements FlutterActivityAndFragmentDelegate.Host,
+        ComponentCallbacks2,
+        FlutterActivityAndFragmentDelegate.DelegateFactory {
   /**
    * The ID of the {@code FlutterView} created by this activity.
    *
@@ -734,7 +736,11 @@ public class FlutterFragment extends Fragment
 
   @NonNull private FlutterActivityAndFragmentDelegate.DelegateFactory delegateFactory = this;
 
-  public FlutterActivityAndFragmentDelegate createDelegate(FlutterActivityAndFragmentDelegate.Host host) {
+  /**
+   * Default delegate factory that creates a simple FlutterActivityAndFragmentDelegate instance.
+   */
+  public FlutterActivityAndFragmentDelegate createDelegate(
+      FlutterActivityAndFragmentDelegate.Host host) {
     return new FlutterActivityAndFragmentDelegate(host);
   }
 
@@ -763,7 +769,8 @@ public class FlutterFragment extends Fragment
   // TODO(mattcarroll): remove this when tests allow for it
   // (https://github.com/flutter/flutter/issues/43798)
   @VisibleForTesting
-  /* package */ void setDelegateFactory(@NonNull FlutterActivityAndFragmentDelegate.DelegateFactory delegateFactory) {
+  /* package */ void setDelegateFactory(
+      @NonNull FlutterActivityAndFragmentDelegate.DelegateFactory delegateFactory) {
     this.delegateFactory = delegateFactory;
     delegate = delegateFactory.createDelegate(this);
   }

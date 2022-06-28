@@ -20,7 +20,6 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.FragmentActivity;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import io.flutter.embedding.android.FlutterActivityAndFragmentDelegate;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -43,18 +42,20 @@ public class FlutterFragmentTest {
     FlutterActivityAndFragmentDelegate delegate;
 
     TestDelegateFactory(FlutterActivityAndFragmentDelegate delegate) {
-        this.delegate = delegate;
+      this.delegate = delegate;
     }
 
-    public FlutterActivityAndFragmentDelegate createDelegate(FlutterActivityAndFragmentDelegate.Host host) {
-        return delegate;
+    public FlutterActivityAndFragmentDelegate createDelegate(
+        FlutterActivityAndFragmentDelegate.Host host) {
+      return delegate;
     }
   }
 
   @Test
   public void itCreatesDefaultFragmentWithExpectedDefaults() {
     FlutterFragment fragment = FlutterFragment.createDefault();
-    TestDelegateFactory delegateFactory = new TestDelegateFactory(new FlutterActivityAndFragmentDelegate(fragment));
+    TestDelegateFactory delegateFactory =
+        new TestDelegateFactory(new FlutterActivityAndFragmentDelegate(fragment));
     fragment.setDelegateFactory(delegateFactory);
 
     assertEquals("main", fragment.getDartEntrypointFunctionName());
@@ -84,7 +85,8 @@ public class FlutterFragmentTest {
             .renderMode(RenderMode.texture)
             .transparencyMode(TransparencyMode.opaque)
             .build();
-    TestDelegateFactory delegateFactory = new TestDelegateFactory(new FlutterActivityAndFragmentDelegate(fragment));
+    TestDelegateFactory delegateFactory =
+        new TestDelegateFactory(new FlutterActivityAndFragmentDelegate(fragment));
     fragment.setDelegateFactory(delegateFactory);
 
     assertEquals("custom_entrypoint", fragment.getDartEntrypointFunctionName());
@@ -223,9 +225,10 @@ public class FlutterFragmentTest {
     TestDelegateFactory delegateFactory = new TestDelegateFactory(mockDelegate);
 
     FlutterFragment fragment =
-        spy(FlutterFragment.withCachedEngine("my_cached_engine")
-            .destroyEngineWithFragment(true)
-            .build());
+        spy(
+            FlutterFragment.withCachedEngine("my_cached_engine")
+                .destroyEngineWithFragment(true)
+                .build());
     when(fragment.getContext()).thenReturn(mock(Context.class));
 
     fragment.setDelegateFactory(delegateFactory);
