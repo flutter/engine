@@ -109,12 +109,15 @@ class FilterContents : public Contents {
 
   ~FilterContents() override;
 
-  /// @brief The input texture sources for this filter. Each input's emitted
-  ///        texture is expected to have premultiplied alpha colors.
+  /// @brief  The input texture sources for this filter. Each input's emitted
+  ///         texture is expected to have premultiplied alpha colors.
   ///
-  ///        The number of required or optional textures depends on the
-  ///        particular filter's implementation.
+  ///         The number of required or optional textures depends on the
+  ///         particular filter's implementation.
   void SetInputs(FilterInput::Vector inputs);
+
+  /// @brief  Screen space bounds to use for cropping the filter output.
+  void SetCoverageCrop(std::optional<Rect> coverage_crop);
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -146,6 +149,7 @@ class FilterContents : public Contents {
                             const Rect& coverage) const = 0;
 
   FilterInput::Vector inputs_;
+  std::optional<Rect> coverage_crop_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FilterContents);
 };

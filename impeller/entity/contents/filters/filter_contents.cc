@@ -116,6 +116,10 @@ void FilterContents::SetInputs(FilterInput::Vector inputs) {
   inputs_ = std::move(inputs);
 }
 
+void FilterContents::SetCoverageCrop(std::optional<Rect> coverage_crop) {
+  coverage_crop_ = coverage_crop;
+}
+
 bool FilterContents::Render(const ContentContext& renderer,
                             const Entity& entity,
                             RenderPass& pass) const {
@@ -175,6 +179,9 @@ std::optional<Rect> FilterContents::GetFilterCoverage(
       continue;
     }
     result = result->Union(coverage.value());
+  }
+  if (coverage_crop_.has_value() && result.has_value()) {
+    result->Union(coverage_crop_.value());
   }
   return result;
 }
