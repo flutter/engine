@@ -1341,8 +1341,10 @@ constexpr std::array<const char*, 4> GetSnapshotPaths() {
   return {TEST_VM_SNAPSHOT_DATA, TEST_VM_SNAPSHOT_INSTRUCTIONS,
           TEST_ISOLATE_SNAPSHOT_DATA, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS};
 #else
+  // NOLINTBEGIN(clang-diagnostic-error)
   // These paths must be set by the build.
   static_assert(false);
+  // NOLINTEND(clang-diagnostic-error)
 #endif
 }
 
