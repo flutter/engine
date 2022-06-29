@@ -62,9 +62,11 @@ class TextLayoutService {
 
   late final Spanometer spanometer = Spanometer(paragraph, context);
 
-  late final List<LayoutFragment> fragments = LayoutFragmenter(paragraph).fragment();
-
-  late final Iterable<MeasuredFragment> measuredFragments = fragments.map(spanometer.measureFragment);
+  late final List<MeasuredFragment> measuredFragments =
+      LayoutFragmenter(paragraph)
+          .fragment()
+          .map(spanometer.measureFragment)
+          .toList();
 
   /// Performs the layout on a paragraph given the [constraints].
   ///
@@ -92,6 +94,7 @@ class TextLayoutService {
     didExceedMaxLines = false;
     lines.clear();
 
+    // TODO(mdebbar): if (paragraph.isEmpty) { ... }
     if (spanCount == 0) {
       return;
     }
@@ -100,33 +103,28 @@ class TextLayoutService {
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
     for (final MeasuredFragment fragment in measuredFragments) {
-      if (currentLine.canAddFragment(fragment)) {
-        // The line can still fit the new fragment.
+      currentLine.addFragment(fragment);
 
-        currentLine.addFragment(fragment);
-      } else if (currentLine.canHaveEllipsis) {
-        // We should stop at this line and add the ellipsis.
+      while (currentLine.isOverflowing) {
+        print('overflowing...');
+        if (currentLine.canHaveEllipsis) {
+          currentLine.insertEllipsis();
+          lines.add(currentLine.build());
+          // TODO(mdebbar): didExceedMaxLines = true ?
+          break;
+        }
 
-        currentLine.addFragment(fragment);
-        // TODO(mdebbar): this should automatically force-break the line to fit the ellipsis.
-        currentLine.insertEllipsis();
+        if (currentLine.isNotBreakable) {
+          // The line can't be legally broken, so the last fragment (that caused
+          // the line to overflow) needs to be force-broken.
+          currentLine._forceBreakLastFragment();
+        }
         lines.add(currentLine.build());
-        // TODO(mdebbar): didExceedMaxLines = true ?
-        break;
-      } else if (currentLine.isNotBreakable) {
-        // The line is too long and needs to be force-broken.
+        currentLine = currentLine.nextLine();
+      }
 
-        // Add only part of the fragment that can fit in the line.
-        currentLine.addPartOfFragment(fragment);
+      if (currentLine.isHardBreak) {
         lines.add(currentLine.build());
-        // TODO(mdebbar): didExceedMaxLines = true ?
-        break;
-      } else {
-        // Normal line break.
-
-        // TODO(mdebbar): `LineBuilder.build` should not include trailing non-breakable fragments.
-        lines.add(currentLine.build());
-        // TODO(mdebbar): `LineBuilder.nextLine` should include all trailing non-breakable fragments.
         currentLine = currentLine.nextLine();
       }
     }
@@ -912,8 +910,6 @@ class LineBuilder {
   final List<MeasuredFragment> _fragments;
   List<MeasuredFragment>? _fragmentsForNextLine;
 
-  int _lastBreakableFragment = -1;
-
   final List<RangeBox> _boxes = <RangeBox>[];
 
   final double maxWidth;
@@ -930,8 +926,9 @@ class LineBuilder {
   /// The width of the line so far, including trailing white space.
   double widthIncludingSpace = 0.0;
 
-  /// The width of trailing white space in the line.
-  double get widthOfTrailingSpace => widthIncludingSpace - width;
+  double get _widthExcludingLastFragment => _fragments.length > 1
+    ? widthIncludingSpace - _fragments.last.metrics.widthIncludingTrailingSpaces
+    : 0;
 
   /// The distance from the top of the line to the alphabetic baseline.
   double ascent = 0.0;
@@ -942,16 +939,30 @@ class LineBuilder {
   /// The height of the line so far.
   double get height => ascent + descent;
 
-  /// Returns true if there is at least one break opportunity in the line.
-  bool isBreakable = false;
+  int _lastBreakableFragment = -1;
+  int _breakCount = 0;
 
-  /// Returns true if there's no break opportunity in the line.
+  /// Whether this line can be legally broken into more than one line.
+  bool get isBreakable {
+    if (_fragments.isEmpty) {
+      return false;
+    }
+    if (_fragments.last.isBreak) {
+      // We need one more break other than the last one.
+      return _breakCount > 1;
+    }
+    return _breakCount > 0;
+  }
+
+  /// Returns true if the line can't be legally broken any further.
   bool get isNotBreakable => !isBreakable;
 
   int _spaceBoxCount = 0;
 
   bool get isEmpty => _fragments.isEmpty;
   bool get isNotEmpty => _fragments.isNotEmpty;
+
+  bool get isHardBreak => _fragments.isNotEmpty && _fragments.last.isHardBreak;
 
   /// The horizontal offset necessary for the line to be correctly aligned.
   double get alignOffset {
@@ -972,6 +983,8 @@ class LineBuilder {
     }
   }
 
+  bool get isOverflowing => width > maxWidth;
+
   bool get canHaveEllipsis {
     if (paragraph.paragraphStyle.ellipsis == null) {
       return false;
@@ -981,36 +994,21 @@ class LineBuilder {
     return (maxLines == null) || (maxLines == lineNumber + 1);
   }
 
-  /// Whether the [fragment] can fit in the line without exceeding [maxWidth].
-  bool canAddFragment(MeasuredFragment fragment) {
-    if (fragment.isSpaceOnly) {
-      return true;
-    }
-
-    final double widthAfterAddingFragment =
-        widthIncludingSpace + fragment.metrics.widthExcludingTrailingSpaces;
-    return widthAfterAddingFragment <= maxWidth;
-  }
-
   ui.TextDirection get _paragraphDirection =>
       paragraph.paragraphStyle.effectiveTextDirection;
 
   void addFragment(MeasuredFragment fragment) {
+    print('adding fragment: "${paragraph.toPlainText().substring(fragment.start, fragment.end)}"');
     fragment = _updateMetrics(fragment);
 
-    if (fragment.type != LineBreakType.prohibited) {
+    if (fragment.isBreak) {
       _lastBreakableFragment = _fragments.length;
     }
 
     _fragments.add(fragment);
   }
 
-  void addPartOfFragment(MeasuredFragment fragment) {
-    addFragment(fragment);
-    _forceBreak(maxWidth, allowEmpty: false);
-  }
-
-  /// Updates the [LineBuilder]'s metrics after adding the new [fragment].
+  /// Updates the [LineBuilder]'s metrics to take into account the new [fragment].
   MeasuredFragment _updateMetrics(MeasuredFragment fragment) {
     if (fragment.isSpaceOnly) {
       _spaceBoxCount++;
@@ -1021,6 +1019,10 @@ class LineBuilder {
 
     if (fragment.isPlaceholder) {
       return _updateHeightForPlaceholder(fragment);
+    }
+
+    if (fragment.isBreak) {
+      _breakCount++;
     }
 
     ascent = math.max(ascent, fragment.metrics.ascent);
@@ -1091,65 +1093,68 @@ class LineBuilder {
     ascent = 0;
     descent = 0;
     _spaceBoxCount = 0;
+    _breakCount = 0;
     _lastBreakableFragment = -1;
 
     for (int i = 0; i < _fragments.length; i++) {
       _fragments[i] = _updateMetrics(_fragments[i]);
-      if (_fragments[i].type != LineBreakType.prohibited) {
+      if (_fragments[i].isBreak) {
         _lastBreakableFragment = i;
       }
     }
   }
 
-  /// Force-breaks the line in order to fit in [maxWidth] while trying to extend
-  /// to [nextBreak].
-  ///
-  /// This should only be called when there isn't enough width to extend to
-  /// [nextBreak], and either of the following is true:
-  ///
-  /// 1. An ellipsis is being appended to this line, OR
-  /// 2. The line doesn't have any line break opportunities and has to be
-  ///    force-broken.
-  void _forceBreak(double availableWidth, { required bool allowEmpty }) {
-    MeasuredFragment? removedFragment;
-    _fragmentsForNextLine = <MeasuredFragment>[];
+  void _forceBreakLastFragment({ double? availableWidth, bool allowEmptyLine = false }) {
+    assert(isNotEmpty);
 
-    while (_fragments.isNotEmpty && widthIncludingSpace > availableWidth) {
-      if (removedFragment != null) {
-        _fragmentsForNextLine!.insert(0, removedFragment);
-      }
-      removedFragment = _fragments.removeLast();
-      _recalculateMetrics();
-    }
+    availableWidth = maxWidth;
+    _fragmentsForNextLine ??= <MeasuredFragment>[];
 
-    if (removedFragment == null) {
-      // No fragment has been removed.
-      return;
-    }
+    // When the line has other fragments, we can always allow the last fragment
+    // to be empty (i.e. completely removed from the line).
+    final bool hasOtherFragments = _fragments.length > 1;
+    final bool allowLastFragmentToBeEmpty = hasOtherFragments || allowEmptyLine;
 
-    final ParagraphSpan span = removedFragment.span;
+    final MeasuredFragment lastFragment = _fragments.removeLast();
+    _recalculateMetrics();
+
+    final ParagraphSpan span = lastFragment.span;
     if (span is FlatTextSpan) {
       spanometer.currentSpan = span;
       final double availableWidthForFragment = availableWidth - widthIncludingSpace;
+      final int forceBreakEnd = lastFragment.end - lastFragment.trailingSpaces;
+
       final int breakingPoint = spanometer.forceBreak(
-        removedFragment.start,
-        removedFragment.end,
+        lastFragment.start,
+        forceBreakEnd,
         availableWidth: availableWidthForFragment,
-        allowEmpty: allowEmpty,
+        allowEmpty: allowLastFragmentToBeEmpty,
       );
 
-      final List<LayoutFragment?> split = removedFragment.split(breakingPoint);
+      if (breakingPoint == forceBreakEnd) {
+        // The entire fragment remained intact. Let's put it back without any
+        // changes.
+        addFragment(lastFragment);
+        return;
+      }
+
+      final List<LayoutFragment?> split = lastFragment.split(breakingPoint);
       if (split.first != null) {
-        // _lastBreakableFragment = _fragments.length;
         addFragment(spanometer.measureFragment(split.first!));
       }
       if (split.last != null) {
         _fragmentsForNextLine!.insert(0, spanometer.measureFragment(split.last!));
       }
-
     } else {
-      // There's no force-breaking, just remove the entire fragment.
-      _fragmentsForNextLine!.insert(0, removedFragment);
+      // This is a placeholder and we can't force-break a placeholder.
+
+      if (allowLastFragmentToBeEmpty) {
+        _fragmentsForNextLine!.insert(0, lastFragment);
+      } else {
+        // TODO(mdebbar): Add test for the case of a single placeholder that
+        //                doesn't fit in one line.
+        addFragment(lastFragment);
+      }
     }
   }
 
@@ -1157,19 +1162,26 @@ class LineBuilder {
 
   void insertEllipsis() {
     assert(canHaveEllipsis);
+
     _ellipsis = paragraph.paragraphStyle.ellipsis!;
     final double ellipsisWidth = spanometer.measureText(_ellipsis!);
     final double availableWidth = maxWidth - ellipsisWidth;
-    _forceBreak(availableWidth, allowEmpty: true);
+
+    _fragmentsForNextLine = <MeasuredFragment>[];
+
+    while (_widthExcludingLastFragment > availableWidth) {
+      _fragmentsForNextLine!.insert(0, _fragments.removeLast());
+      _recalculateMetrics();
+    }
+
+    _forceBreakLastFragment(availableWidth: availableWidth, allowEmptyLine: true);
+
+    widthIncludingSpace += ellipsisWidth;
+    width = widthIncludingSpace;
   }
 
   /// Builds the [ParagraphLine] instance that represents this line.
   ParagraphLine build({String? ellipsis}) {
-    if (_lastBreakableFragment < 0) {
-      // TODO(mdebbar): Do we need to worry about this case?
-      print('Building an unbreakable line!');
-    }
-
     if (_fragmentsForNextLine == null) {
       _fragmentsForNextLine = _fragments.getRange(_lastBreakableFragment + 1, _fragments.length).toList();
       _fragments.removeRange(_lastBreakableFragment + 1, _fragments.length);
@@ -1180,13 +1192,15 @@ class LineBuilder {
     final MeasuredFragment firstFragment = _fragments.first;
     final MeasuredFragment lastFragment = _fragments.last;
 
+    print('building line: [${firstFragment.start} .. ${lastFragment.end}]');
+
     return ParagraphLine(
       lineNumber: lineNumber,
       ellipsis: _ellipsis,
       startIndex: firstFragment.start,
       endIndex: lastFragment.end,
-      trailingNewlines: 0, // TODO(mdebbar): lastFragment.trailingNewlines,
-      hardBreak: lastFragment.isHardBreak,
+      trailingNewlines: lastFragment.trailingNewlines,
+      hardBreak: isHardBreak,
       width: width,
       widthWithTrailingSpaces: widthIncludingSpace,
       left: alignOffset,
@@ -1445,6 +1459,8 @@ class MeasuredFragment implements LayoutFragment {
   @override
   bool get isSpaceOnly => _layoutFragment.isSpaceOnly;
   @override
+  bool get isBreak => _layoutFragment.isBreak;
+  @override
   bool get isHardBreak => _layoutFragment.isHardBreak;
   @override
   bool get isPlaceholder => _layoutFragment.isPlaceholder;
@@ -1522,10 +1538,6 @@ class FragmentMetrics {
 
   /// The width of the measured text, including any trailing spaces.
   final double widthIncludingTrailingSpaces;
-
-  /// The width of trailing spaces in the measured text.
-  double get widthOfTrailingSpaces =>
-      widthIncludingTrailingSpaces - widthExcludingTrailingSpaces;
 
   /// The total height as calculated from the font and style for this text.
   double get height => ascent + descent;

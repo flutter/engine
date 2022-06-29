@@ -132,5 +132,11 @@ class LayoutFragment extends TextFragment implements LineBreakFragment, BidiFrag
   int get length => end - start;
   bool get isSpaceOnly => length == trailingSpaces;
   bool get isPlaceholder => span is PlaceholderSpan;
+  bool get isBreak => type != LineBreakType.prohibited;
   bool get isHardBreak => type == LineBreakType.mandatory || type == LineBreakType.endOfText;
+
+  @override
+  String toString() {
+    return '$LayoutFragment($start, $end, $type, $textDirection)';
+  }
 }
