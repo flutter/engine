@@ -25,7 +25,6 @@ class AutoCache {
 
  private:
   inline bool IsCacheEnabled();
-  int current_index_;
   RasterCacheItem* raster_cache_item_ = nullptr;
   PrerollContext* context_ = nullptr;
   const SkMatrix& matrix_;

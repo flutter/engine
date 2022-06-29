@@ -199,8 +199,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
   // PrerollContext that this test must be revisited and updated.
   // If any fields get removed or replaced, then the expect_defaults closure
   // will fail to compile, again bringing attention to updating this test.
-  EXPECT_EQ(sizeof(PrerollContext),
-            size_t(104) + sizeof(std::vector<RasterCacheItem*>*));
+  EXPECT_EQ(sizeof(PrerollContext), size_t(112));
 
   MutatorsStack mock_mutators;
   FixedRefreshRateStopwatch mock_raster_time;

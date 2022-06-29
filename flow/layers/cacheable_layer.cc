@@ -16,7 +16,6 @@ AutoCache::AutoCache(RasterCacheItem* raster_cache_item,
       matrix_(matrix) {
   if (IsCacheEnabled()) {
     raster_cache_item->PrerollSetup(context, matrix);
-    current_index_ = context_->raster_cached_entries->size();
   }
 }
 

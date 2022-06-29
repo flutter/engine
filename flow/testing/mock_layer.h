@@ -69,23 +69,20 @@ class MockCacheableContainerLayer : public CacheableContainerLayer {
  public:
   // if render more than 3 frames, try to cache itself.
   // if less 3 frames, cache his children
-  explicit MockCacheableContainerLayer() : CacheableContainerLayer(3, true) {}
+  static std::shared_ptr<MockCacheableContainerLayer> CacheLayerOrChildren() {
+    return std::make_shared<MockCacheableContainerLayer>(true);
+  }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-};
-
-class MockCacheableContainerLayer2 : public CacheableContainerLayer {
- public:
   // if render more than 3 frames, try to cache itself.
   // if less 3 frames, cache nothing
-  explicit MockCacheableContainerLayer2() : CacheableContainerLayer(3) {}
-
-  Layer* asLayer() { return this; }
+  static std::shared_ptr<MockCacheableContainerLayer> CacheLayerOnly() {
+    return std::make_shared<MockCacheableContainerLayer>();
+  }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
- private:
-  std::function<void(int, LayerRasterCacheItem*)> cache_strategy_;
+  explicit MockCacheableContainerLayer(bool cache_children = false)
+      : CacheableContainerLayer(3, cache_children) {}
 };
 
 class MockLayerCacheableItem : public LayerRasterCacheItem {

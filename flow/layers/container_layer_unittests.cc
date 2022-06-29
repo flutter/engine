@@ -206,11 +206,11 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   const SkPaint child_paint2(SkColors::kGreen);
   const SkPaint paint;
   auto cacheable_container_layer1 =
-      std::make_shared<MockCacheableContainerLayer>();
+      MockCacheableContainerLayer::CacheLayerOrChildren();
   auto cacheable_container_layer2 =
-      std::make_shared<MockCacheableContainerLayer2>();
+      MockCacheableContainerLayer::CacheLayerOnly();
   auto cacheable_container_layer11 =
-      std::make_shared<MockCacheableContainerLayer>();
+      MockCacheableContainerLayer::CacheLayerOrChildren();
 
   auto cacheable_layer111 =
       std::make_shared<MockCacheableLayer>(child_path3, paint);

@@ -54,7 +54,7 @@ class LayerRasterCacheItem : public RasterCacheItem {
   bool IsCacheChildren() const { return cache_state_ == CacheState::kChildren; }
 
  protected:
-  const SkRect& GetPaintBoundsFromLayer() const;
+  const SkRect* GetPaintBoundsFromLayer() const;
 
   Layer* layer_;
 

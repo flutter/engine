@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/testing/mock_layer.h"
+
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
@@ -67,15 +68,6 @@ void MockLayer::Paint(PaintContext& context) const {
 
 void MockCacheableContainerLayer::Preroll(PrerollContext* context,
                                           const SkMatrix& matrix) {
-  Layer::AutoPrerollSaveLayerState save =
-      Layer::AutoPrerollSaveLayerState::Create(context);
-  auto cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
-
-  ContainerLayer::Preroll(context, matrix);
-}
-
-void MockCacheableContainerLayer2::Preroll(PrerollContext* context,
-                                           const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   auto cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
