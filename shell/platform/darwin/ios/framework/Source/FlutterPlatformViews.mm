@@ -319,11 +319,12 @@ void FlutterPlatformViewsController::EndFrame(
   }
 }
 
-void FlutterPlatformViewsController::FilterPlatformViews(int64_t platform_view_id,
-                                                         sk_sp<SkImageFilter> filter) {
-  EmbeddedViewParams params = current_composition_params_[platform_view_id];
-  params.PushFilter(filter);
-  current_composition_params_[platform_view_id] = params;
+void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter) {
+  for (int64_t id : visited_platform_views_) {
+    EmbeddedViewParams params = current_composition_params_[id];
+    params.PushFilter(filter);
+    current_composition_params_[id] = params;
+  }
 }
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(

@@ -54,9 +54,10 @@ TEST(MutatorsStack, PushClipRect) {
 
 TEST(MutatorsStack, PushBackdropFilter) {
   MutatorsStack stack;
-  sk_sp<SkImageFilter> filter;
-  filter->filterBounds(SkIRect::MakeWH(10, 10), SkMatrix::I(),
-                       SkImageFilter::kForward_MapDirection);
+  SkIRect rect;
+  std::shared_ptr<const DlImageFilter> filter;
+  filter->get_input_device_bounds(SkIRect::MakeWH(10, 10),
+                                  SkMatrix::I(), rect);
   stack.PushBackdropFilter(filter);
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdrop_filter);

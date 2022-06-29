@@ -147,8 +147,8 @@ void EmbedderLayers::PushPlatformViewLayer(
                     .get());
           }
         } break;
-        case MutatorType::backdrop_filter: {
-        } break;
+        case MutatorType::backdrop_filter:
+          break;
       }
     }
 

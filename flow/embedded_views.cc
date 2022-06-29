@@ -36,7 +36,7 @@ void MutatorsStack::PushOpacity(const int& alpha) {
   vector_.push_back(element);
 };
 
-void MutatorsStack::PushBackdropFilter(const sk_sp<SkImageFilter>& filter) {
+void MutatorsStack::PushBackdropFilter(const std::shared_ptr<const DlImageFilter> filter) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(filter);
   vector_.push_back(element);
 };
