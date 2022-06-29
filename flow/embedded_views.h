@@ -122,6 +122,15 @@ class Mutator {
  private:
   MutatorType type_;
 
+  union {
+    SkRect rect_;
+    SkRRect rrect_;
+    SkMatrix matrix_;
+    SkPath* path_;
+    int alpha_;
+    std::shared_ptr<const DlImageFilter> filter_;
+  };
+
 };  // Mutator
 
 // A stack of mutators that can be applied to an embedded platform view.
