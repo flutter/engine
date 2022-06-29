@@ -82,12 +82,20 @@ class Command {
 
   /// The command but with clang-tidy instead of clang.
   String get tidyPath {
-    final String clangTidy = _pathRegex.stringMatch(command)?.replaceAll(
-      'clang/bin/clang',
-      'clang/bin/clang-tidy',
-    ) ?? '';
-    // On Windows [Process].run() sets the working dir after executing the process
-    return _tidyPath ??= path.join(directory.path, clangTidy);
+    String clangTidy() {
+      String clangTidy = _pathRegex.stringMatch(command)?.replaceAll(
+                'clang/bin/clang',
+                'clang/bin/clang-tidy',
+              ) ?? '';
+      if (io.Platform.isWindows) {
+        // On Windows [Process].run() sets the working dir after executing the process
+        clangTidy = path.join(directory.path, clangTidy);
+      }
+
+      return clangTidy;
+    }
+
+    return _tidyPath ??= clangTidy();
   }
 
   /// Whether this command operates on any of the files in `queries`.
