@@ -1333,19 +1333,12 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
             reinterpret_cast<const uint8_t*>("wrong_snapshot"));
 }
 
-// NOLINTBEGIN
-constexpr std::array<const char*, 4> GetSnapshotPaths() {
-#if !defined(TEST_VM_SNAPSHOT_DATA) ||         \
-    !defined(TEST_VM_SNAPSHOT_INSTRUCTIONS) || \
-    !defined(TEST_ISOLATE_SNAPSHOT_DATA) ||    \
-    !defined(TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS)
-  // These paths must be set by the build.
-  static_assert(false);
+#if defined(__clang_analyzer__)
+#define TEST_VM_SNAPSHOT_DATA nullptr
+#define TEST_VM_SNAPSHOT_INSTRUCTIONS nullptr
+#define TEST_ISOLATE_SNAPSHOT_DATA nullptr
+#define TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS nullptr
 #endif
-  return {TEST_VM_SNAPSHOT_DATA, TEST_VM_SNAPSHOT_INSTRUCTIONS,
-          TEST_ISOLATE_SNAPSHOT_DATA, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS};
-}
-// NOLINTEND
 
 //------------------------------------------------------------------------------
 /// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
@@ -1367,17 +1360,15 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   builder.SetSoftwareRendererConfig();
 
   // Construct the location of valid JIT snapshots.
-  auto [vm_data, vm_instructions, isolate_data, isolate_instructions] =
-      GetSnapshotPaths();
   const std::string src_path = GetSourcePath();
   const std::string vm_snapshot_data =
-      fml::paths::JoinPaths({src_path, vm_data});
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
   const std::string vm_snapshot_instructions =
-      fml::paths::JoinPaths({src_path, vm_instructions});
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
   const std::string isolate_snapshot_data =
-      fml::paths::JoinPaths({src_path, isolate_data});
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
   const std::string isolate_snapshot_instructions =
-      fml::paths::JoinPaths({src_path, isolate_instructions});
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
@@ -1412,17 +1403,15 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSpecifiedJITSnapshots) {
   builder.SetSoftwareRendererConfig();
 
   // Construct the location of valid JIT snapshots.
-  auto [vm_data, vm_instructions, isolate_data, isolate_instructions] =
-      GetSnapshotPaths();
   const std::string src_path = GetSourcePath();
   const std::string vm_snapshot_data =
-      fml::paths::JoinPaths({src_path, vm_data});
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
   const std::string vm_snapshot_instructions =
-      fml::paths::JoinPaths({src_path, vm_instructions});
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
   const std::string isolate_snapshot_data =
-      fml::paths::JoinPaths({src_path, isolate_data});
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
   const std::string isolate_snapshot_instructions =
-      fml::paths::JoinPaths({src_path, isolate_instructions});
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
@@ -1450,13 +1439,11 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
   builder.SetSoftwareRendererConfig();
 
   // Construct the location of valid JIT snapshots.
-  auto [vm_data, vm_instructions, isolate_data, isolate_instructions] =
-      GetSnapshotPaths();
   const std::string src_path = GetSourcePath();
   const std::string vm_snapshot_data =
-      fml::paths::JoinPaths({src_path, vm_data});
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
   const std::string vm_snapshot_instructions =
-      fml::paths::JoinPaths({src_path, vm_instructions});
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
 
   ASSERT_EQ(FlutterEngineSetupJITSnapshots(
                 &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
