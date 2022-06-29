@@ -187,7 +187,7 @@ class FlutterPlatformViewsController {
   // Pushes backdrop filter mutation to the mutator stack of each visited platform view
   void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter);
 
-  // Pushes the 
+  // Pushes the
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
  private:

@@ -79,7 +79,9 @@ class Mutator {
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
-  const std::shared_ptr<const DlImageFilter>& GetFilter() const { return filter_; }
+  const std::shared_ptr<const DlImageFilter>& GetFilter() const {
+    return filter_;
+  }
   const int& GetAlpha() const { return alpha_; }
   float GetAlphaFloat() const { return (alpha_ / 255.0); }
 
@@ -119,15 +121,6 @@ class Mutator {
 
  private:
   MutatorType type_;
-
-  
-  
-
-
-
-
-
-  
 
 };  // Mutator
 
@@ -368,7 +361,8 @@ class ExternalViewEmbedder {
 
   virtual void PushVisitedPlatformView(int64_t view_id) {}
 
-  virtual void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter) {}
+  virtual void PushFilterToVisitedPlatformViews(
+      std::shared_ptr<const DlImageFilter> filter) {}
 
  private:
   bool used_this_frame_ = false;

@@ -319,7 +319,8 @@ void FlutterPlatformViewsController::EndFrame(
   }
 }
 
-void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter) {
+void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter) {
   for (int64_t id : visited_platform_views_) {
     EmbeddedViewParams params = current_composition_params_[id];
     params.PushFilter(filter);

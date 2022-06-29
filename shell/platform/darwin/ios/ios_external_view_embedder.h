@@ -64,7 +64,8 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
 
-  void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter) override;
+  void PushFilterToVisitedPlatformViews(
+      std::shared_ptr<const DlImageFilter> filter) override;
 
   void PushVisitedPlatformView(int64_t view_id) override;
 

@@ -92,7 +92,8 @@ bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return true;
 }
 
-void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter) {
+void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter) {
   platform_views_controller_->PushFilterToVisitedPlatformViews(filter);
 }
 
