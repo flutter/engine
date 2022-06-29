@@ -1331,7 +1331,7 @@ Future<void> testTextStyle(
     write: write,
   );
   expect(notoDownloadQueue.debugIsLoadingFonts, isFalse);
-  expect(notoDownloadQueue.pendingSubsets, isEmpty);
+  expect(notoDownloadQueue.pendingFonts, isEmpty);
   expect(notoDownloadQueue.downloader.debugActiveDownloadCount, 0);
 }
 

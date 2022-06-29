@@ -7,7 +7,9 @@ import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
 
+import 'environment.dart';
 import 'exceptions.dart';
 import 'utils.dart';
 
@@ -55,22 +57,78 @@ class GenerateFallbackFontDataCommand extends Command<bool>
         urlForFamily[fontData['family']] = uri;
       }
     }
+    final Map<String, String> charsetForFamily = <String, String>{};
     final io.Directory tempDir =
         await io.Directory.systemTemp.createTemp('fonts');
     for (final String family in fallbackFonts) {
       print('Downloading $family...');
-      final http.Response fontResponse =
-          await client.get(urlForFamily[family]!);
+      final Uri uri = urlForFamily[family]!;
+      final http.Response fontResponse = await client.get(uri);
       if (fontResponse.statusCode != 200) {
         throw ToolExit('Failed to download font for $family');
       }
+      final io.File fontFile =
+          io.File(path.join(tempDir.path, path.basename(uri.path)));
+      await fontFile.writeAsBytes(fontResponse.bodyBytes);
+      final io.ProcessResult fcQueryResult =
+          await io.Process.run('fc-query', <String>[
+        '--format=%{charset}',
+        '--',
+        fontFile.path,
+      ]);
+      final String encodedCharset = fcQueryResult.stdout;
+      charsetForFamily[family] = encodedCharset;
     }
+
+    final StringBuffer sb = StringBuffer();
+
+    sb.writeln('// Copyright 2013 The Flutter Authors. All rights reserved.');
+    sb.writeln('// Use of this source code is governed by a BSD-style license '
+        'that can be');
+    sb.writeln('// found in the LICENSE file.');
+    sb.writeln('');
+    sb.writeln('// DO NOT EDIT! This file is generated. See:');
+    sb.writeln('// dev/generate_fallback_font_data.dart');
+    sb.writeln('import \'noto_font.dart\';');
+    sb.writeln('');
+    sb.writeln('const List<NotoFont> fallbackFonts = <NotoFont>[');
+    for (final String family in fallbackFonts) {
+      sb.writeln('  NotoFont(\'$family\', \'${urlForFamily[family]!}\', '
+          '<CodeunitRange>[');
+      for (final String range in charsetForFamily[family]!.split(' ')) {
+        String? start;
+        String? end;
+        final List<String> parts = range.split('-');
+        if (parts.length == 1) {
+          start = parts[0];
+          end = parts[0];
+        } else {
+          start = parts[0];
+          end = parts[1];
+        }
+        sb.writeln('    CodeunitRange(0x$start, 0x$end),');
+      }
+      sb.writeln('  ]),');
+    }
+    sb.writeln('];');
+
+    final io.File fontDataFile = io.File(path.join(
+      environment.webUiRootDir.path,
+      'lib',
+      'src',
+      'engine',
+      'canvaskit',
+      'font_fallback_data.dart',
+    ));
+    await fontDataFile.writeAsString(sb.toString());
   }
 }
 
 const List<String> fallbackFonts = <String>[
   'Noto Sans',
   'Noto Emoji',
+  'Noto Sans Symbols',
+  'Noto Sans Symbols 2',
   'Noto Sans Adlam',
   'Noto Sans Anatolian Hieroglyphs',
   'Noto Sans Arabic',
@@ -136,7 +194,7 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Mahajani',
   'Noto Sans Malayalam',
   'Noto Sans Mandaic',
-  'Noto Sans Manichean',
+  'Noto Sans Manichaean',
   'Noto Sans Marchen',
   'Noto Sans Masaram Gondi',
   'Noto Sans Math',
@@ -187,8 +245,6 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Soyombo',
   'Noto Sans Sundanese',
   'Noto Sans Syloti Nagri',
-  'Noto Sans Symbols',
-  'Noto Sans Symbols 2',
   'Noto Sans Syriac',
   'Noto Sans TC',
   'Noto Sans Tagalog',
