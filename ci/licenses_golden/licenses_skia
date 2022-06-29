@@ -1,4 +1,4 @@
-Signature: 015b77f7fef2715dae12119e67e49a01
+Signature: 912c12d642bfa93e731878458c5613df
 
 UNUSED LICENSES:
 
@@ -529,11 +529,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skcms
+LIBRARY: skia
 LIBRARY: vulkan
 ORIGIN: ../../../third_party/skia/include/third_party/skcms/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/third_party/skcms/BUILD.bazel
 FILE: ../../../third_party/skia/include/third_party/vulkan/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skcms/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skcms/version.sha1
 FILE: ../../../third_party/skia/third_party/skcms/BUILD.bazel
 FILE: ../../../third_party/skia/third_party/skcms/version.sha1
 ----------------------------------------------------------------------------------------------------
@@ -568,10 +571,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skcms
+LIBRARY: skia
 LIBRARY: vulkanmemoryallocator
 ORIGIN: ../../../third_party/skia/include/third_party/skcms/skcms.h + ../../../third_party/skia/include/third_party/skcms/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/third_party/skcms/skcms.h
+FILE: ../../../third_party/skia/modules/skcms/skcms.cc
+FILE: ../../../third_party/skia/modules/skcms/skcms.h
+FILE: ../../../third_party/skia/modules/skcms/skcms_internal.h
+FILE: ../../../third_party/skia/modules/skcms/src/Transform_inl.h
 FILE: ../../../third_party/skia/third_party/skcms/skcms.cc
 FILE: ../../../third_party/skia/third_party/skcms/skcms_internal.h
 FILE: ../../../third_party/skia/third_party/skcms/src/Transform_inl.h
@@ -5583,6 +5591,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/GraphiteResourceKey.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Log.h
 FILE: ../../../third_party/skia/src/gpu/graphite/PaintParams.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/PaintParams.h
+FILE: ../../../third_party/skia/src/gpu/graphite/QueueManager.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/QueueManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/RecorderPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/RecorderPriv.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Resource.cpp
@@ -5599,6 +5609,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/Geometry.h
+FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlQueueManager.h
+FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlQueueManager.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlSampler.mm
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CoverBoundsRenderStep.cpp
