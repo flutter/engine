@@ -7,8 +7,12 @@
 
 #include <impeller/branching.glsl>
 
-vec4 Unpremultiply(vec4 color) {
-  return vec4(color.rgb / color.a * GreaterThan(color.a, 0), color.a);
+/// Convert a premultiplied color (a color which has its color components
+/// multiplied with its alpha value) to an unpremultiplied color.
+///
+/// Returns (0, 0, 0, 0) if the alpha component is 0.
+vec4 IPUnpremultiply(vec4 color) {
+  return vec4(color.rgb / color.a * IPFloatIsGreaterThan(color.a, 0), color.a);
 }
 
 #endif

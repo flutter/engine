@@ -21,11 +21,12 @@ in vec2 v_src_texture_coords;
 out vec4 frag_color;
 
 void main() {
-  vec4 dst = Unpremultiply(
-      SampleWithBorder(texture_sampler_dst, v_dst_texture_coords));
-  vec4 src = mix(Unpremultiply(SampleWithBorder(texture_sampler_src,
-                                                v_src_texture_coords)),
-                 blend_info.color, GreaterThan(blend_info.color_factor, 0));
+  vec4 dst = IPUnpremultiply(
+      IPSampleClampToBorder(texture_sampler_dst, v_dst_texture_coords));
+  vec4 src =
+      mix(IPUnpremultiply(
+              IPSampleClampToBorder(texture_sampler_src, v_src_texture_coords)),
+          blend_info.color, IPFloatIsGreaterThan(blend_info.color_factor, 0));
 
   vec3 blended = Blend(dst.rgb, src.rgb);
 

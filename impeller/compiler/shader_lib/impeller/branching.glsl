@@ -6,29 +6,44 @@
 #define BRANCHING_GLSL_
 
 #include <impeller/constants.glsl>
+#include <impeller/types.glsl>
 
-vec3 EqualTo3(vec3 x, float y) {
+/// Perform a branchless equality check for each vec3 component.
+///
+/// Returns 1.0 if x == y, otherwise 0.0.
+BoolV3 IPVec3IsEqual(vec3 x, vec3 y) {
   return 1 - abs(sign(x - y));
 }
 
-float GreaterThan(float x, float y) {
+/// Perform a branchless greater than check.
+///
+/// Returns 1.0 if x > y, otherwise 0.0.
+BoolF IPFloatIsGreaterThan(float x, float y) {
   return max(sign(x - y), 0);
 }
 
-vec3 GreaterThan3(vec3 x, float y) {
+/// Perform a branchless greater than check for each vec3 component.
+///
+/// Returns 1.0 if x > y, otherwise 0.0.
+BoolV3 IPVec3IsGreaterThan(vec3 x, vec3 y) {
   return max(sign(x - y), 0);
 }
 
-float LessThan(float x, float y) {
+/// Perform a branchless less than check.
+///
+/// Returns 1.0 if x < y, otherwise 0.0.
+BoolF IPFloatIsLessThan(float x, float y) {
   return max(sign(y - x), 0);
 }
 
-vec3 MixCutoff(vec3 a, vec3 b, vec3 value, float cutoff) {
-  return mix(a, b, GreaterThan3(value, cutoff));
+/// For each vec3 component, if value > cutoff, return b, otherwise return a.
+vec3 IPVec3ChooseCutoff(vec3 a, vec3 b, vec3 value, float cutoff) {
+  return mix(a, b, IPVec3IsGreaterThan(value, vec3(cutoff)));
 }
 
-vec3 MixHalf(vec3 a, vec3 b, vec3 value) {
-  return MixCutoff(a, b, value, 0.5);
+/// For each vec3 component, if value > 0.5, return b, otherwise return a.
+vec3 IPVec3Choose(vec3 a, vec3 b, BoolV3 value) {
+  return IPVec3ChooseCutoff(a, b, value, 0.5);
 }
 
 #endif

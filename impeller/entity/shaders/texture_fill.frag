@@ -16,7 +16,7 @@ in float v_alpha;
 out vec4 frag_color;
 
 void main() {
-  vec4 sampled = ImpellerTexture(texture_sampler, v_texture_coords,
-                                 frag_info.texture_sampler_y_coord_scale);
+  vec4 sampled = IPSample(texture_sampler, v_texture_coords,
+                          frag_info.texture_sampler_y_coord_scale);
   frag_color = sampled * v_alpha;
 }

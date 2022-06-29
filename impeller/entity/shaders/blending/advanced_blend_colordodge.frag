@@ -7,8 +7,8 @@
 vec3 Blend(vec3 dst, vec3 src) {
   // https://www.w3.org/TR/compositing-1/#blendingcolordodge
   vec3 color = min(vec3(1), dst / (1 - src));
-  color = mix(color, vec3(0), EqualTo3(dst, 0.0));
-  color = mix(color, vec3(1), EqualTo3(src, 1.0));
+  color = IPVec3Choose(color, vec3(0), IPVec3IsEqual(dst, vec3(0)));
+  color = IPVec3Choose(color, vec3(1), IPVec3IsEqual(src, vec3(1)));
   return color;
 }
 

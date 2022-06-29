@@ -42,13 +42,14 @@ void main() {
     float gaussian = Gaussian(i);
     gaussian_integral += gaussian;
     total_color +=
-        gaussian * SampleWithBorder(texture_sampler,
-                                    v_texture_coords + blur_uv_offset * i);
+        gaussian * IPSampleClampToBorder(texture_sampler,
+                                         v_texture_coords + blur_uv_offset * i);
   }
 
   vec4 blur_color = total_color / gaussian_integral;
 
-  vec4 src_color = SampleWithBorder(alpha_mask_sampler, v_src_texture_coords);
+  vec4 src_color =
+      IPSampleClampToBorder(alpha_mask_sampler, v_src_texture_coords);
   float blur_factor = v_inner_blur_factor * float(src_color.a > 0) +
                       v_outer_blur_factor * float(src_color.a == 0);
 

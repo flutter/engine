@@ -10,7 +10,7 @@ vec3 BlendScreen(vec3 dst, vec3 src) {
 }
 
 vec3 BlendHardLight(vec3 dst, vec3 src) {
-  return MixHalf(dst * (2 * src), BlendScreen(dst, 2 * src - 1), src);
+  return IPVec3Choose(dst * (2 * src), BlendScreen(dst, 2 * src - 1), src);
 }
 
 //------------------------------------------------------------------------------
