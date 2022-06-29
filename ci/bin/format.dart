@@ -577,6 +577,13 @@ class JavaFormatChecker extends FormatChecker {
             failOk: true,
           ),
         );
+      } else {
+        final String formatterCommand = completedJob.command.join(' ');
+        error(
+          'Formatter command \'$formatterCommand\' failed with exit code '
+          '${completedJob.result.exitCode}. Command output follows:\n\n'
+          '${completedJob.result.output}'
+        );
       }
     }
     final ProcessPool diffPool = ProcessPool(
@@ -663,45 +670,88 @@ class GnFormatChecker extends FormatChecker {
     final List<String> cmd = <String>[
       gnBinary.path,
       'format',
-      if (!fixing) '--dry-run',
+      if (!fixing) '--stdin',
     ];
-    final List<WorkerJob> jobs = <WorkerJob>[];
+    final List<WorkerJob> jobs = [];
     for (final String file in filesToCheck) {
-      jobs.add(WorkerJob(<String>[...cmd, file]));
+      if (!fixing) {
+        final WorkerJob job = WorkerJob(
+            cmd,
+            stdinRaw: codeUnitsAsStream(File(path.join(repoDir.absolute.path, file)).readAsBytesSync()),
+            failOk: true,
+            name: <String>[...cmd, file].join(' '),
+          );
+        jobs.add(job);
+      } else {
+        jobs.add(WorkerJob(<String>[...cmd, file], name: <String>[...cmd, file].join(' ')));
+      }
     }
     final ProcessPool gnPool = ProcessPool(
       processRunner: _processRunner,
       printReport: namedReport('gn format'),
     );
-    final List<WorkerJob> completedJobs = await gnPool.runToCompletion(jobs);
-    reportDone();
-    final List<String> incorrect = <String>[];
-    for (final WorkerJob job in completedJobs) {
-      if (job.result.exitCode == 2) {
-        incorrect.add('  ${job.command.last}');
-      }
-      if (job.result.exitCode == 1) {
-        // GN has exit code 1 if it had some problem formatting/checking the
-        // file.
-        throw FormattingException(
-          'Unable to format ${job.command.last}:\n${job.result.output}',
+    final Stream<WorkerJob> completedJobs = gnPool.startWorkers(jobs);
+    final List<WorkerJob> diffJobs = <WorkerJob>[];
+    await for (final WorkerJob completedJob in completedJobs) {
+      if (completedJob.result.exitCode == 0) {
+        diffJobs.add(
+          WorkerJob(
+            <String>[
+              'git',
+              'diff',
+              '--no-index',
+              '-U0',
+              '--no-color',
+              '--',
+              completedJob.name.split(' ').last,
+              '-'
+            ],
+            stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
+            failOk: true,
+          ),
+        );
+      } else {
+        final String formatterCommand = completedJob.command.join(' ');
+        error(
+          'Formatter command \'$formatterCommand\' failed with exit code '
+          '${completedJob.result.exitCode}. Command output follows:\n\n'
+          '${completedJob.result.output}'
         );
       }
     }
-    if (incorrect.isNotEmpty) {
-      final bool plural = incorrect.length > 1;
+    final ProcessPool diffPool = ProcessPool(
+      processRunner: _processRunner,
+      printReport: namedReport('diff'),
+    );
+    final List<WorkerJob> completedDiffs = await diffPool.runToCompletion(diffJobs);
+    final Iterable<WorkerJob> failed = completedDiffs.where((WorkerJob job) {
+      return job.result.exitCode != 0;
+    });
+    reportDone();
+    if (failed.isNotEmpty) {
+      final bool plural = failed.length > 1;
       if (fixing) {
-        message('Fixed ${incorrect.length} GN file${plural ? 's' : ''}'
+        message('Fixed ${failed.length} GN file${plural ? 's' : ''}'
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
       } else {
-        error('Found ${incorrect.length} GN file${plural ? 's' : ''}'
-            ' which ${plural ? 'were' : 'was'} formatted incorrectly:');
-        incorrect.forEach(stderr.writeln);
+        error('Found ${failed.length} GN file${plural ? 's' : ''}'
+            ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
+        stdout.writeln('To fix, run:');
+        stdout.writeln();
+        stdout.writeln('patch -p0 <<DONE');
+        for (final WorkerJob job in failed) {
+          stdout.write(job.result.output);
+        }
+        stdout.writeln('DONE');
+        stdout.writeln();
       }
     } else {
-      message('All GN files formatted correctly.');
+      message(
+        'Completed checking ${completedDiffs.length} GN files with no '
+        'formatting problems.'
+      );
     }
-    return incorrect.length;
+    return failed.length;
   }
 }
 
