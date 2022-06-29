@@ -34,8 +34,8 @@ ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
       },
       0);
 #elif FML_OS_WIN
-  HRESULT status = CoInitializeEx(nullptr,
-      COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+  HRESULT status = CoInitializeEx(
+      nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
   if (status != S_OK) {
     CoUninitialize();
   }
