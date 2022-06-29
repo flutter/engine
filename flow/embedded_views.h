@@ -71,7 +71,7 @@ class Mutator {
   explicit Mutator(const SkMatrix& matrix)
       : type_(transform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(opacity), alpha_(alpha) {}
-  explicit Mutator(const sk_sp<SkImageFilter>& filter)
+  explicit Mutator(const std::shared_ptr<const DlImageFilter>& filter)
       : type_(backdrop_filter), filter_(filter) {}
 
   const MutatorType& GetType() const { return type_; }
@@ -79,7 +79,7 @@ class Mutator {
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
-  const sk_sp<SkImageFilter>& GetFilter() const { return filter_; }
+  const std::shared_ptr<const DlImageFilter>& GetFilter() const { return filter_; }
   const int& GetAlpha() const { return alpha_; }
   float GetAlphaFloat() const { return (alpha_ / 255.0); }
 
@@ -120,14 +120,14 @@ class Mutator {
  private:
   MutatorType type_;
 
-  union {
-    SkRect rect_;
-    SkRRect rrect_;
-    SkMatrix matrix_;
-    SkPath* path_;
-    int alpha_;
-    sk_sp<SkImageFilter> filter_;
-  };
+  
+  
+
+
+
+
+
+  
 
 };  // Mutator
 
@@ -149,7 +149,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
-  void PushBackdropFilter(const sk_sp<SkImageFilter>& filter);
+  void PushBackdropFilter(const std::shared_ptr<const DlImageFilter> filter);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.
@@ -241,7 +241,7 @@ class EmbeddedViewParams {
   // Clippings are ignored.
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
-  void PushFilter(sk_sp<SkImageFilter> filter) {
+  void PushFilter(std::shared_ptr<const DlImageFilter> filter) {
     mutators_stack_.PushBackdropFilter(filter);
   }
 
@@ -366,21 +366,12 @@ class ExternalViewEmbedder {
   // 'EndFrame', otherwise returns false.
   bool GetUsedThisFrame() const { return used_this_frame_; }
 
-  std::vector<int64_t> GetVisitedPlatformViews() {
-    return visited_platform_views_;
-  }
+  virtual void PushVisitedPlatformView(int64_t view_id) {}
 
-  void PushVisitedPlatformView(int64_t view_id) {
-    visited_platform_views_.push_back(view_id);
-  }
-
-  virtual void FilterPlatformViews(int64_t view_id,
-                                   sk_sp<SkImageFilter> filter) {}
+  virtual void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter) {}
 
  private:
   bool used_this_frame_ = false;
-
-  std::vector<int64_t> visited_platform_views_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
