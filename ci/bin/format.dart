@@ -6,10 +6,8 @@
 //
 // Run with --help for usage.
 
-// TODO(gspencergoog): Support clang formatting on Windows.
-// TODO(gspencergoog): Support Java formatting on Windows.
-
 import 'dart:io';
+import 'dart:math';
 
 import 'package:args/args.dart';
 import 'package:meta/meta.dart';
@@ -84,13 +82,7 @@ String formatCheckToName(FormatCheck check) {
 }
 
 List<String> formatCheckNames() {
-  List<FormatCheck> allowed;
-  if (!Platform.isWindows) {
-    allowed = FormatCheck.values;
-  } else {
-    allowed = <FormatCheck>[FormatCheck.gn, FormatCheck.whitespace];
-  }
-  return allowed
+  return FormatCheck.values
       .map<String>((FormatCheck check) => check.toString().replaceFirst('$FormatCheck.', ''))
       .toList();
 }
@@ -214,7 +206,13 @@ abstract class FormatChecker {
   @protected
   Stream<List<int>> codeUnitsAsStream(List<int>? input) async* {
     if (input != null) {
-      yield input;
+      int pos = 0;
+      while (input.length > pos) {
+        // On Windows large pages seem to be truncated
+        final int len = min(input.length - pos, 512);
+        yield input.getRange(pos, pos + len).toList(growable: false);
+        pos += len;
+      }
     }
   }
 
@@ -324,6 +322,8 @@ class ClangFormatChecker extends FormatChecker {
       clangOs = 'linux-x64';
     } else if (Platform.isMacOS) {
       clangOs = 'mac-x64';
+    } else if (Platform.isWindows) {
+      clangOs = 'windows-x64';
     } else {
       throw FormattingException(
           "Unknown operating system: don't know how to run clang-format here.");
@@ -400,8 +400,25 @@ class ClangFormatChecker extends FormatChecker {
     await for (final WorkerJob completedJob in completedClangFormats) {
       if (completedJob.result.exitCode == 0) {
         diffJobs.add(
-          WorkerJob(<String>['diff', '-u', completedJob.command.last, '-'],
-              stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw), failOk: true),
+          WorkerJob(<String>[
+            'git',
+            'diff',
+            '--no-index',
+            '-U0',
+            '--no-color',
+            '--',
+            completedJob.command.last,
+            '-'
+          ], stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
+             failOk: true
+          ),
+        );
+      } else {
+        final String formatterCommand = completedJob.command.join(' ');
+        error(
+          'Formatter command \'$formatterCommand\' failed with exit code '
+          '${completedJob.result.exitCode}. Command output follows:\n\n'
+          '${completedJob.result.output}'
         );
       }
     }
@@ -540,13 +557,22 @@ class JavaFormatChecker extends FormatChecker {
       processRunner: _processRunner,
       printReport: namedReport('Java format'),
     );
-    final Stream<WorkerJob> completedClangFormats = formatPool.startWorkers(formatJobs);
+    final Stream<WorkerJob> completedJavaFormats = formatPool.startWorkers(formatJobs);
     final List<WorkerJob> diffJobs = <WorkerJob>[];
-    await for (final WorkerJob completedJob in completedClangFormats) {
+    await for (final WorkerJob completedJob in completedJavaFormats) {
       if (completedJob.result.exitCode == 0) {
         diffJobs.add(
           WorkerJob(
-            <String>['diff', '-u', completedJob.command.last, '-'],
+            <String>[
+              'git',
+              'diff',
+              '--no-index',
+              '-U0',
+              '--no-color',
+              '--',
+              completedJob.command.last,
+              '-'
+            ],
             stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
             failOk: true,
           ),
@@ -699,7 +725,7 @@ class PythonFormatChecker extends FormatChecker {
     yapfBin = File(path.join(
       repoDir.absolute.path,
       'tools',
-      'yapf.sh',
+      Platform.isWindows ? 'yapf.bat' : 'yapf.sh',
     ));
     _yapfStyle = File(path.join(
       repoDir.absolute.path,
@@ -961,8 +987,7 @@ Future<int> main(List<String> arguments) async {
       allowed: formatCheckNames(),
       defaultsTo: formatCheckNames(),
       help: 'Specifies which checks will be performed. Defaults to all checks. '
-          'May be specified more than once to perform multiple types of checks. '
-          'On Windows, only whitespace and gn checks are currently supported.');
+          'May be specified more than once to perform multiple types of checks. ');
   parser.addFlag('verbose', help: 'Print verbose output.', defaultsTo: verbose);
 
   late final ArgResults options;
