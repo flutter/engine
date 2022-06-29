@@ -45,19 +45,8 @@ class VirtualDisplayController {
     }
     // Prevent https://github.com/flutter/flutter/issues/2897.
     if (selectedWidth > metrics.widthPixels || selectedHeight > metrics.heightPixels) {
-      float aspectRatio = (float) selectedWidth / (float) selectedHeight;
-      int maybeWidth = (int) (metrics.heightPixels * aspectRatio);
-      int maybeHeight = (int) (metrics.widthPixels / aspectRatio);
-
-      if (maybeHeight <= metrics.heightPixels) {
-        selectedWidth = metrics.widthPixels;
-        selectedHeight = maybeHeight;
-      } else if (maybeWidth <= metrics.widthPixels) {
-        selectedHeight = metrics.heightPixels;
-        selectedWidth = maybeWidth;
-      } else {
-        return null;
-      }
+      selectedWidth = Math.min(selectedWidth, metrics.widthPixels);
+      selectedHeight = Math.min(selectedHeight, metrics.heightPixels);
 
       String message =
           String.format(
