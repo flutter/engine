@@ -17,9 +17,7 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import io.flutter.Log;
 import io.flutter.view.TextureRegistry;
-import java.util.Locale;
 
 @TargetApi(20)
 class VirtualDisplayController {
@@ -48,8 +46,7 @@ class VirtualDisplayController {
 
     int densityDpi = context.getResources().getDisplayMetrics().densityDpi;
     VirtualDisplay virtualDisplay =
-        displayManager.createVirtualDisplay(
-            "flutter-vd", width, height, densityDpi, surface, 0);
+        displayManager.createVirtualDisplay("flutter-vd", width, height, densityDpi, surface, 0);
 
     if (virtualDisplay == null) {
       return null;
