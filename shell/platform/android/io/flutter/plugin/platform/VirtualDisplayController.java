@@ -36,33 +36,12 @@ class VirtualDisplayController {
       Object createParams,
       OnFocusChangeListener focusChangeListener) {
 
-    int selectedWidth = width;
-    int selectedHeight = height;
-
     DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-    if (selectedWidth == 0 || selectedHeight == 0) {
+    if (width == 0 || height == 0) {
       return null;
     }
-    // Prevent https://github.com/flutter/flutter/issues/2897.
-    if (selectedWidth > metrics.widthPixels || selectedHeight > metrics.heightPixels) {
-      selectedWidth = Math.min(selectedWidth, metrics.widthPixels);
-      selectedHeight = Math.min(selectedHeight, metrics.heightPixels);
 
-      String message =
-          String.format(
-              Locale.US,
-              "Resizing virtual display of size: [%d, %d] to size [%d, %d] "
-                  + "since it's larger than the device display size [%d, %d].",
-              width,
-              height,
-              selectedWidth,
-              selectedHeight,
-              metrics.widthPixels,
-              metrics.heightPixels);
-      Log.w(TAG, message);
-    }
-
-    textureEntry.surfaceTexture().setDefaultBufferSize(selectedWidth, selectedHeight);
+    textureEntry.surfaceTexture().setDefaultBufferSize(width, height);
     Surface surface = new Surface(textureEntry.surfaceTexture());
     DisplayManager displayManager =
         (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
@@ -70,7 +49,7 @@ class VirtualDisplayController {
     int densityDpi = context.getResources().getDisplayMetrics().densityDpi;
     VirtualDisplay virtualDisplay =
         displayManager.createVirtualDisplay(
-            "flutter-vd", selectedWidth, selectedHeight, densityDpi, surface, 0);
+            "flutter-vd", width, height, densityDpi, surface, 0);
 
     if (virtualDisplay == null) {
       return null;
@@ -86,8 +65,8 @@ class VirtualDisplayController {
             focusChangeListener,
             viewId,
             createParams);
-    controller.bufferWidth = selectedWidth;
-    controller.bufferHeight = selectedHeight;
+    controller.bufferWidth = width;
+    controller.bufferHeight = height;
     return controller;
   }
 
