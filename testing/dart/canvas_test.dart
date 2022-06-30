@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert' as convert;
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -556,6 +555,7 @@ void main() {
         fontWeight: FontWeight.normal,
         fontSize: 15.0,
       ));
+      builder.pushStyle(TextStyle(color: const Color(0xFFFFFF00)));
       builder.addText('Tab is here >>>>\t<<<<');
 
       final Paragraph paragraph = builder.build();
