@@ -1370,7 +1370,7 @@ public class FlutterView extends FrameLayout
           public void onFlutterUiDisplayed() {
             renderer.removeIsDisplayingFlutterUiListener(this);
             onDone.run();
-            if (!(renderSurface instanceof FlutterImageView)) {
+            if (!(renderSurface instanceof FlutterImageView) && flutterImageView != null) {
               flutterImageView.detachFromRenderer();
             }
           }
