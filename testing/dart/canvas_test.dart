@@ -555,7 +555,7 @@ void main() {
         fontWeight: FontWeight.normal,
         fontSize: 15.0,
       ));
-      builder.pushStyle(TextStyle(color: const Color(0xFFFFFF00)));
+      builder.pushStyle(TextStyle(color: const Color(0xFF0000FF)));
       builder.addText('Tab is here >>>>\t<<<<');
 
       final Paragraph paragraph = builder.build();
