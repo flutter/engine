@@ -42,8 +42,6 @@ class LayerRasterCacheItem : public RasterCacheItem {
             SkCanvas* canvas,
             const SkPaint* paint) const override;
 
-  bool Rasterize(const PaintContext& paint_context, SkCanvas* canvas) const;
-
   bool TryToPrepareRasterCache(const PaintContext& context,
                                bool parent_cached = false) const override;
 

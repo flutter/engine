@@ -76,9 +76,8 @@ std::optional<RasterCacheKeyID> LayerRasterCacheItem::GetId() const {
   switch (cache_state_) {
     case kCurrent:
       return key_id_;
-    case kChildren: {
+    case kChildren:
       return layer_children_id_;
-    }
     default:
       return {};
   }
@@ -97,9 +96,11 @@ const SkRect* LayerRasterCacheItem::GetPaintBoundsFromLayer() const {
   }
 }
 
-bool LayerRasterCacheItem::Rasterize(const PaintContext& paint_context,
-                                     SkCanvas* canvas) const {
-  FML_DCHECK(cache_state_ != CacheState::kNone);
+bool Rasterize(RasterCacheItem::CacheState cache_state,
+               Layer* layer,
+               const PaintContext& paint_context,
+               SkCanvas* canvas) {
+  FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
   SkISize canvas_size = canvas->getBaseLayerSize();
   SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
   internal_nodes_canvas.setMatrix(canvas->getTotalMatrix());
@@ -120,16 +121,16 @@ bool LayerRasterCacheItem::Rasterize(const PaintContext& paint_context,
       // clang-format on
   };
 
-  switch (cache_state_) {
-    case CacheState::kCurrent:
-      FML_DCHECK(layer_->needs_painting(context));
-      layer_->Paint(context);
+  switch (cache_state) {
+    case RasterCacheItem::CacheState::kCurrent:
+      FML_DCHECK(layer->needs_painting(context));
+      layer->Paint(context);
       break;
-    case CacheState::kChildren:
-      layer_->PaintChildren(context);
+    case RasterCacheItem::CacheState::kChildren:
+      layer->PaintChildren(context);
       break;
-    case CacheState::kNone:
-      FML_DCHECK(cache_state_ != CacheState::kNone);
+    case RasterCacheItem::CacheState::kNone:
+      FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
       return false;
   }
   return true;
@@ -156,7 +157,10 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
       };
       return context.raster_cache->UpdateCacheEntry(
           GetId().value(), r_context,
-          [ctx = context, this](SkCanvas* canvas) { Rasterize(ctx, canvas); });
+          [ctx = context, cache_state = cache_state_,
+           layer = layer_](SkCanvas* canvas) {
+            Rasterize(cache_state, layer, ctx, canvas);
+          });
     }
   }
   return false;

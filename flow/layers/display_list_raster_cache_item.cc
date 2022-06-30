@@ -173,6 +173,5 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       [display_list = display_list_](SkCanvas* canvas) {
         display_list->RenderTo(canvas);
       });
-  return false;
 }
 }  // namespace flutter
