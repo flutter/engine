@@ -243,10 +243,6 @@ class EmbeddedViewParams {
   // Clippings are ignored.
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
-  void PushFilter(std::shared_ptr<const DlImageFilter> filter) {
-    mutators_stack_.PushBackdropFilter(filter);
-  }
-
   bool operator==(const EmbeddedViewParams& other) const {
     return size_points_ == other.size_points_ &&
            mutators_stack_ == other.mutators_stack_ &&
@@ -367,11 +363,6 @@ class ExternalViewEmbedder {
   // Whether it is used in this frame, returns true between 'BeginFrame' and
   // 'EndFrame', otherwise returns false.
   bool GetUsedThisFrame() const { return used_this_frame_; }
-
-  virtual void PushVisitedPlatformView(int64_t view_id) {}
-
-  virtual void PushFilterToVisitedPlatformViews(
-      std::shared_ptr<const DlImageFilter> filter) {}
 
  private:
   bool used_this_frame_ = false;
