@@ -545,31 +545,22 @@ void main() {
   });
 
   test('Canvas.drawParagraph renders tabs properly', () async {
-    final Image image = await toImage((Canvas canvas) async {
-      final File file = File(path.join('flutter', 'testing', 'resources', 'RobotoSlab-VariableFont_wght.ttf'));
-      final Uint8List fontData = await file.readAsBytes();
+    final File file = File(path.join('flutter', 'testing', 'resources', 'RobotoSlab-VariableFont_wght.ttf'));
+    final Uint8List fontData = await file.readAsBytes();
+    await loadFontFromList(fontData, fontFamily: 'RobotoSerif');
 
-      await loadFontFromList(fontData, fontFamily: 'RobotoSerif');
-
-      // final Uint8List encoded = convert.utf8.encoder.convert(Uri(path: Uri.encodeFull('Roboto-Medium.ttf')).path);
-      // final Completer<Uint8List> result = Completer<Uint8List>();
-      // window.sendPlatformMessage('flutter/assets', encoded.buffer.asByteData(), (ByteData? data) {
-      //   result.complete(data!.buffer.asUint8List());
-      // });
-      //
-      // await loadFontFromList(await result.future, fontFamily: 'Roboto2');
-
+    final Image image = await toImage((Canvas canvas) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'RobotoSerif',
         fontStyle: FontStyle.normal,
         fontWeight: FontWeight.normal,
         fontSize: 15.0,
       ));
-      // const Color black = Color.fromARGB(255, 0, 0, 0);
-      // builder.pushStyle(TextStyle(color: black, fontSize: 18.0));
-      builder.addText('Hello world!');
+      builder.addText('Tab is here >>>>\t<<<<');
+
       final Paragraph paragraph = builder.build();
       paragraph.layout(const ParagraphConstraints(width: 20 * 5.0));
+
       canvas.drawParagraph(paragraph, Offset.zero);
     }, 100, 100);
 
