@@ -8,7 +8,6 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
-import 'fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
@@ -280,6 +279,9 @@ abstract class ParagraphSpan {
 
   /// The index of the end of the range of text represented by this span.
   int get end;
+
+  /// The resolved style of the span.
+  EngineTextStyle get style;
 }
 
 /// Represent a span of text in the paragraph.
@@ -290,17 +292,23 @@ abstract class ParagraphSpan {
 /// Instead of keeping spans and styles in a tree hierarchy like the framework
 /// does, we flatten the structure and resolve/merge all the styles from parent
 /// nodes.
-class FlatTextSpan extends TextFragment implements ParagraphSpan {
+class FlatTextSpan implements ParagraphSpan {
   /// Creates a [FlatTextSpan] with the given [style], representing the span of
   /// text in the range between [start] and [end].
   FlatTextSpan({
     required this.style,
-    required int start,
-    required int end,
-  }) : super(start, end);
+    required this.start,
+    required this.end,
+  });
 
-  /// The resolved style of the span.
+  @override
   final EngineTextStyle style;
+
+  @override
+  final int start;
+
+  @override
+  final int end;
 
   String textOf(CanvasParagraph paragraph) {
     final String text = paragraph.toPlainText();
@@ -311,6 +319,7 @@ class FlatTextSpan extends TextFragment implements ParagraphSpan {
 
 class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
   PlaceholderSpan(
+    this.style,
     this.start,
     this.end,
     double width,
@@ -325,6 +334,9 @@ class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
           baselineOffset: baselineOffset,
           baseline: baseline,
         );
+
+  @override
+  final EngineTextStyle style;
 
   @override
   final int start;
@@ -604,9 +616,13 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     _plainTextBuffer.write(_placeholderChar);
     final int end = _plainTextBuffer.length;
 
+    final EngineTextStyle style = _currentStyleNode.resolveStyle();
+    _updateCanDrawOnCanvas(style);
+
     _placeholderCount++;
     _placeholderScales.add(scale);
     _spans.add(PlaceholderSpan(
+      style,
       start,
       end,
       width * scale,
@@ -633,11 +649,17 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
-    final EngineTextStyle style = _currentStyleNode.resolveStyle();
     final int start = _plainTextBuffer.length;
     _plainTextBuffer.write(text);
     final int end = _plainTextBuffer.length;
 
+    final EngineTextStyle style = _currentStyleNode.resolveStyle();
+    _updateCanDrawOnCanvas(style);
+
+    _spans.add(FlatTextSpan(style: style, start: start, end: end));
+  }
+
+  void _updateCanDrawOnCanvas(EngineTextStyle style) {
     if (_canDrawOnCanvas) {
       final ui.TextDecoration? decoration = style.decoration;
       if (decoration != null && decoration != ui.TextDecoration.none) {
@@ -658,8 +680,6 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
         _canDrawOnCanvas = false;
       }
     }
-
-    _spans.add(FlatTextSpan(style: style, start: start, end: end));
   }
 
   @override

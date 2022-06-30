@@ -239,6 +239,11 @@ class ParagraphLine {
         other.trailingSpaceBoxCount == trailingSpaceBoxCount &&
         other.displayText == displayText;
   }
+
+  @override
+  String toString() {
+    return '$ParagraphLine($startIndex, $endIndex, $lineMetrics)';
+  }
 }
 
 /// The web implementation of [ui.ParagraphStyle].

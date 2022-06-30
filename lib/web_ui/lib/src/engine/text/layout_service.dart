@@ -52,14 +52,6 @@ class TextLayoutService {
   ui.Rect get paintBounds => _paintBounds;
   ui.Rect _paintBounds = ui.Rect.zero;
 
-  // *** Convenient shortcuts used during layout *** //
-
-  int? get maxLines => paragraph.paragraphStyle.maxLines;
-  bool get unlimitedLines => maxLines == null;
-
-  String? get ellipsis => paragraph.paragraphStyle.ellipsis;
-  bool get hasEllipsis => ellipsis != null;
-
   late final Spanometer spanometer = Spanometer(paragraph, context);
 
   late final List<MeasuredFragment> measuredFragments =
@@ -102,22 +94,24 @@ class TextLayoutService {
     LineBuilder currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
-    for (final MeasuredFragment fragment in measuredFragments) {
+    outerLoop: for (final MeasuredFragment fragment in measuredFragments) {
       currentLine.addFragment(fragment);
 
       while (currentLine.isOverflowing) {
-        print('overflowing...');
         if (currentLine.canHaveEllipsis) {
           currentLine.insertEllipsis();
           lines.add(currentLine.build());
-          // TODO(mdebbar): didExceedMaxLines = true ?
-          break;
+          // TODO(mdebbar): Add tests for didExceedMaxLines.
+          didExceedMaxLines = true;
+          break outerLoop;
         }
 
-        if (currentLine.isNotBreakable) {
+        if (currentLine.isBreakable) {
+          currentLine.revertToLastBreakOpportunity();
+        } else {
           // The line can't be legally broken, so the last fragment (that caused
           // the line to overflow) needs to be force-broken.
-          currentLine._forceBreakLastFragment();
+          currentLine.forceBreakLastFragment();
         }
         lines.add(currentLine.build());
         currentLine = currentLine.nextLine();
@@ -127,6 +121,12 @@ class TextLayoutService {
         lines.add(currentLine.build());
         currentLine = currentLine.nextLine();
       }
+    }
+
+    final int? maxLines = paragraph.paragraphStyle.maxLines;
+    if (maxLines != null && lines.length > maxLines) {
+      didExceedMaxLines = true;
+      lines.removeRange(maxLines, lines.length);
     }
 
     // ***************************************************************** //
@@ -182,6 +182,8 @@ class TextLayoutService {
     // ******************************** //
     // *** MAX/MIN INTRINSIC WIDTHS *** //
     // ******************************** //
+
+    // TODO(mdebbar): Handle maxLines https://github.com/flutter/flutter/issues/91254
 
     double runningMinIntrinsicWidth = 0;
     double runningMaxIntrinsicWidth = 0;
@@ -616,7 +618,7 @@ class SpanBox extends RangeBox {
     required ui.TextDirection boxDirection,
     required this.contentDirection,
     required this.isSpaceOnly,
-  })  : span = spanometer.currentSpan,
+  })  : span = spanometer.currentSpan as FlatTextSpan,
         height = spanometer.height,
         baseline = spanometer.ascent,
         _width = width,
@@ -910,6 +912,22 @@ class LineBuilder {
   final List<MeasuredFragment> _fragments;
   List<MeasuredFragment>? _fragmentsForNextLine;
 
+  int get startIndex {
+    assert(_fragments.isNotEmpty || _fragmentsForNextLine!.isNotEmpty);
+
+    return isNotEmpty
+      ? _fragments.first.start
+      : _fragmentsForNextLine!.first.start;
+  }
+
+  int get endIndex {
+    assert(_fragments.isNotEmpty || _fragmentsForNextLine!.isNotEmpty);
+
+    return isNotEmpty
+      ? _fragments.last.end
+      : _fragmentsForNextLine!.first.start;
+  }
+
   final List<RangeBox> _boxes = <RangeBox>[];
 
   final double maxWidth;
@@ -998,7 +1016,6 @@ class LineBuilder {
       paragraph.paragraphStyle.effectiveTextDirection;
 
   void addFragment(MeasuredFragment fragment) {
-    print('adding fragment: "${paragraph.toPlainText().substring(fragment.start, fragment.end)}"');
     fragment = _updateMetrics(fragment);
 
     if (fragment.isBreak) {
@@ -1104,14 +1121,16 @@ class LineBuilder {
     }
   }
 
-  void _forceBreakLastFragment({ double? availableWidth, bool allowEmptyLine = false }) {
+  void forceBreakLastFragment({ double? availableWidth, bool allowEmptyLine = false }) {
     assert(isNotEmpty);
 
-    availableWidth = maxWidth;
+    availableWidth ??= maxWidth;
+    assert(widthIncludingSpace > availableWidth);
+
     _fragmentsForNextLine ??= <MeasuredFragment>[];
 
-    // When the line has other fragments, we can always allow the last fragment
-    // to be empty (i.e. completely removed from the line).
+    // When the line has fragments other than the last one, we can always allow
+    // the last fragment to be empty (i.e. completely removed from the line).
     final bool hasOtherFragments = _fragments.length > 1;
     final bool allowLastFragmentToBeEmpty = hasOtherFragments || allowEmptyLine;
 
@@ -1122,7 +1141,7 @@ class LineBuilder {
     if (span is FlatTextSpan) {
       spanometer.currentSpan = span;
       final double availableWidthForFragment = availableWidth - widthIncludingSpace;
-      final int forceBreakEnd = lastFragment.end - lastFragment.trailingSpaces;
+      final int forceBreakEnd = lastFragment.end - lastFragment.trailingNewlines;
 
       final int breakingPoint = spanometer.forceBreak(
         lastFragment.start,
@@ -1158,30 +1177,74 @@ class LineBuilder {
     }
   }
 
-  String? _ellipsis;
+  String? get ellipsisText {
+    if (isEmpty) {
+      return null;
+    }
+
+    return _fragments.last.ellipsisText;
+  }
 
   void insertEllipsis() {
     assert(canHaveEllipsis);
+    assert(isOverflowing);
 
-    _ellipsis = paragraph.paragraphStyle.ellipsis!;
-    final double ellipsisWidth = spanometer.measureText(_ellipsis!);
-    final double availableWidth = maxWidth - ellipsisWidth;
+    final String ellipsisText = paragraph.paragraphStyle.ellipsis!;
 
     _fragmentsForNextLine = <MeasuredFragment>[];
+
+    spanometer.currentSpan = _fragments.last.span;
+    double ellipsisWidth = spanometer.measureText(ellipsisText);
+    double availableWidth = math.max(0, maxWidth - ellipsisWidth);
 
     while (_widthExcludingLastFragment > availableWidth) {
       _fragmentsForNextLine!.insert(0, _fragments.removeLast());
       _recalculateMetrics();
+
+      spanometer.currentSpan = _fragments.last.span;
+      ellipsisWidth = spanometer.measureText(ellipsisText);
+      availableWidth = maxWidth - ellipsisWidth;
     }
 
-    _forceBreakLastFragment(availableWidth: availableWidth, allowEmptyLine: true);
+    final MeasuredFragment lastFragment = _fragments.last;
+    forceBreakLastFragment(availableWidth: availableWidth, allowEmptyLine: true);
 
-    widthIncludingSpace += ellipsisWidth;
-    width = widthIncludingSpace;
+    final EllipsisFragment ellipsisFragment = EllipsisFragment(
+      endIndex,
+      lastFragment.textDirection,
+      lastFragment.span,
+      ellipsisText,
+    );
+    final FragmentMetrics ellipsisMetrics = lastFragment.metrics.copyWith(
+      widthExcludingTrailingSpaces: ellipsisWidth,
+      widthIncludingTrailingSpaces: ellipsisWidth,
+    );
+    addFragment(MeasuredFragment(ellipsisFragment, ellipsisMetrics));
+  }
+
+  void revertToLastBreakOpportunity() {
+    assert(isBreakable);
+
+    // The last fragment in the line may or may not be breakable. Regardless,
+    // it needs to be removed.
+    //
+    // We need to find the latest breakable fragment in the line (other than the
+    // last fragment). Such breakable fragment is guaranteed to be found because
+    // the line `isBreakable`.
+
+    // Start from the end and skip the last fragment.
+    int i = _fragments.length - 2;
+    while (!_fragments[i].isBreak) {
+      i--;
+    }
+
+    _fragmentsForNextLine = _fragments.getRange(i + 1, _fragments.length).toList();
+    _fragments.removeRange(i + 1, _fragments.length);
+    _recalculateMetrics();
   }
 
   /// Builds the [ParagraphLine] instance that represents this line.
-  ParagraphLine build({String? ellipsis}) {
+  ParagraphLine build() {
     if (_fragmentsForNextLine == null) {
       _fragmentsForNextLine = _fragments.getRange(_lastBreakableFragment + 1, _fragments.length).toList();
       _fragments.removeRange(_lastBreakableFragment + 1, _fragments.length);
@@ -1189,17 +1252,15 @@ class LineBuilder {
 
     _processTrailingSpaces();
 
-    final MeasuredFragment firstFragment = _fragments.first;
-    final MeasuredFragment lastFragment = _fragments.last;
-
-    print('building line: [${firstFragment.start} .. ${lastFragment.end}]');
+    final int trailingNewlines = isEmpty ? 0 : _fragments.last.trailingNewlines;
 
     return ParagraphLine(
       lineNumber: lineNumber,
-      ellipsis: _ellipsis,
-      startIndex: firstFragment.start,
-      endIndex: lastFragment.end,
-      trailingNewlines: lastFragment.trailingNewlines,
+      // TODO(mdebbar): Remove this in favor of the new EllipsisFragment.
+      ellipsis: ellipsisText,
+      startIndex: startIndex,
+      endIndex: endIndex,
+      trailingNewlines: trailingNewlines,
       hardBreak: isHardBreak,
       width: width,
       widthWithTrailingSpaces: widthIncludingSpace,
@@ -1286,10 +1347,10 @@ class Spanometer {
   double? get letterSpacing => currentSpan.style.letterSpacing;
 
   TextHeightRuler? _currentRuler;
-  FlatTextSpan? _currentSpan;
+  ParagraphSpan? _currentSpan;
 
-  FlatTextSpan get currentSpan => _currentSpan!;
-  set currentSpan(FlatTextSpan? span) {
+  ParagraphSpan get currentSpan => _currentSpan!;
+  set currentSpan(ParagraphSpan? span) {
     if (span == _currentSpan) {
       return;
     }
@@ -1383,7 +1444,7 @@ class Spanometer {
   }) {
     assert(_currentSpan != null);
 
-    final FlatTextSpan span = currentSpan;
+    final FlatTextSpan span = currentSpan as FlatTextSpan;
 
     // Make sure the range is within the current span.
     assert(start >= span.start && start <= span.end);
@@ -1415,7 +1476,7 @@ class Spanometer {
 
   double _measure(int start, int end) {
     assert(_currentSpan != null);
-    final FlatTextSpan span = currentSpan;
+    final FlatTextSpan span = currentSpan as FlatTextSpan;
 
     // Make sure the range is within the current span.
     assert(start >= span.start && start <= span.end);
@@ -1432,37 +1493,32 @@ class Spanometer {
   }
 }
 
-class MeasuredFragment implements LayoutFragment {
+class MeasuredFragment {
   const MeasuredFragment(this._layoutFragment, this.metrics);
 
   final LayoutFragment _layoutFragment;
   final FragmentMetrics metrics;
 
-  @override
+  String? get ellipsisText {
+    final LayoutFragment layoutFragment = _layoutFragment;
+    if (layoutFragment is EllipsisFragment) {
+      return layoutFragment.ellipsisText;
+    }
+    return null;
+  }
+
+  // Delegate these getters to `_layoutFragment` for convenience.
+
   int get start => _layoutFragment.start;
-  @override
   int get end => _layoutFragment.end;
-  @override
   LineBreakType get type => _layoutFragment.type;
-  @override
   ui.TextDirection get textDirection => _layoutFragment.textDirection;
-  @override
   ParagraphSpan get span => _layoutFragment.span;
-
-  @override
   int get trailingNewlines => _layoutFragment.trailingNewlines;
-  @override
   int get trailingSpaces => _layoutFragment.trailingSpaces;
-
-  @override
-  int get length => _layoutFragment.length;
-  @override
   bool get isSpaceOnly => _layoutFragment.isSpaceOnly;
-  @override
   bool get isBreak => _layoutFragment.isBreak;
-  @override
   bool get isHardBreak => _layoutFragment.isHardBreak;
-  @override
   bool get isPlaceholder => _layoutFragment.isPlaceholder;
 
   MeasuredFragment copyWith({
@@ -1478,6 +1534,7 @@ class MeasuredFragment implements LayoutFragment {
   List<LayoutFragment?> split(int index) {
     assert(start <= index);
     assert(index <= end);
+    assert(_layoutFragment is! EllipsisFragment, 'Cannot split an EllipsisFragment');
 
     if (start == index) {
       return <LayoutFragment?>[null, _layoutFragment];
@@ -1487,7 +1544,14 @@ class MeasuredFragment implements LayoutFragment {
       return <LayoutFragment?>[_layoutFragment, null];
     }
 
+    // The length of the second fragment after the split.
     final int secondLength = end - index;
+
+    // Trailing spaces/new lines go to the second fragment. Any left over goes
+    // to the first fragment.
+    final int secondTrailingNewlines = math.min(trailingNewlines, secondLength);
+    final int secondTrailingSpaces = math.min(trailingSpaces, secondLength);
+
     return <LayoutFragment>[
       LayoutFragment(
         start,
@@ -1495,8 +1559,8 @@ class MeasuredFragment implements LayoutFragment {
         LineBreakType.prohibited,
         textDirection,
         span,
-        trailingNewlines: math.max(0, trailingNewlines - secondLength),
-        trailingSpaces: math.max(0, trailingSpaces - secondLength),
+        trailingNewlines: trailingNewlines - secondTrailingNewlines,
+        trailingSpaces: trailingSpaces - secondTrailingSpaces,
       ),
       LayoutFragment(
         index,
@@ -1504,8 +1568,8 @@ class MeasuredFragment implements LayoutFragment {
         type,
         textDirection,
         span,
-        trailingNewlines: math.min(trailingNewlines, secondLength),
-        trailingSpaces: math.min(trailingSpaces, secondLength),
+        trailingNewlines: secondTrailingNewlines,
+        trailingSpaces: secondTrailingSpaces,
       ),
     ];
   }
@@ -1555,4 +1619,29 @@ class FragmentMetrics {
       widthIncludingTrailingSpaces: widthIncludingTrailingSpaces ?? this.widthIncludingTrailingSpaces,
     );
   }
+}
+
+class EllipsisFragment extends LayoutFragment {
+  EllipsisFragment(
+    int index,
+    ui.TextDirection textDirection,
+    ParagraphSpan span,
+    this.ellipsisText,
+  ) : super(
+          index,
+          index,
+          LineBreakType.endOfText,
+          textDirection,
+          span,
+          trailingNewlines: 0,
+          trailingSpaces: 0,
+        );
+
+  final String ellipsisText;
+
+  @override
+  bool get isSpaceOnly => false;
+
+  @override
+  bool get isPlaceholder => false;
 }
