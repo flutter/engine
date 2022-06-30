@@ -38,7 +38,10 @@ class RenderPassMTL final : public RenderPass {
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
   bool EncodeCommands(const std::shared_ptr<Allocator>& transients_allocator,
-                      id<MTLRenderCommandEncoder> pass) const;
+                      id<MTLParallelRenderCommandEncoder> pass) const;
+
+  bool EncodeCommands(const std::shared_ptr<Allocator>& allocator,
+                      id<MTLRenderCommandEncoder> encoder) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPassMTL);
 };

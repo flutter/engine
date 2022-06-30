@@ -157,23 +157,23 @@ bool RenderPassMTL::EncodeCommands(
   if (!IsValid()) {
     return false;
   }
-  auto render_command_encoder =
-      [buffer_ renderCommandEncoderWithDescriptor:desc_];
 
-  if (!render_command_encoder) {
+  auto parallelRCE = [buffer_ parallelRenderCommandEncoderWithDescriptor:desc_];
+
+  if (!parallelRCE) {
     return false;
   }
 
   if (!label_.empty()) {
-    [render_command_encoder setLabel:@(label_.c_str())];
+    [parallelRCE setLabel:@(label_.c_str())];
   }
 
   // Success or failure, the pass must end. The buffer can only process one pass
   // at a time.
   fml::ScopedCleanupClosure auto_end(
-      [render_command_encoder]() { [render_command_encoder endEncoding]; });
+      [parallelRCE]() { [parallelRCE endEncoding]; });
 
-  return EncodeCommands(transients_allocator, render_command_encoder);
+  return EncodeCommands(transients_allocator, parallelRCE);
 }
 
 //-----------------------------------------------------------------------------
@@ -488,6 +488,26 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                       baseInstance:0u];
   }
   return true;
+}
+
+bool RenderPassMTL::EncodeCommands(
+    const std::shared_ptr<Allocator>& allocator,
+    id<MTLParallelRenderCommandEncoder> parallelRCE) const {
+  id<MTLRenderCommandEncoder> rCE1 = [parallelRCE renderCommandEncoder];
+  id<MTLRenderCommandEncoder> rCE2 = [parallelRCE renderCommandEncoder];
+  id<MTLRenderCommandEncoder> rCE3 = [parallelRCE renderCommandEncoder];
+
+  bool r1 = EncodeCommands(allocator, rCE1);
+  bool r2 = EncodeCommands(allocator, rCE2);
+  bool r3 = EncodeCommands(allocator, rCE3);
+  // Success or failure, the pass must end. The buffer can only process one pass
+  // at a time.
+  fml::ScopedCleanupClosure auto_end([rCE1, rCE2, rCE3]() {
+    [rCE1 endEncoding];
+    [rCE2 endEncoding];
+    [rCE3 endEncoding];
+  });
+  return r1 && r2 && r3;
 }
 
 }  // namespace impeller
