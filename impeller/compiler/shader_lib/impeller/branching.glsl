@@ -8,11 +8,14 @@
 #include <impeller/constants.glsl>
 #include <impeller/types.glsl>
 
-/// Perform a branchless equality check for each vec3 component.
+/// Perform an equality check for each vec3 component.
 ///
 /// Returns 1.0 if x == y, otherwise 0.0.
-BoolV3 IPVec3IsEqual(vec3 x, vec3 y) {
-  return 1 - abs(sign(x - y));
+BoolV3 IPVec3IsEqual(vec3 x, float y) {
+  vec3 diff = abs(x - y);
+  return vec3(diff.r < kEhCloseEnough,  //
+              diff.g < kEhCloseEnough,  //
+              diff.b < kEhCloseEnough);
 }
 
 /// Perform a branchless greater than check.
@@ -42,7 +45,7 @@ vec3 IPVec3ChooseCutoff(vec3 a, vec3 b, vec3 value, float cutoff) {
 }
 
 /// For each vec3 component, if value > 0.5, return b, otherwise return a.
-vec3 IPVec3Choose(vec3 a, vec3 b, BoolV3 value) {
+vec3 IPVec3Choose(vec3 a, vec3 b, vec3 value) {
   return IPVec3ChooseCutoff(a, b, value, 0.5);
 }
 

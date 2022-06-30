@@ -24,9 +24,7 @@ vec4 IPSample(sampler2D texture_sampler, vec2 coords, float y_coord_scale) {
 /// This is useful for Impeller graphics backend that don't support
 /// ClampToBorder.
 vec4 IPSampleClampToBorder(sampler2D tex, vec2 uv) {
-  float within_bounds = IPFloatIsGreaterThan(uv.x, 0) *
-                        IPFloatIsGreaterThan(uv.y, 0) *
-                        IPFloatIsLessThan(uv.x, 1) * IPFloatIsLessThan(uv.y, 1);
+  float within_bounds = float(uv.x > 0 && uv.y > 0 && uv.x < 1 && uv.y < 1);
   return texture(tex, uv) * within_bounds;
 }
 

@@ -7,8 +7,24 @@
 vec3 Blend(vec3 dst, vec3 src) {
   // https://www.w3.org/TR/compositing-1/#blendingcolorburn
   vec3 color = 1 - min(vec3(1), (1 - dst) / src);
-  color = IPVec3Choose(color, vec3(1), IPVec3IsEqual(dst, vec3(1)));
-  color = IPVec3Choose(color, vec3(0), IPVec3IsEqual(src, vec3(0)));
+  if (1 - dst.r < kEhCloseEnough) {
+    color.r = 1;
+  }
+  if (1 - dst.g < kEhCloseEnough) {
+    color.g = 1;
+  }
+  if (1 - dst.b < kEhCloseEnough) {
+    color.b = 1;
+  }
+  if (src.r < kEhCloseEnough) {
+    color.r = 0;
+  }
+  if (src.g < kEhCloseEnough) {
+    color.g = 0;
+  }
+  if (src.b < kEhCloseEnough) {
+    color.b = 0;
+  }
   return color;
 }
 
