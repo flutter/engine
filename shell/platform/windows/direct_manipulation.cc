@@ -43,6 +43,7 @@ HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
     IDirectManipulationViewport* viewport,
     DIRECTMANIPULATION_STATUS current,
     DIRECTMANIPULATION_STATUS previous) {
+  during_inertia_ = current == DIRECTMANIPULATION_INERTIA;
   if (during_synthesized_reset_ && previous == DIRECTMANIPULATION_RUNNING) {
     during_synthesized_reset_ = false;
   } else if (current == DIRECTMANIPULATION_RUNNING) {
@@ -53,16 +54,28 @@ HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
             (int32_t) reinterpret_cast<int64_t>(this));
       }
     }
-  } else if (previous == DIRECTMANIPULATION_RUNNING) {
+  }
+  if (previous == DIRECTMANIPULATION_RUNNING) {
+    // Reset deltas to ensure only inertia values will be compared later.
+    last_pan_delta_x_ = 0.0;
+    last_pan_delta_y_ = 0.0;
     if (owner_->binding_handler_delegate) {
       owner_->binding_handler_delegate->OnPointerPanZoomEnd(
           (int32_t) reinterpret_cast<int64_t>(this));
+    }
+  } else if (previous == DIRECTMANIPULATION_INERTIA) {
+    if (owner_->binding_handler_delegate && std::max(std::abs(last_pan_delta_x_), std::abs(last_pan_delta_y_)) > 0.01) {
+      owner_->binding_handler_delegate->OnScrollInertiaCancel((int32_t) reinterpret_cast<int64_t>(this));
     }
     // Need to reset the content transform to its original position
     // so that we are ready for the next gesture.
     // Use during_synthesized_reset_ flag to prevent sending reset also to the
     // framework.
     during_synthesized_reset_ = true;
+    last_pan_x_ = 0.0;
+    last_pan_y_ = 0.0;
+    last_pan_delta_x_ = 0.0;
+    last_pan_delta_y_ = 0.0;
     RECT rect;
     HRESULT hr = viewport->GetViewportRect(&rect);
     if (FAILED(hr)) {
@@ -104,7 +117,11 @@ HRESULT DirectManipulationEventHandler::OnContentUpdated(
     float scale = c - (c - transform[0]);
     float pan_x = transform[4];
     float pan_y = transform[5];
-    if (owner_->binding_handler_delegate) {
+    last_pan_delta_x_ = pan_x - last_pan_x_;
+    last_pan_delta_y_ = pan_y - last_pan_y_;
+    last_pan_x_ = pan_x;
+    last_pan_y_ = pan_y;
+    if (owner_->binding_handler_delegate && !during_inertia_) {
       owner_->binding_handler_delegate->OnPointerPanZoomUpdate(
           (int32_t) reinterpret_cast<int64_t>(this), pan_x, pan_y, scale, 0);
     }
@@ -144,7 +161,8 @@ int DirectManipulationOwner::Init(unsigned int width, unsigned int height) {
       DIRECTMANIPULATION_CONFIGURATION_INTERACTION |
       DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_X |
       DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_Y |
-      DIRECTMANIPULATION_CONFIGURATION_SCALING;
+      DIRECTMANIPULATION_CONFIGURATION_SCALING |
+      DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_INERTIA;
   RETURN_IF_FAILED(viewport_->ActivateConfiguration(configuration));
   RETURN_IF_FAILED(viewport_->SetViewportOptions(
       DIRECTMANIPULATION_VIEWPORT_OPTIONS_MANUALUPDATE));
