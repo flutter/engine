@@ -135,6 +135,8 @@ FILE: ../../../flutter/flow/layer_snapshot_store.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.cc
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/cacheable_layer.cc
+FILE: ../../../flutter/flow/layers/cacheable_layer.h
 FILE: ../../../flutter/flow/layers/checkerboard_layertree_unittests.cc
 FILE: ../../../flutter/flow/layers/clip_path_layer.cc
 FILE: ../../../flutter/flow/layers/clip_path_layer.h
@@ -155,11 +157,15 @@ FILE: ../../../flutter/flow/layers/container_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/display_list_layer.cc
 FILE: ../../../flutter/flow/layers/display_list_layer.h
 FILE: ../../../flutter/flow/layers/display_list_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/display_list_raster_cache_item.cc
+FILE: ../../../flutter/flow/layers/display_list_raster_cache_item.h
 FILE: ../../../flutter/flow/layers/image_filter_layer.cc
 FILE: ../../../flutter/flow/layers/image_filter_layer.h
 FILE: ../../../flutter/flow/layers/image_filter_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/layer.cc
 FILE: ../../../flutter/flow/layers/layer.h
+FILE: ../../../flutter/flow/layers/layer_raster_cache_item.cc
+FILE: ../../../flutter/flow/layers/layer_raster_cache_item.h
 FILE: ../../../flutter/flow/layers/layer_tree.cc
 FILE: ../../../flutter/flow/layers/layer_tree.h
 FILE: ../../../flutter/flow/layers/layer_tree_unittests.cc
@@ -194,9 +200,12 @@ FILE: ../../../flutter/flow/paint_utils.cc
 FILE: ../../../flutter/flow/paint_utils.h
 FILE: ../../../flutter/flow/raster_cache.cc
 FILE: ../../../flutter/flow/raster_cache.h
+FILE: ../../../flutter/flow/raster_cache_item.h
 FILE: ../../../flutter/flow/raster_cache_key.cc
 FILE: ../../../flutter/flow/raster_cache_key.h
 FILE: ../../../flutter/flow/raster_cache_unittests.cc
+FILE: ../../../flutter/flow/raster_cache_util.cc
+FILE: ../../../flutter/flow/raster_cache_util.h
 FILE: ../../../flutter/flow/rtree.cc
 FILE: ../../../flutter/flow/rtree.h
 FILE: ../../../flutter/flow/rtree_unittests.cc
@@ -475,6 +484,11 @@ FILE: ../../../flutter/impeller/compiler/reflector.cc
 FILE: ../../../flutter/impeller/compiler/reflector.h
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.cc
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.h
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
 FILE: ../../../flutter/impeller/compiler/source_options.cc
 FILE: ../../../flutter/impeller/compiler/source_options.h
 FILE: ../../../flutter/impeller/compiler/switches.cc
@@ -602,7 +616,6 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_stroke.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
-FILE: ../../../flutter/impeller/entity/shaders/utils.sl.h
 FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
 FILE: ../../../flutter/impeller/entity/shaders/vertices.vert
 FILE: ../../../flutter/impeller/geometry/color.cc
@@ -1483,6 +1496,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/util/HandlerCompat.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Predicate.java
