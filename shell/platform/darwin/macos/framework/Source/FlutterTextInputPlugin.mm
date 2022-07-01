@@ -157,7 +157,8 @@ static char markerKey;
 
 /**
  * Set to true if last event fed to input context has produced a text editing command
- * or output.
+ * or text output. It is reset to false at the beginning of every key event, and is only
+ * used while processing this event.
  */
 @property(nonatomic) BOOL eventProducedOutput;
 
