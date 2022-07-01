@@ -88,6 +88,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
 @implementation NSEvent (KeyEquivalentMarker)
 
+// This field doesn't need a value because only its address is used as a unique identifier.
 static char markerKey;
 
 - (void)markAsKeyEquivalent {
