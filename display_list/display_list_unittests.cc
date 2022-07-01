@@ -2256,35 +2256,50 @@ TEST(DisplayList, FlatDrawPointsProducesBounds) {
   {
     DisplayListBuilder builder;
     builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, horizontal_points);
-    EXPECT_GE(builder.Build()->bounds().width(), 10);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(20, 10));
+    EXPECT_GE(bounds.width(), 10);
   }
   {
     DisplayListBuilder builder;
     builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, vertical_points);
-    EXPECT_GE(builder.Build()->bounds().height(), 10);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(10, 20));
+    EXPECT_GE(bounds.height(), 10);
   }
   {
     DisplayListBuilder builder;
     builder.drawPoints(SkCanvas::kPoints_PointMode, 1, horizontal_points);
-    EXPECT_TRUE(builder.Build()->bounds().contains(10, 10));
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
   }
   {
     DisplayListBuilder builder;
     builder.setStrokeWidth(2);
     builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, horizontal_points);
-    EXPECT_EQ(builder.Build()->bounds(), SkRect::MakeLTRB(9, 9, 21, 11));
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(20, 10));
+    EXPECT_EQ(bounds, SkRect::MakeLTRB(9, 9, 21, 11));
   }
   {
     DisplayListBuilder builder;
     builder.setStrokeWidth(2);
     builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, vertical_points);
-    EXPECT_EQ(builder.Build()->bounds(), SkRect::MakeLTRB(9, 9, 11, 21));
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(10, 20));
+    EXPECT_EQ(bounds, SkRect::MakeLTRB(9, 9, 11, 21));
   }
   {
     DisplayListBuilder builder;
     builder.setStrokeWidth(2);
     builder.drawPoints(SkCanvas::kPoints_PointMode, 1, horizontal_points);
-    EXPECT_EQ(builder.Build()->bounds(), SkRect::MakeLTRB(9, 9, 11, 11));
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_EQ(bounds, SkRect::MakeLTRB(9, 9, 11, 11));
   }
 }
 
