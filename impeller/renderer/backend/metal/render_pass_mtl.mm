@@ -364,7 +364,9 @@ static bool Bind(PassBindingsCache& pass,
 }
 
 bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
-                                   id<MTLRenderCommandEncoder> encoder) const {
+                                   id<MTLRenderCommandEncoder> encoder,
+                                   int start_index,
+                                   int end_index) const {
   PassBindingsCache pass_bindings(encoder);
   auto bind_stage_resources = [&allocator, &pass_bindings](
                                   const Bindings& bindings,
@@ -393,7 +395,9 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
   const auto target_sample_count = render_target_.GetSampleCount();
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
-  for (const auto& command : commands_) {
+
+  for (int i = start_index; i < end_index; i++) {
+    const auto& command = commands_[i];
     if (command.index_count == 0u) {
       continue;
     }
@@ -493,21 +497,45 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 bool RenderPassMTL::EncodeCommands(
     const std::shared_ptr<Allocator>& allocator,
     id<MTLParallelRenderCommandEncoder> parallelRCE) const {
-  id<MTLRenderCommandEncoder> rCE1 = [parallelRCE renderCommandEncoder];
-  id<MTLRenderCommandEncoder> rCE2 = [parallelRCE renderCommandEncoder];
-  id<MTLRenderCommandEncoder> rCE3 = [parallelRCE renderCommandEncoder];
+  const auto size = commands_.size();
+  if (size >= 3) {
+    id<MTLRenderCommandEncoder> rCE1 = [parallelRCE renderCommandEncoder];
+    id<MTLRenderCommandEncoder> rCE2 = [parallelRCE renderCommandEncoder];
+    id<MTLRenderCommandEncoder> rCE3 = [parallelRCE renderCommandEncoder];
 
-  bool r1 = EncodeCommands(allocator, rCE1);
-  bool r2 = EncodeCommands(allocator, rCE2);
-  bool r3 = EncodeCommands(allocator, rCE3);
-  // Success or failure, the pass must end. The buffer can only process one pass
-  // at a time.
-  fml::ScopedCleanupClosure auto_end([rCE1, rCE2, rCE3]() {
-    [rCE1 endEncoding];
-    [rCE2 endEncoding];
-    [rCE3 endEncoding];
-  });
-  return r1 && r2 && r3;
+    __block bool r2 = false;
+    dispatch_group_t group = dispatch_group_create();
+    dispatch_queue_t queue =
+        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    dispatch_group_async(group, queue, ^{
+      r2 = EncodeCommands(allocator, rCE2, commands_.size() / 3,
+                          commands_.size() * 2 / 3);
+    });
+
+    __block bool r3 = false;
+    dispatch_group_async(group, queue, ^{
+      @autoreleasepool {
+        r3 = EncodeCommands(allocator, rCE3, commands_.size() * 2 / 3,
+                            commands_.size());
+      }
+    });
+
+    bool r1 = EncodeCommands(allocator, rCE1, 0, commands_.size() / 3);
+    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+    // Success or failure, the pass must end. The buffer can only process one
+    // pass at a time.
+    fml::ScopedCleanupClosure auto_end([rCE1, rCE2, rCE3]() {
+      [rCE1 endEncoding];
+      [rCE2 endEncoding];
+      [rCE3 endEncoding];
+    });
+    return r1 && r2 && r3;
+  } else {
+    id<MTLRenderCommandEncoder> rCE1 = [parallelRCE renderCommandEncoder];
+    bool res = EncodeCommands(allocator, rCE1, 0, size);
+    fml::ScopedCleanupClosure auto_end([rCE1]() { [rCE1 endEncoding]; });
+    return res;
+  }
 }
 
 }  // namespace impeller
