@@ -28,6 +28,10 @@ extern const std::map<uint32_t, uint64_t> keyCodeToLogicalKey;
 /**
  * Maps iOS specific string values of nonvisible keys to logical keys.
  *
+ * TODO(dkwingsmt): Change this getter function to a global variable. I tried to
+ * do this but the unit test on CI threw errors saying "message sent to
+ * deallocated instance" on the NSDictionary.
+ *
  * See:
  * https://developer.apple.com/documentation/uikit/uikeycommand/input_strings_for_special_keys?language=objc
  */

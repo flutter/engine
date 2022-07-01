@@ -328,7 +328,7 @@ const std::set<uint32_t> functionKeyCodes = {
     0x00000073,  // f24
 };
 
-NSDictionary<NSString*, NSNumber*>* specialKeyMapping = @{
+NSDictionary<NSString*, NSNumber*>* specialKeyMapping = [[NSDictionary alloc] initWithDictionary:@{
   @"UIKeyInputEscape" : @(0x10000001b),
   @"UIKeyInputF1" : @(0x100000801),
   @"UIKeyInputF2" : @(0x100000802),
@@ -350,7 +350,7 @@ NSDictionary<NSString*, NSNumber*>* specialKeyMapping = @{
   @"UIKeyInputEnd" : @(0x10000000d),
   @"UIKeyInputPageUp" : @(0x100000308),
   @"UIKeyInputPageDown" : @(0x100000307),
-};
+}];
 
 const uint64_t kCapsLockPhysicalKey = 0x00070039;
 const uint64_t kCapsLockLogicalKey = 0x100000104;
