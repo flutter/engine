@@ -150,7 +150,7 @@ static const char* getEventCharacters(NSString* characters, UIKeyboardHIDUsage k
  */
 static uint64_t GetLogicalKeyForEvent(FlutterUIPressProxy* press, uint64_t physicalKey)
     API_AVAILABLE(ios(13.4)) {
-  // Some unprintable keys on iOS has literal names on their key label, such as
+  // Some unprintable keys on iOS have literal names on their key label, such as
   // @"UIKeyInputEscape".
   NSNumber* specialKey = [specialKeyMapping objectForKey:press.key.charactersIgnoringModifiers];
   if (specialKey != nil) {
