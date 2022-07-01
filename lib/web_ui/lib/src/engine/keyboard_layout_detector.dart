@@ -52,9 +52,13 @@ class KeyboardLayoutDetector {
     final bool thisIsDead = event.key == 'Dead';
     final bool thisHasAltGr = event.getModifierState('AltGraph');
     final bool thisHasShift = event.shiftKey;
+    final int index = (thisHasShift ? 1 : 0) + (thisHasAltGr ? 2 : 0);
     candidates.where((LayoutInfo element) {
-      final bool candidateIsDead =
-    });
+      final LayoutEntry? entry = element.mapping[event.code];
+      if (entry == null) {
+
+      }
+     });
     final int afterCandidateNum = candidates.length;
     return afterCandidateNum < beforeCandidateNum;
   }
