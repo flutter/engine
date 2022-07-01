@@ -134,6 +134,7 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
           .texture_registry              = texture_registry,
           .raster_cache                  = raster_cache,
           .checkerboard_offscreen_layers = false,
+          .checkerboard_raster_cache_images = false,
           .frame_device_pixel_ratio      = 1.0f,
           .inherited_opacity             = SK_Scalar1,
     },

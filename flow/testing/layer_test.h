@@ -73,6 +73,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
             .checkerboard_offscreen_layers = false,
+            .checkerboard_raster_cache_images = false,
             .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         },
@@ -89,6 +90,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
             .checkerboard_offscreen_layers = false,
+            .checkerboard_raster_cache_images = false,
             .frame_device_pixel_ratio      = 1.0f,
             .leaf_nodes_builder            = display_list_recorder_.builder().get(),
             // clang-format on
@@ -104,6 +106,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
             .checkerboard_offscreen_layers = true,
+            .checkerboard_raster_cache_images = false,
             .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         } {

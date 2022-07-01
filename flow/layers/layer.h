@@ -129,6 +129,7 @@ struct PaintContext {
   TextureRegistry& texture_registry;
   const RasterCache* raster_cache;
   const bool checkerboard_offscreen_layers;
+  const bool checkerboard_raster_cache_images;
   const float frame_device_pixel_ratio = 1.0f;
 
   // Snapshot store to collect leaf layer snapshots. The store is non-null
