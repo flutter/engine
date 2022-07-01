@@ -14,7 +14,7 @@ typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-typedef ErrorCallback = bool Function(Object exception, StackTrace? stackTrace);
+typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
