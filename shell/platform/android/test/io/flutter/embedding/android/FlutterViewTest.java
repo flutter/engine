@@ -176,9 +176,8 @@ public class FlutterViewTest {
 
   @Test
   public void flutterImageView_revertImageViewAndAvoidNPE() {
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterView flutterView = new FlutterView(ctx);
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
 
@@ -188,9 +187,10 @@ public class FlutterViewTest {
 
     // Register a `FlutterUiDisplayListener` callback.
     // During callback execution it will invoke `flutterImageView.detachFromRenderer()`.
-    flutterView.revertImageView(() -> {
-      // No-op
-    });
+    flutterView.revertImageView(
+        () -> {
+          // No-op
+        });
     assertFalse(flutterView.renderSurface instanceof FlutterImageView);
 
     flutterView.detachFromFlutterEngine();
