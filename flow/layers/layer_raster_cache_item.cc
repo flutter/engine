@@ -117,7 +117,6 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
           .texture_registry              = paint_context.texture_registry,
           .raster_cache                  = paint_context.raster_cache,
           .checkerboard_offscreen_layers = paint_context.checkerboard_offscreen_layers,
-          .checkerboard_raster_cache_images = paint_context.checkerboard_raster_cache_images,
           .frame_device_pixel_ratio      = paint_context.frame_device_pixel_ratio,
       // clang-format on
   };
@@ -153,7 +152,7 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
       .matrix             = matrix_,
       .logical_rect       = *paint_bounds,
       .flow_type          = flow_type,
-      .checkerboard       = context.checkerboard_raster_cache_images,
+      .checkerboard       = context.checkerboard_offscreen_layers,
           // clang-format on
       };
       return context.raster_cache->UpdateCacheEntry(

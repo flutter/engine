@@ -70,7 +70,6 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
       .texture_registry              = unused_texture_registry,
       .raster_cache                  = nullptr,
       .checkerboard_offscreen_layers = false,
-      .checkerboard_raster_cache_images = false,
       .frame_device_pixel_ratio      = 1.0f,
       // clang-format on
   };
