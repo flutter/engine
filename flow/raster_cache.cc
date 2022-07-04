@@ -96,11 +96,8 @@ bool RasterCache::UpdateCacheEntry(
   Entry& entry = cache_[key];
   entry.used_this_frame = true;
   if (!entry.image) {
-    auto draw_checkerboard = [](SkCanvas* canvas, const SkRect& rect) {
-      DrawCheckerboard(canvas, rect);
-    };
     entry.image =
-        Rasterize(raster_cache_context, render_function, draw_checkerboard);
+        Rasterize(raster_cache_context, render_function, DrawCheckerboard);
     if (entry.image != nullptr) {
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {
