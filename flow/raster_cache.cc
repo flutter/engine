@@ -51,7 +51,9 @@ RasterCache::RasterCache(size_t access_threshold,
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
-    const std::function<void(SkCanvas*)>& draw_function) const {
+    const std::function<void(SkCanvas*)>& draw_function,
+    const std::function<void(SkCanvas*, const SkRect& rect)>& draw_checkerboard)
+    const {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
   SkRect dest_rect =
@@ -79,7 +81,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   draw_function(canvas);
 
   if (checkerboard_images_) {
-    DrawCheckerboard(canvas, context.logical_rect);
+    draw_checkerboard(canvas, context.logical_rect);
   }
 
   return std::make_unique<RasterCacheResult>(
@@ -94,7 +96,11 @@ bool RasterCache::UpdateCacheEntry(
   Entry& entry = cache_[key];
   entry.used_this_frame = true;
   if (!entry.image) {
-    entry.image = Rasterize(raster_cache_context, render_function);
+    auto draw_checkerboard = [](SkCanvas* canvas, const SkRect& rect) {
+      DrawCheckerboard(canvas, rect);
+    };
+    entry.image =
+        Rasterize(raster_cache_context, render_function, draw_checkerboard);
     if (entry.image != nullptr) {
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {
