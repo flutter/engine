@@ -49,6 +49,8 @@ char32_t CodePointFromSurrogatePair(wchar_t high, wchar_t low) {
 static const int kMinTouchDeviceId = 0;
 static const int kMaxTouchDeviceId = 128;
 
+static const int kLinesPerScrollWindowsDefault = 3;
+
 }  // namespace
 
 WindowWin32::WindowWin32() : WindowWin32(nullptr) {}
@@ -568,8 +570,7 @@ void WindowWin32::UpdateScrollOffsetMultiplier() {
   UINT lines_per_scroll;
   // Get lines per scroll wheel value from Windows
   if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines_per_scroll, 0) == 0) {
-    // Windows default
-    lines_per_scroll = 3;
+    lines_per_scroll = kLinesPerScrollWindowsDefault;
   }
 
   // This logic is based off Chromium's implementation
