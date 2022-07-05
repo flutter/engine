@@ -51,7 +51,7 @@
   };
 
   _ioSurface = IOSurfaceCreate((CFDictionaryRef)options);
-  IOSurfaceSetValue(_ioSurface, kIOSurfaceColorSpace, kCGColorSpaceSRGB);
+  IOSurfaceSetValue(_ioSurface, CFSTR("IOSurfaceColorSpace"), kCGColorSpaceSRGB);
 }
 
 - (const IOSurfaceRef&)ioSurface {
