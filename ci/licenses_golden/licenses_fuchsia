@@ -1,4 +1,4 @@
-Signature: 841a94fc3514a3c64d495ed7d25388cd
+Signature: 9170ac5a66576a637827146f2418e2e4
 
 UNUSED LICENSES:
 
@@ -2490,7 +2490,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/memory_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/intl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/directory.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/file.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/ldsvc.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/logger.fidl
