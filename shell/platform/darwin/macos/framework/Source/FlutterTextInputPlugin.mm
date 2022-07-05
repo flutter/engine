@@ -737,6 +737,11 @@ static char markerKey;
   }
 
   if (replacementRange.location != NSNotFound) {
+    // According to the NSTextInputClient documentation replacementRange is
+    // computed from the beginning of the marked text. That doesn't seem to be
+    // the case, because in situations where the replacementRange is actually
+    // specified (i.e. when switching between characters equivalent after long
+    // key press) the replacementRange is provided while there is no composition.
     _activeModel->SetComposingRange(
         flutter::TextRange(replacementRange.location,
                            replacementRange.location + replacementRange.length),
