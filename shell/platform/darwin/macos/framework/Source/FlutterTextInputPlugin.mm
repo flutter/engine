@@ -685,6 +685,11 @@ static char markerKey;
     func(self, selector, nil);
   }
 
+  if (selector == @selector(insertNewline:)) {
+    // Already handled through text insertion (multiline) or action.
+    return;
+  }
+
   // Group multiple selectors received within a single run loop turn so that
   // the framework can process them in single microtask.
   NSString* name = NSStringFromSelector(selector);
