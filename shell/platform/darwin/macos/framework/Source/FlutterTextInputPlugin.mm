@@ -516,10 +516,11 @@ static char markerKey;
 
   _eventProducedOutput = NO;
   BOOL res = [_textInputContext handleEvent:event];
-  // TextInputContext seems to return YES even for events that don't produce
-  // any text editing command (i.e. CMD+Q). So if event received as key equivalent
-  // didn't produce an actual command, input plugin must report it as unhandled
-  // so that the next responder can handle it.
+  // NSTextInputContext#handleEvent returns YES if the context handles the event. One of the reasons
+  // the event is handled is because it's a key equivalent. But a key equivalent might produce a
+  // text command (indicated by calling doCommandBySelector) or might not (for example, Cmd+Q). In
+  // the latter case, this command somehow has not been executed yet and Flutter must dispatch it to
+  // the next responder. See https://github.com/flutter/flutter/issues/106354 .
   if (event.isKeyEquivalent && !_eventProducedOutput) {
     return NO;
   }
