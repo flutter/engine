@@ -23,9 +23,15 @@
 //
 // That resulting color [R’, G’, B’, A’] then has each channel clamped to the 0 to 255 range.
 
+uniform FragInfo {
+  mat4 m;
+  vec4 v;
+
+} frag_info;
+
+uniform sampler2D texture_sampler;
+
 in vec4 v_color;
-in mat4 v_m;
-in vec4 v_v;
 
 out vec4 frag_color;
 
@@ -40,7 +46,7 @@ void main() {
   // unpremultiply first, as filter inputs are premultiplied.
   vec4 color = Unpremultiply(v_color);
 
-  color = v_m * v_color + v_v;
+  color = frag_info.m * v_color + frag_info.v;
 
   // we likely need to clamp `frag_color` at this point.
   // color = clamp(color);

@@ -22,10 +22,6 @@ class ColorMatrixFilterContents final : public FilterContents {
 
   void SetMatrix(const ColorMatrix& matrix);
 
-  // |FilterContents|
-  std::optional<Rect> GetFilterCoverage(const FilterInput::Vector& inputs,
-                                        const Entity& entity) const override;
-
  private:
   // |FilterContents|
   bool RenderFilter(const FilterInput::Vector& input_textures,
