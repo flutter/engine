@@ -160,7 +160,7 @@ static char markerKey;
 @property(nonatomic, nonnull) NSString* inputAction;
 
 /**
- * Set to true if last event fed to input context has produced a text editing command
+ * Set to true if the last event fed to the input context produced a text editing command
  * or text output. It is reset to false at the beginning of every key event, and is only
  * used while processing this event.
  */

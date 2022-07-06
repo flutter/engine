@@ -963,7 +963,7 @@
                                    isARepeat:NO
                                      keyCode:0x4];
 
-  // Plugin should mark the event as key equivalent
+  // Plugin should mark the event as key equivalent.
   [plugin performKeyEquivalent:event];
 
   // Simulate KeyboardManager sending unhandled event to plugin. This must return
@@ -984,7 +984,7 @@
                           isARepeat:NO
                             keyCode:0x13];
 
-  // Plugin should mark the event as key equivalent
+  // Plugin should mark the event as key equivalent.
   [plugin performKeyEquivalent:event];
 
   // This is not a valid editing command, plugin must return false so that
