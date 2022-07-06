@@ -85,7 +85,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 /// needs to be forwarded by FlutterKeyboardManager to the next responder.
 - (void)markAsKeyEquivalent;
 
-/// Returns YES if event is marked as key equivalent.
+// Returns YES if the event is marked as a key equivalent.
 - (BOOL)isKeyEquivalent;
 
 @end
