@@ -24,10 +24,10 @@ void testMain() {
       final EnginePlatformDispatcher engineDispatcher =
           EnginePlatformDispatcher();
 
-      expect(engineDispatcher.accessibilityFeatures.highContrast, true);
+      expect(engineDispatcher.accessibilityFeatures.highContrast, isTrue);
       mockHighContrast.isEnabled = false;
       mockHighContrast.invokeListeners(mockHighContrast.isEnabled);
-      expect(engineDispatcher.accessibilityFeatures.highContrast, false);
+      expect(engineDispatcher.accessibilityFeatures.highContrast, isFalse);
 
       engineDispatcher.dispose();
     });

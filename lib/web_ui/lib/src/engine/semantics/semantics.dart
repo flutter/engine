@@ -126,10 +126,6 @@ class EngineAccessibilityFeatures implements ui.AccessibilityFeatures {
     }
     return EngineAccessibilityFeatures(value);
   }
-
-  EngineAccessibilityFeaturesBuilder getBuilder(){
-    return EngineAccessibilityFeaturesBuilder(_index);
-  }
 }
 
 class EngineAccessibilityFeaturesBuilder {

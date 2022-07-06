@@ -86,7 +86,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// these.
   EnginePlatformDispatcher() {
     _addBrightnessMediaQueryListener();
-    _addHighContrastMediaQueryListener();
+    HighContrastSupport.instance.addListener(_updateHighContrast);
     _addFontSizeObserver();
     registerHotRestartListener(dispose);
   }
@@ -100,11 +100,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
-    accessibilityFeatures: setHighContrastonAccessibilityFeatures(),
+    accessibilityFeatures: initializeAccessibilityFeatures(),
   );
 
   /// Initialize accessibility features based on the current value of high contrast flag
-  static EngineAccessibilityFeatures setHighContrastonAccessibilityFeatures() {
+  static EngineAccessibilityFeatures initializeAccessibilityFeatures() {
     final EngineAccessibilityFeaturesBuilder builder =
         EngineAccessibilityFeaturesBuilder(0);
     if (HighContrastSupport.instance.isHighContrastEnabled()) {
@@ -942,10 +942,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   String? get systemFontFamily => configuration.systemFontFamily;
 
-  /// The setting indicating the current display mode of the host platform.
-  /// If the platform has no preference, [highContrastMode] defaults to false.
-  bool get highContrastMode => configuration.accessibilityFeatures.highContrast;
-
   /// Updates [_highContrast] and invokes [onHighContrastModeChanged]
   /// callback if [_highContrast] changed.
   void _updateHighContrast(bool value) {
@@ -957,33 +953,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       invokeOnPlatformConfigurationChanged();
     }
   }
-
-  /// Set the callback function for listening changes in high contrast value.
-  void _addHighContrastMediaQueryListener() {
-    final HighContrastSupport instance = HighContrastSupport.instance;
-
-    instance.addListener(_updateHighContrast);
-  }
-
-  /// A callback that is invoked whenever [highContrastMode] changes value.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this callback is invoked.
-  // @override
-  // ui.VoidCallback? get onPlatformBrightnessChanged =>
-  //     _onPlatformBrightnessChanged;
-  // ui.VoidCallback? _onPlatformBrightnessChanged;
-  // Zone? _onPlatformBrightnessChangedZone;
-  // @override
-  // set onPlatformBrightnessChanged(ui.VoidCallback? callback) {
-  //   _onPlatformBrightnessChanged = callback;
-  //   _onPlatformBrightnessChangedZone = Zone.current;
-  //}
 
   /// Reference to css media query that indicates the user theme preference on the web.
   final DomMediaQueryList _brightnessMediaQuery =
