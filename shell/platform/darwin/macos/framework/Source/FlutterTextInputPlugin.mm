@@ -78,11 +78,11 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
 @interface NSEvent (KeyEquivalentMarker)
 
-/// Internally marks that the event was received through performKeyEquivalent:.
-/// When text editing is active, keyboard events that have modifier keys pressed
-/// are received through performKeyEquivalent: instead of keyDown:. If such event
-/// is passed to TextInputContext but doesn't result in a text editing action it
-/// needs to be forwarded by FlutterKeyboardManager to the next responder.
+// Internally marks that the event was received through performKeyEquivalent:.
+// When text editing is active, keyboard events that have modifier keys pressed
+// are received through performKeyEquivalent: instead of keyDown:. If such event
+// is passed to TextInputContext but doesn't result in a text editing action it
+// needs to be forwarded by FlutterKeyboardManager to the next responder.
 - (void)markAsKeyEquivalent;
 
 // Returns YES if the event is marked as a key equivalent.
