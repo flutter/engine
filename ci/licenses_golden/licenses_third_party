@@ -1,4 +1,4 @@
-Signature: f26791c387acff0413d2e29dc9b253d7
+Signature: 436ad3845aee628b34563c0ca1a1024f
 
 UNUSED LICENSES:
 
@@ -11560,7 +11560,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/lowering.dart
-FILE: ../../../third_party/dart/sdk/lib/io/network_policy.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -14928,6 +14927,7 @@ FILE: ../../../third_party/freetype2/.gitlab-ci.yml
 FILE: ../../../third_party/freetype2/.gitmodules
 FILE: ../../../third_party/freetype2/devel/ft2build.h
 FILE: ../../../third_party/freetype2/devel/ftoption.h
+FILE: ../../../third_party/freetype2/include/freetype-flutter-config/freetype/config/public-macros.h
 FILE: ../../../third_party/freetype2/include/freetype-flutter-config/ftmodule.h
 FILE: ../../../third_party/freetype2/include/freetype-flutter-config/ftoption.h
 FILE: ../../../third_party/freetype2/include/freetype/config/ftconfig.h
