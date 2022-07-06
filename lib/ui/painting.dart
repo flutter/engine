@@ -3907,30 +3907,36 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// SPIR-V not meeting this specification will throw an exception.
   static Future<FragmentProgram> compile({
     required ByteBuffer spirv,
+    ByteBuffer? sksl,
     bool debugPrint = false,
   }) {
     // Delay compilation without creating a timer, which interacts poorly with the
     // flutter test framework. See: https://github.com/flutter/flutter/issues/104084
-    return Future<FragmentProgram>.microtask(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
+    return Future<FragmentProgram>.microtask(() => FragmentProgram._(spirv: spirv, sksl: sksl, debugPrint: debugPrint));
   }
 
   @pragma('vm:entry-point')
   FragmentProgram._({
     required ByteBuffer spirv,
+    ByteBuffer? sksl,
     bool debugPrint = false,
   }) {
     _constructor();
-    final spv.TranspileResult result = spv.transpile(
-      spirv,
-      spv.TargetLanguage.sksl,
-    );
-    _init(result.src, debugPrint);
-    _uniformFloatCount = result.uniformFloatCount;
-    _samplerCount = result.samplerCount;
+    if (sksl == null) {
+      final spv.TranspileResult result = spv.transpile(
+        spirv,
+        spv.TargetLanguage.sksl,
+      );
+      _init(result.src, debugPrint);
+      // _uniformFloatCount = result.uniformFloatCount;
+      // _samplerCount = result.samplerCount;
+    } else {
+      _init(utf8.decode(sksl.asUint8List()), debugPrint);
+    }
   }
 
-  late final int _uniformFloatCount;
-  late final int _samplerCount;
+  // late final int _uniformFloatCount;
+  // late final int _samplerCount;
 
   void _constructor() native 'FragmentProgram_constructor';
   void _init(String sksl, bool debugPrint) native 'FragmentProgram_init';
@@ -3988,23 +3994,23 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     Float32List? floatUniforms,
     List<ImageShader>? samplerUniforms,
   }) {
-    if (floatUniforms == null) {
-      floatUniforms = Float32List(_uniformFloatCount);
-    }
-    if (floatUniforms.length != _uniformFloatCount) {
-      throw ArgumentError(
-        'floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
-    }
-    if (_samplerCount > 0 && (samplerUniforms == null || samplerUniforms.length != _samplerCount)) {
-      throw ArgumentError('samplerUniforms must have length $_samplerCount');
-    }
+    // if (floatUniforms == null) {
+    //   floatUniforms = Float32List(_uniformFloatCount);
+    // }
+    // if (floatUniforms.length != _uniformFloatCount) {
+    //   throw ArgumentError(
+    //     'floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
+    // }
+    // if (_samplerCount > 0 && (samplerUniforms == null || samplerUniforms.length != _samplerCount)) {
+    //   throw ArgumentError('samplerUniforms must have length $_samplerCount');
+    // }
     if (samplerUniforms == null) {
       samplerUniforms = <ImageShader>[];
     } else {
       samplerUniforms = <ImageShader>[...samplerUniforms];
     }
     final _FragmentShader shader = _FragmentShader(
-        this, Float32List.fromList(floatUniforms), samplerUniforms);
+        this, Float32List.fromList(floatUniforms!), samplerUniforms);
     _shader(shader, floatUniforms, samplerUniforms);
     return shader;
   }

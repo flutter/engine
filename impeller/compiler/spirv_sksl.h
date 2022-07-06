@@ -32,9 +32,17 @@ class CompilerSkSL : public spirv_cross::CompilerGLSL {
   std::string compile() override;
 
  private:
+  std::string output_name_;
+
   void emit_header() override;
 
   void emit_resources();
+
+  void emit_interface_block(const spirv_cross::SPIRVariable& var);
+
+  void emit_function_prototype(
+      spirv_cross::SPIRFunction& func,
+      const spirv_cross::Bitset& return_flags) override;
 
   std::string type_to_glsl(const spirv_cross::SPIRType& type,
                            uint32_t id = 0) override;
