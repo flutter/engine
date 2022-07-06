@@ -27,7 +27,7 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_options.msl_version =
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
   sl_compiler->set_msl_options(sl_options);
-  return sl_compiler;
+  return CompilerBackend(sl_compiler);
 }
 
 static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
@@ -44,7 +44,13 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
     sl_options.es = false;
   }
   gl_compiler->set_common_options(sl_options);
-  return gl_compiler;
+  return CompilerBackend(gl_compiler);
+}
+
+static CompilerBackend CreateSkSLCompiler(const spirv_cross::ParsedIR& ir,
+                                          const SourceOptions& source_options) {
+  auto sksl_compiler = std::make_shared<CompilerSkSL>(ir);
+  return CompilerBackend(sksl_compiler);
 }
 
 static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
@@ -56,6 +62,7 @@ static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
     case TargetPlatform::kRuntimeStageMetal:
       return false;
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
     case TargetPlatform::kRuntimeStageGLES:
@@ -80,6 +87,8 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kOpenGLDesktop:
       compiler = CreateGLSLCompiler(ir, source_options);
       break;
+    case TargetPlatform::kSkSL:
+      compiler = CreateSkSLCompiler(ir, source_options);
   }
   if (!compiler) {
     return {};
@@ -151,6 +160,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_spirv_version::shaderc_spirv_version_1_0);
       break;
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:  // TODO(zra): Allow optimizations.
       // With any optimization level above 'zero' enabled, shaderc will emit
       // ops that are not supported by the Engine's SPIR-V -> SkSL transpiler.
       // In particular, with 'shaderc_optimization_level_size' enabled, it will

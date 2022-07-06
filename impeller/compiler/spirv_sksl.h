@@ -33,6 +33,14 @@ class CompilerSkSL : public spirv_cross::CompilerGLSL {
 
  private:
   void emit_header() override;
+
+  std::string type_to_glsl(const spirv_cross::SPIRType& type,
+                           uint32_t id = 0) override;
+
+  std::string builtin_to_glsl(spv::BuiltIn builtin,
+                              spv::StorageClass storage) override;
+
+  void emit_uniform(const spirv_cross::SPIRVariable& var) override;
 };
 
 }  // namespace compiler
