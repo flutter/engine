@@ -247,6 +247,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
         return weak ? weak->PresentSurface(surface_frame, canvas) : false;
       };
 
+  // TODO(btrevisan): Make sure framebuffer_info has the necesssary fields for
+  // partial repaint.
+  // TODO(btrevisan): framebuffer_info.supports_partial_repaint must be true.
+  // TODO(btrevisan): framebuffer_info.existing_damage must a valid SkIRect or
+  // an empty SkIRect (if there is no existing damage).
   framebuffer_info = delegate_->GLContextFramebufferInfo();
   return std::make_unique<SurfaceFrame>(surface, std::move(framebuffer_info),
                                         submit_callback,
@@ -268,7 +273,7 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
 
   GLPresentInfo present_info = {
       .fbo_id = fbo_id_,
-      .damage = frame.submit_info().frame_damage,
+      .damage = frame.submit_info().buffer_damage,
       .presentation_time = frame.submit_info().presentation_time,
   };
   if (!delegate_->GLContextPresent(present_info)) {
@@ -279,11 +284,13 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     auto current_size =
         SkISize::Make(onscreen_surface_->width(), onscreen_surface_->height());
 
+    // TODO(btrevisan): this needs to be updated to have the buffer damage.
     GLFrameInfo frame_info = {static_cast<uint32_t>(current_size.width()),
                               static_cast<uint32_t>(current_size.height())};
 
     // The FBO has changed, ask the delegate for the new FBO and do a surface
     // re-wrap.
+    // TODO(btrevisan): Make sure this returns the fbo_id as well as its damage.
     const uint32_t fbo_id = delegate_->GLContextFBO(frame_info);
     auto new_onscreen_surface =
         WrapOnscreenSurface(context_.get(),  // GL context

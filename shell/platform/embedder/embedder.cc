@@ -242,13 +242,15 @@ InferOpenGLPlatformViewCreationCallback(
 
   auto gl_present = [present = config->open_gl.present,
                      present_with_info = config->open_gl.present_with_info,
-                     user_data](uint32_t fbo_id) -> bool {
+                     user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {
       FlutterPresentInfo present_info = {};
       present_info.struct_size = sizeof(FlutterPresentInfo);
-      present_info.fbo_id = fbo_id;
+      present_info.fbo_id = gl_present_info.fbo_id;
+      // TODO(btrevisan): translate const std::optional<SkIRect> to const FlutterRect *?
+      present_info.damage = gl_present_info.damage;
       return present_with_info(user_data, &present_info);
     }
   };

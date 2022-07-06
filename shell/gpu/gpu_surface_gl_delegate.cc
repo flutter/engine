@@ -20,6 +20,12 @@ SurfaceFrame::FramebufferInfo GPUSurfaceGLDelegate::GLContextFramebufferInfo()
     const {
   SurfaceFrame::FramebufferInfo res;
   res.supports_readback = true;
+  // By default, partial repaint is enabled for every frame.
+  // TODO(btrevisan): Implement deactivation of partial repaint in  cases that
+  // do not benefit from it (e.g. when damage takes over most of the frame).
+  res.supports_partial_repaint = true;
+  // TODO(btrevisan): make sure that when there is existing damage, it is set.
+  res.existing_damage = SkIRect::MakeEmpty();
   return res;
 }
 

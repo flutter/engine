@@ -571,12 +571,15 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     std::unique_ptr<FrameDamage> damage;
     // when leaf layer tracing is enabled we wish to repaing the whole frame for
     // accurate performance metrics.
+    // TODO(btrevisan): make sure that leaf layer tracing is disabled when partial
+    // repaint is desired.
     if (frame->framebuffer_info().supports_partial_repaint &&
         !layer_tree.is_leaf_layer_tracing_enabled()) {
       // Disable partial repaint if external_view_embedder_ SubmitFrame is
       // involved - ExternalViewEmbedder unconditionally clears the entire
       // surface and also partial repaint with platform view present is
       // something that still need to be figured out.
+      // TODO(btrevisan): make sure that no external_view_embedder_ exists.
       bool force_full_repaint =
           external_view_embedder_ &&
           (!raster_thread_merger_ || raster_thread_merger_->IsMerged());

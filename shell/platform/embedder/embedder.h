@@ -401,6 +401,9 @@ typedef struct {
   size_t struct_size;
   /// Id of the fbo backing the surface that was presented.
   uint32_t fbo_id;
+  // An array of rectangles representing the areas that need to be repainted 
+  // in this buffer.
+  const FlutterRect* damage;
 } FlutterPresentInfo;
 
 /// Callback for when a surface is presented.

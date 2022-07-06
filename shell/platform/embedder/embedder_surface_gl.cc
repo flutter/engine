@@ -46,7 +46,7 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
-  return gl_dispatch_table_.gl_present_callback(present_info.fbo_id);
+  return gl_dispatch_table_.gl_present_callback(present_info);
 }
 
 // |GPUSurfaceGLDelegate|
@@ -57,6 +57,18 @@ intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextFBOResetAfterPresent() const {
   return fbo_reset_after_present_;
+}
+
+// |GPUSurfaceGLDelegate|
+void EmbedderSurfaceGL::GLContextSetDamageRegion(const std::optional<SkIRect>& region) {
+  // TODO(btrevisan): add checks.
+
+  // The region given here is the buffer damage.
+
+  // Update GL Context such that it is restricted to the buffer damage.
+
+
+  return;
 }
 
 // |GPUSurfaceGLDelegate|
