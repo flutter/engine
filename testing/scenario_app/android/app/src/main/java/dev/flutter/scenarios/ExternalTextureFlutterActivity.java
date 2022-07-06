@@ -125,7 +125,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private MediaExtractor createMediaExtractor() {
     // Sample Video generated with FFMPEG.
     // ffmpeg -loop 1 -i ~/engine/src/flutter/lib/ui/fixtures/DashInNooglerHat.jpg -c:v libx264
-    // -profile:v main -level:v 5.2 -t 1 -vf scale=192:256 -b:v 1M sample.mp4
+    // -profile:v main -level:v 5.2 -t 1 -r 1 -vf scale=192:256 -b:v 1M sample.mp4
     try {
       MediaExtractor extractor = new MediaExtractor();
       AssetFileDescriptor afd = getAssets().openFd("sample.mp4");
