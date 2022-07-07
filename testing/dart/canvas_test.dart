@@ -501,10 +501,10 @@ void main() {
 
     expect(data, isNotNull);
     expect(data!.lengthInBytes, 6 * 8 * 4);
-    final Uint32List bytes = data.buffer.asUint32List();
-    print(color.value.toRadixString(16));
-    print(bytes.first.toRadixString(16));
-    expect(bytes, List<int>.filled(bytes.length, color.value));
+    expect(data.buffer.asUint8List()[0], 0x12);
+    expect(data.buffer.asUint8List()[1], 0x34);
+    expect(data.buffer.asUint8List()[2], 0x56);
+    expect(data.buffer.asUint8List()[3], 0xFF);
   });
 
   test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
