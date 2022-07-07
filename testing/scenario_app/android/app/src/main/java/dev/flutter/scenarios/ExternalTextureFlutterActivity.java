@@ -277,6 +277,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         boolean seenEOS = false;
         long startTimeNs = System.nanoTime();
+        int frameCount = 0;
 
         while (true) {
           // Move samples (video frames) from the extractor into the decoder, as long as we haven't
@@ -306,6 +307,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
                 onFirstFrame.countDown();
                 onFirstFrame = null;
               }
+              Log.w(TAG, "Presenting frame " + frameCount);
+              frameCount++;
 
               codec.releaseOutputBuffer(
                   outputBufferIndex, startTimeNs + (bufferInfo.presentationTimeUs * 1000));
