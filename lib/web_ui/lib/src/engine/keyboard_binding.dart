@@ -8,6 +8,7 @@ import '../engine.dart'  show registerHotRestartListener;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'key_map.g.dart';
+import 'keyboard_layout_detector.dart' show KeyboardLayoutDetector;
 import 'platform_dispatcher.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
@@ -106,6 +107,7 @@ class KeyboardBinding {
     _setup();
   }
 
+  final KeyboardLayoutDetector layoutDetector = KeyboardLayoutDetector();
   final DomElement glassPaneElement;
   late KeyboardConverter _converter;
   final Map<String, DomEventListener> _listeners = <String, DomEventListener>{};
@@ -145,7 +147,9 @@ class KeyboardBinding {
 
   void _setup() {
     _addEventListener('keydown', allowInterop((DomEvent event) {
-      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
+      layoutDetector.update(event as DomKeyboardEvent);
+      print('${event.code} ${layoutDetector.getKey(event.code ?? '')}');
+      return _converter.handleEvent(FlutterHtmlKeyboardEvent(event));
     }));
     _addEventListener('keyup', allowInterop((DomEvent event) {
       return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
