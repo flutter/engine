@@ -360,6 +360,16 @@ TEST(MockWindow, UnknownPointerTypeSkipsDirectManipulation) {
   window.InjectWindowMessage(DM_POINTERHITTEST, MAKEWPARAM(pointer_id, 0), 0);
 }
 
+TEST(MockWindow, WindowOnSetAndKillFocus) {
+  MockWindow window;
+
+  EXPECT_CALL(window, OnSetFocus()).Times(1);
+  window.InjectWindowMessage(WM_SETFOCUS, 0, 0);
+
+  EXPECT_CALL(window, OnKillFocus()).Times(1);
+  window.InjectWindowMessage(WM_KILLFOCUS, 0, 0);
+}
+
 TEST(MockWindow, WindowOnMinimized) {
   MockWindow window;
   window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
