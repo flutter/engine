@@ -602,11 +602,11 @@ void Window::Destroy() {
 }
 
 void Window::HandleResize(UINT width, UINT height) {
-  bool next_mimimized = (width <= 0) && (height <= 0);
-  if (current_mimimized != next_mimimized) {
-    current_mimimized = next_mimimized;
+  bool next_minimized = (width <= 0) && (height <= 0);
+  if (current_minimized_ != next_minimized) {
+    current_minimized_ = next_minimized;
 
-    if (next_mimimized) {
+    if (next_minimized) {
       OnMinimized();
     } else {
       OnRestoredFromMinimized();

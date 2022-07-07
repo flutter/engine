@@ -261,7 +261,7 @@ class Window : public KeyboardManager::WindowDelegate {
   int current_dpi_ = 0;
   int current_width_ = 0;
   int current_height_ = 0;
-  int current_mimimized = false;
+  int current_minimized_ = false;
 
   // Holds the conversion factor from lines scrolled to pixels scrolled.
   float scroll_offset_multiplier_;
