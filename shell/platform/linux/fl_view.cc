@@ -63,7 +63,7 @@ struct _FlView {
   /* FlKeyboardViewDelegate related properties */
   KeyboardLayoutNotifier keyboard_layout_notifier;
   GdkKeymap* keymap;
-  gulong keymap_keys_changed_cb_id; // Signal connection ID.
+  gulong keymap_keys_changed_cb_id;  // Signal connection ID.
 };
 
 typedef struct _FlViewChild {
@@ -511,8 +511,8 @@ static void fl_view_constructed(GObject* object) {
                    G_CALLBACK(enter_notify_event_cb), self);
   g_signal_connect(self->event_box, "leave-notify-event",
                    G_CALLBACK(leave_notify_event_cb), self);
-  self->keymap_keys_changed_cb_id = g_signal_connect(self->keymap, "keys-changed",
-                   G_CALLBACK(keymap_keys_changed_cb), self);
+  self->keymap_keys_changed_cb_id = g_signal_connect(
+      self->keymap, "keys-changed", G_CALLBACK(keymap_keys_changed_cb), self);
   GtkGesture* zoom = gtk_gesture_zoom_new(self->event_box);
   g_signal_connect(zoom, "begin", G_CALLBACK(gesture_zoom_begin_cb), self);
   g_signal_connect(zoom, "scale-changed", G_CALLBACK(gesture_zoom_update_cb),
