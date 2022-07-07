@@ -1307,6 +1307,10 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
 /// defined.
 ///
 TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
+#endif  // OS_FUCHSIA
+
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
     GTEST_SKIP();
