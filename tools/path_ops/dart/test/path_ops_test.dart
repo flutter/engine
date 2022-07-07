@@ -29,6 +29,7 @@ void main() {
     final SvgPathProxy proxy = SvgPathProxy();
     path.replay(proxy);
     expect(proxy.toString(), 'M0.0,0.0L10.0,0.0L10.0,10.0L0.0,10.0ZM0.0,0.0C30.0,30.0 40.0,40.0 50.0,50.0');
+    path.dispose();
   });
 
   test('Ops test', () {
@@ -69,5 +70,8 @@ void main() {
       34.06542205810547, 128.0, // line
       // close
     ]);
+    cubics.dispose();
+    quad.dispose();
+    intersection.dispose();
   });
 }

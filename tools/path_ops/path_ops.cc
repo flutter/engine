@@ -61,8 +61,8 @@ struct PathData* Data(SkPath* path) {
 }
 
 void DestroyData(PathData* data) {
-  delete data->points;
-  delete data->verbs;
+  delete[] data->points;
+  delete[] data->verbs;
   delete data;
 }
 
