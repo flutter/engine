@@ -773,10 +773,7 @@ def GatherPathOpsTests(build_dir):
   test_dir = os.path.join(
       buildroot_dir, 'flutter', 'tools', 'path_ops', 'dart', 'test'
   )
-  opts = [
-      '--disable-dart-dev',
-      os.path.join(test_dir, 'path_ops_test.dart')
-  ]
+  opts = ['--disable-dart-dev', os.path.join(test_dir, 'path_ops_test.dart')]
   yield EngineExecutableTask(
       build_dir,
       os.path.join('dart-sdk', 'bin', 'dart'),
