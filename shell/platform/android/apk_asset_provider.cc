@@ -33,24 +33,24 @@ class APKAssetMapping : public fml::Mapping {
   FML_DISALLOW_COPY_AND_ASSIGN(APKAssetMapping);
 };
 
-class APKAssetProviderImpl {
+class APKAssetProviderImpl : public APKAssetProviderInternal {
  public:
   explicit APKAssetProviderImpl(JNIEnv* env,
                                 jobject jassetManager,
                                 std::string directory)
       : java_asset_manager_(env, jassetManager),
         directory_(std::move(directory)) {
-    assetManager_ = AAssetManager_fromJava(env, jassetManager);
+    asset_manager_ = AAssetManager_fromJava(env, jassetManager);
   }
 
   ~APKAssetProviderImpl() = default;
 
   std::unique_ptr<fml::Mapping> GetAsMapping(
-      const std::string& asset_name) const {
+      const std::string& asset_name) const override {
     std::stringstream ss;
     ss << directory_.c_str() << "/" << asset_name;
     AAsset* asset =
-        AAssetManager_open(assetManager_, ss.str().c_str(), AASSET_MODE_BUFFER);
+        AAssetManager_open(asset_manager_, ss.str().c_str(), AASSET_MODE_BUFFER);
     if (!asset) {
       return nullptr;
     }
@@ -60,7 +60,7 @@ class APKAssetProviderImpl {
 
  private:
   fml::jni::ScopedJavaGlobalRef<jobject> java_asset_manager_;
-  AAssetManager* assetManager_;
+  AAssetManager* asset_manager_;
   const std::string directory_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(APKAssetProviderImpl);
@@ -73,7 +73,8 @@ APKAssetProvider::APKAssetProvider(JNIEnv* env,
                                                    assetManager,
                                                    std::move(directory))) {}
 
-APKAssetProvider::APKAssetProvider(std::shared_ptr<APKAssetProviderImpl> impl)
+APKAssetProvider::APKAssetProvider(
+    std::shared_ptr<APKAssetProviderInternal> impl)
     : impl_(impl) {}
 
 // |AssetResolver|

@@ -14,7 +14,14 @@
 
 namespace flutter {
 
-class APKAssetProviderImpl;
+class APKAssetProviderInternal {
+ public:
+  virtual std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const = 0;
+
+ protected:
+  virtual ~APKAssetProviderInternal() = default;
+};
 
 class APKAssetProvider final : public AssetResolver {
  public:
@@ -22,14 +29,22 @@ class APKAssetProvider final : public AssetResolver {
                             jobject assetManager,
                             std::string directory);
 
-  explicit APKAssetProvider(std::shared_ptr<APKAssetProviderImpl> impl);
+  explicit APKAssetProvider(std::shared_ptr<APKAssetProviderInternal> impl);
 
   ~APKAssetProvider() = default;
 
+  // Returns a new 'std::unique_ptr<APKAssetProvider>' with the same 'impl_' as
+  // this provider.
   std::unique_ptr<APKAssetProvider> Clone() const;
 
+  // Obtain a raw pointer to the APKAssetProviderInternal.
+  //
+  // This method is intended for use in tests. Callers must not
+  // delete the returned pointer.
+  APKAssetProviderInternal* GetImpl() const { return impl_.get(); }
+
  private:
-  std::shared_ptr<APKAssetProviderImpl> impl_;
+  std::shared_ptr<APKAssetProviderInternal> impl_;
 
   // |flutter::AssetResolver|
   bool IsValid() const override;
