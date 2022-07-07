@@ -534,9 +534,6 @@ class TestParameters {
   // that require SkCanvas->DisplayList transfers.
   // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
   bool is_draw_shadows() const { return is_draw_shadows_; }
-  // The CPU renders nothing for drawVertices with a Blender.
-  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12200
-  bool is_draw_vertices() const { return is_draw_vertices_; }
   // Tests that call drawTextBlob with an sk_ref paint attribute will cause
   // those attributes to be stored in an internal Skia cache so we need
   // to expect that the |sk_ref.unique()| call will fail in those cases.
@@ -551,10 +548,6 @@ class TestParameters {
 
   TestParameters& set_draw_shadows() {
     is_draw_shadows_ = true;
-    return *this;
-  }
-  TestParameters& set_draw_vertices() {
-    is_draw_vertices_ = true;
     return *this;
   }
   TestParameters& set_draw_text_blob() {
@@ -592,7 +585,6 @@ class TestParameters {
   const DisplayListAttributeFlags& flags_;
 
   bool is_draw_shadows_ = false;
-  bool is_draw_vertices_ = false;
   bool is_draw_text_blob_ = false;
   bool is_draw_display_list_ = false;
   bool is_draw_line_ = false;
@@ -1122,7 +1114,7 @@ class CanvasCompareTester {
                      .with_bg(bg));
     }
 
-    if (!testP.is_draw_vertices()) {
+    {
       sk_sp<SkBlender> blender =
           SkBlenders::Arithmetic(0.25, 0.25, 0.25, 0.25, false);
       {
@@ -2623,8 +2615,7 @@ TEST_F(DisplayListCanvas, DrawVerticesWithColors) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawVertices(vertices, DlBlendMode::kSrcOver);
           },
-          kDrawVerticesFlags)
-          .set_draw_vertices());
+          kDrawVerticesFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
@@ -2676,8 +2667,7 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
             }
             builder.drawVertices(vertices, DlBlendMode::kSrcOver);
           },
-          kDrawVerticesFlags)
-          .set_draw_vertices());
+          kDrawVerticesFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawImageNearest) {
