@@ -1294,45 +1294,6 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   engine.reset();
 }
 
-//------------------------------------------------------------------------------
-/// FlutterEngineSetupJITSnapshots should successfully change the contents of
-/// the snapshots in project args.
-///
-TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
-#if defined(OS_FUCHSIA)
-  GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
-#endif  // OS_FUCHSIA
-
-  // This test is only relevant in JIT mode.
-  if (DartVM::IsRunningPrecompiledCode()) {
-    GTEST_SKIP();
-    return;
-  }
-
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
-  EmbedderConfigBuilder builder(context);
-  builder.SetSoftwareRendererConfig();
-
-  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                &(builder.GetProjectArgs()), "vm_snapshot_data",
-                "vm_snapshot_instructions", "isolate_snapshot_data",
-                "isolate_snapshot_instructions"),
-            kSuccess);
-
-  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_data,
-            reinterpret_cast<const uint8_t*>("vm_snapshot_data"));
-  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_instructions,
-            reinterpret_cast<const uint8_t*>("vm_snapshot_instructions"));
-  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_data,
-            reinterpret_cast<const uint8_t*>("isolate_snapshot_data"));
-  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_instructions,
-            reinterpret_cast<const uint8_t*>("isolate_snapshot_instructions"));
-
-  // Quick sanity check.
-  ASSERT_NE(builder.GetProjectArgs().vm_snapshot_data,
-            reinterpret_cast<const uint8_t*>("wrong_snapshot"));
-}
-
 #if defined(__clang_analyzer__)
 #define TEST_VM_SNAPSHOT_DATA nullptr
 #define TEST_VM_SNAPSHOT_INSTRUCTIONS nullptr
@@ -1342,7 +1303,8 @@ TEST_F(EmbedderTest, CanSuccessfullySpecifyJITSnapshotLocations) {
 
 //------------------------------------------------------------------------------
 /// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
-/// of the snapshots in the engine's settings.
+/// of the snapshots in the engine's settings when JIT snapshots are explicitly
+/// defined.
 ///
 TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
 #if defined(OS_FUCHSIA)
@@ -1370,11 +1332,15 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   const std::string isolate_snapshot_instructions =
       fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
-  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
-                vm_snapshot_instructions.c_str(), isolate_snapshot_data.c_str(),
-                isolate_snapshot_instructions.c_str()),
-            kSuccess);
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_data.c_str());
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions.c_str());
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_data.c_str());
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_instructions.c_str());
 
   auto engine = builder.LaunchEngine();
 
@@ -1385,6 +1351,48 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   ASSERT_NE(settings.vm_snapshot_instr(), nullptr);
   ASSERT_NE(settings.isolate_snapshot_data(), nullptr);
   ASSERT_NE(settings.isolate_snapshot_instr(), nullptr);
+}
+
+//------------------------------------------------------------------------------
+/// PopulateJITSnapshotMappingCallbacks should still be able to successfully
+/// change the callbacks of the snapshots in the engine's settings when JIT
+/// snapshots are explicitly defined. However, if those snapshot locations are
+/// invalid, the callbacks should return a nullptr.
+///
+TEST_F(EmbedderTest, JITSnapshotCallbacksFailWithInvalidLocation) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
+#endif  // OS_FUCHSIA
+
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // Explicitly define the locations of the invalid JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>("invalid_vm_data");
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>("invalid_vm_instructions");
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_data");
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_instructions");
+
+  auto engine = builder.LaunchEngine();
+
+  flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
+  const Settings settings = shell.GetSettings();
+
+  ASSERT_EQ(settings.vm_snapshot_data(), nullptr);
+  ASSERT_EQ(settings.vm_snapshot_instr(), nullptr);
+  ASSERT_EQ(settings.isolate_snapshot_data(), nullptr);
+  ASSERT_EQ(settings.isolate_snapshot_instr(), nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -1413,11 +1421,15 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSpecifiedJITSnapshots) {
   const std::string isolate_snapshot_instructions =
       fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
 
-  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
-                vm_snapshot_instructions.c_str(), isolate_snapshot_data.c_str(),
-                isolate_snapshot_instructions.c_str()),
-            kSuccess);
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_data.c_str());
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions.c_str());
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_data.c_str());
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_instructions.c_str());
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1445,10 +1457,11 @@ TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
   const std::string vm_snapshot_instructions =
       fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
 
-  ASSERT_EQ(FlutterEngineSetupJITSnapshots(
-                &(builder.GetProjectArgs()), vm_snapshot_data.c_str(),
-                vm_snapshot_instructions.c_str(), nullptr, nullptr),
-            kSuccess);
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_data.c_str());
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions.c_str());
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1470,10 +1483,11 @@ TEST_F(EmbedderTest, CanLaunchEngineWithInvalidJITSnapshots) {
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
 
-  ASSERT_EQ(FlutterEngineSetupJITSnapshots(&(builder.GetProjectArgs()), nullptr,
-                                           nullptr, "invalid_snapshot_data",
-                                           "invalid_snapshot_instructions"),
-            kSuccess);
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_data");
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_instructions");
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());

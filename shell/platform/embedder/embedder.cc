@@ -1006,29 +1006,6 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
   return kSuccess;
 }
 
-FlutterEngineResult FlutterEngineSetupJITSnapshots(
-    FlutterProjectArgs* args,
-    const char* vm_snapshot_data,
-    const char* vm_snapshot_instructions,
-    const char* isolate_snapshot_data,
-    const char* isolate_snapshot_instructions) {
-  // This function is only relevant in JIT mode.
-  if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    return LOG_EMBEDDER_ERROR(
-        kInvalidArguments, "JIT snapshots can only be specified in JIT mode.");
-  }
-
-  args->vm_snapshot_data = reinterpret_cast<const uint8_t*>(vm_snapshot_data);
-  args->vm_snapshot_instructions =
-      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions);
-  args->isolate_snapshot_data =
-      reinterpret_cast<const uint8_t*>(isolate_snapshot_data);
-  args->isolate_snapshot_instructions =
-      reinterpret_cast<const uint8_t*>(isolate_snapshot_instructions);
-
-  return kSuccess;
-}
-
 // Constructs appropriate mapping callbacks if JIT snapshot locations have been
 // explictly specified.
 void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
@@ -1043,28 +1020,26 @@ void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
     };
   };
 
-  if (SAFE_ACCESS(args, assets_path, nullptr) != nullptr) {
-    // Users are allowed to specify only certain snapshots if they so desire.
-    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data = make_mapping_callback(
-          reinterpret_cast<const char*>(args->vm_snapshot_data), false);
-    }
+  // Users are allowed to specify only certain snapshots if they so desire.
+  if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+    settings.vm_snapshot_data = make_mapping_callback(
+        reinterpret_cast<const char*>(args->vm_snapshot_data), false);
+  }
 
-    if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
-      settings.vm_snapshot_instr = make_mapping_callback(
-          reinterpret_cast<const char*>(args->vm_snapshot_instructions), true);
-    }
+  if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+    settings.vm_snapshot_instr = make_mapping_callback(
+        reinterpret_cast<const char*>(args->vm_snapshot_instructions), true);
+  }
 
-    if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      settings.isolate_snapshot_data = make_mapping_callback(
-          reinterpret_cast<const char*>(args->isolate_snapshot_data), false);
-    }
+  if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+    settings.isolate_snapshot_data = make_mapping_callback(
+        reinterpret_cast<const char*>(args->isolate_snapshot_data), false);
+  }
 
-    if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
-      settings.isolate_snapshot_instr = make_mapping_callback(
-          reinterpret_cast<const char*>(args->isolate_snapshot_instructions),
-          true);
-    }
+  if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+    settings.isolate_snapshot_instr = make_mapping_callback(
+        reinterpret_cast<const char*>(args->isolate_snapshot_instructions),
+        true);
   }
 }
 
@@ -2705,7 +2680,6 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
-  SET_PROC(SetupJITSnapshots, FlutterEngineSetupJITSnapshots);
 #undef SET_PROC
 
   return kSuccess;
