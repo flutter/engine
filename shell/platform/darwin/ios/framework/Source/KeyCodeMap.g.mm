@@ -351,7 +351,7 @@ NSDictionary<NSString*, NSNumber*>* specialKeyMapping = [[NSDictionary alloc] in
   UIKeyInputEnd : @(0x10000000d),
   UIKeyInputPageUp : @(0x100000308),
   UIKeyInputPageDown : @(0x100000307),
-};
+}];
 
 const uint64_t kCapsLockPhysicalKey = 0x00070039;
 const uint64_t kCapsLockLogicalKey = 0x100000104;
