@@ -405,8 +405,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
       // If the inner SurfaceRenderer isn't producing frames, don't try to acquire an image.
       if (!inner.canProduceFrames()) {
-        Log.i(TAG, "Inner SurfaceRenderer no longer producing frames, ignoring");
-        return;
+        Log.i(TAG, "Inner SurfaceRenderer no longer producing frames");
       }
 
       if (!canWriteImage) {
