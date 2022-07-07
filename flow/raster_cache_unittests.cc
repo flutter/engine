@@ -127,7 +127,6 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
   SkMatrix matrix = SkMatrix::I();
 
   auto display_list = GetSampleDisplayList();
-  ;
 
   SkCanvas dummy_canvas;
   SkPaint paint;

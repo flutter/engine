@@ -105,7 +105,7 @@ class RasterCache {
 
   static std::unique_ptr<RasterCacheResult> Rasterize(
       const RasterCache::Context& context,
-      const std::function<void(SkCanvas*)>& draw_function);
+      const std::function<bool(SkCanvas*)>& draw_function);
 
   explicit RasterCache(
       size_t access_threshold = 3,
@@ -122,6 +122,8 @@ class RasterCache {
   bool Draw(const RasterCacheKeyID& id,
             SkCanvas& canvas,
             const SkPaint* paint) const;
+
+  void IncreaseDisplayListCacheCount() { display_list_cached_this_frame_++; }
 
   bool Touch(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
 
@@ -198,11 +200,15 @@ class RasterCache {
    * a new entry that will be 1.
    */
   int MarkSeen(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
+  int MarkDisplayListSeen(const RasterCacheKeyID& id,
+                          const SkMatrix& matrix) const;
+
+  bool HasCached(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
 
   bool UpdateCacheEntry(
       const RasterCacheKeyID& id,
       const Context& raster_cache_context,
-      const std::function<void(SkCanvas*)>& render_function) const;
+      const std::function<bool(SkCanvas*)>& render_function) const;
 
  private:
   struct Entry {

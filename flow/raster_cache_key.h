@@ -25,7 +25,7 @@ class RasterCacheKeyID {
   RasterCacheKeyID(uint16_t id, RasterCacheKeyType type)
       : ids_({id}), type_(type) {}
 
-  RasterCacheKeyID(const std::vector<uint64_t> ids, RasterCacheKeyType type)
+  RasterCacheKeyID(const std::vector<uint64_t>& ids, RasterCacheKeyType type)
       : ids_(ids), type_(type) {}
 
   const std::vector<uint64_t>& ids() const { return ids_; }

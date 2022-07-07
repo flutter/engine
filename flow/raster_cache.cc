@@ -11,6 +11,7 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
+#include "flutter/flow/raster_cache_key.h"
 #include "flutter/flow/raster_cache_util.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
@@ -51,7 +52,7 @@ RasterCache::RasterCache(size_t access_threshold,
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
-    const std::function<void(SkCanvas*)>& draw_function) {
+    const std::function<bool(SkCanvas*)>& draw_function) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
   SkRect dest_rect =
@@ -76,7 +77,10 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   canvas->clear(SK_ColorTRANSPARENT);
   canvas->translate(-dest_rect.left(), -dest_rect.top());
   canvas->concat(context.matrix);
-  draw_function(canvas);
+
+  if (!draw_function(canvas)) {
+    return nullptr;
+  }
 
   if (context.checkerboard) {
     DrawCheckerboard(canvas, context.logical_rect);
@@ -89,23 +93,12 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 bool RasterCache::UpdateCacheEntry(
     const RasterCacheKeyID& id,
     const Context& raster_cache_context,
-    const std::function<void(SkCanvas*)>& render_function) const {
+    const std::function<bool(SkCanvas*)>& render_function) const {
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
   entry.used_this_frame = true;
   if (!entry.image) {
     entry.image = Rasterize(raster_cache_context, render_function);
-    if (entry.image != nullptr) {
-      switch (id.type()) {
-        case RasterCacheKeyType::kDisplayList: {
-          display_list_cached_this_frame_++;
-          break;
-        }
-        default:
-          break;
-      }
-      return true;
-    }
   }
   return entry.image != nullptr;
 }
@@ -115,7 +108,6 @@ bool RasterCache::Touch(const RasterCacheKeyID& id,
   RasterCacheKey cache_key = RasterCacheKey(id, matrix);
   auto it = cache_.find(cache_key);
   if (it != cache_.end()) {
-    it->second.access_count++;
     it->second.used_this_frame = true;
     return true;
   }
@@ -126,7 +118,13 @@ int RasterCache::MarkSeen(const RasterCacheKeyID& id,
                           const SkMatrix& matrix) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
-  entry.used_this_frame = true;
+  return entry.access_count;
+}
+
+int RasterCache::MarkDisplayListSeen(const RasterCacheKeyID& id,
+                                     const SkMatrix& matrix) const {
+  RasterCacheKey key = RasterCacheKey(id, matrix);
+  Entry& entry = cache_[key];
   return entry.access_count;
 }
 
@@ -135,6 +133,16 @@ bool RasterCache::HasEntry(const RasterCacheKeyID& id,
   RasterCacheKey key = RasterCacheKey(id, matrix);
   if (cache_.find(key) != cache_.cend()) {
     return true;
+  }
+  return false;
+}
+
+bool RasterCache::HasCached(const RasterCacheKeyID& id,
+                            const SkMatrix& matrix) const {
+  RasterCacheKey key = RasterCacheKey(id, matrix);
+  auto it = cache_.find(key);
+  if (it != cache_.end()) {
+    return it->second.image != nullptr;
   }
   return false;
 }

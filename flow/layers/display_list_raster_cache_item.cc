@@ -14,6 +14,7 @@
 #include "flutter/flow/raster_cache_key.h"
 #include "flutter/flow/raster_cache_util.h"
 #include "flutter/flow/skia_gpu_object.h"
+#include "flutter/fml/logging.h"
 
 namespace flutter {
 
@@ -52,7 +53,7 @@ DisplayListRasterCacheItem::DisplayListRasterCacheItem(
     bool will_change)
     : RasterCacheItem(RasterCacheKeyID(display_list->unique_id(),
                                        RasterCacheKeyType::kDisplayList),
-                      CacheState::kCurrent),
+                      CacheState::kNone),
       display_list_(display_list),
       offset_(offset),
       is_complex_(is_complex),
@@ -70,6 +71,9 @@ std::unique_ptr<DisplayListRasterCacheItem> DisplayListRasterCacheItem::Make(
 void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
                                               const SkMatrix& matrix) {
   cache_state_ = CacheState::kNone;
+  if (!context->raster_cache->GenerateNewCacheInThisFrame()) {
+    return;
+  }
   DisplayListComplexityCalculator* complexity_calculator =
       context->gr_context ? DisplayListComplexityCalculator::GetForBackend(
                                 context->gr_context->backend())
@@ -81,6 +85,7 @@ void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
     return;
   }
 
+  matrix_ = matrix;
   transformation_matrix_ = matrix;
   transformation_matrix_.preTranslate(offset_.x(), offset_.y());
 
@@ -88,11 +93,7 @@ void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
     // The matrix was singular. No point in going further.
     return;
   }
-
-  if (context->raster_cached_entries && context->raster_cache) {
-    context->raster_cached_entries->push_back(this);
-    cache_state_ = CacheState::kCurrent;
-  }
+  cache_state_ = CacheState::kCurrent;
   return;
 }
 
@@ -108,17 +109,34 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   // if the rect is intersect we will get the entry access_count to confirm if
   // it great than the threshold. Otherwise we only increase the entry
   // access_count.
+  cache_state_ = CacheState::kNone;
   if (context->cull_rect.intersect(bounds)) {
-    if (raster_cache->MarkSeen(key_id_, transformation_matrix_) <
+    // Thought MarkDisplayListSeen we only get the access cout or create entry.
+    // Don't increase the access_count or use_this_frame = true.
+    if (raster_cache->MarkDisplayListSeen(key_id_, transformation_matrix_) <
         raster_cache->access_threshold()) {
-      cache_state_ = CacheState::kNone;
       return;
     }
+    // We need to make sure that we create a maximum of three images per frame.
+    // This display_list can be cached and current entry doesn't create image,
+    // so we should increate the cache count.
+    if (!raster_cache->HasCached(key_id_, transformation_matrix_)) {
+      context->raster_cache->IncreaseDisplayListCacheCount();
+      cache_state_ = CacheState::kCurrent;
+    } else {
+      // Current DL has generator a image and in here it may be used in this
+      // frame, so we need to touch it.
+      raster_cache->Touch(key_id_, matrix);
+    }
     context->subtree_can_inherit_opacity = true;
-    cache_state_ = CacheState::kCurrent;
   } else {
+    // if the bounds with the cull rect is not intersect, we only touch the
+    // cache entry. And should not cache the display list
     raster_cache->Touch(key_id_, matrix);
+    return;
   }
+  // If the display_list can be cached we will add it to cache_entries.
+  context->raster_cached_entries->push_back(this);
   return;
 }
 
@@ -133,13 +151,8 @@ bool DisplayListRasterCacheItem::Draw(const PaintContext& context,
   if (!context.raster_cache || !canvas) {
     return false;
   }
-  if (cache_state_ == CacheState::kCurrent) {
-    return context.raster_cache->Draw(key_id_, *canvas, paint);
-  }
-  // This display_list doesn't cache itself, this only increase the entry
-  // access_count;
-  context.raster_cache->Touch(key_id_, canvas->getTotalMatrix());
-  return false;
+
+  return context.raster_cache->Draw(key_id_, *canvas, paint);
 }
 
 static const auto* flow_type = "RasterCacheFlow::DisplayList";
@@ -153,11 +166,12 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
   // display_list or picture_list to calculate the memory they used, we
   // shouldn't cache the current node if the memory is more significant than the
   // limit.
-  if (cache_state_ == kNone || !context.raster_cache || parent_cached ||
-      !context.raster_cache->GenerateNewCacheInThisFrame()) {
+  if (cache_state_ == CacheState::kNone || !context.raster_cache ||
+      parent_cached) {
     return false;
   }
-  SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
+
+  SkRect bounds = display_list_->bounds();
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = context.gr_context,
@@ -169,9 +183,9 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       // clang-format on
   };
   return context.raster_cache->UpdateCacheEntry(
-      GetId().value(), r_context,
-      [display_list = display_list_](SkCanvas* canvas) {
+      key_id_, r_context, [display_list = display_list_](SkCanvas* canvas) {
         display_list->RenderTo(canvas);
+        return true;
       });
 }
 }  // namespace flutter

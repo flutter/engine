@@ -2434,7 +2434,8 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
                                                          matrix);
           picture_cache_generated =
               display_list_raster_cache_item.need_caching();
-          display_list_raster_cache_item.TryToPrepareRasterCache(paint_context);
+          display_list_raster_cache_item.TryToPrepareRasterCache(paint_context,
+                                                                 false);
           display_list_raster_cache_item.Draw(paint_context, &dummy_canvas,
                                               &paint);
         }
@@ -2445,7 +2446,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
         layer_raster_cache_item.PrerollFinalize(&preroll_context,
                                                 SkMatrix::I());
-        layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
+        layer_raster_cache_item.TryToPrepareRasterCache(paint_context, false);
         layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
         rasterized.set_value(true);
       });

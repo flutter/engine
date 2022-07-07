@@ -38,6 +38,9 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix child_matrix = matrix;
   child_matrix.preTranslate(offset_.fX, offset_.fY);
 
+  AutoCache auto_cache =
+      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
+
   // Similar to what's done in TransformLayer::Preroll, we have to apply the
   // reverse transformation to the cull rect to properly cull child layers.
   context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
@@ -46,8 +49,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
 
-  AutoCache auto_cache =
-      AutoCache(layer_raster_cache_item_.get(), context, matrix);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 

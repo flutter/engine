@@ -26,7 +26,7 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   path.addRect(100, 100, 100 + width, 100 + height);
   MockCacheableLayer layer = MockCacheableLayer(path);
   layer.Preroll(&preroll_context_, ctm);
-  layer.raster_cache_item()->TryToPrepareRasterCache(paint_context_);
+  layer.raster_cache_item()->TryToPrepareRasterCache(paint_context_, false);
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = preroll_context_.gr_context,
@@ -38,10 +38,10 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   };
   UpdateCacheEntry(
       RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer),
-      r_context, [&](SkCanvas* canvas) {
+      r_context, [&](SkCanvas* canvas) -> bool {
         SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
             r_context.logical_rect, r_context.matrix);
-        return std::make_unique<MockRasterCacheResult>(cache_rect);
+        return std::make_unique<MockRasterCacheResult>(cache_rect) != nullptr;
       });
 }
 
@@ -74,13 +74,14 @@ void MockRasterCache::AddMockPicture(int width, int height) {
       .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
       // clang-format on
   };
-  UpdateCacheEntry(RasterCacheKeyID(display_list->unique_id(),
-                                    RasterCacheKeyType::kDisplayList),
-                   r_context, [&](SkCanvas* canvas) {
-                     SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
-                         r_context.logical_rect, r_context.matrix);
-                     return std::make_unique<MockRasterCacheResult>(cache_rect);
-                   });
+  UpdateCacheEntry(
+      RasterCacheKeyID(display_list->unique_id(),
+                       RasterCacheKeyType::kDisplayList),
+      r_context, [&](SkCanvas* canvas) -> bool {
+        SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+            r_context.logical_rect, r_context.matrix);
+        return std::make_unique<MockRasterCacheResult>(cache_rect) != nullptr;
+      });
 }
 
 static std::vector<RasterCacheItem*> raster_cache_items_;
@@ -152,7 +153,7 @@ bool DisplayListRasterCacheItemTryToRasterCache(
   display_list_item.PrerollFinalize(&context, matrix);
   if (display_list_item.cache_state() ==
       RasterCacheItem::CacheState::kCurrent) {
-    return display_list_item.TryToPrepareRasterCache(paint_context);
+    return display_list_item.TryToPrepareRasterCache(paint_context, false);
   }
   return false;
 }

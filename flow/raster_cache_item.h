@@ -55,7 +55,7 @@ class RasterCacheItem {
   virtual std::optional<RasterCacheKeyID> GetId() const { return key_id_; }
 
   virtual bool TryToPrepareRasterCache(const PaintContext& context,
-                                       bool parent_cached = false) const = 0;
+                                       bool parent_cached) const = 0;
 
   unsigned child_items() const { return child_items_; }
 

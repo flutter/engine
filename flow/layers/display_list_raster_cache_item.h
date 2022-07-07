@@ -45,7 +45,7 @@ class DisplayListRasterCacheItem : public RasterCacheItem {
             const SkPaint* paint) const override;
 
   bool TryToPrepareRasterCache(const PaintContext& context,
-                               bool parent_cached = false) const override;
+                               bool parent_cached) const override;
 
   void ModifyMatrix(SkPoint offset) const {
     matrix_ = matrix_.preTranslate(offset.x(), offset.y());

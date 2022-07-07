@@ -42,18 +42,11 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
   if (!context->raster_cache || !context->raster_cached_entries) {
     return;
   }
-  // We've marked the cache entry that we would like to cache so it stays
-  // alive, but if the following conditions apply then we need to set our
-  // state back to kDoNotCache so that we don't populate the entry later.
-  if (context->has_platform_view || context->has_texture_layer ||
-      !SkRect::Intersects(context->cull_rect, layer_->paint_bounds())) {
-    return;
-  }
   child_items_ = context->raster_cached_entries->size() - child_items_;
+  // Determine cache current layer or cache children.
   if (num_cache_attempts_ >= layer_cached_threshold_) {
     // the layer can be cached
     cache_state_ = CacheState::kCurrent;
-    context->raster_cache->MarkSeen(key_id_, matrix_);
   } else {
     num_cache_attempts_++;
     // access current layer
@@ -67,8 +60,24 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
                                    RasterCacheKeyType::kLayerChildren);
       }
       cache_state_ = CacheState::kChildren;
-      context->raster_cache->MarkSeen(layer_children_id_.value(), matrix_);
     }
+  }
+  // We've marked the cache entry that we would like to cache so it stays
+  // alive, but if the following conditions apply then we need to set our
+  // state back to kDoNotCache so that we don't populate the entry later.
+  if (context->has_platform_view || context->has_texture_layer ||
+      !SkRect::Intersects(context->cull_rect, layer_->paint_bounds())) {
+    if (cache_state_ != CacheState::kNone) {
+      // Only touch the entry, do not to cache the layer or children.
+      context->raster_cache->Touch(GetId().value(), matrix_);
+      cache_state_ = CacheState::kNone;
+    }
+    return;
+  }
+  // The layer can be cache, so we should create a entry.
+  if (cache_state_ != CacheState::kNone) {
+    // Create Cache entry
+    context->raster_cache->MarkSeen(GetId().value(), matrix_);
   }
 }
 
@@ -111,19 +120,20 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
           .leaf_nodes_canvas             = canvas,
           .gr_context                    = paint_context.gr_context,
           .dst_color_space               = paint_context.dst_color_space,
-          .view_embedder                 = paint_context.view_embedder,
+          .view_embedder                 = nullptr,
           .raster_time                   = paint_context.raster_time,
           .ui_time                       = paint_context.ui_time,
           .texture_registry              = paint_context.texture_registry,
-          .raster_cache                  = paint_context.raster_cache,
+          .raster_cache                  = layer->subtree_has_platform_view() ? nullptr: paint_context.raster_cache,
           .checkerboard_offscreen_layers = paint_context.checkerboard_offscreen_layers,
           .frame_device_pixel_ratio      = paint_context.frame_device_pixel_ratio,
       // clang-format on
   };
-
   switch (cache_state) {
     case RasterCacheItem::CacheState::kCurrent:
-      FML_DCHECK(layer->needs_painting(context));
+      if (!layer->needs_painting(context)) {
+        return false;
+      }
       layer->Paint(context);
       break;
     case RasterCacheItem::CacheState::kChildren:
@@ -140,7 +150,11 @@ static const auto* flow_type = "RasterCacheFlow::Layer";
 
 bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
                                                    bool parent_cached) const {
-  if (!context.raster_cache || parent_cached) {
+  if (!context.raster_cache) {
+    return false;
+  }
+  if (parent_cached) {
+    context.raster_cache->Touch(GetId().value(), matrix_);
     return false;
   }
   if (cache_state_ != kNone) {
@@ -159,7 +173,7 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
           GetId().value(), r_context,
           [ctx = context, cache_state = cache_state_,
            layer = layer_](SkCanvas* canvas) {
-            Rasterize(cache_state, layer, ctx, canvas);
+            return Rasterize(cache_state, layer, ctx, canvas);
           });
     }
   }
@@ -174,20 +188,10 @@ bool LayerRasterCacheItem::Draw(const PaintContext& context,
 bool LayerRasterCacheItem::Draw(const PaintContext& context,
                                 SkCanvas* canvas,
                                 const SkPaint* paint) const {
-  if (!context.raster_cache || !canvas) {
+  if (!context.raster_cache || !canvas || cache_state_ == CacheState::kNone) {
     return false;
   }
-  switch (cache_state_) {
-    case RasterCacheItem::kNone:
-      return false;
-    case RasterCacheItem::kCurrent: {
-      return context.raster_cache->Draw(key_id_, *canvas, paint);
-    }
-    case RasterCacheItem::kChildren: {
-      return context.raster_cache->Draw(layer_children_id_.value(), *canvas,
-                                        paint);
-    }
-  }
+  return context.raster_cache->Draw(GetId().value(), *canvas, paint);
 }
 
 }  // namespace flutter

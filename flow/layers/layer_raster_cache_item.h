@@ -43,7 +43,7 @@ class LayerRasterCacheItem : public RasterCacheItem {
             const SkPaint* paint) const override;
 
   bool TryToPrepareRasterCache(const PaintContext& context,
-                               bool parent_cached = false) const override;
+                               bool parent_cached) const override;
 
   void MarkCacheChildren() { can_cache_children_ = true; }
 
