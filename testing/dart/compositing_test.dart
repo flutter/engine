@@ -8,7 +8,7 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 
 void main() {
-  test('Scene.toGpuImage succeeds', () async {
+  test('Scene.toImageSync succeeds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawPaint(Paint()..color = const Color(0xFF123456));
@@ -18,7 +18,7 @@ void main() {
     builder.addPicture(const Offset(5, 5), picture);
     final Scene scene = builder.build();
 
-    final Image image = scene.toGpuImage(6, 8);
+    final Image image = scene.toImageSync(6, 8);
     picture.dispose();
     scene.dispose();
 
