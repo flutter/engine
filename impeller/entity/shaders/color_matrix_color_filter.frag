@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <impeller/color.glsl>
+
 // A color filter that transforms colors through a 4x5 color matrix.
 //
 // This filter can be used to change the saturation of pixels, convert from YUV to RGB, etc.
@@ -24,31 +26,26 @@
 // That resulting color [R’, G’, B’, A’] then has each channel clamped to the 0 to 255 range.
 
 uniform FragInfo {
-  mat4 m;
-  vec4 v;
+  mat4 color_m;
+  vec4 color_v;
 
+  vec2 texture_size;
 } frag_info;
 
-uniform sampler2D texture_sampler;
+uniform sampler2D input_texture;
 
-in vec4 v_color;
-
+in vec2 v_position;
 out vec4 frag_color;
 
-vec4 Unpremultiply(vec4 color) {
-  if (color.a == 0) {
-    return vec4(0);
-  }
-  return vec4(color.rgb / color.a, color.a);
-}
-
 void main() {
+  vec4 input_color = texture(input_texture, frag_info.texture_size / v_position);
+
   // unpremultiply first, as filter inputs are premultiplied.
-  vec4 color = Unpremultiply(v_color);
+  vec4 color = IPUnpremultiply(input_color);
 
-  color = frag_info.m * v_color + frag_info.v;
+  color = frag_info.color_m * color + frag_info.color_v;
 
-  // we likely need to clamp `frag_color` at this point.
+  // TODO(kaushikiska@): we likely need to clamp `frag_color` at this point.
   // color = clamp(color);
 
   // premultiply the outputs

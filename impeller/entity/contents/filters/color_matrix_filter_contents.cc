@@ -8,6 +8,7 @@
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -38,17 +39,25 @@ bool ColorMatrixFilterContents::RenderFilter(const FilterInput::Vector& inputs,
   if (!input_snapshot.has_value()) {
     return true;
   }
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
   Command cmd;
   cmd.label = "Color Matrix Filter";
+
   auto options = OptionsFromPass(pass);
   options.blend_mode = Entity::BlendMode::kSource;
-
   cmd.pipeline = renderer.GetColorMatrixColorFilterPipeline(options);
+
+  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+  vtx_builder.AddVertices({
+      {Point(0, 0)},
+      {Point(1, 0)},
+      {Point(1, 1)},
+      {Point(0, 0)},
+      {Point(1, 1)},
+      {Point(0, 1)},
+  });
+  auto& host_buffer = pass.GetTransientsBuffer();
+  auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
   cmd.BindVertices(vtx_buffer);
 
   VS::FrameInfo frame_info;
@@ -56,9 +65,10 @@ bool ColorMatrixFilterContents::RenderFilter(const FilterInput::Vector& inputs,
 
   FS::FragInfo frag_info;
   const float* matrix = matrix_.array;
-  frag_info.v = Vector4(matrix[4], matrix[9], matrix[14], matrix[19]);
+  frag_info.texture_size = Vector2(input_snapshot->texture->GetSize());
+  frag_info.color_v = Vector4(matrix[4], matrix[9], matrix[14], matrix[19]);
   // clang-format off
-  frag_info.m =
+  frag_info.color_m =
       Matrix(
         matrix[ 0], matrix[ 1], matrix[ 2], matrix[ 3],
         matrix[ 5], matrix[ 6], matrix[ 7], matrix[ 8],
@@ -68,10 +78,10 @@ bool ColorMatrixFilterContents::RenderFilter(const FilterInput::Vector& inputs,
   // clang-format on
 
   auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-  // FS::BindTextureSampler(cmd, input_snapshot->texture, sampler);
+  FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
   return pass.AddCommand(std::move(cmd));
 }

@@ -255,8 +255,6 @@ void DisplayListDispatcher::setColorFilter(
       return;
     }
     case flutter::DlColorFilterType::kMatrix: {
-      // TODO (kaushikiska@): implement color filter.
-      FML_LOG(ERROR) << "requested DlColorFilterType::kMatrix";
       const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
       impeller::FilterContents::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
