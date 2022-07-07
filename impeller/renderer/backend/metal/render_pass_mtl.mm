@@ -6,6 +6,7 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/thread_pool.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
@@ -499,29 +500,28 @@ bool RenderPassMTL::EncodeCommands(
     id<MTLParallelRenderCommandEncoder> parallelRCE) const {
   const auto size = commands_.size();
   if (size >= 3) {
+    fml::ThreadPool thread_pool(3);
+
     id<MTLRenderCommandEncoder> rCE1 = [parallelRCE renderCommandEncoder];
     id<MTLRenderCommandEncoder> rCE2 = [parallelRCE renderCommandEncoder];
     id<MTLRenderCommandEncoder> rCE3 = [parallelRCE renderCommandEncoder];
 
-    __block bool r2 = false;
-    dispatch_group_t group = dispatch_group_create();
-    dispatch_queue_t queue =
-        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-    dispatch_group_async(group, queue, ^{
-      r2 = EncodeCommands(allocator, rCE2, commands_.size() / 3,
-                          commands_.size() * 2 / 3);
+    auto res2_future = thread_pool.enqueue([this, allocator, rCE2] {
+      @autoreleasepool {
+        return EncodeCommands(allocator, rCE2, commands_.size() / 3,
+                              commands_.size() * 2 / 3);
+      }
     });
 
-    __block bool r3 = false;
-    dispatch_group_async(group, queue, ^{
+    auto res3_future = thread_pool.enqueue([this, allocator, rCE3] {
       @autoreleasepool {
-        r3 = EncodeCommands(allocator, rCE3, commands_.size() * 2 / 3,
-                            commands_.size());
+        return EncodeCommands(allocator, rCE3, commands_.size() * 2 / 3,
+                              commands_.size());
       }
     });
 
     bool r1 = EncodeCommands(allocator, rCE1, 0, commands_.size() / 3);
-    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+
     // Success or failure, the pass must end. The buffer can only process one
     // pass at a time.
     fml::ScopedCleanupClosure auto_end([rCE1, rCE2, rCE3]() {
@@ -529,7 +529,7 @@ bool RenderPassMTL::EncodeCommands(
       [rCE2 endEncoding];
       [rCE3 endEncoding];
     });
-    return r1 && r2 && r3;
+    return r1 && res2_future->get() && res3_future->get();
   } else {
     id<MTLRenderCommandEncoder> rCE1 = [parallelRCE renderCommandEncoder];
     bool res = EncodeCommands(allocator, rCE1, 0, size);
