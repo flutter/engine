@@ -102,29 +102,17 @@ class EngineAccessibilityFeatures implements ui.AccessibilityFeatures {
       bool? highContrast,
       bool? onOffSwitchLabels})
   {
-    int value = 0;
-    if (accessibleNavigation ?? this.accessibleNavigation) {
-      value = value | _kAccessibleNavigation;
-    }
-    if (invertColors ?? this.invertColors) {
-      value = value | _kInvertColorsIndex;
-    }
-    if (disableAnimations ?? this.disableAnimations) {
-      value = value | _kDisableAnimationsIndex;
-    }
-    if (boldText ?? this.boldText) {
-      value = value | _kBoldTextIndex;
-    }
-    if (reduceMotion ?? this.reduceMotion) {
-      value = value | _kReduceMotionIndex;
-    }
-    if (highContrast ?? this.highContrast) {
-      value = value | _kHighContrastIndex;
-    }
-    if (onOffSwitchLabels ?? this.onOffSwitchLabels) {
-      value = value | _kOnOffSwitchLabelsIndex;
-    }
-    return EngineAccessibilityFeatures(value);
+    final EngineAccessibilityFeaturesBuilder builder = EngineAccessibilityFeaturesBuilder(0);
+
+    builder.accessibleNavigation = accessibleNavigation ?? this.accessibleNavigation;
+    builder.invertColors = invertColors ?? this.invertColors;
+    builder.disableAnimations = disableAnimations ?? this.disableAnimations;
+    builder.boldText = boldText ?? this.boldText;
+    builder.reduceMotion = reduceMotion ?? this.reduceMotion;
+    builder.highContrast = highContrast ?? this.highContrast;
+    builder.onOffSwitchLabels = onOffSwitchLabels ?? this.onOffSwitchLabels;
+
+    return builder.build();
   }
 }
 
@@ -132,6 +120,14 @@ class EngineAccessibilityFeaturesBuilder {
   EngineAccessibilityFeaturesBuilder(this._index);
 
   int _index = 0;
+
+  bool get accessibleNavigation => EngineAccessibilityFeatures._kAccessibleNavigation & _index != 0;
+  bool get invertColors => EngineAccessibilityFeatures._kInvertColorsIndex & _index != 0;
+  bool get disableAnimations => EngineAccessibilityFeatures._kDisableAnimationsIndex & _index != 0;
+  bool get boldText => EngineAccessibilityFeatures._kBoldTextIndex & _index != 0;
+  bool get reduceMotion => EngineAccessibilityFeatures._kReduceMotionIndex & _index != 0;
+  bool get highContrast => EngineAccessibilityFeatures._kHighContrastIndex & _index != 0;
+  bool get onOffSwitchLabels => EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex & _index != 0;
 
   set accessibleNavigation(bool value) {
     const int accessibleNavigation = EngineAccessibilityFeatures._kAccessibleNavigation;
@@ -168,6 +164,7 @@ class EngineAccessibilityFeaturesBuilder {
     _index = value? _index | onOffSwitchLabels : _index & ~onOffSwitchLabels;
   }
 
+  /// Creates and returns an instance of EngineAccessibilityFeatures based on the value of _index
   EngineAccessibilityFeatures build() {
     return EngineAccessibilityFeatures(_index);
   }

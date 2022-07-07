@@ -34,36 +34,35 @@ import 'window.dart';
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback? scheduleFrameCallback;
 
+/// Signature of functions added as a listener to high contrast changes
+typedef HighContrastListener = void Function(bool enabled);
 typedef _KeyDataResponseCallback = void Function(bool handled);
-typedef HighContrastListener = void Function(bool);
 
 
-/// Determines if high contrast is enabled using media query 'forced-colors: active' for windows
-/// TODO(negarb): Add support for web on Mac/iOS/andriod
+/// Determines if high contrast is enabled using media query 'forced-colors: active' for Windows
 class HighContrastSupport {
   static HighContrastSupport instance = HighContrastSupport();
   static const String _highContrastMediaQueryString = '(forced-colors: active)';
 
-  final List<HighContrastListener> listeners = <HighContrastListener>[];
+  final List<HighContrastListener> _listeners = <HighContrastListener>[];
 
   /// Reference to css media query that indicates whether high contrast is on.
-  final html.MediaQueryList _highContrastMediaQuery =
-      html.window.matchMedia(_highContrastMediaQueryString);
+  final html.MediaQueryList _highContrastMediaQuery = html.window.matchMedia(_highContrastMediaQueryString);
 
-  bool isHighContrastEnabled() {
-    return _highContrastMediaQuery.matches;
-  }
+  bool get isHighContrastEnabled => _highContrastMediaQuery.matches;
 
+  /// Adds function to the list of listeners on high contrast changes
   void addListener(HighContrastListener listener) {
-    if (listeners.isEmpty) {
+    if (_listeners.isEmpty) {
       _highContrastMediaQuery.addListener(_onHighContrastChange);
     }
-    listeners.add(listener);
+    _listeners.add(listener);
   }
 
+  /// Removes function from the list of listeners on high contrast changes
   void removeListener(HighContrastListener listener) {
-    listeners.remove(listener);
-    if (listeners.isEmpty) {
+    _listeners.remove(listener);
+    if (_listeners.isEmpty) {
       _highContrastMediaQuery.removeListener(_onHighContrastChange);
     }
   }
@@ -71,7 +70,7 @@ class HighContrastSupport {
   void _onHighContrastChange(html.Event event) {
     final html.MediaQueryListEvent mqEvent = event as html.MediaQueryListEvent;
     final bool isHighContrastEnabled = mqEvent.matches!;
-    for (final HighContrastListener listener in listeners) {
+    for (final HighContrastListener listener in _listeners) {
       listener(isHighContrastEnabled);
     }
   }
@@ -100,14 +99,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
-    accessibilityFeatures: initializeAccessibilityFeatures(),
+    accessibilityFeatures: computeAccessibilityFeatures(),
   );
 
-  /// Initialize accessibility features based on the current value of high contrast flag
-  static EngineAccessibilityFeatures initializeAccessibilityFeatures() {
+  /// Compute accessibility features based on the current value of high contrast flag
+  static EngineAccessibilityFeatures computeAccessibilityFeatures() {
     final EngineAccessibilityFeaturesBuilder builder =
         EngineAccessibilityFeaturesBuilder(0);
-    if (HighContrastSupport.instance.isHighContrastEnabled()) {
+    if (HighContrastSupport.instance.isHighContrastEnabled) {
       builder.highContrast = true;
     }
     return builder.build();

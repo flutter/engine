@@ -165,27 +165,25 @@ void testMain() {
 class MockHighContrastSupport implements HighContrastSupport {
   bool isEnabled = true;
 
-  @override
-  final List<HighContrastListener> listeners = <HighContrastListener>[];
+  final List<HighContrastListener> _listeners = <HighContrastListener>[];
 
   @override
-  bool isHighContrastEnabled() {
-    return isEnabled;
-  }
+  bool get isHighContrastEnabled => isEnabled;
+
 
   void invokeListeners(bool val) {
-    for (final HighContrastListener listener in listeners) {
+    for (final HighContrastListener listener in _listeners) {
       listener(val);
     }
   }
 
   @override
   void addListener(HighContrastListener listener) {
-    listeners.add(listener);
+    _listeners.add(listener);
   }
 
   @override
   void removeListener(HighContrastListener listener) {
-    listeners.remove(listener);
+    _listeners.remove(listener);
   }
 }
