@@ -769,6 +769,23 @@ def GatherFrontEndServerTests(build_dir):
     )
 
 
+def GatherPathOpsTests(build_dir):
+  test_dir = os.path.join(
+      buildroot_dir, 'flutter', 'tools', 'path_ops', 'dart', 'test'
+  )
+  opts = [
+      '--disable-dart-dev',
+      os.path.join(test_dir, 'path_ops_test.dart')
+  ]
+  yield EngineExecutableTask(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir
+  )
+
+
 def GatherConstFinderTests(build_dir):
   test_dir = os.path.join(
       buildroot_dir, 'flutter', 'tools', 'const_finder', 'test'
@@ -1031,6 +1048,7 @@ def main():
     tasks += list(GatherGithooksTests(build_dir))
     tasks += list(GatherClangTidyTests(build_dir))
     tasks += list(GatherApiConsistencyTests(build_dir))
+    tasks += list(GatherPathOpsTests(build_dir))
     tasks += list(GatherConstFinderTests(build_dir))
     tasks += list(GatherFrontEndServerTests(build_dir))
     tasks += list(

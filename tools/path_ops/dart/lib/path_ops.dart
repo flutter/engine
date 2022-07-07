@@ -105,7 +105,7 @@ class SvgPathProxy implements PathProxy {
   @override
   void cubicTo(
       double x1, double y1, double x2, double y2, double x3, double y3) {
-    _buffer.write('C$x1,$y2 $x2,$y2 $x3,$y3');
+    _buffer.write('C$x1,$y1 $x2,$y2 $x3,$y3');
   }
 
   @override
@@ -129,10 +129,17 @@ class SvgPathProxy implements PathProxy {
 ///
 /// Finally, use the [dispose] method to clean up native resources. After
 /// [dispose] has been called, this class must not be used again.
-class Path {
+class Path implements PathProxy {
   /// Creates an empty path object with the specified fill type.
   Path([this.fillType = FillType.nonZero])
       : _path = _createPathFn(fillType.index);
+
+  /// Creates a copy of this path.
+  factory Path.from(Path other) {
+    final Path result = Path(other.fillType);
+    other.replay(result);
+    return result;
+  }
 
   /// The [FillType] of this path.
   final FillType fillType;
@@ -224,22 +231,21 @@ class Path {
     _pathData = null;
   }
 
-  /// Adds a move verb to the absolute coordinates x,y.
+  @override
   void moveTo(double x, double y) {
     assert(_path != null);
     _resetPathData();
     _moveToFn(_path!, x, y);
   }
 
-  /// Adds a line verb to the absolute coordinates x,y.
+  @override
   void lineTo(double x, double y) {
     assert(_path != null);
     _resetPathData();
     _lineToFn(_path!, x, y);
   }
 
-  /// Adds a cubic Bezier curve with x1,y1 as the first control point, x2,y2 as
-  /// the second control point, and end point x3,y3.
+  @override
   void cubicTo(
     double x1,
     double y1,
@@ -253,13 +259,14 @@ class Path {
     _cubicToFn(_path!, x1, y1, x2, y2, x3, y3);
   }
 
-  /// Adds a close command to the start of the current contour.
+  @override
   void close() {
     assert(_path != null);
     _resetPathData();
     _closeFn(_path!, true);
   }
 
+  @override
   void reset() {
     assert(_path != null);
     _resetPathData();
@@ -276,11 +283,13 @@ class Path {
     _path = null;
   }
 
-  void applyOp(Path other, PathOp op) {
+  /// Applies the operation described by [op] to this path using [other].
+  Path applyOp(Path other, PathOp op) {
     assert(_path != null);
     assert(other._path != null);
-    _resetPathData();
-    _opFn(_path!, other._path!, op.index);
+    final Path result = Path.from(this);
+    _opFn(result._path!, other._path!, op.index);
+    return result;
   }
 }
 
