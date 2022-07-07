@@ -157,11 +157,11 @@ sk_sp<SkData> CopyImageByteData(sk_sp<SkImage> raster_image,
     FML_LOG(ERROR) << "Could not copy pixels from the raster image.";
     return nullptr;
   }
-  FML_LOG(ERROR) << "pct: " << pixmap.colorType() << " .. " << color_type;
+
   // The color types already match. No need to swizzle. Return early.
-  // if (pixmap.colorType() == color_type && pixmap.alphaType() == alpha_type) {
-  //   return SkData::MakeWithCopy(pixmap.addr(), pixmap.computeByteSize());
-  // }
+  if (pixmap.colorType() == color_type && pixmap.alphaType() == alpha_type) {
+    return SkData::MakeWithCopy(pixmap.addr(), pixmap.computeByteSize());
+  }
 
   // Perform swizzle if the type doesnt match the specification.
   auto surface = SkSurface::MakeRaster(
