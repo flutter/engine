@@ -419,11 +419,7 @@ int main(int argc, char* argv[]) {
   };
 
 #if defined(FML_OS_WIN)
-  HRESULT comStatus =
-      CoInitializeEx(nullptr, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
-  if (comStatus != S_OK) {
-    CoUninitialize();
-  }
+  CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 #endif  // defined(FML_OS_WIN)
 
   return flutter::RunTester(settings,
