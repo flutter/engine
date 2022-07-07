@@ -1,0 +1,7 @@
+shared_library("path_ops") {
+  sources = [
+    "path_ops.cc",
+    "path_ops.h",
+  ]
+  deps = [ "//third_party/skia" ]
+}

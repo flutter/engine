@@ -9,3 +9,18 @@ homepage: https://github.com/flutter/engine/tree/main/tools/pathkit
 
 environment:
   sdk: '>=2.12.0 <3.0.0'
+
+dev_dependencies:
+  litetest: any
+
+dependency_overrides:
+  async_helper:
+    path: ../../../../third_party/dart/pkg/async_helper
+  expect:
+    path: ../../../../third_party/dart/pkg/expect
+  litetest:
+    path: ../../../testing/litetest
+  meta:
+    path: ../../../../third_party/dart/pkg/meta
+  smith:
+    path: ../../../../third_party/dart/pkg/smith
