@@ -96,8 +96,6 @@ class AndroidShellHolder {
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,
                                     bool base64_encode);
 
-  // void UpdateAssetManager(fml::RefPtr<flutter::AssetManager> asset_manager);
-
   void NotifyLowMemoryWarning();
 
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
@@ -113,7 +111,6 @@ class AndroidShellHolder {
   std::unique_ptr<Shell> shell_;
   bool is_valid_ = false;
   uint64_t next_pointer_flow_id_ = 0;
-  // std::shared_ptr<AssetManager> asset_manager_;
   std::unique_ptr<APKAssetProvider> apk_asset_provider_;
 
   //----------------------------------------------------------------------------

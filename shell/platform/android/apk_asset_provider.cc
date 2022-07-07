@@ -13,29 +13,6 @@
 
 namespace flutter {
 
-APKAssetProviderImpl::APKAssetProviderImpl(JNIEnv* env,
-                                           jobject jassetManager,
-                                           std::string directory)
-    : java_asset_manager_(env, jassetManager),
-      directory_(std::move(directory)) {
-  assetManager_ = AAssetManager_fromJava(env, jassetManager);
-}
-
-APKAssetProviderImpl::~APKAssetProviderImpl() = default;
-
-bool APKAssetProviderImpl::IsValid() const {
-  return true;
-}
-
-bool APKAssetProviderImpl::IsValidAfterAssetManagerChange() const {
-  return true;
-}
-
-// |AssetResolver|
-AssetResolver::AssetResolverType APKAssetProviderImpl::GetType() const {
-  return AssetResolver::AssetResolverType::kApkAssetProvider;
-}
-
 class APKAssetMapping : public fml::Mapping {
  public:
   explicit APKAssetMapping(AAsset* asset) : asset_(asset) {}
@@ -56,17 +33,72 @@ class APKAssetMapping : public fml::Mapping {
   FML_DISALLOW_COPY_AND_ASSIGN(APKAssetMapping);
 };
 
-std::unique_ptr<fml::Mapping> APKAssetProviderImpl::GetAsMapping(
-    const std::string& asset_name) const {
-  std::stringstream ss;
-  ss << directory_.c_str() << "/" << asset_name;
-  AAsset* asset =
-      AAssetManager_open(assetManager_, ss.str().c_str(), AASSET_MODE_BUFFER);
-  if (!asset) {
-    return nullptr;
+class APKAssetProviderImpl {
+ public:
+  explicit APKAssetProviderImpl(JNIEnv* env,
+                                jobject jassetManager,
+                                std::string directory)
+      : java_asset_manager_(env, jassetManager),
+        directory_(std::move(directory)) {
+    assetManager_ = AAssetManager_fromJava(env, jassetManager);
   }
 
-  return std::make_unique<APKAssetMapping>(asset);
+  ~APKAssetProviderImpl() = default;
+
+  std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const {
+    std::stringstream ss;
+    ss << directory_.c_str() << "/" << asset_name;
+    AAsset* asset =
+        AAssetManager_open(assetManager_, ss.str().c_str(), AASSET_MODE_BUFFER);
+    if (!asset) {
+      return nullptr;
+    }
+
+    return std::make_unique<APKAssetMapping>(asset);
+  };
+
+ private:
+  fml::jni::ScopedJavaGlobalRef<jobject> java_asset_manager_;
+  AAssetManager* assetManager_;
+  const std::string directory_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(APKAssetProviderImpl);
+};
+
+APKAssetProvider::APKAssetProvider(JNIEnv* env,
+                                   jobject assetManager,
+                                   std::string directory)
+    : impl_(std::make_shared<APKAssetProviderImpl>(env,
+                                                   assetManager,
+                                                   std::move(directory))) {}
+
+APKAssetProvider::APKAssetProvider(std::shared_ptr<APKAssetProviderImpl> impl)
+    : impl_(impl) {}
+
+// |AssetResolver|
+bool APKAssetProvider::IsValid() const {
+  return true;
+}
+
+// |AssetResolver|
+bool APKAssetProvider::IsValidAfterAssetManagerChange() const {
+  return true;
+}
+
+// |AssetResolver|
+AssetResolver::AssetResolverType APKAssetProvider::GetType() const {
+  return AssetResolver::AssetResolverType::kApkAssetProvider;
+}
+
+// |AssetResolver|
+std::unique_ptr<fml::Mapping> APKAssetProvider::GetAsMapping(
+    const std::string& asset_name) const {
+  return impl_->GetAsMapping(asset_name);
+}
+
+std::unique_ptr<APKAssetProvider> APKAssetProvider::Clone() const {
+  return std::make_unique<APKAssetProvider>(impl_);
 }
 
 }  // namespace flutter
