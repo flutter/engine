@@ -367,7 +367,7 @@ TEST(MockWindow, WindowOnMinimized) {
   EXPECT_CALL(window, OnMinimized()).Times(1);
   window.InjectWindowMessage(WM_SIZE, SIZE_MINIMIZED, MAKEWPARAM(0, 0));
 
-  // notify only when window size is different.
+  // Notify only when type of resizing changes.
   EXPECT_CALL(window, OnMinimized()).Times(0);
   window.InjectWindowMessage(WM_SIZE, SIZE_MINIMIZED, MAKEWPARAM(0, 0));
 }
@@ -379,7 +379,7 @@ TEST(MockWindow, WindowOnRestoredFromMinimized) {
   EXPECT_CALL(window, OnRestoredFromMinimized()).Times(1);
   window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
 
-  // notify only when window size is different.
+  // Notify only when type of resizing changes.
   EXPECT_CALL(window, OnRestoredFromMinimized()).Times(0);
   window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
 }

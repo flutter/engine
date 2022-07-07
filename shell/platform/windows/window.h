@@ -198,10 +198,10 @@ class Window : public KeyboardManager::WindowDelegate {
                         FlutterPointerDeviceKind device_kind,
                         int32_t device_id) = 0;
 
-  // Called when window has been received focus.
+  // Called when window has received focus.
   virtual void OnSetFocus() = 0;
 
-  // Called when window has been lost focus.
+  // Called when window has lost focus.
   virtual void OnKillFocus() = 0;
 
   // Called when window has been minimized.
