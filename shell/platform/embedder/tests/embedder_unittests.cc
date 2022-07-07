@@ -1307,6 +1307,7 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
 /// defined.
 ///
 TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
+// TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
 #endif  // OS_FUCHSIA
@@ -1360,6 +1361,7 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
 /// invalid, the callbacks should return a nullptr.
 ///
 TEST_F(EmbedderTest, JITSnapshotCallbacksFailWithInvalidLocation) {
+// TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
 #endif  // OS_FUCHSIA
