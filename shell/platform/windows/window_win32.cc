@@ -562,20 +562,22 @@ HWND WindowWin32::GetWindowHandle() {
   return window_handle_;
 }
 
-float WindowWin32::GetScrollOffsetMultiplier() { 
-  return scroll_offset_multiplier_; 
+float WindowWin32::GetScrollOffsetMultiplier() {
+  return scroll_offset_multiplier_;
 }
 
 void WindowWin32::UpdateScrollOffsetMultiplier() {
   UINT lines_per_scroll;
   // Get lines per scroll wheel value from Windows
-  if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines_per_scroll, 0) == 0) {
+  if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines_per_scroll, 0) ==
+      0) {
     lines_per_scroll = kLinesPerScrollWindowsDefault;
   }
 
   // This logic is based off Chromium's implementation
   // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/blink/web_input_event_builders_win.cc;l=319-331
-  scroll_offset_multiplier_ = static_cast<float>(lines_per_scroll) * 100.0 / 3.0;
+  scroll_offset_multiplier_ =
+      static_cast<float>(lines_per_scroll) * 100.0 / 3.0;
 }
 
 void WindowWin32::Destroy() {

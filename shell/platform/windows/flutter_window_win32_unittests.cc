@@ -333,13 +333,16 @@ TEST(FlutterWindowWin32Test, OnScrollCallsGetScrollOffsetMultiplier) {
   MockWindowBindingHandlerDelegate delegate;
   win32window.SetView(&delegate);
 
-  ON_CALL(win32window, GetScrollOffsetMultiplier()).WillByDefault(Return(120.0f));
+  ON_CALL(win32window, GetScrollOffsetMultiplier())
+      .WillByDefault(Return(120.0f));
   EXPECT_CALL(win32window, GetScrollOffsetMultiplier()).Times(1);
 
-  EXPECT_CALL(delegate, OnScroll(_, _, 0, 0, 120.0f, 
-              kFlutterPointerDeviceKindMouse, kDefaultPointerDeviceId)).Times(1);
+  EXPECT_CALL(delegate,
+              OnScroll(_, _, 0, 0, 120.0f, kFlutterPointerDeviceKindMouse,
+                       kDefaultPointerDeviceId))
+      .Times(1);
 
-  win32window.OnScroll(0.0f, 0.0f, kFlutterPointerDeviceKindMouse, 
+  win32window.OnScroll(0.0f, 0.0f, kFlutterPointerDeviceKindMouse,
                        kDefaultPointerDeviceId);
 }
 
