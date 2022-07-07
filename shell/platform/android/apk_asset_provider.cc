@@ -49,8 +49,8 @@ class APKAssetProviderImpl : public APKAssetProviderInternal {
       const std::string& asset_name) const override {
     std::stringstream ss;
     ss << directory_.c_str() << "/" << asset_name;
-    AAsset* asset =
-        AAssetManager_open(asset_manager_, ss.str().c_str(), AASSET_MODE_BUFFER);
+    AAsset* asset = AAssetManager_open(asset_manager_, ss.str().c_str(),
+                                       AASSET_MODE_BUFFER);
     if (!asset) {
       return nullptr;
     }
