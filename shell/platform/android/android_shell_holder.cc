@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/android/apk_asset_provider.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/platform/android/android_shell_holder.h"

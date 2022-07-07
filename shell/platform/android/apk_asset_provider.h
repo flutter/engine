@@ -7,7 +7,6 @@
 
 #include <android/asset_manager_jni.h>
 #include <jni.h>
-#include <memory>
 
 #include "flutter/assets/asset_resolver.h"
 #include "flutter/fml/memory/ref_counted.h"
