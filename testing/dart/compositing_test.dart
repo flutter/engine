@@ -11,7 +11,8 @@ void main() {
   test('Scene.toImageSync succeeds', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
-    canvas.drawPaint(Paint()..color = const Color(0xFF123456));
+    const Color color = Color(0xFF123456);
+    canvas.drawPaint(Paint()..color = color);
     final Picture picture = recorder.endRecording();
     final SceneBuilder builder = SceneBuilder();
     builder.pushOffset(10, 10);
@@ -30,19 +31,7 @@ void main() {
     expect(data, isNotNull);
     expect(data!.lengthInBytes, 6 * 8 * 4);
     final Uint32List bytes = data.buffer.asUint32List();
-    // Draws a checkerboard due to flutter_tester not having a GPU context.
-    const int white = 0xFFFFFFFF;
-    const int grey  = 0xFFCCCCCC;
-    expect(bytes, const <int>[
-      white, white, white, grey,  grey,  grey, //
-      white, white, white, grey,  grey,  grey,
-      white, white, white, grey,  grey,  grey,
-      white, white, white, grey,  grey,  grey,
-      grey,  grey,  grey,  white, white, white,
-      grey,  grey,  grey,  white, white, white,
-      grey,  grey,  grey,  white, white, white,
-      grey,  grey,  grey,  white, white, white,
-    ]);
+    expect(bytes, List<int>.filled(bytes.length, color.value));
   });
 
   test('addPicture with disposed picture does not crash', () {
