@@ -1457,6 +1457,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       // https://github.com/flutter/flutter/issues/58426
       case clip_path:
       case opacity:
+      case backdrop_filter:
         break;
     }
     ++iter;
