@@ -91,7 +91,7 @@ TEST(MutatorsStack, PushOpacity) {
 
 TEST(MutatorsStack, PushBackdropFilter) {
   MutatorsStack stack;
-  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);  
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   stack.PushBackdropFilter(filter);
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdrop_filter);

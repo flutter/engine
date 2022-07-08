@@ -79,9 +79,7 @@ class Mutator {
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
-  const DlImageFilter& GetFilter() const {
-    return *filter_;
-  }
+  const DlImageFilter& GetFilter() const { return *filter_; }
   const int& GetAlpha() const { return alpha_; }
   float GetAlphaFloat() const { return (alpha_ / 255.0); }
 
