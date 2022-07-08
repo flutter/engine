@@ -52,17 +52,6 @@ TEST(MutatorsStack, PushClipRect) {
   ASSERT_TRUE(iter->get()->GetRect() == rect);
 }
 
-TEST(MutatorsStack, PushBackdropFilter) {
-  MutatorsStack stack;
-  SkIRect rect;
-  std::shared_ptr<const DlImageFilter> filter;
-  filter->get_input_device_bounds(SkIRect::MakeWH(10, 10), SkMatrix::I(), rect);
-  stack.PushBackdropFilter(filter);
-  auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdrop_filter);
-  ASSERT_TRUE(iter->get()->GetFilter() == filter);
-}
-
 TEST(MutatorsStack, PushClipRRect) {
   MutatorsStack stack;
   auto rrect = SkRRect::MakeEmpty();
@@ -98,6 +87,15 @@ TEST(MutatorsStack, PushOpacity) {
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::opacity);
   ASSERT_TRUE(iter->get()->GetAlpha() == 240);
+}
+
+TEST(MutatorsStack, PushBackdropFilter) {
+  MutatorsStack stack;
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);  
+  stack.PushBackdropFilter(filter);
+  auto iter = stack.Bottom();
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdrop_filter);
+  ASSERT_TRUE(iter->get()->GetFilter() == filter);
 }
 
 TEST(MutatorsStack, Pop) {
