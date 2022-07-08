@@ -36,6 +36,14 @@ class CompilerSkSL : public spirv_cross::CompilerGLSL {
 
   void emit_header() override;
 
+  void emit_uniform(const spirv_cross::SPIRVariable& var) override;
+
+  void detect_unsupported_resources();
+  bool emit_constant_resources();
+  bool emit_struct_resources();
+  bool emit_uniform_resources();
+  bool emit_output_resources();
+  bool emit_global_variable_resources();
   void emit_resources();
 
   void emit_interface_block(const spirv_cross::SPIRVariable& var);
@@ -44,13 +52,25 @@ class CompilerSkSL : public spirv_cross::CompilerGLSL {
       spirv_cross::SPIRFunction& func,
       const spirv_cross::Bitset& return_flags) override;
 
-  std::string type_to_glsl(const spirv_cross::SPIRType& type,
-                           uint32_t id = 0) override;
+  std::string image_type_glsl(const spirv_cross::SPIRType& type,
+                              uint32_t id = 0) override;
 
   std::string builtin_to_glsl(spv::BuiltIn builtin,
                               spv::StorageClass storage) override;
 
-  void emit_uniform(const spirv_cross::SPIRVariable& var) override;
+  std::string to_texture_op(
+      const spirv_cross::Instruction& i,
+      bool sparse,
+      bool* forward,
+      spirv_cross::SmallVector<uint32_t>& inherited_expressions) override;
+
+  std::string to_function_name(
+      const spirv_cross::CompilerGLSL::TextureFunctionNameArguments& args)
+      override;
+
+  std::string to_function_args(
+      const spirv_cross::CompilerGLSL::TextureFunctionArguments& args,
+      bool* p_forward) override;
 };
 
 }  // namespace compiler
