@@ -180,8 +180,8 @@ bool CompilerSkSL::emit_uniform_resources() {
   bool emitted = false;
 
   // Output Uniform Constants (values, samplers, images, etc).
-  std::vector<spirv_cross::ID> regular_uniforms;
-  std::vector<spirv_cross::ID> shader_uniforms;
+  std::vector<ID> regular_uniforms;
+  std::vector<ID> shader_uniforms;
   for (auto& id : ir.ids) {
     if (id.get_type() == TypeVariable) {
       auto& var = id.get<SPIRVariable>();
@@ -343,8 +343,7 @@ void CompilerSkSL::emit_function_prototype(SPIRFunction& func,
   statement("void __main()");
 }
 
-std::string CompilerSkSL::image_type_glsl(const spirv_cross::SPIRType& type,
-                                          uint32_t id) {
+std::string CompilerSkSL::image_type_glsl(const SPIRType& type, uint32_t id) {
   if (type.basetype != SPIRType::SampledImage || type.image.dim != Dim2D) {
     SPIRV_CROSS_THROW("Only sampler2D uniform image types are supported.");
     return "???";
@@ -352,10 +351,9 @@ std::string CompilerSkSL::image_type_glsl(const spirv_cross::SPIRType& type,
   return "shader";
 }
 
-std::string CompilerSkSL::builtin_to_glsl(spv::BuiltIn builtin,
-                                          spv::StorageClass storage) {
-  std::string gl_builtin =
-      spirv_cross::CompilerGLSL::builtin_to_glsl(builtin, storage);
+std::string CompilerSkSL::builtin_to_glsl(BuiltIn builtin,
+                                          StorageClass storage) {
+  std::string gl_builtin = CompilerGLSL::builtin_to_glsl(builtin, storage);
   switch (builtin) {
     case BuiltInFragCoord:
       return "sk_FragCoord";
@@ -381,7 +379,7 @@ std::string CompilerSkSL::to_texture_op(
 }
 
 std::string CompilerSkSL::to_function_name(
-    const spirv_cross::CompilerGLSL::TextureFunctionNameArguments& args) {
+    const CompilerGLSL::TextureFunctionNameArguments& args) {
   std::string name = to_expression(args.base.img);
   return name + ".eval";
 }

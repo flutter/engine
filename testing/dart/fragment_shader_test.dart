@@ -484,7 +484,6 @@ Map<String, ByteBuffer> _loadShaders(String leafFolderName, String ext) {
 const int _shaderImageDimension = 4;
 
 const Color _greenColor = Color(0xFF00FF00);
-const Color _blueColor = Color(0xFF0000FF);
 
 // Precision for checking uniform values.
 const double epsilon = 0.5 / 255.0;
@@ -497,8 +496,8 @@ String toHexString(int color) => '#${color.toRadixString(16)}';
 // 10x10 image where the left half is blue and the right half is
 // green.
 Future<Image> _createBlueGreenImage() async {
-  final int length = 10;
-  final int bytesPerPixel = 4;
+  const int length = 10;
+  const int bytesPerPixel = 4;
   final Uint8List pixels = Uint8List(length * length * bytesPerPixel);
   int i = 0;
   for (int y = 0; y < length; y++) {
@@ -522,9 +521,6 @@ Future<Image> _createBlueGreenImage() async {
   final FrameInfo frame = await codec.getNextFrame();
   return frame.image;
 }
-
-// A single uniform with value 1.
-final Float32List _singleUniform = Float32List.fromList(<double>[1]);
 
 final Float64List _identityMatrix = Float64List.fromList(<double>[
   1, 0, 0, 0,
