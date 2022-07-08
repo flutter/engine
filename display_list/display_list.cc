@@ -494,7 +494,7 @@ void DisplayList::Compare(DisplayList* dl) {
     auto r2 = dl->bounds();
     r1.join(r2);
     auto percent = (damage.width() * damage.height()) / ( r1.width() * r1.height() );
-    printf("DONG DIFF damage: %g %g | %g %g | %g \n", SkScalarToFloat(r1.width()), SkScalarToFloat(r1.height()),
+    printf("DONG DIFF damage %g %g %g %g | %g %g %g %g | %g \n", SkScalarToFloat(r1.x()), SkScalarToFloat(r1.y()),SkScalarToFloat(r1.width()), SkScalarToFloat(r1.height()), SkScalarToFloat(damage.x()), SkScalarToFloat(damage.y()),
            SkScalarToFloat(damage.width()), SkScalarToFloat(damage.height()), percent);
   }else{
     damage = bounds();

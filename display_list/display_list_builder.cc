@@ -53,13 +53,17 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
+  
+  if(!virtual_layer_indexes_.empty() && virtual_layer_indexes_.back().index == 0) {
+    virtual_layer_indexes_.clear();
+  }
+
   auto indexes = virtual_layer_indexes_;
 
-  std::function<bool(const std::vector<DisplayVirtualLayerInfo>& tree)>
+  std::function<bool(std::vector<DisplayVirtualLayerInfo>& tree)>
       checkTree =
-          [&](const std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
+          [&](std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
     std::vector<std::string> stack;
-    //    bool isLegal = true;
     for (unsigned long i = 0; i < tree.size(); i++) {
       if (tree[i].isStart) {
         stack.push_back(tree[i].type);
@@ -75,7 +79,28 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
       }
     }
     if (!stack.empty()) {
-      return false;
+      auto op_count = tree.back().index;
+      for (int i = stack.size()-1; i >= 0; i--) {
+        tree.push_back(DisplayVirtualLayerInfo{op_count, stack[i], false, 0});
+      }
+      stack.clear();
+      for (unsigned long i = 0; i < tree.size(); i++) {
+        if (tree[i].isStart) {
+          stack.push_back(tree[i].type);
+        } else {
+          if (stack.empty()) {
+            return false;
+          }
+          std::string t = stack[stack.size() - 1];
+          stack.pop_back();
+          if (t != tree[i].type) {
+            return false;
+          }
+        }
+      }
+      if(!stack.empty()) {
+        return false;
+      }
     }
     return true;
   };
@@ -159,42 +184,30 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   used_ = allocated_ = op_count_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
+  auto tree = indexes;
   virtual_layer_indexes_.clear();
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
   return sk_sp<DisplayList>(new DisplayList(
       storage_.release(), bytes, count, nested_bytes, nested_count, cull_rect_,
-      compatible, std::move(indexes)));
+      compatible, std::move(tree)));
 }
 
 void DisplayListBuilder::startRecordVirtualLayer(std::string type) {
-  //  if (!virtual_layer_indexes_.empty() &&
-  //      storage_op_count_ == virtual_layer_indexes_.back().index &&
-  //      virtual_layer_indexes_.back().isStart) {
-  //    virtual_layer_indexes_.back().type = type;
-  //  } else {
   virtual_layer_indexes_.push_back(
       DisplayVirtualLayerInfo{storage_op_count_, type, true, 0});
-  //  }
 }
 
 void DisplayListBuilder::saveVirtualLayer(std::string type) {
-  //  FML_DCHECK(!virtual_layer_indexes_.empty());
+  FML_DCHECK(!virtual_layer_indexes_.empty());
   if (virtual_layer_indexes_.empty()) {
     return;
   }
-
-  //  if (storage_op_count_ == virtual_layer_indexes_.back().index &&
-  //      type == virtual_layer_indexes_.back().type) {
-  //    virtual_layer_indexes_.pop_back();
-  //    return;
-  //  }
-  //
-  //  if (storage_op_count_ != virtual_layer_indexes_.back().index &&
-  //      virtual_layer_indexes_.back().isStart) {
   virtual_layer_indexes_.push_back(
       DisplayVirtualLayerInfo{storage_op_count_, type, false});
-  //    return;
-  //  }
+}
+
+void DisplayListBuilder::buildVirtualLayerTrees() {
+
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
