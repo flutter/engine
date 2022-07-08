@@ -39,6 +39,14 @@ def PrintDivider(char='='):
   print('\n')
 
 
+def IsAsan(build_dir):
+  with open(os.path.join(build_dir, 'args.gn')) as args:
+    if 'is_asan = true' in args.read():
+      return True
+
+  return False
+
+
 def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
   command_string = ' '.join(cmd)
 
@@ -770,6 +778,10 @@ def GatherFrontEndServerTests(build_dir):
 
 
 def GatherPathOpsTests(build_dir):
+  # TODO(dnfield): https://github.com/flutter/flutter/issues/107321
+  if IsAsan(build_dir):
+    return
+
   test_dir = os.path.join(
       buildroot_dir, 'flutter', 'tools', 'path_ops', 'dart', 'test'
   )
