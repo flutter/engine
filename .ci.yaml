@@ -8,6 +8,7 @@
 enabled_branches:
   - main
   - flutter-\d+\.\d+-candidate\.\d+
+  - fuchsia_r\d+
 
 platform_properties:
   linux:
@@ -173,6 +174,13 @@ targets:
 
   - name: Linux Unopt
     recipe: engine/engine_unopt
+    properties:
+      add_recipes_cq: "true"
+      clobber: "true"
+    timeout: 60
+
+  - name: Linux License
+    recipe: engine/engine_license
     properties:
       add_recipes_cq: "true"
       clobber: "true"

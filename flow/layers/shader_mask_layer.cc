@@ -3,16 +3,18 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/shader_mask_layer.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader),
+    : CacheableContainerLayer(
+          RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
+      shader_(shader),
       mask_rect_(mask_rect),
-      blend_mode_(blend_mode),
-      render_count_(1) {}
+      blend_mode_(blend_mode) {}
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -24,12 +26,6 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
-
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context->SetTransform(
-      RasterCache::GetIntegralTransCTM(context->GetTransform()));
-#endif
-
   DiffChildren(context, prev);
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -38,23 +34,13 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
 void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, matrix);
 
+  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context, matrix);
+
+  ContainerLayer::Preroll(context, matrix);
   // We always paint with a saveLayer (or a cached rendering),
   // so we can always apply opacity in any of those cases.
   context->subtree_can_inherit_opacity = true;
-
-  SkMatrix child_matrix(matrix);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
-#endif
-
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, child_matrix,
-                            RasterCacheLayerStrategy::kLayer);
-  } else {
-    render_count_++;
-  }
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
@@ -63,20 +49,14 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
 
   AutoCachePaint cache_paint(context);
 
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-      context.leaf_nodes_canvas->getTotalMatrix()));
-#endif
-
-  if (context.raster_cache &&
-      context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                 RasterCacheLayerStrategy::kLayer,
-                                 cache_paint.paint())) {
-    return;
+  if (context.raster_cache) {
+    if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
+      return;
+    }
   }
 
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-      context, paint_bounds(), cache_paint.paint());
+      context, paint_bounds(), cache_paint.sk_paint());
   PaintChildren(context);
 
   SkPaint paint;

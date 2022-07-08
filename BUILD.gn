@@ -114,7 +114,6 @@ group("flutter") {
   if (build_engine_artifacts) {
     public_deps += [
       "//flutter/shell/testing",
-      "//flutter/shell/testing:testing_fractional_translation",
       "//flutter/tools/const_finder",
       "//flutter/tools/font-subset",
     ]
@@ -167,6 +166,7 @@ group("unittests") {
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",
+      "//flutter/shell/platform/embedder:embedder_a11y_unittests",
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
       "//flutter/shell/platform/embedder:embedder_unittests",
       "//flutter/testing:testing_unittests",

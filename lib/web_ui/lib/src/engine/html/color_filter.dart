@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-import 'dart:svg' as svg;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
@@ -12,6 +9,7 @@ import '../canvaskit/color_filter.dart';
 import '../color_filter.dart';
 import '../dom.dart';
 import '../embedder.dart';
+import '../svg.dart';
 import '../util.dart';
 import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
@@ -33,7 +31,7 @@ class PersistedColorFilter extends PersistedContainerSurface
 
   /// Color filter to apply to this surface.
   final ui.ColorFilter filter;
-  html.Element? _filterElement;
+  DomElement? _filterElement;
   bool containerVisible = true;
 
   @override
@@ -272,20 +270,21 @@ class SvgFilterBuilder {
   }
 
   final String id;
-  final svg.SvgSvgElement root = kSvgResourceHeader.clone(false) as svg.SvgSvgElement;
-  final svg.FilterElement filter = svg.FilterElement();
+  final SVGSVGElement root = kSvgResourceHeader.cloneNode(false) as
+      SVGSVGElement;
+  final SVGFilterElement filter = createSVGFilterElement();
 
   set colorInterpolationFilters(String filters) {
     filter.setAttribute('color-interpolation-filters', filters);
   }
 
   void setFeColorMatrix(List<double> matrix, { required String result }) {
-    final svg.FEColorMatrixElement element = svg.FEColorMatrixElement();
+    final SVGFEColorMatrixElement element = createSVGFEColorMatrixElement();
     element.type!.baseVal = kMatrixType;
     element.result!.baseVal = result;
-    final svg.NumberList value = element.values!.baseVal!;
+    final SVGNumberList value = element.values!.baseVal!;
     for (int i = 0; i < matrix.length; i++) {
-      value.appendItem(root.createSvgNumber()..value = matrix[i]);
+      value.appendItem(root.createSVGNumber()..value = matrix[i]);
     }
     filter.append(element);
   }
@@ -295,7 +294,7 @@ class SvgFilterBuilder {
     required String floodOpacity,
     required String result,
   }) {
-    final svg.FEFloodElement element = svg.FEFloodElement();
+    final SVGFEFloodElement element = createSVGFEFloodElement();
     element.setAttribute('flood-color', floodColor);
     element.setAttribute('flood-opacity', floodOpacity);
     element.result!.baseVal = result;
@@ -307,7 +306,7 @@ class SvgFilterBuilder {
     required String in2,
     required int mode,
   }) {
-    final svg.FEBlendElement element = svg.FEBlendElement();
+    final SVGFEBlendElement element = createSVGFEBlendElement();
     element.in1!.baseVal = in1;
     element.in2!.baseVal = in2;
     element.mode!.baseVal = mode;
@@ -324,7 +323,7 @@ class SvgFilterBuilder {
     num? k4,
     required String result,
   }) {
-    final svg.FECompositeElement element = svg.SvgElement.tag('feComposite') as svg.FECompositeElement;
+    final SVGFECompositeElement element = createSVGFECompositeElement();
     element.in1!.baseVal = in1;
     element.in2!.baseVal = in2;
     element.operator!.baseVal = operator;
@@ -350,17 +349,17 @@ class SvgFilterBuilder {
     required double width,
     required double height,
   }) {
-    final svg.FEImageElement element = svg.FEImageElement();
+    final SVGFEImageElement element = createSVGFEImageElement();
     element.href!.baseVal = href;
     element.result!.baseVal = result;
 
     // WebKit will not render if x/y/width/height is specified. So we return
     // explicit size here unless running on WebKit.
     if (browserEngine != BrowserEngine.webkit) {
-      element.x!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, 0);
-      element.y!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, 0);
-      element.width!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, width);
-      element.height!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, height);
+      element.x!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, 0);
+      element.y!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, 0);
+      element.width!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, width);
+      element.height!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, height);
     }
     filter.append(element);
   }
@@ -375,7 +374,7 @@ class SvgFilter {
   SvgFilter._(this.id, this.element);
 
   final String id;
-  final svg.SvgSvgElement element;
+  final SVGSVGElement element;
 }
 
 SvgFilter svgFilterFromColorMatrix(List<double> matrix) {

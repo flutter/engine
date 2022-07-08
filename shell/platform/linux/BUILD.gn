@@ -99,6 +99,7 @@ source_set("flutter_linux_sources") {
   sources = [
     "fl_accessibility_plugin.cc",
     "fl_accessible_node.cc",
+    "fl_accessible_text_field.cc",
     "fl_backing_store_provider.cc",
     "fl_basic_message_channel.cc",
     "fl_binary_codec.cc",
@@ -146,7 +147,7 @@ source_set("flutter_linux_sources") {
     "fl_value.cc",
     "fl_view.cc",
     "fl_view_accessible.cc",
-    "key_mapping.cc",
+    "key_mapping.g.cc",
   ]
 
   # Set flag to stop headers being directly included (library users should not do this)
@@ -192,6 +193,7 @@ executable("flutter_linux_unittests") {
 
   sources = [
     "fl_accessible_node_test.cc",
+    "fl_accessible_text_field_test.cc",
     "fl_basic_message_channel_test.cc",
     "fl_binary_codec_test.cc",
     "fl_binary_messenger_test.cc",
@@ -226,6 +228,7 @@ executable("flutter_linux_unittests") {
     "testing/mock_binary_messenger_response_handle.cc",
     "testing/mock_engine.cc",
     "testing/mock_epoxy.cc",
+    "testing/mock_im_context.cc",
     "testing/mock_plugin_registrar.cc",
     "testing/mock_renderer.cc",
     "testing/mock_settings.cc",
@@ -271,7 +274,7 @@ copy("publish_headers_linux") {
 }
 
 zip_bundle("flutter_gtk") {
-  prefix = ""
+  prefix = "$full_target_platform_name/"
   if (flutter_runtime_mode != "debug" ||
       (flutter_runtime_mode == "debug" && target_cpu != "x64")) {
     prefix = "$full_target_platform_name-$flutter_runtime_mode/"
@@ -280,6 +283,7 @@ zip_bundle("flutter_gtk") {
   deps = [
     ":flutter_linux_gtk",
     ":publish_headers_linux",
+    "//third_party/dart/runtime/bin:gen_snapshot",
   ]
   sources = get_target_outputs(":publish_headers_linux")
   tmp_files = []
@@ -295,6 +299,10 @@ zip_bundle("flutter_gtk") {
     {
       source = "$root_build_dir/libflutter_${host_os}_gtk.so"
       destination = "libflutter_${host_os}_gtk.so"
+    },
+    {
+      source = "$root_build_dir/gen_snapshot"
+      destination = "gen_snapshot"
     },
   ]
   files = tmp_files

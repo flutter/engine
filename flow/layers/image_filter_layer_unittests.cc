@@ -4,12 +4,16 @@
 
 #include "flutter/flow/layers/image_filter_layer.h"
 
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
+#include "gtest/gtest.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPath.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
@@ -63,9 +67,6 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
                                                  nullptr, 1}},
@@ -101,9 +102,6 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
                                                  nullptr, 1}},
@@ -139,9 +137,6 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
                                                  nullptr, 1}},
@@ -186,19 +181,16 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   SkPaint filter_paint;
   filter_paint.setImageFilter(layer_filter);
   layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
-                MockCanvas::DrawCall{
-                    0, MockCanvas::SaveLayerData{children_bounds, filter_paint,
-                                                 nullptr, 1}},
-                MockCanvas::DrawCall{
-                    1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                MockCanvas::DrawCall{
-                    1, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(
+      mock_canvas().draw_calls(),
+      std::vector({MockCanvas::DrawCall{
+                       0, MockCanvas::SaveLayerData{children_bounds,
+                                                    filter_paint, nullptr, 1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::DrawPathData{child_path2, child_paint2}},
+                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(ImageFilterLayerTest, Nested) {
@@ -250,18 +242,11 @@ TEST_F(ImageFilterLayerTest, Nested) {
   layer1->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{0, MockCanvas::SetMatrixData{SkM44()}},
-#endif
-
                 MockCanvas::DrawCall{
                     0, MockCanvas::SaveLayerData{children_bounds, filter_paint1,
                                                  nullptr, 1}},
                 MockCanvas::DrawCall{
                     1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkM44()}},
-#endif
                 MockCanvas::DrawCall{
                     1, MockCanvas::SaveLayerData{child_path2.getBounds(),
                                                  filter_paint2, nullptr, 2}},
@@ -309,34 +294,29 @@ TEST_F(ImageFilterLayerTest, CacheChild) {
   cache_canvas.setMatrix(cache_ctm);
   SkCanvas other_canvas;
   other_canvas.setMatrix(other_transform);
+  SkPaint paint = SkPaint();
 
   use_mock_raster_cache();
+  const auto* cacheable_image_filter_item = layer->raster_cache_item();
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cacheable_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cacheable_image_filter_item->Draw(paint_context(), &paint));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren));
+  // The layer_cache_item's strategy is Children, mean we will must cache
+  // his children
+  EXPECT_EQ(cacheable_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kChildren);
+  EXPECT_TRUE(raster_cache()->Draw(cacheable_image_filter_item->GetId().value(),
+                                   cache_canvas, &paint));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cacheable_image_filter_item->GetId().value(), other_canvas, &paint));
 }
 
 TEST_F(ImageFilterLayerTest, CacheChildren) {
@@ -345,6 +325,7 @@ TEST_F(ImageFilterLayerTest, CacheChildren) {
       SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  SkPaint paint = SkPaint();
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
@@ -361,35 +342,73 @@ TEST_F(ImageFilterLayerTest, CacheChildren) {
 
   use_mock_raster_cache();
 
+  const auto* cacheable_image_filter_item = layer->raster_cache_item();
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
+
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cacheable_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kNone);
+  EXPECT_FALSE(cacheable_image_filter_item->Draw(paint_context(), &paint));
 
   layer->Preroll(preroll_context(), initial_transform);
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
 
   EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                    RasterCacheLayerStrategy::kLayer));
-  EXPECT_FALSE(raster_cache()->Draw(layer.get(), other_canvas,
-                                    RasterCacheLayerStrategy::kLayerChildren));
-  EXPECT_TRUE(raster_cache()->Draw(layer.get(), cache_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren));
+
+  // The layer_cache_item's strategy is Children, mean we will must cache his
+  // children
+  EXPECT_EQ(cacheable_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kChildren);
+  EXPECT_TRUE(raster_cache()->Draw(cacheable_image_filter_item->GetId().value(),
+                                   cache_canvas, &paint));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cacheable_image_filter_item->GetId().value(), other_canvas, &paint));
+}
+
+TEST_F(ImageFilterLayerTest, CacheImageFilterLayerSelf) {
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+  SkPaint paint = SkPaint();
+
+  use_mock_raster_cache();
+  const auto* cacheable_image_filter_item = layer->raster_cache_item();
+  // frame 1.
+  layer->Preroll(preroll_context(), initial_transform);
+  layer->Paint(paint_context());
+  // frame 2.
+  layer->Preroll(preroll_context(), initial_transform);
+  layer->Paint(paint_context());
+  // frame 3.
+  layer->Preroll(preroll_context(), initial_transform);
+  layer->Paint(paint_context());
+
+  LayerTree::TryToRasterCache(cacheable_items(), &paint_context());
+  // frame1,2 cache the ImageFilter's children layer, frame3 cache the
+  // ImageFilterLayer
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)2);
+
+  // ImageFilterLayer default cache itself.
+  EXPECT_EQ(cacheable_image_filter_item->cache_state(),
+            RasterCacheItem::CacheState::kCurrent);
+  EXPECT_EQ(cacheable_image_filter_item->GetId(),
+            RasterCacheKeyID(layer->unique_id(), RasterCacheKeyType::kLayer));
+  EXPECT_TRUE(raster_cache()->Draw(cacheable_image_filter_item->GetId().value(),
+                                   cache_canvas, &paint));
+  EXPECT_FALSE(raster_cache()->Draw(
+      cacheable_image_filter_item->GetId().value(), other_canvas, &paint));
 }
 
 TEST_F(ImageFilterLayerTest, OpacityInheritance) {
@@ -420,23 +439,12 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   opacity_layer->Preroll(context, SkMatrix::I());
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  auto opacity_integer_transform = RasterCache::GetIntegralTransCTM(
-      SkMatrix::Translate(offset.fX, offset.fY));
-#endif
   auto dl_image_filter = DlImageFilter::From(layer_filter);
   DisplayListBuilder expected_builder;
   /* OpacityLayer::Paint() */ {
     expected_builder.save();
     {
       expected_builder.translate(offset.fX, offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integer_transform);
-      /* Integer CTM in ImageFilterLayer::Paint() */
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integer_transform);
-#endif
       /* ImageFilterLayer::Paint() */ {
         expected_builder.setColor(opacity_alpha << 24);
         expected_builder.setImageFilter(dl_image_filter.get());

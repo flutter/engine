@@ -1,4 +1,4 @@
-Signature: b9e1b4151b8b21f0bf4b18d4be261239
+Signature: 5d414096b4e3818c9018d31e17fbff87
 
 UNUSED LICENSES:
 
@@ -2490,7 +2490,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/memory_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/intl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/directory.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/file.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/ldsvc.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/logger.fidl
@@ -2547,7 +2546,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/async/include/lib/async/time.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async/include/lib/async/trap.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/spawn.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl/epitaph.c
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl/handle_closing.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl/include/lib/fidl/epitaph.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/walker.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/include/lib/fidl/cpp/binding.h
@@ -2573,11 +2571,9 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/internal/proxy_controller.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/internal/stub.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/internal/stub_controller.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp/internal/weak_stub_controller.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/builder.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/clone.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/decoder.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/encoder.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/builder.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/clone.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/coding_traits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/comparison.h
@@ -2588,14 +2584,12 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/interfac
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/interface_request.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message_buffer.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message_builder.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message_part.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/string.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/traits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/vector.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/message.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/message_buffer.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/message_builder.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/include/lib/fidl/cpp/internal/logging.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/include/lib/fidl/cpp/internal/synchronous_proxy.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/include/lib/fidl/cpp/synchronous_interface_ptr.h
@@ -3694,6 +3688,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screen_capture.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screenshot.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/overview.fidl

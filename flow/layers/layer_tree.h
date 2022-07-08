@@ -10,6 +10,7 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -32,10 +33,15 @@ class LayerTree {
                bool ignore_raster_cache = false,
                SkRect cull_rect = kGiantRect);
 
+  static void TryToRasterCache(
+      const std::vector<RasterCacheItem*>& raster_cached_entries,
+      const PaintContext* paint_context,
+      bool ignore_raster_cache = false);
+
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;
 
-  sk_sp<SkPicture> Flatten(const SkRect& bounds);
+  sk_sp<DisplayList> Flatten(const SkRect& bounds);
 
   Layer* root_layer() const { return root_layer_.get(); }
 
@@ -90,6 +96,8 @@ class LayerTree {
   bool enable_leaf_layer_tracing_ = false;
 
   PaintRegionMap paint_region_map_;
+
+  std::vector<RasterCacheItem*> raster_cache_items_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };
