@@ -21,7 +21,13 @@ platform channel.
 
 ## Running for iOS
 
-Build the `ios_debug_sim_unopt` engine variant, and run
+Build the `ios_debug_sim_unopt` engine variant and `scenario_app` target.
+
+```sh
+ninja -C out/ios_debug_sim_unopt scenario_app
+```
+
+Then run
 
 ```sh
 ./run_ios_tests.sh
