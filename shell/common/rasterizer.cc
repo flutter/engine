@@ -250,7 +250,8 @@ bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
 namespace {
 std::pair<sk_sp<SkImage>, std::string> MakeBitmapImage(
     sk_sp<DisplayList> display_list,
-    SkImageInfo image_info) {
+    const SkImageInfo& image_info) {
+  FML_DCHECK(display_list);
   // Use 16384 as a proxy for the maximum texture size for a GPU image.
   // This is meant to be large enough to avoid false positives in test contexts,
   // but not so artificially large to be completely unrealistic on any platform.
@@ -280,12 +281,10 @@ std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
   std::pair<sk_sp<SkImage>, std::string> result;
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
-          .SetIfTrue(
-              [&result, &image_info, display_list = std::move(display_list)] {
-                result = MakeBitmapImage(std::move(display_list), image_info);
-              })
-          .SetIfFalse([&result, &image_info,
-                       display_list = std::move(display_list),
+          .SetIfTrue([&result, &image_info, &display_list] {
+            result = MakeBitmapImage(std::move(display_list), image_info);
+          })
+          .SetIfFalse([&result, &image_info, &display_list,
                        surface = surface_.get(),
                        gpu_image_behavior = gpu_image_behavior_] {
             if (!surface ||
