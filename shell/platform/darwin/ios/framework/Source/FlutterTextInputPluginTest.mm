@@ -406,6 +406,23 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
 }
 
+- (void)testDeletingBackwardWorksWithEmoji {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"😀🥰👨‍👩‍👧‍👦🇺🇳"];
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"😀🥰👨‍👩‍👧‍👦");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"😀🥰");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"😀");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"");
+}
+
 - (void)testPastingNonTextDisallowed {
   NSDictionary* config = self.mutableTemplateCopy;
   [self setClientId:123 configuration:config];
