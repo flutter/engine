@@ -14,6 +14,7 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/paint.h"
+#include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
@@ -614,6 +615,76 @@ void Canvas::drawShadow(const CanvasPath* path,
     // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
     builder()->drawShadow(path->path(), color, elevation, transparentOccluder,
                           dpr);
+  }
+}
+
+namespace {
+
+sk_sp<SkTypeface> matchTypeface(const char* family_name,
+                                SkFontStyle font_style) {
+  auto font_collection = UIDartState::Current()
+                             ->platform_configuration()
+                             ->client()
+                             ->GetFontCollection()
+                             .GetFontCollection();
+  for (const auto& manager : font_collection->GetFontManagerOrder()) {
+    sk_sp<SkFontStyleSet> set(manager->matchFamily(family_name));
+    if (!set || set->count() == 0) {
+      continue;
+    }
+
+    sk_sp<SkTypeface> match(set->matchStyle(font_style));
+    if (match) {
+      return match;
+    }
+  }
+  // No font found in font collection, create a default one.
+  // Skia promise the typeface is never null when it makes from name.
+  return SkTypeface::MakeFromName(family_name, font_style);
+}
+
+}  // namespace
+
+void Canvas::drawGlyphRun(const tonic::Uint16List& glyphs,
+                          const tonic::Float32List& positions,
+                          double originX,
+                          double originY,
+                          const char* font_family_name,
+                          int font_weight_index,
+                          int font_slant_index,
+                          double font_size,
+                          const Paint& paint,
+                          const PaintData& paint_data) {
+  FML_DCHECK(paint.isNotNull());
+  auto sk_glyphs = reinterpret_cast<const SkGlyphID*>(glyphs.data());
+  auto sk_points = reinterpret_cast<const SkPoint*>(positions.data());
+  // font_weight_index is from txt::FontWeight (lib/ui/text.dart::FontWeight
+  // in dart side)
+  //
+  // Convert txt::FontWeight values (ranging from 0-8) to SkFontStyle:Weight
+  // values (ranging from 100-900)
+  SkFontStyle::Weight font_weight =
+      static_cast<SkFontStyle::Weight>(font_weight_index * 100 + 100);
+  // Convert txt::FontStyle to SkFontFontStyle::Slant
+  SkFontStyle::Slant font_slant = font_slant_index == 0
+                                      ? SkFontStyle::Slant::kUpright_Slant
+                                      : SkFontStyle::Slant::kItalic_Slant;
+  SkFontStyle font_style(font_weight, SkFontStyle::Width::kNormal_Width,
+                         font_slant);
+  sk_sp<SkTypeface> sk_typeface = matchTypeface(font_family_name, font_style);
+
+  const SkFont sk_font(sk_typeface, font_size);
+  auto sk_textblob = SkTextBlob::MakeFromPosText(
+      sk_glyphs, glyphs.num_elements() * sizeof(SkGlyphID), sk_points, sk_font,
+      SkTextEncoding::kGlyphID);
+
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), kDrawTextBlobFlags);
+    builder()->drawTextBlob(sk_textblob, originX, originY);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawTextBlob(sk_textblob, originX, originY,
+                          *paint.paint(sk_paint));
   }
 }
 

@@ -45,6 +45,8 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
 
   size_t GetFontManagersCount() const;
 
+  std::vector<sk_sp<SkFontMgr>> GetFontManagerOrder() const;
+
   void SetupDefaultFontManager(uint32_t font_initialization_data);
   void SetDefaultFontManager(sk_sp<SkFontMgr> font_manager);
   void SetAssetFontManager(sk_sp<SkFontMgr> font_manager);
@@ -118,8 +120,6 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
   const std::shared_ptr<minikin::FontFamily>& DoMatchFallbackFont(
       uint32_t ch,
       std::string locale);
-
-  std::vector<sk_sp<SkFontMgr>> GetFontManagerOrder() const;
 
   std::shared_ptr<minikin::FontFamily> FindFontFamilyInManagers(
       const std::string& family_name);
