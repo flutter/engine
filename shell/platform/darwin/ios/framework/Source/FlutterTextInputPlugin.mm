@@ -1895,7 +1895,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     UITextRange* oldSelectedRange = _selectedTextRange;
     NSRange oldRange = ((FlutterTextRange*)oldSelectedRange).range;
     if (oldRange.location > 0) {
-      NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
+      NSRange charRange = fml::RangeForCharacterAtIndex(self.text, oldRange.location - 1);
+      NSRange newRange = NSMakeRange(charRange.location, oldRange.location - charRange.location);
       _selectedTextRange = [[FlutterTextRange rangeWithNSRange:newRange] copy];
       [oldSelectedRange release];
     }
