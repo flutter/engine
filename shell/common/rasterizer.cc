@@ -277,33 +277,45 @@ std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
   FML_DCHECK(display_list);
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(picture_size);
-  bool gpu_available = true;
+  std::pair<sk_sp<SkImage>, std::string> result;
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
-      fml::SyncSwitch::Handlers().SetIfTrue(
-          [&gpu_available] { gpu_available = false; }));
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue(
+              [&result, &image_info, display_list = std::move(display_list)] {
+                result = MakeBitmapImage(std::move(display_list), image_info);
+              })
+          .SetIfFalse([&result, &image_info,
+                       display_list = std::move(display_list),
+                       surface = surface_.get(),
+                       gpu_image_behavior = gpu_image_behavior_] {
+            if (!surface ||
+                gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
+              result = MakeBitmapImage(std::move(display_list), image_info);
+              return;
+            }
 
-  if (!gpu_available || !surface_ ||
-      gpu_image_behavior_ == MakeGpuImageBehavior::kBitmap) {
-    return MakeBitmapImage(std::move(display_list), image_info);
-  }
+            auto* context = surface->GetContext();
+            if (!context) {
+              result = MakeBitmapImage(std::move(display_list), image_info);
+              return;
+            }
 
-  auto* context = surface_->GetContext();
-  if (!context) {
-    return MakeBitmapImage(std::move(display_list), image_info);
-  }
+            sk_sp<SkSurface> sk_surface = SkSurface::MakeRenderTarget(
+                context, SkBudgeted::kYes, image_info);
+            if (!sk_surface) {
+              result = {nullptr,
+                        "unable to create render target at specified size"};
+              return;
+            }
 
-  sk_sp<SkSurface> surface =
-      SkSurface::MakeRenderTarget(context, SkBudgeted::kYes, image_info);
-  if (!surface) {
-    return {nullptr, "unable to create render target at specified size"};
-  }
+            SkCanvas* canvas = sk_surface->getCanvas();
+            canvas->clear(SK_ColorTRANSPARENT);
+            display_list->RenderTo(canvas);
 
-  SkCanvas* canvas = surface->getCanvas();
-  canvas->clear(SK_ColorTRANSPARENT);
-  display_list->RenderTo(canvas);
-
-  sk_sp<SkImage> image = surface->makeImageSnapshot();
-  return {image, image ? "" : "Unable to create image"};
+            sk_sp<SkImage> image = sk_surface->makeImageSnapshot();
+            result = {image, image ? "" : "Unable to create image"};
+          }));
+  return result;
 }
 
 namespace {
