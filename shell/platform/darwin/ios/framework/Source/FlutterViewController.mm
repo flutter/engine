@@ -423,7 +423,7 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
 }
 
 - (void)loadView {
-  self.view = [[UIView alloc] init];
+  self.view = [[[UIView alloc] init] autorelease];
   UIView* flutterViewOrPlaceholder = GetViewOrPlaceholder(_flutterView.get());
   flutterViewOrPlaceholder.multipleTouchEnabled = YES;
   flutterViewOrPlaceholder.autoresizingMask =
