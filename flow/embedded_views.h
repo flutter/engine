@@ -99,7 +99,7 @@ class Mutator {
       case opacity:
         return alpha_ == other.alpha_;
       case backdrop_filter:
-        return filter_ == other.filter_;
+        return *filter_ == *other.filter_;
     }
 
     return false;
