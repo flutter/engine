@@ -160,10 +160,10 @@
 
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--assert-ca-layer-type"]) {
     if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--enable-software-rendering"]) {
-      NSAssert([flutterViewController.flutterView.layer isKindOfClass:[CALayer class]],
+      NSAssert([flutterViewController.view.layer isKindOfClass:[CALayer class]],
                @"Expected CALayer for software rendering.");
     } else {
-      NSAssert([flutterViewController.flutterView.layer isKindOfClass:[CAMetalLayer class]],
+      NSAssert([flutterViewController.view.layer isKindOfClass:[CAMetalLayer class]],
                @"Expected CAMetalLayer for non-software rendering.");
     }
   }
