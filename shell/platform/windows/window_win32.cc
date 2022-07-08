@@ -65,6 +65,8 @@ WindowWin32::WindowWin32(
   current_dpi_ = GetDpiForHWND(nullptr);
 
   // Get initial value for wheel scroll lines
+  // TODO: Listen to changes for this value
+  // https://github.com/flutter/flutter/issues/107248
   UpdateScrollOffsetMultiplier();
 
   if (text_input_manager_ == nullptr) {
@@ -567,12 +569,10 @@ float WindowWin32::GetScrollOffsetMultiplier() {
 }
 
 void WindowWin32::UpdateScrollOffsetMultiplier() {
-  UINT lines_per_scroll;
+  UINT lines_per_scroll = kLinesPerScrollWindowsDefault;
+
   // Get lines per scroll wheel value from Windows
-  if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines_per_scroll, 0) ==
-      0) {
-    lines_per_scroll = kLinesPerScrollWindowsDefault;
-  }
+  SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines_per_scroll, 0);
 
   // This logic is based off Chromium's implementation
   // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/blink/web_input_event_builders_win.cc;l=319-331

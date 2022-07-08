@@ -199,6 +199,7 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
 
   UINT GetCurrentHeight();
 
+  // Returns the current pixel per scroll tick value.
   virtual float GetScrollOffsetMultiplier();
 
  protected:
