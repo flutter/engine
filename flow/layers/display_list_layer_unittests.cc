@@ -238,9 +238,9 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   EXPECT_FALSE(context->subtree_can_inherit_opacity);
 
   // Pump the DisplayListLayer until it is ready to cache its DL
-  display_list_layer->Paint(paint_context());
-  display_list_layer->Paint(paint_context());
-  display_list_layer->Paint(paint_context());
+  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context(), SkMatrix());
 
   int opacity_alpha = 0x7F;
   SkPoint opacity_offset = SkPoint::Make(10, 10);

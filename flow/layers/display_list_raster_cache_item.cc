@@ -110,9 +110,10 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   // access_count.
   bool visible = context->cull_rect.intersect(bounds);
   int accesses = raster_cache->MarkSeen(key_id_, matrix, visible);
-  if (!visible || accesses < raster_cache->access_threshold()) {
+  if (!visible || accesses <= raster_cache->access_threshold()) {
     cache_state_ = kNone;
   } else {
+    context->subtree_can_inherit_opacity = true;
     cache_state_ = kCurrent;
   }
   return;

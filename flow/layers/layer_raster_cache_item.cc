@@ -50,11 +50,12 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
     return;
   }
   child_items_ = context->raster_cached_entries->size() - child_items_;
-  int attempts = context->raster_cache->MarkSeen(key_id_, matrix_, true);
-  if (attempts >= layer_cached_threshold_) {
+  if (num_cache_attempts_ >= layer_cached_threshold_) {
     // the layer can be cached
     cache_state_ = CacheState::kCurrent;
+    context->raster_cache->MarkSeen(key_id_, matrix_, true);
   } else {
+    num_cache_attempts_++;
     // access current layer
     if (can_cache_children_) {
       if (!layer_children_id_.has_value()) {

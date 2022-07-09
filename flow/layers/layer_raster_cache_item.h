@@ -63,6 +63,8 @@ class LayerRasterCacheItem : public RasterCacheItem {
 
   // if the layer's children can be directly cache, set the param is true;
   bool can_cache_children_ = false;
+
+  mutable int num_cache_attempts_ = 1;
 };
 
 }  // namespace flutter
