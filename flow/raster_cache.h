@@ -195,10 +195,12 @@ class RasterCache {
    * as visible in the current frame if the caller determines that it
    * intersects the cull rect. The access_count of the entry will be
    * increased if it is visible, or if it was ever visible.
-   * @return the number of times the entry has been hit since it was created. For
-   * a new entry that will be 1 if it is visible, or zero if non-visible.
+   * @return the number of times the entry has been hit since it was created.
+   * For a new entry that will be 1 if it is visible, or zero if non-visible.
    */
-  int MarkSeen(const RasterCacheKeyID& id, const SkMatrix& matrix, bool visible) const;
+  int MarkSeen(const RasterCacheKeyID& id,
+               const SkMatrix& matrix,
+               bool visible) const;
 
   bool UpdateCacheEntry(
       const RasterCacheKeyID& id,

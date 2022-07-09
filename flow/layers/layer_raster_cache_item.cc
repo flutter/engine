@@ -66,7 +66,8 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
                                    RasterCacheKeyType::kLayerChildren);
       }
       cache_state_ = CacheState::kChildren;
-      context->raster_cache->MarkSeen(layer_children_id_.value(), matrix_, true);
+      context->raster_cache->MarkSeen(layer_children_id_.value(), matrix_,
+                                      true);
     }
   }
 }
