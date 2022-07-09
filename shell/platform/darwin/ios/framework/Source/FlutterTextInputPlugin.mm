@@ -1899,6 +1899,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     if (oldRange.location > 0) {
       NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
 
+      // We should check if the last character is a part of emoji.
+      // If so, we must delete the entire emoji to prevent the text from being malformed.
       NSRange charRange = fml::RangeForCharacterAtIndex(self.text, oldRange.location - 1);
       UChar32 codePoint;
       BOOL gotCodePoint = [self.text getBytes:&codePoint
@@ -1909,9 +1911,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
                                         range:charRange
                                remainingRange:NULL];
       if (gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI)) {
-        // We should make sure the entire emoji is deleted.
         newRange = NSMakeRange(charRange.location, oldRange.location - charRange.location);
       }
+
       _selectedTextRange = [[FlutterTextRange rangeWithNSRange:newRange] copy];
       [oldSelectedRange release];
     }
