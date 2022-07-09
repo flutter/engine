@@ -160,13 +160,25 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_spirv_version::shaderc_spirv_version_1_0);
       break;
     case TargetPlatform::kFlutterSPIRV:
-    case TargetPlatform::kSkSL:  // TODO(zra): Allow optimizations.
       // With any optimization level above 'zero' enabled, shaderc will emit
       // ops that are not supported by the Engine's SPIR-V -> SkSL transpiler.
       // In particular, with 'shaderc_optimization_level_size' enabled, it will
       // generate OpPhi (opcode 245) for test 246_OpLoopMerge.frag instead of
       // the OpLoopMerge op expected by that test.
       // See: https://github.com/flutter/flutter/issues/105396.
+      spirv_options.SetOptimizationLevel(
+          shaderc_optimization_level::shaderc_optimization_level_zero);
+      spirv_options.SetTargetEnvironment(
+          shaderc_target_env::shaderc_target_env_opengl,
+          shaderc_env_version::shaderc_env_version_opengl_4_5);
+      spirv_options.SetTargetSpirv(
+          shaderc_spirv_version::shaderc_spirv_version_1_0);
+      break;
+    case TargetPlatform::kSkSL:
+      // When any optimization level above 'zero' is enabled, the phi merges at
+      // loop continue blocks are rendered using syntax that is supported in
+      // GLSL, but not in SkSL.
+      // https://bugs.chromium.org/p/skia/issues/detail?id=13518.
       spirv_options.SetOptimizationLevel(
           shaderc_optimization_level::shaderc_optimization_level_zero);
       spirv_options.SetTargetEnvironment(
