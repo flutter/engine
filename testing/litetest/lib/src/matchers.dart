@@ -114,7 +114,7 @@ Matcher startsWith(String s) => (dynamic d) {
 };
 
 /// Gives a matcher that asserts that the value being matched is a [String] that
-/// ends with `s`
+/// ends with `s`.
 Matcher endsWith(String s) => (dynamic d) {
   expect(d, isInstanceOf<String>());
   final String h = d as String;
@@ -124,7 +124,7 @@ Matcher endsWith(String s) => (dynamic d) {
 };
 
 /// Gives a matcher that asserts that the value being matched is a [String] that
-/// regexp matches with `pattern`
+/// regexp matches with `pattern`.
 Matcher hasMatch(String pattern) => (dynamic d) {
   expect(d, isInstanceOf<String>());
   final String h = d as String;
