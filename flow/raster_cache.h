@@ -202,6 +202,12 @@ class RasterCache {
                const SkMatrix& matrix,
                bool visible) const;
 
+  /**
+   * Returns the access count (i.e. accesses_since_visible) for the given
+   * entry in the cache, or -1 if no such entry exists.
+   */
+  int GetAccessCount(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
+
   bool UpdateCacheEntry(
       const RasterCacheKeyID& id,
       const Context& raster_cache_context,

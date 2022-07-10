@@ -122,6 +122,16 @@ int RasterCache::MarkSeen(const RasterCacheKeyID& id,
   return entry.accesses_since_visible;
 }
 
+int RasterCache::GetAccessCount(const RasterCacheKeyID& id,
+                                const SkMatrix& matrix) const {
+  RasterCacheKey key = RasterCacheKey(id, matrix);
+  auto entry = cache_.find(key);
+  if (entry != cache_.cend()) {
+    return entry->second.accesses_since_visible;
+  }
+  return -1;
+}
+
 bool RasterCache::HasEntry(const RasterCacheKeyID& id,
                            const SkMatrix& matrix) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
