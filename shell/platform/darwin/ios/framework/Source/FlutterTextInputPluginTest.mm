@@ -412,29 +412,31 @@ FLUTTER_ASSERT_ARC
   NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
   FlutterTextInputView* inputView = inputFields[0];
 
-  [inputView insertText:@"😀 text 🥰👨‍👩‍👧‍👦🇺🇳ดี "];
+  [inputView insertText:@"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳ดี "];
   [inputView deleteBackward];
   [inputView deleteBackward];
 
   // Thai vowel is removed.
-  XCTAssertEqualObjects(inputView.text, @"😀 text 🥰👨‍👩‍👧‍👦🇺🇳ด");
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳ด");
   [inputView deleteBackward];
-  XCTAssertEqualObjects(inputView.text, @"😀 text 🥰👨‍👩‍👧‍👦🇺🇳");
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳");
   [inputView deleteBackward];
-  XCTAssertEqualObjects(inputView.text, @"😀 text 🥰👨‍👩‍👧‍👦");
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦");
   [inputView deleteBackward];
-  XCTAssertEqualObjects(inputView.text, @"😀 text 🥰");
-  [inputView deleteBackward];
-
-  XCTAssertEqualObjects(inputView.text, @"😀 text ");
-  [inputView deleteBackward];
-  [inputView deleteBackward];
-  [inputView deleteBackward];
-  [inputView deleteBackward];
-  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰");
   [inputView deleteBackward];
 
-  XCTAssertEqualObjects(inputView.text, @"😀");
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text ");
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ");
   [inputView deleteBackward];
   XCTAssertEqualObjects(inputView.text, @"");
 }
