@@ -39,8 +39,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, save)                     \
   V(Canvas, saveLayerWithoutBounds)   \
   V(Canvas, saveLayer)                \
-  V(Canvas, startRecordVirtualLayer) \
-  V(Canvas, saveVirtualLayer)        \
+  V(Canvas, startRecordVirtualLayer)  \
+  V(Canvas, saveVirtualLayer)         \
   V(Canvas, restore)                  \
   V(Canvas, getSaveCount)             \
   V(Canvas, translate)                \
