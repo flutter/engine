@@ -63,6 +63,7 @@ struct _FlView {
   /* FlKeyboardViewDelegate related properties */
   KeyboardLayoutNotifier keyboard_layout_notifier;
   GdkKeymap* keymap;
+  gulong keymap_keys_changed_cb_id;  // Signal connection ID.
 };
 
 typedef struct _FlViewChild {
@@ -70,7 +71,7 @@ typedef struct _FlViewChild {
   GdkRectangle geometry;
 } FlViewChild;
 
-enum { PROP_FLUTTER_PROJECT = 1, PROP_LAST };
+enum { kPropFlutterProject = 1, kPropLast };
 
 static void fl_view_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
@@ -92,19 +93,16 @@ G_DEFINE_TYPE_WITH_CODE(
             G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
                                   fl_view_scrolling_delegate_iface_init))
 
-static gboolean text_input_im_filter_by_gtk(GtkIMContext* im_context,
-                                            gpointer gdk_event) {
-  GdkEventKey* event = reinterpret_cast<GdkEventKey*>(gdk_event);
-  GdkEventType type = event->type;
-  g_return_val_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE, false);
-  return gtk_im_context_filter_keypress(im_context, event);
-}
-
 // Initialize keyboard manager.
 static void init_keyboard(FlView* self) {
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
-  self->text_input_plugin =
-      fl_text_input_plugin_new(messenger, self, text_input_im_filter_by_gtk);
+
+  GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(self));
+  g_return_if_fail(GDK_IS_WINDOW(window));
+  g_autoptr(GtkIMContext) im_context = gtk_im_multicontext_new();
+  gtk_im_context_set_client_window(im_context, window);
+
+  self->text_input_plugin = fl_text_input_plugin_new(messenger, im_context);
   self->keyboard_manager =
       fl_keyboard_manager_new(FL_KEYBOARD_VIEW_DELEGATE(self));
 }
@@ -241,6 +239,7 @@ static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
 
   g_clear_object(&self->keyboard_manager);
+  g_clear_object(&self->text_input_plugin);
   g_clear_object(&self->scrolling_manager);
   init_keyboard(self);
   init_scrolling(self);
@@ -303,6 +302,7 @@ static void fl_view_keyboard_delegate_iface_init(
   iface->lookup_key = [](FlKeyboardViewDelegate* view_delegate,
                          const GdkKeymapKey* key) -> guint {
     FlView* self = FL_VIEW(view_delegate);
+    g_return_val_if_fail(self->keymap != nullptr, 0);
     return gdk_keymap_lookup_key(self->keymap, key);
   };
 }
@@ -487,7 +487,6 @@ static void fl_view_constructed(GObject* object) {
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->accessibility_plugin = fl_accessibility_plugin_new(self);
-  init_keyboard(self);
   init_scrolling(self);
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
@@ -512,8 +511,8 @@ static void fl_view_constructed(GObject* object) {
                    G_CALLBACK(enter_notify_event_cb), self);
   g_signal_connect(self->event_box, "leave-notify-event",
                    G_CALLBACK(leave_notify_event_cb), self);
-  g_signal_connect(self->keymap, "keys-changed",
-                   G_CALLBACK(keymap_keys_changed_cb), self);
+  self->keymap_keys_changed_cb_id = g_signal_connect(
+      self->keymap, "keys-changed", G_CALLBACK(keymap_keys_changed_cb), self);
   GtkGesture* zoom = gtk_gesture_zoom_new(self->event_box);
   g_signal_connect(zoom, "begin", G_CALLBACK(gesture_zoom_begin_cb), self);
   g_signal_connect(zoom, "scale-changed", G_CALLBACK(gesture_zoom_update_cb),
@@ -534,7 +533,7 @@ static void fl_view_set_property(GObject* object,
   FlView* self = FL_VIEW(object);
 
   switch (prop_id) {
-    case PROP_FLUTTER_PROJECT:
+    case kPropFlutterProject:
       g_set_object(&self->project,
                    static_cast<FlDartProject*>(g_value_get_object(value)));
       break;
@@ -551,7 +550,7 @@ static void fl_view_get_property(GObject* object,
   FlView* self = FL_VIEW(object);
 
   switch (prop_id) {
-    case PROP_FLUTTER_PROJECT:
+    case kPropFlutterProject:
       g_value_set_object(value, self->project);
       break;
     default:
@@ -587,6 +586,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->engine);
   g_clear_object(&self->accessibility_plugin);
   g_clear_object(&self->keyboard_manager);
+  g_signal_handler_disconnect(self->keymap, self->keymap_keys_changed_cb_id);
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
   g_list_free_full(self->gl_area_list, g_object_unref);
@@ -620,6 +620,8 @@ static void fl_view_realize(GtkWidget* widget) {
                                      &attributes, attributes_mask);
   gtk_widget_set_window(widget, window);
   gtk_widget_register_window(widget, window);
+
+  init_keyboard(self);
 
   if (!fl_renderer_start(self->renderer, self, &error)) {
     g_warning("Failed to start Flutter renderer: %s", error->message);
@@ -812,8 +814,6 @@ static void fl_view_remove(GtkContainer* container, GtkWidget* widget) {
   if (widget == GTK_WIDGET(self->event_box)) {
     g_clear_object(&self->event_box);
   }
-
-  g_clear_object(&self->keymap);
 }
 
 // Implements GtkContainer::forall
@@ -877,7 +877,7 @@ static void fl_view_class_init(FlViewClass* klass) {
   container_class->get_child_property = fl_view_get_child_property;
 
   g_object_class_install_property(
-      G_OBJECT_CLASS(klass), PROP_FLUTTER_PROJECT,
+      G_OBJECT_CLASS(klass), kPropFlutterProject,
       g_param_spec_object(
           "flutter-project", "flutter-project", "Flutter project in use",
           fl_dart_project_get_type(),

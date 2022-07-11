@@ -28,8 +28,10 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-Rasterizer::Rasterizer(Delegate& delegate)
+Rasterizer::Rasterizer(Delegate& delegate,
+                       MakeGpuImageBehavior gpu_image_behavior)
     : delegate_(delegate),
+      gpu_image_behavior_(gpu_image_behavior),
       compositor_context_(std::make_unique<flutter::CompositorContext>(*this)),
       user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
@@ -243,6 +245,76 @@ RasterStatus Rasterizer::Draw(std::shared_ptr<LayerTreePipeline> pipeline,
 bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
   return raster_status == RasterStatus::kResubmit ||
          raster_status == RasterStatus::kSkipAndRetry;
+}
+
+namespace {
+std::pair<sk_sp<SkImage>, std::string> MakeBitmapImage(
+    sk_sp<DisplayList> display_list,
+    const SkImageInfo& image_info) {
+  FML_DCHECK(display_list);
+  // Use 16384 as a proxy for the maximum texture size for a GPU image.
+  // This is meant to be large enough to avoid false positives in test contexts,
+  // but not so artificially large to be completely unrealistic on any platform.
+  // This limit is taken from the Metal specification. D3D, Vulkan, and GL
+  // generally have lower limits.
+  if (image_info.width() > 16384 || image_info.height() > 16384) {
+    return {nullptr, "unable to create render target at specified size"};
+  }
+
+  sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
+  SkCanvas* canvas = surface->getCanvas();
+  canvas->clear(SK_ColorTRANSPARENT);
+  display_list->RenderTo(canvas);
+
+  sk_sp<SkImage> image = surface->makeImageSnapshot();
+  return {image, image ? "" : "Unable to create image"};
+}
+}  // namespace
+
+std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size) {
+  TRACE_EVENT0("flutter", "Rasterizer::MakeGpuImage");
+  FML_DCHECK(display_list);
+
+  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(picture_size);
+  std::pair<sk_sp<SkImage>, std::string> result;
+  delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue([&result, &image_info, &display_list] {
+            result = MakeBitmapImage(std::move(display_list), image_info);
+          })
+          .SetIfFalse([&result, &image_info, &display_list,
+                       surface = surface_.get(),
+                       gpu_image_behavior = gpu_image_behavior_] {
+            if (!surface ||
+                gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
+              result = MakeBitmapImage(std::move(display_list), image_info);
+              return;
+            }
+
+            auto* context = surface->GetContext();
+            if (!context) {
+              result = MakeBitmapImage(std::move(display_list), image_info);
+              return;
+            }
+
+            sk_sp<SkSurface> sk_surface = SkSurface::MakeRenderTarget(
+                context, SkBudgeted::kYes, image_info);
+            if (!sk_surface) {
+              result = {nullptr,
+                        "unable to create render target at specified size"};
+              return;
+            }
+
+            SkCanvas* canvas = sk_surface->getCanvas();
+            canvas->clear(SK_ColorTRANSPARENT);
+            display_list->RenderTo(canvas);
+
+            sk_sp<SkImage> image = sk_surface->makeImageSnapshot();
+            result = {image, image ? "" : "Unable to create image"};
+          }));
+  return result;
 }
 
 namespace {

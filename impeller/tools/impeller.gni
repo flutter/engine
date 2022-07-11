@@ -265,9 +265,11 @@ template("impellerc") {
     depfile_intermediate_path = rebase_path(depfile_path, root_build_dir)
     depfile = depfile_path
 
+    shader_lib_dir = rebase_path("//flutter/impeller/compiler/shader_lib")
     args = [
       "--input={{source}}",
       "--include={{source_dir}}",
+      "--include=$shader_lib_dir",
       "--depfile=$depfile_intermediate_path",
       "$shader_target_flag",
     ]
@@ -494,6 +496,10 @@ template("impeller_shaders") {
       name = invoker.name
       shaders = invoker.shaders
     }
+  }
+
+  if (!impeller_shaders_supports_platform) {
+    not_needed(invoker, "*")
   }
 
   group(target_name) {

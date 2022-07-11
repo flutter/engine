@@ -253,6 +253,54 @@ TEST(GeometryTest, MatrixGetMaxBasisLength) {
   }
 }
 
+TEST(GeometryTest, MatrixMakeOrthographic) {
+  {
+    auto m = Matrix::MakeOrthographic(Size(100, 200));
+    auto expect = Matrix{
+        0.02, 0,     0,   0,  //
+        0,    -0.01, 0,   0,  //
+        0,    0,     1,   0,  //
+        -1,   1,     0.5, 1,  //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+
+  {
+    auto m = Matrix::MakeOrthographic(Size(400, 100));
+    auto expect = Matrix{
+        0.005, 0,     0,   0,  //
+        0,     -0.02, 0,   0,  //
+        0,     0,     1,   0,  //
+        -1,    1,     0.5, 1,  //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+}
+
+TEST(GeometryTest, MatrixMakePerspective) {
+  {
+    auto m = Matrix::MakePerspective(Degrees(60), Size(100, 200), 1, 10);
+    auto expect = Matrix{
+        3.4641, 0,       0,        0,   //
+        0,      1.73205, 0,        0,   //
+        0,      0,       -1.22222, -1,  //
+        0,      0,       -2.22222, 0,   //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+
+  {
+    auto m = Matrix::MakePerspective(Radians(1), 2, 10, 20);
+    auto expect = Matrix{
+        0.915244, 0,       0,   0,   //
+        0,        1.83049, 0,   0,   //
+        0,        0,       -3,  -1,  //
+        0,        0,       -40, 0,   //
+    };
+    ASSERT_MATRIX_NEAR(m, expect);
+  }
+}
+
 TEST(GeometryTest, QuaternionLerp) {
   auto q1 = Quaternion{{0.0, 0.0, 1.0}, 0.0};
   auto q2 = Quaternion{{0.0, 0.0, 1.0}, M_PI_4};
@@ -722,6 +770,40 @@ TEST(GeometryTest, PointAbs) {
   auto a_abs = a.Abs();
   auto expected = Point(1, 2);
   ASSERT_POINT_NEAR(a_abs, expected);
+}
+
+TEST(GeometryTest, CanUseVector3AssignmentOperators) {
+  {
+    Vector3 p(1, 2, 4);
+    p += Vector3(1, 2, 4);
+    ASSERT_EQ(p.x, 2u);
+    ASSERT_EQ(p.y, 4u);
+    ASSERT_EQ(p.z, 8u);
+  }
+
+  {
+    Vector3 p(3, 6, 8);
+    p -= Vector3(1, 2, 3);
+    ASSERT_EQ(p.x, 2u);
+    ASSERT_EQ(p.y, 4u);
+    ASSERT_EQ(p.z, 5u);
+  }
+
+  {
+    Vector3 p(1, 2, 3);
+    p *= Vector3(2, 3, 4);
+    ASSERT_EQ(p.x, 2u);
+    ASSERT_EQ(p.y, 6u);
+    ASSERT_EQ(p.z, 12u);
+  }
+
+  {
+    Vector3 p(2, 6, 12);
+    p /= Vector3(2, 3, 4);
+    ASSERT_EQ(p.x, 1u);
+    ASSERT_EQ(p.y, 2u);
+    ASSERT_EQ(p.z, 3u);
+  }
 }
 
 TEST(GeometryTest, ColorPremultiply) {
