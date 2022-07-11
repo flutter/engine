@@ -313,9 +313,13 @@ void DisplayList::Compare(DisplayList* dl) {
   // 1.2 算法实现2 从左右分别进行深搜
 
   // 给定tail返回head
-  std::function<int(int,const std::vector<DisplayVirtualLayerInfo>&)> findHeadWithTail = [&] (int tailIndex, const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+  std::function<int(int, const std::vector<DisplayVirtualLayerInfo>&)>
+      findHeadWithTail =
+          [&](int tailIndex,
+              const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
     for (int i = tailIndex - 1; i >= 0; i--) {
-      if(vec[i].isStart && vec[i].type == vec[tailIndex].type && vec[i].depth == vec[tailIndex].depth) {
+      if (vec[i].isStart && vec[i].type == vec[tailIndex].type &&
+          vec[i].depth == vec[tailIndex].depth) {
         return i;
       }
     }
@@ -323,9 +327,13 @@ void DisplayList::Compare(DisplayList* dl) {
   };
 
   // 给定head找到对应tail
-  std::function<int(int,const std::vector<DisplayVirtualLayerInfo>&)> findTailWithHead = [&] (int headIndex, const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
-    for(unsigned long i = headIndex+1; i < vec.size();i++) {
-      if(!vec[i].isStart && vec[i].type == vec[headIndex].type && vec[i].depth == vec[headIndex].depth) {
+  std::function<int(int, const std::vector<DisplayVirtualLayerInfo>&)>
+      findTailWithHead =
+          [&](int headIndex,
+              const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    for (unsigned long i = headIndex + 1; i < vec.size(); i++) {
+      if (!vec[i].isStart && vec[i].type == vec[headIndex].type &&
+          vec[i].depth == vec[headIndex].depth) {
         return i;
       }
     }
@@ -333,16 +341,18 @@ void DisplayList::Compare(DisplayList* dl) {
   };
 
   // 给定Head或者Tail 进行jump.
-  std::function<int(int, bool,const std::vector<DisplayVirtualLayerInfo>&)> treeJump = [&] (int index, bool isHead,const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
-    if(isHead) {
-      for (unsigned long i = index+1; i < vec.size(); i++) {
-        if(vec[i].depth == vec[index].depth && vec[i].isStart) {
+  std::function<int(int, bool, const std::vector<DisplayVirtualLayerInfo>&)>
+      treeJump = [&](int index, bool isHead,
+                     const std::vector<DisplayVirtualLayerInfo>& vec) -> int {
+    if (isHead) {
+      for (unsigned long i = index + 1; i < vec.size(); i++) {
+        if (vec[i].depth == vec[index].depth && vec[i].isStart) {
           return i;
         }
       }
-    }else{
-      for (int i = index-1; i > 0; i--) {
-        if(vec[i].depth == vec[index].depth && !vec[i].isStart) {
+    } else {
+      for (int i = index - 1; i > 0; i--) {
+        if (vec[i].depth == vec[index].depth && !vec[i].isStart) {
           return i;
         }
       }
@@ -350,14 +360,15 @@ void DisplayList::Compare(DisplayList* dl) {
     return 0;
   };
 
-  // 递归的主函数，将new old 中的子树进行diff，获得差异化部分. 已经保证父节点类型相同.
-  std::function<void(int, int, int, int)> diffTree = [&] (int newH, int newT, int oldH, int oldT) -> void {
-
+  // 递归的主函数，将new old 中的子树进行diff，获得差异化部分.
+  // 已经保证父节点类型相同.
+  std::function<void(int, int, int, int)> diffTree =
+      [&](int newH, int newT, int oldH, int oldT) -> void {
     // 比较父节点.
     auto h1 = getNPtr(newOpHead, newOpTail, newTree[newH].index);
-    auto t1 = getNPtr(newOpHead, newOpTail, newTree[newH+1].index);
+    auto t1 = getNPtr(newOpHead, newOpTail, newTree[newH + 1].index);
     auto h2 = getNPtr(oldOpHead, oldOpTail, oldTree[oldH].index);
-    auto t2 = getNPtr(oldOpHead, oldOpTail, oldTree[oldH+1].index);
+    auto t2 = getNPtr(oldOpHead, oldOpTail, oldTree[oldH + 1].index);
 
     if (!(t1 - h1 == t2 - h2 && CompareOps(h1, t1, h2, t2))) {
       // 父节点不一致直接寄.
@@ -370,14 +381,15 @@ void DisplayList::Compare(DisplayList* dl) {
 
     // 新树没有子树
     if (newT - newH == 1 && oldT - oldH != 1) {
-      auto r1 = dl->partBounds(oldTree[oldH+1].index, oldTree[oldT-1].index);
+      auto r1 =
+          dl->partBounds(oldTree[oldH + 1].index, oldTree[oldT - 1].index);
       damage.join(r1);
       return;
     }
 
     // 旧树没有子树
     if (oldT - oldH == 1 && newT - newH != 1) {
-      auto r1 = partBounds(newTree[newH+1].index, newTree[newT-1].index);
+      auto r1 = partBounds(newTree[newH + 1].index, newTree[newT - 1].index);
       damage.join(r1);
       return;
     }
@@ -399,25 +411,24 @@ void DisplayList::Compare(DisplayList* dl) {
     int lEdgeNewTreeHead = 0;
     int lEdgeOldTreeHead = 0;
 
-    while(newTreeTail != newT-1 && oldTreeTail != oldT-1) {
-      if(newTreeHead == 0) {
+    while (newTreeTail != newT - 1 && oldTreeTail != oldT - 1) {
+      if (newTreeHead == 0) {
         newTreeHead = newH + 1;
         oldTreeHead = oldH + 1;
-      }else{
+      } else {
         newTreeHead = treeJump(newTreeHead, true, newTree);
         oldTreeHead = treeJump(oldTreeHead, true, oldTree);
       }
       newTreeTail = findTailWithHead(newTreeHead, newTree);
       oldTreeTail = findTailWithHead(oldTreeHead, oldTree);
-      if(newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
+      if (newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
         lEdgeNewTreeHead = newTreeHead;
         lEdgeOldTreeHead = oldTreeHead;
         diffTree(newTreeHead, newTreeTail, oldTreeHead, oldTreeTail);
-      }else{
+      } else {
         break;
       }
     }
-
 
     // 2. 从右往左递归子树
 
@@ -429,72 +440,81 @@ void DisplayList::Compare(DisplayList* dl) {
     newTreeHead = 0;
     oldTreeHead = 0;
 
-    while(newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead) {
-      if(oldTreeTail == oldT) {
+    while (newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead) {
+      if (oldTreeTail == oldT) {
         oldTreeTail = oldT - 1;
         newTreeTail = newT - 1;
-      }else{
+      } else {
         oldTreeTail = oldTreeHead - 1;
         newTreeTail = newTreeHead - 1;
       }
       newTreeHead = findHeadWithTail(newTreeTail, newTree);
       oldTreeHead = findHeadWithTail(oldTreeTail, oldTree);
-      if(newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead && newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
+      if (newTreeHead < lEdgeNewTreeHead && oldTreeHead < lEdgeOldTreeHead &&
+          newTree[newTreeHead].type == oldTree[oldTreeHead].type) {
         rEdgeNewTreeHead = newTreeHead;
         rEdgeOldTreeHead = oldTreeHead;
         diffTree(newTreeHead, newTreeTail, oldTreeHead, oldTreeTail);
-      }else{
+      } else {
         break;
       }
     }
 
     // 3. 中间的都寄了
 
-    if(rEdgeNewTreeHead - lEdgeNewTreeHead > 1) {
+    if (rEdgeNewTreeHead - lEdgeNewTreeHead > 1) {
       int garbageNewTreeHead = 0;
       int garbageNewTreeTail = newTreeHead - 1;
-      if(lEdgeNewTreeHead == 0) {
+      if (lEdgeNewTreeHead == 0) {
         garbageNewTreeHead = 1;
-      }else{
+      } else {
         garbageNewTreeHead = findTailWithHead(lEdgeNewTreeHead, newTree) - 1;
       }
-      if(rEdgeNewTreeHead == 0) {
+      if (rEdgeNewTreeHead == 0) {
         garbageNewTreeTail = newT;
-      }else{
+      } else {
         garbageNewTreeTail = rEdgeNewTreeHead - 1;
       }
-      SkRect rect = partBounds(newTree[garbageNewTreeHead].index, newTree[garbageNewTreeTail].index);
+      SkRect rect = partBounds(newTree[garbageNewTreeHead].index,
+                               newTree[garbageNewTreeTail].index);
       damage.join(rect);
     }
 
-    if(rEdgeOldTreeHead - lEdgeNewTreeHead > 1) {
+    if (rEdgeOldTreeHead - lEdgeNewTreeHead > 1) {
       int garbageOldTreeHead = 0;
       int garbageOldTreeTail = oldTreeHead - 1;
-      if(lEdgeOldTreeHead == 0) {
+      if (lEdgeOldTreeHead == 0) {
         garbageOldTreeHead = 1;
-      }else{
+      } else {
         garbageOldTreeHead = findTailWithHead(lEdgeOldTreeHead, oldTree) - 1;
       }
-      if(rEdgeOldTreeHead == 0) {
+      if (rEdgeOldTreeHead == 0) {
         garbageOldTreeTail = oldT;
-      }else{
+      } else {
         garbageOldTreeTail = rEdgeOldTreeHead - 1;
       }
-      SkRect rect = dl->partBounds(oldTree[garbageOldTreeHead].index, oldTree[garbageOldTreeTail].index);
+      SkRect rect = dl->partBounds(oldTree[garbageOldTreeHead].index,
+                                   oldTree[garbageOldTreeTail].index);
       damage.join(rect);
     }
   };
 
-  if(!newTree.empty() && !oldTree.empty() && newTree[0].type == oldTree[0].type) {
-    diffTree(0, newTree.size()-1, 0, oldTree.size()-1);
+  if (!newTree.empty() && !oldTree.empty() &&
+      newTree[0].type == oldTree[0].type) {
+    diffTree(0, newTree.size() - 1, 0, oldTree.size() - 1);
     // debug.
     auto r1 = bounds();
     auto r2 = dl->bounds();
     r1.join(r2);
-    auto percent = (damage.width() * damage.height()) / ( r1.width() * r1.height() );
-    printf("DONG DIFF damage %g %g %g %g | %g %g %g %g | %g \n", SkScalarToFloat(r1.x()), SkScalarToFloat(r1.y()),SkScalarToFloat(r1.width()), SkScalarToFloat(r1.height()), SkScalarToFloat(damage.x()), SkScalarToFloat(damage.y()),
-           SkScalarToFloat(damage.width()), SkScalarToFloat(damage.height()), percent);
-  }else{
+    auto percent =
+        (damage.width() * damage.height()) / (r1.width() * r1.height());
+    printf("DONG DIFF damage %g %g %g %g | %g %g %g %g | %g \n",
+           SkScalarToFloat(r1.x()), SkScalarToFloat(r1.y()),
+           SkScalarToFloat(r1.width()), SkScalarToFloat(r1.height()),
+           SkScalarToFloat(damage.x()), SkScalarToFloat(damage.y()),
+           SkScalarToFloat(damage.width()), SkScalarToFloat(damage.height()),
+           percent);
+  } else {
     damage = bounds();
   }
 

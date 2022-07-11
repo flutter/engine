@@ -333,7 +333,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   int op_count_ = 0;
 
   uint32_t storage_op_count_ = 0;
-                                   // 因为 【】【】【】 所以depth先为1.
+  // 因为 【】【】【】 所以depth先为1.
   uint32_t virtual_layer_depth_ = 1;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
