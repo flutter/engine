@@ -231,6 +231,8 @@ FLUTTER_DARWIN_EXPORT
  */
 @property(weak, nonatomic, readonly) FlutterEngine* engine;
 
+@property(nonatomic, readonly) UIView* flutterView;
+
 /**
  * The `FlutterBinaryMessenger` associated with this FlutterViewController (used for communicating
  * with channels).

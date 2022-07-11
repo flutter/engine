@@ -33,7 +33,6 @@ extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 @property(nonatomic, readonly) BOOL isPresentingViewController;
 @property(nonatomic, readonly) BOOL isVoiceOverRunning;
 @property(nonatomic, retain) FlutterKeyboardManager* keyboardManager;
-@property(nonatomic, readonly) UIView* flutterView;
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterRestorationPlugin*)restorationPlugin;
