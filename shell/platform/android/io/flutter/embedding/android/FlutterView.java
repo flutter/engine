@@ -1210,7 +1210,6 @@ public class FlutterView extends FrameLayout
             false,
             systemSettingsObserver);
 
-    localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
@@ -1309,6 +1308,11 @@ public class FlutterView extends FrameLayout
         getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
   }
 
+  @VisibleForTesting
+  public FlutterImageView getCurrentImageSurface() {
+    return flutterImageView;
+  }
+
   /**
    * Converts the current render surface to a {@link FlutterImageView} if it's not one already.
    * Otherwise, it resizes the {@link FlutterImageView} based on the current view size.
@@ -1371,7 +1375,7 @@ public class FlutterView extends FrameLayout
           public void onFlutterUiDisplayed() {
             renderer.removeIsDisplayingFlutterUiListener(this);
             onDone.run();
-            if (!(renderSurface instanceof FlutterImageView)) {
+            if (!(renderSurface instanceof FlutterImageView) && flutterImageView != null) {
               flutterImageView.detachFromRenderer();
             }
           }
