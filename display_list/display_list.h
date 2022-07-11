@@ -276,7 +276,10 @@ class DisplayList : public SkRefCnt {
     return virtual_layer_tree_;
   }
 
-  void setVirtualBounds(SkRect rect) { virtual_bounds_ = rect; virtual_bounds_valid_ = true; }
+  void setVirtualBounds(SkRect rect) {
+    virtual_bounds_ = rect;
+    virtual_bounds_valid_ = true;
+  }
 
   void Compare(DisplayList* dl);
 

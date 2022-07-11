@@ -89,7 +89,7 @@ void DisplayListBuilder::buildVirtualLayerTree() {
     virtual_layer_tree_.clear();
     return;
   }
-  
+
   FML_DCHECK(virtual_layer_tree_[0].index == 0);
 
   std::vector<std::string> stack;
