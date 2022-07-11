@@ -24,6 +24,13 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(
   }
 
   valid_ = true;
+
+  
+
+  // if (HasExtension(extensions, "EGL_KHR_partial_update")) {
+  //   set_damage_region_ = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+  //       eglGetProcAddress("eglSetDamageRegionKHR"));
+  // }
 }
 
 EmbedderSurfaceGL::~EmbedderSurfaceGL() = default;
@@ -62,13 +69,10 @@ bool EmbedderSurfaceGL::GLContextFBOResetAfterPresent() const {
 // |GPUSurfaceGLDelegate|
 void EmbedderSurfaceGL::GLContextSetDamageRegion(const std::optional<SkIRect>& region) {
   // TODO(btrevisan): add checks.
+  FML_DCHECK(IsValid());
 
   // The region given here is the buffer damage.
-
-  // Update GL Context such that it is restricted to the buffer damage.
-
-
-  return;
+  // onscreen_surface_->SetDamageRegion(region);
 }
 
 // |GPUSurfaceGLDelegate|

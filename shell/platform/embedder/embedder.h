@@ -5,6 +5,7 @@
 #ifndef FLUTTER_EMBEDDER_H_
 #define FLUTTER_EMBEDDER_H_
 
+#include <vector>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -377,6 +378,14 @@ typedef struct {
   FlutterSize lower_left_corner_radius;
 } FlutterRoundedRect;
 
+/// A strucutre to represent damage as rectangles.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterDamage).
+  size_t struct_size;
+  // Vector of rectangles representing the areas that need to be repainted.
+  std::vector<FlutterRect> damage;
+} FlutterDamage;
+
 /// This information is passed to the embedder when requesting a frame buffer
 /// object.
 ///
@@ -401,9 +410,8 @@ typedef struct {
   size_t struct_size;
   /// Id of the fbo backing the surface that was presented.
   uint32_t fbo_id;
-  // An array of rectangles representing the areas that need to be repainted 
-  // in this buffer.
-  const FlutterRect* damage;
+  // A vector of rectangles representing the areas that need to be repainted.
+  FlutterDamage fbo_damage;
 } FlutterPresentInfo;
 
 /// Callback for when a surface is presented.

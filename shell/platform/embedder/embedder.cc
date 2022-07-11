@@ -249,8 +249,14 @@ InferOpenGLPlatformViewCreationCallback(
       FlutterPresentInfo present_info = {};
       present_info.struct_size = sizeof(FlutterPresentInfo);
       present_info.fbo_id = gl_present_info.fbo_id;
-      // TODO(btrevisan): translate const std::optional<SkIRect> to const FlutterRect *?
-      present_info.damage = gl_present_info.damage;
+
+      FlutterDamage fbo_damage = {};
+      fbo_damage.struct_size = sizeof(FlutterDamage);
+      fbo_damage.damage = std::vector<FlutterRect> {FlutterRect{static_cast<double>(gl_present_info.damage->fLeft),
+                                                                static_cast<double>(gl_present_info.damage->fRight),
+                                                                static_cast<double>(gl_present_info.damage->fTop),
+                                                                static_cast<double>(gl_present_info.damage->fBottom)}};
+      present_info.fbo_damage = fbo_damage;
       return present_with_info(user_data, &present_info);
     }
   };
