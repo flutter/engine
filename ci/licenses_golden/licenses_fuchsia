@@ -1,4 +1,4 @@
-Signature: c858f58593c63d5bda6769546598839c
+Signature: 232d0e031628d1a6b57ef2d9e5f4d223
 
 UNUSED LICENSES:
 
@@ -425,7 +425,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
@@ -1178,7 +1177,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
@@ -1828,7 +1826,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/meta.json
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
@@ -2490,7 +2487,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/memory_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/intl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/directory.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/file.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/ldsvc.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/logger.fidl
@@ -3234,10 +3230,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/vmo/vmo_fields.dar
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/vmo/vmo_holder.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/vmo/vmo_writer.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/testing.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/agent_interceptor.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/test_harness_fixtures.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/test_harness_spec_builder.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/test.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/lib/src/view_token_pair.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/lib/views.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/src/incoming.dart
@@ -3689,6 +3681,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screen_capture.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screenshot.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/overview.fidl
@@ -3715,6 +3708,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/wire_format_
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/linkage.h
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_absolute.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_base.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/internal/convert.cc
