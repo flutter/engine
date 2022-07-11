@@ -96,8 +96,16 @@ bool RunFlutter(GLFWwindow* window,
     glfwMakeContextCurrent(nullptr);  // is this even a thing?
     return true;
   };
-  config.open_gl.present = [](void* userdata) -> bool {
-    glfwSwapBuffers(static_cast<GLFWwindow*>(userdata));
+  config.open_gl.present_with_info = [](void* userdata, FlutterPresentInfo* present_info) -> bool {
+    // Check if damage exists
+    if (present_info->fbo_damage.empty()) {
+      // Render only damaged regions
+      // TODO(btrevisan): verify extensions.
+      eglSwapBuffersWithDamageKHR(static_cast<GLFWwindow*>(userdata), present_info->fbo_damage);
+    } else {
+      // Otherwise, render the entire screen
+      glfwSwapBuffers(static_cast<GLFWwindow*>(userdata));
+    }
     return true;
   };
   config.open_gl.fbo_callback = [](void*) -> uint32_t {
