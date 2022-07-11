@@ -267,7 +267,6 @@ void DisplayList::Compare(DisplayList* dl) {
       newTree[0].type != oldTree[0].type) {
     damage = bounds();
     setVirtualBounds(damage);
-    virtual_bounds_valid_ = true;
     return;
   }
 
@@ -301,7 +300,6 @@ void DisplayList::Compare(DisplayList* dl) {
   if (!checkTree(newTree) || !checkTree(oldTree)) {
     damage = bounds();
     setVirtualBounds(damage);
-    virtual_bounds_valid_ = true;
     return;
   }
 
@@ -520,6 +518,5 @@ void DisplayList::Compare(DisplayList* dl) {
 
   // 2. Add damage.
   setVirtualBounds(damage);
-  virtual_bounds_valid_ = true;
 }
 }  // namespace flutter

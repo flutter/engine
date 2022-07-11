@@ -85,11 +85,12 @@ void DisplayListBuilder::saveVirtualLayer(std::string type) {
 }
 
 void DisplayListBuilder::buildVirtualLayerTree() {
-  if (!virtual_layer_tree_.empty() && virtual_layer_tree_.back().index == 0) {
+  if (virtual_layer_tree_.empty() || virtual_layer_tree_.back().index == 0) {
     virtual_layer_tree_.clear();
+    return;
   }
-
-  // check
+  
+  FML_DCHECK(virtual_layer_tree_[0].index == 0);
 
   std::vector<std::string> stack;
   for (unsigned long i = 0; i < virtual_layer_tree_.size(); i++) {
