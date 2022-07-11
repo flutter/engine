@@ -25,8 +25,6 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(
 
   valid_ = true;
 
-  
-
   // if (HasExtension(extensions, "EGL_KHR_partial_update")) {
   //   set_damage_region_ = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
   //       eglGetProcAddress("eglSetDamageRegionKHR"));
@@ -67,7 +65,8 @@ bool EmbedderSurfaceGL::GLContextFBOResetAfterPresent() const {
 }
 
 // |GPUSurfaceGLDelegate|
-void EmbedderSurfaceGL::GLContextSetDamageRegion(const std::optional<SkIRect>& region) {
+void EmbedderSurfaceGL::GLContextSetDamageRegion(
+    const std::optional<SkIRect>& region) {
   // TODO(btrevisan): add checks.
   FML_DCHECK(IsValid());
 

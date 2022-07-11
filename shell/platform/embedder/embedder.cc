@@ -240,9 +240,10 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  auto gl_present = [present = config->open_gl.present,
-                     present_with_info = config->open_gl.present_with_info,
-                     user_data](flutter::GLPresentInfo gl_present_info) -> bool {
+  auto gl_present =
+      [present = config->open_gl.present,
+       present_with_info = config->open_gl.present_with_info,
+       user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {
@@ -252,10 +253,11 @@ InferOpenGLPlatformViewCreationCallback(
 
       FlutterDamage fbo_damage = {};
       fbo_damage.struct_size = sizeof(FlutterDamage);
-      fbo_damage.damage = std::vector<FlutterRect> {FlutterRect{static_cast<double>(gl_present_info.damage->fLeft),
-                                                                static_cast<double>(gl_present_info.damage->fRight),
-                                                                static_cast<double>(gl_present_info.damage->fTop),
-                                                                static_cast<double>(gl_present_info.damage->fBottom)}};
+      fbo_damage.damage = std::vector<FlutterRect>{
+          FlutterRect{static_cast<double>(gl_present_info.damage->fLeft),
+                      static_cast<double>(gl_present_info.damage->fRight),
+                      static_cast<double>(gl_present_info.damage->fTop),
+                      static_cast<double>(gl_present_info.damage->fBottom)}};
       present_info.fbo_damage = fbo_damage;
       return present_with_info(user_data, &present_info);
     }

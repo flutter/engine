@@ -5,10 +5,10 @@
 #ifndef FLUTTER_EMBEDDER_H_
 #define FLUTTER_EMBEDDER_H_
 
-#include <vector>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <vector>
 
 // This file defines an Application Binary Interface (ABI), which requires more
 // stability than regular code to remain functional for exchanging messages
