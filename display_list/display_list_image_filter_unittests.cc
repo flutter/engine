@@ -6,6 +6,7 @@
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_image_filter.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/types.h"
 #include "gtest/gtest.h"
 
@@ -84,7 +85,7 @@ TEST(DisplayListImageFilter, FromSkiaErodeImageFilter) {
 
 TEST(DisplayListImageFilter, FromSkiaMatrixImageFilter) {
   sk_sp<SkImageFilter> sk_image_filter = SkImageFilters::MatrixTransform(
-      SkMatrix::RotateDeg(45), DisplayList::LinearSampling, nullptr);
+      SkMatrix::RotateDeg(45), ToSk(DlImageSampling::kLinear), nullptr);
   std::shared_ptr<DlImageFilter> filter = DlImageFilter::From(sk_image_filter);
 
   ASSERT_EQ(filter->type(), DlImageFilterType::kUnknown);
@@ -102,7 +103,7 @@ TEST(DisplayListImageFilter, FromSkiaComposeImageFilter) {
   sk_sp<SkImageFilter> sk_blur_filter =
       SkImageFilters::Blur(5.0, 5.0, SkTileMode::kRepeat, nullptr);
   sk_sp<SkImageFilter> sk_matrix_filter = SkImageFilters::MatrixTransform(
-      SkMatrix::RotateDeg(45), DisplayList::LinearSampling, nullptr);
+      SkMatrix::RotateDeg(45), ToSk(DlImageSampling::kLinear), nullptr);
   sk_sp<SkImageFilter> sk_image_filter =
       SkImageFilters::Compose(sk_blur_filter, sk_matrix_filter);
   std::shared_ptr<DlImageFilter> filter = DlImageFilter::From(sk_image_filter);
@@ -139,6 +140,135 @@ TEST(DisplayListImageFilter, FromSkiaColorFilterImageFilter) {
   ASSERT_EQ(filter->asMatrix(), nullptr);
   ASSERT_EQ(filter->asCompose(), nullptr);
   ASSERT_NE(filter->asColorFilter(), nullptr);
+}
+
+// SkRect::contains treats the rect as a half-open interval which is
+// appropriate for so many operations. Unfortunately, we are using
+// it here to test containment of the corners of a transformed quad
+// so the corners of the quad that are measured against the right
+// and bottom edges are contained even if they are on the right or
+// bottom edge. This method does the "all sides inclusive" version
+// of SkRect::contains.
+static bool containsInclusive(const SkRect rect, const SkPoint p) {
+  // Test with a slight offset of 1E-9 to "forgive" IEEE bit-rounding
+  // Ending up with bounds that are off by 1E-9 (these numbers are all
+  // being tested in device space with this method) will be off by a
+  // negligible amount of a pixel that wouldn't contribute to changing
+  // the color of a pixel.
+  return (p.fX >= rect.fLeft - 1E-9 &&   //
+          p.fX <= rect.fRight + 1E-9 &&  //
+          p.fY >= rect.fTop - 1E-9 &&    //
+          p.fY <= rect.fBottom + 1E-9);
+}
+
+static bool containsInclusive(const SkRect rect, const SkPoint quad[4]) {
+  return (containsInclusive(rect, quad[0]) &&  //
+          containsInclusive(rect, quad[1]) &&  //
+          containsInclusive(rect, quad[2]) &&  //
+          containsInclusive(rect, quad[3]));
+}
+
+static bool containsInclusive(const SkIRect rect, const SkPoint quad[4]) {
+  return containsInclusive(SkRect::Make(rect), quad);
+}
+
+static bool containsInclusive(const SkIRect rect, const SkRect bounds) {
+  return (bounds.fLeft >= rect.fLeft - 1E-9 &&
+          bounds.fTop >= rect.fTop - 1E-9 &&
+          bounds.fRight <= rect.fRight + 1E-9 &&
+          bounds.fBottom <= rect.fBottom + 1E-9);
+}
+
+// Used to verify that the expected output bounds and revers engineered
+// "input bounds for output bounds" rectangles are included in the rectangle
+// returned from the various bounds computation methods under the specified
+// matrix.
+static void TestBoundsWithMatrix(const DlImageFilter& filter,
+                                 const SkMatrix& matrix,
+                                 const SkRect& sourceBounds,
+                                 const SkPoint expectedLocalOutputQuad[4]) {
+  SkRect deviceInputBounds = matrix.mapRect(sourceBounds);
+  SkPoint expectedDeviceOutputQuad[4];
+  matrix.mapPoints(expectedDeviceOutputQuad, expectedLocalOutputQuad, 4);
+
+  SkIRect deviceFilterIBounds;
+  ASSERT_EQ(filter.map_device_bounds(deviceInputBounds.roundOut(), matrix,
+                                     deviceFilterIBounds),
+            &deviceFilterIBounds);
+  ASSERT_TRUE(containsInclusive(deviceFilterIBounds, expectedDeviceOutputQuad));
+
+  SkIRect reverseInputIBounds;
+  ASSERT_EQ(filter.get_input_device_bounds(deviceFilterIBounds, matrix,
+                                           reverseInputIBounds),
+            &reverseInputIBounds);
+  ASSERT_TRUE(containsInclusive(reverseInputIBounds, deviceInputBounds));
+}
+
+static void TestInvalidBounds(const DlImageFilter& filter,
+                              const SkMatrix& matrix,
+                              const SkRect& localInputBounds) {
+  SkIRect deviceInputBounds = matrix.mapRect(localInputBounds).roundOut();
+
+  SkRect localFilterBounds;
+  ASSERT_EQ(filter.map_local_bounds(localInputBounds, localFilterBounds),
+            nullptr);
+  ASSERT_EQ(localFilterBounds, localInputBounds);
+
+  SkIRect deviceFilterIBounds;
+  ASSERT_EQ(
+      filter.map_device_bounds(deviceInputBounds, matrix, deviceFilterIBounds),
+      nullptr);
+  ASSERT_EQ(deviceFilterIBounds, deviceInputBounds);
+
+  SkIRect reverseInputIBounds;
+  ASSERT_EQ(filter.get_input_device_bounds(deviceInputBounds, matrix,
+                                           reverseInputIBounds),
+            nullptr);
+  ASSERT_EQ(reverseInputIBounds, deviceInputBounds);
+}
+
+// localInputBounds is a sample bounds for testing as input to the filter.
+// localExpectOutputBounds is the theoretical output bounds for applying
+// the filter to the localInputBounds.
+// localExpectInputBounds is the theoretical input bounds required for the
+// filter to cover the localExpectOutputBounds
+// If either of the expected bounds are nullptr then the bounds methods will
+// be assumed to be unable to perform their computations for the given
+// image filter and will be returning null.
+static void TestBounds(const DlImageFilter& filter,
+                       const SkRect& sourceBounds,
+                       const SkPoint expectedLocalOutputQuad[4]) {
+  SkRect localFilterBounds;
+  ASSERT_EQ(filter.map_local_bounds(sourceBounds, localFilterBounds),
+            &localFilterBounds);
+  ASSERT_TRUE(containsInclusive(localFilterBounds, expectedLocalOutputQuad));
+
+  for (int scale = 1; scale <= 4; scale++) {
+    for (int skew = 0; skew < 8; skew++) {
+      for (int degrees = 0; degrees <= 360; degrees += 15) {
+        SkMatrix matrix;
+        matrix.setScale(scale, scale);
+        matrix.postSkew(skew / 8.0, skew / 8.0);
+        matrix.postRotate(degrees);
+        ASSERT_TRUE(matrix.invert(nullptr));
+        TestBoundsWithMatrix(filter, matrix, sourceBounds,
+                             expectedLocalOutputQuad);
+        matrix.setPerspX(0.01);
+        matrix.setPerspY(0.01);
+        ASSERT_TRUE(matrix.invert(nullptr));
+        TestBoundsWithMatrix(filter, matrix, sourceBounds,
+                             expectedLocalOutputQuad);
+      }
+    }
+  }
+}
+
+static void TestBounds(const DlImageFilter& filter,
+                       const SkRect& sourceBounds,
+                       const SkRect& expectedLocalOutputBounds) {
+  SkPoint expectedLocalOutputQuad[4];
+  expectedLocalOutputBounds.toQuad(expectedLocalOutputQuad);
+  TestBounds(filter, sourceBounds, expectedLocalOutputQuad);
 }
 
 TEST(DisplayListImageFilter, BlurConstructor) {
@@ -185,6 +315,14 @@ TEST(DisplayListImageFilter, BlurNotEquals) {
   TestNotEquals(filter1, filter4, "Tile Mode differs");
 }
 
+TEST(DisplayListImageFilter, BlurBounds) {
+  DlBlurImageFilter filter = DlBlurImageFilter(5, 10, DlTileMode::kDecal);
+  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expectOutputBounds = inputBounds.makeOutset(15, 30);
+  // SkRect expectInputBounds = expectOutputBounds.makeOutset(15, 30);
+  TestBounds(filter, inputBounds, expectOutputBounds);
+}
+
 TEST(DisplayListImageFilter, DilateConstructor) {
   DlDilateImageFilter filter(5.0, 6.0);
 }
@@ -224,6 +362,13 @@ TEST(DisplayListImageFilter, DilateNotEquals) {
 
   TestNotEquals(filter1, filter2, "Radius X differs");
   TestNotEquals(filter1, filter3, "Radius Y differs");
+}
+
+TEST(DisplayListImageFilter, DilateBounds) {
+  DlDilateImageFilter filter = DlDilateImageFilter(5, 10);
+  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expectOutputBounds = inputBounds.makeOutset(5, 10);
+  TestBounds(filter, inputBounds, expectOutputBounds);
 }
 
 TEST(DisplayListImageFilter, ErodeConstructor) {
@@ -267,18 +412,25 @@ TEST(DisplayListImageFilter, ErodeNotEquals) {
   TestNotEquals(filter1, filter3, "Radius Y differs");
 }
 
+TEST(DisplayListImageFilter, ErodeBounds) {
+  DlErodeImageFilter filter = DlErodeImageFilter(5, 10);
+  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expectOutputBounds = inputBounds.makeInset(5, 10);
+  TestBounds(filter, inputBounds, expectOutputBounds);
+}
+
 TEST(DisplayListImageFilter, MatrixConstructor) {
   DlMatrixImageFilter filter(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                                0.5, 3.0, 15,  //
                                                0.0, 0.0, 1),
-                             DisplayList::LinearSampling);
+                             DlImageSampling::kLinear);
 }
 
 TEST(DisplayListImageFilter, MatrixShared) {
   DlMatrixImageFilter filter(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                                0.5, 3.0, 15,  //
                                                0.0, 0.0, 1),
-                             DisplayList::LinearSampling);
+                             DlImageSampling::kLinear);
 
   ASSERT_NE(filter.shared().get(), &filter);
   ASSERT_EQ(*filter.shared(), filter);
@@ -288,7 +440,7 @@ TEST(DisplayListImageFilter, MatrixAsMatrix) {
   DlMatrixImageFilter filter(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                                0.5, 3.0, 15,  //
                                                0.0, 0.0, 1),
-                             DisplayList::LinearSampling);
+                             DlImageSampling::kLinear);
 
   ASSERT_NE(filter.asMatrix(), nullptr);
   ASSERT_EQ(filter.asMatrix(), &filter);
@@ -298,18 +450,18 @@ TEST(DisplayListImageFilter, MatrixContents) {
   SkMatrix matrix = SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                       0.5, 3.0, 15,  //
                                       0.0, 0.0, 1);
-  DlMatrixImageFilter filter(matrix, DisplayList::LinearSampling);
+  DlMatrixImageFilter filter(matrix, DlImageSampling::kLinear);
 
   ASSERT_EQ(filter.matrix(), matrix);
-  ASSERT_EQ(filter.sampling(), DisplayList::LinearSampling);
+  ASSERT_EQ(filter.sampling(), DlImageSampling::kLinear);
 }
 
 TEST(DisplayListImageFilter, MatrixEquals) {
   SkMatrix matrix = SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                       0.5, 3.0, 15,  //
                                       0.0, 0.0, 1);
-  DlMatrixImageFilter filter1(matrix, DisplayList::LinearSampling);
-  DlMatrixImageFilter filter2(matrix, DisplayList::LinearSampling);
+  DlMatrixImageFilter filter1(matrix, DlImageSampling::kLinear);
+  DlMatrixImageFilter filter2(matrix, DlImageSampling::kLinear);
 
   TestEquals(filter1, filter2);
 }
@@ -321,19 +473,36 @@ TEST(DisplayListImageFilter, MatrixNotEquals) {
   SkMatrix matrix2 = SkMatrix::MakeAll(5.0, 0.0, 10,  //
                                        0.5, 3.0, 15,  //
                                        0.0, 0.0, 1);
-  DlMatrixImageFilter filter1(matrix1, DisplayList::LinearSampling);
-  DlMatrixImageFilter filter2(matrix2, DisplayList::LinearSampling);
-  DlMatrixImageFilter filter3(matrix1, DisplayList::NearestSampling);
+  DlMatrixImageFilter filter1(matrix1, DlImageSampling::kLinear);
+  DlMatrixImageFilter filter2(matrix2, DlImageSampling::kLinear);
+  DlMatrixImageFilter filter3(matrix1, DlImageSampling::kNearestNeighbor);
 
   TestNotEquals(filter1, filter2, "Matrix differs");
   TestNotEquals(filter1, filter3, "Sampling differs");
+}
+
+TEST(DisplayListImageFilter, MatrixBounds) {
+  SkMatrix matrix = SkMatrix::MakeAll(2.0, 0.0, 10,  //
+                                      0.5, 3.0, 7,   //
+                                      0.0, 0.0, 1);
+  SkMatrix inverse;
+  ASSERT_TRUE(matrix.invert(&inverse));
+  DlMatrixImageFilter filter(matrix, DlImageSampling::kLinear);
+  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkPoint expectedOutputQuad[4] = {
+      {50, 77},    // (20,20) => (20*2 + 10, 20/2 + 20*3 + 7) == (50, 77)
+      {50, 257},   // (20,80) => (20*2 + 10, 20/2 + 80*3 + 7) == (50, 257)
+      {170, 287},  // (80,80) => (80*2 + 10, 80/2 + 80*3 + 7) == (170, 287)
+      {170, 107},  // (80,20) => (80*2 + 10, 80/2 + 20*3 + 7) == (170, 107)
+  };
+  TestBounds(filter, inputBounds, expectedOutputQuad);
 }
 
 TEST(DisplayListImageFilter, ComposeConstructor) {
   DlMatrixImageFilter outer(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                               0.5, 3.0, 15,  //
                                               0.0, 0.0, 1),
-                            DisplayList::LinearSampling);
+                            DlImageSampling::kLinear);
   DlBlurImageFilter inner(5.0, 6.0, DlTileMode::kMirror);
   DlComposeImageFilter filter(outer, inner);
 }
@@ -342,7 +511,7 @@ TEST(DisplayListImageFilter, ComposeShared) {
   DlMatrixImageFilter outer(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                               0.5, 3.0, 15,  //
                                               0.0, 0.0, 1),
-                            DisplayList::LinearSampling);
+                            DlImageSampling::kLinear);
   DlBlurImageFilter inner(5.0, 6.0, DlTileMode::kMirror);
   DlComposeImageFilter filter(outer, inner);
 
@@ -354,7 +523,7 @@ TEST(DisplayListImageFilter, ComposeAsCompose) {
   DlMatrixImageFilter outer(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                               0.5, 3.0, 15,  //
                                               0.0, 0.0, 1),
-                            DisplayList::LinearSampling);
+                            DlImageSampling::kLinear);
   DlBlurImageFilter inner(5.0, 6.0, DlTileMode::kMirror);
   DlComposeImageFilter filter(outer, inner);
 
@@ -366,7 +535,7 @@ TEST(DisplayListImageFilter, ComposeContents) {
   DlMatrixImageFilter outer(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                               0.5, 3.0, 15,  //
                                               0.0, 0.0, 1),
-                            DisplayList::LinearSampling);
+                            DlImageSampling::kLinear);
   DlBlurImageFilter inner(5.0, 6.0, DlTileMode::kMirror);
   DlComposeImageFilter filter(outer, inner);
 
@@ -378,14 +547,14 @@ TEST(DisplayListImageFilter, ComposeEquals) {
   DlMatrixImageFilter outer1(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                                0.5, 3.0, 15,  //
                                                0.0, 0.0, 1),
-                             DisplayList::LinearSampling);
+                             DlImageSampling::kLinear);
   DlBlurImageFilter inner1(5.0, 6.0, DlTileMode::kMirror);
   DlComposeImageFilter filter1(outer1, inner1);
 
   DlMatrixImageFilter outer2(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                                0.5, 3.0, 15,  //
                                                0.0, 0.0, 1),
-                             DisplayList::LinearSampling);
+                             DlImageSampling::kLinear);
   DlBlurImageFilter inner2(5.0, 6.0, DlTileMode::kMirror);
   DlComposeImageFilter filter2(outer1, inner1);
 
@@ -396,13 +565,13 @@ TEST(DisplayListImageFilter, ComposeNotEquals) {
   DlMatrixImageFilter outer1(SkMatrix::MakeAll(2.0, 0.0, 10,  //
                                                0.5, 3.0, 15,  //
                                                0.0, 0.0, 1),
-                             DisplayList::LinearSampling);
+                             DlImageSampling::kLinear);
   DlBlurImageFilter inner1(5.0, 6.0, DlTileMode::kMirror);
 
   DlMatrixImageFilter outer2(SkMatrix::MakeAll(5.0, 0.0, 10,  //
                                                0.5, 3.0, 15,  //
                                                0.0, 0.0, 1),
-                             DisplayList::LinearSampling);
+                             DlImageSampling::kLinear);
   DlBlurImageFilter inner2(7.0, 6.0, DlTileMode::kMirror);
 
   DlComposeImageFilter filter1(outer1, inner1);
@@ -411,6 +580,15 @@ TEST(DisplayListImageFilter, ComposeNotEquals) {
 
   TestNotEquals(filter1, filter2, "Outer differs");
   TestNotEquals(filter1, filter3, "Inner differs");
+}
+
+TEST(DisplayListImageFilter, ComposeBounds) {
+  DlDilateImageFilter outer = DlDilateImageFilter(5, 10);
+  DlBlurImageFilter inner = DlBlurImageFilter(12, 5, DlTileMode::kDecal);
+  DlComposeImageFilter filter = DlComposeImageFilter(outer, inner);
+  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  SkRect expectOutputBounds = inputBounds.makeOutset(36, 15).makeOutset(5, 10);
+  TestBounds(filter, inputBounds, expectOutputBounds);
 }
 
 TEST(DisplayListImageFilter, ColorFilterConstructor) {
@@ -462,6 +640,20 @@ TEST(DisplayListImageFilter, ColorFilterNotEquals) {
 
   TestNotEquals(filter1, filter2, "Color differs");
   TestNotEquals(filter1, filter3, "Blend Mode differs");
+}
+
+TEST(DisplayListImageFilter, ColorFilterBounds) {
+  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcIn);
+  DlColorFilterImageFilter filter(dl_color_filter);
+  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  TestBounds(filter, inputBounds, inputBounds);
+}
+
+TEST(DisplayListImageFilter, ColorFilterModifiesTransparencyBounds) {
+  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  DlColorFilterImageFilter filter(dl_color_filter);
+  SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  TestInvalidBounds(filter, SkMatrix::I(), inputBounds);
 }
 
 TEST(DisplayListImageFilter, UnknownConstructor) {

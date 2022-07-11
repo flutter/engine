@@ -57,8 +57,8 @@ static NSString* const kTransformKey = @"transform";
  * or at the beginning of the next (downstream).
  */
 typedef NS_ENUM(NSUInteger, FlutterTextAffinity) {
-  FlutterTextAffinityUpstream,
-  FlutterTextAffinityDownstream
+  kFlutterTextAffinityUpstream,
+  kFlutterTextAffinityDownstream
 };
 
 /*
@@ -75,6 +75,35 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
   return flutter::TextRange([base unsignedLongValue], [extent unsignedLongValue]);
 }
+
+@interface NSEvent (KeyEquivalentMarker)
+
+// Internally marks that the event was received through performKeyEquivalent:.
+// When text editing is active, keyboard events that have modifier keys pressed
+// are received through performKeyEquivalent: instead of keyDown:. If such event
+// is passed to TextInputContext but doesn't result in a text editing action it
+// needs to be forwarded by FlutterKeyboardManager to the next responder.
+- (void)markAsKeyEquivalent;
+
+// Returns YES if the event is marked as a key equivalent.
+- (BOOL)isKeyEquivalent;
+
+@end
+
+@implementation NSEvent (KeyEquivalentMarker)
+
+// This field doesn't need a value because only its address is used as a unique identifier.
+static char markerKey;
+
+- (void)markAsKeyEquivalent {
+  objc_setAssociatedObject(self, &markerKey, @true, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (BOOL)isKeyEquivalent {
+  return [objc_getAssociatedObject(self, &markerKey) boolValue] == YES;
+}
+
+@end
 
 /**
  * Private properties of FlutterTextInputPlugin.
@@ -129,6 +158,13 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  * https://api.flutter.dev/flutter/services/TextInputAction-class.html
  */
 @property(nonatomic, nonnull) NSString* inputAction;
+
+/**
+ * Set to true if the last event fed to the input context produced a text editing command
+ * or text output. It is reset to false at the beginning of every key event, and is only
+ * used while processing this event.
+ */
+@property(nonatomic) BOOL eventProducedOutput;
 
 /**
  * Whether to enable the sending of text input updates from the engine to the
@@ -237,6 +273,16 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
 #pragma mark - Private
 
+- (void)resignAndRemoveFromSuperview {
+  if (self.superview != nil) {
+    // With accessiblity enabled TextInputPlugin is inside _client, so take the
+    // nextResponder from the _client.
+    NSResponder* nextResponder = _client != nil ? _client.nextResponder : self.nextResponder;
+    [self.window makeFirstResponder:nextResponder];
+    [self removeFromSuperview];
+  }
+}
+
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   BOOL handled = YES;
   NSString* method = call.method;
@@ -257,17 +303,24 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       _enableDeltaModel = [config[kEnableDeltaModel] boolValue];
       NSDictionary* inputTypeInfo = config[kTextInputType];
       _inputType = inputTypeInfo[kTextInputTypeName];
-      self.textAffinity = FlutterTextAffinityUpstream;
+      self.textAffinity = kFlutterTextAffinityUpstream;
 
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }
   } else if ([method isEqualToString:kShowMethod]) {
+    // Ensure the plugin is in hierarchy. Only do this with accessibility disabled.
+    // When accessibility is enabled cocoa will reparent the plugin inside
+    // FlutterTextField in [FlutterTextField startEditing].
+    if (_client == nil) {
+      [_flutterViewController.view addSubview:self];
+    }
+    [self.window makeFirstResponder:self];
     _shown = TRUE;
-    [_textInputContext activate];
   } else if ([method isEqualToString:kHideMethod]) {
+    [self resignAndRemoveFromSuperview];
     _shown = FALSE;
-    [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
+    [self resignAndRemoveFromSuperview];
     // If there's an active mark region, commit it, end composing, and clear the IME's mark text.
     if (_activeModel && _activeModel->composing()) {
       _activeModel->CommitComposing();
@@ -344,8 +397,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   NSString* selectionAffinity = state[kSelectionAffinityKey];
   if (selectionAffinity != nil) {
     _textAffinity = [selectionAffinity isEqualToString:kTextAffinityUpstream]
-                        ? FlutterTextAffinityUpstream
-                        : FlutterTextAffinityDownstream;
+                        ? kFlutterTextAffinityUpstream
+                        : kFlutterTextAffinityDownstream;
   }
 
   NSString* text = state[kTextKey];
@@ -362,7 +415,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (composing_range.collapsed() && wasComposing) {
     [_textInputContext discardMarkedText];
   }
-  [_client becomeFirstResponder];
+  [_client startEditing];
+
   [self updateTextAndSelection];
 }
 
@@ -446,8 +500,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (NSString*)textAffinityString {
-  return (self.textAffinity == FlutterTextAffinityUpstream) ? kTextAffinityUpstream
-                                                            : kTextAffinityDownstream;
+  return (self.textAffinity == kFlutterTextAffinityUpstream) ? kTextAffinityUpstream
+                                                             : kTextAffinityDownstream;
 }
 
 - (BOOL)isComposing {
@@ -464,13 +518,17 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     return NO;
   }
 
-  // NSTextInputContext sometimes deactivates itself without calling
-  // deactivate. One such example is when the composing region is deleted.
-  // TODO(LongCatIsLooong): put FlutterTextInputPlugin in the view hierarchy and
-  // request/resign first responder when needed. Activate/deactivate shouldn't
-  // be called by the application.
-  [_textInputContext activate];
-  return [_textInputContext handleEvent:event];
+  _eventProducedOutput = NO;
+  BOOL res = [_textInputContext handleEvent:event];
+  // NSTextInputContext#handleEvent returns YES if the context handles the event. One of the reasons
+  // the event is handled is because it's a key equivalent. But a key equivalent might produce a
+  // text command (indicated by calling doCommandBySelector) or might not (for example, Cmd+Q). In
+  // the latter case, this command somehow has not been executed yet and Flutter must dispatch it to
+  // the next responder. See https://github.com/flutter/flutter/issues/106354 .
+  if (event.isKeyEquivalent && !_eventProducedOutput) {
+    return NO;
+  }
+  return res;
 }
 
 #pragma mark -
@@ -485,7 +543,21 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (BOOL)performKeyEquivalent:(NSEvent*)event {
-  return [self.flutterViewController performKeyEquivalent:event];
+  if ([_flutterViewController isDispatchingKeyEvent:event]) {
+    // When NSWindow is nextResponder, keyboard manager will send to it
+    // unhandled events (through [NSWindow keyDown:]). If event has has both
+    // control and cmd modifiers set (i.e. cmd+control+space - emoji picker)
+    // NSWindow will then send this event as performKeyEquivalent: to first
+    // responder, which is FlutterTextInputPlugin. If that's the case, the
+    // plugin must not handle the event, otherwise the emoji picker would not
+    // work (due to first responder returning YES from performKeyEquivalent:)
+    // and there would be endless loop, because FlutterViewController will
+    // send the event back to [keyboardManager handleEvent:].
+    return NO;
+  }
+  [event markAsKeyEquivalent];
+  [self.flutterViewController keyDown:event];
+  return YES;
 }
 
 - (void)flagsChanged:(NSEvent*)event {
@@ -548,6 +620,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     return;
   }
 
+  _eventProducedOutput |= true;
+
   if (range.location != NSNotFound) {
     // The selected range can actually have negative numbers, since it can start
     // at the end of the range if the user selected the text going backwards.
@@ -587,6 +661,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (void)doCommandBySelector:(SEL)selector {
+  _eventProducedOutput |= selector != NSSelectorFromString(@"noop:");
   if ([self respondsToSelector:selector]) {
     // Note: The more obvious [self performSelector...] doesn't give ARC enough information to
     // handle retain semantics properly. See https://stackoverflow.com/questions/7017281/ for more

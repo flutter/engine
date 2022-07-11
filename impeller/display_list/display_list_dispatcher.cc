@@ -12,6 +12,7 @@
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
@@ -324,9 +325,12 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
   }
 }
 
-// |flutter::Dispatcher|
-void DisplayListDispatcher::setImageFilter(
+static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
     const flutter::DlImageFilter* filter) {
+  if (filter == nullptr) {
+    return std::nullopt;
+  }
+
   switch (filter->type()) {
     case flutter::DlImageFilterType::kBlur: {
       auto blur = filter->asBlur();
@@ -338,7 +342,7 @@ void DisplayListDispatcher::setImageFilter(
         UNIMPLEMENTED;
       }
 
-      paint_.image_filter = [sigma_x, sigma_y](FilterInput::Ref input) {
+      return [sigma_x, sigma_y](FilterInput::Ref input) {
         return FilterContents::MakeGaussianBlur(input, sigma_x, sigma_y);
       };
 
@@ -350,9 +354,14 @@ void DisplayListDispatcher::setImageFilter(
     case flutter::DlImageFilterType::kComposeFilter:
     case flutter::DlImageFilterType::kColorFilter:
     case flutter::DlImageFilterType::kUnknown:
-      UNIMPLEMENTED;
-      break;
+      return std::nullopt;
   }
+}
+
+// |flutter::Dispatcher|
+void DisplayListDispatcher::setImageFilter(
+    const flutter::DlImageFilter* filter) {
+  paint_.image_filter = ToImageFilterProc(filter);
 }
 
 // |flutter::Dispatcher|
@@ -371,11 +380,8 @@ static std::optional<Rect> ToRect(const SkRect* rect) {
 void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::SaveLayerOptions options,
                                       const flutter::DlImageFilter* backdrop) {
-  if (backdrop) {
-    UNIMPLEMENTED;
-  }
-  canvas_.SaveLayer(options.renders_with_attributes() ? paint_ : Paint{},
-                    ToRect(bounds));
+  auto paint = options.renders_with_attributes() ? paint_ : Paint{};
+  canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
 }
 
 // |flutter::Dispatcher|
@@ -719,7 +725,7 @@ void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
                                       const SkPoint point,
-                                      const SkSamplingOptions& sampling,
+                                      flutter::DlImageSampling sampling,
                                       bool render_with_attributes) {
   if (!image) {
     return;
@@ -746,14 +752,14 @@ void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
 }
 
 static impeller::SamplerDescriptor ToSamplerDescriptor(
-    const SkSamplingOptions& options) {
+    const flutter::DlImageSampling options) {
   impeller::SamplerDescriptor desc;
-  switch (options.filter) {
-    case SkFilterMode::kNearest:
+  switch (options) {
+    case flutter::DlImageSampling::kNearestNeighbor:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
       desc.label = "Nearest Sampler";
       break;
-    case SkFilterMode::kLinear:
+    case flutter::DlImageSampling::kLinear:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.label = "Linear Sampler";
       break;
@@ -768,7 +774,7 @@ void DisplayListDispatcher::drawImageRect(
     const sk_sp<flutter::DlImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const SkSamplingOptions& sampling,
+    flutter::DlImageSampling sampling,
     bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
   canvas_.DrawImageRect(
@@ -784,7 +790,7 @@ void DisplayListDispatcher::drawImageRect(
 void DisplayListDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
                                           const SkIRect& center,
                                           const SkRect& dst,
-                                          SkFilterMode filter,
+                                          flutter::DlFilterMode filter,
                                           bool render_with_attributes) {
   // Needs https://github.com/flutter/flutter/issues/95434
   UNIMPLEMENTED;
@@ -795,7 +801,7 @@ void DisplayListDispatcher::drawImageLattice(
     const sk_sp<flutter::DlImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
-    SkFilterMode filter,
+    flutter::DlFilterMode filter,
     bool render_with_attributes) {
   // Needs https://github.com/flutter/flutter/issues/95434
   UNIMPLEMENTED;
@@ -808,7 +814,7 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       const flutter::DlColor colors[],
                                       int count,
                                       flutter::DlBlendMode mode,
-                                      const SkSamplingOptions& sampling,
+                                      flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
                                       bool render_with_attributes) {
   // Needs https://github.com/flutter/flutter/issues/95434
