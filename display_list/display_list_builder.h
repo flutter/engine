@@ -350,7 +350,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void setAttributesFromDlPaint(const DlPaint& paint,
                                 const DisplayListAttributeFlags flags);
 
-  void buildVirtualLayerTrees();
+  void buildVirtualLayerTree();
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
@@ -398,7 +398,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   };
 
   std::vector<LayerInfo> layer_stack_;
-  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes_;
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_tree_;
   LayerInfo* current_layer_;
 
   // This flag indicates whether or not the current rendering attributes

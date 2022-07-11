@@ -67,8 +67,8 @@ bool DisplayListLayer::Compare(DiffContext* context,
   const auto op_bytes_1 = dl1->bytes();
   const auto op_bytes_2 = dl2->bytes();
 
-  const auto i1 = dl1->virtual_layer_indexes();
-  const auto i2 = dl2->virtual_layer_indexes();
+  const auto i1 = dl1->virtual_layer_tree();
+  const auto i2 = dl2->virtual_layer_tree();
 
   // compare virtual layers
   if (!i1.empty() || !i2.empty()) {

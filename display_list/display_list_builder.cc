@@ -53,74 +53,100 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (layer_stack_.size() > 1) {
     restore();
   }
-  
-  if(!virtual_layer_indexes_.empty() && virtual_layer_indexes_.back().index == 0) {
-    virtual_layer_indexes_.clear();
+
+  buildVirtualLayerTree();
+  size_t bytes = used_;
+  int count = op_count_;
+  size_t nested_bytes = nested_bytes_;
+  int nested_count = nested_op_count_;
+  used_ = allocated_ = op_count_ = 0;
+  nested_bytes_ = nested_op_count_ = 0;
+  storage_.realloc(bytes);
+  auto tree = virtual_layer_tree_;
+  virtual_layer_tree_.clear();
+  bool compatible = layer_stack_.back().is_group_opacity_compatible();
+  return sk_sp<DisplayList>(new DisplayList(
+      storage_.release(), bytes, count, nested_bytes, nested_count, cull_rect_,
+      compatible, std::move(tree)));
+}
+
+void DisplayListBuilder::startRecordVirtualLayer(std::string type) {
+  virtual_layer_tree_.push_back(
+      DisplayVirtualLayerInfo{storage_op_count_, type, true, 0});
+}
+
+void DisplayListBuilder::saveVirtualLayer(std::string type) {
+  FML_DCHECK(!virtual_layer_tree_.empty());
+  if (virtual_layer_tree_.empty()) {
+    return;
+  }
+  virtual_layer_tree_.push_back(
+      DisplayVirtualLayerInfo{storage_op_count_, type, false});
+}
+
+void DisplayListBuilder::buildVirtualLayerTree() {
+  if(!virtual_layer_tree_.empty() && virtual_layer_tree_.back().index == 0) {
+    virtual_layer_tree_.clear();
   }
 
-  auto indexes = virtual_layer_indexes_;
+  // check
 
-  std::function<bool(std::vector<DisplayVirtualLayerInfo>& tree)>
-      checkTree =
-          [&](std::vector<DisplayVirtualLayerInfo>& tree) -> bool {
-    std::vector<std::string> stack;
-    for (unsigned long i = 0; i < tree.size(); i++) {
-      if (tree[i].isStart) {
-        stack.push_back(tree[i].type);
+  std::vector<std::string> stack;
+  for (unsigned long i = 0; i < virtual_layer_tree_.size(); i++) {
+    if (virtual_layer_tree_[i].isStart) {
+      stack.push_back(virtual_layer_tree_[i].type);
+    } else {
+      if (stack.empty()) {
+        virtual_layer_tree_.clear();
+        return;
+      }
+      std::string t = stack[stack.size() - 1];
+      stack.pop_back();
+      if (t != virtual_layer_tree_[i].type) {
+        virtual_layer_tree_.clear();
+        return;
+      }
+    }
+  }
+
+  if (!stack.empty()) {
+    auto op_count = virtual_layer_tree_.back().index;
+    for (int i = stack.size()-1; i >= 0; i--) {
+      virtual_layer_tree_.push_back(DisplayVirtualLayerInfo{op_count, stack[i], false, 0});
+    }
+    stack.clear();
+    for (unsigned long i = 0; i < virtual_layer_tree_.size(); i++) {
+      if (virtual_layer_tree_[i].isStart) {
+        stack.push_back(virtual_layer_tree_[i].type);
       } else {
         if (stack.empty()) {
-          return false;
+          virtual_layer_tree_.clear();
+          return;
         }
         std::string t = stack[stack.size() - 1];
         stack.pop_back();
-        if (t != tree[i].type) {
-          return false;
+        if (t != virtual_layer_tree_[i].type) {
+          virtual_layer_tree_.clear();
+          return;
         }
       }
     }
-    if (!stack.empty()) {
-      auto op_count = tree.back().index;
-      for (int i = stack.size()-1; i >= 0; i--) {
-        tree.push_back(DisplayVirtualLayerInfo{op_count, stack[i], false, 0});
-      }
-      stack.clear();
-      for (unsigned long i = 0; i < tree.size(); i++) {
-        if (tree[i].isStart) {
-          stack.push_back(tree[i].type);
-        } else {
-          if (stack.empty()) {
-            return false;
-          }
-          std::string t = stack[stack.size() - 1];
-          stack.pop_back();
-          if (t != tree[i].type) {
-            return false;
-          }
-        }
-      }
-      if(!stack.empty()) {
-        return false;
-      }
+    if(!stack.empty()) {
+      virtual_layer_tree_.clear();
+      return;
     }
-    return true;
-  };
-
-  if (!checkTree(indexes)) {
-    indexes.clear();
   }
 
-  if (!indexes.empty()) {
-    // 1. tree shake.
     std::vector<int> garbage;
-    for (uint32_t i = 0; i < indexes.size(); i++) {
-      if (indexes[i].isStart) {
-        if (indexes[i + 1].isStart &&
-            indexes[i].index == indexes[i + 1].index) {
+    for (uint32_t i = 0; i < virtual_layer_tree_.size(); i++) {
+      if (virtual_layer_tree_[i].isStart) {
+        if (virtual_layer_tree_[i + 1].isStart &&
+            virtual_layer_tree_[i].index == virtual_layer_tree_[i + 1].index) {
           // [[
           uint32_t flag = 0;
-          for (uint32_t j = i + 1; j < indexes.size(); j++) {
-            if (indexes[j].type == indexes[i].type) {
-              if (indexes[j].isStart) {
+          for (uint32_t j = i + 1; j < virtual_layer_tree_.size(); j++) {
+            if (virtual_layer_tree_[j].type == virtual_layer_tree_[i].type) {
+              if (virtual_layer_tree_[j].isStart) {
                 flag += 1;
               } else {
                 if (flag == 0) {
@@ -133,9 +159,9 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
               }
             }
           }
-        } else if (!indexes[i + 1].isStart &&
-                   indexes[i].index == indexes[i + 1].index &&
-                   indexes[i + 1].type == indexes[i].type) {
+        } else if (!virtual_layer_tree_[i + 1].isStart &&
+                   virtual_layer_tree_[i].index == virtual_layer_tree_[i + 1].index &&
+                   virtual_layer_tree_[i + 1].type == virtual_layer_tree_[i].type) {
           // []
           garbage.push_back(i);
           garbage.push_back(i + 1);
@@ -144,70 +170,37 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
     }
     std::sort(garbage.begin(), garbage.end());
     for (int i = garbage.size() - 1; i >= 0; i--) {
-      indexes.erase(indexes.begin() + garbage[i]);
+      virtual_layer_tree_.erase(virtual_layer_tree_.begin() + garbage[i]);
     }
 
     // 2. addDepth.
-    indexes[0].depth = 1;
-    indexes[indexes.size() - 1].depth = 1;
+    virtual_layer_tree_[0].depth = 1;
+    virtual_layer_tree_[virtual_layer_tree_.size() - 1].depth = 1;
     uint32_t currDepth = 1;
-    for (uint32_t i = 1; i < indexes.size(); i++) {
-      if (indexes[i].isStart) {
-        if (indexes[i - 1].isStart) {
+    for (uint32_t i = 1; i < virtual_layer_tree_.size(); i++) {
+      if (virtual_layer_tree_[i].isStart) {
+        if (virtual_layer_tree_[i - 1].isStart) {
           // [[
           currDepth += 1;
-          indexes[i].depth = currDepth;
+          virtual_layer_tree_[i].depth = currDepth;
         } else {
           // ][
-          indexes[i].depth = currDepth;
+          virtual_layer_tree_[i].depth = currDepth;
         }
       } else {
-        if (indexes[i - 1].isStart) {
+        if (virtual_layer_tree_[i - 1].isStart) {
           // []
-          indexes[i].depth = currDepth;
+          virtual_layer_tree_[i].depth = currDepth;
         } else {
           // ]]
           currDepth -= 1;
-          indexes[i].depth = currDepth;
+          virtual_layer_tree_[i].depth = currDepth;
         }
       }
     }
-    indexes.insert(indexes.begin(), DisplayVirtualLayerInfo{0, "_k", true, 0});
-    indexes.push_back(DisplayVirtualLayerInfo{indexes[indexes.size() - 1].index,
+    virtual_layer_tree_.insert(virtual_layer_tree_.begin(), DisplayVirtualLayerInfo{0, "_k", true, 0});
+    virtual_layer_tree_.push_back(DisplayVirtualLayerInfo{virtual_layer_tree_[virtual_layer_tree_.size() - 1].index,
                                               "_k", false, 0});
-  }
-
-  size_t bytes = used_;
-  int count = op_count_;
-  size_t nested_bytes = nested_bytes_;
-  int nested_count = nested_op_count_;
-  used_ = allocated_ = op_count_ = 0;
-  nested_bytes_ = nested_op_count_ = 0;
-  storage_.realloc(bytes);
-  auto tree = indexes;
-  virtual_layer_indexes_.clear();
-  bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  return sk_sp<DisplayList>(new DisplayList(
-      storage_.release(), bytes, count, nested_bytes, nested_count, cull_rect_,
-      compatible, std::move(tree)));
-}
-
-void DisplayListBuilder::startRecordVirtualLayer(std::string type) {
-  virtual_layer_indexes_.push_back(
-      DisplayVirtualLayerInfo{storage_op_count_, type, true, 0});
-}
-
-void DisplayListBuilder::saveVirtualLayer(std::string type) {
-  FML_DCHECK(!virtual_layer_indexes_.empty());
-  if (virtual_layer_indexes_.empty()) {
-    return;
-  }
-  virtual_layer_indexes_.push_back(
-      DisplayVirtualLayerInfo{storage_op_count_, type, false});
-}
-
-void DisplayListBuilder::buildVirtualLayerTrees() {
-
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)

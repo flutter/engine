@@ -51,7 +51,7 @@ DisplayList::DisplayList(uint8_t* ptr,
       bounds_({0, 0, -1, -1}),
       bounds_cull_(cull_rect),
       can_apply_group_opacity_(can_apply_group_opacity),
-      virtual_layer_indexes_(indexes) {
+      virtual_layer_tree_(indexes) {
   virtual_bounds_valid_ = false;
   static std::atomic<uint32_t> nextID{1};
   do {
@@ -234,7 +234,7 @@ void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
 }
 
 const SkRect& DisplayList::bounds() {
-  if (!virtual_layer_indexes_.empty() && virtual_bounds_valid_) {
+  if (!virtual_layer_tree_.empty() && virtual_bounds_valid_) {
     virtual_bounds_valid_ = false;
     return virtual_bounds_;
   }
@@ -260,8 +260,8 @@ void DisplayList::Compare(DisplayList* dl) {
   // 0. Diff alg.
 
   SkRect damage;
-  auto newTree = virtual_layer_indexes();
-  auto oldTree = dl->virtual_layer_indexes();
+  auto newTree = virtual_layer_tree();
+  auto oldTree = dl->virtual_layer_tree();
 
   if (newTree.empty() || oldTree.empty() ||
       newTree[0].type != oldTree[0].type) {
@@ -376,7 +376,7 @@ void DisplayList::Compare(DisplayList* dl) {
     }
 
     // 旧树没有子树
-    if (oldT - oldH == 1 && oldT - oldH != 1) {
+    if (oldT - oldH == 1 && newT - newH != 1) {
       auto r1 = partBounds(newTree[newH+1].index, newTree[newT-1].index);
       damage.join(r1);
       return;
@@ -447,8 +447,6 @@ void DisplayList::Compare(DisplayList* dl) {
         break;
       }
     }
-
-    //
 
     // 3. 中间的都寄了
 

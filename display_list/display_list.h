@@ -272,8 +272,8 @@ class DisplayList : public SkRefCnt {
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
-  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes() {
-    return virtual_layer_indexes_;
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_tree() {
+    return virtual_layer_tree_;
   }
 
   void setVirtualBounds(SkRect rect) { virtual_bounds_ = rect; }
@@ -308,7 +308,7 @@ class DisplayList : public SkRefCnt {
 
   bool virtual_bounds_valid_;
 
-  std::vector<DisplayVirtualLayerInfo> virtual_layer_indexes_;
+  std::vector<DisplayVirtualLayerInfo> virtual_layer_tree_;
 
   SkRect virtual_bounds_;
 
