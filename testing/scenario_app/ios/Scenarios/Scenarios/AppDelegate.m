@@ -154,6 +154,7 @@
     rootViewController = [UIViewController new];
     [rootViewController.view addSubview:flutterViewController.view];
     flutterViewController.view.frame = CGRectMake(150, 150, 500, 500);
+    flutterViewController.flutterView.frame = CGRectMake(0, 0, 350, 350);
   }
 
   self.window.rootViewController = rootViewController;

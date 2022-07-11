@@ -662,6 +662,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   if (appeared) {
     if (!_flutterView) {
       _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+      CGRect viewBounds = self.view.bounds;
+      _flutterView.get().frame =
+          CGRectMake(0.0, 0.0, viewBounds.size.width, viewBounds.size.height);
       [self.view insertSubview:_flutterView.get() atIndex:0];
     }
     [self installFirstFrameCallback];
@@ -1173,7 +1176,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)viewDidLayoutSubviews {
   CGRect viewBounds = self.view.bounds;
   CGFloat scale = [UIScreen mainScreen].scale;
-  _flutterView.get().frame = viewBounds;
+  _flutterView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, viewBounds.size.height);
 
   // Purposefully place this not visible.
   _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
