@@ -46,12 +46,17 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
-  return gl_dispatch_table_.gl_present_callback(present_info.fbo_id);
+  /// NEW: Pass the damage region (as set by GLContextSetDamageRegion and the
+  /// frame damage (in present_info) so that the embedder can keep track of it.
+  return gl_dispatch_table_.gl_present_callback(present_info, damage_region_);
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
-  return gl_dispatch_table_.gl_fbo_callback(frame_info);
+GLFrameBuffer EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+  /// NEW: updating GLContextFBO to trigger a callback that will not only return
+  /// the FBO ID but also its existing damage (at least when doing partial
+  /// partial repaint.
+  return gl_dispatch_table_.gl_fbo_callback(frame_info);;
 }
 
 // |GPUSurfaceGLDelegate|
@@ -105,6 +110,14 @@ sk_sp<GrDirectContext> EmbedderSurfaceGL::CreateResourceContext() const {
          "Expect degraded performance. Set a valid make_resource_current "
          "callback on FlutterOpenGLRendererConfig.";
   return nullptr;
+}
+
+void EmbedderSurfaceGL::GLContextSetDamageRegion(
+    const std::optional<SkIRect>& region) {
+  /// NEW: Updating the damage_region_ so that it can be passed down to the
+  /// embedder using present_with_info.
+  /// NOTE: region here refers to the buffer_damage.
+  damage_region_ = region;
 }
 
 }  // namespace flutter
