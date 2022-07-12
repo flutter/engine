@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -23,7 +22,7 @@ void main() {
     final Canvas canvas = Canvas(recorder);
     canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
     final Picture picture = recorder.endRecording();
-    final Image image = picture.toGpuImage(50, 50);
+    final Image image = picture.toImageSync(50, 50);
     picture.dispose();
 
     // TODO(dnfield): this should not throw once

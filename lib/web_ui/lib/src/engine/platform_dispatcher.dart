@@ -33,7 +33,49 @@ import 'window.dart';
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback? scheduleFrameCallback;
 
+/// Signature of functions added as a listener to high contrast changes
+typedef HighContrastListener = void Function(bool enabled);
 typedef _KeyDataResponseCallback = void Function(bool handled);
+
+
+/// Determines if high contrast is enabled using media query 'forced-colors: active' for Windows
+class HighContrastSupport {
+  static HighContrastSupport instance = HighContrastSupport();
+  static const String _highContrastMediaQueryString = '(forced-colors: active)';
+
+  final List<HighContrastListener> _listeners = <HighContrastListener>[];
+
+  /// Reference to css media query that indicates whether high contrast is on.
+  final DomMediaQueryList _highContrastMediaQuery = domWindow.matchMedia(_highContrastMediaQueryString);
+  late final DomEventListener _onHighContrastChangeListener =
+      allowInterop(_onHighContrastChange);
+
+  bool get isHighContrastEnabled => _highContrastMediaQuery.matches;
+
+  /// Adds function to the list of listeners on high contrast changes
+  void addListener(HighContrastListener listener) {
+    if (_listeners.isEmpty) {
+      _highContrastMediaQuery.addListener(_onHighContrastChangeListener);
+    }
+    _listeners.add(listener);
+  }
+
+  /// Removes function from the list of listeners on high contrast changes
+  void removeListener(HighContrastListener listener) {
+    _listeners.remove(listener);
+    if (_listeners.isEmpty) {
+      _highContrastMediaQuery.removeListener(_onHighContrastChangeListener);
+    }
+  }
+
+  void _onHighContrastChange(DomEvent event) {
+    final DomMediaQueryListEvent mqEvent = event as DomMediaQueryListEvent;
+    final bool isHighContrastEnabled = mqEvent.matches!;
+    for (final HighContrastListener listener in _listeners) {
+      listener(isHighContrastEnabled);
+    }
+  }
+}
 
 /// Platform event dispatcher.
 ///
@@ -42,22 +84,40 @@ typedef _KeyDataResponseCallback = void Function(bool handled);
 class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Private constructor, since only dart:ui is supposed to create one of
   /// these.
-  EnginePlatformDispatcher._() {
+  EnginePlatformDispatcher() {
     _addBrightnessMediaQueryListener();
+    HighContrastSupport.instance.addListener(_updateHighContrast);
     _addFontSizeObserver();
+    registerHotRestartListener(dispose);
   }
 
   /// The [EnginePlatformDispatcher] singleton.
   static EnginePlatformDispatcher get instance => _instance;
-  static final EnginePlatformDispatcher _instance =
-      EnginePlatformDispatcher._();
+  static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher();
 
   /// The current platform configuration.
   @override
   ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
+    accessibilityFeatures: computeAccessibilityFeatures(),
   );
+
+  /// Compute accessibility features based on the current value of high contrast flag
+  static EngineAccessibilityFeatures computeAccessibilityFeatures() {
+    final EngineAccessibilityFeaturesBuilder builder =
+        EngineAccessibilityFeaturesBuilder(0);
+    if (HighContrastSupport.instance.isHighContrastEnabled) {
+      builder.highContrast = true;
+    }
+    return builder.build();
+  }
+
+  void dispose() {
+    _removeBrightnessMediaQueryListener();
+    _disconnectFontSizeObserver();
+    HighContrastSupport.instance.removeListener(_updateHighContrast);
+  }
 
   /// Receives all events related to platform configuration changes.
   @override
@@ -483,7 +543,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
           contentHandler: (DomElement content) {
-            // Remove cast to [html.Element] after migration.
             flutterViewEmbedder.glassPaneElement!.append(content);
           },
         );
@@ -821,9 +880,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       attributes: true,
       attributeFilter: <String>[styleAttribute],
     );
-    registerHotRestartListener(() {
-      _disconnectFontSizeObserver();
-    });
   }
 
   /// Remove the observer for font-size changes in the browser's <html> element.
@@ -885,6 +941,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   String? get systemFontFamily => configuration.systemFontFamily;
 
+  /// Updates [_highContrast] and invokes [onHighContrastModeChanged]
+  /// callback if [_highContrast] changed.
+  void _updateHighContrast(bool value) {
+    if (configuration.accessibilityFeatures.highContrast != value) {
+      final EngineAccessibilityFeatures original =
+          configuration.accessibilityFeatures as EngineAccessibilityFeatures;
+      configuration = configuration.copyWith(
+          accessibilityFeatures: original.copyWith(highContrast: value));
+      invokeOnPlatformConfigurationChanged();
+    }
+  }
+
   /// Reference to css media query that indicates the user theme preference on the web.
   final DomMediaQueryList _brightnessMediaQuery =
       domWindow.matchMedia('(prefers-color-scheme: dark)');
@@ -907,9 +975,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
           mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
     });
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
-    registerHotRestartListener(() {
-      _removeBrightnessMediaQueryListener();
-    });
   }
 
   /// Remove the callback function for listening changes in [_brightnessMediaQuery] value.
