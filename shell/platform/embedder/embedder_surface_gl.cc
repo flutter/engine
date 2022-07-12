@@ -56,7 +56,7 @@ GLFrameBuffer EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   /// NEW: updating GLContextFBO to trigger a callback that will not only return
   /// the FBO ID but also its existing damage (at least when doing partial
   /// partial repaint.
-  return gl_dispatch_table_.gl_fbo_callback(frame_info);;
+  return gl_dispatch_table_.gl_fbo_callback(frame_info);
 }
 
 // |GPUSurfaceGLDelegate|

@@ -230,12 +230,13 @@ FlutterRect SkIRectToFlutterRect(const std::optional<SkIRect> rect) {
   return flutter_rect;
 }
 
-/// NEW: Adding this function to make it easier to translate a FlutterRect back 
+/// NEW: Adding this function to make it easier to translate a FlutterRect back
 /// to a SkIRect.
 SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
-  SkIRect rect = {
-      static_cast<int32_t>(flutter_rect.left), static_cast<int32_t>(flutter_rect.right),
-      static_cast<int32_t>(flutter_rect.top), static_cast<int32_t>(flutter_rect.bottom)};
+  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
+                  static_cast<int32_t>(flutter_rect.right),
+                  static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.bottom)};
   return rect;
 }
 
@@ -262,10 +263,10 @@ InferOpenGLPlatformViewCreationCallback(
   /// can receive more information than just the fbo_id (e.g. damage).
   /// NOTE: this means that for partial repaint to work, we must have it use the
   /// present_with_info callback rather than the present callback.
-  auto gl_present =
-      [present = config->open_gl.present,
-       present_with_info = config->open_gl.present_with_info,
-       user_data](flutter::GLPresentInfo gl_present_info, std::optional<SkIRect> damage_region) -> bool {
+  auto gl_present = [present = config->open_gl.present,
+                     present_with_info = config->open_gl.present_with_info,
+                     user_data](flutter::GLPresentInfo gl_present_info,
+                                std::optional<SkIRect> damage_region) -> bool {
     if (present) {
       return present(user_data);
     } else {
@@ -301,7 +302,8 @@ InferOpenGLPlatformViewCreationCallback(
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
        fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
-       user_data](flutter::GLFrameInfo gl_frame_info) -> flutter::GLFrameBuffer {
+       user_data](
+          flutter::GLFrameInfo gl_frame_info) -> flutter::GLFrameBuffer {
     if (fbo_callback) {
       flutter::GLFrameBuffer fbo;
       fbo.fbo_id = fbo_callback(user_data);

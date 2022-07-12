@@ -16,10 +16,11 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
                                 public GPUSurfaceGLDelegate {
  public:
   struct GLDispatchTable {
-    std::function<bool(void)> gl_make_current_callback;           // required
-    std::function<bool(void)> gl_clear_current_callback;          // required
-    std::function<bool(GLPresentInfo, std::optional<SkIRect>)> gl_present_callback;       // required
-    std::function<GLFrameBuffer(GLFrameInfo)> gl_fbo_callback;         // required
+    std::function<bool(void)> gl_make_current_callback;   // required
+    std::function<bool(void)> gl_clear_current_callback;  // required
+    std::function<bool(GLPresentInfo, std::optional<SkIRect>)>
+        gl_present_callback;                                      // required
+    std::function<GLFrameBuffer(GLFrameInfo)> gl_fbo_callback;    // required
     std::function<bool(void)> gl_make_resource_current_callback;  // optional
     std::function<SkMatrix(void)>
         gl_surface_transformation_callback;              // optional

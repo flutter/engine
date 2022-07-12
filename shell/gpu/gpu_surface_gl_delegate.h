@@ -24,7 +24,7 @@ struct GLFrameInfo {
 
 /// NEW: Adding this new struct so that we have information about the FBO's id
 /// and existing damage in one place.
-/// A structure to represent a frame buffer as composed by an id and existing 
+/// A structure to represent a frame buffer as composed by an id and existing
 /// damage to it (in the case of partial repaint).
 struct GLFrameBuffer {
   uint32_t fbo_id;
@@ -65,7 +65,7 @@ class GPUSurfaceGLDelegate {
 
   /// NEW: Changing the return type of GLContextFBO so that it can also return
   /// the existing damage for that FBO.
-  // The information about the main window bound framebuffer such as ID and 
+  // The information about the main window bound framebuffer such as ID and
   // existing damage. ID is typically FBO0. Existing damage is only relevant
   // when performing partial repaint.
   virtual GLFrameBuffer GLContextFBO(GLFrameInfo frame_info) const = 0;

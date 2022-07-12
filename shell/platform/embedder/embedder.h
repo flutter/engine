@@ -417,7 +417,7 @@ typedef struct {
   FlutterDamage damage;
 } FlutterFrameBuffer;
 
-/// NEW: adding this type of callback since the return value of the 
+/// NEW: adding this type of callback since the return value of the
 /// fbo_with_damage callback is a FlutterFrameBuffer (instead of a uintptr).
 typedef FlutterFrameBuffer (*FlutterFrameBufferFrameInfoCallback)(
     void* /* user data */,
