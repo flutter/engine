@@ -14,6 +14,7 @@ using fup_TouchPointerSample = fuchsia::ui::pointer::TouchPointerSample;
 using fup_ViewParameters = fuchsia::ui::pointer::ViewParameters;
 using fup_MouseEvent = fuchsia::ui::pointer::MouseEvent;
 using fup_MousePointerSample = fuchsia::ui::pointer::MousePointerSample;
+using fup_MouseDeviceInfo = fuchsia::ui::pointer::MouseDeviceInfo;
 
 namespace {
 
@@ -142,7 +143,7 @@ MouseEventBuilder& MouseEventBuilder::AddViewParameters(
 MouseEventBuilder& MouseEventBuilder::AddMouseDeviceInfo(
     uint32_t id,
     std::vector<uint8_t> buttons) {
-  device_info_ = std::make_optional<fup::MouseDeviceInfo>();
+  device_info_ = std::make_optional<fup_MouseDeviceInfo>();
   device_info_->set_id(id);
   device_info_->set_buttons(buttons);
   return *this;
