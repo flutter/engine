@@ -661,9 +661,9 @@ recursedeps = [
 hooks = [
   {
     # Warn if the engine developer is still using the old split buildroot scheme.
-    'name': 'Detect split buildroot. Patch your .gclient file to replace "src/flutter" with "src" if this step fails.',
+    'name': 'Detect split buildroot.',
     'pattern': '.',
-    'action': ['python3', 'src/tools/split_buildroot.py'],
+    'action': ['python3', 'src/tools/split_buildroot_landmine.py'],
   },
   {
     # Generate the Dart SDK's .dart_tool/package_confg.json file.
