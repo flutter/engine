@@ -30,6 +30,7 @@ using fup_TouchPointerSample = fuchsia::ui::pointer::TouchPointerSample;
 using fup_TouchResponse = fuchsia::ui::pointer::TouchResponse;
 using fup_TouchResponseType = fuchsia::ui::pointer::TouchResponseType;
 using fup_ViewParameters = fuchsia::ui::pointer::ViewParameters;
+using fup_MouseEvent = fuchsia::ui::pointer::MouseEvent;
 
 constexpr std::array<std::array<float, 2>, 2> kRect = {{{0, 0}, {20, 20}}};
 constexpr std::array<float, 9> kIdentity = {1, 0, 0, 0, 1, 0, 0, 0, 1};
@@ -690,7 +691,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TickBased) {
       });
   RunLoopUntilIdle();  // Server gets watch call.
 
-  std::vector<fup::MouseEvent> events =
+  std::vector<fup_MouseEvent> events =
       MouseEventBuilder()
           .AddTime(1111789u)
           .AddViewParameters(kRect, kRect, kIdentity)
@@ -743,7 +744,7 @@ TEST_F(PointerDelegateTest, MouseWheel_PixelBased) {
       });
   RunLoopUntilIdle();  // Server gets watch call.
 
-  std::vector<fup::MouseEvent> events =
+  std::vector<fup_MouseEvent> events =
       MouseEventBuilder()
           .AddTime(1111789u)
           .AddViewParameters(kRect, kRect, kIdentity)
@@ -796,7 +797,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TouchpadPixelBased) {
       });
   RunLoopUntilIdle();  // Server gets watch call.
 
-  std::vector<fup::MouseEvent> events =
+  std::vector<fup_MouseEvent> events =
       MouseEventBuilder()
           .AddTime(1111789u)
           .AddViewParameters(kRect, kRect, kIdentity)

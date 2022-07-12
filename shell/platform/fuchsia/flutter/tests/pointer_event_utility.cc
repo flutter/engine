@@ -12,6 +12,8 @@ using fup_TouchIxnId = fuchsia::ui::pointer::TouchInteractionId;
 using fup_TouchIxnResult = fuchsia::ui::pointer::TouchInteractionResult;
 using fup_TouchPointerSample = fuchsia::ui::pointer::TouchPointerSample;
 using fup_ViewParameters = fuchsia::ui::pointer::ViewParameters;
+using fup_MouseEvent = fuchsia::ui::pointer::MouseEvent;
+
 
 namespace {
 
@@ -90,9 +92,10 @@ std::vector<fup_TouchEvent> TouchEventBuilder::BuildAsVector() {
   return events;
 }
 
-MouseEventBuilder::MouseEventBuilder() = default;
+MouseEventBuilder MouseEventBuilder::New() {
+  return MouseEventBuilder();
+}
 
-MouseEventBuilder::~MouseEventBuilder() = default;
 
 MouseEventBuilder& MouseEventBuilder::AddTime(zx_time_t time) {
   time_ = time;
@@ -146,8 +149,8 @@ MouseEventBuilder& MouseEventBuilder::AddMouseDeviceInfo(
   return *this;
 }
 
-fup::MouseEvent MouseEventBuilder::Build() {
-  fup::MouseEvent event;
+fup_MouseEvent MouseEventBuilder::Build() {
+  fup_MouseEvent event;
   if (time_) {
     event.set_timestamp(time_.value());
   }
@@ -164,8 +167,8 @@ fup::MouseEvent MouseEventBuilder::Build() {
   return event;
 }
 
-std::vector<fup::MouseEvent> MouseEventBuilder::BuildAsVector() {
-  std::vector<fup::MouseEvent> events;
+std::vector<fup_MouseEvent> MouseEventBuilder::BuildAsVector() {
+  std::vector<fup_MouseEvent> events;
   events.emplace_back(Build());
   return events;
 }

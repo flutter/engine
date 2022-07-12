@@ -306,7 +306,7 @@ flutter::PointerData CreateMouseDraft(const fup_MouseEvent& event,
     is_scroll = true;
   }
 
-  if (sample.scroll_h_physical_pixel) {
+  if (sample.scroll_h_physical_pixel()) {
     dx = sample.scroll_h_physical_pixel();
     is_scroll = true;
   } else if (sample.has_scroll_h()) {
