@@ -37,6 +37,15 @@ public class ErrorLogResult implements MethodChannel.Result {
   }
 
   @Override
+  public void errorWithException(
+      String errorCode, @NonNull Exception exception, @Nullable Object errorDetails) {
+    String details = (errorDetails != null) ? " details: " + errorDetails : "";
+    if (level >= Log.WARN || BuildConfig.DEBUG) {
+      Log.println(level, tag, exception.getMessage() + details);
+    }
+  }
+
+  @Override
   public void notImplemented() {
     if (level >= Log.WARN || BuildConfig.DEBUG) {
       Log.println(level, tag, "method not implemented");

@@ -68,5 +68,8 @@ class StoredResult implements MethodChannel.Result {
   public void error(String errorCode, String errorMessage, Object errorDetails) {}
 
   @Override
+  public void errorWithException(String errorCode, Exception exception, Object errorDetails) {}
+
+  @Override
   public void notImplemented() {}
 }
