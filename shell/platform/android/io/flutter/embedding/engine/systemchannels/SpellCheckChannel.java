@@ -8,9 +8,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StandardMethodCodec;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -75,7 +76,7 @@ public class SpellCheckChannel {
       };
 
   public SpellCheckChannel(@NonNull DartExecutor dartExecutor) {
-    channel = new MethodChannel(dartExecutor, "flutter/spellcheck", JSONMethodCodec.INSTANCE);
+    channel = new MethodChannel(dartExecutor, "flutter/spellcheck", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
