@@ -67,6 +67,9 @@ class GPUSurfaceGLSkia : public Surface {
   sk_sp<SkSurface> onscreen_surface_;
   /// FBO backing the current `onscreen_surface_`.
   uint32_t fbo_id_ = 0;
+  /// NEW: Adding fbo_existing_damage_, a private variable that keeps track of 
+  /// the existing damage within the current FBO.
+  std::optional<SkIRect> fbo_existing_damage_ = SkIRect::MakeEmpty();
   bool context_owner_ = false;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface. This is a
@@ -74,6 +77,9 @@ class GPUSurfaceGLSkia : public Surface {
   // external view embedder is present.
   const bool render_to_surface_ = true;
   bool valid_ = false;
+  /// NEW: Adding partial_repaint_enabled_, a private variable that says whether
+  /// partial repaint is turned on or not.
+  bool partial_repaint_enabled_;
 
   // WeakPtrFactory must be the last member.
   fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGLSkia> weak_factory_;
