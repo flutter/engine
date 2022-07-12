@@ -1,4 +1,4 @@
-Signature: 4d4173fffac9864e6795646152da3197
+Signature: ff8f0819ab88149f98e45a3afad8d4b6
 
 UNUSED LICENSES:
 
@@ -6118,7 +6118,6 @@ FILE: ../../../third_party/skia/src/core/SkEnumerate.h
 FILE: ../../../third_party/skia/src/core/SkGlyphBuffer.cpp
 FILE: ../../../third_party/skia/src/core/SkGlyphBuffer.h
 FILE: ../../../third_party/skia/src/core/SkPathMakers.h
-FILE: ../../../third_party/skia/src/core/SkStrikeForGPU.h
 FILE: ../../../third_party/skia/src/core/SkStrikeSpec.h
 FILE: ../../../third_party/skia/src/core/SkVMBlitter.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVMath.cpp
@@ -6181,6 +6180,7 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkSecondaryCBDrawContext_imp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
 FILE: ../../../third_party/skia/src/image/SkSurface_GpuMtl.mm
 FILE: ../../../third_party/skia/src/sksl/SkSLOutputStream.cpp
+FILE: ../../../third_party/skia/src/text/StrikeForGPU.h
 FILE: ../../../third_party/skia/src/utils/SkCharToGlyphCache.cpp
 FILE: ../../../third_party/skia/src/utils/SkCharToGlyphCache.h
 FILE: ../../../third_party/skia/src/utils/SkClipStackUtils.cpp
