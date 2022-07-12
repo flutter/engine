@@ -95,7 +95,6 @@ MouseEventBuilder MouseEventBuilder::New() {
   return MouseEventBuilder();
 }
 
-
 MouseEventBuilder& MouseEventBuilder::AddTime(zx_time_t time) {
   time_ = time;
   return *this;
