@@ -14,7 +14,6 @@ using fup_TouchPointerSample = fuchsia::ui::pointer::TouchPointerSample;
 using fup_ViewParameters = fuchsia::ui::pointer::ViewParameters;
 using fup_MouseEvent = fuchsia::ui::pointer::MouseEvent;
 
-
 namespace {
 
 fup_ViewParameters CreateViewParameters(
