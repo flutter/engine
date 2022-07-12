@@ -377,6 +377,21 @@ typedef struct {
   FlutterSize lower_left_corner_radius;
 } FlutterRoundedRect;
 
+/// QUESTION: should damage be a vector of FlutterRect's? Intuitively, this
+/// seems like the correct approach since we could have areas that are being
+/// rendered in different corners of the screen. However, the partial repaint
+/// implemented for android and iOS seems to use only one rectangle. On the
+/// other hand, one rectangle might help with reduce the complexity of the
+/// rendering process.
+/// NEW: Adding new struct so that the embedder can represent the idea of
+/// damage in a self-contained way.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterDamage).
+  size_t struct_size;
+  // Rectangle that represents the area that needs to be rendered.
+  FlutterRect damage;
+} FlutterDamage;
+
 /// This information is passed to the embedder when requesting a frame buffer
 /// object.
 ///
@@ -393,6 +408,21 @@ typedef uint32_t (*UIntFrameInfoCallback)(
     void* /* user data */,
     const FlutterFrameInfo* /* frame info */);
 
+/// NEW: Adding new struct so that the embedder can represent the idea of
+/// a frame buffer in a self-contained way.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterFrameBuffer).
+  size_t struct_size;
+  intptr_t fbo_id;
+  FlutterDamage damage;
+} FlutterFrameBuffer;
+
+/// NEW: adding this type of callback since the return value of the 
+/// fbo_with_damage callback is a FlutterFrameBuffer (instead of a uintptr).
+typedef FlutterFrameBuffer (*FlutterFrameBufferFrameInfoCallback)(
+    void* /* user data */,
+    const FlutterFrameInfo* /* frame info */);
+
 /// This information is passed to the embedder when a surface is presented.
 ///
 /// See: \ref FlutterOpenGLRendererConfig.present_with_info.
@@ -401,6 +431,11 @@ typedef struct {
   size_t struct_size;
   /// Id of the fbo backing the surface that was presented.
   uint32_t fbo_id;
+  /// NEW: Adding new fields so that present with partial repaint works.
+  /// Rectangle representing the area that the compositor needs to render.
+  FlutterDamage frame_damage;
+  /// Rectangle representing the area that changed since FBO was last used.
+  FlutterDamage buffer_damage;
 } FlutterPresentInfo;
 
 /// Callback for when a surface is presented.
@@ -466,6 +501,7 @@ typedef struct {
   /// `FlutterPresentInfo` struct that the embedder can use to release any
   /// resources. The return value indicates success of the present call.
   BoolPresentInfoCallback present_with_info;
+  FlutterFrameBufferFrameInfoCallback fbo_with_damage_callback;
 } FlutterOpenGLRendererConfig;
 
 /// Alias for id<MTLDevice>.
