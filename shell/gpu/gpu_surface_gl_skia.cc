@@ -248,6 +248,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
       };
 
   framebuffer_info = delegate_->GLContextFramebufferInfo();
+  // CHECK IF PARTIAL REPAINT IS ENABLED
+    // CALCULATE ACCUMULATED DAMAGE (I.E. ARE IN CURRENT FBO THAT LAGS BEHIND FRONT BUFFER)
+    // SET ACCUMULATED DAMAGE TO FBO_INFO EXISTING_DAMAGE
+    // SET SUPPORTS_PARTIAL_REPAINT TO TRUE
   return std::make_unique<SurfaceFrame>(surface, std::move(framebuffer_info),
                                         submit_callback,
                                         std::move(context_switch));
