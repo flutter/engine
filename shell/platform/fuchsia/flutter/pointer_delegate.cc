@@ -292,8 +292,8 @@ flutter::PointerData CreateMouseDraft(const fup_MouseEvent& event,
   // after the transistion done.
   const int kScrollOffsetMultiplier = 20;
 
-  double dy;
-  double dx;
+  double dy = 0;
+  double dx = 0;
   bool is_scroll;
 
   if (sample.has_scroll_v_physical_pixel()) {
@@ -315,6 +315,7 @@ flutter::PointerData CreateMouseDraft(const fup_MouseEvent& event,
   }
 
   if (is_scroll) {
+    ptr.signal_kind = flutter::PointerData::SignalKind::kScroll;
     bool is_trackpad_scroll =
         sample.has_is_precision_scroll() && sample.is_precision_scroll();
 
@@ -323,7 +324,6 @@ flutter::PointerData CreateMouseDraft(const fup_MouseEvent& event,
       ptr.pan_y = dy;
       ptr.pan_x = dx;
     } else {
-      ptr.signal_kind = flutter::PointerData::SignalKind::kScroll;
       ptr.scroll_delta_y = dy;
       ptr.scroll_delta_x = dx;
     }

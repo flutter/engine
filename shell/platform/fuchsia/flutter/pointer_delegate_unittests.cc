@@ -709,7 +709,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TickBased) {
   EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
   EXPECT_EQ(pointers.value()[0].buttons, 0);
   EXPECT_EQ(pointers.value()[0].scroll_delta_x, 0);
-  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 20);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, -20);
   pointers = {};
 
   // receive a horizontal scroll
@@ -762,7 +762,7 @@ TEST_F(PointerDelegateTest, MouseWheel_PixelBased) {
   EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
   EXPECT_EQ(pointers.value()[0].buttons, 0);
   EXPECT_EQ(pointers.value()[0].scroll_delta_x, 0);
-  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 120);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, -120);
   pointers = {};
 
   // receive a horizontal scroll
@@ -816,7 +816,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TouchpadPixelBased) {
             flutter::PointerData::DeviceKind::kTrackpad);
   EXPECT_EQ(pointers.value()[0].buttons, 0);
   EXPECT_EQ(pointers.value()[0].scroll_delta_x, 0);
-  EXPECT_EQ(pointers.value()[0].scroll_delta_y, 120);
+  EXPECT_EQ(pointers.value()[0].scroll_delta_y, -120);
   pointers = {};
 
   // receive a horizontal scroll
