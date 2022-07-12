@@ -112,6 +112,11 @@ public class RestorationChannel {
             }
 
             @Override
+            public void errorWithException(String errorCode, Exception exception, Object errorDetails) {
+              // Unused.
+            }
+
+            @Override
             public void notImplemented() {
               // Nothing to do.
             }
