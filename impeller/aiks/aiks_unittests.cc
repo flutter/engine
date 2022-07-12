@@ -459,10 +459,8 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(
-      GetContext(), canvas,
-      "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
-      "NotoColorEmoji.ttf"));
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
+                                 "NotoColorEmoji.ttf"));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
