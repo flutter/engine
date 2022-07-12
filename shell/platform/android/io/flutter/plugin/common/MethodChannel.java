@@ -233,7 +233,7 @@ public class MethodChannel {
      */
     void errorWithException(
         @NonNull String errorCode,
-        @Nullable Exception exception,
+        @NonNull Exception exception,
         @Nullable Object errorDetails);
 
     /** Handles a call to an unimplemented method. */
