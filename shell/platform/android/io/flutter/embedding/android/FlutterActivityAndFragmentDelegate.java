@@ -602,10 +602,8 @@ import java.util.List;
     // screen when unlocked. We can work around this by changing the visibility of FlutterView in
     // onStart and onStop.
     // See https://github.com/flutter/flutter/issues/93276
-    if (flutterView.getVisibility() != View.GONE) {
-      previousVisibility = flutterView.getVisibility();
-      flutterView.setVisibility(View.GONE);
-    }
+    previousVisibility = flutterView.getVisibility();
+    flutterView.setVisibility(View.GONE);
   }
 
   /**
