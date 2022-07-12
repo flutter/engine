@@ -101,8 +101,6 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '6af51ff4b86270cc61517bff3fff5c3bb11492e1',
-
    # Fuchsia compatibility
    #
    # The dependencies in this section should match the layout in the Fuchsia gn
@@ -661,6 +659,12 @@ recursedeps = [
 ]
 
 hooks = [
+  {
+    # Warn if the engine developer is still using the old split buildroot scheme.
+    'name': 'Detect split buildroot. Patch your .gclient file to replace "src/flutter" with "src" if this step fails.',
+    'pattern': '.',
+    'action': ['python3', 'src/tools/split_buildroot.py'],
+  },
   {
     # Generate the Dart SDK's .dart_tool/package_confg.json file.
     'name': 'Generate .dart_tool/package_confg.json',
