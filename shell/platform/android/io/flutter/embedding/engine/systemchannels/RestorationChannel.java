@@ -112,7 +112,8 @@ public class RestorationChannel {
             }
 
             @Override
-            public void errorWithException(String errorCode, Exception exception, Object errorDetails) {
+            public void errorWithException(
+                String errorCode, Exception exception, Object errorDetails) {
               // Unused.
             }
 

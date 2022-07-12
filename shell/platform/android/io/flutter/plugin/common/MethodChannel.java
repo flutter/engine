@@ -221,20 +221,18 @@ public class MethodChannel {
      * Handles an error result.
      *
      * @param errorCode An error code String.
-     * @param exception The exception which is responsible for this erroneous result.
-     *     The exception message will be reported in the 
-     *     <a href="https://api.flutter.dev/flutter/services/PlatformException/message.html">
-     *     PlatformException.message</a> field on the Dart side.
-     *     The stack trace will be reported in the <a href="https://api.flutter.dev/flutter/services/PlatformException/stacktrace.html">
+     * @param exception The exception which is responsible for this erroneous result. The exception
+     *     message will be reported in the <a
+     *     href="https://api.flutter.dev/flutter/services/PlatformException/message.html">
+     *     PlatformException.message</a> field on the Dart side. The stack trace will be reported in
+     *     the <a href="https://api.flutter.dev/flutter/services/PlatformException/stacktrace.html">
      *     PlatformException.stacktrace</a> field on the Dart side.
      * @param errorDetails Error details, possibly null. The details must be an Object type
      *     supported by the codec. For instance, if you are using {@link StandardMessageCodec}
      *     (default), please see its documentation on what types are supported.
      */
     void errorWithException(
-        @NonNull String errorCode,
-        @NonNull Exception exception,
-        @Nullable Object errorDetails);
+        @NonNull String errorCode, @NonNull Exception exception, @Nullable Object errorDetails);
 
     /** Handles a call to an unimplemented method. */
     void notImplemented();
@@ -292,10 +290,11 @@ public class MethodChannel {
               }
 
               @Override
-              public void errorWithException(String errorCode, Exception exception, Object errorDetails) {
+              public void errorWithException(
+                  String errorCode, Exception exception, Object errorDetails) {
                 reply.reply(
                     codec.encodeErrorEnvelopeWithStacktrace(
-                      errorCode, exception.getMessage(), errorDetails, getStackTrace(exception)));
+                        errorCode, exception.getMessage(), errorDetails, getStackTrace(exception)));
               }
 
               @Override
