@@ -217,6 +217,25 @@ public class MethodChannel {
     void error(
         @NonNull String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
 
+    /**
+     * Handles an error result.
+     *
+     * @param errorCode An error code String.
+     * @param exception The exception which is responsible for this erroneous result.
+     *     The exception message will be reported in the 
+     *     <a href="https://api.flutter.dev/flutter/services/PlatformException/message.html">
+     *     PlatformException.message</a> field on the Dart side.
+     *     The stack trace will be reported in the <a href="https://api.flutter.dev/flutter/services/PlatformException/stacktrace.html">
+     *     PlatformException.stacktrace</a> field on the Dart side.
+     * @param errorDetails Error details, possibly null. The details must be an Object type
+     *     supported by the codec. For instance, if you are using {@link StandardMessageCodec}
+     *     (default), please see its documentation on what types are supported.
+     */
+    void errorWithException(
+        @NonNull String errorCode,
+        @Nullable Exception exception,
+        @Nullable Object errorDetails);
+
     /** Handles a call to an unimplemented method. */
     void notImplemented();
   }
@@ -270,6 +289,13 @@ public class MethodChannel {
               @Override
               public void error(String errorCode, String errorMessage, Object errorDetails) {
                 reply.reply(codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails));
+              }
+
+              @Override
+              public void errorWithException(String errorCode, Exception exception, Object errorDetails) {
+                reply.reply(
+                    codec.encodeErrorEnvelopeWithStacktrace(
+                      errorCode, exception.getMessage(), errorDetails, getStackTrace(exception)));
               }
 
               @Override
