@@ -39,7 +39,6 @@ constexpr fup_TouchIxnId kIxnOne = {.device_id = 1u,
                                     .interaction_id = 2u};
 
 constexpr uint32_t kMouseDeviceId = 123;
-constexpr std::array<int64_t, 2> kNoScrollDelta = {0, 0};
 constexpr std::array<int64_t, 2> kNoScrollInPhysicalPixelDelta = {0, 0};
 const bool kNotPrecisionScroll = false;
 const bool kPrecisionScroll = true;
@@ -802,7 +801,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TouchpadPixelBased) {
           .AddTime(1111789u)
           .AddViewParameters(kRect, kRect, kIdentity)
           .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {0, 1}, {0, 120},
-                     kNotPrecisionScroll)
+                     kPrecisionScroll)
           .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
           .BuildAsVector();
   mouse_source_->ScheduleCallback(std::move(events));
@@ -825,7 +824,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TouchpadPixelBased) {
                .AddTime(1111789u)
                .AddViewParameters(kRect, kRect, kIdentity)
                .AddSample(kMouseDeviceId, {10.f, 10.f}, {}, {1, 0}, {120, 0},
-                          kNotPrecisionScroll)
+                          kPrecisionScroll)
                .AddMouseDeviceInfo(kMouseDeviceId, {0, 1, 2})
                .BuildAsVector();
   mouse_source_->ScheduleCallback(std::move(events));
