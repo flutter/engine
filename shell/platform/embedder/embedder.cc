@@ -221,6 +221,24 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
+/// NEW: Adding this function to make it easier to translate a SkIRect to a
+/// FlutterRect.
+FlutterRect SkIRectToFlutterRect(const std::optional<SkIRect> rect) {
+  FlutterRect flutter_rect = {
+      static_cast<double>(rect->fLeft), static_cast<double>(rect->fRight),
+      static_cast<double>(rect->fTop), static_cast<double>(rect->fBottom)};
+  return flutter_rect;
+}
+
+/// NEW: Adding this function to make it easier to translate a FlutterRect back 
+/// to a SkIRect.
+SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+  SkIRect rect = {
+      static_cast<int32_t>(flutter_rect.left), static_cast<int32_t>(flutter_rect.right),
+      static_cast<int32_t>(flutter_rect.top), static_cast<int32_t>(flutter_rect.bottom)};
+  return rect;
+}
+
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
@@ -240,15 +258,40 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  auto gl_present = [present = config->open_gl.present,
-                     present_with_info = config->open_gl.present_with_info,
-                     user_data](uint32_t fbo_id) -> bool {
+  /// NEW: Changing the arguments to gl_present callback so that the embedder
+  /// can receive more information than just the fbo_id (e.g. damage).
+  /// NOTE: this means that for partial repaint to work, we must have it use the
+  /// present_with_info callback rather than the present callback.
+  auto gl_present =
+      [present = config->open_gl.present,
+       present_with_info = config->open_gl.present_with_info,
+       user_data](flutter::GLPresentInfo gl_present_info, std::optional<SkIRect> damage_region) -> bool {
     if (present) {
       return present(user_data);
     } else {
-      FlutterPresentInfo present_info = {};
+      FlutterPresentInfo present_info;
       present_info.struct_size = sizeof(FlutterPresentInfo);
-      present_info.fbo_id = fbo_id;
+      present_info.fbo_id = gl_present_info.fbo_id;
+
+      /// Format the frame_damage appropriately.
+      FlutterDamage frame_damage;
+      frame_damage.struct_size = sizeof(FlutterDamage);
+      frame_damage.damage = SkIRectToFlutterRect(gl_present_info.damage);
+
+      /// Format the buffer_damage appropriately.
+      FlutterDamage buffer_damage;
+      buffer_damage.struct_size = sizeof(FlutterDamage);
+      buffer_damage.damage = SkIRectToFlutterRect(damage_region);
+
+      present_info.frame_damage = frame_damage;
+      present_info.buffer_damage = buffer_damage;
+
+      /// Pass the present_info to the present_with_info callback so that it can
+      /// correctly only render part of the screen and save the FBO's damage
+      /// region.
+      /// NOTE: alternatively, I could create a present callback that is
+      /// specific to partial repaint / damage tracking and leave
+      /// present_with_info as it is.
       return present_with_info(user_data, &present_info);
     }
   };
@@ -257,14 +300,30 @@ InferOpenGLPlatformViewCreationCallback(
       [fbo_callback = config->open_gl.fbo_callback,
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
-       user_data](flutter::GLFrameInfo gl_frame_info) -> intptr_t {
+       fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
+       user_data](flutter::GLFrameInfo gl_frame_info) -> flutter::GLFrameBuffer {
     if (fbo_callback) {
-      return fbo_callback(user_data);
+      flutter::GLFrameBuffer fbo;
+      fbo.fbo_id = fbo_callback(user_data);
+      return fbo;
+    } else if (fbo_with_frame_info_callback) {
+      FlutterFrameInfo frame_info = {};
+      frame_info.struct_size = sizeof(FlutterFrameInfo);
+      frame_info.size = {gl_frame_info.width, gl_frame_info.height};
+
+      flutter::GLFrameBuffer fbo;
+      fbo.fbo_id = fbo_with_frame_info_callback(user_data, &frame_info);
+      return fbo;
     } else {
       FlutterFrameInfo frame_info = {};
       frame_info.struct_size = sizeof(FlutterFrameInfo);
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
-      return fbo_with_frame_info_callback(user_data, &frame_info);
+
+      FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, &frame_info);
+      flutter::GLFrameBuffer gl_fbo;
+      gl_fbo.fbo_id = fbo.fbo_id;
+      gl_fbo.damage = FlutterRectToSkIRect(fbo.damage.damage);
+      return gl_fbo;
     }
   };
 
