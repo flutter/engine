@@ -18,8 +18,8 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   struct GLDispatchTable {
     std::function<bool(void)> gl_make_current_callback;           // required
     std::function<bool(void)> gl_clear_current_callback;          // required
-    std::function<bool(uint32_t)> gl_present_callback;            // required
-    std::function<intptr_t(GLFrameInfo)> gl_fbo_callback;         // required
+    std::function<bool(GLPresentInfo, std::optional<SkIRect>)> gl_present_callback;       // required
+    std::function<GLFrameBuffer(GLFrameInfo)> gl_fbo_callback;         // required
     std::function<bool(void)> gl_make_resource_current_callback;  // optional
     std::function<SkMatrix(void)>
         gl_surface_transformation_callback;              // optional
@@ -37,6 +37,9 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   bool valid_ = false;
   GLDispatchTable gl_dispatch_table_;
   bool fbo_reset_after_present_;
+  /// NEW: Adding this private variable to keep track of the damage region of
+  /// the current buffer so that it can be passed to the present callback.s
+  std::optional<SkIRect> damage_region_ = SkIRect::MakeEmpty();
 
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
 
@@ -59,7 +62,7 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFrameBuffer GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextFBOResetAfterPresent() const override;
@@ -69,6 +72,9 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
 
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
+
+  // |GPUSurfaceGLDelegate|
+  void GLContextSetDamageRegion(const std::optional<SkIRect>& region) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGL);
 };
