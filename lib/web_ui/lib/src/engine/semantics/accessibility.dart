@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import '../../engine.dart'  show registerHotRestartListener;
+import '../../engine.dart' show registerHotRestartListener;
 import '../dom.dart';
 import '../services.dart';
 import '../util.dart';
@@ -63,15 +63,18 @@ class AccessibilityAnnouncements {
     final Map<dynamic, dynamic> dataMap = inputMap.readDynamicJson('data');
     final String? message = dataMap.tryString('message');
     if (message != null && message.isNotEmpty) {
-      _initLiveRegion(message);
+      final bool? assertiveAnnouncement = dataMap.tryBool('assertiveAnnouncement');
+      _initLiveRegion(message, assertiveAnnouncement : assertiveAnnouncement);
       _removeElementTimer = Timer(durationA11yMessageIsOnDom, () {
         _element!.remove();
       });
     }
   }
 
-  void _initLiveRegion(String message) {
-    _domElement.setAttribute('aria-live', 'polite');
+  void _initLiveRegion(String message, {bool? assertiveAnnouncement = true}) {
+    //The default is assertive. If assertiveAnnouncement is set to false, the mode will be polite.
+    final String assertiveLevel = (assertiveAnnouncement == null || assertiveAnnouncement)? 'assertive' : 'polite';
+    _domElement.setAttribute('aria-live', assertiveLevel);
     _domElement.text = message;
     domDocument.body!.append(_domElement);
   }

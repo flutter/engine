@@ -46,7 +46,7 @@ void testMain() {
       );
       final DomHTMLLabelElement input =
           domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
-      expect(input.getAttribute('aria-live'), equals('polite'));
+      expect(input.getAttribute('aria-live'), equals('assertive'));
       expect(input.text, testMessage);
 
       // The element should have been removed after the duration.
@@ -54,6 +54,38 @@ void testMain() {
           accessibilityAnnouncements.durationA11yMessageIsOnDom,
           () =>
               expect(domDocument.getElementById('accessibility-element'), isNull));
+    });
+
+    test('Default value of aria-live is assertive when assertiveAnnouncement is not specified', () {
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message'}};
+      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
+      final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
+
+      expect(input.getAttribute('aria-live'), equals('assertive'));
+    });
+
+     test('aria-live is assertive when assertiveAnnouncement is set to true', () {
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'assertiveAnnouncement': true}};
+      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
+      final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
+
+      expect(input.getAttribute('aria-live'), equals('assertive'));
+    });
+
+    test('aria-live is assertive when assertiveAnnouncement is null', () {
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'assertiveAnnouncement': null}};
+      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
+      final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
+
+      expect(input.getAttribute('aria-live'), equals('assertive'));
+    });
+
+    test('aria-live is polite when assertiveAnnouncement is set to false', () {
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'assertiveAnnouncement': false}};
+      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
+      final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
+
+      expect(input.getAttribute('aria-live'), equals('polite'));
     });
   });
 }
