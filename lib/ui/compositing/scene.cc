@@ -23,7 +23,7 @@ namespace flutter {
 IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
 
 #define FOR_EACH_BINDING(V) \
-  V(Scene, toGpuImage)      \
+  V(Scene, toImageSync)     \
   V(Scene, toImage)         \
   V(Scene, dispose)
 
@@ -68,10 +68,10 @@ void Scene::dispose() {
   ClearDartWrapper();
 }
 
-Dart_Handle Scene::toGpuImage(uint32_t width,
-                              uint32_t height,
-                              Dart_Handle raw_image_handle) {
-  TRACE_EVENT0("flutter", "Scene::toGpuImage");
+Dart_Handle Scene::toImageSync(uint32_t width,
+                               uint32_t height,
+                               Dart_Handle raw_image_handle) {
+  TRACE_EVENT0("flutter", "Scene::toImageSync");
   auto* dart_state = UIDartState::Current();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
 
@@ -85,7 +85,7 @@ Dart_Handle Scene::toGpuImage(uint32_t width,
     return tonic::ToDart("Could not flatten scene into a layer tree.");
   }
 
-  Picture::RasterizeToGpuImage(picture, width, height, raw_image_handle);
+  Picture::RasterizeToImageSync(picture, width, height, raw_image_handle);
   return Dart_Null();
 }
 

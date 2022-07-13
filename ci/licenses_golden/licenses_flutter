@@ -1356,6 +1356,7 @@ FILE: ../../../flutter/shell/platform/android/android_surface_software.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_software.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
+FILE: ../../../flutter/shell/platform/android/apk_asset_provider_unittests.cc
 FILE: ../../../flutter/shell/platform/android/context/android_context.cc
 FILE: ../../../flutter/shell/platform/android/context/android_context.h
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder.cc
@@ -1697,6 +1698,9 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterRestora
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.mm
@@ -2070,6 +2074,9 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/platform_view_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_delegate.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_delegate.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_delegate_unittests.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_injector_delegate.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_injector_delegate.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_injector_delegate_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/program_metadata.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.h
