@@ -125,9 +125,11 @@ class RasterCache {
 
   bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 
-  void PrepareNewFrame();
+  void BeginFrame();
 
-  void CleanupAfterFrame();
+  void EvictUnusedCacheEntries();
+
+  void EndFrame();
 
   void Clear();
 
@@ -221,9 +223,9 @@ class RasterCache {
     std::unique_ptr<RasterCacheResult> image;
   };
 
-  void SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
-                               RasterCacheMetrics& picture_metrics,
-                               RasterCacheMetrics& layer_metrics);
+  void UpdateMetrics();
+
+  RasterCacheMetrics& GetMetricsForKind(RasterCacheKeyKind kind);
 
   const size_t access_threshold_;
   const size_t display_list_cache_limit_per_frame_;
