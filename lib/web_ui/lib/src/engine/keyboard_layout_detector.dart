@@ -5,11 +5,11 @@
 import 'package:web_keyboard_layouts/web_keyboard_layouts.dart' as keyboard_layouts;
 import 'dom.dart';
 
-// Set this flag to true to see the details of detecting layouts.
-const bool _debugLogLayoutEvents = false;
+// Set this flag to true to see the details during layout detection.
+const bool _debugLogLayoutEvents = true;
 void _debugLog(String message) {
   if (_debugLogLayoutEvents) {
-    print(_debugLogLayoutEvents);
+    print(message);
   }
 }
 
@@ -21,10 +21,11 @@ bool _isEascii(int clue) {
 class KeyboardLayoutDetector {
   KeyboardLayoutDetector() {
     int index = 0;
-    for (final String key in keyboard_layouts.kLayoutGoals.keys) {
-      _goalToIndex[key] = index;
+    for (final String code in keyboard_layouts.kLayoutGoals.keys) {
+      _goalToIndex[code] = index;
       index += 1;
     }
+    print('Goal: $_goalToIndex');
   }
 
   void update(DomKeyboardEvent event) {
@@ -35,9 +36,10 @@ class KeyboardLayoutDetector {
     if (goalIndex == null) {
       return;
     }
+    print('Cue ${event.code} index $goalIndex key ${event.key}');
 
     // There is an existing candidate list. Filter based on it.
-    if (_candidates.isEmpty) {
+    if (_candidates.isNotEmpty) {
       final bool effectiveCue = _filterCandidates(_candidates, event, goalIndex);
       if (effectiveCue) {
         _debugCues.add(event);
@@ -69,6 +71,10 @@ class KeyboardLayoutDetector {
       return null;
     }
     final keyboard_layouts.LayoutInfo candidate = _candidates.first;
+    if (candidate.name != _debugLastLayout) {
+      _debugLog('[Debug] Switching to layout ${candidate.name}.');
+      _debugLastLayout = candidate.name;
+    }
     if (!_calculatedLayouts.containsKey(candidate.name)) {
       _calculatedLayouts[candidate.name] = _buildLayout(candidate.mapping, candidate.name);
     }
@@ -82,7 +88,7 @@ class KeyboardLayoutDetector {
     final bool thisHasAltGr = event.getModifierState('AltGraph');
     final bool thisHasShift = event.shiftKey;
     final int index = (thisHasShift ? 1 : 0) + (thisHasAltGr ? 2 : 0);
-    candidates.where((keyboard_layouts.LayoutInfo element) {
+    candidates.retainWhere((keyboard_layouts.LayoutInfo element) {
       final int expected = element.mapping[goalIndex][index];
       if (thisIsDead) {
         return expected == keyboard_layouts.kDeadKey;
@@ -93,14 +99,12 @@ class KeyboardLayoutDetector {
       }
     });
     final int afterCandidateNum = candidates.length;
+    print('Filter before $beforeCandidateNum after $afterCandidateNum');
     return afterCandidateNum < beforeCandidateNum;
   }
 
   static Map<String, int> _buildLayout(List<List<int>> clueMap, String debugLayoutName) {
-    assert(() {
-      print('Building layout for $debugLayoutName');
-      return true;
-    }());
+    _debugLog('Building layout for $debugLayoutName');
     final Map<int, String> mandatoryGoalsByChar = <int, String>{..._mandatoryGoalsByChar};
     final Map<String, int> result = <String, int>{};
     // The logical key should be the first available clue from below:
@@ -150,9 +154,11 @@ class KeyboardLayoutDetector {
   final Map<String, int> _goalToIndex = <String, int>{};
   final List<keyboard_layouts.LayoutInfo> _candidates = <keyboard_layouts.LayoutInfo>[];
   final Map<String, Map<String, int>> _calculatedLayouts = <String, Map<String, int>>{};
+
   // Record all effective cues since the last reset. That is, cues that filtered
   // out any candidates. This is used to print out debug information.
   final List<DomKeyboardEvent> _debugCues = <DomKeyboardEvent>[];
+  String _debugLastLayout = '';
 
   static late final List<keyboard_layouts.LayoutInfo> _fullCandidates = keyboard_layouts.kLayouts.where(
     (keyboard_layouts.LayoutInfo layout) => layout.platform == _currentPlatform,
