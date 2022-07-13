@@ -144,6 +144,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)invalidateDisplayLink;
 - (void)addInternalPlugins;
 - (flutter::PointerData)generatePointerDataForFake;
+- (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
+                  initialRoute:(nullable NSString*)initialRoute;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -427,7 +429,22 @@ typedef enum UIAccessibilityContrast : NSInteger {
   mockEngine.viewController = viewController;
   UIView* view = viewController.view;
   XCTAssertNotNil(view);
-  OCMVerify([mockEngine attachView]);
+  OCMVerify(times(1), [mockEngine attachView]);
+}
+
+- (void)testViewDidLoadDoesntInvokeEngineAttachViewWhenEngineNeedsLaunch {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  // sharedSetupWithProject sets the engine needs to be launched.
+  [viewController sharedSetupWithProject:nil initialRoute:nil];
+  mockEngine.viewController = viewController;
+  UIView* view = viewController.view;
+  XCTAssertNotNil(view);
+  OCMVerify(never(), [mockEngine attachView]);
 }
 
 - (void)testInternalPluginsWeakPtrNotCrash {

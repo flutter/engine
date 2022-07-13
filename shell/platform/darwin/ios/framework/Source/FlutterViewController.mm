@@ -676,14 +676,12 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     [_engine.get() launchEngine:nil libraryURI:nil entrypointArgs:nil];
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
+  } else if ([_engine.get() viewController] == self) {
+    [_engine.get() attachView];
   }
 
   // Register internal plugins.
   [self addInternalPlugins];
-
-  if ([_engine.get() viewController] == self) {
-    [_engine.get() attachView];
-  }
 
   if (@available(iOS 13.4, *)) {
     _hoverGestureRecognizer =
