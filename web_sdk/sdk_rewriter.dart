@@ -12,6 +12,7 @@ final ArgParser argParser = ArgParser()
   ..addOption('input-dir')
   ..addFlag('ui', defaultsTo: false)
   ..addFlag('engine', defaultsTo: false)
+  ..addFlag('keyboard-layouts', defaultsTo: false)
   ..addMultiOption('input')
   ..addOption('stamp');
 
@@ -50,6 +51,7 @@ import 'dart:math' as math;
 import 'dart:svg' as svg;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:web_keyboard_layouts' as keyboard_layouts;
 '''),
   // Replace exports of engine files with "part" directives.
   MappedReplacer(RegExp(r'''
@@ -68,6 +70,19 @@ final List<Replacer> enginePartsPatterns = <Replacer>[
   // Remove imports/exports from all engine parts.
   AllReplacer(RegExp(r'\nimport\s*.*'), ''),
   AllReplacer(RegExp(r'\nexport\s*.*'), ''),
+];
+
+final List<Replacer> keyboardLayoutsPatterns = <Replacer>[
+  AllReplacer(RegExp(r'library\s+web_keyboard_layouts;'), 'library dart.web_keyboard_layouts;'),
+  AllReplacer(RegExp(r'part\s+of\s+web_keyboard_layouts;'), 'part of dart.web_keyboard_layouts;'),
+  AllReplacer(RegExp(
+    r'''
+export\s*'src/engine.dart'
+'''),
+    r'''
+export 'dart:_engine'
+''',
+  ),
 ];
 
 final List<Replacer> sharedPatterns = <Replacer>[
@@ -96,6 +111,7 @@ void main(List<String> arguments) {
       filePath: inputFilePath,
       isUi: results['ui'] as bool,
       isEngine: results['engine'] as bool,
+      isKeyboardLayouts: results['keyboard-layouts'] as bool,
     );
     outputFile.writeAsStringSync(rewrittenContent);
     if (results['stamp'] != null) {
@@ -104,7 +120,13 @@ void main(List<String> arguments) {
   }
 }
 
-String rewriteFile(String source, {required String filePath, required bool isUi, required bool isEngine}) {
+String rewriteFile(
+  String source, {
+  required String filePath,
+  required bool isUi,
+  required bool isEngine,
+  required bool isKeyboardLayouts,
+}) {
   final List<Replacer> replacementPatterns = <Replacer>[];
   replacementPatterns.addAll(sharedPatterns);
   if (isUi) {
@@ -117,6 +139,8 @@ String rewriteFile(String source, {required String filePath, required bool isUi,
       source = _preprocessEnginePartFile(source);
       replacementPatterns.addAll(enginePartsPatterns);
     }
+  } else if (isKeyboardLayouts) {
+    replacementPatterns.addAll(keyboardLayoutsPatterns);
   }
   for (final Replacer replacer in replacementPatterns) {
     source = replacer.perform(source);

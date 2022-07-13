@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:web_keyboard_layouts/web_keyboard_layouts.dart';
+import 'package:web_keyboard_layouts/web_keyboard_layouts.dart' as keyboard_layouts;
 import 'dom.dart';
 
 // Set this flag to true to see the details of detecting layouts.
@@ -21,7 +21,7 @@ bool _isEascii(int clue) {
 class KeyboardLayoutDetector {
   KeyboardLayoutDetector() {
     int index = 0;
-    for (final String key in kLayoutGoals.keys) {
+    for (final String key in keyboard_layouts.kLayoutGoals.keys) {
       _goalToIndex[key] = index;
       index += 1;
     }
@@ -68,7 +68,7 @@ class KeyboardLayoutDetector {
     if (_candidates.isEmpty) {
       return null;
     }
-    final LayoutInfo candidate = _candidates.first;
+    final keyboard_layouts.LayoutInfo candidate = _candidates.first;
     if (!_calculatedLayouts.containsKey(candidate.name)) {
       _calculatedLayouts[candidate.name] = _buildLayout(candidate.mapping, candidate.name);
     }
@@ -76,16 +76,16 @@ class KeyboardLayoutDetector {
     return map[code];
   }
 
-  static bool _filterCandidates(List<LayoutInfo> candidates, DomKeyboardEvent event, int goalIndex) {
+  static bool _filterCandidates(List<keyboard_layouts.LayoutInfo> candidates, DomKeyboardEvent event, int goalIndex) {
     final int beforeCandidateNum = candidates.length;
     final bool thisIsDead = event.key == 'Dead';
     final bool thisHasAltGr = event.getModifierState('AltGraph');
     final bool thisHasShift = event.shiftKey;
     final int index = (thisHasShift ? 1 : 0) + (thisHasAltGr ? 2 : 0);
-    candidates.where((LayoutInfo element) {
+    candidates.where((keyboard_layouts.LayoutInfo element) {
       final int expected = element.mapping[goalIndex][index];
       if (thisIsDead) {
-        return expected == kDeadKey;
+        return expected == keyboard_layouts.kDeadKey;
       } else {
         final String key = event.key ?? '';
         // TODO: Correctly process Utf16
@@ -111,7 +111,7 @@ class KeyboardLayoutDetector {
     //    there are no non-latin logical keys.
     //  - Derived on the fly from keyCode & characters.
     int goalIndex = 0;
-    kLayoutGoals.forEach((String code, String? goalKey) {
+    keyboard_layouts.kLayoutGoals.forEach((String code, String? goalKey) {
       // Skip optional goals.
       if (goalKey == null) {
         return;
@@ -128,7 +128,7 @@ class KeyboardLayoutDetector {
       }
       // See if all clues on this key are non-EASCII. If not, use the verbatim key.
       if (!clues.any(_isEascii)) {
-        final int character = kLayoutGoals[code]!.codeUnitAt(0);
+        final int character = keyboard_layouts.kLayoutGoals[code]!.codeUnitAt(0);
         result[code] = character;
         mandatoryGoalsByChar.remove(character);
       }
@@ -148,21 +148,21 @@ class KeyboardLayoutDetector {
   }
 
   final Map<String, int> _goalToIndex = <String, int>{};
-  final List<LayoutInfo> _candidates = <LayoutInfo>[];
+  final List<keyboard_layouts.LayoutInfo> _candidates = <keyboard_layouts.LayoutInfo>[];
   final Map<String, Map<String, int>> _calculatedLayouts = <String, Map<String, int>>{};
   // Record all effective cues since the last reset. That is, cues that filtered
   // out any candidates. This is used to print out debug information.
   final List<DomKeyboardEvent> _debugCues = <DomKeyboardEvent>[];
 
-  static late final List<LayoutInfo> _fullCandidates = kLayouts.where(
-    (LayoutInfo layout) => layout.platform == _currentPlatform,
+  static late final List<keyboard_layouts.LayoutInfo> _fullCandidates = keyboard_layouts.kLayouts.where(
+    (keyboard_layouts.LayoutInfo layout) => layout.platform == _currentPlatform,
   ).toList();
-  static late final LayoutPlatform _currentPlatform = () {
+  static late final keyboard_layouts.LayoutPlatform _currentPlatform = () {
     // TODO
-    return LayoutPlatform.win;
+    return keyboard_layouts.LayoutPlatform.win;
   }();
   static late final Map<int, String> _mandatoryGoalsByChar = Map<int, String>.fromEntries(
-    kLayoutGoals
+    keyboard_layouts.kLayoutGoals
       .entries
       .where((MapEntry<String, String?> entry) => entry.value != null)
       // TODO: correctly handle UTF

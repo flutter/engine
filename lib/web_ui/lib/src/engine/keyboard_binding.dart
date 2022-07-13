@@ -8,7 +8,7 @@ import '../engine.dart'  show registerHotRestartListener;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'key_map.g.dart';
-import 'keyboard_layout_detector.dart' show KeyboardLayoutDetector;
+import 'keyboard_layout_detector.dart';
 import 'platform_dispatcher.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';

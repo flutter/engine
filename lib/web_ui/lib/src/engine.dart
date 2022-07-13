@@ -106,6 +106,7 @@ export 'engine/js_interop/js_promise.dart';
 export 'engine/key_map.g.dart';
 export 'engine/keyboard.dart';
 export 'engine/keyboard_binding.dart';
+export 'engine/keyboard_layout_detector.dart';
 export 'engine/mouse_cursor.dart';
 export 'engine/navigation/history.dart';
 export 'engine/navigation/js_url_strategy.dart';
