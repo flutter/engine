@@ -50,7 +50,7 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
                               ->get_window(0)
                               ->viewport_metrics();
 
-  layer_tree_ = std::make_unique<LayerTree>(
+  layer_tree_ = std::make_shared<LayerTree>(
       SkISize::Make(viewport_metrics.physical_width,
                     viewport_metrics.physical_height),
       static_cast<float>(viewport_metrics.device_pixel_ratio));
@@ -72,8 +72,6 @@ Dart_Handle Scene::toImageSync(uint32_t width,
                                uint32_t height,
                                Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toImageSync");
-  auto* dart_state = UIDartState::Current();
-  auto snapshot_delegate = dart_state->GetSnapshotDelegate();
 
   if (!layer_tree_) {
     return tonic::ToDart("Scene did not contain a layer tree.");
@@ -112,12 +110,10 @@ void Scene::RasterizeToImageSync(uint32_t width,
   auto dl_image = DlDeferredImageGPU::Make(SkISize::Make(width, height));
   image->set_image(dl_image);
 
-  auto layer_tree = takeLayerTree();
-
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
       [snapshot_delegate, unref_queue, dl_image = std::move(dl_image),
-       layer_tree = std::move(layer_tree.get()), width, height]() {
+       layer_tree = layer_tree_, width, height]() {
         auto display_list =
             layer_tree->Flatten(SkRect::MakeWH(width, height),
                                 snapshot_delegate.get()->GetTextureRegistry());
@@ -137,7 +133,7 @@ void Scene::RasterizeToImageSync(uint32_t width,
 }
 
 std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
-  return std::move(layer_tree_);
+  // TODO
 }
 
 }  // namespace flutter

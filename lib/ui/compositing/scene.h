@@ -54,7 +54,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
                             uint32_t height,
                             Dart_Handle raw_image_handle);
 
-  std::unique_ptr<flutter::LayerTree> layer_tree_;
+  std::shared_ptr<flutter::LayerTree> layer_tree_;
 };
 
 }  // namespace flutter
