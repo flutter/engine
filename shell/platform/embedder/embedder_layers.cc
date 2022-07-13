@@ -115,19 +115,19 @@ void EmbedderLayers::PushPlatformViewLayer(
     for (auto i = mutators.Bottom(); i != mutators.Top(); ++i) {
       const auto& mutator = *i;
       switch (mutator->GetType()) {
-        case MutatorType::clip_rect: {
+        case MutatorType::clipRect: {
           mutations_array.push_back(
               mutations_referenced_
                   .emplace_back(ConvertMutation(mutator->GetRect()))
                   .get());
         } break;
-        case MutatorType::clip_rrect: {
+        case MutatorType::clipRRect: {
           mutations_array.push_back(
               mutations_referenced_
                   .emplace_back(ConvertMutation(mutator->GetRRect()))
                   .get());
         } break;
-        case MutatorType::clip_path: {
+        case MutatorType::clipPath: {
           // Unsupported mutation.
         } break;
         case MutatorType::transform: {
@@ -147,7 +147,7 @@ void EmbedderLayers::PushPlatformViewLayer(
                     .get());
           }
         } break;
-        case MutatorType::backdrop_filter:
+        case MutatorType::backdropFilter:
           break;
       }
     }

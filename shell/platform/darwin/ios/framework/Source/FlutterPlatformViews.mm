@@ -410,19 +410,19 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         finalTransform = CATransform3DConcat(transform, finalTransform);
         break;
       }
-      case clip_rect:
+      case clipRect:
         [maskView clipRect:(*iter)->GetRect() matrix:finalTransform];
         break;
-      case clip_rrect:
+      case clipRRect:
         [maskView clipRRect:(*iter)->GetRRect() matrix:finalTransform];
         break;
-      case clip_path:
+      case clipPath:
         [maskView clipPath:(*iter)->GetPath() matrix:finalTransform];
         break;
       case opacity:
         embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
         break;
-      case backdrop_filter:
+      case backdropFilter:
         break;
     }
     ++iter;

@@ -36,10 +36,10 @@ TEST(MutatorsStack, CopyAndUpdateTheCopy) {
   ASSERT_TRUE(copy.is_empty());
   ASSERT_TRUE(!stack.is_empty());
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rrect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clipRRect);
   ASSERT_TRUE(iter->get()->GetRRect() == rrect);
   ++iter;
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clipRect);
   ASSERT_TRUE(iter->get()->GetRect() == rect);
 }
 
@@ -48,7 +48,7 @@ TEST(MutatorsStack, PushClipRect) {
   auto rect = SkRect::MakeEmpty();
   stack.PushClipRect(rect);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clipRect);
   ASSERT_TRUE(iter->get()->GetRect() == rect);
 }
 
@@ -57,7 +57,7 @@ TEST(MutatorsStack, PushClipRRect) {
   auto rrect = SkRRect::MakeEmpty();
   stack.PushClipRRect(rrect);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rrect);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clipRRect);
   ASSERT_TRUE(iter->get()->GetRRect() == rrect);
 }
 
@@ -66,7 +66,7 @@ TEST(MutatorsStack, PushClipPath) {
   SkPath path;
   stack.PushClipPath(path);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == flutter::MutatorType::clip_path);
+  ASSERT_TRUE(iter->get()->GetType() == flutter::MutatorType::clipPath);
   ASSERT_TRUE(iter->get()->GetPath() == path);
 }
 
@@ -94,7 +94,7 @@ TEST(MutatorsStack, PushBackdropFilter) {
   auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   stack.PushBackdropFilter(filter);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdrop_filter);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdropFilter);
   ASSERT_TRUE(iter->get()->GetFilter() == filter);
 }
 
@@ -122,11 +122,11 @@ TEST(MutatorsStack, Traversal) {
   while (iter != stack.Top()) {
     switch (index) {
       case 0:
-        ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rrect);
+        ASSERT_TRUE(iter->get()->GetType() == MutatorType::clipRRect);
         ASSERT_TRUE(iter->get()->GetRRect() == rrect);
         break;
       case 1:
-        ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rect);
+        ASSERT_TRUE(iter->get()->GetType() == MutatorType::clipRect);
         ASSERT_TRUE(iter->get()->GetRect() == rect);
         break;
       case 2:
@@ -172,17 +172,17 @@ TEST(MutatorsStack, Equality) {
 TEST(Mutator, Initialization) {
   SkRect rect = SkRect::MakeEmpty();
   Mutator mutator = Mutator(rect);
-  ASSERT_TRUE(mutator.GetType() == MutatorType::clip_rect);
+  ASSERT_TRUE(mutator.GetType() == MutatorType::clipRect);
   ASSERT_TRUE(mutator.GetRect() == rect);
 
   SkRRect rrect = SkRRect::MakeEmpty();
   Mutator mutator2 = Mutator(rrect);
-  ASSERT_TRUE(mutator2.GetType() == MutatorType::clip_rrect);
+  ASSERT_TRUE(mutator2.GetType() == MutatorType::clipRRect);
   ASSERT_TRUE(mutator2.GetRRect() == rrect);
 
   SkPath path;
   Mutator mutator3 = Mutator(path);
-  ASSERT_TRUE(mutator3.GetType() == MutatorType::clip_path);
+  ASSERT_TRUE(mutator3.GetType() == MutatorType::clipPath);
   ASSERT_TRUE(mutator3.GetPath() == path);
 
   SkMatrix matrix;
