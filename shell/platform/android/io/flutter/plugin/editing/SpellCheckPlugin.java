@@ -15,6 +15,7 @@ import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 
 /**
@@ -117,7 +118,8 @@ public class SpellCheckPlugin
       return;
     }
 
-    ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
+    ArrayList<HashMap<String, Object>> spellCheckerSuggestionSpans =
+        new ArrayList<HashMap<String, Object>>();
     SentenceSuggestionsInfo spellCheckResults = results[0];
 
     for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
@@ -128,19 +130,20 @@ public class SpellCheckPlugin
         continue;
       }
 
-      String spellCheckerSuggestionSpan = "";
+      HashMap<String, Object> spellCheckerSuggestionSpan = new HashMap<String, Object>();
       int start = spellCheckResults.getOffsetAt(i);
-      int end = start + spellCheckResults.getLengthAt(i) - 1;
+      int end = start + spellCheckResults.getLengthAt(i);
 
-      spellCheckerSuggestionSpan += String.valueOf(start) + ".";
-      spellCheckerSuggestionSpan += String.valueOf(end) + ".";
+      spellCheckerSuggestionSpan.put("start", start);
+      spellCheckerSuggestionSpan.put("end", end);
 
+      ArrayList<String> suggestions = new ArrayList<String>();
       for (int j = 0; j < suggestionsCount; j++) {
-        spellCheckerSuggestionSpan += suggestionsInfo.getSuggestionAt(j) + "\n";
+        suggestions.add(suggestionsInfo.getSuggestionAt(j));
       }
 
-      spellCheckerSuggestionSpans.add(
-          spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
+      spellCheckerSuggestionSpan.put("suggestions", suggestions);
+      spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan);
     }
 
     pendingResult.success(spellCheckerSuggestionSpans);

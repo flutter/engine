@@ -11,9 +11,7 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-
-import org.json.JSONArray;
-import org.json.JSONException;
+import java.util.ArrayList;
 
 /**
  * {@link SpellCheckChannel} is a platform channel that is used by the framework to initiate spell
@@ -60,11 +58,11 @@ public class SpellCheckChannel {
           switch (method) {
             case "SpellCheck.initiateSpellCheck":
               try {
-                final JSONArray argumentList = (JSONArray) args;
-                String locale = argumentList.getString(0);
-                String text = argumentList.getString(1);
+                final ArrayList<String> argumentList = (ArrayList<String>) args;
+                String locale = argumentList.get(0);
+                String text = argumentList.get(1);
                 spellCheckMethodHandler.initiateSpellCheck(locale, text, result);
-              } catch (JSONException exception) {
+              } catch (IllegalStateException exception) {
                 result.error("error", exception.getMessage(), null);
               }
               break;
