@@ -10,6 +10,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/shell/common/rasterizer.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -71,12 +72,15 @@ Dart_Handle Scene::toGpuImage(uint32_t width,
                               uint32_t height,
                               Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toGpuImage");
+  auto* dart_state = UIDartState::Current();
+  auto snapshot_delegate = dart_state->GetSnapshotDelegate();
 
   if (!layer_tree_) {
     return tonic::ToDart("Scene did not contain a layer tree.");
   }
 
-  auto picture = layer_tree_->Flatten(SkRect::MakeWH(width, height));
+  auto context = (static_cast<Rasterizer*>(snapshot_delegate.get()))->compositor_context();
+  auto picture = layer_tree_->FlattenWithContext(SkRect::MakeWH(width, height), context);
   if (!picture) {
     return tonic::ToDart("Could not flatten scene into a layer tree.");
   }
@@ -89,12 +93,14 @@ Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
+  auto* dart_state = UIDartState::Current();
+  auto snapshot_delegate = dart_state->GetSnapshotDelegate();
 
   if (!layer_tree_) {
     return tonic::ToDart("Scene did not contain a layer tree.");
   }
-
-  auto picture = layer_tree_->Flatten(SkRect::MakeWH(width, height));
+  auto context = (static_cast<Rasterizer*>(snapshot_delegate.get()))->compositor_context();
+  auto picture = layer_tree_->FlattenWithContext(SkRect::MakeWH(width, height), context);
   if (!picture) {
     return tonic::ToDart("Could not flatten scene into a layer tree.");
   }

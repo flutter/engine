@@ -43,6 +43,11 @@ class LayerTree {
 
   sk_sp<DisplayList> Flatten(const SkRect& bounds);
 
+  sk_sp<DisplayList> FlattenWithContext(
+    const SkRect& bounds,
+    CompositorContext* compositor_context
+  );
+
   Layer* root_layer() const { return root_layer_.get(); }
 
   void set_root_layer(std::shared_ptr<Layer> root_layer) {

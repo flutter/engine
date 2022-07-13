@@ -223,4 +223,69 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
   return builder.Build();
 }
 
+sk_sp<DisplayList> LayerTree::FlattenWithContext(const SkRect& bounds, CompositorContext* compositor_context) {
+  TRACE_EVENT0("flutter", "LayerTree::FlattenWithContext");
+
+  DisplayListCanvasRecorder builder(bounds);
+
+  MutatorsStack unused_stack;
+  const FixedRefreshRateStopwatch unused_stopwatch;
+  TextureRegistry unused_texture_registry;
+  SkMatrix root_surface_transformation;
+  // No root surface transformation. So assume identity.
+  root_surface_transformation.reset();
+
+  PrerollContext preroll_context{
+      // clang-format off
+      .raster_cache                  = nullptr,
+      .gr_context                    = nullptr,
+      .view_embedder                 = nullptr,
+      .mutators_stack                = unused_stack,
+      .dst_color_space               = nullptr,
+      .cull_rect                     = kGiantRect,
+      .surface_needs_readback        = false,
+      .raster_time                   = unused_stopwatch,
+      .ui_time                       = unused_stopwatch,
+      .texture_registry              = compositor_context->texture_registry(),
+      .checkerboard_offscreen_layers = false,
+      .frame_device_pixel_ratio      = device_pixel_ratio_
+      // clang-format on
+  };
+
+  SkISize canvas_size = builder.getBaseLayerSize();
+  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
+  internal_nodes_canvas.addCanvas(&builder);
+
+  PaintContext paint_context = {
+      // clang-format off
+      .internal_nodes_canvas         = &internal_nodes_canvas,
+      .leaf_nodes_canvas             = &builder,
+      .gr_context                    = nullptr,
+      .dst_color_space               = nullptr,
+      .view_embedder                 = nullptr,
+      .raster_time                   = unused_stopwatch,
+      .ui_time                       = unused_stopwatch,
+      .texture_registry              = compositor_context->texture_registry(),
+      .raster_cache                  = nullptr,
+      .checkerboard_offscreen_layers = false,
+      .frame_device_pixel_ratio      = device_pixel_ratio_,
+      .layer_snapshot_store          = nullptr,
+      .enable_leaf_layer_tracing     = false,
+      .leaf_nodes_builder            = builder.builder().get(),
+      // clang-format on
+  };
+
+  // Even if we don't have a root layer, we still need to create an empty
+  // picture.
+  if (root_layer_) {
+    root_layer_->Preroll(&preroll_context, root_surface_transformation);
+    // The needs painting flag may be set after the preroll. So check it after.
+    if (root_layer_->needs_painting(paint_context)) {
+      root_layer_->Paint(paint_context);
+    }
+  }
+
+  return builder.Build();
+}
+
 }  // namespace flutter
