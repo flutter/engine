@@ -25,9 +25,8 @@ import java.util.ArrayList;
  *
  * <p>Once the spell check results are received by the {@link
  * io.flutter.plugin.editing.SpellCheckPlugin}, it will send back to the framework the {@code
- * ArrayList<String>} of encoded spell check results (see {@link
- * io.flutter.plugin.editing.SpellCheckPlugin#onGetSentenceSuggestions} for details). For example,
- * the argument may look like: {@code {"7.11.world\nword\nold"}}. The {@link
+ * ArrayList<HashMap<String,Object>>} of spell check results (see {@link
+ * io.flutter.plugin.editing.SpellCheckPlugin#onGetSentenceSuggestions} for details). The {@link
  * io.flutter.plugin.editing.SpellCheckPlugin} only handles one request to fetch spell check results
  * at a time; see {@link io.flutter.plugin.editing.SpellCheckPlugin#initiateSpellCheck} for details.
  *

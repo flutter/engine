@@ -106,14 +106,22 @@ public class SpellCheckPlugin
    * Callback for Android spell check API that decomposes results and send results through the
    * {@link SpellCheckChannel}.
    *
-   * <p>Spell check results will be encoded as a string representing the span of that result, with
-   * the format "start_index.end_index.suggestion_1/nsuggestion_2/nsuggestion_3", where there may be
-   * up to 5 suggestions.
+   * <p>Spell check results are encoded as dictionaries with a format that looks like
+   *
+   * <pre>{@code
+   * {
+   *   startIndex: 0,
+   *   endIndex: 5,
+   *   suggestions: [hello, ...]
+   * }
+   * }</pre>
+   *
+   * where there may be up to 5 suggestions.
    */
   @Override
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
     if (results.length == 0) {
-      pendingResult.success(new ArrayList<String>());
+      pendingResult.success(new ArrayList<HashMap<String, Object>>());
       pendingResult = null;
       return;
     }
@@ -134,8 +142,8 @@ public class SpellCheckPlugin
       int start = spellCheckResults.getOffsetAt(i);
       int end = start + spellCheckResults.getLengthAt(i);
 
-      spellCheckerSuggestionSpan.put("start", start);
-      spellCheckerSuggestionSpan.put("end", end);
+      spellCheckerSuggestionSpan.put("startIndex", start);
+      spellCheckerSuggestionSpan.put("endIndex", end);
 
       ArrayList<String> suggestions = new ArrayList<String>();
       for (int j = 0; j < suggestionsCount; j++) {
