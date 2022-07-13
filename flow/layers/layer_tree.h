@@ -11,6 +11,7 @@
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -45,7 +46,7 @@ class LayerTree {
 
   sk_sp<DisplayList> FlattenWithContext(
     const SkRect& bounds,
-    CompositorContext* compositor_context
+    SnapshotDelegate* snapshot_delegate
   );
 
   Layer* root_layer() const { return root_layer_.get(); }

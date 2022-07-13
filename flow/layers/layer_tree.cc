@@ -223,17 +223,17 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
   return builder.Build();
 }
 
-sk_sp<DisplayList> LayerTree::FlattenWithContext(const SkRect& bounds, CompositorContext* compositor_context) {
+sk_sp<DisplayList> LayerTree::FlattenWithContext(const SkRect& bounds, SnapshotDelegate* snapshot_delegate) {
   TRACE_EVENT0("flutter", "LayerTree::FlattenWithContext");
 
   DisplayListCanvasRecorder builder(bounds);
 
   MutatorsStack unused_stack;
   const FixedRefreshRateStopwatch unused_stopwatch;
-  TextureRegistry unused_texture_registry;
   SkMatrix root_surface_transformation;
   // No root surface transformation. So assume identity.
   root_surface_transformation.reset();
+  auto* texture_registry = snapshot_delegate->GetTextureRegistry();
 
   PrerollContext preroll_context{
       // clang-format off
@@ -246,7 +246,7 @@ sk_sp<DisplayList> LayerTree::FlattenWithContext(const SkRect& bounds, Composito
       .surface_needs_readback        = false,
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
-      .texture_registry              = compositor_context->texture_registry(),
+      .texture_registry              = *texture_registry,
       .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = device_pixel_ratio_
       // clang-format on
@@ -265,7 +265,7 @@ sk_sp<DisplayList> LayerTree::FlattenWithContext(const SkRect& bounds, Composito
       .view_embedder                 = nullptr,
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
-      .texture_registry              = compositor_context->texture_registry(),
+      .texture_registry              = *texture_registry,
       .raster_cache                  = nullptr,
       .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = device_pixel_ratio_,

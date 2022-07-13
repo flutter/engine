@@ -8,6 +8,7 @@
 #include <string>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/common/graphics/texture.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPromiseImageTexture.h"
@@ -28,6 +29,17 @@ class SnapshotDelegate {
                                             SkISize picture_size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Gets the registry of external textures currently in use by the
+  ///             rasterizer. These textures may be updated at a cadence
+  ///             different from that of the Flutter application. When an
+  ///             external texture is referenced in the Flutter layer tree, that
+  ///             texture is composited within the Flutter layer tree.
+  ///
+  /// @return     A pointer to the external texture registry.
+  ///
+  virtual TextureRegistry* GetTextureRegistry() = 0;
 };
 
 }  // namespace flutter
