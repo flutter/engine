@@ -213,9 +213,11 @@ public class SpellCheckPluginTest {
     ArrayList<HashMap<String, Object>> expectedResults = new ArrayList<HashMap<String, Object>>();
     HashMap<String, Object> expectedResult = new HashMap<String, Object>();
 
-    expectedResult.put("startIndex", 7);
-    expectedResult.put("endIndex", 12);
-    expectedResult.put("suggestions", new ArrayList<String>(Arrays.asList("world", "word", "old")));
+    expectedResult.put(SpellCheckPlugin.START_INDEX_KEY, 7);
+    expectedResult.put(SpellCheckPlugin.END_INDEX_KEY, 12);
+    expectedResult.put(
+        SpellCheckPlugin.SUGGESTIONS_KEY,
+        new ArrayList<String>(Arrays.asList("world", "word", "old")));
     expectedResults.add(expectedResult);
 
     verify(mockResult).success(expectedResults);

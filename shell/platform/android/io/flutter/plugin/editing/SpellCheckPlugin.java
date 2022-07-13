@@ -35,6 +35,10 @@ public class SpellCheckPlugin
   private final TextServicesManager mTextServicesManager;
   private SpellCheckerSession mSpellCheckerSession;
 
+  public static final String START_INDEX_KEY = "startIndex";
+  public static final String END_INDEX_KEY = "endIndex";
+  public static final String SUGGESTIONS_KEY = "suggestions";
+
   @VisibleForTesting MethodChannel.Result pendingResult;
 
   // The maximum number of suggestions that the Android spell check service is allowed to provide
@@ -142,15 +146,15 @@ public class SpellCheckPlugin
       int start = spellCheckResults.getOffsetAt(i);
       int end = start + spellCheckResults.getLengthAt(i);
 
-      spellCheckerSuggestionSpan.put("startIndex", start);
-      spellCheckerSuggestionSpan.put("endIndex", end);
+      spellCheckerSuggestionSpan.put(START_INDEX_KEY, start);
+      spellCheckerSuggestionSpan.put(END_INDEX_KEY, end);
 
       ArrayList<String> suggestions = new ArrayList<String>();
       for (int j = 0; j < suggestionsCount; j++) {
         suggestions.add(suggestionsInfo.getSuggestionAt(j));
       }
 
-      spellCheckerSuggestionSpan.put("suggestions", suggestions);
+      spellCheckerSuggestionSpan.put(SUGGESTIONS_KEY, suggestions);
       spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan);
     }
 
