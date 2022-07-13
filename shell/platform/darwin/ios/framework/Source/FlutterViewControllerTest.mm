@@ -455,6 +455,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
+  UIView* view = viewController.view;
+  // The implementation in viewDidLoad requires the viewControllers.viewLoaded is true.
+  // Accessing the view to make sure the view loads in the memory,
+  // which makes viewControllers.viewLoaded true.
+  XCTAssertNotNil(view);
   [viewController viewDidLoad];
   OCMVerify([viewController addInternalPlugins]);
 }
