@@ -740,6 +740,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   if (textInputPlugin != nil) {
     [self.keyboardManager addSecondaryResponder:textInputPlugin];
   }
+  if ([_engine.get() viewController] == self) {
+    [textInputPlugin setupIndirectScribbleInteraction:self];
+  }
 }
 
 - (void)removeInternalPlugins {
