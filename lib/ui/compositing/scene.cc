@@ -118,9 +118,9 @@ void Scene::RasterizeToImageSync(uint32_t width,
       raster_task_runner,
       [snapshot_delegate, unref_queue, dl_image = std::move(dl_image),
        layer_tree = std::move(layer_tree.get()), width, height]() {
-        auto display_list = layer_tree->FlattenWithContext(
-            SkRect::MakeWH(width, height),
-            snapshot_delegate.get()->GetTextureRegistry());
+        auto display_list =
+            layer_tree->Flatten(SkRect::MakeWH(width, height),
+                                snapshot_delegate.get()->GetTextureRegistry());
 
         sk_sp<SkImage> sk_image;
         std::string error;

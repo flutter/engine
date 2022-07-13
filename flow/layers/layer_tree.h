@@ -42,7 +42,8 @@ class LayerTree {
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;
 
-  sk_sp<DisplayList> Flatten(const SkRect& bounds);
+  sk_sp<DisplayList> Flatten(const SkRect& bounds,
+                             TextureRegistry* texture_registry = nullptr);
 
   sk_sp<DisplayList> FlattenWithContext(const SkRect& bounds,
                                         TextureRegistry* texture_registry);
