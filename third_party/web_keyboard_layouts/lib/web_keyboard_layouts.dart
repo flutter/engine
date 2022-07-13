@@ -4,4 +4,4 @@
 library web_keyboard_layouts;
 
 part 'base.dart';
-part 'definitions.dart';
+part 'definitions.g.dart';

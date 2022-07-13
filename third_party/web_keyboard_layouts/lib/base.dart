@@ -9,15 +9,7 @@ enum LayoutPlatform {
   darwin,
 }
 
-class LayoutEntry {
-  const LayoutEntry(
-    this.values,
-  );
-
-  // List of four: value, withShift, withAlt, withShiftAlt.
-  // Each value is either 0xYYYYYY, or 0x1000000 for a dead key.
-  final List<int> values;
-}
+const kDeadKey = 0x1000000;
 
 class LayoutInfo {
   const LayoutInfo({
@@ -28,5 +20,8 @@ class LayoutInfo {
 
   final String name;
   final LayoutPlatform platform;
-  final Map<String, LayoutEntry> mapping;
+  // Each element of `mapping` is a list of four:
+  // noModifier, withShift, withAlt, withShiftAlt.
+  // Each value is either 0xYYYYYY, or 0x1000000 for a dead key.
+  final List<List<int>> mapping;
 }
