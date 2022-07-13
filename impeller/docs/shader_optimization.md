@@ -8,7 +8,7 @@ for some other drivers that end users will run Flutter apps against.
 
 That being said, newer graphics devices have architectures that allow for both
 simpler shader compilation and better handling of traditionally slow shader
-code. In fact, straight forward "unoptimized" shader code filled with branches
+code. In fact, straightforward "unoptimized" shader code filled with branches
 may significantly outperform the equivalent branchless optimized shader code
 when targeting newer GPU architectures.
 
