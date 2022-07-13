@@ -292,8 +292,7 @@ InferOpenGLPlatformViewCreationCallback(
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
        fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
-       user_data](
-          flutter::GLFrameInfo gl_frame_info) -> FlutterFrameBuffer {
+       user_data](flutter::GLFrameInfo gl_frame_info) -> FlutterFrameBuffer {
     if (fbo_callback) {
       FlutterFrameBuffer fbo;
       fbo.fbo_id = fbo_callback(user_data);

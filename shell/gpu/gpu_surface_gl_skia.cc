@@ -192,7 +192,7 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
   const intptr_t fbo = delegate_->GLContextFBO(frame_info);
   onscreen_surface = WrapOnscreenSurface(context_.get(),  // GL context
                                          size,            // root surface size
-                                         fbo       // window FBO ID
+                                         fbo              // window FBO ID
   );
 
   if (onscreen_surface == nullptr) {
@@ -302,7 +302,7 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     auto new_onscreen_surface =
         WrapOnscreenSurface(context_.get(),  // GL context
                             current_size,    // root surface size
-                            fbo       // window FBO ID
+                            fbo              // window FBO ID
         );
 
     if (!new_onscreen_surface) {
