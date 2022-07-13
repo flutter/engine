@@ -59,7 +59,7 @@ TEST(MutatorsStack, PushBackdropFilter) {
   filter->get_input_device_bounds(SkIRect::MakeWH(10, 10), SkMatrix::I(), rect);
   stack.PushBackdropFilter(filter);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == MutatorType::backdrop_filter);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::kBackdropFilter);
   ASSERT_TRUE(iter->get()->GetFilter() == filter);
 }
 
