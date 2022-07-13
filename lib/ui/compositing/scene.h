@@ -30,7 +30,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
                      bool checkerboardRasterCacheImages,
                      bool checkerboardOffscreenLayers);
 
-  std::unique_ptr<flutter::LayerTree> takeLayerTree();
+  std::shared_ptr<flutter::LayerTree> takeLayerTree();
 
   Dart_Handle toImageSync(uint32_t width,
                           uint32_t height,

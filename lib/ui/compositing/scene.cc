@@ -132,8 +132,8 @@ void Scene::RasterizeToImageSync(uint32_t width,
   image->AssociateWithDartWrapper(raw_image_handle);
 }
 
-std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
-  return nullptr;
+std::shared_ptr<flutter::LayerTree> Scene::takeLayerTree() {
+  return std::move(layer_tree_);
 }
 
 }  // namespace flutter
