@@ -223,7 +223,9 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds) {
   return builder.Build();
 }
 
-sk_sp<DisplayList> LayerTree::FlattenWithContext(const SkRect& bounds, SnapshotDelegate* snapshot_delegate) {
+sk_sp<DisplayList> LayerTree::FlattenWithContext(
+    const SkRect& bounds,
+    TextureRegistry* texture_registry) {
   TRACE_EVENT0("flutter", "LayerTree::FlattenWithContext");
 
   DisplayListCanvasRecorder builder(bounds);
@@ -233,7 +235,6 @@ sk_sp<DisplayList> LayerTree::FlattenWithContext(const SkRect& bounds, SnapshotD
   SkMatrix root_surface_transformation;
   // No root surface transformation. So assume identity.
   root_surface_transformation.reset();
-  auto* texture_registry = snapshot_delegate->GetTextureRegistry();
 
   PrerollContext preroll_context{
       // clang-format off

@@ -8,10 +8,10 @@
 #include <cstdint>
 #include <memory>
 
+#include "flutter/common/graphics/texture.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -44,10 +44,8 @@ class LayerTree {
 
   sk_sp<DisplayList> Flatten(const SkRect& bounds);
 
-  sk_sp<DisplayList> FlattenWithContext(
-    const SkRect& bounds,
-    SnapshotDelegate* snapshot_delegate
-  );
+  sk_sp<DisplayList> FlattenWithContext(const SkRect& bounds,
+                                        TextureRegistry* texture_registry);
 
   Layer* root_layer() const { return root_layer_.get(); }
 

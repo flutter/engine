@@ -78,7 +78,9 @@ Dart_Handle Scene::toImageSync(uint32_t width,
     return tonic::ToDart("Scene did not contain a layer tree.");
   }
 
-  auto picture = layer_tree_->FlattenWithContext(SkRect::MakeWH(width, height), snapshot_delegate.get());
+  auto picture = layer_tree_->FlattenWithContext(
+      SkRect::MakeWH(width, height),
+      snapshot_delegate.get()->GetTextureRegistry());
   if (!picture) {
     return tonic::ToDart("Could not flatten scene into a layer tree.");
   }
@@ -97,7 +99,9 @@ Dart_Handle Scene::toImage(uint32_t width,
   if (!layer_tree_) {
     return tonic::ToDart("Scene did not contain a layer tree.");
   }
-  auto picture = layer_tree_->FlattenWithContext(SkRect::MakeWH(width, height), snapshot_delegate.get());
+  auto picture = layer_tree_->FlattenWithContext(
+      SkRect::MakeWH(width, height),
+      snapshot_delegate.get()->GetTextureRegistry());
   if (!picture) {
     return tonic::ToDart("Could not flatten scene into a layer tree.");
   }
