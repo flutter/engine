@@ -20,7 +20,6 @@
 
 namespace flutter {
 
-// TODO(chinmaygarde): Make these enum names match the style guide.
 enum MutatorType {
   kClipRect,
   kClipRRect,
