@@ -76,7 +76,6 @@ SurfaceFrame::FramebufferInfo EmbedderSurfaceGL::GLContextFramebufferInfo()
     const {
   SurfaceFrame::FramebufferInfo res;
   res.supports_readback = true;
-  res.supports_partial_repaint = true;
   res.existing_damage = existing_damage_;
   // TODO(btrevisan): confirm if cliping alignment needs to be updated.
   return res;

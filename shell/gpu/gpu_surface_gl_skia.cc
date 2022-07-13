@@ -187,12 +187,10 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
 
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
-  /// NEW: Updating the call to GLContextFBO to account for the FBO's existing
-  /// damage.
-  const intptr_t fbo = delegate_->GLContextFBO(frame_info);
+  const intptr_t fbo_id = delegate_->GLContextFBO(frame_info);
   onscreen_surface = WrapOnscreenSurface(context_.get(),  // GL context
                                          size,            // root surface size
-                                         fbo              // window FBO ID
+                                         fbo_id           // window FBO ID
   );
 
   if (onscreen_surface == nullptr) {
@@ -203,7 +201,7 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   onscreen_surface_ = std::move(onscreen_surface);
-  fbo_id_ = fbo;
+  fbo_id_ = fbo_id;
   return true;
 }
 
@@ -296,13 +294,11 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
 
     // The FBO has changed, ask the delegate for the new FBO and do a surface
     // re-wrap.
-    /// NEW: Updating the call to GLContextFBO to account for the FBO's existing
-    /// damage.
-    const intptr_t fbo = delegate_->GLContextFBO(frame_info);
+    const intptr_t fbo_id = delegate_->GLContextFBO(frame_info);
     auto new_onscreen_surface =
         WrapOnscreenSurface(context_.get(),  // GL context
                             current_size,    // root surface size
-                            fbo              // window FBO ID
+                            fbo_id           // window FBO ID
         );
 
     if (!new_onscreen_surface) {
@@ -310,7 +306,7 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     }
 
     onscreen_surface_ = std::move(new_onscreen_surface);
-    fbo_id_ = fbo;
+    fbo_id_ = fbo_id;
   }
 
   return true;

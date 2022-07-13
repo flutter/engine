@@ -54,11 +54,7 @@ class GPUSurfaceGLDelegate {
   // context and not any of the contexts dedicated for IO.
   virtual bool GLContextPresent(const GLPresentInfo& present_info) = 0;
 
-  /// NEW: Changing the return type of GLContextFBO so that it can also return
-  /// the existing damage for that FBO.
-  // The information about the main window bound framebuffer such as ID and
-  // existing damage. ID is typically FBO0. Existing damage is only relevant
-  // when performing partial repaint.
+  // The ID of the main window bound framebuffer. Typically FBO0.
   virtual intptr_t GLContextFBO(GLFrameInfo frame_info) const = 0;
 
   // The rendering subsystem assumes that the ID of the main window bound
