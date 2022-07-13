@@ -1412,7 +1412,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
-      case transform: {
+      case kTransform: {
         const SkMatrix& matrix = (*iter)->GetMatrix();
         SkScalar matrix_array[9];
         matrix.get9(matrix_array);
@@ -1425,7 +1425,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
                             transformMatrix.obj());
         break;
       }
-      case clip_rect: {
+      case kClipRect: {
         const SkRect& rect = (*iter)->GetRect();
         env->CallVoidMethod(
             mutatorsStack, g_mutators_stack_push_cliprect_method,
@@ -1433,7 +1433,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
             static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
-      case clip_rrect: {
+      case kClipRRect: {
         const SkRRect& rrect = (*iter)->GetRRect();
         const SkRect& rect = rrect.rect();
         const SkVector& upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
@@ -1455,9 +1455,9 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       }
       // TODO(cyanglaz): Implement other mutators.
       // https://github.com/flutter/flutter/issues/58426
-      case clip_path:
-      case opacity:
-      case backdrop_filter:
+      case kClipPath:
+      case kOpacity:
+      case kBackdropFilter:
         break;
     }
     ++iter;

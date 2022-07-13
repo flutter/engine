@@ -22,41 +22,41 @@ namespace flutter {
 
 // TODO(chinmaygarde): Make these enum names match the style guide.
 enum MutatorType {
-  clipRect,
-  clipRRect,
-  clipPath,
-  transform,
-  opacity,
-  backdropFilter
+  kClipRect,
+  kClipRRect,
+  kClipPath,
+  kTransform,
+  kOpacity,
+  kBackdropFilter
 };
 
-// Stores mutation information like clipping or transform.
+// Stores mutation information like clipping or kTransform.
 //
-// The `type` indicates the type of the mutation: clipRect, transform and etc.
+// The `type` indicates the type of the mutation: kClipRect, kTransform and etc.
 // Each `type` is paired with an object that supports the mutation. For example,
-// if the `type` is clipRect, `rect()` is used the represent the rect to be
+// if the `type` is kClipRect, `rect()` is used the represent the rect to be
 // clipped. One mutation object must only contain one type of mutation.
 class Mutator {
  public:
   Mutator(const Mutator& other) {
     type_ = other.type_;
     switch (other.type_) {
-      case clipRect:
+      case kClipRect:
         rect_ = other.rect_;
         break;
-      case clipRRect:
+      case kClipRRect:
         rrect_ = other.rrect_;
         break;
-      case clipPath:
+      case kClipPath:
         path_ = new SkPath(*other.path_);
         break;
-      case transform:
+      case kTransform:
         matrix_ = other.matrix_;
         break;
-      case opacity:
+      case kOpacity:
         alpha_ = other.alpha_;
         break;
-      case backdropFilter:
+      case kBackdropFilter:
         filter_ = other.filter_;
         break;
       default:
@@ -64,15 +64,15 @@ class Mutator {
     }
   }
 
-  explicit Mutator(const SkRect& rect) : type_(clipRect), rect_(rect) {}
-  explicit Mutator(const SkRRect& rrect) : type_(clipRRect), rrect_(rrect) {}
+  explicit Mutator(const SkRect& rect) : type_(kClipRect), rect_(rect) {}
+  explicit Mutator(const SkRRect& rrect) : type_(kClipRRect), rrect_(rrect) {}
   explicit Mutator(const SkPath& path)
-      : type_(clipPath), path_(new SkPath(path)) {}
+      : type_(kClipPath), path_(new SkPath(path)) {}
   explicit Mutator(const SkMatrix& matrix)
-      : type_(transform), matrix_(matrix) {}
-  explicit Mutator(const int& alpha) : type_(opacity), alpha_(alpha) {}
+      : type_(kTransform), matrix_(matrix) {}
+  explicit Mutator(const int& alpha) : type_(kOpacity), alpha_(alpha) {}
   explicit Mutator(const DlImageFilter& filter)
-      : type_(backdropFilter), filter_(&filter) {}
+      : type_(kBackdropFilter), filter_(&filter) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
@@ -88,17 +88,17 @@ class Mutator {
       return false;
     }
     switch (type_) {
-      case clipRect:
+      case kClipRect:
         return rect_ == other.rect_;
-      case clipRRect:
+      case kClipRRect:
         return rrect_ == other.rrect_;
-      case clipPath:
+      case kClipPath:
         return *path_ == *other.path_;
-      case transform:
+      case kTransform:
         return matrix_ == other.matrix_;
-      case opacity:
+      case kOpacity:
         return alpha_ == other.alpha_;
-      case backdropFilter:
+      case kBackdropFilter:
         return *filter_ == *other.filter_;
     }
 
@@ -108,11 +108,11 @@ class Mutator {
   bool operator!=(const Mutator& other) const { return !operator==(other); }
 
   bool IsClipType() {
-    return type_ == clipRect || type_ == clipRRect || type_ == clipPath;
+    return type_ == kClipRect || type_ == kClipRRect || type_ == kClipPath;
   }
 
   ~Mutator() {
-    if (type_ == clipPath) {
+    if (type_ == kClipPath) {
       delete path_;
     }
   };
