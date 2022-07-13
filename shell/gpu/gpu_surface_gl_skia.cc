@@ -189,10 +189,10 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
                             static_cast<uint32_t>(size.height())};
   /// NEW: Updating the call to GLContextFBO to account for the FBO's existing
   /// damage.
-  const GLFrameBuffer fbo = delegate_->GLContextFBO(frame_info);
+  const intptr_t fbo = delegate_->GLContextFBO(frame_info);
   onscreen_surface = WrapOnscreenSurface(context_.get(),  // GL context
                                          size,            // root surface size
-                                         fbo.fbo_id       // window FBO ID
+                                         fbo       // window FBO ID
   );
 
   if (onscreen_surface == nullptr) {
@@ -203,9 +203,7 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   onscreen_surface_ = std::move(onscreen_surface);
-  fbo_id_ = fbo.fbo_id;
-  fbo_existing_damage_ = fbo.damage;
-
+  fbo_id_ = fbo;
   return true;
 }
 
@@ -261,8 +259,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
   /// repaint.
   if (partial_repaint_enabled_) {
     framebuffer_info.supports_partial_repaint = true;
-    framebuffer_info.existing_damage = fbo_existing_damage_;
-    // TODO(btrevisan): confirm if cliping alignment needs to be updated.
   }
   return std::make_unique<SurfaceFrame>(surface, std::move(framebuffer_info),
                                         submit_callback,
@@ -302,11 +298,11 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     // re-wrap.
     /// NEW: Updating the call to GLContextFBO to account for the FBO's existing
     /// damage.
-    const GLFrameBuffer fbo = delegate_->GLContextFBO(frame_info);
+    const intptr_t fbo = delegate_->GLContextFBO(frame_info);
     auto new_onscreen_surface =
         WrapOnscreenSurface(context_.get(),  // GL context
                             current_size,    // root surface size
-                            fbo.fbo_id       // window FBO ID
+                            fbo       // window FBO ID
         );
 
     if (!new_onscreen_surface) {
@@ -314,8 +310,7 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     }
 
     onscreen_surface_ = std::move(new_onscreen_surface);
-    fbo_id_ = fbo.fbo_id;
-    fbo_existing_damage_ = fbo.damage;
+    fbo_id_ = fbo;
   }
 
   return true;

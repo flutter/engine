@@ -51,12 +51,35 @@ bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
   return gl_dispatch_table_.gl_present_callback(present_info, damage_region_);
 }
 
+/// NEW: Adding this function to make it easier to translate a FlutterRect back
+/// to a SkIRect.
+SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
+                  static_cast<int32_t>(flutter_rect.right),
+                  static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.bottom)};
+  return rect;
+}
+
 // |GPUSurfaceGLDelegate|
-GLFrameBuffer EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   /// NEW: updating GLContextFBO to trigger a callback that will not only return
   /// the FBO ID but also its existing damage (at least when doing partial
   /// partial repaint.
-  return gl_dispatch_table_.gl_fbo_callback(frame_info);
+  FlutterFrameBuffer fbo = gl_dispatch_table_.gl_fbo_callback(frame_info);
+  existing_damage_ = FlutterRectToSkIRect(fbo.damage.damage);
+  return fbo.fbo_id;
+}
+
+// |GPUSurfaceGLDelegate|
+SurfaceFrame::FramebufferInfo EmbedderSurfaceGL::GLContextFramebufferInfo()
+    const {
+  SurfaceFrame::FramebufferInfo res;
+  res.supports_readback = true;
+  res.supports_partial_repaint = true;
+  res.existing_damage = existing_damage_;
+  // TODO(btrevisan): confirm if cliping alignment needs to be updated.
+  return res;
 }
 
 // |GPUSurfaceGLDelegate|

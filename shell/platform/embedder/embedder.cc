@@ -230,16 +230,6 @@ FlutterRect SkIRectToFlutterRect(const std::optional<SkIRect> rect) {
   return flutter_rect;
 }
 
-/// NEW: Adding this function to make it easier to translate a FlutterRect back
-/// to a SkIRect.
-SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
-  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
-                  static_cast<int32_t>(flutter_rect.right),
-                  static_cast<int32_t>(flutter_rect.top),
-                  static_cast<int32_t>(flutter_rect.bottom)};
-  return rect;
-}
-
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
@@ -303,9 +293,9 @@ InferOpenGLPlatformViewCreationCallback(
            config->open_gl.fbo_with_frame_info_callback,
        fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
        user_data](
-          flutter::GLFrameInfo gl_frame_info) -> flutter::GLFrameBuffer {
+          flutter::GLFrameInfo gl_frame_info) -> FlutterFrameBuffer {
     if (fbo_callback) {
-      flutter::GLFrameBuffer fbo;
+      FlutterFrameBuffer fbo;
       fbo.fbo_id = fbo_callback(user_data);
       return fbo;
     } else if (fbo_with_frame_info_callback) {
@@ -313,7 +303,7 @@ InferOpenGLPlatformViewCreationCallback(
       frame_info.struct_size = sizeof(FlutterFrameInfo);
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
 
-      flutter::GLFrameBuffer fbo;
+      FlutterFrameBuffer fbo;
       fbo.fbo_id = fbo_with_frame_info_callback(user_data, &frame_info);
       return fbo;
     } else {
@@ -322,10 +312,7 @@ InferOpenGLPlatformViewCreationCallback(
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
 
       FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, &frame_info);
-      flutter::GLFrameBuffer gl_fbo;
-      gl_fbo.fbo_id = fbo.fbo_id;
-      gl_fbo.damage = FlutterRectToSkIRect(fbo.damage.damage);
-      return gl_fbo;
+      return fbo;
     }
   };
 

@@ -22,15 +22,6 @@ struct GLFrameInfo {
   uint32_t height;
 };
 
-/// NEW: Adding this new struct so that we have information about the FBO's id
-/// and existing damage in one place.
-/// A structure to represent a frame buffer as composed by an id and existing
-/// damage to it (in the case of partial repaint).
-struct GLFrameBuffer {
-  uint32_t fbo_id;
-  std::optional<SkIRect> damage = SkIRect::MakeEmpty();
-};
-
 // Information passed during presentation of a frame.
 struct GLPresentInfo {
   uint32_t fbo_id;
@@ -68,7 +59,7 @@ class GPUSurfaceGLDelegate {
   // The information about the main window bound framebuffer such as ID and
   // existing damage. ID is typically FBO0. Existing damage is only relevant
   // when performing partial repaint.
-  virtual GLFrameBuffer GLContextFBO(GLFrameInfo frame_info) const = 0;
+  virtual intptr_t GLContextFBO(GLFrameInfo frame_info) const = 0;
 
   // The rendering subsystem assumes that the ID of the main window bound
   // framebuffer remains constant throughout. If this assumption in incorrect,
