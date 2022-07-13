@@ -133,7 +133,7 @@ void Scene::RasterizeToImageSync(uint32_t width,
 }
 
 std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
-  // TODO
+  return nullptr;
 }
 
 }  // namespace flutter
