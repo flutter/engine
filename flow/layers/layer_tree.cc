@@ -183,7 +183,7 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds,
       .surface_needs_readback        = false,
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
-.texture_registry              = texture_registry == nullptr ? unused_texture_registry : *texture_registry,      
+.texture_registry              = texture_registry == nullptr ? unused_texture_registry : *texture_registry,
       .checkerboard_offscreen_layers = false,
       .frame_device_pixel_ratio      = device_pixel_ratio_
       // clang-format on
