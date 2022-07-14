@@ -10,7 +10,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/keyboard.dart';
+import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
 import 'package:ui/ui.dart' as ui;
@@ -20,7 +20,7 @@ void main() {
 }
 
 void testMain() {
-  group('Keyboard', () {
+  group('RawKeyboard', () {
     /// Used to save and restore [ui.window.onPlatformMessage] after each test.
     ui.PlatformMessageCallback? savedCallback;
 
@@ -33,15 +33,15 @@ void testMain() {
     });
 
     test('initializes and disposes', () {
-      expect(Keyboard.instance, isNull);
-      Keyboard.initialize();
-      expect(Keyboard.instance, isA<Keyboard>());
-      Keyboard.instance!.dispose();
-      expect(Keyboard.instance, isNull);
+      expect(RawKeyboard.instance, isNull);
+      RawKeyboard.initialize();
+      expect(RawKeyboard.instance, isA<RawKeyboard>());
+      RawKeyboard.instance!.dispose();
+      expect(RawKeyboard.instance, isNull);
     });
 
     test('dispatches keyup to flutter/keyevent channel', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       String? channelReceived;
       Map<String, dynamic>? dataReceived;
@@ -67,13 +67,13 @@ void testMain() {
         'keyCode': 1,
       });
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     },
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
         skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches keydown to flutter/keyevent channel', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       String? channelReceived;
       Map<String, dynamic>? dataReceived;
@@ -100,13 +100,13 @@ void testMain() {
       });
       expect(event.defaultPrevented, isFalse);
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     },
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
         skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches correct meta state', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       Map<String, dynamic>? dataReceived;
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -154,13 +154,13 @@ void testMain() {
         'keyCode': 0,
       });
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     },
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
         skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches repeat events', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -209,13 +209,13 @@ void testMain() {
         expectedMessage,
       ]);
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     },
         // TODO(mdebbar): https://github.com/flutter/flutter/issues/50815
         skip: browserEngine == BrowserEngine.edge);
 
     test('stops dispatching events after dispose', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -228,8 +228,8 @@ void testMain() {
       dispatchKeyboardEvent('keyup');
       expect(count, 2);
 
-      Keyboard.instance!.dispose();
-      expect(Keyboard.instance, isNull);
+      RawKeyboard.instance!.dispose();
+      expect(RawKeyboard.instance, isNull);
 
       // No more event dispatching.
       dispatchKeyboardEvent('keydown');
@@ -239,7 +239,7 @@ void testMain() {
     });
 
     test('prevents default when key is handled by the framework', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -258,11 +258,11 @@ void testMain() {
       expect(event.defaultPrevented, isTrue);
       expect(count, 1);
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     });
 
     test("Doesn't prevent default when key is not handled by the framework", () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -281,11 +281,11 @@ void testMain() {
       expect(event.defaultPrevented, isFalse);
       expect(count, 1);
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     });
 
     test('keyboard events should be triggered on text fields', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -305,11 +305,11 @@ void testMain() {
         expect(count, 1);
       });
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     });
 
     test('the "Tab" key should never be ignored', () {
-      Keyboard.initialize();
+      RawKeyboard.initialize();
 
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -331,7 +331,7 @@ void testMain() {
         expect(count, 1);
       });
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     });
 
     testFakeAsync(
@@ -344,7 +344,7 @@ void testMain() {
         //
         // There's no `keyup(i)`. The web engine is expected to synthesize a
         // `keyup(i)` event.
-        Keyboard.initialize(onMacOs: true);
+        RawKeyboard.initialize(onMacOs: true);
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
         ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -460,14 +460,14 @@ void testMain() {
           }
         ]);
 
-        Keyboard.instance!.dispose();
+        RawKeyboard.instance!.dispose();
       },
     );
 
     testFakeAsync(
       'On macOS, do not synthesize keyup when we receive repeat events',
       (FakeAsync async) {
-        Keyboard.initialize(onMacOs: true);
+        RawKeyboard.initialize(onMacOs: true);
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
         ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -542,14 +542,14 @@ void testMain() {
         }
         messages.clear();
 
-        Keyboard.instance!.dispose();
+        RawKeyboard.instance!.dispose();
       },
     );
 
     testFakeAsync(
       'On macOS, do not synthesize keyup when keys are not affected by meta modifiers',
       (FakeAsync async) {
-        Keyboard.initialize();
+        RawKeyboard.initialize();
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
         ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -574,12 +574,12 @@ void testMain() {
         async.elapse(const Duration(seconds: 3));
         expect(messages, hasLength(0));
 
-        Keyboard.instance!.dispose();
+        RawKeyboard.instance!.dispose();
       },
     );
 
     testFakeAsync('On macOS, do not synthesize keyup for meta keys', (FakeAsync async) {
-      Keyboard.initialize(onMacOs: true);
+      RawKeyboard.initialize(onMacOs: true);
 
       final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
       ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -637,13 +637,13 @@ void testMain() {
         }
       ]);
 
-      Keyboard.instance!.dispose();
+      RawKeyboard.instance!.dispose();
     });
 
     testFakeAsync(
       'On non-macOS, do not synthesize keyup for shortcuts',
       (FakeAsync async) {
-        Keyboard.initialize();
+        RawKeyboard.initialize(); // onMacOs: false
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
         ui.window.onPlatformMessage = (String channel, ByteData? data,
@@ -696,7 +696,7 @@ void testMain() {
         async.elapse(const Duration(seconds: 3));
         expect(messages, isEmpty);
 
-        Keyboard.instance!.dispose();
+        RawKeyboard.instance!.dispose();
       },
     );
 
