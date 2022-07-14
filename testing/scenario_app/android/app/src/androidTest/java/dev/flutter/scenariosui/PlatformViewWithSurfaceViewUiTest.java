@@ -127,7 +127,7 @@ public class PlatformViewWithSurfaceViewUiTest {
 
   // TODO(dnfield): This is not safe until https://github.com/flutter/flutter/issues/31990
   // is resolved.
-  @Ignore
+  @Ignore("not safe until https://github.com/flutter/flutter/issues/31990 is resolved")
   @Test
   public void testPlatformViewLargerThanDisplaySize() throws Exception {
     // Regression test for https://github.com/flutter/flutter/issues/28978.
