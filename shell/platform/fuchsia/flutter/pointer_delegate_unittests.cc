@@ -812,8 +812,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TouchpadPixelBased) {
   EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
   EXPECT_EQ(pointers.value()[0].signal_kind,
             flutter::PointerData::SignalKind::kScroll);
-  EXPECT_EQ(pointers.value()[0].kind,
-            flutter::PointerData::DeviceKind::kMouse);
+  EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
   EXPECT_EQ(pointers.value()[0].buttons, 0);
   EXPECT_EQ(pointers.value()[0].scroll_delta_x, 0);
   EXPECT_EQ(pointers.value()[0].scroll_delta_y, -120);
@@ -835,8 +834,7 @@ TEST_F(PointerDelegateTest, MouseWheel_TouchpadPixelBased) {
   EXPECT_EQ(pointers.value()[0].change, flutter::PointerData::Change::kHover);
   EXPECT_EQ(pointers.value()[0].signal_kind,
             flutter::PointerData::SignalKind::kScroll);
-  EXPECT_EQ(pointers.value()[0].kind,
-            flutter::PointerData::DeviceKind::kMouse);
+  EXPECT_EQ(pointers.value()[0].kind, flutter::PointerData::DeviceKind::kMouse);
   EXPECT_EQ(pointers.value()[0].buttons, 0);
   EXPECT_EQ(pointers.value()[0].scroll_delta_x, 120);
   EXPECT_EQ(pointers.value()[0].scroll_delta_y, 0);
