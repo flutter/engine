@@ -25,6 +25,7 @@ import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 import java.util.ArrayList;
 import java.util.List;
@@ -139,7 +140,10 @@ public class FlutterEngineGroupComponentTest {
             any(Context.class),
             any(DartEntrypoint.class),
             nullable(String.class),
-            nullable(List.class)))
+            nullable(List.class),
+            nullable(PlatformViewsController.class),
+            nullable(boolean.class),
+            nullable(boolean.class)))
         .thenReturn(mock(FlutterEngine.class));
 
     FlutterEngine thirdEngine =

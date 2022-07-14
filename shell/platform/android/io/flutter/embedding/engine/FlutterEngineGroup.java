@@ -11,6 +11,7 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -142,6 +143,9 @@ public class FlutterEngineGroup {
     DartEntrypoint dartEntrypoint = options.getDartEntrypoint();
     String initialRoute = options.getInitialRoute();
     List<String> dartEntrypointArgs = options.getDartEntrypointArgs();
+    PlatformViewsController platformViewsController = options.getPlatformViewsController();
+    boolean automaticallyRegisterPlugins = options.getAutomaticallyRegisterPlugins();
+    boolean waitForRestorationData = options.getWaitForRestorationData();
 
     if (dartEntrypoint == null) {
       dartEntrypoint = DartEntrypoint.createDefault();
@@ -155,7 +159,9 @@ public class FlutterEngineGroup {
       engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, dartEntrypointArgs);
     } else {
       engine =
-          activeEngines.get(0).spawn(context, dartEntrypoint, initialRoute, dartEntrypointArgs);
+          activeEngines.get(0)
+              .spawn(context, dartEntrypoint, initialRoute, dartEntrypointArgs,
+                  platformViewsController, automaticallyRegisterPlugins, waitForRestorationData);
     }
 
     activeEngines.add(engine);
@@ -188,6 +194,9 @@ public class FlutterEngineGroup {
     @Nullable private DartEntrypoint dartEntrypoint;
     @Nullable private String initialRoute;
     @Nullable private List<String> dartEntrypointArgs;
+    @NonNull PlatformViewsController platformViewsController = new PlatformViewsController();
+    boolean automaticallyRegisterPlugins = true;
+    boolean waitForRestorationData = false;
 
     public Options(@NonNull Context context) {
       this.context = context;
@@ -220,6 +229,30 @@ public class FlutterEngineGroup {
     }
 
     /**
+     * Manages platform views.
+     */
+    public PlatformViewsController getPlatformViewsController() {
+      return platformViewsController;
+    }
+
+    /**
+     * If plugins are automatically registered, then they are registered during the
+     * execution of {@link io.flutter.embedding.engine.FlutterEngine}'s constructor.
+     */
+    public boolean getAutomaticallyRegisterPlugins() {
+      return automaticallyRegisterPlugins;
+    }
+
+    /**
+     * The waitForRestorationData flag controls whether the engine delays responding to
+     * requests from the framework for restoration data until that data has been provided to the
+     * engine via {@code RestorationChannel.setRestorationData(byte[] data)}.
+     */
+    public boolean getWaitForRestorationData() {
+      return waitForRestorationData;
+    }
+
+    /**
      * Setter for `dartEntrypoint` property.
      *
      * @param dartEntrypoint specifies the {@link DartEntrypoint} the new engine should run. It
@@ -249,6 +282,39 @@ public class FlutterEngineGroup {
      */
     public Options setDartEntrypointArgs(List<String> dartEntrypointArgs) {
       this.dartEntrypointArgs = dartEntrypointArgs;
+      return this;
+    }
+
+    /**
+     * Setter for `platformViewsController` property.
+     *
+     * @param platformViewsController Manages platform views.
+     */
+    public Options setPlatformViewsController(@NonNull PlatformViewsController platformViewsController) {
+      this.platformViewsController = platformViewsController;
+      return this;
+    }
+
+    /**
+     * Setter for `automaticallyRegisterPlugins` property.
+     *
+     * @param automaticallyRegisterPlugins If plugins are automatically registered, then they are
+     * registered during the execution of {@link io.flutter.embedding.engine.FlutterEngine}'s constructor.
+     */
+    public Options setAutomaticallyRegisterPlugins(boolean automaticallyRegisterPlugins) {
+      this.automaticallyRegisterPlugins = automaticallyRegisterPlugins;
+      return this;
+    }
+
+    /**
+     * Setter for `waitForRestorationData` property.
+     *
+     * @param waitForRestorationData The waitForRestorationData flag controls whether the engine delays
+     * responding to requests from the framework for restoration data until that data has been provided
+     * to the engine via {@code RestorationChannel.setRestorationData(byte[] data)}.
+     */
+    public Options setWaitForRestorationData(boolean waitForRestorationData) {
+      this.waitForRestorationData = waitForRestorationData;
       return this;
     }
   }
