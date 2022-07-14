@@ -316,13 +316,6 @@ flutter::PointerData CreateMouseDraft(const fup_MouseEvent& event,
 
   if (is_scroll) {
     ptr.signal_kind = flutter::PointerData::SignalKind::kScroll;
-    bool is_trackpad_scroll =
-        sample.has_is_precision_scroll() && sample.is_precision_scroll();
-
-    if (is_trackpad_scroll) {
-      ptr.kind = flutter::PointerData::DeviceKind::kTrackpad;
-    }
-
     ptr.scroll_delta_y = dy;
     ptr.scroll_delta_x = dx;
   }
