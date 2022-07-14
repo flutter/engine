@@ -34,11 +34,10 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 
   SkRect bounds =
       RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
-  FML_DCHECK(
-      std::round(std::abs(bounds.width() - image_->dimensions().width())) <=
-          1 &&
-      std::round(std::abs(bounds.height() - image_->dimensions().height())) <=
-          1);
+  // clang-format off
+  FML_DCHECK(std::round(std::abs(bounds.width() - image_->dimensions().width())) <=1 &&
+             std::round(std::abs(bounds.height() - image_->dimensions().height())) <= 1);
+  // clang-format on
   canvas.resetMatrix();
   flow_.Step();
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
