@@ -82,14 +82,14 @@ struct RasterCacheMetrics {
    * they were used in the frame or held memory during the frame and then
    * were evicted after it ended.
    */
-  size_t total_count() const { return in_use_count + eviction_count; }
+  size_t total_count() const { return in_use_count; }
 
   /**
    * The size of all of the cached images during this frame whether
    * they were used in the frame or held memory during the frame and then
    * were evicted after it ended.
    */
-  size_t total_bytes() const { return in_use_bytes + eviction_bytes; }
+  size_t total_bytes() const { return in_use_bytes; }
 };
 
 class RasterCache {

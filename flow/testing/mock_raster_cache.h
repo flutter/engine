@@ -124,11 +124,19 @@ PrerollContextHolder GetSamplePrerollContextHolder(
 PaintContextHolder GetSamplePaintContextHolder(
     RasterCache* raster_cache = nullptr);
 
-bool DisplayListRasterCacheItemTryToRasterCache(
+bool RasterCacheItemPrerollAndTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,
     PrerollContext& context,
     PaintContext& paint_context,
     const SkMatrix& matrix);
+
+void RasterCacheItemPreroll(DisplayListRasterCacheItem& display_list_item,
+                            PrerollContext& context,
+                            const SkMatrix& matrix);
+
+bool RasterCacheItemTryToRasterCache(
+    DisplayListRasterCacheItem& display_list_item,
+    PaintContext& paint_context);
 
 }  // namespace testing
 }  // namespace flutter

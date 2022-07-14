@@ -26,6 +26,8 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   path.addRect(100, 100, 100 + width, 100 + height);
   MockCacheableLayer layer = MockCacheableLayer(path);
   layer.Preroll(&preroll_context_, ctm);
+  MarkSeen(RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer), ctm,
+           true);
   layer.raster_cache_item()->TryToPrepareRasterCache(paint_context_);
   RasterCache::Context r_context = {
       // clang-format off
@@ -143,13 +145,26 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
   return holder;
 }
 
-bool DisplayListRasterCacheItemTryToRasterCache(
+bool RasterCacheItemPrerollAndTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,
     PrerollContext& context,
     PaintContext& paint_context,
     const SkMatrix& matrix) {
+  RasterCacheItemPreroll(display_list_item, context, matrix);
+  context.raster_cache->EvictUnusedCacheEntries();
+  return RasterCacheItemTryToRasterCache(display_list_item, paint_context);
+}
+
+void RasterCacheItemPreroll(DisplayListRasterCacheItem& display_list_item,
+                            PrerollContext& context,
+                            const SkMatrix& matrix) {
   display_list_item.PrerollSetup(&context, matrix);
   display_list_item.PrerollFinalize(&context, matrix);
+}
+
+bool RasterCacheItemTryToRasterCache(
+    DisplayListRasterCacheItem& display_list_item,
+    PaintContext& paint_context) {
   if (display_list_item.cache_state() ==
       RasterCacheItem::CacheState::kCurrent) {
     return display_list_item.TryToPrepareRasterCache(paint_context);
