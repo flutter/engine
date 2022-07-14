@@ -347,7 +347,7 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP: {
-      if (wparam == VK_PACKET) {
+      if (wparam == VK_PACKET || wparam == VK_PROCESSKEY) {
         return false;
       }
       current_session_.clear();
