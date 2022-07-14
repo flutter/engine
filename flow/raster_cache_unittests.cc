@@ -240,51 +240,6 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
 
-TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
-  size_t threshold = 1;
-  flutter::RasterCache cache(threshold);
-
-  SkMatrix matrix = SkMatrix::I();
-
-  auto display_list = GetSampleDisplayList();
-
-  SkCanvas dummy_canvas;
-  SkPaint paint;
-
-  PrerollContextHolder preroll_context_holder =
-      GetSamplePrerollContextHolder(&cache);
-  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
-  auto& preroll_context = preroll_context_holder.preroll_context;
-  auto& paint_context = paint_context_holder.paint_context;
-
-  cache.BeginFrame();
-
-  DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
-                                               true, false);
-
-  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-
-  cache.EndFrame();
-  cache.BeginFrame();
-
-  ASSERT_TRUE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_TRUE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-
-  cache.EndFrame();
-
-  cache.BeginFrame();
-  cache.EvictUnusedCacheEntries();
-  cache.EndFrame();  // Extra frame without a Get image access.
-
-  cache.BeginFrame();
-  ASSERT_FALSE(
-      cache.Draw(display_list_item.GetId().value(), dummy_canvas, &paint));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-}
-
 TEST(RasterCache, EvitUnusedCacheEntries) {
   size_t threshold = 1;
   flutter::RasterCache cache(threshold);
