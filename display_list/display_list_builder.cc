@@ -81,7 +81,7 @@ void DisplayListBuilder::saveVirtualLayer(std::string type) {
     return;
   }
   virtual_layer_tree_.push_back(
-      DisplayVirtualLayerInfo{storage_op_count_, type, false});
+      DisplayVirtualLayerInfo{storage_op_count_, type, false, 0});
 }
 
 void DisplayListBuilder::buildVirtualLayerTree() {

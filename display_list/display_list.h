@@ -256,6 +256,7 @@ class DisplayList : public SkRefCnt {
   uint32_t unique_id() const { return unique_id_; }
 
   const SkRect& bounds();
+  const SkRect& virtualBounds();
   const SkRect partBounds(int start, int end);
 
   bool Equals(const DisplayList* other) const;

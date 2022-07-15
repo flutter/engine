@@ -224,11 +224,20 @@ void DisplayList::DispatchPart(Dispatcher& ctx, int start, int end) const {
   Dispatch(ctx, getNPtr(ptr, opEnd, start), getNPtr(ptr, opEnd, end));
 }
 
-const SkRect& DisplayList::bounds() {
+const SkRect& DisplayList::virtualBounds() {
   if (!virtual_layer_tree_.empty() && virtual_bounds_valid_) {
     virtual_bounds_valid_ = false;
     return virtual_bounds_;
   }
+  if (bounds_.width() < 0.0) {
+    // ComputeBounds() will leave the variable with a
+    // non-negative width and height
+    ComputeBounds();
+  }
+  return bounds_;
+}
+
+const SkRect& DisplayList::bounds() {
   if (bounds_.width() < 0.0) {
     // ComputeBounds() will leave the variable with a
     // non-negative width and height

@@ -22,7 +22,7 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    bool will_change)
     : offset_(offset), display_list_(std::move(display_list)) {
   if (display_list_.skia_object() != nullptr) {
-    bounds_ = display_list_.skia_object()->bounds().makeOffset(offset_.x(),
+    bounds_ = display_list_.skia_object()->virtualBounds().makeOffset(offset_.x(),
                                                                offset_.y());
     display_list_raster_cache_item_ = DisplayListRasterCacheItem::Make(
         display_list_.skia_object().get(), offset_, is_complex, will_change);
