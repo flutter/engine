@@ -413,9 +413,9 @@ public class FlutterEngine {
         null, // FlutterLoader. A null value passed here causes the constructor to get it from the
         // FlutterInjector.
         newFlutterJNI, // FlutterJNI.
-        platformViewsController,// PlatformViewsController.
-        null,// String[]. The Dart VM has already started, this arguments will have no effect.
-        automaticallyRegisterPlugins,// boolean.
+        platformViewsController, // PlatformViewsController.
+        null, // String[]. The Dart VM has already started, this arguments will have no effect.
+        automaticallyRegisterPlugins, // boolean.
         waitForRestorationData); // boolean
   }
 

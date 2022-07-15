@@ -160,8 +160,14 @@ public class FlutterEngineGroup {
     } else {
       engine =
           activeEngines.get(0)
-              .spawn(context, dartEntrypoint, initialRoute, dartEntrypointArgs,
-                  platformViewsController, automaticallyRegisterPlugins, waitForRestorationData);
+              .spawn(
+                  context,
+                  dartEntrypoint,
+                  initialRoute,
+                  dartEntrypointArgs,
+                  platformViewsController,
+                  automaticallyRegisterPlugins,
+                  waitForRestorationData);
     }
 
     activeEngines.add(engine);
@@ -228,25 +234,23 @@ public class FlutterEngineGroup {
       return dartEntrypointArgs;
     }
 
-    /**
-     * Manages platform views.
-     */
+    /** Manages platform views. */
     public PlatformViewsController getPlatformViewsController() {
       return platformViewsController;
     }
 
     /**
      * If plugins are automatically registered, then they are registered during the
-     * execution of {@link io.flutter.embedding.engine.FlutterEngine}'s constructor.
+     * {@link io.flutter.embedding.engine.FlutterEngine}'s constructor.
      */
     public boolean getAutomaticallyRegisterPlugins() {
       return automaticallyRegisterPlugins;
     }
 
     /**
-     * The waitForRestorationData flag controls whether the engine delays responding to
-     * requests from the framework for restoration data until that data has been provided to the
-     * engine via {@code RestorationChannel.setRestorationData(byte[] data)}.
+     * The waitForRestorationData flag controls whether the engine delays responding to requests
+     * from the framework for restoration data until that data has been provided to the engine via
+     * {@code RestorationChannel.setRestorationData(byte[] data)}.
      */
     public boolean getWaitForRestorationData() {
       return waitForRestorationData;
@@ -290,7 +294,8 @@ public class FlutterEngineGroup {
      *
      * @param platformViewsController Manages platform views.
      */
-    public Options setPlatformViewsController(@NonNull PlatformViewsController platformViewsController) {
+    public Options setPlatformViewsController(
+        @NonNull PlatformViewsController platformViewsController) {
       this.platformViewsController = platformViewsController;
       return this;
     }
@@ -299,7 +304,8 @@ public class FlutterEngineGroup {
      * Setter for `automaticallyRegisterPlugins` property.
      *
      * @param automaticallyRegisterPlugins If plugins are automatically registered, then they are
-     * registered during the execution of {@link io.flutter.embedding.engine.FlutterEngine}'s constructor.
+     *     registered during the execution of {@link io.flutter.embedding.engine.FlutterEngine}'s
+     *     constructor.
      */
     public Options setAutomaticallyRegisterPlugins(boolean automaticallyRegisterPlugins) {
       this.automaticallyRegisterPlugins = automaticallyRegisterPlugins;
@@ -309,9 +315,10 @@ public class FlutterEngineGroup {
     /**
      * Setter for `waitForRestorationData` property.
      *
-     * @param waitForRestorationData The waitForRestorationData flag controls whether the engine delays
-     * responding to requests from the framework for restoration data until that data has been provided
-     * to the engine via {@code RestorationChannel.setRestorationData(byte[] data)}.
+     * @param waitForRestorationData The waitForRestorationData flag controls whether the engine
+     *     delays responding to requests from the framework for restoration data until that data has
+     *     been provided to the engine via {@code RestorationChannel.setRestorationData(byte[]
+     *     data)}.
      */
     public Options setWaitForRestorationData(boolean waitForRestorationData) {
       this.waitForRestorationData = waitForRestorationData;
