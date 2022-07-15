@@ -31,6 +31,7 @@ RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
+
   SkRect bounds =
       RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
 #ifndef NDEBUG
