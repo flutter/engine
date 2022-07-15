@@ -108,6 +108,28 @@ static std::string StringToShaderStage(std::string str) {
   return "ShaderStage::kUnknown";
 }
 
+static std::string StringToVkShaderStage(std::string str){
+  if (str == "vertex") {
+    return "0x00000001";
+  }
+  if (str == "fragment") {
+    return "0x00000010";
+  }
+
+  if (str == "tessellation_control") {
+    return "0x00000002";
+  }
+
+  if (str == "tessellation_evaluation") {
+    return "0x00000004";
+  }
+
+  if (str == "compute") {
+    return "0x00000020";
+  }
+  return "0x0000001f"; // VK_SHADER_STAGE_ALL_GRAPHICS
+}
+
 Reflector::Reflector(Options options,
                      std::shared_ptr<const spirv_cross::ParsedIR> ir,
                      std::shared_ptr<fml::Mapping> shader_data,
@@ -366,6 +388,9 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
                    [type = compiler_.GetType()](inja::Arguments& args) {
                      return ToString(type);
                    });
+  env.add_callback("to_vk_shader_stage_flag_bits",1u,[](inja::Arguments& args){
+                      return StringToVkShaderStage(args.at(0u)->get<std::string>());
+                  });
 
   auto inflated_template =
       std::make_shared<std::string>(env.render(tmpl, *template_arguments_));
