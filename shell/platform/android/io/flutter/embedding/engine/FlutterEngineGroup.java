@@ -159,7 +159,8 @@ public class FlutterEngineGroup {
       engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, dartEntrypointArgs);
     } else {
       engine =
-          activeEngines.get(0)
+          activeEngines.
+              get(0)
               .spawn(
                   context,
                   dartEntrypoint,
@@ -240,8 +241,8 @@ public class FlutterEngineGroup {
     }
 
     /**
-     * If plugins are automatically registered, then they are registered during the
-     * {@link io.flutter.embedding.engine.FlutterEngine}'s constructor.
+     * If plugins are automatically registered, then they are registered during the {@link
+     * io.flutter.embedding.engine.FlutterEngine}'s constructor.
      */
     public boolean getAutomaticallyRegisterPlugins() {
       return automaticallyRegisterPlugins;
