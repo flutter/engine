@@ -125,8 +125,9 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
 
   if (!SAFE_EXISTS(open_gl_config, make_current) ||
       !SAFE_EXISTS(open_gl_config, clear_current) ||
-      !SAFE_EXISTS_ONE_OF(open_gl_config, fbo_callback,
-                          fbo_with_frame_info_callback) ||
+      !SAFE_EXISTS_ONE_OF_3(open_gl_config, fbo_callback,
+                          fbo_with_frame_info_callback,
+                          fbo_with_damage_callback) ||
       !SAFE_EXISTS_ONE_OF(open_gl_config, present, present_with_info)) {
     return false;
   }

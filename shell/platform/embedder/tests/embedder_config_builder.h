@@ -104,6 +104,8 @@ class EmbedderConfigBuilder {
 
   FlutterCompositor& GetCompositor();
 
+  FlutterRendererConfig& GetRendererConfig();
+
   void SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType type);
 

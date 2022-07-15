@@ -44,6 +44,28 @@ namespace testing {
 
 using EmbedderTest = testing::EmbedderTest;
 
+TEST_F(EmbedderTest, CanCreateOpenGLWithFBOWithDamageCallbackOnly) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback = [](void* userdata, const FlutterFrameInfo* frame_info) -> FlutterFrameBuffer {
+    // No need to fill in the returned FBO since it will not actually be used.
+    FlutterFrameBuffer fbo;
+    return fbo;
+  };
+
+  // Make sure other FBO callbacks are not defined.
+  builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
+
+  auto engine = builder.LaunchEngine();
+
+  ASSERT_TRUE(engine.is_valid());
+}
+
 TEST_F(EmbedderTest, CanGetVulkanEmbedderContext) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kVulkanContext);
   EmbedderConfigBuilder builder(context);
