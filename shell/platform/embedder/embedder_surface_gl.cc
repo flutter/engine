@@ -46,14 +46,14 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
-  /// NEW: Pass the damage region (as set by GLContextSetDamageRegion and the
-  /// frame damage (in present_info) so that the embedder can keep track of it.
-  return gl_dispatch_table_.gl_present_callback(present_info, damage_region_);
+  /// NEW: Pass the frame damage (in present_info) so that the embedder can keep
+  // track of it.
+  return gl_dispatch_table_.gl_present_callback(present_info);
 }
 
 /// NEW: Adding this function to make it easier to translate a FlutterRect back
 /// to a SkIRect.
-SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
   SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
                   static_cast<int32_t>(flutter_rect.right),
                   static_cast<int32_t>(flutter_rect.top),
@@ -62,23 +62,16 @@ SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+GLFBOInfo EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   /// NEW: updating GLContextFBO to trigger a callback that will not only return
   /// the FBO ID but also its existing damage (at least when doing partial
   /// partial repaint.
   FlutterFrameBuffer fbo = gl_dispatch_table_.gl_fbo_callback(frame_info);
-  existing_damage_ = FlutterRectToSkIRect(fbo.damage.damage);
-  return fbo.fbo_id;
-}
-
-// |GPUSurfaceGLDelegate|
-SurfaceFrame::FramebufferInfo EmbedderSurfaceGL::GLContextFramebufferInfo()
-    const {
-  SurfaceFrame::FramebufferInfo res;
-  res.supports_readback = true;
-  res.existing_damage = existing_damage_;
-  // TODO(btrevisan): confirm if cliping alignment needs to be updated.
-  return res;
+  GLFBOInfo gl_fbo = {
+    static_cast<uint32_t>(fbo.fbo_id), // fbo_id
+    FlutterRectToSkIRect(fbo.damage.damage), // existing_damage
+  };
+  return gl_fbo;
 }
 
 // |GPUSurfaceGLDelegate|
@@ -133,13 +126,4 @@ sk_sp<GrDirectContext> EmbedderSurfaceGL::CreateResourceContext() const {
          "callback on FlutterOpenGLRendererConfig.";
   return nullptr;
 }
-
-void EmbedderSurfaceGL::GLContextSetDamageRegion(
-    const std::optional<SkIRect>& region) {
-  /// NEW: Updating the damage_region_ so that it can be passed down to the
-  /// embedder using present_with_info.
-  /// NOTE: region here refers to the buffer_damage.
-  damage_region_ = region;
-}
-
 }  // namespace flutter

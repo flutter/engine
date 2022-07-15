@@ -125,9 +125,8 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
 
   if (!SAFE_EXISTS(open_gl_config, make_current) ||
       !SAFE_EXISTS(open_gl_config, clear_current) ||
-      !SAFE_EXISTS_ONE_OF_3(open_gl_config, fbo_callback,
-                          fbo_with_frame_info_callback,
-                          fbo_with_damage_callback) ||
+      !SAFE_EXISTS_ONE_OF(open_gl_config, fbo_callback,
+                          fbo_with_frame_info_callback) ||
       !SAFE_EXISTS_ONE_OF(open_gl_config, present, present_with_info)) {
     return false;
   }
@@ -250,14 +249,11 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  /// NEW: Changing the arguments to gl_present callback so that the embedder
-  /// can receive more information than just the fbo_id (e.g. damage).
   /// NOTE: this means that for partial repaint to work, we must have it use the
   /// present_with_info callback rather than the present callback.
   auto gl_present = [present = config->open_gl.present,
                      present_with_info = config->open_gl.present_with_info,
-                     user_data](flutter::GLPresentInfo gl_present_info,
-                                std::optional<SkIRect> damage_region) -> bool {
+                     user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {
@@ -270,20 +266,11 @@ InferOpenGLPlatformViewCreationCallback(
       frame_damage.struct_size = sizeof(FlutterDamage);
       frame_damage.damage = SkIRectToFlutterRect(gl_present_info.damage);
 
-      /// Format the buffer_damage appropriately.
-      FlutterDamage buffer_damage;
-      buffer_damage.struct_size = sizeof(FlutterDamage);
-      buffer_damage.damage = SkIRectToFlutterRect(damage_region);
-
       present_info.frame_damage = frame_damage;
-      present_info.buffer_damage = buffer_damage;
 
       /// Pass the present_info to the present_with_info callback so that it can
       /// correctly only render part of the screen and save the FBO's damage
       /// region.
-      /// NOTE: alternatively, I could create a present callback that is
-      /// specific to partial repaint / damage tracking and leave
-      /// present_with_info as it is.
       return present_with_info(user_data, &present_info);
     }
   };
@@ -292,27 +279,16 @@ InferOpenGLPlatformViewCreationCallback(
       [fbo_callback = config->open_gl.fbo_callback,
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
-       fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
        user_data](flutter::GLFrameInfo gl_frame_info) -> FlutterFrameBuffer {
     if (fbo_callback) {
       FlutterFrameBuffer fbo;
       fbo.fbo_id = fbo_callback(user_data);
       return fbo;
-    } else if (fbo_with_frame_info_callback) {
-      FlutterFrameInfo frame_info = {};
-      frame_info.struct_size = sizeof(FlutterFrameInfo);
-      frame_info.size = {gl_frame_info.width, gl_frame_info.height};
-
-      FlutterFrameBuffer fbo;
-      fbo.fbo_id = fbo_with_frame_info_callback(user_data, &frame_info);
-      return fbo;
     } else {
       FlutterFrameInfo frame_info = {};
       frame_info.struct_size = sizeof(FlutterFrameInfo);
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
-
-      FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, &frame_info);
-      return fbo;
+      return fbo_with_frame_info_callback(user_data, &frame_info);
     }
   };
 

@@ -35,6 +35,14 @@ struct GLPresentInfo {
   std::optional<fml::TimePoint> presentation_time = std::nullopt;
 };
 
+// Information passed when an FBO is requested.
+struct GLFBOInfo {
+  uint32_t fbo_id;
+
+  // Refers to the FBO's damage since it was last used.
+  const SkIRect existing_damage;
+};
+
 class GPUSurfaceGLDelegate {
  public:
   ~GPUSurfaceGLDelegate();
@@ -55,7 +63,7 @@ class GPUSurfaceGLDelegate {
   virtual bool GLContextPresent(const GLPresentInfo& present_info) = 0;
 
   // The ID of the main window bound framebuffer. Typically FBO0.
-  virtual intptr_t GLContextFBO(GLFrameInfo frame_info) const = 0;
+  virtual GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const = 0;
 
   // The rendering subsystem assumes that the ID of the main window bound
   // framebuffer remains constant throughout. If this assumption in incorrect,

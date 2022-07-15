@@ -386,8 +386,6 @@ typedef struct {
 /// NEW: Adding new struct so that the embedder can represent the idea of
 /// damage in a self-contained way.
 typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterDamage).
-  size_t struct_size;
   // Rectangle that represents the area that needs to be rendered.
   FlutterRect damage;
 } FlutterDamage;
@@ -431,11 +429,8 @@ typedef struct {
   size_t struct_size;
   /// Id of the fbo backing the surface that was presented.
   uint32_t fbo_id;
-  /// NEW: Adding new fields so that present with partial repaint works.
   /// Rectangle representing the area that the compositor needs to render.
   FlutterDamage frame_damage;
-  /// Rectangle representing the area that changed since FBO was last used.
-  FlutterDamage buffer_damage;
 } FlutterPresentInfo;
 
 /// Callback for when a surface is presented.
@@ -494,14 +489,13 @@ typedef struct {
   /// surface from. When using this variant, the embedder is passed a
   /// `FlutterFrameInfo` struct that indicates the properties of the surface
   /// that flutter will acquire from the returned fbo.
-  UIntFrameInfoCallback fbo_with_frame_info_callback;
+  FlutterFrameBufferFrameInfoCallback fbo_with_frame_info_callback;
   /// Specifying one (and only one) of `present` or `present_with_info` is
   /// required. Specifying both is an error and engine initialization will be
   /// terminated. When using this variant, the embedder is passed a
   /// `FlutterPresentInfo` struct that the embedder can use to release any
   /// resources. The return value indicates success of the present call.
   BoolPresentInfoCallback present_with_info;
-  FlutterFrameBufferFrameInfoCallback fbo_with_damage_callback;
 } FlutterOpenGLRendererConfig;
 
 /// Alias for id<MTLDevice>.
