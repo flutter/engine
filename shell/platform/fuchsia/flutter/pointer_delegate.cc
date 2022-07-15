@@ -287,10 +287,12 @@ flutter::PointerData CreateMouseDraft(const fup_MouseEvent& event,
     ptr.buttons = flutter_buttons;
   }
 
-  // Fuchsia previously only provided scroll data in "ticks", not physical pixels.
-  // On legacy platforms, since Flutter expects scroll data in physical pixels,
-  // to compensate for lack of guidance, we make up a "reasonable amount".
-  // TODO(fxbug.dev/103443): Remove the tick based scrolling after the transition.
+  // Fuchsia previously only provided scroll data in "ticks", not physical
+  // pixels. On legacy platforms, since Flutter expects scroll data in physical
+  // pixels, to compensate for lack of guidance, we make up a "reasonable
+  // amount".
+  // TODO(fxbug.dev/103443): Remove the tick based scrolling after the
+  // transition.
   const int kScrollOffsetMultiplier = 20;
 
   double dy = 0;
