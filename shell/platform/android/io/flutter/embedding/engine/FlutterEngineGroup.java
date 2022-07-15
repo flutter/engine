@@ -159,8 +159,8 @@ public class FlutterEngineGroup {
       engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, dartEntrypointArgs);
     } else {
       engine =
-          activeEngines.
-              get(0)
+          activeEngines
+              .get(0)
               .spawn(
                   context,
                   dartEntrypoint,
