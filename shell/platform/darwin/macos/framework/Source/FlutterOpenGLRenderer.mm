@@ -148,7 +148,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .open_gl.make_current = reinterpret_cast<BoolCallback>(OnMakeCurrent),
       .open_gl.clear_current = reinterpret_cast<BoolCallback>(OnClearCurrent),
       .open_gl.present = reinterpret_cast<BoolCallback>(OnPresent),
-      .open_gl.fbo_with_frame_info_callback = reinterpret_cast<UIntFrameInfoCallback>(OnFBO),
+      .open_gl.fbo_with_frame_info_callback = reinterpret_cast<FlutterFrameBufferFrameInfoCallback>(OnFBO),
       .open_gl.fbo_reset_after_present = true,
       .open_gl.make_resource_current = reinterpret_cast<BoolCallback>(OnMakeResourceCurrent),
       .open_gl.gl_external_texture_frame_callback =

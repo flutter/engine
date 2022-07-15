@@ -22,8 +22,8 @@ bool AndroidSurfaceMock::GLContextPresent(const GLPresentInfo& present_info) {
   return true;
 }
 
-intptr_t AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
-  return 0;
+GLFBOInfo AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
+  return GLFBOInfo{0};
 }
 
 }  // namespace flutter

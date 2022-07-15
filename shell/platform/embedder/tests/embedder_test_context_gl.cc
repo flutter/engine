@@ -10,6 +10,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
 #include "flutter/testing/testing.h"
+#include "shell/gpu/gpu_surface_gl_delegate.h"
 #include "tests/embedder_test.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -69,7 +70,7 @@ void EmbedderTestContextGL::SetGLPresentCallback(GLPresentCallback callback) {
   gl_present_callback_ = callback;
 }
 
-uint32_t EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
+FlutterFrameBuffer EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
 
   GLGetFBOCallback callback;
@@ -83,7 +84,9 @@ uint32_t EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
   }
 
   const auto size = frame_info.size;
-  return gl_surface_->GetFramebuffer(size.width, size.height);
+  FlutterFrameBuffer fbo;
+  fbo.fbo_id = gl_surface_->GetFramebuffer(size.width, size.height);
+  return fbo;
 }
 
 bool EmbedderTestContextGL::GLMakeResourceCurrent() {

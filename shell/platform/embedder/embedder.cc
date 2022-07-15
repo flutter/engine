@@ -263,7 +263,6 @@ InferOpenGLPlatformViewCreationCallback(
 
       /// Format the frame_damage appropriately.
       FlutterDamage frame_damage;
-      frame_damage.struct_size = sizeof(FlutterDamage);
       frame_damage.damage = SkIRectToFlutterRect(gl_present_info.damage);
 
       present_info.frame_damage = frame_damage;

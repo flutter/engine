@@ -5,6 +5,7 @@
 #include "flutter/shell/common/shell_test_platform_view_gl.h"
 
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
+#include "shell/gpu/gpu_surface_gl_delegate.h"
 
 namespace flutter {
 namespace testing {
@@ -69,8 +70,8 @@ bool ShellTestPlatformViewGL::GLContextPresent(
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
-  return gl_surface_.GetFramebuffer(frame_info.width, frame_info.height);
+GLFBOInfo ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
+  return GLFBOInfo{gl_surface_.GetFramebuffer(frame_info.width, frame_info.height)};
 }
 
 // |GPUSurfaceGLDelegate|
