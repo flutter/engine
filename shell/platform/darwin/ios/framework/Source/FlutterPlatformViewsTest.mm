@@ -5,8 +5,6 @@
 #import <OCMock/OCMock.h>
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
-#import <UIKit/UIKit.h>
-#import <XCTest/XCTest.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
@@ -418,17 +416,17 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
   [mockFlutterView addSubview:childClippingView];
 
-    [mockFlutterView setNeedsLayout];
-    [mockFlutterView layoutIfNeeded];
-  
-    // childClippingView has the CAFilter, no additional filters were added
-    XCTAssertEqual(1, (int)[childClippingView.layer.filters count]);
-  
-    NSObject* gaussianFilter = [childClippingView.layer.filters firstObject];
-    XCTAssertEqual(@(5), [gaussianFilter valueForKey:@"inputRadius"]);
-  
-    // No new views were added
-    XCTAssertEqual(0, (int)[gMockPlatformView.subviews count]);
+  [mockFlutterView setNeedsLayout];
+  [mockFlutterView layoutIfNeeded];
+
+  // childClippingView has the CAFilter, no additional filters were added
+  XCTAssertEqual(1, (int)[childClippingView.layer.filters count]);
+
+  NSObject* gaussianFilter = [childClippingView.layer.filters firstObject];
+  XCTAssertEqual(@(5), [gaussianFilter valueForKey:@"inputRadius"]);
+
+  // No new views were added
+  XCTAssertEqual(0, (int)[gMockPlatformView.subviews count]);
 }
 
 - (void)testCompositePlatformView {

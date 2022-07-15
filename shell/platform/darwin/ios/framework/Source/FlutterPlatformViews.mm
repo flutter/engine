@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import <UIKit/UIGestureRecognizerSubclass.h>
-#import <UIKit/UIGestureRecognizerSubclass.h>
 
 #include <list>
 #include <map>

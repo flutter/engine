@@ -12,20 +12,20 @@ static int kMaxPointsInVerb = 4;
 namespace flutter {
 
 FlutterPlatformViewLayer::FlutterPlatformViewLayer(
-                                                   fml::scoped_nsobject<UIView> overlay_view,
-                                                   fml::scoped_nsobject<UIView> overlay_view_wrapper,
-                                                   std::unique_ptr<IOSSurface> ios_surface,
-                                                   std::unique_ptr<Surface> surface)
-: overlay_view(std::move(overlay_view)),
-overlay_view_wrapper(std::move(overlay_view_wrapper)),
-ios_surface(std::move(ios_surface)),
-surface(std::move(surface)){};
+    fml::scoped_nsobject<UIView> overlay_view,
+    fml::scoped_nsobject<UIView> overlay_view_wrapper,
+    std::unique_ptr<IOSSurface> ios_surface,
+    std::unique_ptr<Surface> surface)
+    : overlay_view(std::move(overlay_view)),
+      overlay_view_wrapper(std::move(overlay_view_wrapper)),
+      ios_surface(std::move(ios_surface)),
+      surface(std::move(surface)){};
 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
 FlutterPlatformViewsController::FlutterPlatformViewsController()
-: layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()),
-weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)){};
+    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()),
+      weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)){};
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
 
@@ -40,7 +40,7 @@ CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
   transform.m21 = matrix.getSkewX();
   transform.m41 = matrix.getTranslateX();
   transform.m14 = matrix.getPerspX();
-  
+
   transform.m12 = matrix.getSkewY();
   transform.m22 = matrix.getScaleY();
   transform.m42 = matrix.getTranslateY();
@@ -74,33 +74,35 @@ void ResetAnchor(CALayer* layer) {
 
 - (void)applyBackdropFilterWithRadius:(NSNumber*)blurRadius {
   if (!_gaussianFilter) {
-    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-    
+    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+
     UIView* view = [visualEffectView.subviews firstObject];
     if (!view) {
-      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access the Gaussian blur filter.";
+      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                         "access the Gaussian blur filter.";
       return;
     }
-    
+
     _gaussianFilter = [[view.layer.filters firstObject] retain];
     if (!_gaussianFilter)
       return;
-    
+
     FML_DCHECK([[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]);
     [visualEffectView release];
   }
-  
-  if(![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access the Gaussian blur filter's properties.";
+
+  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                       "access the Gaussian blur filter's properties.";
     return;
   }
-  
+
   if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
     return;
-  
-  [_gaussianFilter setValue:blurRadius
-                     forKey:@"inputRadius"];
-  self.layer.filters = @[_gaussianFilter];
+
+  [_gaussianFilter setValue:blurRadius forKey:@"inputRadius"];
+  self.layer.filters = @[ _gaussianFilter ];
 }
 
 - (void)dealloc {
@@ -141,10 +143,10 @@ void ResetAnchor(CALayer* layer) {
 - (void)drawRect:(CGRect)rect {
   CGContextRef context = UIGraphicsGetCurrentContext();
   CGContextSaveGState(context);
-  
+
   // For mask view, only the alpha channel is used.
   CGContextSetAlpha(context, 1);
-  
+
   for (size_t i = 0; i < paths_.size(); i++) {
     CGContextAddPath(context, paths_.at(i));
     CGContextClip(context);
@@ -185,7 +187,7 @@ void ResetAnchor(CALayer* layer) {
       SkVector topRightRadii = clipSkRRect.radii(SkRRect::kUpperRight_Corner);
       SkVector bottomRightRadii = clipSkRRect.radii(SkRRect::kLowerRight_Corner);
       SkVector bottomLeftRadii = clipSkRRect.radii(SkRRect::kLowerLeft_Corner);
-      
+
       // Start drawing RRect
       // Move point to the top left corner adding the top left radii's x.
       CGPathMoveToPoint(mutablePathRef, nil, clipSkRect.fLeft + topLeftRadii.x(), clipSkRect.fTop);
@@ -214,7 +216,7 @@ void ResetAnchor(CALayer* layer) {
                             clipSkRect.fLeft + topLeftRadii.x(), clipSkRect.fTop,
                             clipSkRect.fLeft + topLeftRadii.x(), clipSkRect.fTop);
       CGPathCloseSubpath(mutablePathRef);
-      
+
       pathRef = mutablePathRef;
       break;
     }
@@ -233,7 +235,7 @@ void ResetAnchor(CALayer* layer) {
     return;
   }
   CGMutablePathRef pathRef = CGPathCreateMutable();
-  
+
   // Loop through all verbs and translate them into CGPath
   SkPath::Iter iter(path, true);
   SkPoint pts[kMaxPointsInVerb];
@@ -289,7 +291,7 @@ void ResetAnchor(CALayer* layer) {
 
 - (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
   CGAffineTransform affine =
-  CGAffineTransformMake(matrix.m11, matrix.m12, matrix.m21, matrix.m22, matrix.m41, matrix.m42);
+      CGAffineTransformMake(matrix.m11, matrix.m12, matrix.m21, matrix.m22, matrix.m41, matrix.m42);
   CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &affine);
   CGPathRelease(path);
   return fml::CFRef<CGPathRef>(transformedPath);

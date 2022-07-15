@@ -49,7 +49,8 @@
 @interface ChildClippingView : UIView
 
 // Adds a blur filter to its layers.
-- (void)applyBackdropFilterWithRadius:(NSNumber*)blurRadius; // TODO EMILY: is it better to pass an int?
+- (void)applyBackdropFilterWithRadius:
+    (NSNumber*)blurRadius;  // TODO EMILY: is it better to pass an int?
 
 @end
 
