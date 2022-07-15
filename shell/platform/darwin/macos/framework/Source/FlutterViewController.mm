@@ -380,7 +380,10 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)viewDidLoad {
   [self configureTrackingArea];
-  [self.view setAcceptsTouchEvents:YES];
+  if (@available(macOS 10.12.2, *)) {
+    [self.view setAllowedTouchTypes:NSTouchTypeMaskIndirect];
+    [self.view setWantsRestingTouches:YES];
+  }
 }
 
 - (void)viewWillAppear {
@@ -522,7 +525,7 @@ static void CommonInit(FlutterViewController* controller) {
                event.momentumPhase == NSEventPhaseCancelled) {
       _mouseState.system_scroll_inertia_active = false;
     }
-    // Skip momentum events, the framework will generate scroll momentum.
+    // Skip momentum update events, the framework will generate scroll momentum.
     NSAssert(event.momentumPhase != NSEventPhaseNone,
              @"Received gesture event with unexpected phase");
   }
