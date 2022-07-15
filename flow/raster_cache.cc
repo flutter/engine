@@ -31,13 +31,17 @@ RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
-
   SkRect bounds =
       RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
-  // clang-format off
-  FML_DCHECK(std::round(std::abs(bounds.width() - image_->dimensions().width())) <=1 &&
-             std::round(std::abs(bounds.height() - image_->dimensions().height())) <= 1);
-  // clang-format on
+#ifndef NDEBUG
+  // The image dimensions should always be larger than the device bounds and smaller than the device bounds plus one pixel, at the same time, we must introduce epsilon to solve the round-off error. The value of epsilon is 1/512, which represents half of an AA sample.
+  // see https://github.com/flutter/flutter/issues/107622
+  float epsilon = 1 / 512.0;
+  FML_DCHECK(image_->dimensions().width() - bounds.width() > -epsilon &&
+             image_->dimensions().height() - bounds.height() > -epsilon &&
+             image_->dimensions().width() - bounds.width() < 1 + epsilon &&
+             image_->dimensions().height() - bounds.height() < 1 + epsilon);
+#endif
   canvas.resetMatrix();
   flow_.Step();
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
