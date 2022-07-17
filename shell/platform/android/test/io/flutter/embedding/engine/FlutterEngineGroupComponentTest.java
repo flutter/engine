@@ -125,7 +125,10 @@ public class FlutterEngineGroupComponentTest {
             any(Context.class),
             any(DartEntrypoint.class),
             nullable(String.class),
-            nullable(List.class));
+            nullable(List.class),
+            any(PlatformViewsController.class),
+            any(Boolean.class),
+            any(Boolean.class));
 
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(ctx, mock(DartEntrypoint.class));
@@ -141,9 +144,9 @@ public class FlutterEngineGroupComponentTest {
             any(DartEntrypoint.class),
             nullable(String.class),
             nullable(List.class),
-            nullable(PlatformViewsController.class),
-            nullable(boolean.class),
-            nullable(boolean.class)))
+            any(PlatformViewsController.class),
+            any(Boolean.class),
+            any(Boolean.class)))
         .thenReturn(mock(FlutterEngine.class));
 
     FlutterEngine thirdEngine =
