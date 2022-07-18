@@ -698,6 +698,8 @@ TEST_F(RasterCacheTest, RasterCacheKeyID_LayerChildrenIds) {
       RasterCacheKeyID(mock_layer->unique_id(), RasterCacheKeyType::kLayer));
   expected_ids.emplace_back(RasterCacheKeyID(display_list->unique_id(),
                                              RasterCacheKeyType::kDisplayList));
+  ASSERT_EQ(expected_ids[0], mock_layer->caching_key_id());
+  ASSERT_EQ(expected_ids[1], display_list_layer->caching_key_id());
   ASSERT_EQ(ids, expected_ids);
 }
 

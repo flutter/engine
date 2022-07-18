@@ -22,19 +22,7 @@ std::optional<std::vector<RasterCacheKeyID>> RasterCacheKeyID::LayerChildrenIds(
   std::vector<RasterCacheKeyID> ids;
   std::transform(
       children_layers.begin(), children_layers.end(), std::back_inserter(ids),
-      [](auto& layer) -> RasterCacheKeyID {
-        int64_t unique_id;
-        RasterCacheKeyType type;
-        if (layer->as_display_list_layer()) {
-          unique_id =
-              layer->as_display_list_layer()->display_list()->unique_id();
-          type = RasterCacheKeyType::kDisplayList;
-        } else {
-          unique_id = layer->unique_id();
-          type = RasterCacheKeyType::kLayer;
-        }
-        return RasterCacheKeyID(unique_id, type);
-      });
+      [](auto& layer) -> RasterCacheKeyID { return layer->caching_key_id(); });
   return ids;
 }
 
