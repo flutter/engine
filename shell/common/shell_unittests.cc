@@ -2984,25 +2984,34 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_NE(nullptr, spawn.get());
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
-        PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
-                 [&spawn, &spawner, initial_route] {
-                   // Check second shell ran the second entrypoint.
-                   ASSERT_EQ("testCanLaunchSecondaryIsolate",
-                             spawn->GetEngine()->GetLastEntrypoint());
-                   ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
+        PostSync(spawner->GetTaskRunners().GetUITaskRunner(), [&spawn, &spawner,
+                                                               initial_route] {
+          // Check second shell ran the second entrypoint.
+          ASSERT_EQ("testCanLaunchSecondaryIsolate",
+                    spawn->GetEngine()->GetLastEntrypoint());
+          ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
 
-                   ASSERT_NE(spawner->GetEngine()
-                                 ->GetRuntimeController()
-                                 ->GetRootIsolateGroup(),
-                             0u);
-                   ASSERT_EQ(spawner->GetEngine()
-                                 ->GetRuntimeController()
-                                 ->GetRootIsolateGroup(),
-                             spawn->GetEngine()
-                                 ->GetRuntimeController()
-                                 ->GetRootIsolateGroup());
-                 });
-
+          ASSERT_NE(spawner->GetEngine()
+                        ->GetRuntimeController()
+                        ->GetRootIsolateGroup(),
+                    0u);
+          ASSERT_EQ(spawner->GetEngine()
+                        ->GetRuntimeController()
+                        ->GetRootIsolateGroup(),
+                    spawn->GetEngine()
+                        ->GetRuntimeController()
+                        ->GetRootIsolateGroup());
+          auto spawner_snapshot_delegate = spawner->GetEngine()
+                                               ->GetRuntimeController()
+                                               ->GetSnapshotDelegate();
+          auto spawn_snapshot_delegate =
+              spawn->GetEngine()->GetRuntimeController()->GetSnapshotDelegate();
+          PostSync(spawner->GetTaskRunners().GetRasterTaskRunner(),
+                   [spawner_snapshot_delegate, spawn_snapshot_delegate] {
+                     ASSERT_NE(spawner_snapshot_delegate.get(),
+                               spawn_snapshot_delegate.get());
+                   });
+        });
         PostSync(
             spawner->GetTaskRunners().GetIOTaskRunner(), [&spawner, &spawn] {
               ASSERT_EQ(spawner->GetIOManager()->GetResourceContext().get(),
@@ -3754,7 +3763,7 @@ TEST_F(ShellTest, SpawnWorksWithOnError) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST_F(ShellTest, PictureToGpuImage) {
+TEST_F(ShellTest, PictureToImageSync) {
 #if !SHELL_ENABLE_GL
   // GL emulation does not exist on Fuchsia.
   GTEST_SKIP();
@@ -3778,7 +3787,7 @@ TEST_F(ShellTest, PictureToGpuImage) {
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
   PlatformViewNotifyCreated(shell.get());
-  configuration.SetEntrypoint("toGpuImage");
+  configuration.SetEntrypoint("toImageSync");
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
 

@@ -4,6 +4,7 @@
 
 #include "impeller/compiler/runtime_stage_data.h"
 
+#include <array>
 #include <optional>
 
 #include "impeller/base/validation.h"
@@ -54,6 +55,7 @@ static std::optional<fb::TargetPlatform> ToTargetPlatform(
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
       return std::nullopt;

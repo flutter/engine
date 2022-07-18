@@ -33,7 +33,6 @@ void MockRasterCache::AddMockLayer(int width, int height) {
       .dst_color_space    = preroll_context_.dst_color_space,
       .matrix             = ctm,
       .logical_rect       = layer.paint_bounds(),
-      .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
       // clang-format on
   };
   UpdateCacheEntry(
@@ -61,17 +60,16 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
   for (int i = 0; i < access_threshold(); i++) {
-    MarkSeen(display_list_item.GetId().value(), ctm);
+    MarkSeen(display_list_item.GetId().value(), ctm, true);
     Draw(display_list_item.GetId().value(), mock_canvas_, nullptr);
   }
-  MarkSeen(display_list_item.GetId().value(), ctm);
+  MarkSeen(display_list_item.GetId().value(), ctm, true);
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = preroll_context_.gr_context,
       .dst_color_space    = preroll_context_.dst_color_space,
       .matrix             = ctm,
       .logical_rect       = display_list->bounds(),
-      .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
       // clang-format on
   };
   UpdateCacheEntry(RasterCacheKeyID(display_list->unique_id(),

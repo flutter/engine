@@ -3906,27 +3906,65 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
   /// SPIR-V not meeting this specification will throw an exception.
   static Future<FragmentProgram> compile({
-    required ByteBuffer spirv,
+    ByteBuffer? spirv,
+    ByteBuffer? raw,
+    int? uniformFloatCount,
+    int? samplerCount,
     bool debugPrint = false,
   }) {
+    final bool spirvNull = spirv == null;
+    final bool rawNull = raw == null;
+    if (spirvNull && rawNull) {
+      throw ArgumentError(
+        'FragmentProgram.compile must be passed either the "spirv" or the '
+        '"raw" argument.',
+      );
+    }
+    if (!spirvNull && !rawNull) {
+      throw ArgumentError(
+        'FragmentProgram.compile must be passed only one of the "spirv" or the '
+        '"raw" arguments.',
+      );
+    }
+    if (!rawNull && uniformFloatCount == null && samplerCount == null) {
+      throw ArgumentError(
+        'FragmentProgram.compile requires the "uniformFloatCount" or the '
+        '"samplerCount" argument when passing the "raw" argument.',
+      );
+    }
     // Delay compilation without creating a timer, which interacts poorly with the
     // flutter test framework. See: https://github.com/flutter/flutter/issues/104084
-    return Future<FragmentProgram>.microtask(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
+    return Future<FragmentProgram>.microtask(() => FragmentProgram._(
+      spirv: spirv,
+      raw: raw,
+      uniformFloatCount: uniformFloatCount ?? 0,
+      samplerCount: samplerCount ?? 0,
+      debugPrint: debugPrint,
+    ));
   }
 
   @pragma('vm:entry-point')
   FragmentProgram._({
-    required ByteBuffer spirv,
+    ByteBuffer? spirv,
+    ByteBuffer? raw,
+    required int uniformFloatCount,
+    required int samplerCount,
     bool debugPrint = false,
   }) {
     _constructor();
-    final spv.TranspileResult result = spv.transpile(
-      spirv,
-      spv.TargetLanguage.sksl,
-    );
-    _init(result.src, debugPrint);
-    _uniformFloatCount = result.uniformFloatCount;
-    _samplerCount = result.samplerCount;
+    if (raw == null) {
+      final spv.TranspileResult result = spv.transpile(
+        spirv!,
+        spv.TargetLanguage.sksl,
+      );
+      _init(result.src, debugPrint);
+      _uniformFloatCount = result.uniformFloatCount;
+      _samplerCount = result.samplerCount;
+    } else {
+      _init(utf8.decode(raw.asUint8List()), debugPrint);
+      _uniformFloatCount = uniformFloatCount;
+      _samplerCount = samplerCount;
+    }
   }
 
   late final int _uniformFloatCount;
@@ -3993,9 +4031,12 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     }
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
-        'floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
+        'floatUniforms size: ${floatUniforms.length} must match given shader '
+        'uniform count: $_uniformFloatCount.',
+      );
     }
-    if (_samplerCount > 0 && (samplerUniforms == null || samplerUniforms.length != _samplerCount)) {
+    if (_samplerCount > 0 &&
+        (samplerUniforms == null || samplerUniforms.length != _samplerCount)) {
       throw ArgumentError('samplerUniforms must have length $_samplerCount');
     }
     if (samplerUniforms == null) {
@@ -4004,7 +4045,10 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
       samplerUniforms = <ImageShader>[...samplerUniforms];
     }
     final _FragmentShader shader = _FragmentShader(
-        this, Float32List.fromList(floatUniforms), samplerUniforms);
+      this,
+      Float32List.fromList(floatUniforms),
+      samplerUniforms,
+    );
     _shader(shader, floatUniforms, samplerUniforms);
     return shader;
   }
@@ -5375,9 +5419,9 @@ class Picture extends NativeFieldWrapperClass1 {
   }
   String? _toImage(int width, int height, _Callback<_Image?> callback) native 'Picture_toImage';
 
-  /// Creates a GPU resident image from this picture.
+  /// Synchronously creates a handle to an image of this picture.
   ///
-  /// {@template dart.ui.painting.Picture.toGpuImage}
+  /// {@template dart.ui.painting.Picture.toImageSync}
   /// The returned image will be `width` pixels wide and `height` pixels high.
   /// The picture is rasterized within the 0 (left), 0 (top), `width` (right),
   /// `height` (bottom) bounds. Content outside these bounds is clipped.
@@ -5386,20 +5430,23 @@ class Picture extends NativeFieldWrapperClass1 {
   /// asynchronously. If the rasterization fails, an exception will be thrown
   /// when the image is drawn to a [Canvas].
   ///
-  /// In the flutter_tester, this will always created a light gray and white
-  /// checkerboard bitmap with the requested dimensions.
+  /// If a GPU context is available, this image will be created as GPU resident
+  /// and not copied back to the host. This means the image will be more
+  /// efficient to draw.
+  ///
+  /// If no GPU context is availalbe, the image will be rasterized on the CPU.
   /// {@endtemplate}
-  Image toGpuImage(int width, int height) {
+  Image toImageSync(int width, int height) {
     assert(!_disposed);
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
 
     final _Image image = _Image._();
-    _toGpuImage(width, height, image);
+    _toImageSync(width, height, image);
     return Image._(image, image.width, image.height);
   }
-  void _toGpuImage(int width, int height, _Image outImage) native 'Picture_toGpuImage';
+  void _toImageSync(int width, int height, _Image outImage) native 'Picture_toImageSync';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -5909,7 +5956,7 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
 }
 
 /// An exception thrown by [Canvas.drawImage] and related methods when drawing
-/// an [Image] created via [Picture.toGpuImage] that is in an invalid state.
+/// an [Image] created via [Picture.toImageSync] that is in an invalid state.
 ///
 /// This exception may be thrown if the requested image dimensions exceeded the
 /// maximum 2D texture size allowed by the GPU, or if no GPU surface or context
@@ -5920,7 +5967,7 @@ class PictureRasterizationException implements Exception {
   /// A string containing details about the failure.
   final String message;
 
-  /// If available, the stack trace at the time [Picture.toGpuImage] was called.
+  /// If available, the stack trace at the time [Picture.toImageSync] was called.
   final StackTrace? stack;
 
   @override
