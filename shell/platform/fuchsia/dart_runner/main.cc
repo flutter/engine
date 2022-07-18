@@ -39,8 +39,6 @@ int main(int argc, const char** argv) {
 
   // Create our component context which is served later.
   auto context = sys::ComponentContext::Create();
-  
-  FML_LOG(INFO) << "hi from erik";
 
   dart_utils::RootInspectNode::Initialize(context.get());
   auto build_info = dart_utils::RootInspectNode::CreateRootChild("build_info");
