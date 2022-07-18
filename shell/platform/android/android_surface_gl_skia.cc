@@ -9,6 +9,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
@@ -162,10 +163,10 @@ bool AndroidSurfaceGLSkia::GLContextPresent(const GLPresentInfo& present_info) {
   return onscreen_surface_->SwapBuffers(present_info.damage);
 }
 
-intptr_t AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
+GLFBOInfo AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
   FML_DCHECK(IsValid());
   // The default window bound framebuffer on Android.
-  return 0;
+  return GLFBOInfo{0};
 }
 
 // |GPUSurfaceGLDelegate|
