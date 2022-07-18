@@ -28,6 +28,7 @@ class FontFallbackData {
   /// Used for tests.
   static void debugReset() {
     _instance = FontFallbackData();
+    notoDownloadQueue = FallbackFontDownloadQueue();
   }
 
   /// Code units that no known font has a glyph for.
@@ -57,8 +58,6 @@ class FontFallbackData {
   final List<RegisteredFont> registeredFallbackFonts = <RegisteredFont>[];
 
   final List<String> globalFontFallbacks = <String>['Roboto'];
-
-  final Map<String, int> fontFallbackCounts = <String, int>{};
 
   /// A list of code units to check against the global fallback fonts.
   final Set<int> _codeUnitsToCheckAgainstFallbackFonts = <int>{};
@@ -215,23 +214,19 @@ class FontFallbackData {
       printWarning('Failed to parse fallback font $family as a font.');
       return;
     }
-    fontFallbackCounts.putIfAbsent(family, () => 0);
-    final int fontFallbackTag = fontFallbackCounts[family]!;
-    fontFallbackCounts[family] = fontFallbackCounts[family]! + 1;
-    final String countedFamily = '$family $fontFallbackTag';
     // Insert emoji font before all other fallback fonts so we use the emoji
     // whenever it's available.
-    registeredFallbackFonts.add(RegisteredFont(bytes, countedFamily, typeface));
+    registeredFallbackFonts.add(RegisteredFont(bytes, family, typeface));
     // Insert emoji font before all other fallback fonts so we use the emoji
     // whenever it's available.
     if (family == 'Noto Emoji') {
       if (globalFontFallbacks.first == 'Roboto') {
-        globalFontFallbacks.insert(1, countedFamily);
+        globalFontFallbacks.insert(1, family);
       } else {
-        globalFontFallbacks.insert(0, countedFamily);
+        globalFontFallbacks.insert(0, family);
       }
     } else {
-      globalFontFallbacks.add(countedFamily);
+      globalFontFallbacks.add(family);
     }
   }
 }
@@ -340,6 +335,10 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
           if (bestFonts.contains(_notoSansJP)) {
             bestFont = _notoSansJP;
           }
+        } else if (language == 'ko') {
+          if (bestFonts.contains(_notoSansKR)) {
+            bestFont = _notoSansKR;
+          }
         }
       }
     }
@@ -355,7 +354,8 @@ NotoFont _notoSansSC = fallbackFonts.singleWhere((NotoFont font) => font.name ==
 NotoFont _notoSansTC = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans TC');
 NotoFont _notoSansHK = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans HK');
 NotoFont _notoSansJP = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans JP');
-List<NotoFont> _cjkFonts = <NotoFont>[_notoSansSC, _notoSansTC, _notoSansHK, _notoSansJP];
+NotoFont _notoSansKR = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans KR');
+List<NotoFont> _cjkFonts = <NotoFont>[_notoSansSC, _notoSansTC, _notoSansHK, _notoSansJP, _notoSansKR];
 
 class FallbackFontDownloadQueue {
   NotoDownloader downloader = NotoDownloader();

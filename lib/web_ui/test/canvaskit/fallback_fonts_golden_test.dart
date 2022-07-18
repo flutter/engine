@@ -28,7 +28,7 @@ void testMain() {
     ui.PlatformMessageCallback? savedCallback;
 
     setUp(() {
-      notoDownloadQueue = FallbackFontDownloadQueue();
+      FontFallbackData.debugReset();
       notoDownloadQueue.downloader = TestDownloader();
       TestDownloader.mockDownloads.clear();
       final String notoSansArabicUrl = fallbackFonts
@@ -42,7 +42,6 @@ void testMain() {
       TestDownloader.mockDownloads[notoEmojiUrl] =
           '/assets/fonts/NotoColorEmoji.ttf';
       savedCallback = ui.window.onPlatformMessage;
-      FontFallbackData.debugReset();
     });
 
     tearDown(() {
@@ -68,7 +67,7 @@ void testMain() {
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
-          contains('Noto Sans Arabic 0'));
+          contains('Noto Sans Arabic'));
 
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
@@ -109,7 +108,7 @@ void testMain() {
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
-          <String>['Roboto', 'Noto Sans Arabic 0']);
+          <String>['Roboto', 'Noto Sans Arabic']);
 
       pb = CkParagraphBuilder(
         CkParagraphStyle(),
@@ -126,8 +125,8 @@ void testMain() {
 
       expect(FontFallbackData.instance.globalFontFallbacks, <String>[
         'Roboto',
-        'Noto Emoji 0',
-        'Noto Sans Arabic 0',
+        'Noto Emoji',
+        'Noto Sans Arabic',
       ]);
     });
 
@@ -147,7 +146,7 @@ void testMain() {
       await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
-          contains('Noto Emoji 0'));
+          contains('Noto Emoji'));
 
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);

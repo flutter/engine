@@ -66,7 +66,7 @@ const List<NotoFont> fallbackFonts = <NotoFont>[
     CodeunitRange(0xfeff, 0xfeff),
     CodeunitRange(0xfffc, 0xfffd),
   ]),
-  NotoFont('Noto Emoji', 'http://fonts.gstatic.com/s/notoemoji/v24/bMrnmSyK7YY-MEu6aWjPDs-ar6uWaGWuob-r0jwvS-FGJCMY.ttf', <CodeunitRange>[
+  NotoFont('Noto Emoji', 'http://fonts.gstatic.com/s/notoemoji/v26/bMrnmSyK7YY-MEu6aWjPDs-ar6uWaGWuob-r0jwvS-FGJCMY.ttf', <CodeunitRange>[
     CodeunitRange(0x20, 0x20),
     CodeunitRange(0x23, 0x23),
     CodeunitRange(0x2a, 0x2a),
