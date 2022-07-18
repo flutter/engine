@@ -131,44 +131,6 @@ TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
   }
 }
 
-TEST_P(EntityTest, EntityCoverageCachingWorks) {
-  auto make_fill = [](Rect rect) {
-    return SolidColorContents::Make(PathBuilder{}.AddRect(rect).TakePath(),
-                                    Color::White());
-  };
-
-  Entity entity;
-  entity.SetContents(make_fill({0, 0, 100, 100}));
-  {
-    auto coverage = entity.GetCoverage();
-    auto expected = Rect(0, 0, 100, 100);
-    ASSERT_TRUE(coverage.has_value());
-    ASSERT_RECT_NEAR(coverage.value(), expected);
-  }
-
-  entity.SetContents(make_fill({0, 0, 200, 200}));
-  // When true, the coverage is not recomputed.
-  {
-    auto coverage = entity.GetCoverage(true);
-    auto expected = Rect(0, 0, 100, 100);
-    ASSERT_TRUE(coverage.has_value());
-    ASSERT_RECT_NEAR(coverage.value(), expected);
-  }
-  // When false, coverage is computed and the cached coverage is overridden.
-  {
-    auto coverage = entity.GetCoverage();
-    auto expected = Rect(0, 0, 200, 200);
-    ASSERT_TRUE(coverage.has_value());
-    ASSERT_RECT_NEAR(coverage.value(), expected);
-  }
-  {
-    auto coverage = entity.GetCoverage(true);
-    auto expected = Rect(0, 0, 200, 200);
-    ASSERT_TRUE(coverage.has_value());
-    ASSERT_RECT_NEAR(coverage.value(), expected);
-  }
-}
-
 TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   auto image = CreateTextureForFixture("boston.jpg");
   auto filter = FilterContents::MakeBlend(Entity::BlendMode::kSoftLight,

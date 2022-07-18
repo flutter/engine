@@ -362,7 +362,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
                          &renderer](Entity& element_entity) {
     auto pass = pass_context.GetRenderPass(pass_depth);
 
-    auto coverage = element_entity.GetCoverage(true);
+    auto coverage = element_entity.GetCoverage();
     if (!coverage.has_value() ||
         !Rect::MakeSize(Size(pass->GetRenderTargetSize()))
              .IntersectsWithRect(coverage.value())) {

@@ -33,16 +33,12 @@ bool Entity::AddsToCoverage() const {
   return adds_to_coverage_;
 }
 
-std::optional<Rect> Entity::GetCoverage(bool use_cache) const {
+std::optional<Rect> Entity::GetCoverage() const {
   if (!adds_to_coverage_ || !contents_) {
     return std::nullopt;
   }
 
-  if (!use_cache || !coverage_cache_.has_value()) {
-    coverage_cache_ = contents_->GetCoverage(*this);
-  }
-
-  return coverage_cache_.value();
+  return contents_->GetCoverage(*this);
 }
 
 void Entity::SetContents(std::shared_ptr<Contents> contents) {

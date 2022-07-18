@@ -79,14 +79,7 @@ class Entity {
 
   bool AddsToCoverage() const;
 
-  /// @brief      Get the screen space bounding rectangle that this entity will
-  ///             affect when rendered.
-  /// @param[in]  use_cache  When `false`, always compute the coverage (and
-  ///                        overwrite the cached coverage). When `true`, return
-  ///                        the cached coverage if populated. Coverage is
-  ///                        always computed if the cache has not yet been
-  ///                        populated.
-  std::optional<Rect> GetCoverage(bool use_cache = false) const;
+  std::optional<Rect> GetCoverage() const;
 
   void SetContents(std::shared_ptr<Contents> contents);
 
@@ -110,7 +103,6 @@ class Entity {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   uint32_t stencil_depth_ = 0u;
   bool adds_to_coverage_ = true;
-  mutable std::optional<std::optional<Rect>> coverage_cache_;
 };
 
 }  // namespace impeller
