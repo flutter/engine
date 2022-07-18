@@ -143,7 +143,10 @@ typedef CanvasPath Path;
   V(Canvas, drawRect, 7)                               \
   V(Canvas, drawShadow, 5)                             \
   V(Canvas, drawVertices, 5)                           \
+  V(Canvas, getDestinationClipBounds, 2)               \
+  V(Canvas, getLocalClipBounds, 2)                     \
   V(Canvas, getSaveCount, 1)                           \
+  V(Canvas, getTransform, 2)                           \
   V(Canvas, restore, 1)                                \
   V(Canvas, rotate, 2)                                 \
   V(Canvas, save, 1)                                   \

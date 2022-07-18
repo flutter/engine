@@ -54,7 +54,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   void rotate(double radians);
   void skew(double sx, double sy);
   void transform(const tonic::Float64List& matrix4);
-  void getTransform(tonic::Float64List& matrix4);
+  void getTransform(Dart_Handle matrix4_handle);
 
   void clipRect(double left,
                 double top,
@@ -64,8 +64,8 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                 bool doAntiAlias = true);
   void clipRRect(const RRect& rrect, bool doAntiAlias = true);
   void clipPath(const CanvasPath* path, bool doAntiAlias = true);
-  void getDestinationClipBounds(tonic::Float64List& rect);
-  void getLocalClipBounds(tonic::Float64List& rect);
+  void getDestinationClipBounds(Dart_Handle rect_handle);
+  void getLocalClipBounds(Dart_Handle rect_handle);
 
   void drawColor(SkColor color, DlBlendMode blend_mode);
 

@@ -4646,7 +4646,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     _getTransform(matrix4);
     return matrix4;
   }
-  void _getTransform(Float64List matrix4) native 'Canvas_getTransform';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::getTransform')
+  external void _getTransform(Float64List matrix4);
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
@@ -4757,7 +4759,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     _getLocalClipBounds(bounds);
     return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
   }
-  void _getLocalClipBounds(Float64List bounds) native 'Canvas_getLocalClipBounds';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::getLocalClipBounds')
+  external void _getLocalClipBounds(Float64List bounds);
 
   /// Returns the conservative bounds of the combined result of all clip methods
   /// executed within the current save stack of this [Canvas] object, as measured
@@ -4778,7 +4782,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     _getDestinationClipBounds(bounds);
     return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
   }
-  void _getDestinationClipBounds(Float64List bounds) native 'Canvas_getDestinationClipBounds';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::getDestinationClipBounds')
+  external void _getDestinationClipBounds(Float64List bounds);
 
   /// Paints the given [Color] onto the canvas, applying the given
   /// [BlendMode], with the given color being the source and the background
@@ -5575,7 +5581,7 @@ class Picture extends NativeFieldWrapperClass1 {
   /// and not copied back to the host. This means the image will be more
   /// efficient to draw.
   ///
-  /// If no GPU context is availalbe, the image will be rasterized on the CPU.
+  /// If no GPU context is available, the image will be rasterized on the CPU.
   /// {@endtemplate}
   Image toImageSync(int width, int height) {
     assert(!_disposed);
@@ -5588,7 +5594,7 @@ class Picture extends NativeFieldWrapperClass1 {
     return Image._(image, image.width, image.height);
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>('Picture::toImageSync')
+  @FfiNative<Void Function(Pointer<Void>, Uint32, Uint32, Handle)>('Picture::toImageSync')
   external void _toImageSync(int width, int height, _Image outImage);
 
   /// Release the resources used by this object. The object is no longer usable

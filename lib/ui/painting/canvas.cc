@@ -155,7 +155,7 @@ void Canvas::transform(const tonic::Float64List& matrix4) {
   }
 }
 
-void Canvas::getTransform(tonic::Float64List& matrix4) {
+void Canvas::getTransform(Dart_Handle matrix4_handle) {
   SkM44 sk_m44 =
       display_list_recorder_
           ? display_list_recorder_->builder()->getTransformFullPerspective()
@@ -163,6 +163,7 @@ void Canvas::getTransform(tonic::Float64List& matrix4) {
   SkScalar m44_values[16];
   // The Float array stored by Dart Matrix4 is in column-major order
   sk_m44.getColMajor(m44_values);
+  auto matrix4 = tonic::Float64List(matrix4_handle);
   for (int i = 0; i < 16; i++) {
     matrix4[i] = m44_values[i];
   }
@@ -197,8 +198,9 @@ void Canvas::clipPath(const CanvasPath* path, bool doAntiAlias) {
   }
 }
 
-void Canvas::getDestinationClipBounds(tonic::Float64List& rect) {
+void Canvas::getDestinationClipBounds(Dart_Handle rect_handle) {
   if (display_list_recorder_) {
+    auto rect = tonic::Float64List(rect_handle);
     SkRect bounds = builder()->getDestinationClipBounds();
     rect[0] = bounds.fLeft;
     rect[1] = bounds.fTop;
@@ -207,8 +209,9 @@ void Canvas::getDestinationClipBounds(tonic::Float64List& rect) {
   }
 }
 
-void Canvas::getLocalClipBounds(tonic::Float64List& rect) {
+void Canvas::getLocalClipBounds(Dart_Handle rect_handle) {
   if (display_list_recorder_) {
+    auto rect = tonic::Float64List(rect_handle);
     SkRect bounds = display_list_recorder_->builder()->getLocalClipBounds();
     rect[0] = bounds.fLeft;
     rect[1] = bounds.fTop;
