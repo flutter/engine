@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#include "shell/gpu/gpu_surface_gl_delegate.h"
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
@@ -51,8 +52,8 @@ std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrDirectContext* gr_cont
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t IOSSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
-  return IsValid() ? render_target_->GetFramebuffer() : GL_NONE;
+GLFBOInfo IOSSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+  return IsValid() ? GLFBOInfo{render_target_->GetFramebuffer()} : GLFBOInfo{GL_NONE};
 }
 
 // |GPUSurfaceGLDelegate|
