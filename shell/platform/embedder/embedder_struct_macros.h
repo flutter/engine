@@ -28,5 +28,5 @@
 /// Checks if exactly one of member1 or member2 exists and is non-null.
 #define SAFE_EXISTS_ONE_OF(pointer, member1, member2) \
   (SAFE_EXISTS(pointer, member1) != SAFE_EXISTS(pointer, member2))
-  
+
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SAFE_ACCESS_H_
