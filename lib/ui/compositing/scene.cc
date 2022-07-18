@@ -101,7 +101,11 @@ Dart_Handle Scene::toImage(uint32_t width,
 void Scene::RasterizeToImageSync(uint32_t width,
                                  uint32_t height,
                                  Dart_Handle raw_image_handle) {
+  FML_DCHECK(layer_tree_);
   auto* dart_state = UIDartState::Current();
+  if (!dart_state) {
+    return;
+  }
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
@@ -112,8 +116,12 @@ void Scene::RasterizeToImageSync(uint32_t width,
 
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
-      [snapshot_delegate, unref_queue, dl_image = std::move(dl_image),
+      [snapshot_delegate = std::move(snapshot_delegate),
+       unref_queue = std::move(unref_queue), dl_image = std::move(dl_image),
        layer_tree = layer_tree_, width, height]() {
+        if (!snapshot_delegate) {
+          return;
+        }
         auto display_list =
             layer_tree->Flatten(SkRect::MakeWH(width, height),
                                 snapshot_delegate.get()->GetTextureRegistry());
