@@ -35,7 +35,9 @@ class Scene extends NativeFieldWrapperClass1 {
     }
     return Image._(image, image.width, image.height);
   }
-  String? _toImageSync(int width, int height, _Image outImage) native 'Scene_toImageSync';
+
+  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>('Scene::toImageSync')
+  external String? _toImageSync(int width, int height, _Image outImage);
 
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
