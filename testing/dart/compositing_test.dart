@@ -51,7 +51,7 @@ void main() {
     final ByteData? data = await image.toByteData();
 
     expect(data, isNotNull);
-    expect(data!.lengthInBytes, 6 * 8 * 4);
+    expect(data!.lengthInBytes, 10 * 10 * 4);
     expect(data.buffer.asUint8List()[0], 0);
     expect(data.buffer.asUint8List()[1], 0);
     expect(data.buffer.asUint8List()[2], 0);
