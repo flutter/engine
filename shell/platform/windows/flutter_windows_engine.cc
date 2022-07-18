@@ -9,7 +9,6 @@
 #include <sstream>
 
 #include "flutter/fml/platform/win/wstring_conversion.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
