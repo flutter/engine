@@ -63,6 +63,12 @@ std::string TargetPlatformToString(TargetPlatform platform) {
       return "OpenGLES";
     case TargetPlatform::kOpenGLDesktop:
       return "OpenGLDesktop";
+    case TargetPlatform::kRuntimeStageMetal:
+      return "RuntimeStageMetal";
+    case TargetPlatform::kRuntimeStageGLES:
+      return "RuntimeStageGLES";
+    case TargetPlatform::kSkSL:
+      return "SkSL";
   }
   FML_UNREACHABLE();
 }
@@ -102,6 +108,9 @@ bool TargetPlatformNeedsSL(TargetPlatform platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageGLES:
+    case TargetPlatform::kSkSL:
       return true;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kFlutterSPIRV:
@@ -116,9 +125,12 @@ bool TargetPlatformNeedsReflection(TargetPlatform platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageGLES:
       return true;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
       return false;
   }
   FML_UNREACHABLE();
@@ -189,12 +201,15 @@ spirv_cross::CompilerMSL::Options::Platform TargetPlatformToMSLPlatform(
     TargetPlatform platform) {
   switch (platform) {
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
       return spirv_cross::CompilerMSL::Options::Platform::iOS;
     case TargetPlatform::kMetalDesktop:
       return spirv_cross::CompilerMSL::Options::Platform::macOS;
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
     case TargetPlatform::kUnknown:
       return spirv_cross::CompilerMSL::Options::Platform::macOS;
   }
@@ -225,10 +240,13 @@ std::string TargetPlatformSLExtension(TargetPlatform platform) {
       return "unknown";
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
       return "metal";
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       return "glsl";
   }
   FML_UNREACHABLE();
@@ -247,26 +265,34 @@ bool TargetPlatformIsOpenGL(TargetPlatform platform) {
   switch (platform) {
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       return true;
     case TargetPlatform::kMetalDesktop:
+    case TargetPlatform::kRuntimeStageMetal:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kUnknown:
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
       return false;
   }
+  FML_UNREACHABLE();
 }
 
 bool TargetPlatformIsMetal(TargetPlatform platform) {
   switch (platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
       return true;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       return false;
   }
+  FML_UNREACHABLE();
 }
 
 }  // namespace compiler

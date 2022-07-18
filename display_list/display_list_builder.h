@@ -13,6 +13,7 @@
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_path_effect.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
 
@@ -154,15 +155,20 @@ class DisplayListBuilder final : public virtual Dispatcher,
   // Only the |renders_with_attributes()| option will be accepted here. Any
   // other flags will be ignored and calculated anew as the DisplayList is
   // built. Alternatively, use the |saveLayer(SkRect, bool)| method.
-  void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
+  void saveLayer(const SkRect* bounds,
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override;
   // Convenience method with just a boolean to indicate whether the saveLayer
   // should apply the rendering attributes.
   void saveLayer(const SkRect* bounds, bool renders_with_attributes) {
-    saveLayer(bounds, renders_with_attributes
-                          ? SaveLayerOptions::kWithAttributes
-                          : SaveLayerOptions::kNoAttributes);
+    saveLayer(bounds,
+              renders_with_attributes ? SaveLayerOptions::kWithAttributes
+                                      : SaveLayerOptions::kNoAttributes,
+              nullptr);
   }
-  void saveLayer(const SkRect* bounds, const DlPaint* paint);
+  void saveLayer(const SkRect* bounds,
+                 const DlPaint* paint,
+                 const DlImageFilter* backdrop = nullptr);
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
   void restoreToCount(int restore_count);
@@ -193,9 +199,27 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void transform(const SkMatrix& matrix) { transform(&matrix); }
   void transform(const SkM44& matrix44) { transform(&matrix44); }
 
+  /// Returns the 4x4 full perspective transform representing all transform
+  /// operations executed so far in this DisplayList within the enclosing
+  /// save stack.
+  SkM44 getTransformFullPerspective() { return current_layer_->matrix; }
+  /// Returns the 3x3 partial perspective transform representing all transform
+  /// operations executed so far in this DisplayList within the enclosing
+  /// save stack.
+  SkMatrix getTransform() { return current_layer_->matrix.asM33(); }
+
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
+
+  /// Conservative estimate of the bounds of all outstanding clip operations
+  /// measured in the coordinate space within which this DisplayList will
+  /// be rendered.
+  SkRect getDestinationClipBounds() { return current_layer_->clip_bounds; }
+  /// Conservative estimate of the bounds of all outstanding clip operations
+  /// transformed into the local coordinate space in which currently
+  /// recorded rendering operations are interpreted.
+  SkRect getLocalClipBounds();
 
   void drawPaint() override;
   void drawPaint(const DlPaint& paint);
@@ -249,41 +273,41 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  bool render_with_attributes) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const DlPaint* paint = nullptr);
   void drawImageRect(
       const sk_sp<DlImage> image,
       const SkRect& src,
       const SkRect& dst,
-      const SkSamplingOptions& sampling,
+      DlImageSampling sampling,
       bool render_with_attributes,
       SkCanvas::SrcRectConstraint constraint =
           SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling,
+                     DlImageSampling sampling,
                      const DlPaint* paint = nullptr,
                      SkCanvas::SrcRectConstraint constraint =
                          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint);
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     DlFilterMode filter,
                      bool render_with_attributes) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     DlFilterMode filter,
                      const DlPaint* paint = nullptr);
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter,
+                        DlFilterMode filter,
                         bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
@@ -291,7 +315,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cullRect,
                  bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
@@ -300,7 +324,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cullRect,
                  const DlPaint* paint = nullptr);
   void drawPicture(const sk_sp<SkPicture> picture,
@@ -345,11 +369,24 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   struct LayerInfo {
-    LayerInfo(size_t save_layer_offset = 0, bool has_layer = false)
+    LayerInfo(const SkM44& matrix,
+              const SkRect& clip_bounds,
+              size_t save_layer_offset = 0,
+              bool has_layer = false)
         : save_layer_offset(save_layer_offset),
           has_layer(has_layer),
           cannot_inherit_opacity(false),
-          has_compatible_op(false) {}
+          has_compatible_op(false),
+          matrix(matrix),
+          clip_bounds(clip_bounds) {}
+
+    LayerInfo(const LayerInfo* current_layer,
+              size_t save_layer_offset = 0,
+              bool has_layer = false)
+        : LayerInfo(current_layer->matrix,
+                    current_layer->clip_bounds,
+                    save_layer_offset,
+                    has_layer) {}
 
     // The offset into the memory buffer where the saveLayer DLOp record
     // for this saveLayer() call is placed. This may be needed if the
@@ -362,6 +399,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
     bool has_layer;
     bool cannot_inherit_opacity;
     bool has_compatible_op;
+
+    SkM44 matrix;
+    SkRect clip_bounds;
 
     bool is_group_opacity_compatible() const { return !cannot_inherit_opacity; }
 

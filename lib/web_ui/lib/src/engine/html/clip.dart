@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-import 'dart:svg' as svg;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
@@ -210,8 +207,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   final ui.Color color;
   final ui.Color shadowColor;
   final ui.Clip clipBehavior;
-  html.Element? _clipElement;
-  html.Element? _svgElement;
+  DomElement? _clipElement;
+  DomElement? _svgElement;
 
   @override
   void recomputeTransformAndClip() {
@@ -345,7 +342,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// we size the inner container to cover full pathBounds instead of sizing
     /// to clipping rect bounds (which is the case for elevation == 0.0 where
     /// we shift outer/inner clip area instead to position clip-path).
-    final svg.SvgSvgElement svgClipPath = elevation == 0.0
+    final SVGSVGElement svgClipPath = elevation == 0.0
         ? pathToSvgClipPath(path,
             offsetX: -pathBounds.left,
             offsetY: -pathBounds.top,
@@ -362,7 +359,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     _clipElement?.remove();
     _svgElement?.remove();
     _clipElement = svgClipPath;
-    rootElement!.append(_clipElement! as DomElement);
+    rootElement!.append(_clipElement!);
     if (elevation == 0.0) {
       setClipPath(rootElement!, createSvgClipUrl());
       final DomCSSStyleDeclaration rootElementStyle = rootElement!.style;
@@ -404,7 +401,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
         '${pathBounds2.bottom}');
 
     /// Render element behind the clipped content.
-    rootElement!.insertBefore(_svgElement! as DomElement, childContainer);
+    rootElement!.insertBefore(_svgElement!, childContainer);
 
     final SurfaceShadowData shadow = computeShadow(pathBounds, elevation)!;
     final ui.Color boxShadowColor = toShadowColor(shadowColor);
@@ -445,12 +442,12 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       // Reuse clipElement from prior surface.
       _clipElement = oldSurface._clipElement;
       if (_clipElement != null) {
-        rootElement!.append(_clipElement! as DomElement);
+        rootElement!.append(_clipElement!);
       }
       oldSurface._clipElement = null;
       _svgElement = oldSurface._svgElement;
       if (_svgElement != null) {
-        rootElement!.insertBefore(_svgElement! as DomElement, childContainer);
+        rootElement!.insertBefore(_svgElement!, childContainer);
       }
       oldSurface._svgElement = null;
     }
@@ -518,8 +515,7 @@ class PersistedClipPath extends PersistedContainerSurface
 SVGSVGElement createSvgClipDef(DomElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
   final SVGSVGElement svgClipPath = pathToSvgClipPath(clipPath,
-      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom) as
-      SVGSVGElement;
+      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
   setClipPath(element, createSvgClipUrl());
   // We need to set width and height for the clipElement to cover the
   // bounds of the path since browsers such as Safari and Edge

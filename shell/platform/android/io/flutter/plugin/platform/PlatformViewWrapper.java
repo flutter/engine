@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.platform;
 
+import static android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -19,6 +21,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -56,7 +59,7 @@ class PlatformViewWrapper extends FrameLayout {
   @Nullable @VisibleForTesting ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener;
   private final AtomicLong pendingFramesCount = new AtomicLong(0L);
 
-  private final TextureRegistry.OnFrameConsumedListener listener =
+  private final TextureRegistry.OnFrameConsumedListener frameConsumedListener =
       new TextureRegistry.OnFrameConsumedListener() {
         @Override
         public void onFrameConsumed() {
@@ -66,9 +69,37 @@ class PlatformViewWrapper extends FrameLayout {
         }
       };
 
+  private boolean shouldRecreateSurfaceForLowMemory = false;
+  private final TextureRegistry.OnTrimMemoryListener trimMemoryListener =
+      new TextureRegistry.OnTrimMemoryListener() {
+        @Override
+        public void onTrimMemory(int level) {
+          // When a memory pressure warning is received and the level equal {@code
+          // ComponentCallbacks2.TRIM_MEMORY_COMPLETE}, the Android system releases the underlying
+          // surface. If we continue to use the surface (e.g., call lockHardwareCanvas), a crash
+          // occurs, and we found that this crash appeared on Android10 and above.
+          // See https://github.com/flutter/flutter/issues/103870 for more details.
+          //
+          // Here our workaround is to recreate the surface before using it.
+          if (level == TRIM_MEMORY_COMPLETE && Build.VERSION.SDK_INT >= 29) {
+            shouldRecreateSurfaceForLowMemory = true;
+          }
+        }
+      };
+
   private void onFrameProduced() {
     if (Build.VERSION.SDK_INT == 29) {
       pendingFramesCount.incrementAndGet();
+    }
+  }
+
+  private void recreateSurfaceIfNeeded() {
+    if (shouldRecreateSurfaceForLowMemory) {
+      if (surface != null) {
+        surface.release();
+      }
+      surface = createSurface(tx);
+      shouldRecreateSurfaceForLowMemory = false;
     }
   }
 
@@ -87,7 +118,8 @@ class PlatformViewWrapper extends FrameLayout {
   public PlatformViewWrapper(
       @NonNull Context context, @NonNull TextureRegistry.SurfaceTextureEntry textureEntry) {
     this(context);
-    textureEntry.setOnFrameConsumedListener(listener);
+    textureEntry.setOnFrameConsumedListener(frameConsumedListener);
+    textureEntry.setOnTrimMemoryListener(trimMemoryListener);
     setTexture(textureEntry.surfaceTexture());
   }
 
@@ -211,6 +243,21 @@ class PlatformViewWrapper extends FrameLayout {
     return true;
   }
 
+  @Override
+  public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+    final View embeddedView = getChildAt(0);
+    if (embeddedView != null
+        && embeddedView.getImportantForAccessibility()
+            == View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS) {
+      return false;
+    }
+    // Forward the request only if the embedded view is in the Flutter accessibility tree.
+    // The embedded view may be ignored when the framework doesn't populate a SemanticNode
+    // for the current platform view.
+    // See AccessibilityBridge for more.
+    return super.requestSendAccessibilityEvent(child, event);
+  }
+
   /** Used on Android O+, {@link invalidateChildInParent} used for previous versions. */
   @SuppressLint("NewApi")
   @Override
@@ -249,6 +296,10 @@ class PlatformViewWrapper extends FrameLayout {
       // If there are still frames that are not consumed, we will draw them next time.
       invalidate();
     } else {
+      // We try to recreate the surface before using it to avoid the crash:
+      // https://github.com/flutter/flutter/issues/103870
+      recreateSurfaceIfNeeded();
+
       // Override the canvas that this subtree of views will use to draw.
       final Canvas surfaceCanvas = surface.lockHardwareCanvas();
       try {

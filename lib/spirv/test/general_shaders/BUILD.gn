@@ -3,25 +3,35 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
 if (enable_unittests) {
-  compiled_action_foreach("spirv_compile_general_shaders") {
-    tool = "//flutter/lib/spirv/test:glsl_to_spirv"
+  test_shaders = [
+    "blue_green_sampler.frag",
+    "children_and_uniforms.frag",
+    "functions.frag",
+    "simple.frag",
+    "uniforms.frag",
+  ]
 
-    sources = [
-      "blue_green_sampler.glsl",
-      "children_and_uniforms.glsl",
-      "functions.glsl",
-      "simple.glsl",
-      "uniforms.glsl",
+  group("general_shaders") {
+    deps = [
+      ":sksl_compile_general_shaders",
+      ":spirv_compile_general_shaders",
     ]
+  }
 
-    outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]
+  impellerc("spirv_compile_general_shaders") {
+    shaders = test_shaders
+    shader_target_flag = "--flutter-spirv"
+    intermediates_subdir = "spirv"
+  }
 
-    args = [
-      "{{source}}",
-      rebase_path(target_gen_dir, root_build_dir) + "/{{source_name_part}}.spv",
-    ]
+  impellerc("sksl_compile_general_shaders") {
+    shaders = test_shaders
+    shader_target_flag = "--sksl"
+    intermediates_subdir = "sksl"
+    sl_file_extension = "sksl"
   }
 }

@@ -8,7 +8,7 @@
 #include <iostream>
 #include <vector>
 
-#include "third_party/swiftshader/third_party/SPIRV-Tools/include/spirv-tools/libspirv.hpp"
+#include "spirv-tools/libspirv.hpp"
 
 namespace fs = std::filesystem;
 
@@ -41,7 +41,8 @@ int main(int argc, const char* argv[]) {
   }
 
   std::fstream output;
-  output.open(argv[2], std::fstream::out | std::fstream::trunc);
+  output.open(argv[2],
+              std::fstream::out | std::fstream::trunc | std::fstream::binary);
   if (!output.is_open()) {
     output.close();
     std::cerr << "failed to open output file" << std::endl;

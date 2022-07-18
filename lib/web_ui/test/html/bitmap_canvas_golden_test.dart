@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -24,14 +23,14 @@ Future<void> testMain() async {
 
   void appendToScene() {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
-    final html.Element testScene = html.Element.tag('flt-scene');
+    final DomElement testScene = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       testScene.style.position = 'absolute';
       testScene.style.transformOrigin = '0 0 0';
       testScene.style.transform = 'scale(0.3)';
     }
-    testScene.append(canvas.rootElement as html.Node);
+    testScene.append(canvas.rootElement);
     flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
   }
 
@@ -251,7 +250,7 @@ Future<void> testMain() async {
     sb.pop();
     sb.pop();
     final SurfaceScene scene = sb.build() as SurfaceScene;
-    final html.Element sceneElement = scene.webOnlyRootElement!;
+    final DomElement sceneElement = scene.webOnlyRootElement!;
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -259,7 +258,7 @@ Future<void> testMain() async {
       sceneElement.style.transform = 'scale(0.3)';
     }
 
-    sceneElement.querySelector('flt-clip')!.append(canvas.rootElement as html.Node);
+    sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
     flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
 
     await matchGoldenFile(

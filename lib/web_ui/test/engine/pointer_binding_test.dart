@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show flutterViewEmbedder, window;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/ui.dart' as ui;
@@ -45,7 +45,7 @@ void main() {
 
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
-  final html.Element glassPane = flutterViewEmbedder.glassPaneElement!;
+  final DomElement glassPane = flutterViewEmbedder.glassPaneElement!;
   double dpi = 1.0;
 
   setUp(() {
@@ -57,7 +57,7 @@ void testMain() {
     final MockSafariPointerEventWorkaround mockSafariPointer =
         MockSafariPointerEventWorkaround();
     SafariPointerEventWorkaround.instance = mockSafariPointer;
-    final PointerBinding instance = PointerBinding(html.DivElement());
+    final PointerBinding instance = PointerBinding(createDomHTMLDivElement());
     expect(mockSafariPointer.workAroundInvoked, isIosSafari);
     instance.dispose();
   }, skip: !isIosSafari);
@@ -67,18 +67,18 @@ void testMain() {
       return;
     }
 
-    html.PointerEvent expectCorrectType(html.Event e) {
-      expect(e.runtimeType, equals(html.PointerEvent));
-      return e as html.PointerEvent;
+    DomPointerEvent expectCorrectType(DomEvent e) {
+      expect(domInstanceOfString(e, 'PointerEvent'), isTrue);
+      return e as DomPointerEvent;
     }
 
-    List<html.PointerEvent> expectCorrectTypes(List<html.Event> events) {
+    List<DomPointerEvent> expectCorrectTypes(List<DomEvent> events) {
       return events.map(expectCorrectType).toList();
     }
 
     final _PointerEventContext context = _PointerEventContext();
-    html.PointerEvent event;
-    List<html.PointerEvent> events;
+    DomPointerEvent event;
+    List<DomPointerEvent> events;
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('pointerdown'));
@@ -168,6 +168,14 @@ void testMain() {
     expect(events[1].client.x, equals(222));
     expect(events[1].client.y, equals(223));
 
+    event = expectCorrectType(context.mouseLeave(clientX: 1000, clientY: 2000, buttons: 6));
+    expect(event.type, equals('pointerleave'));
+    expect(event.pointerId, equals(1));
+    expect(event.button, equals(0));
+    expect(event.buttons, equals(6));
+    expect(event.client.x, equals(1000));
+    expect(event.client.y, equals(2000));
+
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('pointerup'));
     expect(event.pointerId, equals(1));
@@ -235,18 +243,18 @@ void testMain() {
       return;
     }
 
-    html.TouchEvent expectCorrectType(html.Event e) {
-      expect(e.runtimeType, equals(html.TouchEvent));
-      return e as html.TouchEvent;
+    DomTouchEvent expectCorrectType(DomEvent e) {
+      expect(domInstanceOfString(e, 'TouchEvent'), isTrue);
+      return e as DomTouchEvent;
     }
 
-    List<html.TouchEvent> expectCorrectTypes(List<html.Event> events) {
+    List<DomTouchEvent> expectCorrectTypes(List<DomEvent> events) {
       return events.map(expectCorrectType).toList();
     }
 
     final _TouchEventContext context = _TouchEventContext();
-    html.TouchEvent event;
-    List<html.TouchEvent> events;
+    DomTouchEvent event;
+    List<DomTouchEvent> events;
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('touchstart'));
@@ -331,13 +339,13 @@ void testMain() {
       return;
     }
 
-    html.MouseEvent expectCorrectType(html.Event e) {
-      expect(e.runtimeType, equals(html.MouseEvent));
-      return e as html.MouseEvent;
+    DomMouseEvent expectCorrectType(DomEvent e) {
+      expect(domInstanceOfString(e, 'MouseEvent'), isTrue);
+      return e as DomMouseEvent;
     }
 
     final _MouseEventContext context = _MouseEventContext();
-    html.MouseEvent event;
+    DomMouseEvent event;
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('mousedown'));
@@ -384,6 +392,13 @@ void testMain() {
     expect(event.buttons, equals(1));
     expect(event.client.x, equals(214));
     expect(event.client.y, equals(215));
+
+    event = expectCorrectType(context.mouseLeave(clientX: 1000, clientY: 2000, buttons: 6));
+    expect(event.type, equals('mouseleave'));
+    expect(event.button, equals(0));
+    expect(event.buttons, equals(6));
+    expect(event.client.x, equals(1000));
+    expect(event.client.y, equals(2000));
 
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('mouseup'));
@@ -468,8 +483,8 @@ void testMain() {
         packets.add(packet);
       };
 
-      final html.Element semanticsPlaceholder =
-          html.Element.tag('flt-semantics-placeholder');
+      final DomElement semanticsPlaceholder =
+          createDomElement('flt-semantics-placeholder');
       glassPane.append(semanticsPlaceholder);
 
       // Press on the semantics placeholder.
@@ -509,7 +524,7 @@ void testMain() {
       packets.clear();
 
       // Release the pointer on the semantics placeholder.
-      html.window.dispatchEvent(context.primaryUp(
+      domWindow.dispatchEvent(context.primaryUp(
         clientX: 100.0,
         clientY: 200.0,
       ));
@@ -842,7 +857,7 @@ void testMain() {
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
-    'correctly converts buttons of down, move and up events',
+    'correctly converts buttons of down, move, leave, and up events',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -1002,6 +1017,30 @@ void testMain() {
       expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40 * dpi));
       expect(packets[0].data[0].physicalY, equals(41 * dpi));
+      expect(packets[0].data[0].buttons, equals(0));
+      packets.clear();
+
+      // Leave
+
+      glassPane.dispatchEvent(context.mouseLeave(
+        buttons: 1,
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, isEmpty);
+      packets.clear();
+
+      glassPane.dispatchEvent(context.mouseLeave(
+        buttons: 0,
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[0].synthesized, isFalse);
+      expect(packets[0].data[0].physicalX, equals(1000 * dpi));
+      expect(packets[0].data[0].physicalY, equals(2000 * dpi));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
@@ -1787,7 +1826,7 @@ void testMain() {
       packets.clear();
 
       // Move outside the glasspane.
-      html.window.dispatchEvent(context.primaryMove(
+      domWindow.dispatchEvent(context.primaryMove(
         clientX: 900.0,
         clientY: 1900.0,
       ));
@@ -1799,7 +1838,7 @@ void testMain() {
       packets.clear();
 
       // Release outside the glasspane.
-      html.window.dispatchEvent(context.primaryUp(
+      domWindow.dispatchEvent(context.primaryUp(
         clientX: 1000.0,
         clientY: 2000.0,
       ));
@@ -2097,6 +2136,30 @@ void testMain() {
 
   _testEach<_PointerEventContext>(
     <_PointerEventContext>[
+      if (!isIosSafari) _PointerEventContext(),
+    ],
+    'ignores pointer up or pointer cancel events for unknown device',
+    (_PointerEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      context.multiTouchUp(const <_TouchDetails>[
+        _TouchDetails(pointer: 23, clientX: 200, clientY: 202),
+      ]).forEach(glassPane.dispatchEvent);
+      expect(packets, hasLength(0));
+
+      context.multiTouchCancel(const <_TouchDetails>[
+        _TouchDetails(pointer: 24, clientX: 200, clientY: 202),
+      ]).forEach(glassPane.dispatchEvent);
+      expect(packets, hasLength(0));
+    },
+  );
+
+  _testEach<_PointerEventContext>(
+    <_PointerEventContext>[
       _PointerEventContext(),
     ],
     'handles random pointer id on up events',
@@ -2265,41 +2328,43 @@ abstract class _BasicEventContext implements PointerSupportDetector {
   //
   //  * For mouse, a left click
   //  * For touch, a touch down
-  html.Event primaryDown({double clientX, double clientY});
+  DomEvent primaryDown({double clientX, double clientY});
 
   // Generate an event that is:
   //
   //  * For mouse, a drag with LMB down
   //  * For touch, a touch drag
-  html.Event primaryMove({double clientX, double clientY});
+  DomEvent primaryMove({double clientX, double clientY});
 
   // Generate an event that is:
   //
   //  * For mouse, release LMB
   //  * For touch, a touch up
-  html.Event primaryUp({double clientX, double clientY});
+  DomEvent primaryUp({double clientX, double clientY});
 }
 
 mixin _ButtonedEventMixin on _BasicEventContext {
   // Generate an event that is a mouse down with the specific buttons.
-  html.Event mouseDown(
+  DomEvent mouseDown(
       {double? clientX, double? clientY, int? button, int? buttons});
 
   // Generate an event that is a mouse drag with the specific buttons, or button
   // changes during the drag.
   //
   // If there is no button change, assign `button` with _kNoButtonChange.
-  html.Event mouseMove(
+  DomEvent mouseMove(
       {double? clientX,
       double? clientY,
       required int button,
       required int buttons});
 
-  // Generate an event that releases all mouse buttons.
-  html.Event mouseUp(
-      {double? clientX, double? clientY, int? button, int? buttons});
+  // Generate an event that moves the mouse outside of the tracked area.
+  DomEvent mouseLeave({double? clientX, double? clientY, required int buttons});
 
-  html.Event hover({double? clientX, double? clientY}) {
+  // Generate an event that releases all mouse buttons.
+  DomEvent mouseUp({double? clientX, double? clientY, int? button, int? buttons});
+
+  DomEvent hover({double? clientX, double? clientY}) {
     return mouseMove(
       buttons: 0,
       button: _kNoButtonChange,
@@ -2309,7 +2374,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryDown({double? clientX, double? clientY}) {
+  DomEvent primaryDown({double? clientX, double? clientY}) {
     return mouseDown(
       buttons: 1,
       button: 0,
@@ -2319,7 +2384,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryMove({double? clientX, double? clientY}) {
+  DomEvent primaryMove({double? clientX, double? clientY}) {
     return mouseMove(
       buttons: 1,
       button: _kNoButtonChange,
@@ -2329,7 +2394,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryUp({double? clientX, double? clientY}) {
+  DomEvent primaryUp({double? clientX, double? clientY}) {
     return mouseUp(
       button: 0,
       clientX: clientX,
@@ -2337,15 +2402,14 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     );
   }
 
-  html.Event wheel({
+  DomEvent wheel({
     required int? buttons,
     required double? clientX,
     required double? clientY,
     required double? deltaX,
     required double? deltaY,
   }) {
-    final Function jsWheelEvent =
-        js_util.getProperty<Function>(html.window, 'WheelEvent');
+    final Function jsWheelEvent = js_util.getProperty<Function>(domWindow, 'WheelEvent');
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
       <String, dynamic>{
@@ -2356,7 +2420,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         'deltaY': deltaY,
       }
     ];
-    return js_util.callConstructor<html.Event>(
+    return js_util.callConstructor<DomEvent>(
       jsWheelEvent,
       js_util.jsify(eventArgs) as List<Object?>,
     );
@@ -2372,13 +2436,13 @@ class _TouchDetails {
 }
 
 mixin _MultiPointerEventMixin on _BasicEventContext {
-  List<html.Event> multiTouchDown(List<_TouchDetails> touches);
-  List<html.Event> multiTouchMove(List<_TouchDetails> touches);
-  List<html.Event> multiTouchUp(List<_TouchDetails> touches);
-  List<html.Event> multiTouchCancel(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchDown(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchMove(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchUp(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchCancel(List<_TouchDetails> touches);
 
   @override
-  html.Event primaryDown({double? clientX, double? clientY}) {
+  DomEvent primaryDown({double? clientX, double? clientY}) {
     return multiTouchDown(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2389,7 +2453,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryMove({double? clientX, double? clientY}) {
+  DomEvent primaryMove({double? clientX, double? clientY}) {
     return multiTouchMove(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2400,7 +2464,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryUp({double? clientX, double? clientY}) {
+  DomEvent primaryUp({double? clientX, double? clientY}) {
     return multiTouchUp(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2416,7 +2480,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
 class _TouchEventContext extends _BasicEventContext
     with _MultiPointerEventMixin
     implements PointerSupportDetector {
-  _TouchEventContext() : _target = html.document.createElement('div');
+  _TouchEventContext() : _target = domDocument.createElement('div');
 
   @override
   String get name => 'TouchAdapter';
@@ -2433,14 +2497,14 @@ class _TouchEventContext extends _BasicEventContext
   @override
   bool get hasMouseEvents => false;
 
-  html.EventTarget _target;
+  DomEventTarget _target;
 
-  html.Touch _createTouch({
+  DomTouch _createTouch({
     int? identifier,
     double? clientX,
     double? clientY,
   }) {
-    return html.Touch(<String, dynamic>{
+    return createDomTouch(<String, dynamic>{
       'identifier': identifier,
       'clientX': clientX,
       'clientY': clientY,
@@ -2448,9 +2512,9 @@ class _TouchEventContext extends _BasicEventContext
     });
   }
 
-  html.TouchEvent _createTouchEvent(
+  DomTouchEvent _createTouchEvent(
       String eventType, List<_TouchDetails> touches) {
-    return html.TouchEvent(
+    return createDomTouchEvent(
       eventType,
       <String, dynamic>{
         'changedTouches': touches
@@ -2467,23 +2531,23 @@ class _TouchEventContext extends _BasicEventContext
   }
 
   @override
-  List<html.Event> multiTouchDown(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchstart', touches)];
+  List<DomEvent> multiTouchDown(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchstart', touches)];
   }
 
   @override
-  List<html.Event> multiTouchMove(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchmove', touches)];
+  List<DomEvent> multiTouchMove(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchmove', touches)];
   }
 
   @override
-  List<html.Event> multiTouchUp(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchend', touches)];
+  List<DomEvent> multiTouchUp(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchend', touches)];
   }
 
   @override
-  List<html.Event> multiTouchCancel(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchcancel', touches)];
+  List<DomEvent> multiTouchCancel(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchcancel', touches)];
   }
 }
 
@@ -2510,7 +2574,7 @@ class _MouseEventContext extends _BasicEventContext
   bool get hasMouseEvents => true;
 
   @override
-  html.Event mouseDown({
+  DomEvent mouseDown({
     double? clientX,
     double? clientY,
     int? button,
@@ -2526,7 +2590,7 @@ class _MouseEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseMove({
+  DomEvent mouseMove({
     double? clientX,
     double? clientY,
     required int button,
@@ -2551,7 +2615,22 @@ class _MouseEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({
+  DomEvent mouseLeave({
+    double? clientX,
+    double? clientY,
+    required int buttons,
+  }) {
+    return _createMouseEvent(
+      'mouseleave',
+      buttons: buttons,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  DomEvent mouseUp({
     double? clientX,
     double? clientY,
     int? button,
@@ -2566,7 +2645,7 @@ class _MouseEventContext extends _BasicEventContext
     );
   }
 
-  html.MouseEvent _createMouseEvent(
+  DomMouseEvent _createMouseEvent(
     String type, {
     int? buttons,
     int? button,
@@ -2574,7 +2653,7 @@ class _MouseEventContext extends _BasicEventContext
     double? clientY,
   }) {
     final Function jsMouseEvent =
-        js_util.getProperty<Function>(html.window, 'MouseEvent');
+        js_util.getProperty<Function>(domWindow, 'MouseEvent');
     final List<dynamic> eventArgs = <dynamic>[
       type,
       <String, dynamic>{
@@ -2584,7 +2663,7 @@ class _MouseEventContext extends _BasicEventContext
         'clientY': clientY,
       }
     ];
-    return js_util.callConstructor<html.MouseEvent>(
+    return js_util.callConstructor<DomMouseEvent>(
       jsMouseEvent,
       js_util.jsify(eventArgs) as List<Object?>,
     );
@@ -2614,7 +2693,7 @@ class _PointerEventContext extends _BasicEventContext
   bool get hasMouseEvents => false;
 
   @override
-  List<html.Event> multiTouchDown(List<_TouchDetails> touches) {
+  List<DomEvent> multiTouchDown(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) => _downWithFullDetails(
               pointer: details.pointer,
@@ -2628,7 +2707,7 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseDown({
+  DomEvent mouseDown({
     double? clientX,
     double? clientY,
     int? button,
@@ -2645,7 +2724,7 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _downWithFullDetails({
+  DomEvent _downWithFullDetails({
     double? clientX,
     double? clientY,
     int? button,
@@ -2653,7 +2732,7 @@ class _PointerEventContext extends _BasicEventContext
     int? pointer,
     String? pointerType,
   }) {
-    return html.PointerEvent('pointerdown', <String, dynamic>{
+    return createDomPointerEvent('pointerdown', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -2664,7 +2743,7 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  List<html.Event> multiTouchMove(List<_TouchDetails> touches) {
+  List<DomEvent> multiTouchMove(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) => _moveWithFullDetails(
               pointer: details.pointer,
@@ -2678,7 +2757,7 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseMove({
+  DomEvent mouseMove({
     double? clientX,
     double? clientY,
     required int button,
@@ -2695,7 +2774,7 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _moveWithFullDetails({
+  DomEvent _moveWithFullDetails({
     double? clientX,
     double? clientY,
     int? button,
@@ -2703,7 +2782,7 @@ class _PointerEventContext extends _BasicEventContext
     int? pointer,
     String? pointerType,
   }) {
-    return html.PointerEvent('pointermove', <String, dynamic>{
+    return createDomPointerEvent('pointermove', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -2714,7 +2793,42 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  List<html.Event> multiTouchUp(List<_TouchDetails> touches) {
+  DomEvent mouseLeave({
+    double? clientX,
+    double? clientY,
+    required int buttons,
+    int pointerId = 1,
+  }) {
+    return _leaveWithFullDetails(
+      pointer: pointerId,
+      buttons: buttons,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+      pointerType: 'mouse',
+    );
+  }
+
+  DomEvent _leaveWithFullDetails({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointer,
+    String? pointerType,
+  }) {
+    return createDomPointerEvent('pointerleave', <String, dynamic>{
+      'pointerId': pointer,
+      'button': button,
+      'buttons': buttons,
+      'clientX': clientX,
+      'clientY': clientY,
+      'pointerType': pointerType,
+    });
+  }
+
+  @override
+  List<DomEvent> multiTouchUp(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) => _upWithFullDetails(
               pointer: details.pointer,
@@ -2727,7 +2841,7 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({
+  DomEvent mouseUp({
     double? clientX,
     double? clientY,
     int? button,
@@ -2744,7 +2858,7 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _upWithFullDetails({
+  DomEvent _upWithFullDetails({
     double? clientX,
     double? clientY,
     int? button,
@@ -2752,7 +2866,7 @@ class _PointerEventContext extends _BasicEventContext
     int? pointer,
     String? pointerType,
   }) {
-    return html.PointerEvent('pointerup', <String, dynamic>{
+    return createDomPointerEvent('pointerup', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -2763,10 +2877,10 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  List<html.Event> multiTouchCancel(List<_TouchDetails> touches) {
+  List<DomEvent> multiTouchCancel(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) =>
-            html.PointerEvent('pointercancel', <String, dynamic>{
+            createDomPointerEvent('pointercancel', <String, dynamic>{
               'pointerId': details.pointer,
               'button': 0,
               'buttons': 0,

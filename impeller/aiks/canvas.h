@@ -18,6 +18,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
+#include "impeller/geometry/vertices.h"
 #include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
@@ -34,7 +35,10 @@ class Canvas {
 
   void Save();
 
-  void SaveLayer(Paint paint, std::optional<Rect> bounds = std::nullopt);
+  void SaveLayer(
+      Paint paint,
+      std::optional<Rect> bounds = std::nullopt,
+      std::optional<Paint::ImageFilterProc> backdrop_filter = std::nullopt);
 
   bool Restore();
 
@@ -88,6 +92,8 @@ class Canvas {
   void DrawPicture(Picture picture);
 
   void DrawTextFrame(TextFrame text_frame, Point position, Paint paint);
+
+  void DrawVertices(Vertices vertices, Entity::BlendMode mode, Paint paint);
 
   Picture EndRecordingAsPicture();
 

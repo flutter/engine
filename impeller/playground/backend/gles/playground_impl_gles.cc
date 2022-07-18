@@ -5,7 +5,7 @@
 #include "impeller/playground/backend/gles/playground_impl_gles.h"
 
 #define GLFW_INCLUDE_NONE
-#import "third_party/glfw/include/GLFW/glfw3.h"
+#include "third_party/glfw/include/GLFW/glfw3.h"
 
 #include "flutter/fml/build_config.h"
 #include "impeller/entity/gles/entity_shaders_gles.h"
@@ -124,7 +124,7 @@ std::shared_ptr<Context> PlaygroundImplGLES::GetContext() const {
 }
 
 // |PlaygroundImpl|
-PlaygroundImpl::WindowHandle PlaygroundImplGLES::GetWindowHandle() {
+PlaygroundImpl::WindowHandle PlaygroundImplGLES::GetWindowHandle() const {
   return handle_.get();
 }
 

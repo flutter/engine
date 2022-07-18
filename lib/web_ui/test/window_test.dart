@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -47,7 +46,7 @@ void testMain() {
     final JsUrlStrategy jsUrlStrategy = JsUrlStrategy(
         getPath: allowInterop(() => '/initial'),
         getState: allowInterop(() => state),
-        addPopStateListener: allowInterop((html.EventListener listener) => () {}),
+        addPopStateListener: allowInterop((DomEventListener listener) => () {}),
         prepareExternalUrl: allowInterop((String value) => ''),
         pushState: allowInterop((Object? newState, String title, String url) {
           expect(newState is Map, true);
@@ -472,7 +471,7 @@ void testMain() {
 
 void jsSetUrlStrategy(dynamic strategy) {
   js_util.callMethod<void>(
-    html.window,
+    domWindow,
     '_flutter_web_set_location_strategy',
     <dynamic>[strategy],
   );

@@ -6,6 +6,8 @@
 #include "flutter/testing/testing.h"
 #include "impeller/fixtures/box_fade.frag.h"
 #include "impeller/fixtures/box_fade.vert.h"
+#include "impeller/fixtures/colors.frag.h"
+#include "impeller/fixtures/colors.vert.h"
 #include "impeller/fixtures/impeller.frag.h"
 #include "impeller/fixtures/impeller.vert.h"
 #include "impeller/fixtures/instanced_draw.frag.h"
@@ -28,6 +30,7 @@
 #include "impeller/renderer/surface.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/tessellator/tessellator.h"
+#include "third_party/imgui/imgui.h"
 
 namespace impeller {
 namespace testing {
@@ -76,7 +79,8 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     cmd.BindVertices(vertex_buffer);
 
     VS::UniformBuffer uniforms;
-    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   Matrix::MakeScale(GetContentScale());
     VS::BindUniformBuffer(cmd,
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
@@ -92,6 +96,105 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     FS::BindContents2(cmd, bridge, sampler);
 
     cmd.primitive_type = PrimitiveType::kTriangle;
+    if (!pass.AddCommand(std::move(cmd))) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanRenderPerspectiveCube) {
+  using VS = ColorsVertexShader;
+  using FS = ColorsFragmentShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+  ASSERT_TRUE(pipeline);
+
+  struct Cube {
+    VS::PerVertexData vertices[8] = {
+        // -Z
+        {{-1, -1, -1}, Color::Red()},
+        {{1, -1, -1}, Color::Yellow()},
+        {{1, 1, -1}, Color::Green()},
+        {{-1, 1, -1}, Color::Blue()},
+        // +Z
+        {{-1, -1, 1}, Color::Green()},
+        {{1, -1, 1}, Color::Blue()},
+        {{1, 1, 1}, Color::Red()},
+        {{-1, 1, 1}, Color::Yellow()},
+    };
+    uint16_t indices[36] = {
+        1, 5, 2, 2, 5, 6,  // +X
+        4, 0, 7, 7, 0, 3,  // -X
+        4, 5, 0, 0, 5, 1,  // +Y
+        3, 2, 7, 7, 2, 6,  // -Y
+        5, 4, 6, 6, 4, 7,  // +Z
+        0, 1, 3, 3, 1, 2,  // -Z
+    };
+  } cube;
+
+  VertexBuffer vertex_buffer;
+  {
+    auto device_buffer =
+        context->GetPermanentsAllocator()->CreateBufferWithCopy(
+            reinterpret_cast<uint8_t*>(&cube), sizeof(cube));
+    vertex_buffer.vertex_buffer = {
+        .buffer = device_buffer,
+        .range = Range(offsetof(Cube, vertices), sizeof(Cube::vertices))};
+    vertex_buffer.index_buffer = {
+        .buffer = device_buffer,
+        .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
+    vertex_buffer.index_count = 36;
+    vertex_buffer.index_type = IndexType::k16bit;
+  }
+
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  Vector3 euler_angles;
+  bool first_frame = true;
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowSize({400, 80});
+      ImGui::SetNextWindowPos({20, 20});
+    }
+
+    static Degrees fov_y(60);
+    static Scalar distance = 10;
+
+    ImGui::Begin("Controls");
+    ImGui::SliderFloat("Field of view", &fov_y.degrees, 0, 180);
+    ImGui::SliderFloat("Camera distance", &distance, 0, 30);
+    ImGui::End();
+
+    Command cmd;
+    cmd.label = "Perspective Cube";
+    cmd.pipeline = pipeline;
+
+    cmd.BindVertices(vertex_buffer);
+
+    VS::UniformBuffer uniforms;
+    Scalar time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    euler_angles = Vector3(0.19 * time, 0.7 * time, 0.43 * time);
+
+    uniforms.mvp =
+        Matrix::MakePerspective(fov_y, pass.GetRenderTargetSize(), 0, 10) *
+        Matrix::MakeTranslation({0, 0, -distance}) *
+        Matrix::MakeRotationX(Radians(euler_angles.x)) *
+        Matrix::MakeRotationY(Radians(euler_angles.y)) *
+        Matrix::MakeRotationZ(Radians(euler_angles.z));
+    VS::BindUniformBuffer(cmd,
+                          pass.GetTransientsBuffer().EmplaceUniform(uniforms));
+
+    cmd.primitive_type = PrimitiveType::kTriangle;
+    cmd.cull_mode = CullMode::kBackFace;
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
     }
@@ -158,6 +261,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
       for (size_t j = 0; j < 1; j++) {
         VS::UniformBuffer uniforms;
         uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                       Matrix::MakeScale(GetContentScale()) *
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
         VS::BindUniformBuffer(
             cmd, pass.GetTransientsBuffer().EmplaceUniform(uniforms));
@@ -181,9 +285,8 @@ TEST_P(RendererTest, CanRenderToTexture) {
   auto pipeline_desc =
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_desc.has_value());
-  auto box_pipeline = context->GetPipelineLibrary()
-                          ->GetRenderPipeline(std::move(pipeline_desc))
-                          .get();
+  auto box_pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(pipeline_desc).get();
   ASSERT_TRUE(box_pipeline);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -324,7 +427,8 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     VS::BindInstanceInfo(
@@ -338,12 +442,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
 }
 #endif  // IMPELLER_ENABLE_METAL
 
-#if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, TheImpeller) {
-  if (GetBackend() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_(
-        "The shader fails to link in the GLES backend for some reason.");
-  }
   using VS = ImpellerVertexShader;
   using FS = ImpellerFragmentShader;
 
@@ -391,11 +490,11 @@ TEST_P(RendererTest, TheImpeller) {
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
 
-    FS::FrameInfo fs_uniform;
+    FS::FragInfo fs_uniform;
     fs_uniform.texture_size = Point(size);
     fs_uniform.time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
-    FS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
+    FS::BindFragInfo(cmd,
+                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
     FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
 
@@ -404,7 +503,6 @@ TEST_P(RendererTest, TheImpeller) {
   };
   OpenPlaygroundHere(callback);
 }
-#endif
 
 }  // namespace testing
 }  // namespace impeller

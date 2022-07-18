@@ -383,7 +383,7 @@ class MaskFilter {
   }
 
   @override
-  int get hashCode => hashValues(_style, _sigma);
+  int get hashCode => Object.hash(_style, _sigma);
 
   @override
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
@@ -479,7 +479,7 @@ Future<Codec> instantiateImageCodec(
   if (engine.useCanvasKit) {
     return engine.skiaInstantiateImageCodec(list, targetWidth, targetHeight);
   } else {
-    final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
+    final engine.DomBlob blob = engine.createDomBlob(<dynamic>[list.buffer]);
     return engine.HtmlBlobCodec(blob);
   }
 }
@@ -493,7 +493,7 @@ Future<Codec> instantiateImageCodecFromBuffer(
   if (engine.useCanvasKit) {
     return engine.skiaInstantiateImageCodec(buffer._list!, targetWidth, targetHeight);
   } else {
-    final html.Blob blob = html.Blob(<dynamic>[buffer._list!.buffer]);
+    final engine.DomBlob blob = engine.createDomBlob(<dynamic>[buffer._list!.buffer]);
     return engine.HtmlBlobCodec(blob);
   }
 }
@@ -734,7 +734,7 @@ class Shadow {
   }
 
   @override
-  int get hashCode => hashValues(color, offset, blurRadius);
+  int get hashCode => Object.hash(color, offset, blurRadius);
 
   @override
   String toString() => 'TextShadow($color, $offset, $blurRadius)';
@@ -836,7 +836,10 @@ class ImageDescriptor {
 
 class FragmentProgram {
   static Future<FragmentProgram> compile({
-    required ByteBuffer spirv,
+    ByteBuffer? spirv,
+    ByteBuffer? raw,
+    int? uniformFloatCount,
+    int? samplerCount,
     bool debugPrint = false,
   }) {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');

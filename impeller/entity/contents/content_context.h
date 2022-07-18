@@ -12,8 +12,21 @@
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/entity/advanced_blend.vert.h"
+#include "impeller/entity/advanced_blend_color.frag.h"
 #include "impeller/entity/advanced_blend_colorburn.frag.h"
+#include "impeller/entity/advanced_blend_colordodge.frag.h"
+#include "impeller/entity/advanced_blend_darken.frag.h"
+#include "impeller/entity/advanced_blend_difference.frag.h"
+#include "impeller/entity/advanced_blend_exclusion.frag.h"
+#include "impeller/entity/advanced_blend_hardlight.frag.h"
+#include "impeller/entity/advanced_blend_hue.frag.h"
+#include "impeller/entity/advanced_blend_lighten.frag.h"
+#include "impeller/entity/advanced_blend_luminosity.frag.h"
+#include "impeller/entity/advanced_blend_multiply.frag.h"
+#include "impeller/entity/advanced_blend_overlay.frag.h"
+#include "impeller/entity/advanced_blend_saturation.frag.h"
 #include "impeller/entity/advanced_blend_screen.frag.h"
+#include "impeller/entity/advanced_blend_softlight.frag.h"
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -31,6 +44,8 @@
 #include "impeller/entity/solid_stroke.vert.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/vertices.frag.h"
+#include "impeller/entity/vertices.vert.h"
 #include "impeller/renderer/formats.h"
 
 namespace impeller {
@@ -40,10 +55,36 @@ using GradientFillPipeline =
 using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
+using BlendColorPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorFragmentShader>;
+using BlendColorBurnPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorburnFragmentShader>;
+using BlendColorDodgePipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColordodgeFragmentShader>;
+using BlendDarkenPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendDarkenFragmentShader>;
+using BlendDifferencePipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendDifferenceFragmentShader>;
+using BlendExclusionPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendExclusionFragmentShader>;
+using BlendHardLightPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendHardlightFragmentShader>;
+using BlendHuePipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendHueFragmentShader>;
+using BlendLightenPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendLightenFragmentShader>;
+using BlendLuminosityPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendLuminosityFragmentShader>;
+using BlendMultiplyPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendMultiplyFragmentShader>;
+using BlendOverlayPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendOverlayFragmentShader>;
+using BlendSaturationPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendSaturationFragmentShader>;
 using BlendScreenPipeline =
     PipelineT<AdvancedBlendVertexShader, AdvancedBlendScreenFragmentShader>;
-using BlendColorburnPipeline =
-    PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorburnFragmentShader>;
+using BlendSoftLightPipeline =
+    PipelineT<AdvancedBlendVertexShader, AdvancedBlendSoftlightFragmentShader>;
 using TexturePipeline =
     PipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
 using GaussianBlurPipeline =
@@ -54,6 +95,8 @@ using SolidStrokePipeline =
     PipelineT<SolidStrokeVertexShader, SolidStrokeFragmentShader>;
 using GlyphAtlasPipeline =
     PipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
+using VerticesPipeline =
+    PipelineT<VerticesVertexShader, VerticesFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
@@ -106,16 +149,6 @@ class ContentContext {
     return GetPipeline(texture_blend_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline> GetBlendScreenPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(blend_screen_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline> GetBlendColorburnPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(blend_colorburn_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline> GetTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_pipelines_, opts);
@@ -145,6 +178,88 @@ class ContentContext {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline> GetVerticesPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(vertices_pipelines_, opts);
+  }
+
+  // Advanced blends.
+
+  std::shared_ptr<Pipeline> GetBlendColorPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_color_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendColorBurnPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_colorburn_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendColorDodgePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_colordodge_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendDarkenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_darken_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendDifferencePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_difference_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendExclusionPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_exclusion_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendHardLightPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_hardlight_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendHuePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_hue_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendLightenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_lighten_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendLuminosityPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_luminosity_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendMultiplyPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_multiply_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendOverlayPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_overlay_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendSaturationPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_saturation_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendScreenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_screen_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline> GetBlendSoftLightPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_softlight_pipelines_, opts);
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   using SubpassCallback =
@@ -170,14 +285,29 @@ class ContentContext {
   mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
-  mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
-  mutable Variants<BlendColorburnPipeline> blend_colorburn_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<SolidStrokePipeline> solid_stroke_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
+  mutable Variants<VerticesPipeline> vertices_pipelines_;
+  // Advanced blends.
+  mutable Variants<BlendColorPipeline> blend_color_pipelines_;
+  mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;
+  mutable Variants<BlendColorDodgePipeline> blend_colordodge_pipelines_;
+  mutable Variants<BlendDarkenPipeline> blend_darken_pipelines_;
+  mutable Variants<BlendDifferencePipeline> blend_difference_pipelines_;
+  mutable Variants<BlendExclusionPipeline> blend_exclusion_pipelines_;
+  mutable Variants<BlendHardLightPipeline> blend_hardlight_pipelines_;
+  mutable Variants<BlendHuePipeline> blend_hue_pipelines_;
+  mutable Variants<BlendLightenPipeline> blend_lighten_pipelines_;
+  mutable Variants<BlendLuminosityPipeline> blend_luminosity_pipelines_;
+  mutable Variants<BlendMultiplyPipeline> blend_multiply_pipelines_;
+  mutable Variants<BlendOverlayPipeline> blend_overlay_pipelines_;
+  mutable Variants<BlendSaturationPipeline> blend_saturation_pipelines_;
+  mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
+  mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline> GetPipeline(Variants<TypedPipeline>& container,

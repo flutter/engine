@@ -11,7 +11,9 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
@@ -263,14 +265,17 @@ size_t Canvas::GetStencilDepth() const {
   return xformation_stack_.back().stencil_depth;
 }
 
-void Canvas::SaveLayer(Paint paint, std::optional<Rect> bounds) {
+void Canvas::SaveLayer(Paint paint,
+                       std::optional<Rect> bounds,
+                       std::optional<Paint::ImageFilterProc> backdrop_filter) {
   Save(true, paint.blend_mode);
 
   auto& new_layer_pass = GetCurrentPass();
   new_layer_pass.SetDelegate(
       std::make_unique<PaintPassDelegate>(paint, bounds));
+  new_layer_pass.SetBackdropFilter(backdrop_filter);
 
-  if (bounds.has_value()) {
+  if (bounds.has_value() && !backdrop_filter.has_value()) {
     // Render target switches due to a save layer can be elided. In such cases
     // where passes are collapsed into their parent, the clipping effect to
     // the size of the render target that would have been allocated will be
@@ -296,6 +301,21 @@ void Canvas::DrawTextFrame(TextFrame text_frame, Point position, Paint paint) {
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
+
+  GetCurrentPass().AddEntity(std::move(entity));
+}
+
+void Canvas::DrawVertices(Vertices vertices,
+                          Entity::BlendMode mode,
+                          Paint paint) {
+  std::shared_ptr<VerticesContents> contents =
+      std::make_shared<VerticesContents>(std::move(vertices));
+  contents->SetColor(paint.color);
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(std::move(contents), true));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }

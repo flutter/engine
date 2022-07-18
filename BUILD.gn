@@ -103,6 +103,9 @@ group("flutter") {
         # Impeller artifacts - compiler and libtessellator
         "//flutter/impeller/compiler:impellerc",
         "//flutter/impeller/tessellator:tessellator_shared",
+
+        # path_ops
+        "//flutter/tools/path_ops",
       ]
 
       if (full_dart_sdk) {
@@ -114,7 +117,6 @@ group("flutter") {
   if (build_engine_artifacts) {
     public_deps += [
       "//flutter/shell/testing",
-      "//flutter/shell/testing:testing_fractional_translation",
       "//flutter/tools/const_finder",
       "//flutter/tools/font-subset",
     ]
@@ -158,15 +160,13 @@ group("unittests") {
       "//flutter/display_list:display_list_unittests",
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
-      "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
-      "//flutter/lib/spirv/test/general_shaders:spirv_compile_general_shaders",
-      "//flutter/lib/spirv/test/supported_glsl_op_shaders:spirv_compile_supported_glsl_shaders",
-      "//flutter/lib/spirv/test/supported_op_shaders:spirv_compile_supported_op_shaders",
+      "//flutter/lib/spirv/test",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:dart_plugin_registrant_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",
+      "//flutter/shell/platform/embedder:embedder_a11y_unittests",
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
       "//flutter/shell/platform/embedder:embedder_unittests",
       "//flutter/testing:testing_unittests",

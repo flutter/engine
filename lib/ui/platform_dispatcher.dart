@@ -1698,7 +1698,7 @@ class DisplayFeature {
   }
 
   @override
-  int get hashCode => hashValues(bounds, type, state);
+  int get hashCode => Object.hash(bounds, type, state);
 
   @override
   String toString() {
@@ -2025,13 +2025,7 @@ class Locale {
   }
 
   @override
-  int get hashCode => _hashCode[this] ??= hashValues(
-        languageCode,
-        scriptCode,
-        countryCode == '' ? null : countryCode,
-      );
-  // Memoize hashCode since languageCode and countryCode require lookups.
-  static final Expando<int> _hashCode = Expando<int>();
+  int get hashCode => Object.hash(languageCode, scriptCode, countryCode == '' ? null : countryCode);
 
   static Locale? _cachedLocale;
   static String? _cachedLocaleString;

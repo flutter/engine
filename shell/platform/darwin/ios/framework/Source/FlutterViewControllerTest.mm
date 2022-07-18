@@ -132,7 +132,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
-- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
+- (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
@@ -145,6 +145,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)addInternalPlugins;
 - (BOOL)captureTextFromCameraEnabled;
 - (flutter::PointerData)generatePointerDataForFake;
+- (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
+                  initialRoute:(nullable NSString*)initialRoute;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -440,7 +442,22 @@ typedef enum UIAccessibilityContrast : NSInteger {
   mockEngine.viewController = viewController;
   UIView* view = viewController.view;
   XCTAssertNotNil(view);
-  OCMVerify([mockEngine attachView]);
+  OCMVerify(times(1), [mockEngine attachView]);
+}
+
+- (void)testViewDidLoadDoesntInvokeEngineAttachViewWhenEngineNeedsLaunch {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  // sharedSetupWithProject sets the engine needs to be launched.
+  [viewController sharedSetupWithProject:nil initialRoute:nil];
+  mockEngine.viewController = viewController;
+  UIView* view = viewController.view;
+  XCTAssertNotNil(view);
+  OCMVerify(never(), [mockEngine attachView]);
 }
 
 - (void)testInternalPluginsWeakPtrNotCrash {
@@ -468,6 +485,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
+  UIView* view = viewController.view;
+  // The implementation in viewDidLoad requires the viewControllers.viewLoaded is true.
+  // Accessing the view to make sure the view loads in the memory,
+  // which makes viewControllers.viewLoaded true.
+  XCTAssertNotNil(view);
   [viewController viewDidLoad];
   OCMVerify([viewController addInternalPlugins]);
 }
@@ -945,54 +967,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   engine.viewController = nil;
 }
 
-- (void)testHideA11yElements {
-  FlutterDartProject* project = [[FlutterDartProject alloc] init];
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
-                                                                        nibName:nil
-                                                                         bundle:nil];
-  id flutterViewControllerClassMOCK = OCMClassMock([FlutterViewController class]);
-  [[[flutterViewControllerClassMOCK stub] andReturnValue:@YES] isUIAccessibilityIsVoiceOverRunning];
-
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationWillResignActiveNotification
-                    object:nil];
-  XCTAssertTrue(realVC.view.accessibilityElementsHidden);
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationDidBecomeActiveNotification
-                    object:nil];
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
-  engine.viewController = nil;
-
-  [flutterViewControllerClassMOCK stopMocking];
-}
-
-- (void)testDontHideA11yElementsWhenVoiceOverIsOff {
-  FlutterDartProject* project = [[FlutterDartProject alloc] init];
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
-                                                                        nibName:nil
-                                                                         bundle:nil];
-  id flutterViewControllerClassMOCK = OCMClassMock([FlutterViewController class]);
-  [[[flutterViewControllerClassMOCK stub] andReturnValue:@NO] isUIAccessibilityIsVoiceOverRunning];
-
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationWillResignActiveNotification
-                    object:nil];
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationDidBecomeActiveNotification
-                    object:nil];
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
-  engine.viewController = nil;
-
-  [flutterViewControllerClassMOCK stopMocking];
-}
-
 - (void)testNotifyLowMemory {
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -1169,7 +1143,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   id mockPanGestureRecognizer = OCMClassMock([UIPanGestureRecognizer class]);
   XCTAssertNotNil(mockPanGestureRecognizer);
 
-  [vc scrollEvent:mockPanGestureRecognizer];
+  [vc discreteScrollEvent:mockPanGestureRecognizer];
 
   [[[self.mockEngine verify] ignoringNonObjectArgs]
       dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];

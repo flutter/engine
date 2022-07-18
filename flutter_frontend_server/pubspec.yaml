@@ -43,8 +43,6 @@ dependency_overrides:
     path: ../../third_party/dart/third_party/pkg/bazel_worker
   build_integration:
     path: ../../third_party/dart/pkg/build_integration
-  charcode:
-    path: ../../third_party/dart/third_party/pkg/charcode
   collection:
     path: ../../third_party/dart/third_party/pkg/collection
   compiler:
@@ -78,7 +76,7 @@ dependency_overrides:
   meta:
     path: ../../third_party/dart/pkg/meta
   package_config:
-    path: ../../third_party/dart/third_party/pkg_tested/package_config
+    path: ../../third_party/dart/third_party/pkg/package_config
   path:
     path: ../../third_party/dart/third_party/pkg/path
   protobuf:

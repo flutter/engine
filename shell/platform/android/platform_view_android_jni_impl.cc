@@ -241,20 +241,17 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jstring jLibraryUrl,
                                             jobject jAssetManager,
                                             jobject jEntrypointArgs) {
-  auto asset_manager = std::make_shared<flutter::AssetManager>();
-
-  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-      env,                                             // jni environment
-      jAssetManager,                                   // asset manager
-      fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
+  auto apk_asset_provider = std::make_unique<flutter::APKAssetProvider>(
+      env,                                            // jni environment
+      jAssetManager,                                  // asset manager
+      fml::jni::JavaStringToString(env, jBundlePath)  // apk asset dir
   );
-
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto entrypoint_args = fml::jni::StringListToVector(env, jEntrypointArgs);
 
-  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl,
-                               entrypoint_args);
+  ANDROID_SHELL_HOLDER->Launch(std::move(apk_asset_provider), entrypoint,
+                               libraryUrl, entrypoint_args);
 }
 
 static jobject LookupCallbackInformation(JNIEnv* env,
@@ -1412,7 +1409,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
-      case transform: {
+      case kTransform: {
         const SkMatrix& matrix = (*iter)->GetMatrix();
         SkScalar matrix_array[9];
         matrix.get9(matrix_array);
@@ -1425,7 +1422,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
                             transformMatrix.obj());
         break;
       }
-      case clip_rect: {
+      case kClipRect: {
         const SkRect& rect = (*iter)->GetRect();
         env->CallVoidMethod(
             mutatorsStack, g_mutators_stack_push_cliprect_method,
@@ -1433,7 +1430,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
             static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
-      case clip_rrect: {
+      case kClipRRect: {
         const SkRRect& rrect = (*iter)->GetRRect();
         const SkRect& rect = rrect.rect();
         const SkVector& upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
@@ -1455,8 +1452,9 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       }
       // TODO(cyanglaz): Implement other mutators.
       // https://github.com/flutter/flutter/issues/58426
-      case clip_path:
-      case opacity:
+      case kClipPath:
+      case kOpacity:
+      case kBackdropFilter:
         break;
     }
     ++iter;

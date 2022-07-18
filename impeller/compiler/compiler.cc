@@ -27,7 +27,7 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_options.msl_version =
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
   sl_compiler->set_msl_options(sl_options);
-  return sl_compiler;
+  return CompilerBackend(sl_compiler);
 }
 
 static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
@@ -44,7 +44,13 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
     sl_options.es = false;
   }
   gl_compiler->set_common_options(sl_options);
-  return gl_compiler;
+  return CompilerBackend(gl_compiler);
+}
+
+static CompilerBackend CreateSkSLCompiler(const spirv_cross::ParsedIR& ir,
+                                          const SourceOptions& source_options) {
+  auto sksl_compiler = std::make_shared<CompilerSkSL>(ir);
+  return CompilerBackend(sksl_compiler);
 }
 
 static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
@@ -53,10 +59,13 @@ static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
       FML_UNREACHABLE();
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
       return false;
     case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       return true;
   }
   FML_UNREACHABLE();
@@ -68,6 +77,8 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
   switch (source_options.target_platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageGLES:
       compiler = CreateMSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
@@ -76,6 +87,8 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kOpenGLDesktop:
       compiler = CreateGLSLCompiler(ir, source_options);
       break;
+    case TargetPlatform::kSkSL:
+      compiler = CreateSkSLCompiler(ir, source_options);
   }
   if (!compiler) {
     return {};
@@ -85,7 +98,6 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     backend->rename_entry_point("main", source_options.entry_point_name,
                                 ToExecutionModel(source_options.type));
   }
-
   return compiler;
 }
 
@@ -130,16 +142,45 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
       spirv_options.SetOptimizationLevel(
-          shaderc_optimization_level::shaderc_optimization_level_zero);
+          shaderc_optimization_level::shaderc_optimization_level_performance);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_vulkan,
           shaderc_env_version::shaderc_env_version_vulkan_1_1);
       spirv_options.SetTargetSpirv(
           shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
-    case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageGLES:
       spirv_options.SetOptimizationLevel(
-          shaderc_optimization_level::shaderc_optimization_level_size);
+          shaderc_optimization_level::shaderc_optimization_level_performance);
+      spirv_options.SetTargetEnvironment(
+          shaderc_target_env::shaderc_target_env_opengl,
+          shaderc_env_version::shaderc_env_version_opengl_4_5);
+      spirv_options.SetTargetSpirv(
+          shaderc_spirv_version::shaderc_spirv_version_1_0);
+      break;
+    case TargetPlatform::kFlutterSPIRV:
+      // With any optimization level above 'zero' enabled, shaderc will emit
+      // ops that are not supported by the Engine's SPIR-V -> SkSL transpiler.
+      // In particular, with 'shaderc_optimization_level_size' enabled, it will
+      // generate OpPhi (opcode 245) for test 246_OpLoopMerge.frag instead of
+      // the OpLoopMerge op expected by that test.
+      // See: https://github.com/flutter/flutter/issues/105396.
+      spirv_options.SetOptimizationLevel(
+          shaderc_optimization_level::shaderc_optimization_level_zero);
+      spirv_options.SetTargetEnvironment(
+          shaderc_target_env::shaderc_target_env_opengl,
+          shaderc_env_version::shaderc_env_version_opengl_4_5);
+      spirv_options.SetTargetSpirv(
+          shaderc_spirv_version::shaderc_spirv_version_1_0);
+      break;
+    case TargetPlatform::kSkSL:
+      // When any optimization level above 'zero' is enabled, the phi merges at
+      // loop continue blocks are rendered using syntax that is supported in
+      // GLSL, but not in SkSL.
+      // https://bugs.chromium.org/p/skia/issues/detail?id=13518.
+      spirv_options.SetOptimizationLevel(
+          shaderc_optimization_level::shaderc_optimization_level_zero);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_opengl,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
@@ -231,6 +272,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
 
   reflector_ = std::make_unique<Reflector>(std::move(reflector_options),  //
                                            parsed_ir,                     //
+                                           GetSLShaderSource(),           //
                                            sl_compiler                    //
   );
 

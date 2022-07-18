@@ -49,6 +49,8 @@ char32_t CodePointFromSurrogatePair(wchar_t high, wchar_t low) {
 static const int kMinTouchDeviceId = 0;
 static const int kMaxTouchDeviceId = 128;
 
+static const int kLinesPerScrollWindowsDefault = 3;
+
 }  // namespace
 
 WindowWin32::WindowWin32() : WindowWin32(nullptr) {}
@@ -61,6 +63,12 @@ WindowWin32::WindowWin32(
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
   current_dpi_ = GetDpiForHWND(nullptr);
+
+  // Get initial value for wheel scroll lines
+  // TODO: Listen to changes for this value
+  // https://github.com/flutter/flutter/issues/107248
+  UpdateScrollOffsetMultiplier();
+
   if (text_input_manager_ == nullptr) {
     text_input_manager_ = std::make_unique<TextInputManagerWin32>();
   }
@@ -233,15 +241,9 @@ void WindowWin32::OnImeComposition(UINT const message,
     OnComposeCommit();
   }
 
-  if (lparam & GCS_COMPSTR) {
-    // Read the in-progress composing string.
-    long pos = text_input_manager_->GetComposingCursorPosition();
-    std::optional<std::u16string> text =
-        text_input_manager_->GetComposingString();
-    if (text) {
-      OnComposeChange(text.value(), pos);
-    }
-  }
+  // Process GCS_RESULTSTR at fisrt, because Google Japanese Input and ATOK send
+  // both GCS_RESULTSTR and GCS_COMPSTR to commit composed text and send new
+  // composing text.
   if (lparam & GCS_RESULTSTR) {
     // Commit but don't end composing.
     // Read the committed composing string.
@@ -250,6 +252,15 @@ void WindowWin32::OnImeComposition(UINT const message,
     if (text) {
       OnComposeChange(text.value(), pos);
       OnComposeCommit();
+    }
+  }
+  if (lparam & GCS_COMPSTR) {
+    // Read the in-progress composing string.
+    long pos = text_input_manager_->GetComposingCursorPosition();
+    std::optional<std::u16string> text =
+        text_input_manager_->GetComposingString();
+    if (text) {
+      OnComposeChange(text.value(), pos);
     }
   }
 }
@@ -323,6 +334,9 @@ WindowWin32::HandleMessage(UINT const message,
       current_width_ = width;
       current_height_ = height;
       HandleResize(width, height);
+      break;
+    case WM_PAINT:
+      OnPaint();
       break;
     case WM_TOUCH: {
       UINT num_points = LOWORD(wparam);
@@ -551,6 +565,22 @@ UINT WindowWin32::GetCurrentHeight() {
 
 HWND WindowWin32::GetWindowHandle() {
   return window_handle_;
+}
+
+float WindowWin32::GetScrollOffsetMultiplier() {
+  return scroll_offset_multiplier_;
+}
+
+void WindowWin32::UpdateScrollOffsetMultiplier() {
+  UINT lines_per_scroll = kLinesPerScrollWindowsDefault;
+
+  // Get lines per scroll wheel value from Windows
+  SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines_per_scroll, 0);
+
+  // This logic is based off Chromium's implementation
+  // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/blink/web_input_event_builders_win.cc;l=319-331
+  scroll_offset_multiplier_ =
+      static_cast<float>(lines_per_scroll) * 100.0 / 3.0;
 }
 
 void WindowWin32::Destroy() {

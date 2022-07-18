@@ -72,7 +72,7 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
     FML_LOG(ERROR) << "Could not add reactor worker.";
     return nullptr;
   }
-
+  FML_LOG(ERROR) << "Using the Impeller rendering backend.";
   return context;
 }
 
@@ -285,8 +285,7 @@ void AndroidSurfaceGLImpeller::GLContextSetDamageRegion(
 
 // |GPUSurfaceGLDelegate|
 bool AndroidSurfaceGLImpeller::GLContextPresent(
-    uint32_t fbo_id,
-    const std::optional<SkIRect>& damage) {
+    const GLPresentInfo& present_info) {
   // The FBO ID is superfluous and was introduced for iOS where the default
   // framebuffer was not FBO0.
   if (!onscreen_surface_) {

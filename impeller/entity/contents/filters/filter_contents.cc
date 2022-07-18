@@ -29,38 +29,44 @@ namespace impeller {
 
 std::shared_ptr<FilterContents> FilterContents::MakeBlend(
     Entity::BlendMode blend_mode,
-    FilterInput::Vector inputs) {
+    FilterInput::Vector inputs,
+    std::optional<Color> foreground_color) {
   if (blend_mode > Entity::BlendMode::kLastAdvancedBlendMode) {
     VALIDATION_LOG << "Invalid blend mode " << static_cast<int>(blend_mode)
                    << " passed to FilterContents::MakeBlend.";
     return nullptr;
   }
 
-  if (inputs.size() < 2 ||
+  size_t total_inputs = inputs.size() + (foreground_color.has_value() ? 1 : 0);
+  if (total_inputs < 2 ||
       blend_mode <= Entity::BlendMode::kLastPipelineBlendMode) {
     auto blend = std::make_shared<BlendFilterContents>();
     blend->SetInputs(inputs);
     blend->SetBlendMode(blend_mode);
+    blend->SetForegroundColor(foreground_color);
     return blend;
   }
 
-  if (blend_mode <= Entity::BlendMode::kLastAdvancedBlendMode) {
-    auto blend_input = inputs[0];
-    std::shared_ptr<BlendFilterContents> new_blend;
-    for (auto in_i = inputs.begin() + 1; in_i < inputs.end(); in_i++) {
-      new_blend = std::make_shared<BlendFilterContents>();
-      new_blend->SetInputs({blend_input, *in_i});
-      new_blend->SetBlendMode(blend_mode);
-      if (in_i < inputs.end() - 1) {
-        blend_input = FilterInput::Make(
-            std::static_pointer_cast<FilterContents>(new_blend));
-      }
+  auto blend_input = inputs[0];
+  std::shared_ptr<BlendFilterContents> new_blend;
+  for (auto in_i = inputs.begin() + 1; in_i < inputs.end(); in_i++) {
+    new_blend = std::make_shared<BlendFilterContents>();
+    new_blend->SetInputs({*in_i, blend_input});
+    new_blend->SetBlendMode(blend_mode);
+    if (in_i < inputs.end() - 1 || foreground_color.has_value()) {
+      blend_input = FilterInput::Make(
+          std::static_pointer_cast<FilterContents>(new_blend));
     }
-    // new_blend will always be assigned because inputs.size() >= 2.
-    return new_blend;
   }
 
-  FML_UNREACHABLE();
+  if (foreground_color.has_value()) {
+    new_blend = std::make_shared<BlendFilterContents>();
+    new_blend->SetInputs({blend_input});
+    new_blend->SetBlendMode(blend_mode);
+    new_blend->SetForegroundColor(foreground_color);
+  }
+
+  return new_blend;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
@@ -110,6 +116,10 @@ void FilterContents::SetInputs(FilterInput::Vector inputs) {
   inputs_ = std::move(inputs);
 }
 
+void FilterContents::SetCoverageCrop(std::optional<Rect> coverage_crop) {
+  coverage_crop_ = coverage_crop;
+}
+
 bool FilterContents::Render(const ContentContext& renderer,
                             const Entity& entity,
                             RenderPass& pass) const {
@@ -140,11 +150,22 @@ bool FilterContents::Render(const ContentContext& renderer,
   return contents->Render(renderer, e, pass);
 }
 
+std::optional<Rect> FilterContents::GetLocalCoverage(
+    const Entity& local_entity) const {
+  auto coverage = GetFilterCoverage(inputs_, local_entity);
+  if (coverage_crop_.has_value() && coverage.has_value()) {
+    coverage = coverage->Intersection(coverage_crop_.value());
+  }
+
+  return coverage;
+}
+
 std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
   Entity entity_with_local_transform = entity;
   entity_with_local_transform.SetTransformation(
       GetTransform(entity.GetTransformation()));
-  return GetFilterCoverage(inputs_, entity_with_local_transform);
+
+  return GetLocalCoverage(entity_with_local_transform);
 }
 
 std::optional<Rect> FilterContents::GetFilterCoverage(
@@ -180,7 +201,7 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
   entity_with_local_transform.SetTransformation(
       GetTransform(entity.GetTransformation()));
 
-  auto coverage = GetFilterCoverage(inputs_, entity_with_local_transform);
+  auto coverage = GetLocalCoverage(entity_with_local_transform);
   if (!coverage.has_value() || coverage->IsEmpty()) {
     return std::nullopt;
   }
