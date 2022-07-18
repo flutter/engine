@@ -55,7 +55,8 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
         present_info->fbo_id);
   };
   opengl_renderer_config_.fbo_with_frame_info_callback =
-      [](void* context, const FlutterFrameInfo* frame_info) -> FlutterFrameBuffer {
+      [](void* context,
+         const FlutterFrameInfo* frame_info) -> FlutterFrameBuffer {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         *frame_info);
   };
