@@ -39,8 +39,6 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   // smaller than the device bounds plus one pixel, at the same time, we must
   // introduce epsilon to solve the round-off error. The value of epsilon is
   // 1/512, which represents half of an AA sample.
-  //
-  // see https://github.com/flutter/flutter/issues/107622
   float epsilon = 1 / 512.0;
   FML_DCHECK(image_->dimensions().width() - bounds.width() > -epsilon &&
              image_->dimensions().height() - bounds.height() > -epsilon &&
