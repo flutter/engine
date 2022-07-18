@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "flutter/fml/platform/win/wstring_conversion.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
@@ -67,13 +68,17 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
   };
   config.open_gl.fbo_reset_after_present = true;
   config.open_gl.fbo_with_frame_info_callback =
-      [](void* user_data, const FlutterFrameInfo* info) -> uint32_t {
+      [](void* user_data, const FlutterFrameInfo* info) -> FlutterFrameBuffer {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     if (host->view()) {
-      return host->view()->GetFrameBufferId(info->size.width,
+      FlutterFrameBuffer fbo;
+      fbo.fbo_id = host->view()->GetFrameBufferId(info->size.width,
                                             info->size.height);
+      return fbo;
     } else {
-      return kWindowFrameBufferID;
+      FlutterFrameBuffer fbo;
+      fbo.fbo_id = kWindowFrameBufferID;
+      return fbo;
     }
   };
   config.open_gl.gl_proc_resolver = [](void* user_data,

@@ -24,7 +24,7 @@ struct GLFrameInfo {
 
 // Information passed during presentation of a frame.
 struct GLPresentInfo {
-  uint32_t fbo_id;
+  intptr_t fbo_id;
 
   // Damage is a hint to compositor telling it which parts of front buffer
   // need to be updated

@@ -71,7 +71,8 @@ bool ShellTestPlatformViewGL::GLContextPresent(
 
 // |GPUSurfaceGLDelegate|
 GLFBOInfo ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
-  return GLFBOInfo{gl_surface_.GetFramebuffer(frame_info.width, frame_info.height)};
+  return GLFBOInfo{
+      gl_surface_.GetFramebuffer(frame_info.width, frame_info.height)};
 }
 
 // |GPUSurfaceGLDelegate|
