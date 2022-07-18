@@ -118,10 +118,6 @@ typedef CanvasPath Path;
 //   If there is a mismatch between names or parameter count an @FfiNative is
 //   trying to resolve, an exception will be thrown.
 #define FFI_METHOD_LIST(V)                             \
-  V(Image, dispose, 1)                                 \
-  V(Image, width, 1)                                   \
-  V(Image, height, 1)                                  \
-  V(Image, toByteData, 3)                              \
   V(Canvas, clipPath, 3)                               \
   V(Canvas, clipRect, 7)                               \
   V(Canvas, clipRRect, 3)                              \
@@ -171,6 +167,10 @@ typedef CanvasPath Path;
   V(Gradient, initRadial, 8)                           \
   V(Gradient, initSweep, 9)                            \
   V(Gradient, initTwoPointConical, 11)                 \
+  V(Image, dispose, 1)                                 \
+  V(Image, width, 1)                                   \
+  V(Image, height, 1)                                  \
+  V(Image, toByteData, 3)                              \
   V(ImageDescriptor, bytesPerPixel, 1)                 \
   V(ImageDescriptor, dispose, 1)                       \
   V(ImageDescriptor, height, 1)                        \
