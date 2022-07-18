@@ -10,6 +10,7 @@
 #include "flutter/impeller/renderer/backend/gles/proc_table_gles.h"
 #include "flutter/impeller/toolkit/egl/context.h"
 #include "flutter/impeller/toolkit/egl/surface.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
 namespace flutter {
@@ -295,9 +296,9 @@ bool AndroidSurfaceGLImpeller::GLContextPresent(
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t AndroidSurfaceGLImpeller::GLContextFBO(GLFrameInfo frame_info) const {
+GLFBOInfo AndroidSurfaceGLImpeller::GLContextFBO(GLFrameInfo frame_info) const {
   // FBO0 is the default window bound framebuffer in EGL environments.
-  return 0;
+  return GLFBOInfo{0};
 }
 
 // |GPUSurfaceGLDelegate|

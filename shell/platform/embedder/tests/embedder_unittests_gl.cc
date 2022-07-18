@@ -51,7 +51,9 @@ TEST_F(EmbedderTest, CanCreateOpenGLWithFBOWithDamageCallbackOnly) {
 
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
 
-  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = [](void* userdata, const FlutterFrameInfo* frame_info) -> FlutterFrameBuffer {
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback =
+      [](void* userdata,
+         const FlutterFrameInfo* frame_info) -> FlutterFrameBuffer {
     // No need to fill in the returned FBO since it will not actually be used.
     FlutterFrameBuffer fbo;
     return fbo;

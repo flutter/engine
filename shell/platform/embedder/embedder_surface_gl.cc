@@ -68,8 +68,8 @@ GLFBOInfo EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   /// partial repaint.
   FlutterFrameBuffer fbo = gl_dispatch_table_.gl_fbo_callback(frame_info);
   GLFBOInfo gl_fbo = {
-    static_cast<uint32_t>(fbo.fbo_id), // fbo_id
-    FlutterRectToSkIRect(fbo.damage.damage), // existing_damage
+    static_cast<uint32_t>(fbo.fbo_id),        // fbo_id
+    FlutterRectToSkIRect(fbo.damage.damage),  // existing_damage
   };
   return gl_fbo;
 }

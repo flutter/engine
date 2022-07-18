@@ -251,9 +251,10 @@ InferOpenGLPlatformViewCreationCallback(
 
   /// NOTE: this means that for partial repaint to work, we must have it use the
   /// present_with_info callback rather than the present callback.
-  auto gl_present = [present = config->open_gl.present,
-                     present_with_info = config->open_gl.present_with_info,
-                     user_data](flutter::GLPresentInfo gl_present_info) -> bool {
+  auto gl_present =
+      [present = config->open_gl.present,
+       present_with_info = config->open_gl.present_with_info,
+       user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {

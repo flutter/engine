@@ -271,7 +271,7 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
   }
 
   GLPresentInfo present_info = {
-      .fbo_id = fbo_id_,
+      .fbo_id = static_cast<intptr_t>(fbo_id_),
       .damage = frame.submit_info().frame_damage,
       .presentation_time = frame.submit_info().presentation_time,
   };
@@ -290,9 +290,9 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     // re-wrap.
     const GLFBOInfo fbo__info = delegate_->GLContextFBO(frame_info);
     auto new_onscreen_surface =
-        WrapOnscreenSurface(context_.get(),  // GL context
-                            current_size,    // root surface size
-                            fbo__info.fbo_id // window FBO ID
+        WrapOnscreenSurface(context_.get(),   // GL context
+                            current_size,     // root surface size
+                            fbo__info.fbo_id  // window FBO ID
         );
 
     if (!new_onscreen_surface) {

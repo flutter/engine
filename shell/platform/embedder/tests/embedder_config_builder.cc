@@ -6,7 +6,6 @@
 
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "shell/gpu/gpu_surface_gl_delegate.h"
 #include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "vulkan/vulkan_core.h"
@@ -149,8 +148,9 @@ void EmbedderConfigBuilder::SetOpenGLFBOCallBack() {
     frame_info.struct_size = sizeof(FlutterFrameInfo);
     frame_info.size.width = 0;
     frame_info.size.height = 0;
-    FlutterFrameBuffer fbo = reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
-        frame_info);
+    FlutterFrameBuffer fbo =
+        reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
+            frame_info);
     return fbo.fbo_id;
   };
 #endif

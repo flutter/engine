@@ -22,8 +22,8 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
     std::function<FlutterFrameBuffer(GLFrameInfo)> gl_fbo_callback;  // required
     std::function<bool(void)> gl_make_resource_current_callback;     // optional
     std::function<SkMatrix(void)>
-        gl_surface_transformation_callback;                          // optional
-    std::function<void*(const char*)> gl_proc_resolver;              // optional
+        gl_surface_transformation_callback;              // optional
+    std::function<void*(const char*)> gl_proc_resolver;  // optional
   };
 
   EmbedderSurfaceGL(

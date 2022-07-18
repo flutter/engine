@@ -72,8 +72,8 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     if (host->view()) {
       FlutterFrameBuffer fbo;
-      fbo.fbo_id = host->view()->GetFrameBufferId(info->size.width,
-                                            info->size.height);
+      fbo.fbo_id =
+          host->view()->GetFrameBufferId(info->size.width, info->size.height);
       return fbo;
     } else {
       FlutterFrameBuffer fbo;

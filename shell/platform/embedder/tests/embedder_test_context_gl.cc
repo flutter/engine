@@ -70,7 +70,8 @@ void EmbedderTestContextGL::SetGLPresentCallback(GLPresentCallback callback) {
   gl_present_callback_ = callback;
 }
 
-FlutterFrameBuffer EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
+FlutterFrameBuffer EmbedderTestContextGL::GLGetFramebuffer(
+    FlutterFrameInfo frame_info) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
 
   GLGetFBOCallback callback;
