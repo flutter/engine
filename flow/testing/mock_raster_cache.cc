@@ -35,7 +35,6 @@ void MockRasterCache::AddMockLayer(int width, int height) {
       .dst_color_space    = preroll_context_.dst_color_space,
       .matrix             = ctm,
       .logical_rect       = layer.paint_bounds(),
-      .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
       // clang-format on
   };
   UpdateCacheEntry(
@@ -73,7 +72,6 @@ void MockRasterCache::AddMockPicture(int width, int height) {
       .dst_color_space    = preroll_context_.dst_color_space,
       .matrix             = ctm,
       .logical_rect       = display_list->bounds(),
-      .checkerboard       = preroll_context_.checkerboard_offscreen_layers,
       // clang-format on
   };
   UpdateCacheEntry(RasterCacheKeyID(display_list->unique_id(),

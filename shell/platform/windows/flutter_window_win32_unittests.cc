@@ -109,6 +109,13 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi() { return GetCurrentDPI(); }
 
+  // Simulates a WindowProc message from the OS.
+  LRESULT InjectWindowMessage(UINT const message,
+                              WPARAM const wparam,
+                              LPARAM const lparam) {
+    return HandleMessage(message, wparam, lparam);
+  }
+
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
   MOCK_METHOD4(OnPointerMove,
@@ -120,8 +127,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   MOCK_METHOD4(OnPointerLeave,
                void(double, double, FlutterPointerDeviceKind, int32_t));
   MOCK_METHOD0(OnSetCursor, void());
-  MOCK_METHOD4(OnScroll,
-               void(double, double, FlutterPointerDeviceKind, int32_t));
+  MOCK_METHOD0(GetScrollOffsetMultiplier, float());
   MOCK_METHOD0(GetDpiScale, float());
   MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
@@ -203,6 +209,20 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 TEST(FlutterWindowWin32Test, CreateDestroy) {
   FlutterWindowWin32Test window(800, 600);
   ASSERT_TRUE(TRUE);
+}
+
+TEST(FlutterWindowWin32Test, OnBitmapSurfaceUpdated) {
+  FlutterWindowWin32 win32window(100, 100);
+  int old_handle_count = GetGuiResources(GetCurrentProcess(), GR_GDIOBJECTS);
+
+  constexpr size_t row_bytes = 100 * 4;
+  constexpr size_t height = 100;
+  std::array<char, row_bytes * height> allocation;
+  win32window.OnBitmapSurfaceUpdated(allocation.data(), row_bytes, height);
+
+  int new_handle_count = GetGuiResources(GetCurrentProcess(), GR_GDIOBJECTS);
+  // Check GDI resources leak
+  EXPECT_EQ(old_handle_count, new_handle_count);
 }
 
 // Tests that composing rect updates are transformed from Flutter logical
@@ -325,6 +345,36 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
                           kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerLeave(10.0, 10.0, kFlutterPointerDeviceKindStylus,
                              kDefaultPointerDeviceId);
+}
+
+// Tests that calls to OnScroll in turn calls GetScrollOffsetMultiplier
+// for mapping scroll ticks to pixels.
+TEST(FlutterWindowWin32Test, OnScrollCallsGetScrollOffsetMultiplier) {
+  MockFlutterWindowWin32 win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  ON_CALL(win32window, GetScrollOffsetMultiplier())
+      .WillByDefault(Return(120.0f));
+  EXPECT_CALL(win32window, GetScrollOffsetMultiplier()).Times(1);
+
+  EXPECT_CALL(delegate,
+              OnScroll(_, _, 0, 0, 120.0f, kFlutterPointerDeviceKindMouse,
+                       kDefaultPointerDeviceId))
+      .Times(1);
+
+  win32window.OnScroll(0.0f, 0.0f, kFlutterPointerDeviceKindMouse,
+                       kDefaultPointerDeviceId);
+}
+
+TEST(FlutterWindowWin32Test, OnWindowRepaint) {
+  MockFlutterWindowWin32 win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  EXPECT_CALL(delegate, OnWindowRepaint()).Times(1);
+
+  win32window.InjectWindowMessage(WM_PAINT, 0, 0);
 }
 
 }  // namespace testing
