@@ -10,6 +10,7 @@
 #include "display_list/display_list_tile_mode.h"
 #include "gtest/gtest.h"
 #include "third_party/imgui/imgui.h"
+#include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkPathBuilder.h"
 
@@ -322,6 +323,11 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
           Point(250, 150), Point(800, 600), 20, Color::White(), Color::White());
       bounds = SkRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
     }
+
+    // Insert a clip to test that the backdrop filter handles stencil depths > 0
+    // correctly.
+    builder.clipRect(SkRect::MakeLTRB(0, 0, 99999, 99999), SkClipOp::kIntersect,
+                     true);
 
     builder.drawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
                       flutter::DlImageSampling::kNearestNeighbor, true);
