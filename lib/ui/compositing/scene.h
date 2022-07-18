@@ -54,9 +54,9 @@ class Scene : public RefCountedDartWrappable<Scene> {
                             uint32_t height,
                             Dart_Handle raw_image_handle);
 
-  // This is a shared_ptr to support flattening the layer tree from the UI thread
-  // onto the raster thread - allowing access to the texture registry required to
-  // render TextureLayers.
+  // This is a shared_ptr to support flattening the layer tree from the UI
+  // thread onto the raster thread - allowing access to the texture registry
+  // required to render TextureLayers.
   //
   // No longer valid after calling `takeLayerTree`.
   std::shared_ptr<flutter::LayerTree> layer_tree_;
