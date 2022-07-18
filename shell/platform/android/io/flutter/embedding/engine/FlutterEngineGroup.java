@@ -152,7 +152,12 @@ public class FlutterEngineGroup {
     }
 
     if (activeEngines.size() == 0) {
-      engine = createEngine(context);
+      engine =
+          createEngine(
+              context,
+              platformViewsController,
+              automaticallyRegisterPlugins,
+              waitForRestorationData);
       if (initialRoute != null) {
         engine.getNavigationChannel().setInitialRoute(initialRoute);
       }
@@ -191,8 +196,19 @@ public class FlutterEngineGroup {
   }
 
   @VisibleForTesting
-  /* package */ FlutterEngine createEngine(Context context) {
-    return new FlutterEngine(context);
+  /* package */ FlutterEngine createEngine(
+      Context context,
+      @NonNull PlatformViewsController platformViewsController,
+      boolean automaticallyRegisterPlugins,
+      boolean waitForRestorationData) {
+    return new FlutterEngine(
+        context,
+        null,
+        null,
+        platformViewsController,
+        null,
+        automaticallyRegisterPlugins,
+        waitForRestorationData);
   }
 
   /** Options that control how a FlutterEngine should be created. */

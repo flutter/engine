@@ -74,7 +74,11 @@ public class FlutterEngineGroupComponentTest {
     engineGroupUnderTest =
         new FlutterEngineGroup(ctx) {
           @Override
-          FlutterEngine createEngine(Context context) {
+          FlutterEngine createEngine(
+              Context context,
+              PlatformViewsController platformViewsController,
+              boolean automaticallyRegisterPlugins,
+              boolean waitForRestorationData) {
             return firstEngineUnderTest;
           }
         };
