@@ -5903,9 +5903,14 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
   /// Throws an [Exception] if the asset does not exist.
   static Future<ImmutableBuffer> fromAsset(String assetKey) {
     final ImmutableBuffer instance = ImmutableBuffer._(0);
-    return _futurize((_Callback<int> callback) {
+    return _futurize((_Callback<int?> callback) {
       return instance._initFromAsset(assetKey, callback);
-    }).then((int length) => instance.._length = length);
+    }).then((int? length) {
+      if (length != null) {
+        return instance.._length = length;
+      }
+      throw Exception('Failed to load $assetKey');
+  });
   }
 
   @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::init')

@@ -51,7 +51,8 @@ class UIDartState : public tonic::DartState {
             fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
             std::string advisory_script_uri,
             std::string advisory_script_entrypoint,
-            std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+            std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+            std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner);
 
     /// The task runners used by the shell hosting this runtime controller. This
     /// may be used by the isolate to scheduled asynchronous texture uploads or
@@ -89,6 +90,10 @@ class UIDartState : public tonic::DartState {
 
     /// Cache for tracking path volatility.
     std::shared_ptr<VolatilePathTracker> volatile_path_tracker;
+
+    /// The task runner whose tasks may be executed concurrently on a
+    /// pool of worker threads.
+    std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner;
   };
 
   Dart_Port main_port() const { return main_port_; }
@@ -117,6 +122,8 @@ class UIDartState : public tonic::DartState {
   fml::RefPtr<flutter::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
 
   std::shared_ptr<VolatilePathTracker> GetVolatilePathTracker() const;
+
+  std::shared_ptr<fml::ConcurrentTaskRunner> GetConcurrentWorkerTaskRunner() const;
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
