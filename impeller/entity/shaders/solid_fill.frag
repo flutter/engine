@@ -4,7 +4,8 @@
 
 uniform FragInfo {
   vec4 color;
-} frag_info;
+}
+frag_info;
 
 out vec4 frag_color;
 
