@@ -72,7 +72,42 @@ void ResetAnchor(CALayer* layer) {
   return NO;
 }
 
-- (void)applyBackdropFilterWithRadius:(NSNumber*)blurRadius {
+//- (void)applyBackdropFilterWithRadius:(NSNumber*)blurRadius {
+//  if (!_gaussianFilter) {
+//    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+//        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+//
+//    UIView* view = [visualEffectView.subviews firstObject]; // check view name is BackdropView
+//    if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+//      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access its subviews.";
+//      return;
+//    }
+//
+//    _gaussianFilter = [[view.layer.filters firstObject] retain];
+//    if (!_gaussianFilter || ![[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
+//      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access the Gaussian blur filter. ";
+//      return;
+//    }
+//
+//    [visualEffectView release];
+//  }
+//
+//  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) { // TODO EMILY: is there another way to check that inputRadius key is valid?
+//    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+//                       "access the Gaussian blur filter's properties.";
+//    return;
+//  }
+//
+//  if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
+//    return;
+//
+//  [_gaussianFilter setValue:blurRadius forKey:@"inputRadius"];
+//  self.layer.filters = @[ _gaussianFilter ];
+//}
+
+// TODO EMILY: This method was added for when Javon's code is ready. Replace
+// applyBackdropFilterWithRadius: with applyBackdropFilter:
+- (void)applyBackdropFilter:(const flutter::DlImageFilter&)blurFilter {
   if (!_gaussianFilter) {
     UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
         initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
@@ -92,61 +127,18 @@ void ResetAnchor(CALayer* layer) {
     [visualEffectView release];
   }
 
-  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
+  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) { // TODO EMILY: is there another way to check that inputRadius key is valid?
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                        "access the Gaussian blur filter's properties.";
     return;
   }
-
-  if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
-    return;
-
-  [_gaussianFilter setValue:blurRadius forKey:@"inputRadius"];
-  self.layer.filters = @[ _gaussianFilter ];
-}
-
-// TODO EMILY: This method was added for when Javon's code is ready. Replace
-// applyBackdropFilterWithRadius: with applyBackdropFilter:
-- (void)applyBackdropFilter:(const flutter::DlImageFilter&)blurFilter {
-  if (!_gaussianFilter) {
-    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-
-    UIView* view = [visualEffectView.subviews firstObject];
-    if (!view) {
-      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                         "access the Gaussian blur filter.";
-      return;
-    }
-
-    _gaussianFilter = [[view.layer.filters firstObject] retain];
-    if (!_gaussianFilter)
-      return;
-
-    FML_DCHECK([[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]);
-    [visualEffectView release];
-  }
-
-  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                       "access the Gaussian blur filter's properties.";
-    return;
-  }
-
-  // TODO EMILY: I don't know if this works to get the sigma values.
-  NSNumber* sigmaX = 0;
-  NSNumber* sigmaY = 0;
-  NSNumber* blurRadius = 0;
 
   if (!blurFilter.asBlur()) {
+    FML_DLOG(ERROR) << "The backdrop filter was not added correctly.";
     return;
-  } else {
-    sigmaX = @(blurFilter.asBlur()->sigma_x());
-    sigmaY = @(blurFilter.asBlur()->sigma_y());
-
-    // TODO EMILY: Math to calculate blurRadius -> Choose the larger value.
-    blurRadius = MAX(sigmaX, sigmaY);
   }
+  
+  NSNumber* blurRadius = @(blurFilter.asBlur()->sigma_x());
 
   if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
     return;

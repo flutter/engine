@@ -411,7 +411,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
 
-        [clipView applyBackdropFilterWithRadius:@(5)];
+//        [clipView applyBackdropFilterWithRadius:@(5)];
         break;
       }
       case kClipRect:
