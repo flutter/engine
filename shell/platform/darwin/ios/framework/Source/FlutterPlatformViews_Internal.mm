@@ -97,9 +97,59 @@ void ResetAnchor(CALayer* layer) {
                        "access the Gaussian blur filter's properties.";
     return;
   }
+  
+  if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
+    return;
+
+  [_gaussianFilter setValue:blurRadius forKey:@"inputRadius"];
+  self.layer.filters = @[ _gaussianFilter ];
+}
+
+// TODO EMILY: This method was added for when Javon's code is ready. Replace applyBackdropFilterWithRadius: with applyBackdropFilter:
+- (void)applyBackdropFilter:(const flutter::DlImageFilter&)blurFilter {
+  if (!_gaussianFilter) {
+    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+
+    UIView* view = [visualEffectView.subviews firstObject];
+    if (!view) {
+      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                         "access the Gaussian blur filter.";
+      return;
+    }
+
+    _gaussianFilter = [[view.layer.filters firstObject] retain];
+    if (!_gaussianFilter)
+      return;
+
+    FML_DCHECK([[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]);
+    [visualEffectView release];
+  }
+
+  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                       "access the Gaussian blur filter's properties.";
+    return;
+  }
+
+  // TODO EMILY: I don't know if this works to get the sigma values.
+  NSNumber* sigmaX = 0;
+  NSNumber* sigmaY = 0;
+  NSNumber* blurRadius = 0;
+
+  if(!blurFilter.asBlur()) {
+    return;
+  } else {
+    sigmaX = @(blurFilter.asBlur()->sigma_x());
+    sigmaY = @(blurFilter.asBlur()->sigma_y());
+
+    // TODO EMILY: Math to calculate blurRadius -> Choose the larger value.
+    blurRadius = MAX(sigmaX, sigmaY);
+  }
 
   if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
     return;
+  // When we add Javon's code, the backdrop filter case will only be called once. Will this check be needed? To update the radius value, will a new Backdrop layer be read and added to stack? Or will an additional layer be added on top of the original layer? Stacking multiple backdrop layers affects the FlutterView differently (blurred edge along overlay). I think we need to let the BackdropFilter layers stack on PlatformViews to have the same effect, not simply update the radius values. I wonder how the effect will look since the BDFilter layers are added to the view, not on top of the view.
 
   [_gaussianFilter setValue:blurRadius forKey:@"inputRadius"];
   self.layer.filters = @[ _gaussianFilter ];
