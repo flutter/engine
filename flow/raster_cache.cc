@@ -171,7 +171,7 @@ void RasterCache::BeginFrame() {
 void RasterCache::UpdateMetrics() {
   for (auto it = cache_.begin(); it != cache_.end(); ++it) {
     Entry& entry = it->second;
-    FML_CHECK(entry.encountered_this_frame);
+    FML_DCHECK(entry.encountered_this_frame);
     if (entry.image) {
       RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
       metrics.in_use_count++;
