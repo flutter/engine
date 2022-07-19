@@ -381,6 +381,7 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view) {
+  
   if (flutter_view_ == nullptr) {
     return;
   }

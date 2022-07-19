@@ -77,18 +77,18 @@ void ResetAnchor(CALayer* layer) {
     UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
         initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
 
-    UIView* view = [visualEffectView.subviews firstObject];
-    if (!view) {
-      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                         "access the Gaussian blur filter.";
+    UIView* view = [visualEffectView.subviews firstObject]; // check view name is BackdropView
+    if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access its subviews.";
       return;
     }
 
     _gaussianFilter = [[view.layer.filters firstObject] retain];
-    if (!_gaussianFilter)
+    if (!_gaussianFilter || ![[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
+      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access the Gaussian blur filter. ";
       return;
+    }
 
-    FML_DCHECK([[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]);
     [visualEffectView release];
   }
 
