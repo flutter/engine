@@ -217,9 +217,11 @@ public class FlutterEngineGroup {
     @Nullable private DartEntrypoint dartEntrypoint;
     @Nullable private String initialRoute;
     @Nullable private List<String> dartEntrypointArgs;
-    @NonNull PlatformViewsController platformViewsController = new PlatformViewsController();
-    boolean automaticallyRegisterPlugins = true;
-    boolean waitForRestorationData = false;
+    private boolean automaticallyRegisterPlugins = true;
+    private boolean waitForRestorationData = false;
+
+    @NonNull
+    private PlatformViewsController platformViewsController = new PlatformViewsController();
 
     public Options(@NonNull Context context) {
       this.context = context;
