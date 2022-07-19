@@ -250,4 +250,46 @@ public class FlutterEngineGroupComponentTest {
             nullable(String.class),
             eq(secondDartEntrypointArgs));
   }
+
+  @Test
+  public void canCreateAndRunWithMoreParams() {
+    FlutterEngine firstEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            new FlutterEngineGroup.Options(ctx).setDartEntrypoint(mock(DartEntrypoint.class)));
+    assertEquals(1, engineGroupUnderTest.activeEngines.size());
+    verify(mockflutterJNI, times(1))
+        .runBundleAndSnapshotFromLibrary(
+            nullable(String.class),
+            nullable(String.class),
+            isNull(),
+            any(AssetManager.class),
+            nullable(List.class));
+
+    when(mockflutterJNI.isAttached()).thenReturn(true);
+    jniAttached = false;
+    FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
+    when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
+    doReturn(secondMockflutterJNI)
+        .when(mockflutterJNI)
+        .spawn(
+            nullable(String.class),
+            nullable(String.class),
+            nullable(String.class),
+            nullable(List.class));
+
+    PlatformViewsController controller = new PlatformViewsController();
+    boolean waitForRestorationData = true;
+
+    FlutterEngine secondEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            new FlutterEngineGroup.Options(ctx)
+                .setDartEntrypoint(mock(DartEntrypoint.class))
+                .setWaitForRestorationData(waitForRestorationData)
+                .setPlatformViewsController(controller));
+
+    assertEquals(controller, secondEngine.getPlatformViewsController());
+    assertEquals(
+        waitForRestorationData, secondEngine.getRestorationChannel().waitForRestorationData);
+  }
 }
