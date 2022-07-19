@@ -344,6 +344,55 @@ struct SaveLayerBackdropBoundsOp final : DLOp {
                : DisplayListCompare::kNotEqual;
   }
 };
+
+// 4 byte header + 20 byte payload packs into minimum 24 bytes
+struct SaveLayerColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSaveLayerBackdrop;
+
+  explicit SaveLayerColorFilterOp(const SaveLayerOptions options,
+                                  const DlColorFilter* color_filter)
+      : options(options), color_filter(color_filter->shared()) {}
+
+  SaveLayerOptions options;
+  const std::shared_ptr<DlColorFilter> color_filter;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.saveLayerCF(nullptr, options, color_filter.get());
+  }
+
+  DisplayListCompare equals(const SaveLayerColorFilterOp* other) const {
+    return options == other->options &&
+                   Equals(color_filter, other->color_filter)
+               ? DisplayListCompare::kEqual
+               : DisplayListCompare::kNotEqual;
+  }
+};
+
+// 4 byte header + 36 byte payload packs evenly into 36 bytes
+struct SaveLayerColorFilterBoundsOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSaveLayerBackdropBounds;
+
+  SaveLayerColorFilterBoundsOp(SkRect rect,
+                               const SaveLayerOptions options,
+                               const DlColorFilter* color_filter)
+      : options(options), rect(rect), color_filter(color_filter->shared()) {}
+
+  SaveLayerOptions options;
+  const SkRect rect;
+  const std::shared_ptr<DlColorFilter> color_filter;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.saveLayerCF(&rect, options, color_filter.get());
+  }
+
+  DisplayListCompare equals(const SaveLayerColorFilterBoundsOp* other) const {
+    return (options == other->options && rect == other->rect &&
+            Equals(color_filter, other->color_filter))
+               ? DisplayListCompare::kEqual
+               : DisplayListCompare::kNotEqual;
+  }
+};
+
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
 struct RestoreOp final : DLOp {
   static const auto kType = DisplayListOpType::kRestore;

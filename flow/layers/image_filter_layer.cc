@@ -3,16 +3,19 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/image_filter_layer.h"
+
+#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
-ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
+ImageFilterLayer::ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
-      filter_(std::move(filter)),
-      transformed_filter_(nullptr) {}
+      sk_filter_(filter != nullptr ? filter->skia_object() : nullptr),
+      transformed_filter_(nullptr),
+      filter_(std::move(filter)) {}
 
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -25,7 +28,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
 
   if (filter_) {
-    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
+    auto filter = sk_filter_->makeWithLocalMatrix(context->GetTransform());
     if (filter) {
       // This transform will be applied to every child rect in the subtree
       context->PushFilterBoundsAdjustment([filter](SkRect rect) {
@@ -62,7 +65,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   }
 
   const SkIRect filter_input_bounds = child_bounds.roundOut();
-  SkIRect filter_output_bounds = filter_->filterBounds(
+  SkIRect filter_output_bounds = sk_filter_->filterBounds(
       filter_input_bounds, SkMatrix::I(), SkImageFilter::kForward_MapDirection);
   child_bounds = SkRect::Make(filter_output_bounds);
 
@@ -72,7 +75,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   // So in here we reset the LayerRasterCacheItem cache state.
   layer_raster_cache_item_->MarkNotCacheChildren();
 
-  transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
+  transformed_filter_ = sk_filter_->makeWithLocalMatrix(matrix);
   if (transformed_filter_) {
     layer_raster_cache_item_->MarkCacheChildren();
   }
@@ -91,7 +94,7 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     return;
   }
 
-  cache_paint.setImageFilter(filter_);
+  cache_paint.setImageFilter(sk_filter_);
 
   // Normally a save_layer is sized to the current layer bounds, but in this
   // case the bounds of the child may not be the same as the filtered version

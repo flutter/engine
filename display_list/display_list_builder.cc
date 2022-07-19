@@ -3,8 +3,11 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/display_list_builder.h"
+#include <cstddef>
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/display_list_color.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
@@ -489,6 +492,27 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     }
   }
 }
+
+void DisplayListBuilder::saveLayerCF(const SkRect* bounds,
+                                     const SaveLayerOptions in_options,
+                                     const DlColorFilter* color_filter) {
+  SaveLayerOptions options = in_options.without_optimizations();
+  size_t save_layer_offset = used_;
+  if (color_filter) {
+    bounds  //
+        ? Push<SaveLayerColorFilterBoundsOp>(0, 1, *bounds, options,
+                                             color_filter)
+        : Push<SaveLayerColorFilterOp>(0, 1, options, color_filter);
+  } else {
+    bounds  //
+        ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
+        : Push<SaveLayerOp>(0, 1, options);
+  }
+  CheckLayerOpacityCompatibility(options.renders_with_attributes());
+  layer_stack_.emplace_back(current_layer_, save_layer_offset, true);
+  current_layer_ = &layer_stack_.back();
+}
+
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
                                    const DlPaint* paint,
                                    const DlImageFilter* backdrop) {
@@ -498,6 +522,18 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     saveLayer(bounds, SaveLayerOptions::kWithAttributes, backdrop);
   } else {
     saveLayer(bounds, SaveLayerOptions::kNoAttributes, backdrop);
+  }
+}
+
+void DisplayListBuilder::saveLayer(const SkRect* bounds,
+                                   const DlPaint* paint,
+                                   const DlColorFilter* color_filter) {
+  if (paint != nullptr) {
+    setAttributesFromDlPaint(*paint,
+                             DisplayListOpFlags::kSaveLayerWithPaintFlags);
+    saveLayerCF(bounds, SaveLayerOptions::kWithAttributes, color_filter);
+  } else {
+    saveLayerCF(bounds, SaveLayerOptions::kNoAttributes, color_filter);
   }
 }
 

@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "display_list/display_list_blend_mode.h"
+#include "display_list/display_list_color_filter.h"
 #include "display_list/display_list_path_effect.h"
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
@@ -358,6 +359,15 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
   }
 }
 
+static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
+    const flutter::DlColorFilter* filter) {
+  if (filter == nullptr) {
+    return std::nullopt;
+  }
+  // TODO(JsouLiang):
+  return std::nullopt;
+}
+
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setImageFilter(
     const flutter::DlImageFilter* filter) {
@@ -382,6 +392,17 @@ void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
   canvas_.SaveLayer(paint, ToRect(bounds), ToImageFilterProc(backdrop));
+}
+
+// |flutter::Dispatcher|
+void DisplayListDispatcher::saveLayerCF(
+    const SkRect* bounds,
+    const flutter::SaveLayerOptions options,
+    const flutter::DlColorFilter* color_filter) {
+  auto paint = options.renders_with_attributes() ? paint_ : Paint{};
+  // TODO(JsouLiang)
+  ToColorFilterProc(color_filter);
+  // canvas_.SaveLayer(paint, ToRect(bounds), ToColorFilterProc(color_filter));
 }
 
 // |flutter::Dispatcher|

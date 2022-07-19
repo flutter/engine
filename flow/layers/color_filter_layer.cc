@@ -3,15 +3,17 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/color_filter_layer.h"
+#include <cstddef>
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
-ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
+ColorFilterLayer::ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer,
           true),
+      sk_filter_(filter ? filter->skia_object() : nullptr),
       filter_(std::move(filter)) {}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
@@ -45,23 +47,29 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  AutoCachePaint cache_paint(context);
-
   if (context.raster_cache) {
+    AutoCachePaint cache_paint(context);
     if (layer_raster_cache_item_->IsCacheChildren()) {
-      cache_paint.setColorFilter(filter_);
+      cache_paint.setColorFilter(sk_filter_);
     }
     if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
       return;
     }
   }
 
-  cache_paint.setColorFilter(filter_);
+  AutoCachePaint cache_paint(context);
+  cache_paint.setColorFilter(sk_filter_);
 
-  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-      context, paint_bounds(), cache_paint.sk_paint());
-
-  PaintChildren(context);
+  if (context.leaf_nodes_builder) {
+    context.leaf_nodes_builder->saveLayer(
+        &paint_bounds(), cache_paint.dl_paint(), filter_.get());
+    PaintChildren(context);
+    context.leaf_nodes_builder->restore();
+  } else {
+    Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+        context, paint_bounds(), cache_paint.sk_paint());
+    PaintChildren(context);
+  }
 }
 
 }  // namespace flutter
