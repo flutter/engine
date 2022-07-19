@@ -144,6 +144,7 @@ public class FlutterEngineGroup {
     String initialRoute = options.getInitialRoute();
     List<String> dartEntrypointArgs = options.getDartEntrypointArgs();
     PlatformViewsController platformViewsController = options.getPlatformViewsController();
+    if (platformViewsController == null) platformViewsController = new PlatformViewsController();
     boolean automaticallyRegisterPlugins = options.getAutomaticallyRegisterPlugins();
     boolean waitForRestorationData = options.getWaitForRestorationData();
 
@@ -217,11 +218,9 @@ public class FlutterEngineGroup {
     @Nullable private DartEntrypoint dartEntrypoint;
     @Nullable private String initialRoute;
     @Nullable private List<String> dartEntrypointArgs;
+    @NonNull private PlatformViewsController platformViewsController;
     private boolean automaticallyRegisterPlugins = true;
     private boolean waitForRestorationData = false;
-
-    @NonNull
-    private PlatformViewsController platformViewsController = new PlatformViewsController();
 
     public Options(@NonNull Context context) {
       this.context = context;
