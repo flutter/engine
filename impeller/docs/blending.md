@@ -27,10 +27,10 @@ layer, all Entities have an associated blend mode, which can be set via
 
 ## Premultiplied colors
 
-In impeller, all blending _source colors_ are assumed to be _premultiplied_ for
-the purposes of blending. This means that all Entity shaders must output
-colors with premultiplied alpha. In general, these shaders also assume that
-sampled textures and uniform color inputs are premultiplied.
+In Impeller, all blending _source colors_ are assumed to be _premultiplied_ for
+the purpose of blending. This means that all Entity shaders must output colors
+with premultiplied alpha. In general, these shaders also assume that sampled
+textures and uniform color inputs are premultiplied.
 
 The reason for this is that it enables us to implement all of the _Porter-Duff
 alpha composites_ using the built-in raster pipeline blend configuration offered
@@ -75,6 +75,16 @@ composites_, and they can technically be combined with any _pipeline blend_ with
 predictable compositing behavior. However, in order to keep in line with
 Flutter's (and Skia's) current behavior, Impeller uses _Source Over_ compositing
 when rendering all advanced blends.
+
+Advanced blends are expensive when compared to pipeline blends (which are
+essentially free) for the following reasons:
+* For each advanced blend, the current render pass ends because the backdrop
+  texture needs to be sampled.
+* A potentially large texture (the render pass backdrop) is sampled. Although in
+  practice, just the coverage rectangle of the source being blended is actually
+  used.
+* An intermediary texture is allocated for the blend output before being blitted
+  back to the render pass texture.
 
 | Advanced blend |
 | --- |
