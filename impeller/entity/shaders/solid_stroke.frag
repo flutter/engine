@@ -4,7 +4,8 @@
 
 uniform FragInfo {
   vec4 color;
-} frag_info;
+}
+frag_info;
 
 in float v_pen_down;
 

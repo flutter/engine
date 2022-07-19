@@ -5,7 +5,8 @@
 uniform VertInfo {
   mat4 mvp;
   float size;
-} vert_info;
+}
+vert_info;
 
 in vec2 position;
 in vec2 normal;
