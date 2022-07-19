@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 namespace {
@@ -17,7 +18,7 @@ namespace {
 constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
 
-}  // namespaces
+}  // namespace
 
 namespace flutter {
 
@@ -37,6 +38,8 @@ using namespace flutter;
 
 @implementation FlutterPlatformPlugin {
   fml::WeakPtr<FlutterEngine> _engine;
+  // Used to detect whether this device has live text input ability or not.
+  fml::scoped_nsobject<UITextField> _textField;
 }
 
 - (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
@@ -88,6 +91,8 @@ using namespace flutter;
     result(nil);
   } else if ([method isEqualToString:@"Clipboard.hasStrings"]) {
     result([self clipboardHasStrings]);
+  } else if ([method isEqualToString:@"LiveTextSupport.isLiveTextInputAvailable"]) {
+    result(@([self isLiveTextInputAvailable]));
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -287,4 +292,16 @@ using namespace flutter;
   return @{@"value" : @(hasStrings)};
 }
 
+- (BOOL)isLiveTextInputAvailable {
+  UITextField* textField = [self textField];
+  return [textField canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
+}
+
+- (UITextField*)textField {
+  if (_textField.get() == nil) {
+    UITextField* newTextField = [[UITextField alloc] init];
+    _textField.reset(newTextField);
+  }
+  return _textField.get();
+}
 @end

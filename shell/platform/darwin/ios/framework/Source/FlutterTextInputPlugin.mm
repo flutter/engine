@@ -47,6 +47,7 @@ static NSString* const kSetEditableSizeAndTransformMethod =
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
 static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
+static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -2102,6 +2103,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];
     result(nil);
+  } else if ([method isEqualToString:kStartLiveTextInputMethod]) {
+    [self startLiveTextInput];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -2144,6 +2148,15 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
                                    position:[rect[4] unsignedIntegerValue]]];
   }
   _activeView.selectionRects = rectsAsRect;
+}
+
+- (void)startLiveTextInput {
+  if (_activeView == nil || !_activeView.isFirstResponder) {
+    return;
+  }
+  if (@available(iOS 15.0, *)) {
+    [_activeView captureTextFromCamera:nil];
+  }
 }
 
 - (void)showTextInput {
