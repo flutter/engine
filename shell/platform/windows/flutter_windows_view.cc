@@ -117,11 +117,8 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
 
 void FlutterWindowsView::ForceRedraw() {
   if (resize_status_ == ResizeState::kDone) {
-    // Request new frame
-    // TODO(knopp): Replace with more specific call once there is API for it
-    // https://github.com/flutter/flutter/issues/69716
-    SendWindowMetrics(resize_target_width_, resize_target_height_,
-                      binding_handler_->GetDpiScale());
+    // Request new frame.
+    engine_->ScheduleFrame();
   }
 }
 
@@ -161,6 +158,10 @@ void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
                           return resize_status == ResizeState::kDone;
                         });
   }
+}
+
+void FlutterWindowsView::OnWindowRepaint() {
+  ForceRedraw();
 }
 
 void FlutterWindowsView::OnPointerMove(double x,
@@ -603,6 +604,8 @@ void FlutterWindowsView::CreateRenderSurface() {
     PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
     engine_->surface_manager()->CreateSurface(GetRenderTarget(), bounds.width,
                                               bounds.height);
+    resize_target_width_ = bounds.width;
+    resize_target_height_ = bounds.height;
   }
 }
 
