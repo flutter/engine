@@ -409,7 +409,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case kTransform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
-        
+
         [clipView applyBackdropFilterWithRadius:@(5)];
         break;
       }
@@ -425,11 +425,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case kOpacity:
         embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
         break;
-      case kBackdropFilter: {        
-        [clipView applyBackdropFilter:(*iter)->GetFilter()]; // TODO EMILY: check for nullptr here? or just in applyBackdropFilter method?
+      case kBackdropFilter: {
+        [clipView
+            applyBackdropFilter:(*iter)->GetFilter()];  // TODO EMILY: check for nullptr here? or
+                                                        // just in applyBackdropFilter method?
         break;
       }
-
     }
     ++iter;
   }

@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
+#include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -15,7 +16,6 @@
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "flutter/display_list/display_list_image_filter.h"
 
 @class FlutterTouchInterceptingView;
 
@@ -54,10 +54,9 @@
     (NSNumber*)blurRadius;  // TODO EMILY: is it better to pass an int?
 
 // Adds a blur filter to its layers.
-- (void)applyBackdropFilter:
-    (const flutter::DlImageFilter&)blurFilter;
-// TODO EMILY: This method was added for when Javon's code is ready. Replace applyBackdropFilterWithRadius: with applyBackdropFilter:
-
+- (void)applyBackdropFilter:(const flutter::DlImageFilter&)blurFilter;
+// TODO EMILY: This method was added for when Javon's code is ready. Replace
+// applyBackdropFilterWithRadius: with applyBackdropFilter:
 
 @end
 
