@@ -12,10 +12,6 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 class Canvas;
 
@@ -37,20 +33,18 @@ class Picture : public RefCountedDartWrappable<Picture> {
                       uint32_t height,
                       Dart_Handle raw_image_callback);
 
-  void toGpuImage(uint32_t width,
-                  uint32_t height,
-                  Dart_Handle raw_image_handle);
+  void toImageSync(uint32_t width,
+                   uint32_t height,
+                   Dart_Handle raw_image_handle);
 
   void dispose();
 
   size_t GetAllocationSize() const override;
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-  static void RasterizeToGpuImage(sk_sp<DisplayList> display_list,
-                                  uint32_t width,
-                                  uint32_t height,
-                                  Dart_Handle raw_image_handle);
+  static void RasterizeToImageSync(sk_sp<DisplayList> display_list,
+                                   uint32_t width,
+                                   uint32_t height,
+                                   Dart_Handle raw_image_handle);
 
   static Dart_Handle RasterizeToImage(sk_sp<DisplayList> display_list,
                                       uint32_t width,

@@ -395,12 +395,14 @@ static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
   if (!mapping) {
     return nullptr;
   }
-  return SkData::MakeWithProc(
+  auto data = SkData::MakeWithProc(
       mapping->GetMapping(), mapping->GetSize(),
       [](const void* ptr, void* context) {
         delete reinterpret_cast<fml::Mapping*>(context);
       },
-      mapping.release());
+      mapping.get());
+  mapping.release();
+  return data;
 }
 
 bool RenderTextInCanvas(std::shared_ptr<Context> context,
@@ -457,10 +459,8 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(
-      GetContext(), canvas,
-      "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
-      "NotoColorEmoji.ttf"));
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊",
+                                 "NotoColorEmoji.ttf"));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -769,8 +769,8 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
           Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
 
       auto screen_to_canvas = canvas.GetCurrentTransformation().Invert();
-      Point point_a = screen_to_canvas * handle_a;
-      Point point_b = screen_to_canvas * handle_b;
+      Point point_a = screen_to_canvas * handle_a * GetContentScale();
+      Point point_b = screen_to_canvas * handle_b * GetContentScale();
 
       Point middle = (point_a + point_b) / 2;
       auto radius = point_a.GetDistance(middle);
@@ -798,8 +798,10 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
 }
 
 TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
-  auto callback = [](AiksContext& renderer, RenderTarget& render_target) {
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
     Canvas canvas;
+    canvas.Scale(GetContentScale());
+
     Paint alpha;
     alpha.color = Color::Red().WithAlpha(0.5);
 
@@ -837,8 +839,9 @@ TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   paint.stroke_width = 10;
 
   canvas.Translate({100, 100});
-  canvas.DrawPath(PathBuilder{}.AddRect(Rect::MakeSize({100, 100})).TakePath(),
-                  {paint});
+  canvas.DrawPath(
+      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
+      {paint});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -910,11 +913,11 @@ TEST_P(AiksTest, CanRenderClippedLayers) {
     canvas.SaveLayer({}, Rect::MakeXYWH(50, 50, 100, 100));
 
     // Fill the layer with white.
-    canvas.DrawRect(Rect::MakeSize({400, 400}), {.color = Color::White()});
+    canvas.DrawRect(Rect::MakeSize(Size{400, 400}), {.color = Color::White()});
     // Fill the layer with green, but do so with a color blend that can't be
     // collapsed into the parent pass.
     canvas.DrawRect(
-        Rect::MakeSize({400, 400}),
+        Rect::MakeSize(Size{400, 400}),
         {.color = Color::Green(), .blend_mode = Entity::BlendMode::kColorBurn});
   }
 

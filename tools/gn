@@ -56,9 +56,6 @@ def get_out_dir(args):
   if args.target_os == 'fuchsia' and args.fuchsia_cpu is not None:
     target_dir.append(args.fuchsia_cpu)
 
-  if args.support_fractional_translation:
-    target_dir.append('fractional')
-
   # This exists for backwards compatibility of tests that are being run
   # on LUCI. This can be removed in coordination with a LUCI change:
   # https://github.com/flutter/flutter/issues/76547
@@ -347,10 +344,6 @@ def to_gn_args(args):
   if args.allow_deprecated_api_calls:
     gn_args['allow_deprecated_api_calls'] = args.allow_deprecated_api_calls
 
-  if args.support_fractional_translation:
-    gn_args['support_fractional_translation'
-           ] = args.support_fractional_translation
-
   # DBC is not supported anymore.
   if args.interpreter:
     raise Exception(
@@ -532,6 +525,11 @@ def to_gn_args(args):
 
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
+
+  # Vulkan support is WIP, see: https://github.com/flutter/flutter/issues/107357
+  if args.enable_impeller_vulkan:
+    gn_args['impeller_enable_vulkan'] = True
+    gn_args['skia_use_vma'] = False
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
@@ -833,15 +831,6 @@ def parse_args(args):
       '--fuchsia-target-api-level', dest='fuchsia_target_api_level'
   )
 
-  parser.add_argument(
-      '--support-fractional-translation',
-      dest='support_fractional_translation',
-      default=False,
-      action='store_true',
-      help='Whether to allow layers to render at fraction pixel '
-      'boundaries.'
-  )
-
   # Flags for Dart features.
   parser.add_argument(
       '--use-mallinfo2',
@@ -864,6 +853,13 @@ def parse_args(args):
       type=str,
       help='Absolute path to a prebuilt impellerc. ' +
       'Do not use this outside of CI or with impellerc from a different engine version.'
+  )
+  parser.add_argument(
+      '--enable-impeller-vulkan',
+      default=False,
+      action='store_true',
+      help='Enables WIP impeller support for vulkan. ' +
+      'https://github.com/flutter/flutter/issues/107357'
   )
 
   # Sanitizers.

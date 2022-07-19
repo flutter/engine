@@ -16,10 +16,6 @@ namespace {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
-// TODO: See if this can be queried from the OS; this value is chosen
-// arbitrarily to get something that feels reasonable.
-constexpr int kScrollOffsetMultiplier = 20;
-
 // Maps a Flutter cursor name to an HCURSOR.
 //
 // Returns the arrow cursor for unknown constants.
@@ -139,6 +135,12 @@ void FlutterWindowWin32::OnResize(unsigned int width, unsigned int height) {
   }
 }
 
+void FlutterWindowWin32::OnPaint() {
+  if (binding_handler_delegate_ != nullptr) {
+    binding_handler_delegate_->OnWindowRepaint();
+  }
+}
+
 void FlutterWindowWin32::OnPointerMove(double x,
                                        double y,
                                        FlutterPointerDeviceKind device_kind,
@@ -228,7 +230,7 @@ void FlutterWindowWin32::OnScroll(double delta_x,
 
   ScreenToClient(GetWindowHandle(), &point);
   binding_handler_delegate_->OnScroll(point.x, point.y, delta_x, delta_y,
-                                      kScrollOffsetMultiplier, device_kind,
+                                      GetScrollOffsetMultiplier(), device_kind,
                                       device_id);
 }
 
@@ -247,7 +249,7 @@ void FlutterWindowWin32::OnResetImeComposing() {
 bool FlutterWindowWin32::OnBitmapSurfaceUpdated(const void* allocation,
                                                 size_t row_bytes,
                                                 size_t height) {
-  HDC dc = ::GetDC(std::get<HWND>(GetRenderTarget()));
+  HDC dc = ::GetDC(GetWindowHandle());
   BITMAPINFO bmi;
   memset(&bmi, 0, sizeof(bmi));
   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -259,6 +261,7 @@ bool FlutterWindowWin32::OnBitmapSurfaceUpdated(const void* allocation,
   bmi.bmiHeader.biSizeImage = 0;
   int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
                               allocation, &bmi, DIB_RGB_COLORS);
+  ::ReleaseDC(GetWindowHandle(), dc);
   return ret != 0;
 }
 
