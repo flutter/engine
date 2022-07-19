@@ -1108,5 +1108,23 @@ TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
   }
 }
 
+TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
+  // No path.
+  {
+    auto fill = std::make_shared<SolidColorContents>();
+    fill->SetColor(Color::CornflowerBlue());
+    ASSERT_FALSE(fill->ShouldRender(Entity{}, {100, 100}));
+  }
+
+  // With path.
+  {
+    auto fill = std::make_shared<SolidColorContents>();
+    fill->SetColor(Color::CornflowerBlue());
+    fill->SetPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath());
+    ASSERT_TRUE(fill->ShouldRender(Entity{}, {100, 100}));
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller
