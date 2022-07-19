@@ -360,17 +360,14 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
                          &renderer](Entity& element_entity) {
-    auto pass = pass_context.GetRenderPass(pass_depth);
+    element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
+                                   stencil_depth_floor);
 
-    auto coverage = element_entity.GetCoverage();
-    if (!coverage.has_value() ||
-        !Rect::MakeSize(Size(pass->GetRenderTargetSize()))
-             .IntersectsWithRect(coverage.value())) {
+    auto pass = pass_context.GetRenderPass(pass_depth);
+    if (!element_entity.ShouldRender(*pass)) {
       return true;  // Nothing to render.
     }
 
-    element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
-                                   stencil_depth_floor);
     if (!element_entity.Render(renderer, *pass)) {
       return false;
     }
