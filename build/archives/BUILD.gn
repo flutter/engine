@@ -169,7 +169,7 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
 
 # If there is no prebuilt sdk, create the dart sdk archive from the built sdk.
 if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
-  zip_bundle("dart_sdk_archive") {
+  zip_bundle_from_file("dart_sdk_archive") {
     deps = [ "//third_party/dart:create_sdk" ]
     output = "dart-sdk-$full_target_platform_name.zip"
     if (is_mac) {
@@ -179,7 +179,7 @@ if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
     }
     files = [
       {
-        source = "$root_out_dir/dart-sdk"
+        source = rebase_path("$root_build_dir/dart-sdk")
         destination = "dart-sdk"
       },
     ]
