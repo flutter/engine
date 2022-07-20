@@ -135,6 +135,12 @@ void FlutterWindowWin32::OnResize(unsigned int width, unsigned int height) {
   }
 }
 
+void FlutterWindowWin32::OnPaint() {
+  if (binding_handler_delegate_ != nullptr) {
+    binding_handler_delegate_->OnWindowRepaint();
+  }
+}
+
 void FlutterWindowWin32::OnPointerMove(double x,
                                        double y,
                                        FlutterPointerDeviceKind device_kind,
@@ -243,7 +249,7 @@ void FlutterWindowWin32::OnResetImeComposing() {
 bool FlutterWindowWin32::OnBitmapSurfaceUpdated(const void* allocation,
                                                 size_t row_bytes,
                                                 size_t height) {
-  HDC dc = ::GetDC(std::get<HWND>(GetRenderTarget()));
+  HDC dc = ::GetDC(GetWindowHandle());
   BITMAPINFO bmi;
   memset(&bmi, 0, sizeof(bmi));
   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -255,6 +261,7 @@ bool FlutterWindowWin32::OnBitmapSurfaceUpdated(const void* allocation,
   bmi.bmiHeader.biSizeImage = 0;
   int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
                               allocation, &bmi, DIB_RGB_COLORS);
+  ::ReleaseDC(GetWindowHandle(), dc);
   return ret != 0;
 }
 
