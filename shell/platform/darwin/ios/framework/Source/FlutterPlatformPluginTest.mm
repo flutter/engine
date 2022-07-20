@@ -115,21 +115,21 @@
   OCMVerify([navigationControllerMock popViewControllerAnimated:YES]);
 }
 
-- (void)testWhetherDeviceHasLiveTextSupportInvokeCorrectly {
+- (void)testWhetherDeviceHasLiveTextInputInvokeCorrectly {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
-  XCTestExpectation* liveTextSupportInvokeExpectation =
-      [self expectationWithDescription:@"liveTextSupportInvoke"];
+  XCTestExpectation* invokeExpectation =
+      [self expectationWithDescription:@"isLiveTextInputAvailableInvoke"];
   FlutterPlatformPlugin* plugin =
       [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
   FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"LiveTextSupport.isLiveTextInputAvailable"
+      [FlutterMethodCall methodCallWithMethodName:@"LiveText.isLiveTextInputAvailable"
                                         arguments:nil];
   FlutterResult result = ^(id result) {
     OCMVerify([mockPlugin isLiveTextInputAvailable]);
-    [liveTextSupportInvokeExpectation fulfill];
+    [invokeExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];
   [self waitForExpectationsWithTimeout:1 handler:nil];

@@ -91,7 +91,7 @@ using namespace flutter;
     result(nil);
   } else if ([method isEqualToString:@"Clipboard.hasStrings"]) {
     result([self clipboardHasStrings]);
-  } else if ([method isEqualToString:@"LiveTextSupport.isLiveTextInputAvailable"]) {
+  } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
   } else {
     result(FlutterMethodNotImplemented);
