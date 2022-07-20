@@ -99,11 +99,11 @@ struct SampledImageSlot {
 };
 
 struct VkDescriptorSetLayoutBinding {
-  uint32_t   binding = 0;
-  uint32_t   descriptorType = 0;
-  uint32_t   descriptorCount = 1;
-  uint32_t   stageFlags = 0;
-  void*      pImmutableSamplers = nullptr;
+  uint32_t binding = 0;
+  uint32_t descriptorType = 0;
+  uint32_t descriptorCount = 1;
+  uint32_t stageFlags = 0;
+  void* pImmutableSamplers = nullptr;
 };
 
 template <size_t Size>
