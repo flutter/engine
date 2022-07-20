@@ -319,7 +319,7 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Setup culling.
     ///
-    switch (command.cull_mode) {
+    switch (pipeline.GetDescriptor().GetCullMode()) {
       case CullMode::kNone:
         gl.Disable(GL_CULL_FACE);
         break;
@@ -335,7 +335,7 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Setup winding order.
     ///
-    switch (command.winding) {
+    switch (pipeline.GetDescriptor().GetWindingOrder()) {
       case WindingOrder::kClockwise:
         gl.FrontFace(GL_CW);
         break;
@@ -473,7 +473,7 @@ bool RenderPassGLES::EncodeCommands(
 
   auto pass_data = std::make_shared<RenderPassData>();
   pass_data->label = label_;
-  pass_data->viewport.rect = Rect::MakeSize(Size(GetRenderTargetSize()));
+  pass_data->viewport.rect = Rect::MakeSize(GetRenderTargetSize());
 
   //----------------------------------------------------------------------------
   /// Setup color data.

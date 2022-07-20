@@ -6,8 +6,11 @@
 
 #include "flutter/lib/ui/painting/fragment_program.h"
 
+#include "flutter/assets/asset_manager.h"
+#include "flutter/impeller/runtime_stage/runtime_stage.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -15,26 +18,72 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-using tonic::ToDart;
-
 namespace flutter {
-
-static void FragmentProgram_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&FragmentProgram::Create, args);
-}
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentProgram);
 
-#define FOR_EACH_BINDING(V) \
-  V(FragmentProgram, init)  \
-  V(FragmentProgram, shader)
+void FragmentProgram::initFromAsset(std::string asset_name) {
+  std::shared_ptr<AssetManager> asset_manager = UIDartState::Current()
+                                                    ->platform_configuration()
+                                                    ->client()
+                                                    ->GetAssetManager();
+  std::unique_ptr<fml::Mapping> data = asset_manager->GetAsMapping(asset_name);
+  if (data == nullptr) {
+    Dart_ThrowException(tonic::ToDart("Asset '" + asset_name + "' not found"));
+    return;
+  }
 
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
+  auto runtime_stage = impeller::RuntimeStage(std::move(data));
+  {
+    auto code_mapping = runtime_stage.GetCodeMapping();
+    auto code_size = code_mapping->GetSize();
+    const char* sksl =
+        reinterpret_cast<const char*>(code_mapping->GetMapping());
+    // SkString makes a copy.
+    SkRuntimeEffect::Result result =
+        SkRuntimeEffect::MakeForShader(SkString(sksl, code_size));
+    if (result.effect == nullptr) {
+      Dart_ThrowException(tonic::ToDart(std::string("Invalid SkSL:\n") + sksl +
+                                        std::string("\nSkSL Error:\n") +
+                                        result.errorText.c_str()));
+      return;
+    }
+    runtime_effect_ = result.effect;
+  }
 
-void FragmentProgram::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"FragmentProgram_constructor", FragmentProgram_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+  int sampled_image_count = 0;
+  size_t other_uniforms_bytes = 0;
+  for (const auto& uniform_description : runtime_stage.GetUniforms()) {
+    if (uniform_description.type ==
+        impeller::RuntimeUniformType::kSampledImage) {
+      sampled_image_count++;
+    } else {
+      size_t size = uniform_description.dimensions.rows *
+                    uniform_description.dimensions.cols *
+                    uniform_description.bit_width / 8u;
+      other_uniforms_bytes += size;
+    }
+  }
+
+  Dart_Handle ths = Dart_HandleFromWeakPersistent(dart_wrapper());
+  if (Dart_IsError(ths)) {
+    Dart_PropagateError(ths);
+  }
+
+  Dart_Handle result = Dart_SetField(ths, tonic::ToDart("_samplerCount"),
+                                     Dart_NewInteger(sampled_image_count));
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
+  }
+
+  size_t rounded_uniform_bytes =
+      (other_uniforms_bytes + sizeof(float) - 1) & ~(sizeof(float) - 1);
+  size_t float_count = rounded_uniform_bytes / sizeof(float);
+  result = Dart_SetField(ths, tonic::ToDart("_uniformFloatCount"),
+                         Dart_NewInteger(float_count));
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
+  }
 }
 
 void FragmentProgram::init(std::string sksl, bool debugPrintSksl) {
@@ -53,12 +102,12 @@ void FragmentProgram::init(std::string sksl, bool debugPrintSksl) {
   }
 }
 
-fml::RefPtr<FragmentShader> FragmentProgram::shader(
-    Dart_Handle shader,
-    tonic::Float32List& uniforms,
-    Dart_Handle samplers) {
+fml::RefPtr<FragmentShader> FragmentProgram::shader(Dart_Handle shader,
+                                                    Dart_Handle uniforms_handle,
+                                                    Dart_Handle samplers) {
   auto sampler_shaders =
       tonic::DartConverter<std::vector<ImageShader*>>::FromDart(samplers);
+  tonic::Float32List uniforms(uniforms_handle);
   size_t uniform_count = uniforms.num_elements();
   size_t uniform_data_size =
       (uniform_count + 2 * sampler_shaders.size()) * sizeof(float);
@@ -89,8 +138,9 @@ fml::RefPtr<FragmentShader> FragmentProgram::shader(
   return FragmentShader::Create(shader, std::move(sk_shader));
 }
 
-fml::RefPtr<FragmentProgram> FragmentProgram::Create() {
-  return fml::MakeRefCounted<FragmentProgram>();
+void FragmentProgram::Create(Dart_Handle wrapper) {
+  auto res = fml::MakeRefCounted<FragmentProgram>();
+  res->AssociateWithDartWrapper(wrapper);
 }
 
 FragmentProgram::FragmentProgram() = default;

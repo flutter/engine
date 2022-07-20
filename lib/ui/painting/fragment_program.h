@@ -14,10 +14,6 @@
 #include <string>
 #include <vector>
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
 class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
@@ -26,15 +22,15 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
 
  public:
   ~FragmentProgram() override;
-  static fml::RefPtr<FragmentProgram> Create();
+  static void Create(Dart_Handle wrapper);
+
+  void initFromAsset(std::string asset_name);
 
   void init(std::string sksl, bool debugPrintSksl);
 
   fml::RefPtr<FragmentShader> shader(Dart_Handle shader,
-                                     tonic::Float32List& uniforms,
+                                     Dart_Handle uniforms_handle,
                                      Dart_Handle samplers);
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   FragmentProgram();
