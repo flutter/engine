@@ -371,7 +371,7 @@ TEST(MockWindow, WindowOnSetAndKillFocus) {
 }
 
 TEST(MockWindow, WindowOnMinimized) {
-  MockWindow window;
+  ::testing::NiceMock<MockWindow> window;
   window.InjectWindowMessage(WM_SIZE, SIZE_RESTORED, MAKEWPARAM(1, 1));
 
   EXPECT_CALL(window, OnMinimized()).Times(1);
@@ -383,7 +383,7 @@ TEST(MockWindow, WindowOnMinimized) {
 }
 
 TEST(MockWindow, WindowOnRestoredFromMinimized) {
-  MockWindow window;
+  ::testing::NiceMock<MockWindow> window;
   window.InjectWindowMessage(WM_SIZE, SIZE_MINIMIZED, MAKEWPARAM(0, 0));
 
   EXPECT_CALL(window, OnRestoredFromMinimized()).Times(1);
