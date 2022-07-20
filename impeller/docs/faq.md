@@ -57,8 +57,8 @@
     Flutter Engine dynamic library.
   * The binary size overhead of Impeller is around 100 KB per architecture. This
     includes all precompiled shaders.
-  * Impeller is already is present in all Flutter engine. It is current behind a
-    flag as development progresses.
+  * Impeller compiled into the Flutter engine. It is current behind a flag as
+    development progresses.
 * How do I enable Impeller to try it out myself?
   * See the instructions in the README on how to [try Impeller in
     Flutter](https://github.com/flutter/engine/tree/main/impeller#try-impeller-in-flutter).
