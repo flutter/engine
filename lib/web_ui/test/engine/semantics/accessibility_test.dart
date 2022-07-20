@@ -56,7 +56,7 @@ void testMain() {
               expect(domDocument.getElementById('accessibility-element'), isNull));
     });
 
-    test('Default value of aria-live is assertive when assertiveAnnouncement is not specified', () {
+    test('Default value of aria-live is assertive when ariaLivePolitenessSetting is not specified', () {
       const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message'}};
       accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
       final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
@@ -64,24 +64,24 @@ void testMain() {
       expect(input.getAttribute('aria-live'), equals('assertive'));
     });
 
-     test('aria-live is assertive when assertiveAnnouncement is set to true', () {
-      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'assertiveAnnouncement': true}};
+     test('aria-live is assertive when ariaLivePolitenessSetting is set to 1', () {
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'ariaLivePolitenessSetting': 1}};
       accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
       final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
 
       expect(input.getAttribute('aria-live'), equals('assertive'));
     });
 
-    test('aria-live is assertive when assertiveAnnouncement is null', () {
-      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'assertiveAnnouncement': null}};
+    test('aria-live is assertive when ariaLivePolitenessSetting is null', () {
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'ariaLivePolitenessSetting': null}};
       accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
       final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
 
       expect(input.getAttribute('aria-live'), equals('assertive'));
     });
 
-    test('aria-live is polite when assertiveAnnouncement is set to false', () {
-      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'assertiveAnnouncement': false}};
+    test('aria-live is polite when ariaLivePolitenessSetting is set to 0', () {
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'message', 'ariaLivePolitenessSetting': 0}};
       accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
       final DomHTMLLabelElement input = domDocument.getElementById('accessibility-element')! as DomHTMLLabelElement;
 

@@ -10,6 +10,14 @@ import '../dom.dart';
 import '../services.dart';
 import '../util.dart';
 
+/// Determines the politeness setting of aria live in Flutter web.
+///
+/// The order of this enum must match the order of the values in semantics_event.dart in framework.
+enum AriaLivePolitenessSetting {
+  polite,
+  assertive,
+}
+
 /// Singleton for accessing accessibility announcements from the platform.
 final AccessibilityAnnouncements accessibilityAnnouncements =
     AccessibilityAnnouncements.instance;
@@ -63,17 +71,18 @@ class AccessibilityAnnouncements {
     final Map<dynamic, dynamic> dataMap = inputMap.readDynamicJson('data');
     final String? message = dataMap.tryString('message');
     if (message != null && message.isNotEmpty) {
-      final bool? assertiveAnnouncement = dataMap.tryBool('assertiveAnnouncement');
-      _initLiveRegion(message, assertiveAnnouncement : assertiveAnnouncement);
+      /// The default value for politenessSetting is assertive.
+      final int ariaLivePolitenessSettingIndex = dataMap.tryInt('ariaLivePolitenessSetting')?? 1;
+      final AriaLivePolitenessSetting ariaLivePolitenessSetting = AriaLivePolitenessSetting.values[ariaLivePolitenessSettingIndex];
+      _initLiveRegion(message, ariaLivePolitenessSetting);
       _removeElementTimer = Timer(durationA11yMessageIsOnDom, () {
         _element!.remove();
       });
     }
   }
 
-  void _initLiveRegion(String message, {bool? assertiveAnnouncement = true}) {
-    //The default is assertive. If assertiveAnnouncement is set to false, the mode will be polite.
-    final String assertiveLevel = (assertiveAnnouncement == null || assertiveAnnouncement)? 'assertive' : 'polite';
+  void _initLiveRegion(String message, AriaLivePolitenessSetting ariaLivePolitenessSetting) {
+    final String assertiveLevel = (ariaLivePolitenessSetting == AriaLivePolitenessSetting.assertive)? 'assertive' : 'polite';
     _domElement.setAttribute('aria-live', assertiveLevel);
     _domElement.text = message;
     domDocument.body!.append(_domElement);
