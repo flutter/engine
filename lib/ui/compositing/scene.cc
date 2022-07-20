@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/compositing/scene.h"
 
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
 #include "flutter/lib/ui/painting/image.h"
@@ -17,6 +18,8 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/dart_persistent_value.h"
+#include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
 
@@ -70,35 +73,34 @@ Dart_Handle Scene::toImageSync(uint32_t width,
     return tonic::ToDart("Scene did not contain a layer tree.");
   }
 
-  Scene::RasterizeToImageSync(width, height, raw_image_handle);
-
+  Scene::RasterizeToImage(width, height, raw_image_handle);
   return Dart_Null();
 }
 
 Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
+                           Dart_Handle raw_image_handle,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
 
   if (!layer_tree_) {
     return tonic::ToDart("Scene did not contain a layer tree.");
   }
-  auto picture = layer_tree_->Flatten(SkRect::MakeWH(width, height));
-  if (!picture) {
-    return tonic::ToDart("Could not flatten scene into a layer tree.");
-  }
 
-  return Picture::RasterizeToImage(picture, width, height, raw_image_callback);
+  Scene::RasterizeToImage(width, height, raw_image_handle, raw_image_callback);
+  return Dart_Null();
 }
 
-void Scene::RasterizeToImageSync(uint32_t width,
-                                 uint32_t height,
-                                 Dart_Handle raw_image_handle) {
+void Scene::RasterizeToImage(uint32_t width,
+                             uint32_t height,
+                             Dart_Handle raw_image_handle,
+                             Dart_Handle raw_image_callback) {
   FML_DCHECK(layer_tree_);
   auto* dart_state = UIDartState::Current();
   if (!dart_state) {
     return;
   }
+  auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
@@ -107,10 +109,34 @@ void Scene::RasterizeToImageSync(uint32_t width,
   auto dl_image = DlDeferredImageGPU::Make(SkISize::Make(width, height));
   image->set_image(dl_image);
 
+  std::function<void()> ui_task;
+  if (raw_image_callback) {
+    auto image_callback = std::make_unique<tonic::DartPersistentValue>(
+        dart_state, raw_image_callback);
+    auto image_handle = std::make_unique<tonic::DartPersistentValue>(
+        dart_state, raw_image_handle);
+    ui_task = fml::MakeCopyable(
+        [image_handle = std::move(image_handle),
+         image_callback = std::move(image_callback)]() mutable {
+          auto dart_state = image_handle->dart_state().lock();
+          if (!dart_state) {
+            // The root isolate could have died in the meantime.
+            return;
+          }
+          tonic::DartState::Scope scope(dart_state);
+          tonic::DartInvoke(image_callback->Get(), {image_handle->Get()});
+
+          // image_callback is associated with the Dart isolate and must be
+          // deleted on the UI thread.
+          image_callback.reset();
+        });
+  }
+
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
       [snapshot_delegate = std::move(snapshot_delegate),
        unref_queue = std::move(unref_queue), dl_image = std::move(dl_image),
+       ui_task_runner = std::move(ui_task_runner), ui_task = std::move(ui_task),
        layer_tree = layer_tree_, width, height]() {
         if (!snapshot_delegate) {
           return;
@@ -127,6 +153,9 @@ void Scene::RasterizeToImageSync(uint32_t width,
           dl_image->set_image(std::move(sk_image));
         } else {
           dl_image->set_error(std::move(error));
+        }
+        if (ui_task) {
+          ui_task_runner->PostTask(ui_task);
         }
       });
 

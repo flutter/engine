@@ -34,19 +34,21 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
+                      Dart_Handle raw_image_handle,
                       Dart_Handle image_callback);
 
   void dispose();
 
  private:
-  explicit Scene(std::shared_ptr<flutter::Layer> rootLayer,
-                 uint32_t rasterizerTracingThreshold,
-                 bool checkerboardRasterCacheImages,
-                 bool checkerboardOffscreenLayers);
+  Scene(std::shared_ptr<flutter::Layer> rootLayer,
+        uint32_t rasterizerTracingThreshold,
+        bool checkerboardRasterCacheImages,
+        bool checkerboardOffscreenLayers);
 
-  void RasterizeToImageSync(uint32_t width,
-                            uint32_t height,
-                            Dart_Handle raw_image_handle);
+  void RasterizeToImage(uint32_t width,
+                        uint32_t height,
+                        Dart_Handle raw_image_handle,
+                        Dart_Handle raw_image_callback = nullptr);
 
   // This is a shared_ptr to support flattening the layer tree from the UI
   // thread onto the raster thread - allowing access to the texture registry

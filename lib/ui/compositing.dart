@@ -47,7 +47,8 @@ class Scene extends NativeFieldWrapperClass1 {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
-    return _futurize((_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
+    final _Image image = _Image._();
+    return _futurize((_Callback<Image?> callback) => _toImage(width, height, image, (_Image? image) {
         if (image == null) {
           callback(null);
         } else {
@@ -57,8 +58,8 @@ class Scene extends NativeFieldWrapperClass1 {
     );
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>('Scene::toImage')
-  external String? _toImage(int width, int height, _Callback<_Image?> callback);
+  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle, Handle)>('Scene::toImage')
+  external String? _toImage(int width, int height, _Image outImage, _Callback<_Image?> callback);
 
   /// Releases the resources used by this scene.
   ///
