@@ -50,13 +50,7 @@
 @interface ChildClippingView : UIView
 
 // Adds a blur filter to its layers.
-//- (void)applyBackdropFilterWithRadius:
-//    (NSNumber*)blurRadius;  // TODO EMILY: is it better to pass an int?
-
-// Adds a blur filter to its layers.
 - (void)applyBackdropFilter:(const flutter::DlImageFilter&)blurFilter;
-// TODO EMILY: This method was added for when Javon's code is ready. Replace
-// applyBackdropFilterWithRadius: with applyBackdropFilter:
 
 @end
 

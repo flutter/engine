@@ -410,11 +410,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case kTransform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
-
-//        [clipView applyBackdropFilterWithRadius:@(5)];
-        
-//        [clipView
-//            applyBackdropFilter:(*iter)->GetFilter()];
         
         // TODO EMILY: these lines are for visual tests, delete before landing PR
         flutter::DlBlurImageFilter filter = flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);

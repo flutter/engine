@@ -72,41 +72,6 @@ void ResetAnchor(CALayer* layer) {
   return NO;
 }
 
-//- (void)applyBackdropFilterWithRadius:(NSNumber*)blurRadius {
-//  if (!_gaussianFilter) {
-//    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-//        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-//
-//    UIView* view = [visualEffectView.subviews firstObject]; // check view name is BackdropView
-//    if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-//      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access its subviews.";
-//      return;
-//    }
-//
-//    _gaussianFilter = [[view.layer.filters firstObject] retain];
-//    if (!_gaussianFilter || ![[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
-//      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access the Gaussian blur filter. ";
-//      return;
-//    }
-//
-//    [visualEffectView release];
-//  }
-//
-//  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) { // TODO EMILY: is there another way to check that inputRadius key is valid?
-//    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-//                       "access the Gaussian blur filter's properties.";
-//    return;
-//  }
-//
-//  if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
-//    return;
-//
-//  [_gaussianFilter setValue:blurRadius forKey:@"inputRadius"];
-//  self.layer.filters = @[ _gaussianFilter ];
-//}
-
-// TODO EMILY: This method was added for when Javon's code is ready. Replace
-// applyBackdropFilterWithRadius: with applyBackdropFilter:
 - (void)applyBackdropFilter:(const flutter::DlImageFilter&)blurFilter {
   if (!_gaussianFilter) {
     UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
