@@ -250,7 +250,7 @@ class Window : public KeyboardManager::WindowDelegate {
   void TrackMouseLeaveEvent(HWND hwnd);
 
   // Stores new width and height and calls |OnResize| to notify inheritors
-  void HandleResize(UINT width, UINT height, bool minimized);
+  void HandleResize(UINT width, UINT height);
 
   // Retrieves a class instance pointer for |window|
   static Window* GetThisFromHandle(HWND const window) noexcept;

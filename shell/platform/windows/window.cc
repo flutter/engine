@@ -321,6 +321,7 @@ Window::HandleMessage(UINT const message,
                       LPARAM const lparam) noexcept {
   LPARAM result_lparam = lparam;
   int xPos = 0, yPos = 0;
+  UINT width = 0, height = 0;
   UINT button_pressed = 0;
   FlutterPointerDeviceKind device_kind;
 
@@ -329,19 +330,14 @@ Window::HandleMessage(UINT const message,
       current_dpi_ = GetDpiForHWND(window_handle_);
       OnDpiScale(current_dpi_);
       return 0;
-    case WM_SIZE: {
-      UINT width = 0, height = 0;
+    case WM_SIZE:
       width = LOWORD(lparam);
       height = HIWORD(lparam);
 
       current_width_ = width;
       current_height_ = height;
-
-      bool minimized = wparam == SIZE_MINIMIZED;
-
-      HandleResize(width, height, minimized);
+      HandleResize(width, height);
       break;
-    }
     case WM_PAINT:
       OnPaint();
       break;
@@ -605,11 +601,12 @@ void Window::Destroy() {
   UnregisterClass(window_class_name_.c_str(), nullptr);
 }
 
-void Window::HandleResize(UINT width, UINT height, bool minimized) {
-  if (current_minimized_ != minimized) {
-    current_minimized_ = minimized;
+void Window::HandleResize(UINT width, UINT height) {
+  bool next_minimized = (width <= 0) && (height <= 0);
+  if (current_minimized_ != next_minimized) {
+    current_minimized_ = next_minimized;
 
-    if (minimized) {
+    if (next_minimized) {
       OnMinimized();
     } else {
       OnRestoredFromMinimized();
