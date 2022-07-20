@@ -94,18 +94,19 @@ struct RasterCacheMetrics {
  *
  * Life cycle of RasterCache methods:
  * - Preroll stage
- *   - RasterCacheItem::PrerollSetup
- *       At the start of each layer's preroll, add cache items to
- * `PrerollContext::raster_cached_entries`.
- *   - RasterCacheItem::PrerollFinalize
- *       At the end of each layer's preroll, may mark cache entris as
- * encountered by the current frame.
+ *   - LayerTree::Preroll - for each Layer in the tree:
+ *     - RasterCacheItem::PrerollSetup
+ *         At the start of each layer's preroll, add cache items to
+ *         `PrerollContext::raster_cached_entries`.
+ *     - RasterCacheItem::PrerollFinalize
+ *         At the end of each layer's preroll, may mark cache entris as
+ *         encountered by the current frame.
  * - Paint stage
  *   - RasterCache::EvictUnusedCacheEntries
  *       Evit cached images that are no longer used.
  *   - LayerTree::TryToPrepareRasterCache
  *       Create cache image for each cache entry if it does not exist.
- *   - LayerTree::Paint
+ *   - LayerTree::Paint - for each layer in the tree:
  *       If layers or display lists are cached as cached images, the method
  *       `RasterCache::Draw` will be used to draw those cache images.
  *   - RasterCache::EndFrame:

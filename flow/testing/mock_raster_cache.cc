@@ -24,10 +24,10 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   SkMatrix ctm = SkMatrix::I();
   SkPath path;
   path.addRect(100, 100, 100 + width, 100 + height);
-  MockCacheableLayer layer = MockCacheableLayer(path);
+  int layer_cached_threshold = 1;
+  MockCacheableLayer layer =
+      MockCacheableLayer(path, SkPaint(), layer_cached_threshold);
   layer.Preroll(&preroll_context_, ctm);
-  MarkSeen(RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer), ctm,
-           true);
   layer.raster_cache_item()->TryToPrepareRasterCache(paint_context_);
   RasterCache::Context r_context = {
       // clang-format off
@@ -62,10 +62,8 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
   for (int i = 0; i < access_threshold(); i++) {
-    MarkSeen(display_list_item.GetId().value(), ctm, true);
-    Draw(display_list_item.GetId().value(), mock_canvas_, nullptr);
+    AutoCache(&display_list_item, &preroll_context_, ctm);
   }
-  MarkSeen(display_list_item.GetId().value(), ctm, true);
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = preroll_context_.gr_context,
@@ -83,7 +81,6 @@ void MockRasterCache::AddMockPicture(int width, int height) {
                    });
 }
 
-static std::vector<RasterCacheItem*> raster_cache_items_;
 PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
