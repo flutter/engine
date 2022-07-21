@@ -6,11 +6,19 @@
 #include <chrono>
 #include <iostream>
 
+#define GLFW_EXPOSE_NATIVE_EGL
+
+#include <array>
 #include "GLFW/glfw3.h"
+#include "GLFW/glfw3native.h"
 #include "embedder.h"
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
 
 // This value is calculated after the window is created.
 static double g_pixelRatio = 1.0;
+
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
 
@@ -82,6 +90,17 @@ void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
       &event);
 }
 
+std::array<EGLint, 4> static RectToInts(EGLDisplay display,
+                                        EGLSurface surface,
+                                        const FlutterRect rect) {
+  EGLint height;
+  eglQuerySurface(display, surface, EGL_HEIGHT, &height);
+
+  std::array<EGLint, 4> res{static_cast<int>(rect.left), height - static_cast<int>(rect.bottom), static_cast<int>(rect.right) - static_cast<int>(rect.left),
+                            static_cast<int>(rect.top) - static_cast<int>(rect.bottom)};
+  return res;
+}
+
 bool RunFlutter(GLFWwindow* window,
                 const std::string& project_path,
                 const std::string& icudtl_path) {
@@ -97,19 +116,27 @@ bool RunFlutter(GLFWwindow* window,
     return true;
   };
   config.open_gl.present_with_info = [](void* userdata, const FlutterPresentInfo* info) -> bool {
-    swap_buffers_with_damage_ =
+    PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage_ =
           reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
               eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
-    
-    info->
 
     GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
-    swap_buffers_with_damage_(eglGetDisplay(window), window->context.egl.surface)
+
+    auto rects = RectToInts(glfwGetEGLDisplay(), glfwGetEGLSurface(window), info->frame_damage.damage);
+
+    swap_buffers_with_damage_(glfwGetEGLDisplay(), glfwGetEGLSurface(window), rects.data(), 1);
+
+    std::cout << info->frame_damage.damage.top << ", " << info->frame_damage.damage.bottom << ", " << info->frame_damage.damage.left << ", " << info->frame_damage.damage.right << std::endl;
+
+    // for (auto rect : rects) {
+    //   std::cout << rect.x << ", " << rect.y << std::endl;
+    // }
 
     //glfwSwapBuffers(static_cast<GLFWwindow*>(userdata));
     return true;
   };
   config.open_gl.fbo_callback = [](void*) -> uint32_t {
+    //std::cout << fbo.fbo_id << std::endl;
     return 0;  // FBO0
   };
   config.open_gl.gl_proc_resolver = [](void*, const char* name) -> void* {
