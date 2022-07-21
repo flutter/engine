@@ -8,8 +8,8 @@
 #include <list>
 #include <map>
 
-#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkBBHFactory.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
 
