@@ -170,11 +170,7 @@ class PlatformViewWrapper extends FrameLayout {
     // to the user until the platform view draws its first frame.
     final Canvas canvas = surface.lockHardwareCanvas();
     try {
-      if (Build.VERSION.SDK_INT >= 29) {
-        canvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
-      } else {
-        canvas.drawColor(Color.TRANSPARENT);
-      }
+      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
       onFrameProduced();
     } finally {
       surface.unlockCanvasAndPost(canvas);
@@ -306,11 +302,7 @@ class PlatformViewWrapper extends FrameLayout {
       try {
         // Clear the current pixels in the canvas.
         // This helps when a WebView renders an HTML document with transparent background.
-        if (Build.VERSION.SDK_INT >= 29) {
-          surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
-        } else {
-          surfaceCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        }
+        surfaceCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         super.draw(surfaceCanvas);
         onFrameProduced();
       } finally {
