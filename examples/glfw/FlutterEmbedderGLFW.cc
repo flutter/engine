@@ -96,8 +96,17 @@ bool RunFlutter(GLFWwindow* window,
     glfwMakeContextCurrent(nullptr);  // is this even a thing?
     return true;
   };
-  config.open_gl.present = [](void* userdata) -> bool {
-    glfwSwapBuffers(static_cast<GLFWwindow*>(userdata));
+  config.open_gl.present_with_info = [](void* userdata, const FlutterPresentInfo* info) -> bool {
+    swap_buffers_with_damage_ =
+          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+              eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+    
+    info->
+
+    GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
+    swap_buffers_with_damage_(eglGetDisplay(window), window->context.egl.surface)
+
+    //glfwSwapBuffers(static_cast<GLFWwindow*>(userdata));
     return true;
   };
   config.open_gl.fbo_callback = [](void*) -> uint32_t {

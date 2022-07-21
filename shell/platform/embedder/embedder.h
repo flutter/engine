@@ -431,6 +431,8 @@ typedef struct {
   uint32_t fbo_id;
   /// Rectangle representing the area that the compositor needs to render.
   FlutterDamage frame_damage;
+  /// Rectangle used to set the buffer's damage region.
+  FlutterDamage buffer_damage;
 } FlutterPresentInfo;
 
 /// Callback for when a surface is presented.

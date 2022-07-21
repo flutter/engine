@@ -28,11 +28,13 @@ struct GLPresentInfo {
 
   // Damage is a hint to compositor telling it which parts of front buffer
   // need to be updated
-  const std::optional<SkIRect>& damage;
+  const std::optional<SkIRect>& frame_damage;
 
   // Time at which this frame is scheduled to be presented. This is a hint
   // that can be passed to the platform to drop queued frames.
   std::optional<fml::TimePoint> presentation_time = std::nullopt;
+
+  const std::optional<SkIRect>& buffer_damage;
 };
 
 // Information passed when an FBO is requested.
