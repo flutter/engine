@@ -57,7 +57,7 @@ void ResetAnchor(CALayer* layer) {
 }  // namespace flutter
 
 @implementation ChildClippingView {
-  NSObject* _gaussianFilter;
+  NSMutableArray* _gaussianFilters;// = [[[NSMutableArray alloc] init] autorelease]; // TODO EMILY: is autorelease the right thing here?
 }
 
 // The ChildClippingView's frame is the bounding rect of the platform view. we only want touches to
@@ -72,61 +72,66 @@ void ResetAnchor(CALayer* layer) {
   return NO;
 }
 
-- (void)applyBackdropFilter:(const flutter::DlImageFilter&)blurFilter {
-  if (!_gaussianFilter) {
-    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-
-    UIView* view = [visualEffectView.subviews firstObject];
-    if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                         "access its subviews.";
+- (void)applyBackdropFilters:(NSArray*)blurRadii {
+  if(!_gaussianFilters || ([blurRadii count] != [_gaussianFilters count])) {
+    NSObject* gaussianFilter = [self extractGaussianFilter];
+    if(!gaussianFilter)
       return;
+      
+    _gaussianFilters = [NSMutableArray arrayWithCapacity:[blurRadii count]];
+    for(NSNumber* radius in blurRadii) {
+      NSObject* newGaussianFilter = [gaussianFilter copy]; // TODO EMILY: play with pointers and references. Do we need to make a new copy for every gaussianFilter?
+      [newGaussianFilter setValue:radius forKey:@"inputRadius"];
+      [_gaussianFilters addObject:newGaussianFilter];
     }
-
-    _gaussianFilter = [[view.layer.filters firstObject] retain];
-    if (!_gaussianFilter || ![[_gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
-      FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                         "access the Gaussian blur filter. ";
-      return;
+  } else {
+    for(int i = 0; i < (int)[blurRadii count]; i++) {
+      if([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i])
+        continue;
+      
+      [_gaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
     }
-
-    [visualEffectView release];
   }
+  
+  self.layer.filters = _gaussianFilters;
+}
 
-  if (![[_gaussianFilter valueForKey:@"inputRadius"]
+// Creates and initializes a UIVisualEffectView with a UIBlurEffect. Extracts and returns its gaussianFilter.
+// Logs errors and returns if Apple's API has changed and the filter can't be extracted.
+- (NSObject*)extractGaussianFilter {
+  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+                                          initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+  
+  UIView* view = [visualEffectView.subviews firstObject];
+  if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+    "access its subviews.";
+    return nil;
+  }
+  
+  NSObject* gaussianFilter = [[view.layer.filters firstObject] retain];
+  if (!gaussianFilter || ![[gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+    "access the Gaussian blur filter. ";
+    return nil;
+  }
+  
+  [visualEffectView release];
+
+  if (![[gaussianFilter valueForKey:@"inputRadius"]
           isKindOfClass:[NSNumber class]]) {  // TODO EMILY: is there another way to check that
                                               // inputRadius key is valid? -> DOCUMENT ATTEMPTS
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                        "access the Gaussian blur filter's properties.";
-    return;
+    return nil;
   }
-
-  if (!blurFilter.asBlur()) {
-    FML_DLOG(ERROR) << "The backdrop filter was not added correctly.";
-    return;
-  }
-
-  // sigma_x is arbitrarily chosen as the blur radius
-  NSNumber* blurRadius = @(blurFilter.asBlur()->sigma_x());
-
-  if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
-    return;
-  // When we add Javon's code, the backdrop filter case will only be called once. Will this check be
-  // needed? To update the radius value, will a new Backdrop layer be read and added to stack? Or
-  // will an additional layer be added on top of the original layer? Stacking multiple backdrop
-  // layers affects the FlutterView differently (blurred edge along overlay). I think we need to let
-  // the BackdropFilter layers stack on PlatformViews to have the same effect, not simply update the
-  // radius values. I wonder how the effect will look since the BDFilter layers are added to the
-  // view, not on top of the view.
-
-  [_gaussianFilter setValue:blurRadius forKey:@"inputRadius"];
-  self.layer.filters = @[ _gaussianFilter ];
+  
+  return gaussianFilter;
 }
 
 - (void)dealloc {
-  [_gaussianFilter release];
-  _gaussianFilter = nil;
+  [_gaussianFilters release];
+  _gaussianFilters = nil;
   [super dealloc];
 }
 
