@@ -1,17 +1,13 @@
+#version 320 es
+
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-uniform FrameInfo {
-  mat4 mvp;
-} frame_info;
+precision highp float;
 
-in vec2 position;
-in vec4 color;
-
-out vec4 v_color;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
-  gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
-  v_color = color;
+    fragColor = vec4(0.0, 1.0, 0.0, 1.0);
 }

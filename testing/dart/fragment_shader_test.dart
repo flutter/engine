@@ -295,6 +295,38 @@ void main() {
     await _expectShaderRendersGreen(shader);
   });
 
+  test('iplr throws an exception on invalid assetKey', () async {
+    bool throws = false;
+    try {
+      final FragmentProgram program = FragmentProgram.fromAsset(
+        '<invalid>',
+      );
+    } catch (e) {
+      throws = true;
+    }
+    expect(throws, equals(true));
+  });
+
+  test('iplr throws an exception on invalid data', () async {
+    bool throws = false;
+    try {
+      final FragmentProgram program = FragmentProgram.fromAsset(
+        'DashInNooglerHat.jpg',
+      );
+    } catch (e) {
+      throws = true;
+    }
+    expect(throws, equals(true));
+  });
+
+  test('iplr accepts a shader with no uniforms', () async {
+    final FragmentProgram program = FragmentProgram.fromAsset(
+      'no_uniforms.frag.iplr',
+    );
+    final Shader shader = program.shader();
+    await _expectShaderRendersGreen(shader);
+  });
+
   // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
   final Map<String, ByteBuffer> supportedGLSLOpShaders = _loadShaders(
     path.join('supported_glsl_op_shaders', 'spirv'),
