@@ -15,10 +15,8 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
-
 // This value is calculated after the window is created.
 static double g_pixelRatio = 1.0;
-
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
 
@@ -97,7 +95,7 @@ std::array<EGLint, 4> static RectToInts(EGLDisplay display,
   eglQuerySurface(display, surface, EGL_HEIGHT, &height);
 
   std::array<EGLint, 4> res{static_cast<int>(rect.left), height - static_cast<int>(rect.bottom), static_cast<int>(rect.right) - static_cast<int>(rect.left),
-                            static_cast<int>(rect.top) - static_cast<int>(rect.bottom)};
+                            static_cast<int>(rect.bottom) - static_cast<int>(rect.top)};
   return res;
 }
 
