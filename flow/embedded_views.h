@@ -78,7 +78,7 @@ class Mutator {
   const SkRRect& GetRRect() const { return rrect_; }
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
-  const std::shared_ptr<const DlImageFilter>& GetFilter() const {
+  const std::shared_ptr<const DlImageFilter> GetFilter() const {
     return filter_;
   }
   const int& GetAlpha() const { return alpha_; }
@@ -150,7 +150,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
-  void PushBackdropFilter(const DlImageFilter& filter);
+  void PushBackdropFilter(const std::shared_ptr<const DlImageFilter> filter);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.
