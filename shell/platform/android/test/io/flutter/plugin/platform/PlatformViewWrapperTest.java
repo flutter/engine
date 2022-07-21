@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
