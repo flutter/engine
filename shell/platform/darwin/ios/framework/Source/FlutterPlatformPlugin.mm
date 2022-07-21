@@ -10,7 +10,6 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 namespace {
@@ -39,7 +38,7 @@ using namespace flutter;
 @implementation FlutterPlatformPlugin {
   fml::WeakPtr<FlutterEngine> _engine;
   // Used to detect whether this device has live text input ability or not.
-  fml::scoped_nsobject<UITextField> _textField;
+  UITextField* _textField;
 }
 
 - (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
@@ -298,10 +297,14 @@ using namespace flutter;
 }
 
 - (UITextField*)textField {
-  if (_textField.get() == nil) {
-    UITextField* newTextField = [[UITextField alloc] init];
-    _textField.reset(newTextField);
+  if (_textField == nil) {
+    _textField = [[UITextField alloc] init];
   }
-  return _textField.get();
+  return _textField;
+}
+
+- (void)dealloc {
+  [_textField release];
+  [super dealloc];
 }
 @end
