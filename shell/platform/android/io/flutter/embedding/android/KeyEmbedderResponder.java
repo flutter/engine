@@ -12,7 +12,6 @@ import io.flutter.embedding.android.KeyboardMap.TogglingGoal;
 import io.flutter.plugin.common.BinaryMessenger;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.Callable;
 
 /**
  * A {@link KeyboardManager.Responder} of {@link KeyboardManager} that handles events by sending
@@ -135,7 +134,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
       boolean truePressed,
       long eventLogicalKey,
       KeyEvent event,
-      ArrayList<Callable<Void>> postSynchronize) {
+      ArrayList<Runnable> postSynchronize) {
     // During an incoming event, there might be a synthesized Flutter event for each key of each
     // pressing goal, followed by an eventual main Flutter event.
     //
@@ -151,6 +150,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     // 1. Find the current states of all keys.
     // 2. Derive the pre-event state of the event key (if applicable.)
     for (int keyIdx = 0; keyIdx < goal.keys.length; keyIdx += 1) {
+      final KeyboardMap.KeyPair key = goal.keys[keyIdx];
       nowStates[keyIdx] = pressingRecords.containsKey(goal.keys[keyIdx].physicalKey);
       if (goal.keys[keyIdx].logicalKey == eventLogicalKey) {
         switch (getEventType(event)) {
@@ -159,9 +159,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
             postEventAnyPressed = true;
             if (!truePressed) {
               postSynchronize.add(
-                  () -> {
-                    synthesizeEvent(false, key.logicalKey, key.physicalKey, event.getEventTime());
-                  });
+                  () ->
+                      synthesizeEvent(
+                          false, key.logicalKey, key.physicalKey, event.getEventTime()));
             }
             break;
           case kUp:
@@ -176,9 +176,9 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
             // both of which have printable characters. Obviously don't synthesize up events either.
             if (!truePressed) {
               postSynchronize.add(
-                  () -> {
-                    synthesizeEvent(false, key.logicalKey, key.physicalKey, event.getEventTime());
-                  });
+                  () ->
+                      synthesizeEvent(
+                          false, key.logicalKey, key.physicalKey, event.getEventTime()));
             }
             preEventStates[keyIdx] = nowStates[keyIdx];
             postEventAnyPressed = true;
@@ -270,7 +270,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     final Long physicalKey = getPhysicalKey(event);
     final Long logicalKey = getLogicalKey(event);
 
-    final ArrayList<Callable<Void>> postSynchronizeEvents = new ArrayList<>();
+    final ArrayList<Runnable> postSynchronizeEvents = new ArrayList<>();
     for (final PressingGoal goal : KeyboardMap.pressingGoals) {
       synchronizePressingKey(
           goal, (event.getMetaState() & goal.mask) != 0, logicalKey, event, postSynchronizeEvents);
@@ -341,8 +341,8 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     output.synthesized = false;
 
     sendKeyEvent(output, onKeyEventHandledCallback);
-    for (final Callable<Void> postSyncEvent : postSynchronizeEvents) {
-      postSyncEvent();
+    for (final Runnable postSyncEvent : postSynchronizeEvents) {
+      postSyncEvent.run();
     }
     return true;
   }
