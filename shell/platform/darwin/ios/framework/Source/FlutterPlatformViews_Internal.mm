@@ -77,7 +77,7 @@ void ResetAnchor(CALayer* layer) {
     UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
         initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
 
-    UIView* view = [visualEffectView.subviews firstObject]; // check view name is BackdropView
+    UIView* view = [visualEffectView.subviews firstObject];
     if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access its subviews.";
       return;
@@ -92,7 +92,7 @@ void ResetAnchor(CALayer* layer) {
     [visualEffectView release];
   }
 
-  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) { // TODO EMILY: is there another way to check that inputRadius key is valid?
+  if (![[_gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) { // TODO EMILY: is there another way to check that inputRadius key is valid? -> DOCUMENT ATTEMPTS
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                        "access the Gaussian blur filter's properties.";
     return;
@@ -103,6 +103,7 @@ void ResetAnchor(CALayer* layer) {
     return;
   }
   
+  // sigma_x is arbitrarily chosen as the blur radius
   NSNumber* blurRadius = @(blurFilter.asBlur()->sigma_x());
 
   if ([[_gaussianFilter valueForKey:@"inputRadius"] isEqual:blurRadius])
