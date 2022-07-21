@@ -487,7 +487,6 @@ void DisplayListBoundsCalculator::restore() {
 
     // Before we pop_back we will get the current layer bounds from the
     // current accumulator and adjust ot as required based on the filter.
-    // SkRect layer_bounds = accumulator_->bounds();
     std::shared_ptr<DlImageFilter> filter = layer_info->filter();
     const SkRect* clip = has_clip() ? &clip_bounds() : nullptr;
     if (filter) {
