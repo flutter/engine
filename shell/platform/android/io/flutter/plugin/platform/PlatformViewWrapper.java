@@ -9,7 +9,6 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
