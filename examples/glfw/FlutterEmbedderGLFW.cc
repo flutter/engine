@@ -116,26 +116,42 @@ bool RunFlutter(GLFWwindow* window,
     return true;
   };
   config.open_gl.present_with_info = [](void* userdata, const FlutterPresentInfo* info) -> bool {
+    PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ =
+          reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+              eglGetProcAddress("eglSetDamageRegionKHR"));
     PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage_ =
           reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
               eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
 
+
     GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
+    EGLDisplay display = glfwGetEGLDisplay();
+    EGLSurface surface = glfwGetEGLSurface(window);
 
-    auto rects = RectToInts(glfwGetEGLDisplay(), glfwGetEGLSurface(window), info->frame_damage.damage);
+    // Set damage region with buffer damage
+    auto buffer_rects = RectToInts(display, surface, info->buffer_damage.damage);
+    set_damage_region_(display, surface, buffer_rects.data(), 1);
 
-    swap_buffers_with_damage_(glfwGetEGLDisplay(), glfwGetEGLSurface(window), rects.data(), 1);
+    // Swap buffers with frame damage
+    auto frame_rects = RectToInts(display, surface, info->frame_damage.damage);
+    swap_buffers_with_damage_(display, surface, frame_rects.data(), 1);
+    // Add frame damage to damage history
+    // TODO
 
     std::cout << info->frame_damage.damage.top << ", " << info->frame_damage.damage.bottom << ", " << info->frame_damage.damage.left << ", " << info->frame_damage.damage.right << std::endl;
 
     // for (auto rect : rects) {
     //   std::cout << rect.x << ", " << rect.y << std::endl;
     // }
-
-    //glfwSwapBuffers(static_cast<GLFWwindow*>(userdata));
     return true;
   };
   config.open_gl.fbo_callback = [](void*) -> uint32_t {
+    // Get FBO' age
+    // TODO
+
+    // Given the FBO age, create existing damage region by joining all frame
+    // damages since FBO was last used
+    // TODO
     //std::cout << fbo.fbo_id << std::endl;
     return 0;  // FBO0
   };
