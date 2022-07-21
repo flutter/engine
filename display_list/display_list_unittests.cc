@@ -2349,5 +2349,106 @@ TEST(DisplayList, RTreeOfSimpleScene) {
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
+TEST(DisplayList, RTreeOfSaveRestoreScene) {
+  DisplayListBuilder builder;
+  builder.drawRect({10, 10, 20, 20});
+  builder.save();
+  builder.drawRect({50, 50, 60, 60});
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
+  DisplayListBuilder builder;
+  // blur filter with sigma=1 expands by 3 on all sides
+  auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
+  DlPaint default_paint = DlPaint();
+  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  builder.drawRect({10, 10, 20, 20}, default_paint);
+  builder.saveLayer(nullptr, &filter_paint);
+  // the following rectangle will be expanded to 50,50,60,60
+  // by the saveLayer filter during the restore operation
+  builder.drawRect({53, 53, 57, 57}, default_paint);
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
+  DisplayListBuilder builder;
+  // blur filter with sigma=1 expands by 30 on all sides
+  auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
+  DlPaint default_paint = DlPaint();
+  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  builder.drawRect({10, 10, 20, 20}, default_paint);
+  builder.clipRect({50, 50, 60, 60}, SkClipOp::kIntersect, false);
+  builder.saveLayer(nullptr, &filter_paint);
+  // the following rectangle will be expanded to 23,23,87,87
+  // by the saveLayer filter during the restore operation
+  // but it will then be clipped to 50,50,60,60
+  builder.drawRect({53, 53, 57, 57}, default_paint);
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
 }  // namespace testing
 }  // namespace flutter

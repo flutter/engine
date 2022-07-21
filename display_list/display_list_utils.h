@@ -368,14 +368,9 @@ class BoundsAccumulator {
   /// before they are accumulated back into the surrounding bounds.
   virtual void save() = 0;
 
-  /// Restore the previous set of accumulation rects/bounds and accumulate
-  /// the current rects/bounds that were accumulated since the most recent
-  /// call to |save| into them, optionally clipping them to the specified
-  /// clip if it is not null.
-  ///
-  /// If there are no saved accumulations to restore to, this method will
-  /// NOP even if a clip is provided.
-  virtual void restore(const SkRect* clip = nullptr) = 0;
+  /// Restore to the previous accumulation and incorporate the bounds of
+  /// the primitives that were recorded since the last save (if needed).
+  virtual void restore() = 0;
 
   /// Restore the previous set of accumulation rects/bounds and accumulate
   /// the current rects/bounds that were accumulated since the most recent
@@ -410,7 +405,7 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
   bool is_not_empty() const override { return rect_.is_not_empty(); }
 
   void save() override;
-  void restore(const SkRect* clip) override;
+  void restore() override;
   bool restore(std::function<bool(const SkRect&, SkRect&)> mapper,
                const SkRect* clip) override;
 
@@ -452,7 +447,7 @@ class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
   bool is_not_empty() const override;
 
   void save() override;
-  void restore(const SkRect* clip = nullptr) override;
+  void restore() override;
 
   bool restore(
       std::function<bool(const SkRect& original, SkRect& modified)> map,

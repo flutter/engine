@@ -269,10 +269,10 @@ void RectBoundsAccumulator::save() {
   saved_rects_.emplace_back(rect_);
   rect_ = AccumulationRect();
 }
-void RectBoundsAccumulator::restore(const SkRect* clip) {
+void RectBoundsAccumulator::restore() {
   if (!saved_rects_.empty()) {
     SkRect layer_bounds = rect_.bounds();
-    pop_and_accumulate(layer_bounds, clip);
+    pop_and_accumulate(layer_bounds, nullptr);
   }
 }
 bool RectBoundsAccumulator::restore(
@@ -339,23 +339,12 @@ bool RTreeBoundsAccumulator::is_not_empty() const {
 void RTreeBoundsAccumulator::save() {
   saved_offsets_.push_back(rects_.size());
 }
-void RTreeBoundsAccumulator::restore(const SkRect* clip) {
+void RTreeBoundsAccumulator::restore() {
   if (saved_offsets_.empty()) {
     return;
   }
 
-  size_t previous_size = saved_offsets_.back();
   saved_offsets_.pop_back();
-
-  if (clip) {
-    for (size_t i = previous_size; i < saved_offsets_.size(); i++) {
-      SkRect original = rects_[i];
-      if (original.intersect(*clip)) {
-        rects_[previous_size++] = original;
-      }
-    }
-    rects_.resize(previous_size);
-  }
 }
 bool RTreeBoundsAccumulator::restore(
     std::function<bool(const SkRect& original, SkRect& modified)> map,
@@ -368,18 +357,16 @@ bool RTreeBoundsAccumulator::restore(
   saved_offsets_.pop_back();
 
   bool success = true;
-  if (clip) {
-    for (size_t i = previous_size; i < saved_offsets_.size(); i++) {
-      SkRect original = rects_[i];
-      if (!map(original, original)) {
-        success = false;
-      }
-      if (original.intersect(*clip)) {
-        rects_[previous_size++] = original;
-      }
+  for (size_t i = previous_size; i < rects_.size(); i++) {
+    SkRect original = rects_[i];
+    if (!map(original, original)) {
+      success = false;
     }
-    rects_.resize(previous_size);
+    if (clip == nullptr || original.intersect(*clip)) {
+      rects_[previous_size++] = original;
+    }
   }
+  rects_.resize(previous_size);
   return success;
 }
 sk_sp<DlRTree> RTreeBoundsAccumulator::rtree() const {
@@ -503,7 +490,7 @@ void DisplayListBoundsCalculator::restore() {
         is_unbounded = true;
       }
     } else {
-      accumulator_.restore(clip);
+      accumulator_.restore();
     }
 
     // Restore the accumulator before popping the LayerInfo so that
