@@ -13,6 +13,7 @@ import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
@@ -31,7 +32,6 @@ import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
 import io.flutter.view.TextureRegistry;
 import java.util.concurrent.atomic.AtomicLong;
-import android.graphics.PorterDuff;
 
 /**
  * Wraps a platform view to intercept gestures and project this view onto a {@link SurfaceTexture}.
