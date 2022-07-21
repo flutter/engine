@@ -586,10 +586,6 @@ class DisplayListBoundsCalculator final
    public:
     // Construct a LayerData to push on the save stack for a |save|
     // or |saveLayer| call.
-    // The |outer| parameter is the |BoundsAccumulator| that was
-    // in use by the stream before this layer was pushed on the
-    // stack and should be returned when this layer is popped off
-    // the stack.
     // Some saveLayer calls will process their bounds by a
     // |DlImageFilter| when they are restored, but for most
     // saveLayer (and all save) calls the filter will be null.
