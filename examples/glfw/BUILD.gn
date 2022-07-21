@@ -17,7 +17,6 @@ if (build_embedder_examples) {
 
     libs = [
       "EGL",
-      "GLESv2",
     ]
   }
 }
