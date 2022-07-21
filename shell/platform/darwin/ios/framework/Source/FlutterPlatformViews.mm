@@ -381,7 +381,6 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view) {
-  
   if (flutter_view_ == nullptr) {
     return;
   }
@@ -410,12 +409,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case kTransform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
-        
+
         // TODO EMILY: these lines are for visual tests, delete before landing PR
-        flutter::DlBlurImageFilter filter = flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);
-        
-        [clipView
-            applyBackdropFilter:filter];
+        flutter::DlBlurImageFilter filter =
+            flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);
+
+        [clipView applyBackdropFilter:filter];
 
         break;
       }
