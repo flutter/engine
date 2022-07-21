@@ -7,7 +7,6 @@
 #include <iomanip>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_color_filter.h"
 
 namespace flutter {
 namespace testing {
@@ -598,7 +597,6 @@ void DisplayListStreamDispatcher::saveLayer(const SkRect* bounds,
   startl() << "{" << std::endl;
   indent();
 }
-
 void DisplayListStreamDispatcher::restore() {
   outdent();
   startl() << "}" << std::endl;

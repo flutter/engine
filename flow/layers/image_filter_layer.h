@@ -13,7 +13,7 @@ namespace flutter {
 
 class ImageFilterLayer : public CacheableContainerLayer {
  public:
-  explicit ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter);
+  explicit ImageFilterLayer(sk_sp<SkImageFilter> filter);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -21,12 +21,10 @@ class ImageFilterLayer : public CacheableContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  sk_sp<SkImageFilter> sk_filter() const { return sk_filter_; }
-
  private:
-  sk_sp<SkImageFilter> sk_filter_;
+  sk_sp<SkImageFilter> filter_;
   sk_sp<SkImageFilter> transformed_filter_;
-  std::shared_ptr<const DlImageFilter> filter_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ImageFilterLayer);
 };
 

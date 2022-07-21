@@ -8,7 +8,6 @@
 #include <unordered_map>
 
 #include "display_list/display_list_blend_mode.h"
-#include "display_list/display_list_color_filter.h"
 #include "display_list/display_list_path_effect.h"
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"

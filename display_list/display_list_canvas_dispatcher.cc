@@ -6,7 +6,6 @@
 
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/fml/trace_event.h"
-#include "include/core/SkColorFilter.h"
 
 namespace flutter {
 

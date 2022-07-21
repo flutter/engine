@@ -3,11 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/display_list_builder.h"
-#include <cstddef>
 
-#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_color.h"
 #include "flutter/display_list/display_list_ops.h"
 
 namespace flutter {
@@ -492,7 +489,6 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     }
   }
 }
-
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
                                    const DlPaint* paint,
                                    const DlImageFilter* backdrop) {

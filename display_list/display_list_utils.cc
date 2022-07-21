@@ -462,7 +462,6 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
     AccumulateUnbounded();
   }
 }
-
 void DisplayListBoundsCalculator::restore() {
   if (layer_infos_.size() > 1) {
     SkMatrixDispatchHelper::restore();

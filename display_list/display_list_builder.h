@@ -7,7 +7,6 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_flags.h"
@@ -170,7 +169,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void saveLayer(const SkRect* bounds,
                  const DlPaint* paint,
                  const DlImageFilter* backdrop = nullptr);
-
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
   void restoreToCount(int restore_count);

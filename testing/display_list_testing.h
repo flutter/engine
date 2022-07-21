@@ -8,7 +8,6 @@
 #include <ostream>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_path_effect.h"
 
