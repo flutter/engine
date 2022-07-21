@@ -110,24 +110,24 @@ static std::string StringToShaderStage(std::string str) {
 
 static std::string StringToVkShaderStage(std::string str) {
   if (str == "vertex") {
-    return "0x00000001";
+    return "VK_SHADER_STAGE_VERTEX_BIT";
   }
   if (str == "fragment") {
-    return "0x00000010";
+    return "VK_SHADER_STAGE_FRAGMENT_BIT";
   }
 
   if (str == "tessellation_control") {
-    return "0x00000002";
+    return "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT";
   }
 
   if (str == "tessellation_evaluation") {
-    return "0x00000004";
+    return "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT";
   }
 
   if (str == "compute") {
-    return "0x00000020";
+    return "VK_SHADER_STAGE_COMPUTE_BIT";
   }
-  return "0x0000001f";  // VK_SHADER_STAGE_ALL_GRAPHICS
+  return "VK_SHADER_STAGE_ALL_GRAPHICS";
 }
 
 Reflector::Reflector(Options options,
