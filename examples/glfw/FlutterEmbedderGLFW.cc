@@ -115,10 +115,9 @@ bool RunFlutter(GLFWwindow* window,
     glfwMakeContextCurrent(nullptr);  // is this even a thing?
     return true;
   };
+  /// IS 2 CORRECT? HOW DO I KNOW WHEN IT'S A TRIPLE BUFFER?
+  //FlutterDamage frame_damage_history[2];
   config.open_gl.present_with_info = [](void* userdata, const FlutterPresentInfo* info) -> bool {
-    PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ =
-          reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
-              eglGetProcAddress("eglSetDamageRegionKHR"));
     PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage_ =
           reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
               eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
@@ -128,32 +127,46 @@ bool RunFlutter(GLFWwindow* window,
     EGLDisplay display = glfwGetEGLDisplay();
     EGLSurface surface = glfwGetEGLSurface(window);
 
-    // Set damage region with buffer damage
-    auto buffer_rects = RectToInts(display, surface, info->buffer_damage.damage);
-    set_damage_region_(display, surface, buffer_rects.data(), 1);
-
     // Swap buffers with frame damage
-    auto frame_rects = RectToInts(display, surface, info->frame_damage.damage);
+    FlutterRect empty_rect = {0, 0, 0, 0};
+    auto frame_rects = RectToInts(display, surface, empty_rect);
     swap_buffers_with_damage_(display, surface, frame_rects.data(), 1);
     // Add frame damage to damage history
     // TODO
 
-    std::cout << info->frame_damage.damage.top << ", " << info->frame_damage.damage.bottom << ", " << info->frame_damage.damage.left << ", " << info->frame_damage.damage.right << std::endl;
+    std::cout << "Frame Damage: " << info->frame_damage.damage.left << ", " << info->frame_damage.damage.top << ", " << info->frame_damage.damage.right << ", " << info->frame_damage.damage.bottom << std::endl;
 
     // for (auto rect : rects) {
     //   std::cout << rect.x << ", " << rect.y << std::endl;
     // }
     return true;
   };
-  config.open_gl.fbo_callback = [](void*) -> uint32_t {
-    // Get FBO' age
-    // TODO
+  config.open_gl.fbo_with_frame_info_callback = [](void* userdata, const FlutterFrameInfo* info) -> FlutterFrameBuffer {
+    //std::cout << info->frame_damage.damage.bottom << ", " << info->frame_damage.damage.top << ", " << info->frame_damage.damage.left << ", " << info->frame_damage.damage.right << std::endl;
+
+    PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ =
+          reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+              eglGetProcAddress("eglSetDamageRegionKHR"));
+
+    GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
+    EGLDisplay display = glfwGetEGLDisplay();
+    EGLSurface surface = glfwGetEGLSurface(window);
+
+    FlutterRect empty_rect = {0, 0, 0, 0};
+    auto buffer_rects = RectToInts(display, surface, empty_rect);
+    set_damage_region_(display, surface, buffer_rects.data(), 1);
 
     // Given the FBO age, create existing damage region by joining all frame
     // damages since FBO was last used
     // TODO
     //std::cout << fbo.fbo_id << std::endl;
-    return 0;  // FBO0
+    FlutterFrameBuffer fbo;
+    fbo.fbo_id = 0;
+    FlutterDamage existing_damage;
+    existing_damage.damage = empty_rect;
+    fbo.damage = existing_damage;
+    std::cout << "Existing Damage: " << fbo.damage.damage.left << ", " << fbo.damage.damage.top << ", " << fbo.damage.damage.right << ", " << fbo.damage.damage.bottom << std::endl;
+    return fbo;  // FBO0
   };
   config.open_gl.gl_proc_resolver = [](void*, const char* name) -> void* {
     return reinterpret_cast<void*>(glfwGetProcAddress(name));

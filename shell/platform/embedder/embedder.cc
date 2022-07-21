@@ -225,8 +225,8 @@ static void* DefaultGLProcResolver(const char* name) {
 /// FlutterRect.
 FlutterRect SkIRectToFlutterRect(const std::optional<SkIRect> rect) {
   FlutterRect flutter_rect = {
-      static_cast<double>(rect->fLeft), static_cast<double>(rect->fRight),
-      static_cast<double>(rect->fTop), static_cast<double>(rect->fBottom)};
+      static_cast<double>(rect->fLeft), static_cast<double>(rect->fTop),
+      static_cast<double>(rect->fRight), static_cast<double>(rect->fBottom)};
   return flutter_rect;
 }
 

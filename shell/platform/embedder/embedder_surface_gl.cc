@@ -55,8 +55,8 @@ bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
 /// to a SkIRect.
 const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
   SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
-                  static_cast<int32_t>(flutter_rect.right),
                   static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.right),
                   static_cast<int32_t>(flutter_rect.bottom)};
   return rect;
 }
