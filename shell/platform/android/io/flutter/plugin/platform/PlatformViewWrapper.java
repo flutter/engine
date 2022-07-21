@@ -31,6 +31,7 @@ import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
 import io.flutter.view.TextureRegistry;
 import java.util.concurrent.atomic.AtomicLong;
+import android.graphics.PorterDuff;
 
 /**
  * Wraps a platform view to intercept gestures and project this view onto a {@link SurfaceTexture}.
@@ -308,7 +309,7 @@ class PlatformViewWrapper extends FrameLayout {
         if (Build.VERSION.SDK_INT >= 29) {
           surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
         } else {
-          surfaceCanvas.drawColor(Color.TRANSPARENT);
+          surfaceCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         }
         super.draw(surfaceCanvas);
         onFrameProduced();
