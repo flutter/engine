@@ -63,9 +63,6 @@ class DisplayListStreamDispatcher final : public Dispatcher {
   void saveLayer(const SkRect* bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
-  void saveLayerCF(const SkRect* bounds,
-                   const SaveLayerOptions options,
-                   const DlColorFilter* color_filter) override;
   void restore() override;
 
   void translate(SkScalar tx, SkScalar ty) override;

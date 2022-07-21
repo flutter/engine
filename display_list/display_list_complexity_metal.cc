@@ -78,22 +78,6 @@ void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
   save_layer_count_++;
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::saveLayerCF(
-    const SkRect* bounds,
-    const SaveLayerOptions options,
-    const DlColorFilter* color_filter) {
-  if (IsComplex()) {
-    return;
-  }
-  if (color_filter) {
-    // Flutter does not offer this operation so this value can only ever be
-    // non-null for a frame-wide builder which is not currently evaluated for
-    // complexity.
-    AccumulateComplexity(Ceiling());
-  }
-  save_layer_count_++;
-}
-
 void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
     const SkPoint& p0,
     const SkPoint& p1) {

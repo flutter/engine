@@ -21,10 +21,7 @@ class ColorFilterLayer : public CacheableContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  sk_sp<SkColorFilter> sk_filter() const { return sk_filter_; }
-
  private:
-  sk_sp<SkColorFilter> sk_filter_;
   std::shared_ptr<const DlColorFilter> filter_;
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };

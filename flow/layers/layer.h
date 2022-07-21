@@ -229,6 +229,12 @@ class Layer {
       update_needs_paint();
     }
 
+    void setColorFilter(const DlColorFilter* filter) {
+      sk_paint_.setColorFilter(filter->skia_object());
+      dl_paint_.setColorFilter(filter);
+      update_needs_paint();
+    }
+
     void setBlendMode(DlBlendMode mode) {
       sk_paint_.setBlendMode(ToSk(mode));
       dl_paint_.setBlendMode(mode);

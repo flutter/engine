@@ -40,9 +40,6 @@ class DisplayListGLComplexityCalculator
     void saveLayer(const SkRect* bounds,
                    const SaveLayerOptions options,
                    const DlImageFilter* backdrop) override;
-    void saveLayerCF(const SkRect* bounds,
-                     const SaveLayerOptions options,
-                     const DlColorFilter* backdrop) override;
 
     void drawLine(const SkPoint& p0, const SkPoint& p1) override;
     void drawRect(const SkRect& rect) override;

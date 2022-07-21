@@ -64,22 +64,6 @@ void DisplayListGLComplexityCalculator::GLHelper::saveLayer(
   save_layer_count_++;
 }
 
-void DisplayListGLComplexityCalculator::GLHelper::saveLayerCF(
-    const SkRect* bounds,
-    const SaveLayerOptions options,
-    const DlColorFilter* color_filter) {
-  if (IsComplex()) {
-    return;
-  }
-  if (color_filter) {
-    // Flutter does not offer this operation so this value can only ever be
-    // non-null for a frame-wide builder which is not currently evaluated for
-    // complexity.
-    AccumulateComplexity(Ceiling());
-  }
-  save_layer_count_++;
-}
-
 void DisplayListGLComplexityCalculator::GLHelper::drawLine(const SkPoint& p0,
                                                            const SkPoint& p1) {
   if (IsComplex()) {

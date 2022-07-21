@@ -1647,13 +1647,6 @@ class SaveLayerOptionsExpector : public virtual Dispatcher,
     save_layer_count_++;
   }
 
-  void saveLayerCF(const SkRect* bounds,
-                   const SaveLayerOptions options,
-                   const DlColorFilter* color_filter) override {
-    EXPECT_EQ(options, expected_[save_layer_count_]);
-    save_layer_count_++;
-  }
-
   int save_layer_count() { return save_layer_count_; }
 
  private:

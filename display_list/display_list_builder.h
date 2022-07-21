@@ -159,10 +159,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void saveLayer(const SkRect* bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
-
-  void saveLayerCF(const SkRect* bounds,
-                   const SaveLayerOptions options,
-                   const DlColorFilter* backdrop) override;
   // Convenience method with just a boolean to indicate whether the saveLayer
   // should apply the rendering attributes.
   void saveLayer(const SkRect* bounds, bool renders_with_attributes) {
@@ -175,9 +171,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
                  const DlPaint* paint,
                  const DlImageFilter* backdrop = nullptr);
 
-  void saveLayer(const SkRect* bounds,
-                 const DlPaint* paint,
-                 const DlColorFilter* color_filter);
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
   void restoreToCount(int restore_count);

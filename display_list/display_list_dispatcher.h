@@ -76,10 +76,6 @@ class Dispatcher {
                          const SaveLayerOptions options,
                          const DlImageFilter* backdrop = nullptr) = 0;
 
-  virtual void saveLayerCF(const SkRect* bounds,
-                           const SaveLayerOptions options,
-                           const DlColorFilter* backdrop = nullptr) = 0;
-
   virtual void restore() = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;

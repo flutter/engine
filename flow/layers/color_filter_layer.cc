@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/color_filter_layer.h"
 #include <cstddef>
+#include "flutter/display_list/display_list_comparable.h"
+#include "flutter/display_list/display_list_paint.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/raster_cache_util.h"
 
@@ -13,7 +15,6 @@ ColorFilterLayer::ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer,
           true),
-      sk_filter_(filter ? filter->skia_object() : nullptr),
       filter_(std::move(filter)) {}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
@@ -21,7 +22,7 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto* prev = static_cast<const ColorFilterLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     FML_DCHECK(prev);
-    if (filter_ != prev->filter_) {
+    if (NotEquals(filter_, prev->filter_)) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
@@ -50,7 +51,7 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   if (context.raster_cache) {
     AutoCachePaint cache_paint(context);
     if (layer_raster_cache_item_->IsCacheChildren()) {
-      cache_paint.setColorFilter(sk_filter_);
+      cache_paint.setColorFilter(filter_->skia_object());
     }
     if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
       return;
@@ -58,14 +59,13 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   }
 
   AutoCachePaint cache_paint(context);
-  cache_paint.setColorFilter(sk_filter_);
-
   if (context.leaf_nodes_builder) {
-    context.leaf_nodes_builder->saveLayer(
-        &paint_bounds(), cache_paint.dl_paint(), filter_.get());
+    cache_paint.setColorFilter(filter_.get());
+    context.leaf_nodes_builder->saveLayer(&paint_bounds(), cache_paint.dl_paint());
     PaintChildren(context);
     context.leaf_nodes_builder->restore();
   } else {
+    cache_paint.setColorFilter(filter_ ? filter_->skia_object() : nullptr);
     Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
         context, paint_bounds(), cache_paint.sk_paint());
     PaintChildren(context);

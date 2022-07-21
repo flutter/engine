@@ -599,23 +599,6 @@ void DisplayListStreamDispatcher::saveLayer(const SkRect* bounds,
   indent();
 }
 
-void DisplayListStreamDispatcher::saveLayerCF(const SkRect* bounds,
-                                            const SaveLayerOptions options,
-                                            const DlColorFilter* color_filter) {
-  startl() << "saveLayer(" << bounds << ", " << options;
-  if (color_filter) {
-    os_ << "," << std::endl;
-    indent(10);
-    startl() << "color_filter: ";
-    out(color_filter);
-    outdent(10);
-  } else {
-    os_ << ", no color_filter";
-  }
-  os_ << ");" << std::endl;
-  startl() << "{" << std::endl;
-  indent();
-}
 void DisplayListStreamDispatcher::restore() {
   outdent();
   startl() << "}" << std::endl;

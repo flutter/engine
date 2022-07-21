@@ -73,27 +73,6 @@ void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
   }
 }
 
-void DisplayListCanvasDispatcher::saveLayerCF(
-    const SkRect* bounds,
-    const SaveLayerOptions options,
-    const DlColorFilter* color_filter) {
-  if (bounds == nullptr && options.can_distribute_opacity() &&
-      color_filter == nullptr) {
-    canvas_->save();
-    save_opacity(options.renders_with_attributes() ? combined_opacity()
-                                                   : opacity());
-  } else {
-    TRACE_EVENT0("flutter", "Canvas::saveLayer");
-    const SkPaint* paint = safe_paint(options.renders_with_attributes());
-    if (bounds) {
-      canvas_->saveLayer(*bounds, paint);
-      // saveLayer will apply the current opacity on behalf of the children
-      // so they will inherit an opaque opacity.
-      save_opacity(SK_Scalar1);
-    }
-  }
-}
-
 void DisplayListCanvasDispatcher::translate(SkScalar tx, SkScalar ty) {
   canvas_->translate(tx, ty);
 }

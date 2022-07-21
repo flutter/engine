@@ -463,42 +463,6 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   }
 }
 
-void DisplayListBoundsCalculator::saveLayerCF(
-    const SkRect* bounds,
-    const SaveLayerOptions options,
-    const DlColorFilter* color_filter) {
-  SkMatrixDispatchHelper::save();
-  ClipBoundsDispatchHelper::save();
-  if (options.renders_with_attributes()) {
-    // The actual flood of the outer layer clip will occur after the
-    // (eventual) corresponding restore is called, but rather than
-    // remember this information in the LayerInfo until the restore
-    // method is processed, we just mark the unbounded state up front.
-    if (!paint_nops_on_transparency()) {
-      // We will fill the clip of the outer layer when we restore
-      AccumulateUnbounded();
-    }
-
-    layer_infos_.emplace_back(
-        std::make_unique<LayerData>(accumulator_, image_filter_));
-  } else {
-    layer_infos_.emplace_back(
-        std::make_unique<LayerData>(accumulator_, nullptr));
-  }
-
-  accumulator_ = layer_infos_.back()->layer_accumulator();
-
-  // Even though Skia claims that the bounds are only a hint, they actually
-  // use them as the temporary layer bounds during rendering the layer, so
-  // we set them as if a clip operation were performed.
-  if (bounds) {
-    clipRect(*bounds, SkClipOp::kIntersect, false);
-  }
-  if (color_filter) {
-    AccumulateUnbounded();
-  }
-}
-
 void DisplayListBoundsCalculator::restore() {
   if (layer_infos_.size() > 1) {
     SkMatrixDispatchHelper::restore();

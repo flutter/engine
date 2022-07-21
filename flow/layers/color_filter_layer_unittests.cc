@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/color_filter_layer.h"
 
@@ -14,6 +15,7 @@
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
+#include "include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/effects/SkColorMatrixFilter.h"
 
@@ -90,7 +92,6 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
   layer->Add(mock_layer);
-  dl_color_filter->skia_object();
 
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
@@ -98,23 +99,23 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
-  SkPaint filter_paint;
-  filter_paint.setColorFilter(layer->sk_filter());
-  layer->Paint(paint_context());
-  auto res1 = mock_canvas().draw_calls();
-  auto res2 =
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                    nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
-  EXPECT_EQ(res1.size(), res2.size());
-  for (size_t i = 0; i < res1.size(); i++) {
-    auto& item1 = res1[i];
-    auto& item2 = res2[i];
-    EXPECT_EQ(item1, item2);
-  }
+  DisplayListBuilder expected_builder;
+  /* ColorFilterLayer::Paint() */ {
+    expected_builder.setColorFilter(dl_color_filter.get());
+    expected_builder.saveLayer(&child_bounds, true);
+    {
+        /* MockLayer::Paint() */ {
+          expected_builder.setColor(SkColors::kYellow.toSkColor());
+          expected_builder.setColorFilter(nullptr);
+          expected_builder.drawPath(child_path);
+        }
+      }
+    }
+    expected_builder.restore();
+  auto expected_display_list = expected_builder.Build();
+
+  layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
 }
 
 TEST_F(ColorFilterLayerTest, MultipleChildren) {
@@ -127,8 +128,9 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto layer = std::make_shared<ColorFilterLayer>(DlColorFilter::From(
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW)));
+  auto dl_color_filter = DlColorFilter::From(
+      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW));
+  auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
@@ -145,19 +147,28 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
   EXPECT_EQ(mock_layer1->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
-  SkPaint filter_paint;
-  filter_paint.setColorFilter(layer->sk_filter());
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{children_bounds,
-                                                    filter_paint, nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  DisplayListBuilder expected_builder;
+  /* ColorFilterLayer::Paint() */ {
+    expected_builder.setColorFilter(dl_color_filter.get());
+    expected_builder.saveLayer(&children_bounds, true);
+    {
+        /* MockLayer::Paint() */ {
+          expected_builder.setColor(SkColors::kYellow.toSkColor());
+          expected_builder.setColorFilter(nullptr);
+          expected_builder.drawPath(child_path1);
+        }
+        /* MockLayer::Paint() */ {
+            expected_builder.setColor(SkColors::kCyan.toSkColor());
+            expected_builder.setColorFilter(nullptr);
+            expected_builder.drawPath(child_path2);
+            }
+      }
+    }
+    expected_builder.restore();
+  auto expected_display_list = expected_builder.Build();
+
+  layer->Paint(display_list_paint_context());
+ EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
 }
 
 TEST_F(ColorFilterLayerTest, Nested) {
@@ -170,10 +181,13 @@ TEST_F(ColorFilterLayerTest, Nested) {
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto layer1 = std::make_shared<ColorFilterLayer>(DlColorFilter::From(
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW)));
-  auto layer2 = std::make_shared<ColorFilterLayer>(DlColorFilter::From(
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorMAGENTA, SK_ColorBLUE)));
+  auto dl_color_filter1 = DlColorFilter::From(
+      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW));
+  auto layer1 = std::make_shared<ColorFilterLayer>(dl_color_filter1);
+
+  auto dl_color_filter2 = DlColorFilter::From(
+      SkColorMatrixFilter::MakeLightingFilter(SK_ColorMAGENTA, SK_ColorBLUE));
+  auto layer2 = std::make_shared<ColorFilterLayer>(dl_color_filter2);
   layer2->Add(mock_layer2);
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
@@ -194,24 +208,37 @@ TEST_F(ColorFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
-  SkPaint filter_paint1, filter_paint2;
-  filter_paint1.setColorFilter(layer1->sk_filter());
-  filter_paint2.setColorFilter(layer2->sk_filter());
-  layer1->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{children_bounds,
-                                                    filter_paint1, nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::SaveLayerData{child_path2.getBounds(),
-                                                    filter_paint2, nullptr, 2}},
-                   MockCanvas::DrawCall{
-                       2, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                   MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+
+  DisplayListBuilder expected_builder;
+  /* ColorFilterLayer::Paint() */ {
+    expected_builder.setColorFilter(dl_color_filter1.get());
+    expected_builder.saveLayer(&children_bounds, true);
+    {
+        /* MockLayer::Paint() */ {
+          expected_builder.setColor(SkColors::kYellow.toSkColor());
+          expected_builder.setColorFilter(nullptr);
+          expected_builder.drawPath(child_path1);
+        }
+        /* ColorFilter::Paint() */ {
+          expected_builder.setColor(SkColors::kBlack.toSkColor());
+          expected_builder.setColorFilter(dl_color_filter2.get());
+          expected_builder.saveLayer(&child_path2.getBounds(), true);
+
+           /* MockLayer::Paint() */ {
+            expected_builder.setColor(SkColors::kCyan.toSkColor());
+            expected_builder.setColorFilter(nullptr);
+            expected_builder.drawPath(child_path2);
+            }
+            expected_builder.restore();
+        }
+      }
+    }
+    expected_builder.restore();
+
+    auto expected_display_list = expected_builder.Build();
+
+    layer1->Paint(display_list_paint_context());
+    EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
 }
 
 TEST_F(ColorFilterLayerTest, Readback) {
