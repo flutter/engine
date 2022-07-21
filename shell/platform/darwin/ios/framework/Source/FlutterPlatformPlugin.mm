@@ -292,8 +292,7 @@ using namespace flutter;
 }
 
 - (BOOL)isLiveTextInputAvailable {
-  UITextField* textField = [self textField];
-  return [textField canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
+  return [[self textField] canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
 }
 
 - (UITextField*)textField {
