@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <iostream>
 #include "flutter/flow/layers/layer_tree.h"
 
 #include "flutter/flow/embedded_views.h"
@@ -160,7 +161,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 
 sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds,
                                       TextureRegistry* texture_registry) {
-  TRACE_EVENT0("flutter", "LayerTree::FlattenWithContext");
+  TRACE_EVENT0("flutter", "LayerTree::Flatten");
 
   DisplayListCanvasRecorder builder(bounds);
 
