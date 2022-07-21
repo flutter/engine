@@ -13,6 +13,8 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPromiseImageTexture.h"
 #include "third_party/skia/include/gpu/GrContextThreadSafeProxy.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+
 namespace flutter {
 
 class SnapshotDelegate {
@@ -40,6 +42,8 @@ class SnapshotDelegate {
   /// @return     A pointer to the external texture registry.
   ///
   virtual TextureRegistry* GetTextureRegistry() = 0;
+
+  virtual GrDirectContext* GetGrContext() = 0;
 };
 
 }  // namespace flutter

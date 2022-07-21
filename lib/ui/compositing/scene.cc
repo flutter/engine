@@ -143,7 +143,8 @@ void Scene::RasterizeToImage(uint32_t width,
         }
         auto display_list =
             layer_tree->Flatten(SkRect::MakeWH(width, height),
-                                snapshot_delegate.get()->GetTextureRegistry());
+                                snapshot_delegate.get()->GetTextureRegistry(),
+                                snapshot_delegate.get()->GetGrContext());
 
         sk_sp<SkImage> sk_image;
         std::string error;

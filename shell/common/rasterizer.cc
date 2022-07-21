@@ -145,6 +145,10 @@ flutter::TextureRegistry* Rasterizer::GetTextureRegistry() {
   return &compositor_context_->texture_registry();
 }
 
+GrDirectContext* Rasterizer::GetGrContext() {
+  return surface_->GetContext();
+}
+
 flutter::LayerTree* Rasterizer::GetLastLayerTree() {
   return last_layer_tree_.get();
 }

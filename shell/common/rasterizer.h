@@ -26,6 +26,7 @@
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_surface_producer.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -214,6 +215,9 @@ class Rasterizer final : public SnapshotDelegate,
 
   // |SnapshotDelegate|
   flutter::TextureRegistry* GetTextureRegistry() override;
+
+  // |SnapshotDelegate|
+  GrDirectContext* GetGrContext() override;
 
   using LayerTreeDiscardCallback = std::function<bool(flutter::LayerTree&)>;
 

@@ -160,7 +160,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 }
 
 sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds,
-                                      TextureRegistry* texture_registry) {
+                                      TextureRegistry* texture_registry,
+                                      GrDirectContext* gr_context) {
   TRACE_EVENT0("flutter", "LayerTree::Flatten");
 
   DisplayListCanvasRecorder builder(bounds);
@@ -175,7 +176,7 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds,
   PrerollContext preroll_context{
       // clang-format off
       .raster_cache                  = nullptr,
-      .gr_context                    = nullptr,
+      .gr_context                    = gr_context,
       .view_embedder                 = nullptr,
       .mutators_stack                = unused_stack,
       .dst_color_space               = nullptr,
@@ -197,7 +198,7 @@ sk_sp<DisplayList> LayerTree::Flatten(const SkRect& bounds,
       // clang-format off
       .internal_nodes_canvas         = &internal_nodes_canvas,
       .leaf_nodes_canvas             = &builder,
-      .gr_context                    = nullptr,
+      .gr_context                    = gr_context,
       .dst_color_space               = nullptr,
       .view_embedder                 = nullptr,
       .raster_time                   = unused_stopwatch,

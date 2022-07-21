@@ -43,7 +43,8 @@ class LayerTree {
              bool ignore_raster_cache = false) const;
 
   sk_sp<DisplayList> Flatten(const SkRect& bounds,
-                             TextureRegistry* texture_registry = nullptr);
+                             TextureRegistry* texture_registry = nullptr,
+                             GrDirectContext* gr_context = nullptr);
 
   Layer* root_layer() const { return root_layer_.get(); }
 
