@@ -5,11 +5,11 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.View;
@@ -26,7 +26,6 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
-@TargetApi(31)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
@@ -118,6 +117,50 @@ public class PlatformViewWrapperTest {
     verify(surface, times(1)).unlockCanvasAndPost(canvas);
     verifyNoMoreInteractions(surface);
     verifyNoMoreInteractions(canvas);
+  }
+
+  @Config(sdk = 28)
+  @Test
+  public void draw_clearsCanvasWithClearModeOnAndroidVersionsBelow29() {
+    final Surface surface = mock(Surface.class);
+    final PlatformViewWrapper wrapper =
+        new PlatformViewWrapper(ctx) {
+          @Override
+          protected Surface createSurface(@NonNull SurfaceTexture tx) {
+            return surface;
+          }
+        };
+
+    wrapper.addView(
+        new View(ctx) {
+          @Override
+          public void draw(Canvas canvas) {
+            super.draw(canvas);
+            canvas.drawColor(Color.RED);
+          }
+        });
+
+    final int size = 100;
+    wrapper.measure(size, size);
+    wrapper.layout(0, 0, size, size);
+
+    final SurfaceTexture tx = mock(SurfaceTexture.class);
+    when(tx.isReleased()).thenReturn(false);
+
+    when(surface.lockHardwareCanvas()).thenReturn(mock(Canvas.class));
+
+    wrapper.setTexture(tx);
+
+    final Canvas canvas = mock(Canvas.class);
+    when(surface.lockHardwareCanvas()).thenReturn(canvas);
+    when(surface.isValid()).thenReturn(true);
+
+    // Test.
+    wrapper.invalidate();
+    wrapper.draw(new Canvas());
+
+    // Verify.
+    verify(canvas, times(1)).drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
   }
 
   @Test
