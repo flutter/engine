@@ -279,21 +279,32 @@ std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(picture_size);
   std::pair<sk_sp<SkImage>, std::string> result;
+
+  std::unique_ptr<Surface> pbuffer_surface;
+  Surface* snapshot_surface = nullptr;
+  if (surface_ && surface_->GetContext()) {
+    snapshot_surface = surface_.get();
+  } else if (snapshot_surface_producer_) {
+    pbuffer_surface = snapshot_surface_producer_->CreateSnapshotSurface();
+    if (pbuffer_surface && pbuffer_surface->GetContext()) {
+      snapshot_surface = pbuffer_surface.get();
+    }
+  }
+
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&result, &image_info, &display_list] {
             result = MakeBitmapImage(std::move(display_list), image_info);
           })
-          .SetIfFalse([&result, &image_info, &display_list,
-                       surface = surface_.get(),
+          .SetIfFalse([&result, &image_info, &display_list, &snapshot_surface,
                        gpu_image_behavior = gpu_image_behavior_] {
-            if (!surface ||
+            if (!snapshot_surface ||
                 gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
               result = MakeBitmapImage(std::move(display_list), image_info);
               return;
             }
 
-            auto* context = surface->GetContext();
+            auto* context = snapshot_surface->GetContext();
             if (!context) {
               result = MakeBitmapImage(std::move(display_list), image_info);
               return;
@@ -311,7 +322,24 @@ std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
             canvas->clear(SK_ColorTRANSPARENT);
             display_list->RenderTo(canvas);
 
-            sk_sp<SkImage> image = sk_surface->makeImageSnapshot();
+            // Cannot use SkSurface::makeImageSnapshot here, because that image
+            // is not safe to collect on the IO task runner. Need a cross
+            // context image so that we can safely dispose of it on the
+            // IO task runner if it ends up embedded in a display list that is
+            // collected there.
+            // TODO(dnfield): Impeller won't have this restriction, we can avoid
+            // the extra allocations here in that case.
+            SkBitmap bitmap;
+            if (!bitmap.tryAllocPixels(image_info, 0)) {
+              result = {nullptr, "unable to allocate pixels"};
+              return;
+            }
+            if (!sk_surface->readPixels(bitmap, 0, 0)) {
+              result = {nullptr, "unable to read surface pixels"};
+              return;
+            }
+            sk_sp<SkImage> image = SkImage::MakeCrossContextFromPixmap(
+                context, bitmap.pixmap(), false, true);
             result = {image, image ? "" : "Unable to create image"};
           }));
   return result;
