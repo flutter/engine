@@ -100,7 +100,7 @@ class Mutator {
       case kOpacity:
         return alpha_ == other.alpha_;
       case kBackdropFilter:
-        return filter_ == other.filter_;
+        return *filter_ == *other.filter_;
     }
 
     return false;
@@ -367,12 +367,20 @@ class ExternalViewEmbedder {
   // 'EndFrame', otherwise returns false.
   bool GetUsedThisFrame() const { return used_this_frame_; }
 
+  void SetFoundPlatformViews(bool found_platform_views) {
+    found_platform_views_ = found_platform_views;
+  }
+
+  bool GetFoundPlatformViews() const { return found_platform_views_; }
+
   virtual void PushVisitedPlatformView(int64_t view_id) {}
 
   virtual void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter) {}
 
  private:
+  
+  bool found_platform_views_ = false;
   bool used_this_frame_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
