@@ -176,7 +176,7 @@ public class MethodChannel {
      * <p>The handler is called on the platform thread (Android main thread) by default, or
      * otherwise on the thread specified by the task queue provided to the associated {@link
      * MethodChannel} when it was created. See also <a
-     * href="https://github.com/flutter/flutter/wiki/The-Engine-architecture#threading>Threading in
+     * href="https://github.com/flutter/flutter/wiki/The-Engine-architecture#threading">Threading in
      * the Flutter Engine</a>.
      *
      * @param call A {@link MethodCall}.
