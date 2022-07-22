@@ -56,8 +56,7 @@ void ResetAnchor(CALayer* layer) {
 
 }  // namespace flutter
 
-@implementation ChildClippingView
-{
+@implementation ChildClippingView {
   NSMutableArray* _gaussianFilters;
 }
 
@@ -73,26 +72,27 @@ void ResetAnchor(CALayer* layer) {
   return NO;
 }
 
-// Creates and initializes a UIVisualEffectView with a UIBlurEffect. Extracts and returns its gaussianFilter.
-// Logs errors and returns if Apple's API has changed and the filter can't be extracted.
+// Creates and initializes a UIVisualEffectView with a UIBlurEffect. Extracts and returns its
+// gaussianFilter. Logs errors and returns if Apple's API has changed and the filter can't be
+// extracted.
 - (NSObject*)extractGaussianFilter {
   UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-                                          initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-  
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+
   UIView* view = [visualEffectView.subviews firstObject];
   if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-    "access its subviews.";
+                       "access its subviews.";
     return nil;
   }
-  
+
   NSObject* gaussianFilter = [[view.layer.filters firstObject] retain];
   if (!gaussianFilter || ![[gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-    "access the Gaussian blur filter. ";
+                       "access the Gaussian blur filter. ";
     return nil;
   }
-  
+
   [visualEffectView release];
 
   if (![[gaussianFilter valueForKey:@"inputRadius"]
@@ -102,41 +102,47 @@ void ResetAnchor(CALayer* layer) {
                        "access the Gaussian blur filter's properties.";
     return nil;
   }
-  
+
   return gaussianFilter;
 }
 
 - (void)applyBackdropFilters:(NSArray*)blurRadii {
-  if(!_gaussianFilters) {
+  if (!_gaussianFilters) {
     NSObject* gaussianFilter = [self extractGaussianFilter];
-    if(!gaussianFilter) return;
-    
-    _gaussianFilters = [[[NSMutableArray alloc] init] retain]; // TODO EMILY: does this need retain?
-    for(NSNumber* radius in blurRadii) {
-      NSObject* newGaussianFilter = [gaussianFilter copy]; // TODO EMILY: play with pointers and references. Do we need to make a new copy for every gaussianFilter?
+    if (!gaussianFilter)
+      return;
+
+    _gaussianFilters =
+        [[[NSMutableArray alloc] init] retain];  // TODO EMILY: does this need retain?
+    for (NSNumber* radius in blurRadii) {
+      NSObject* newGaussianFilter =
+          [gaussianFilter copy];  // TODO EMILY: play with pointers and references. Do we need to
+                                  // make a new copy for every gaussianFilter?
       [newGaussianFilter setValue:radius forKey:@"inputRadius"];
       [_gaussianFilters addObject:newGaussianFilter];
     }
-  }
-  else if ([blurRadii count] != [_gaussianFilters count]) {
+  } else if ([blurRadii count] != [_gaussianFilters count]) {
     NSObject* gaussianFilter = [self extractGaussianFilter];
-    if(!gaussianFilter) return;
-    
+    if (!gaussianFilter)
+      return;
+
     [_gaussianFilters removeAllObjects];
-    for(NSNumber* radius in blurRadii) {
-      NSObject* newGaussianFilter = [gaussianFilter copy]; // TODO EMILY: play with pointers and references. Do we need to make a new copy for every gaussianFilter?
+    for (NSNumber* radius in blurRadii) {
+      NSObject* newGaussianFilter =
+          [gaussianFilter copy];  // TODO EMILY: play with pointers and references. Do we need to
+                                  // make a new copy for every gaussianFilter?
       [newGaussianFilter setValue:radius forKey:@"inputRadius"];
       [_gaussianFilters addObject:newGaussianFilter];
     }
-  }
-  else {
-    for(int i = 0; i < (int)[blurRadii count]; i++) {
-      if([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i]) continue;
-      
+  } else {
+    for (int i = 0; i < (int)[blurRadii count]; i++) {
+      if ([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i])
+        continue;
+
       [_gaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
     }
   }
-  
+
   self.layer.filters = _gaussianFilters;
 }
 

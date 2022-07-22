@@ -351,7 +351,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   stack.PushTransform(screenScaleMatrix);
   // Push backdrop filters
   flutter::DlBlurImageFilter filter = flutter::DlBlurImageFilter(5, 2, flutter::DlTileMode::kClamp);
-  for(int i = 0; i < 50; i++) {
+  for (int i = 0; i < 50; i++) {
     stack.PushBackdropFilter(filter);
   }
 
@@ -369,9 +369,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   // childClippingView has CAFilters for the multiple backdrop filters
   XCTAssertEqual(50, (int)[childClippingView.layer.filters count]);
-  
+
   // All filters have sigma X radius
-  for(int i = 0; i < 50; i++) {
+  for (int i = 0; i < 50; i++) {
     NSObject* gaussianFilter = childClippingView.layer.filters[i];
     XCTAssertEqualObjects(@"gaussianBlur", [gaussianFilter valueForKey:@"name"]);
     XCTAssertEqualObjects(@(5), [gaussianFilter valueForKey:@"inputRadius"]);
@@ -381,7 +381,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertEqual(0, (int)[gMockPlatformView.subviews count]);
 }
 
-//TODO: If a Flutter user removes the backdrop filter, a new stack is created. To simulate this removal in the test, I created a new stack. It doesn't test the removal's effect fully. I think we need to run further integration tests for full testing.
+// TODO: If a Flutter user removes the backdrop filter, a new stack is created. To simulate this
+// removal in the test, I created a new stack. It doesn't test the removal's effect fully. I think
+// we need to run further integration tests for full testing.
 - (void)testRemoveBackdropFilters {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
@@ -422,7 +424,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   stack.PushTransform(screenScaleMatrix);
   // Push backdrop filters
   flutter::DlBlurImageFilter filter = flutter::DlBlurImageFilter(5, 2, flutter::DlTileMode::kClamp);
-  for(int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++) {
     stack.PushBackdropFilter(filter);
   }
 
@@ -437,20 +439,20 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
-  
+
   // Simulate removing 1 backdrop filter (create a new mutators stack)
   // Create embedded view params
   flutter::MutatorsStack stack2;
   // Layer tree always pushes a screen scale factor to the stack
   stack2.PushTransform(screenScaleMatrix);
   // Push backdrop filters
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     stack2.PushBackdropFilter(filter);
   }
-  
-  embeddedViewParams =
-      std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack2);
-  
+
+  embeddedViewParams = std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix,
+                                                                     SkSize::Make(10, 10), stack2);
+
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   [mockFlutterView setNeedsLayout];
@@ -460,7 +462,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertEqual(4, (int)[childClippingView.layer.filters count]);
 
   // All filters have sigma X radius
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     NSObject* gaussianFilter = childClippingView.layer.filters[i];
     XCTAssertEqualObjects(@"gaussianBlur", [gaussianFilter valueForKey:@"name"]);
     XCTAssertEqualObjects(@(5), [gaussianFilter valueForKey:@"inputRadius"]);
@@ -470,7 +472,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertEqual(0, (int)[gMockPlatformView.subviews count]);
 }
 
-// TODO: Similarly, to simulate a Flutter user editing the input radius of an applied Backdrop Filter, this test creates a new mutators stack. We might need more integration testing to fully test the functionality of editing a Backdrop Filter.
+// TODO: Similarly, to simulate a Flutter user editing the input radius of an applied Backdrop
+// Filter, this test creates a new mutators stack. We might need more integration testing to fully
+// test the functionality of editing a Backdrop Filter.
 - (void)testEditBackdropFilters {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
@@ -511,7 +515,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   stack.PushTransform(screenScaleMatrix);
   // Push backdrop filters
   flutter::DlBlurImageFilter filter = flutter::DlBlurImageFilter(5, 2, flutter::DlTileMode::kClamp);
-  for(int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++) {
     stack.PushBackdropFilter(filter);
   }
 
@@ -526,26 +530,28 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
-  
+
   // Simulate editing 1 backdrop filter (create a new mutators stack)
   // Create embedded view params
   flutter::MutatorsStack stack2;
   // Layer tree always pushes a screen scale factor to the stack
   stack2.PushTransform(screenScaleMatrix);
   // Push backdrop filters
-  for(int i = 0; i < 4; i++) {
-    if(i == 3) {
-      flutter::DlBlurImageFilter filter2 = flutter::DlBlurImageFilter(2, 5, flutter::DlTileMode::kClamp); // TODO EMILY: is filter actually a reference? Should we be concerned about that?
+  for (int i = 0; i < 4; i++) {
+    if (i == 3) {
+      flutter::DlBlurImageFilter filter2 = flutter::DlBlurImageFilter(
+          2, 5, flutter::DlTileMode::kClamp);  // TODO EMILY: is filter actually a reference? Should
+                                               // we be concerned about that?
       stack2.PushBackdropFilter(filter2);
       continue;
     }
-    
+
     stack2.PushBackdropFilter(filter);
   }
-  
-  embeddedViewParams =
-      std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack2);
-  
+
+  embeddedViewParams = std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix,
+                                                                     SkSize::Make(10, 10), stack2);
+
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   [mockFlutterView setNeedsLayout];
@@ -553,18 +559,20 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   // childClippingView has CAFilters for the multiple backdrop filters
   XCTAssertEqual(4, (int)[childClippingView.layer.filters count]);
-  
+
   // One filter has radius 2, others have original sigma x radius
   int countRadius2 = 0;
   int countRadius5 = 0;
 
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     NSObject* gaussianFilter = childClippingView.layer.filters[i];
     XCTAssertEqualObjects(@"gaussianBlur", [gaussianFilter valueForKey:@"name"]);
-    if([@(5) isEqual:[gaussianFilter valueForKey:@"inputRadius"]]) countRadius5++;
-    else if([@(2) isEqual:[gaussianFilter valueForKey:@"inputRadius"]]) countRadius2++;
+    if ([@(5) isEqual:[gaussianFilter valueForKey:@"inputRadius"]])
+      countRadius5++;
+    else if ([@(2) isEqual:[gaussianFilter valueForKey:@"inputRadius"]])
+      countRadius2++;
   }
-  
+
   XCTAssertEqual(1, countRadius2);
   XCTAssertEqual(3, countRadius5);
 
