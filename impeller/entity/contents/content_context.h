@@ -40,6 +40,8 @@
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/solid_fill.frag.h"
 #include "impeller/entity/solid_fill.vert.h"
+#include "impeller/entity/radial_gradient_fill.vert.h"
+#include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/solid_stroke.frag.h"
 #include "impeller/entity/solid_stroke.vert.h"
 #include "impeller/entity/texture_fill.frag.h"
@@ -54,6 +56,7 @@ using GradientFillPipeline =
     PipelineT<GradientFillVertexShader, GradientFillFragmentShader>;
 using SolidFillPipeline =
     PipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
+using RadialGradientFillPipeline = PipelineT<RadialGradientFillVertexShader,RadialGradientFillFragmentShader>;
 using BlendPipeline = PipelineT<BlendVertexShader, BlendFragmentShader>;
 using BlendColorPipeline =
     PipelineT<AdvancedBlendVertexShader, AdvancedBlendColorFragmentShader>;
@@ -138,6 +141,10 @@ class ContentContext {
   std::shared_ptr<Pipeline> GetGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(gradient_fill_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline> GetRadialGradientFillPipeline(
+      ContentContextOptions opts) const {
+      return GetPipeline(radial_gradient_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline> GetSolidFillPipeline(
@@ -284,6 +291,7 @@ class ContentContext {
   // map.
   mutable Variants<GradientFillPipeline> gradient_fill_pipelines_;
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
