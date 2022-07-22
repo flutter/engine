@@ -44,7 +44,7 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
   if (context->view_embedder != nullptr) {
-    if(context->view_embedder->GetFoundPlatformViews())
+    if (context->view_embedder->GetFoundPlatformViews())
       context->view_embedder->PushFilterToVisitedPlatformViews(filter_);
   }
   SkRect child_paint_bounds = SkRect::MakeEmpty();
