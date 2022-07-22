@@ -43,7 +43,7 @@ import org.robolectric.annotation.Config;
 @RunWith(AndroidJUnit4.class)
 public class FlutterEngineGroupComponentTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
-  @Mock FlutterJNI mockflutterJNI;
+  @Mock FlutterJNI mockFlutterJNI;
   @Mock FlutterLoader mockFlutterLoader;
   FlutterEngineGroup engineGroupUnderTest;
   FlutterEngine firstEngineUnderTest;
@@ -55,20 +55,36 @@ public class FlutterEngineGroupComponentTest {
 
     MockitoAnnotations.openMocks(this);
     jniAttached = false;
-    when(mockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
-    doAnswer(invocation -> jniAttached = true).when(mockflutterJNI).attachToNative();
+    when(mockFlutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(mockFlutterJNI).attachToNative();
     GeneratedPluginRegistrant.clearRegisteredEngines();
 
     when(mockFlutterLoader.findAppBundlePath()).thenReturn("some/path/to/flutter_assets");
+
+    FlutterJNI.Factory jniFactory =
+        new FlutterJNI.Factory() {
+          @Override
+          public FlutterJNI provideFlutterJNI() {
+            // The default implementation is that `new FlutterJNI()` will report errors when
+            // creating the engine later,
+            // Change mockFlutterJNI to the default so that we can create the engine directly in
+            // later tests
+            return mockFlutterJNI;
+          }
+        };
+
     FlutterInjector.setInstance(
-        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+        new FlutterInjector.Builder()
+            .setFlutterLoader(mockFlutterLoader)
+            .setFlutterJNIFactory(jniFactory)
+            .build());
 
     firstEngineUnderTest =
         spy(
             new FlutterEngine(
                 ctx,
                 mock(FlutterLoader.class),
-                mockflutterJNI,
+                mockFlutterJNI,
                 /*dartVmArgs=*/ new String[] {},
                 /*automaticallyRegisterPlugins=*/ false));
     engineGroupUnderTest =
@@ -167,7 +183,7 @@ public class FlutterEngineGroupComponentTest {
                 FlutterInjector.instance().flutterLoader().findAppBundlePath(),
                 "other entrypoint"));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
-    verify(mockflutterJNI, times(1))
+    verify(mockFlutterJNI, times(1))
         .runBundleAndSnapshotFromLibrary(
             eq("some/path/to/flutter_assets"),
             eq("other entrypoint"),
@@ -185,13 +201,13 @@ public class FlutterEngineGroupComponentTest {
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
     verify(firstEngine.getNavigationChannel(), times(1)).setInitialRoute("/foo");
 
-    when(mockflutterJNI.isAttached()).thenReturn(true);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
     jniAttached = false;
     FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
     when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
     doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
     doReturn(secondMockflutterJNI)
-        .when(mockflutterJNI)
+        .when(mockFlutterJNI)
         .spawn(
             nullable(String.class),
             nullable(String.class),
@@ -202,7 +218,7 @@ public class FlutterEngineGroupComponentTest {
         engineGroupUnderTest.createAndRunEngine(ctx, mock(DartEntrypoint.class), "/bar");
 
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
-    verify(mockflutterJNI, times(1))
+    verify(mockFlutterJNI, times(1))
         .spawn(nullable(String.class), nullable(String.class), eq("/bar"), nullable(List.class));
   }
 
@@ -215,7 +231,7 @@ public class FlutterEngineGroupComponentTest {
                 .setDartEntrypoint(mock(DartEntrypoint.class))
                 .setDartEntrypointArgs(firstDartEntrypointArgs));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
-    verify(mockflutterJNI, times(1))
+    verify(mockFlutterJNI, times(1))
         .runBundleAndSnapshotFromLibrary(
             nullable(String.class),
             nullable(String.class),
@@ -223,13 +239,13 @@ public class FlutterEngineGroupComponentTest {
             any(AssetManager.class),
             eq(firstDartEntrypointArgs));
 
-    when(mockflutterJNI.isAttached()).thenReturn(true);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
     jniAttached = false;
     FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
     when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
     doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
     doReturn(secondMockflutterJNI)
-        .when(mockflutterJNI)
+        .when(mockFlutterJNI)
         .spawn(
             nullable(String.class),
             nullable(String.class),
@@ -243,7 +259,7 @@ public class FlutterEngineGroupComponentTest {
                 .setDartEntrypointArgs(secondDartEntrypointArgs));
 
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
-    verify(mockflutterJNI, times(1))
+    verify(mockFlutterJNI, times(1))
         .spawn(
             nullable(String.class),
             nullable(String.class),
@@ -252,12 +268,31 @@ public class FlutterEngineGroupComponentTest {
   }
 
   @Test
-  public void canCreateAndRunWithMoreParams() {
+  public void createEngineSupportMoreParams() {
+    // Create a new FlutterEngineGroup because the first engine created in engineGroupUnderTest was
+    // changed to firstEngineUnderTest in `setUp()`, so can't use it to validate params.
+    FlutterEngineGroup engineGroup = new FlutterEngineGroup(ctx);
+    PlatformViewsController controller = new PlatformViewsController();
+    boolean waitForRestorationData = true;
+    FlutterEngine firstEngine =
+        engineGroup.createAndRunEngine(
+            new FlutterEngineGroup.Options(ctx)
+                .setDartEntrypoint(mock(DartEntrypoint.class))
+                .setPlatformViewsController(controller)
+                .setWaitForRestorationData(waitForRestorationData));
+
+    assertEquals(controller, firstEngine.getPlatformViewsController());
+    assertEquals(
+        waitForRestorationData, firstEngine.getRestorationChannel().waitForRestorationData);
+  }
+
+  @Test
+  public void spawnEngineSupportMoreParams() {
     FlutterEngine firstEngine =
         engineGroupUnderTest.createAndRunEngine(
             new FlutterEngineGroup.Options(ctx).setDartEntrypoint(mock(DartEntrypoint.class)));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
-    verify(mockflutterJNI, times(1))
+    verify(mockFlutterJNI, times(1))
         .runBundleAndSnapshotFromLibrary(
             nullable(String.class),
             nullable(String.class),
@@ -265,13 +300,13 @@ public class FlutterEngineGroupComponentTest {
             any(AssetManager.class),
             nullable(List.class));
 
-    when(mockflutterJNI.isAttached()).thenReturn(true);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
     jniAttached = false;
     FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
     when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
     doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
     doReturn(secondMockflutterJNI)
-        .when(mockflutterJNI)
+        .when(mockFlutterJNI)
         .spawn(
             nullable(String.class),
             nullable(String.class),
