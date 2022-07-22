@@ -123,7 +123,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
   //
   // Events that should be synthesized before the main event are synthesized
   // immediately, while events that should be syntehsized after the main event are appended to
-  // postSynthsize.
+  // `postSynchronize`.
   //
   // Although Android KeyEvent defined bitmasks for sided modifiers (SHIFT_LEFT_ON and
   // SHIFT_RIGHT_ON),
