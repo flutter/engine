@@ -405,7 +405,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   
   NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease]; // TODO EMILY: is autorelease the best option?
   
-  int numFilters = 0;
+//  int numFilters = 0;
   
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -414,16 +414,16 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
         
-        if(numFilters < 4) {
-          // TODO EMILY: these lines are for visual tests, delete before landing PR
-          flutter::DlBlurImageFilter filter =
-              flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);
-          
-          NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
-          [blurRadii addObject:blurRadius];
-          
-          numFilters++;
-        }
+//        if(numFilters < 1) {
+//          // TODO EMILY: these lines are for visual tests, delete before landing PR
+//          flutter::DlBlurImageFilter filter =
+//              flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);
+//
+//          NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
+//          [blurRadii addObject:blurRadius];
+//
+//          numFilters++;
+//        }
 
         break;
       }
@@ -440,12 +440,8 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
         break;
       case kBackdropFilter: {
-        // TODO EMILY: think of a way to avoid repeatedly adding backdropFilters when no changes were made to BDFilters
-        
-        if (!(*iter)->GetFilter().asBlur()) {
-          // We only support DlBlurImageFilter for BackdropFilter.
-          continue;
-        }
+        // We only support DlBlurImageFilter for BackdropFilter.
+        if (!(*iter)->GetFilter().asBlur()) continue;
         
         // Sigma X is arbitrarily chosen as the radius value because Quartz only supports 1D rendering.
         // DlBlurImageFilter's Tile Mode is not supported in CIGaussianBlurFilter so it is not used to blur the PlatformView.
@@ -458,8 +454,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   }
   
   [clipView applyBackdropFilters:blurRadii]; // TODO EMILY: pass pointer/reference?
-  
-  
   
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.

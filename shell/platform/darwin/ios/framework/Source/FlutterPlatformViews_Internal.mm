@@ -56,8 +56,9 @@ void ResetAnchor(CALayer* layer) {
 
 }  // namespace flutter
 
-@implementation ChildClippingView {
-  NSMutableArray* _gaussianFilters;// = [[[NSMutableArray alloc] init] autorelease]; // TODO EMILY: is autorelease the right thing here?
+@implementation ChildClippingView
+{
+  NSMutableArray* _gaussianFilters;
 }
 
 // The ChildClippingView's frame is the bounding rect of the platform view. we only want touches to
@@ -70,30 +71,6 @@ void ResetAnchor(CALayer* layer) {
     }
   }
   return NO;
-}
-
-- (void)applyBackdropFilters:(NSArray*)blurRadii {
-  if(!_gaussianFilters || ([blurRadii count] != [_gaussianFilters count])) {
-    NSObject* gaussianFilter = [self extractGaussianFilter];
-    if(!gaussianFilter)
-      return;
-      
-    _gaussianFilters = [NSMutableArray arrayWithCapacity:[blurRadii count]];
-    for(NSNumber* radius in blurRadii) {
-      NSObject* newGaussianFilter = [gaussianFilter copy]; // TODO EMILY: play with pointers and references. Do we need to make a new copy for every gaussianFilter?
-      [newGaussianFilter setValue:radius forKey:@"inputRadius"];
-      [_gaussianFilters addObject:newGaussianFilter];
-    }
-  } else {
-    for(int i = 0; i < (int)[blurRadii count]; i++) {
-      if([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i])
-        continue;
-      
-      [_gaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
-    }
-  }
-  
-  self.layer.filters = _gaussianFilters;
 }
 
 // Creates and initializes a UIVisualEffectView with a UIBlurEffect. Extracts and returns its gaussianFilter.
@@ -127,6 +104,40 @@ void ResetAnchor(CALayer* layer) {
   }
   
   return gaussianFilter;
+}
+
+- (void)applyBackdropFilters:(NSArray*)blurRadii {
+  if(!_gaussianFilters) {
+    NSObject* gaussianFilter = [self extractGaussianFilter];
+    if(!gaussianFilter) return;
+    
+    _gaussianFilters = [[[NSMutableArray alloc] init] retain]; // TODO EMILY: does this need retain?
+    for(NSNumber* radius in blurRadii) {
+      NSObject* newGaussianFilter = [gaussianFilter copy]; // TODO EMILY: play with pointers and references. Do we need to make a new copy for every gaussianFilter?
+      [newGaussianFilter setValue:radius forKey:@"inputRadius"];
+      [_gaussianFilters addObject:newGaussianFilter];
+    }
+  }
+  else if ([blurRadii count] != [_gaussianFilters count]) {
+    NSObject* gaussianFilter = [self extractGaussianFilter];
+    if(!gaussianFilter) return;
+    
+    [_gaussianFilters removeAllObjects];
+    for(NSNumber* radius in blurRadii) {
+      NSObject* newGaussianFilter = [gaussianFilter copy]; // TODO EMILY: play with pointers and references. Do we need to make a new copy for every gaussianFilter?
+      [newGaussianFilter setValue:radius forKey:@"inputRadius"];
+      [_gaussianFilters addObject:newGaussianFilter];
+    }
+  }
+  else {
+    for(int i = 0; i < (int)[blurRadii count]; i++) {
+      if([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i]) continue;
+      
+      [_gaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
+    }
+  }
+  
+  self.layer.filters = _gaussianFilters;
 }
 
 - (void)dealloc {

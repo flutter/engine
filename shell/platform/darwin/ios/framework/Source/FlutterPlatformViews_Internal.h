@@ -50,7 +50,7 @@
 @interface ChildClippingView : UIView
 
 // Adds a blur filter to its layers.
-- (void)applyBackdropFilters:(NSArray*)blurRadii; // TODO EMILY: make param NSMutableArray?
+- (void)applyBackdropFilters:(NSArray*)blurRadii;
 
 @end
 
