@@ -4,15 +4,12 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
-import 'package:vm_service/vm_service.dart' as vms;
-import 'package:vm_service/vm_service_io.dart';
 
 import 'shader_test_file_utils.dart';
 
@@ -65,38 +62,6 @@ void main() {
       floatUniforms: Float32List.fromList(<double>[1]),
     );
     _expectShaderRendersGreen(shader);
-  });
-
-  test('simple iplr shader can be re-initialized', () async {
-    final FragmentProgram program = FragmentProgram.fromAsset(
-      'functions.frag.iplr',
-    );
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(<double>[1]),
-    );
-
-    final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
-
-    if (info.serverUri == null) {
-      fail('This test must not be run with --disable-observatory.');
-    }
-
-    final vms.VmService vmService = await vmServiceConnectUri(
-      'ws://localhost:${info.serverUri!.port}${info.serverUri!.path}ws',
-    );
-    final vms.VM vm = await vmService.getVM();
-
-    expect(vm.isolates!.isNotEmpty, true);
-    for (final vms.IsolateRef isolateRef in vm.isolates!) {
-      final vms.Response response = await vmService.callServiceExtension(
-        'ext.ui.window.reinitializeShader',
-        isolateId: isolateRef.id,
-        args: <String, Object>{
-          'assetKey': 'functions.frag.iplr',
-        },
-      );
-      expect(response.type == 'Success', true);
-    }
   });
 
   test('blue-green image renders green', () async {
