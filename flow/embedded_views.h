@@ -379,7 +379,6 @@ class ExternalViewEmbedder {
       std::shared_ptr<const DlImageFilter> filter) {}
 
  private:
-  
   bool found_platform_views_ = false;
   bool used_this_frame_ = false;
 
