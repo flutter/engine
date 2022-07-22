@@ -5,6 +5,8 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 
+#include <cstddef>
+#include <memory>
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_comparable.h"
@@ -72,6 +74,11 @@ class DlImageFilter
   static std::shared_ptr<DlImageFilter> From(
       const sk_sp<SkImageFilter> sk_filter) {
     return From(sk_filter.get());
+  }
+
+  std::shared_ptr<DlImageFilter> makeWithLocalMatrix(const SkMatrix&) const {
+    // TODO(Jsoulaing): if need implement this method which used for ImageFilterLayer
+    return nullptr;
   }
 
   // Return a DlBlurImageFilter pointer to this object iff it is a Blur
