@@ -11,4 +11,3 @@ PathContents::PathContents() = default;
 PathContents::~PathContents() = default;
 
 }  // namespace impeller
-

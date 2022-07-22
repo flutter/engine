@@ -188,7 +188,6 @@ static Color ToColor(const SkColor& color) {
   };
 }
 
-
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* source) {
@@ -226,10 +225,10 @@ void DisplayListDispatcher::setColorSource(
           source->asRadialGradient();
       FML_CHECK(radialGradient);
       auto contents = std::make_shared<RadialGradientContents>();
-      contents->SetCenterAndRadius(ToPoint(radialGradient->center()), radialGradient->radius());
+      contents->SetCenterAndRadius(ToPoint(radialGradient->center()),
+                                   radialGradient->radius());
       paint_.contents = std::move(contents);
       return;
-      // auto contents = std::make_shared<Raf>()
     }
     case flutter::DlColorSourceType::kConicalGradient:
     case flutter::DlColorSourceType::kSweepGradient:

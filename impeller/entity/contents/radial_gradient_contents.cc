@@ -20,7 +20,6 @@ void RadialGradientContents::SetPath(Path path) {
   path_ = std::move(path);
 }
 
-
 void RadialGradientContents::SetCenterAndRadius(Point centre, Scalar radius) {
   center_ = centre;
   radius_ = radius;
@@ -50,7 +49,7 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
                                     RenderPass& pass) const {
   using VS = RadialGradientFillPipeline::VertexShader;
   using FS = RadialGradientFillPipeline::FragmentShader;
-  
+
   auto vertices_builder = VertexBufferBuilder<VS::PerVertexData>();
   {
     auto result =
@@ -81,8 +80,8 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
 
   Command cmd;
   cmd.label = "RadialGradientFill";
-  cmd.pipeline =
-      renderer.GetRadialGradientFillPipeline(OptionsFromPassAndEntity(pass, entity));
+  cmd.pipeline = renderer.GetRadialGradientFillPipeline(
+      OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(
       vertices_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
@@ -94,4 +93,3 @@ bool RadialGradientContents::Render(const ContentContext& renderer,
 }
 
 }  // namespace impeller
-
