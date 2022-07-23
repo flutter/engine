@@ -10,10 +10,12 @@ import '../dom.dart';
 import '../services.dart';
 import '../util.dart';
 
-/// Determines the politeness setting of aria live in Flutter web.
+/// Determines the assertiveness level of the accessibility announcement.
+///
+/// It is used to set the priority with which assistive technology should treat announcements.
 ///
 /// The order of this enum must match the order of the values in semantics_event.dart in framework.
-enum AriaLivePolitenessSetting {
+enum Assertiveness {
   polite,
   assertive,
 }
@@ -71,18 +73,18 @@ class AccessibilityAnnouncements {
     final Map<dynamic, dynamic> dataMap = inputMap.readDynamicJson('data');
     final String? message = dataMap.tryString('message');
     if (message != null && message.isNotEmpty) {
-      /// The default value for politenessSetting is assertive.
-      final int ariaLivePolitenessSettingIndex = dataMap.tryInt('ariaLivePolitenessSetting')?? 1;
-      final AriaLivePolitenessSetting ariaLivePolitenessSetting = AriaLivePolitenessSetting.values[ariaLivePolitenessSettingIndex];
-      _initLiveRegion(message, ariaLivePolitenessSetting);
+      /// The default value for politeness is `polite`.
+      final int ariaLivePolitenessIndex = dataMap.tryInt('assertiveness') ?? 0;
+      final Assertiveness ariaLivePoliteness = Assertiveness.values[ariaLivePolitenessIndex];
+      _initLiveRegion(message, ariaLivePoliteness);
       _removeElementTimer = Timer(durationA11yMessageIsOnDom, () {
         _element!.remove();
       });
     }
   }
 
-  void _initLiveRegion(String message, AriaLivePolitenessSetting ariaLivePolitenessSetting) {
-    final String assertiveLevel = (ariaLivePolitenessSetting == AriaLivePolitenessSetting.assertive)? 'assertive' : 'polite';
+  void _initLiveRegion(String message, Assertiveness ariaLivePoliteness) {
+    final String assertiveLevel = (ariaLivePoliteness == Assertiveness.assertive) ? 'assertive' : 'polite';
     _domElement.setAttribute('aria-live', assertiveLevel);
     _domElement.text = message;
     domDocument.body!.append(_domElement);
