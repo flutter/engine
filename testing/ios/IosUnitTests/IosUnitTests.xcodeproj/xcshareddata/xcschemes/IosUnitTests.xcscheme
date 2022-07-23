@@ -78,12 +78,6 @@
             ReferencedContainer = "container:IosUnitTests.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "--icu-data-file-path=Frameworks/Flutter.framework/icudtl.dat"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
