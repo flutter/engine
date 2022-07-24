@@ -63,7 +63,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
     };
     display_link_.get().paused = YES;
 
-    [self setMaxRefreshRateIfEnabled];
+    [DisplayLinkManager setMaxRefreshRateIfEnabled:display_link_.get()];
 
     task_runner->PostTask([client = [self retain]]() {
       [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
@@ -73,23 +73,6 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   }
 
   return self;
-}
-
-- (void)setMaxRefreshRateIfEnabled {
-  NSNumber* minimumFrameRateDisabled =
-      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"];
-  if (![minimumFrameRateDisabled boolValue]) {
-    return;
-  }
-  double maxFrameRate = fmax([DisplayLinkManager displayRefreshRate], 60);
-  double minFrameRate = fmax(maxFrameRate / 2, 60);
-
-  if (@available(iOS 15.0, *)) {
-    display_link_.get().preferredFrameRateRange =
-        CAFrameRateRangeMake(minFrameRate, maxFrameRate, maxFrameRate);
-  } else if (@available(iOS 10.0, *)) {
-    display_link_.get().preferredFramesPerSecond = maxFrameRate;
-  }
 }
 
 - (void)await {
@@ -163,6 +146,27 @@ double VsyncWaiterIOS::GetRefreshRate() const {
     return [UIScreen mainScreen].maximumFramesPerSecond;  // iOS 10.3
   } else {
     return 60.0;
+  }
+}
+
++ (void)setMaxRefreshRateIfEnabled:(CADisplayLink*)displayLink {
+  if (displayLink == nil) {
+    return;
+  }
+
+  NSNumber* minimumFrameRateDisabled =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"];
+  if (![minimumFrameRateDisabled boolValue]) {
+    return;
+  }
+  double maxFrameRate = fmax([DisplayLinkManager displayRefreshRate], 60);
+  double minFrameRate = fmax(maxFrameRate / 2, 60);
+
+  if (@available(iOS 15.0, *)) {
+    displayLink.preferredFrameRateRange =
+        CAFrameRateRangeMake(minFrameRate, maxFrameRate, maxFrameRate);
+  } else if (@available(iOS 10.0, *)) {
+    displayLink.preferredFramesPerSecond = maxFrameRate;
   }
 }
 

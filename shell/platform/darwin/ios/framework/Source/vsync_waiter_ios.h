@@ -26,6 +26,16 @@
 ///
 + (double)displayRefreshRate;
 
+//------------------------------------------------------------------------------
+/// @brief      This method is to set max refresh rate for a CADisplaylink
+///             if "CADisableMinimumFrameDurationOnPhone" is enabled.
+///             If the displayLink is nil or "CADisableMinimumFrameDurationOnPhone"
+///             is disabled, nothing will happen.
+///
+/// @param  displayLink  The CADisplayLink you want to set max refresh rate.
+///
++ (void)setMaxRefreshRateIfEnabled:(CADisplayLink*)displayLink;
+
 @end
 
 @interface VSyncClient : NSObject
