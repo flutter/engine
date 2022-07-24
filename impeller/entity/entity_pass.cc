@@ -160,8 +160,7 @@ bool EntityPass::Render(ContentContext& renderer,
     render_pass->SetLabel("EntityPass Root Render Pass");
 
     {
-      auto size_rect =
-          Rect::MakeSize(Size(offscreen_target.GetRenderTargetSize()));
+      auto size_rect = Rect::MakeSize(offscreen_target.GetRenderTargetSize());
       auto contents = std::make_shared<TextureContents>();
       contents->SetPath(PathBuilder{}.AddRect(size_rect).TakePath());
       contents->SetTexture(offscreen_target.GetRenderTargetTexture());
@@ -252,7 +251,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto subpass_coverage =
-        GetSubpassCoverage(*subpass, Rect::MakeSize(Size(root_pass_size)));
+        GetSubpassCoverage(*subpass, Rect::MakeSize(root_pass_size));
 
     if (backdrop_contents) {
       auto backdrop_coverage = backdrop_contents->GetCoverage(Entity{});
@@ -269,7 +268,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     if (subpass_coverage.has_value()) {
       subpass_coverage =
-          subpass_coverage->Intersection(Rect::MakeSize(Size(root_pass_size)));
+          subpass_coverage->Intersection(Rect::MakeSize(root_pass_size));
     }
 
     if (!subpass_coverage.has_value()) {
@@ -359,11 +358,15 @@ bool EntityPass::OnRender(ContentContext& renderer,
   }
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
-                         &renderer](Entity element_entity) {
+                         &renderer](Entity& element_entity) {
     element_entity.SetStencilDepth(element_entity.GetStencilDepth() -
                                    stencil_depth_floor);
 
     auto pass = pass_context.GetRenderPass(pass_depth);
+    if (!element_entity.ShouldRender(pass->GetRenderTargetSize())) {
+      return true;  // Nothing to render.
+    }
+
     if (!element_entity.Render(renderer, *pass)) {
       return false;
     }
@@ -379,6 +382,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
     backdrop_entity.SetContents(std::move(backdrop_contents));
     backdrop_entity.SetTransformation(
         Matrix::MakeTranslation(Vector3(parent_position - position)));
+    backdrop_entity.SetStencilDepth(stencil_depth_floor);
 
     render_element(backdrop_entity);
   }
