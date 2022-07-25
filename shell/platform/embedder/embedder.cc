@@ -269,7 +269,7 @@ InferOpenGLPlatformViewCreationCallback(
       present_info.frame_damage = frame_damage;
 
       FlutterDamage buffer_damage;
-      frame_damage.damage = SkIRectToFlutterRect(gl_present_info.buffer_damage);
+      buffer_damage.damage = SkIRectToFlutterRect(gl_present_info.buffer_damage);
       present_info.buffer_damage = buffer_damage;
 
       /// Pass the present_info to the present_with_info callback so that it can
