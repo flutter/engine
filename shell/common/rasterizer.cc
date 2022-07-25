@@ -656,6 +656,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       damage = std::make_unique<FrameDamage>();
       if (frame->framebuffer_info().existing_damage && !force_full_repaint) {
         damage->SetPreviousLayerTree(last_layer_tree_.get());
+        std::cout << "prev layer tree was set" << std::endl;
         damage->AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
         damage->SetClipAlignment(
             frame->framebuffer_info().horizontal_clip_alignment,

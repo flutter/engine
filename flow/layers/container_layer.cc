@@ -11,6 +11,7 @@ namespace flutter {
 ContainerLayer::ContainerLayer() : child_paint_bounds_(SkRect::MakeEmpty()) {}
 
 void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  std::cout << "Container layer" << std:endl;
   auto old_container = static_cast<const ContainerLayer*>(old_layer);
   DiffContext::AutoSubtreeRestore subtree(context);
   DiffChildren(context, old_container);
