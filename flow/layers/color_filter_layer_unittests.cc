@@ -26,9 +26,8 @@ using ColorFilterLayerTest = LayerTest;
 
 #ifndef NDEBUG
 TEST_F(ColorFilterLayerTest, PaintingEmptyLayerDies) {
-  auto sk_color_filter = sk_sp<SkColorFilter>();
-  auto dl_color_filter = DlColorFilter::From(sk_color_filter);
-  auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
+  auto layer = std::make_shared<ColorFilterLayer>(
+      std::make_shared<DlUnknownColorFilter>(sk_sp<SkColorFilter>()));
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
@@ -43,8 +42,9 @@ TEST_F(ColorFilterLayerTest, PaintBeforePrerollDies) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
+
   auto layer = std::make_shared<ColorFilterLayer>(
-      DlColorFilter::From(sk_sp<SkColorFilter>()));
+      std::make_shared<DlUnknownColorFilter>(sk_sp<SkColorFilter>()));
   layer->Add(mock_layer);
 
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
