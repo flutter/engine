@@ -445,7 +445,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack2;
   // Layer tree always pushes a screen scale factor to the stack
   stack2.PushTransform(screenScaleMatrix);
-  // Push backdrop filters
+  // Push backdrop filters //TODO EMILY: test pushing 0 backdrop filters, is that possible?
   for (int i = 0; i < 4; i++) {
     stack2.PushBackdropFilter(filter);
   }
