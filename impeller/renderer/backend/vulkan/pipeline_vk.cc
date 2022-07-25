@@ -6,6 +6,17 @@
 
 namespace impeller {
 
-//
+PipelineVK::PipelineVK(std::weak_ptr<PipelineLibrary> library,
+                       PipelineDescriptor desc,
+                       std::unique_ptr<PipelineVKCreateInfo> create_info)
+    : Pipeline(std::move(library), std::move(desc)),
+      pipeline_(std::move(create_info->pipeline)),
+      render_pass_(std::move(create_info->render_pass)) {
+  is_valid_ = pipeline_ && render_pass_;
+}
+
+bool PipelineVK::IsValid() const {
+  return is_valid_;
+}
 
 }  // namespace impeller
