@@ -127,11 +127,50 @@ zip_bundle("flutter_patched_sdk") {
   ]
 }
 
+generated_file("dart_sdk_entitlement_config") {
+  outputs = [ "$target_gen_dir/dart_sdk_entitlements.txt" ]
+
+  # Dart SDK is a prebuilt archive. The rule for building
+  # Dart SDK is https://github.com/flutter/engine/blob/main/BUILD.gn#L61
+  contents = [
+    "dart-sdk/bin/dart",
+    "dart-sdk/bin/dartaotruntime",
+    "dart-sdk/bin/utils/gen_snapshot",
+  ]
+
+  deps = []
+}
+
 # Flutter consumes the dart sdk as a prebuilt. Rather than regenerating
 # the zip file we are just copying the original file to the artifacts location.
 if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
   zip_bundle("dart_sdk_archive") {
-    deps = []
+    deps = [ ":dart_sdk_entitlement_config" ]
+    output = "dart-sdk-$full_target_platform_name.zip"
+    files = [
+      {
+        source = prebuilt_dart_sdk
+        destination = "dart-sdk"
+      },
+    ]
+    if (is_mac) {
+      # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
+      # names will require changes in the list of artifacts the tool is downloading.
+      output = "dart-sdk-darwin-$target_cpu.zip"
+      files += [
+        {
+          source = "$target_gen_dir/dart_sdk_entitlements.txt"
+          destination = "entitlements.txt"
+        },
+      ]
+    }
+  }
+}
+
+# If there is no prebuilt sdk, create the dart sdk archive from the built sdk.
+if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
+  zip_bundle_from_file("dart_sdk_archive") {
+    deps = [ "//third_party/dart:create_sdk" ]
     output = "dart-sdk-$full_target_platform_name.zip"
     if (is_mac) {
       # Mac artifacts sometimes use mac and sometimes darwin. Standardizing the
@@ -140,7 +179,7 @@ if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
     }
     files = [
       {
-        source = prebuilt_dart_sdk
+        source = rebase_path("$root_build_dir/dart-sdk")
         destination = "dart-sdk"
       },
     ]
@@ -194,6 +233,14 @@ if (host_os == "win") {
 
 # Archives Flutter Mac Artifacts
 if (is_mac) {
+  generated_file("snapshot_entitlement_config") {
+    outputs = [ "$target_gen_dir/snapshot_entitlements.txt" ]
+
+    data_keys = [ "snapshot_entitlement_file_path" ]
+
+    deps = [ "//flutter/lib/snapshot:create_macos_gen_snapshots" ]
+  }
+
   group("macos_flutter_framework") {
     deps = [
       "//flutter/shell/platform/darwin/macos:macos_flutter_framework_archive",
@@ -201,7 +248,10 @@ if (is_mac) {
   }
 
   zip_bundle("archive_gen_snapshot") {
-    deps = [ "//flutter/lib/snapshot:create_macos_gen_snapshots" ]
+    deps = [
+      ":snapshot_entitlement_config",
+      "//flutter/lib/snapshot:create_macos_gen_snapshots",
+    ]
     suffix = "-$flutter_runtime_mode"
     if (flutter_runtime_mode == "debug") {
       suffix = ""
@@ -211,6 +261,10 @@ if (is_mac) {
       {
         source = "$root_out_dir/gen_snapshot_$target_cpu"
         destination = "gen_snapshot_$target_cpu"
+      },
+      {
+        source = "$target_gen_dir/snapshot_entitlements.txt"
+        destination = "entitlements.txt"
       },
     ]
   }
