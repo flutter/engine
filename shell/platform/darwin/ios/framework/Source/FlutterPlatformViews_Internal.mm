@@ -81,13 +81,15 @@ void ResetAnchor(CALayer* layer) {
 
   UIView* view = [visualEffectView.subviews firstObject];
   if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access its subviews.";
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                       "access its subviews.";
     return nil;
   }
 
   NSObject* gaussianFilter = [[view.layer.filters firstObject] retain];
   if (!gaussianFilter || ![[gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access the Gaussian blur filter. ";
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
+                       "access the Gaussian blur filter. ";
     return nil;
   }
 
@@ -96,7 +98,8 @@ void ResetAnchor(CALayer* layer) {
   if (![[gaussianFilter valueForKey:@"inputRadius"]
           isKindOfClass:[NSNumber class]]) {  // TODO EMILY: is there another way to check that
                                               // inputRadius key is valid? -> DOCUMENT ATTEMPTS
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation access the Gaussian blur filter's properties.";
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation "
+                       "access the Gaussian blur filter's properties.";
     return nil;
   }
 
@@ -105,28 +108,30 @@ void ResetAnchor(CALayer* layer) {
 
 - (void)applyBackdropFilters:(NSArray*)blurRadii {
   NSObject* gaussianFilter;
-  if(!_gaussianFilters) {
+  if (!_gaussianFilters) {
     _gaussianFilters = [[[NSMutableArray alloc] init] retain];
   }
 
-  if([blurRadii count] > [_gaussianFilters count]) {
+  if ([blurRadii count] > [_gaussianFilters count]) {
     gaussianFilter = [self extractGaussianFilter];
-    if (!gaussianFilter) return;
+    if (!gaussianFilter)
+      return;
   }
-  
+
   if ([blurRadii count] < [_gaussianFilters count]) {
-    [_gaussianFilters removeObjectsInRange:(NSRange){[blurRadii count], [_gaussianFilters count] - [blurRadii count]} ];
+    [_gaussianFilters removeObjectsInRange:(NSRange){[blurRadii count],
+                                                     [_gaussianFilters count] - [blurRadii count]}];
   }
-  
+
   for (int i = 0; i < (int)[blurRadii count]; i++) {
     if (i >= (int)[_gaussianFilters count]) {
       [_gaussianFilters addObject:[gaussianFilter copy]];
-    }
-    else if ([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i]) continue;
+    } else if ([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i])
+      continue;
 
     [_gaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
   }
-  
+
   self.layer.filters = _gaussianFilters;
 }
 
