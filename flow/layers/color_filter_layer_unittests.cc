@@ -104,14 +104,14 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
     expected_builder.setColorFilter(dl_color_filter.get());
     expected_builder.saveLayer(&child_bounds, true);
     {
-        /* MockLayer::Paint() */ {
-          expected_builder.setColor(SkColors::kYellow.toSkColor());
-          expected_builder.setColorFilter(nullptr);
-          expected_builder.drawPath(child_path);
-        }
+      /* MockLayer::Paint() */ {
+        expected_builder.setColor(SkColors::kYellow.toSkColor());
+        expected_builder.setColorFilter(nullptr);
+        expected_builder.drawPath(child_path);
       }
     }
-    expected_builder.restore();
+  }
+  expected_builder.restore();
   auto expected_display_list = expected_builder.Build();
 
   layer->Paint(display_list_paint_context());
@@ -152,23 +152,23 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
     expected_builder.setColorFilter(dl_color_filter.get());
     expected_builder.saveLayer(&children_bounds, true);
     {
-        /* MockLayer::Paint() */ {
-          expected_builder.setColor(SkColors::kYellow.toSkColor());
-          expected_builder.setColorFilter(nullptr);
-          expected_builder.drawPath(child_path1);
-        }
-        /* MockLayer::Paint() */ {
-            expected_builder.setColor(SkColors::kCyan.toSkColor());
-            expected_builder.setColorFilter(nullptr);
-            expected_builder.drawPath(child_path2);
-            }
+      /* MockLayer::Paint() */ {
+        expected_builder.setColor(SkColors::kYellow.toSkColor());
+        expected_builder.setColorFilter(nullptr);
+        expected_builder.drawPath(child_path1);
+      }
+      /* MockLayer::Paint() */ {
+        expected_builder.setColor(SkColors::kCyan.toSkColor());
+        expected_builder.setColorFilter(nullptr);
+        expected_builder.drawPath(child_path2);
       }
     }
-    expected_builder.restore();
+  }
+  expected_builder.restore();
   auto expected_display_list = expected_builder.Build();
 
   layer->Paint(display_list_paint_context());
- EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
 }
 
 TEST_F(ColorFilterLayerTest, Nested) {
@@ -208,37 +208,36 @@ TEST_F(ColorFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
-
   DisplayListBuilder expected_builder;
   /* ColorFilterLayer::Paint() */ {
     expected_builder.setColorFilter(dl_color_filter1.get());
     expected_builder.saveLayer(&children_bounds, true);
     {
-        /* MockLayer::Paint() */ {
-          expected_builder.setColor(SkColors::kYellow.toSkColor());
-          expected_builder.setColorFilter(nullptr);
-          expected_builder.drawPath(child_path1);
-        }
-        /* ColorFilter::Paint() */ {
-          expected_builder.setColor(SkColors::kBlack.toSkColor());
-          expected_builder.setColorFilter(dl_color_filter2.get());
-          expected_builder.saveLayer(&child_path2.getBounds(), true);
+      /* MockLayer::Paint() */ {
+        expected_builder.setColor(SkColors::kYellow.toSkColor());
+        expected_builder.setColorFilter(nullptr);
+        expected_builder.drawPath(child_path1);
+      }
+      /* ColorFilter::Paint() */ {
+        expected_builder.setColor(SkColors::kBlack.toSkColor());
+        expected_builder.setColorFilter(dl_color_filter2.get());
+        expected_builder.saveLayer(&child_path2.getBounds(), true);
 
-           /* MockLayer::Paint() */ {
-            expected_builder.setColor(SkColors::kCyan.toSkColor());
-            expected_builder.setColorFilter(nullptr);
-            expected_builder.drawPath(child_path2);
-            }
-            expected_builder.restore();
+        /* MockLayer::Paint() */ {
+          expected_builder.setColor(SkColors::kCyan.toSkColor());
+          expected_builder.setColorFilter(nullptr);
+          expected_builder.drawPath(child_path2);
         }
+        expected_builder.restore();
       }
     }
-    expected_builder.restore();
+  }
+  expected_builder.restore();
 
-    auto expected_display_list = expected_builder.Build();
+  auto expected_display_list = expected_builder.Build();
 
-    layer1->Paint(display_list_paint_context());
-    EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
+  layer1->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
 }
 
 TEST_F(ColorFilterLayerTest, Readback) {
