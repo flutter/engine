@@ -91,8 +91,7 @@ TEST(MutatorsStack, PushOpacity) {
 
 TEST(MutatorsStack, PushBackdropFilter) {
   MutatorsStack stack;
-  std::shared_ptr<const DlImageFilter> filter =
-      std::make_shared<const DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   stack.PushBackdropFilter(filter);
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::kBackdropFilter);
@@ -154,8 +153,7 @@ TEST(MutatorsStack, Equality) {
   stack.PushClipPath(path);
   int alpha = 240;
   stack.PushOpacity(alpha);
-  std::shared_ptr<const DlImageFilter> filter =
-      std::make_shared<const DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   stack.PushBackdropFilter(filter);
 
   MutatorsStack stackOther;
@@ -169,8 +167,7 @@ TEST(MutatorsStack, Equality) {
   stackOther.PushClipPath(otherPath);
   int otherAlpha = 240;
   stackOther.PushOpacity(otherAlpha);
-  std::shared_ptr<const DlImageFilter> otherFilter =
-      std::make_shared<const DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto otherFilter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   stackOther.PushBackdropFilter(otherFilter);
 
   ASSERT_TRUE(stack == stackOther);
@@ -202,8 +199,7 @@ TEST(Mutator, Initialization) {
   Mutator mutator5 = Mutator(alpha);
   ASSERT_TRUE(mutator5.GetType() == MutatorType::kOpacity);
 
-  std::shared_ptr<const DlImageFilter> filter =
-      std::make_shared<const DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   Mutator mutator6 = Mutator(filter);
   ASSERT_TRUE(mutator6.GetType() == MutatorType::kBackdropFilter);
   ASSERT_TRUE(mutator6.GetFilter() == filter);
@@ -235,6 +231,11 @@ TEST(Mutator, CopyConstructor) {
   Mutator mutator5 = Mutator(alpha);
   Mutator copy5 = Mutator(mutator5);
   ASSERT_TRUE(mutator5 == copy5);
+
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter);
+  Mutator copy6 = Mutator(mutator6);
+  ASSERT_TRUE(mutator6 == copy6);
 }
 
 TEST(Mutator, Equality) {
@@ -264,8 +265,7 @@ TEST(Mutator, Equality) {
   Mutator otherMutator5 = Mutator(alpha);
   ASSERT_TRUE(mutator5 == otherMutator5);
 
-  std::shared_ptr<const DlImageFilter> filter =
-      std::make_shared<const DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   Mutator mutator6 = Mutator(filter);
   Mutator otherMutator6 = Mutator(filter);
   ASSERT_TRUE(mutator6 == otherMutator6);
@@ -284,6 +284,12 @@ TEST(Mutator, UnEquality) {
   Mutator mutator2 = Mutator(alpha);
   Mutator otherMutator2 = Mutator(alpha2);
   ASSERT_TRUE(mutator2 != otherMutator2);
+
+  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
+  auto filter2 = DlBlurImageFilter(10, 10, DlTileMode::kClamp);
+  Mutator mutator3 = Mutator(filter);
+  Mutator otherMutator3 = Mutator(filter2);
+  ASSERT_TRUE(mutator3 != otherMutator3);
 }
 
 }  // namespace testing
