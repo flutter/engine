@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'
     show debugDefaultTargetPlatformOverride;
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 void main() {
   // This is a hack to make Flutter think you are running on Google Fuchsia,
@@ -109,6 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headline4,
             ),
+            // SpinKitRotatingCircle(color: Colors.blue, size: 50.0),
           ],
         ),
       ),

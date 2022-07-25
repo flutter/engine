@@ -168,15 +168,15 @@ bool RunFlutter(GLFWwindow* window,
     FlutterDamage existing_damage;
 
     if (age == 0) {  // full repaint
-      existing_damage.damage = {0, 0, kInitialWindowWidth, kInitialWindowHeight};
+      existing_damage.damage = {0, 0, 0, 0};//{0, 0, kInitialWindowWidth, kInitialWindowHeight};
     } else {
       // join up to (age - 1) last rects from damage history
       --age;
       existing_damage.damage = {0, 0, 0, 0};
-      for (auto i = damage_history_.rbegin();
-           i != damage_history_.rend() && age > 0; ++i, --age) {
-        JoinFlutterRect(&(existing_damage.damage), *i);
-      }
+      // for (auto i = damage_history_.rbegin();
+      //      i != damage_history_.rend() && age > 0; ++i, --age) {
+      //   JoinFlutterRect(&(existing_damage.damage), *i);
+      // }
     }
 
     FlutterFrameBuffer fbo;
