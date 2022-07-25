@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/color_filter_layer.h"
-#include <cstddef>
+
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/flow/raster_cache_item.h"
@@ -51,7 +51,7 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   if (context.raster_cache) {
     AutoCachePaint cache_paint(context);
     if (layer_raster_cache_item_->IsCacheChildren()) {
-      cache_paint.setColorFilter(filter_->skia_object());
+      cache_paint.setColorFilter(filter_.get());
     }
     if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
       return;
@@ -66,7 +66,7 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
     PaintChildren(context);
     context.leaf_nodes_builder->restore();
   } else {
-    cache_paint.setColorFilter(filter_ ? filter_->skia_object() : nullptr);
+    cache_paint.setColorFilter(filter_.get());
     Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
         context, paint_bounds(), cache_paint.sk_paint());
     PaintChildren(context);

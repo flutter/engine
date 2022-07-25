@@ -23,6 +23,7 @@ class ColorFilterLayer : public CacheableContainerLayer {
 
  private:
   std::shared_ptr<const DlColorFilter> filter_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };
 

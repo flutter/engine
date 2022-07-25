@@ -223,13 +223,9 @@ class Layer {
       update_needs_paint();
     }
 
-    void setColorFilter(sk_sp<SkColorFilter> filter) {
-      sk_paint_.setColorFilter(filter);
-      dl_paint_.setColorFilter(DlColorFilter::From(filter));
-      update_needs_paint();
-    }
-
     void setColorFilter(const DlColorFilter* filter) {
+      if (!filter)
+        return;
       sk_paint_.setColorFilter(filter->skia_object());
       dl_paint_.setColorFilter(filter);
       update_needs_paint();

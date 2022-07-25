@@ -87,10 +87,11 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
-  auto dl_color_filter = DlColorFilter::From(
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW));
+
+  auto dl_color_filter = DlLinearToSrgbGammaColorFilter::instance;
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
-  auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
+  auto layer = std::make_shared<ColorFilterLayer>(
+      DlLinearToSrgbGammaColorFilter::instance);
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
@@ -128,9 +129,9 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto dl_color_filter = DlColorFilter::From(
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW));
-  auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
+  auto dl_color_filter = DlSrgbToLinearGammaColorFilter::instance;
+  auto layer = std::make_shared<ColorFilterLayer>(
+      DlSrgbToLinearGammaColorFilter::instance);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
@@ -181,13 +182,13 @@ TEST_F(ColorFilterLayerTest, Nested) {
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto dl_color_filter1 = DlColorFilter::From(
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW));
-  auto layer1 = std::make_shared<ColorFilterLayer>(dl_color_filter1);
+  auto dl_color_filter1 = DlSrgbToLinearGammaColorFilter::instance;
+  auto layer1 = std::make_shared<ColorFilterLayer>(
+      DlSrgbToLinearGammaColorFilter::instance);
 
-  auto dl_color_filter2 = DlColorFilter::From(
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorMAGENTA, SK_ColorBLUE));
-  auto layer2 = std::make_shared<ColorFilterLayer>(dl_color_filter2);
+  auto dl_color_filter2 = DlSrgbToLinearGammaColorFilter::instance;
+  auto layer2 = std::make_shared<ColorFilterLayer>(
+      DlSrgbToLinearGammaColorFilter::instance);
   layer2->Add(mock_layer2);
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
@@ -241,7 +242,6 @@ TEST_F(ColorFilterLayerTest, Nested) {
 }
 
 TEST_F(ColorFilterLayerTest, Readback) {
-  auto layer_filter = SkColorFilters::LinearToSRGBGamma();
   auto initial_transform = SkMatrix();
 
   // ColorFilterLayer does not read from surface
@@ -262,15 +262,14 @@ TEST_F(ColorFilterLayerTest, Readback) {
 }
 
 TEST_F(ColorFilterLayerTest, CacheChild) {
-  auto layer_filter =
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW);
+  auto layer_filter = DlSrgbToLinearGammaColorFilter::instance;
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   SkPaint paint = SkPaint();
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto layer =
-      std::make_shared<ColorFilterLayer>(DlColorFilter::From(layer_filter));
+  auto layer = std::make_shared<ColorFilterLayer>(
+      DlSrgbToLinearGammaColorFilter::instance);
   layer->Add(mock_layer);
 
   SkMatrix cache_ctm = initial_transform;
@@ -304,16 +303,15 @@ TEST_F(ColorFilterLayerTest, CacheChild) {
 }
 
 TEST_F(ColorFilterLayerTest, CacheChildren) {
-  auto layer_filter =
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW);
+  auto layer_filter = DlSrgbToLinearGammaColorFilter::instance;
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
-  auto layer =
-      std::make_shared<ColorFilterLayer>(DlColorFilter::From(layer_filter));
+  auto layer = std::make_shared<ColorFilterLayer>(
+      DlSrgbToLinearGammaColorFilter::instance);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
   SkPaint paint = SkPaint();
@@ -351,16 +349,15 @@ TEST_F(ColorFilterLayerTest, CacheChildren) {
 }
 
 TEST_F(ColorFilterLayerTest, CacheColorFilterLayerSelf) {
-  auto layer_filter =
-      SkColorMatrixFilter::MakeLightingFilter(SK_ColorGREEN, SK_ColorYELLOW);
+  auto layer_filter = DlSrgbToLinearGammaColorFilter::instance;
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
-  auto layer =
-      std::make_shared<ColorFilterLayer>(DlColorFilter::From(layer_filter));
+  auto layer = std::make_shared<ColorFilterLayer>(
+      DlSrgbToLinearGammaColorFilter::instance);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
   SkPaint paint = SkPaint();
