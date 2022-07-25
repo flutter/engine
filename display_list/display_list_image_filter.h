@@ -12,6 +12,7 @@
 #include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
+#include "src/core/SkLocalMatrixImageFilter.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
@@ -34,6 +35,7 @@ enum class DlImageFilterType {
   kMatrix,
   kComposeFilter,
   kColorFilter,
+  kLocalMatrixFilter,
   kUnknown
 };
 
@@ -41,6 +43,7 @@ class DlBlurImageFilter;
 class DlDilateImageFilter;
 class DlErodeImageFilter;
 class DlMatrixImageFilter;
+class DlLocalMatrixImageFilter;
 class DlComposeImageFilter;
 class DlColorFilterImageFilter;
 
@@ -81,6 +84,10 @@ class DlImageFilter
   // Return a DlMatrixImageFilter pointer to this object iff it is a Matrix
   // type of ImageFilter, otherwise return nullptr.
   virtual const DlMatrixImageFilter* asMatrix() const { return nullptr; }
+
+  virtual const DlLocalMatrixImageFilter* asLocalMatrix() const {
+    return nullptr;
+  }
 
   // Return a DlComposeImageFilter pointer to this object iff it is a Compose
   // type of ImageFilter, otherwise return nullptr.
@@ -615,6 +622,70 @@ class DlColorFilterImageFilter final : public DlImageFilter {
 
  private:
   std::shared_ptr<DlColorFilter> color_filter_;
+};
+
+class DlLocalMatrixImageFilter final : public DlImageFilter {
+ public:
+  explicit DlLocalMatrixImageFilter(const SkMatrix& matrix,
+                                    std::shared_ptr<DlImageFilter> filter)
+      : matrix_(matrix), image_filter_(filter) {}
+  explicit DlLocalMatrixImageFilter(const DlLocalMatrixImageFilter* filter)
+      : DlLocalMatrixImageFilter(filter->matrix_, filter->image_filter_) {}
+  DlLocalMatrixImageFilter(const DlLocalMatrixImageFilter& filter)
+      : DlLocalMatrixImageFilter(&filter) {}
+
+  std::shared_ptr<DlImageFilter> shared() const override {
+    return std::make_shared<DlLocalMatrixImageFilter>(this);
+  }
+
+  DlImageFilterType type() const override {
+    return DlImageFilterType::kLocalMatrixFilter;
+  }
+  size_t size() const override { return sizeof(*this); }
+
+  const SkMatrix& matrix() const { return matrix_; }
+
+  const DlLocalMatrixImageFilter* asLocalMatrix() const override {
+    return this;
+  }
+
+  bool modifies_transparent_black() const override { return false; }
+
+  SkRect* map_local_bounds(const SkRect& input_bounds,
+                           SkRect& output_bounds) const override {
+    output_bounds = matrix_.mapRect(input_bounds);
+    return &output_bounds;
+  }
+
+  SkIRect* map_device_bounds(const SkIRect& input_bounds,
+                             const SkMatrix& ctm,
+                             SkIRect& output_bounds) const override {
+    return image_filter_->map_device_bounds(
+        input_bounds, SkMatrix::Concat(ctm, matrix_), output_bounds);
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    return image_filter_->get_input_device_bounds(
+        output_bounds, SkMatrix::Concat(ctm, matrix_), input_bounds);
+  }
+
+  sk_sp<SkImageFilter> skia_object() const override {
+    return SkLocalMatrixImageFilter::Make(matrix_,
+                                          image_filter_->skia_object());
+  }
+
+ protected:
+  bool equals_(const DlImageFilter& other) const override {
+    FML_DCHECK(other.type() == DlImageFilterType::kMatrix);
+    auto that = static_cast<const DlLocalMatrixImageFilter*>(&other);
+    return (matrix_ == that->matrix_ && image_filter_ == that->image_filter_);
+  }
+
+ private:
+  SkMatrix matrix_;
+  std::shared_ptr<DlImageFilter> image_filter_;
 };
 
 // A wrapper class for a Skia ImageFilter of unknown type. The above 4 types
