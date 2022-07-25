@@ -35,6 +35,10 @@
 
 - (void)await;
 
+- (void)preventVsyncPause;
+
+- (void)recoverVsyncPause;
+
 - (void)invalidate;
 
 - (double)getRefreshRate;
@@ -51,6 +55,10 @@ class VsyncWaiterIOS final : public VsyncWaiter, public VariableRefreshRateRepor
 
   // |VariableRefreshRateReporter|
   double GetRefreshRate() const override;
+
+  void PreventVsyncPause();
+
+  void RecoverVsyncPause();
 
  private:
   fml::scoped_nsobject<VSyncClient> client_;

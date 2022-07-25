@@ -26,6 +26,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
@@ -1116,24 +1117,46 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self preventVsyncPause];
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr event:event];
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self preventVsyncPause];
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr event:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self recoverVsyncPause];
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr event:event];
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self recoverVsyncPause];
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr event:event];
 }
 
 - (void)forceTouchesCancelled:(NSSet*)touches {
+  [self recoverVsyncPause];
   flutter::PointerData::Change cancel = flutter::PointerData::Change::kCancel;
   [self dispatchTouches:touches pointerDataChangeOverride:&cancel event:nullptr];
+}
+
+#pragma mark - Handle vsync pause when touching
+
+- (std::shared_ptr<flutter::VsyncWaiterIOS>)vsyncWaiter {
+  flutter::Shell& shell = [_engine.get() shell];
+  auto vsync_waiter = std::shared_ptr<flutter::VsyncWaiter>(shell.GetVsyncWaiter());
+  auto vsync_waiter_ios = std::static_pointer_cast<flutter::VsyncWaiterIOS>(vsync_waiter);
+  return vsync_waiter_ios;
+}
+
+- (void)preventVsyncPause {
+  [self vsyncWaiter]->PreventVsyncPause();
+}
+
+- (void)recoverVsyncPause {
+  [self vsyncWaiter]->RecoverVsyncPause();
 }
 
 #pragma mark - Handle view resizing
