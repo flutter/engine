@@ -93,6 +93,7 @@ struct GLProc {
   PROC(BindTexture);                         \
   PROC(BlendEquationSeparate);               \
   PROC(BlendFuncSeparate);                   \
+  PROC(BlitFramebuffer);                     \
   PROC(BufferData);                          \
   PROC(CheckFramebufferStatus);              \
   PROC(Clear);                               \
@@ -123,6 +124,7 @@ struct GLProc {
   PROC(FramebufferTexture2D);                \
   PROC(FrontFace);                           \
   PROC(GenBuffers);                          \
+  PROC(GenerateMipmap);                      \
   PROC(GenFramebuffers);                     \
   PROC(GenRenderbuffers);                    \
   PROC(GenTextures);                         \

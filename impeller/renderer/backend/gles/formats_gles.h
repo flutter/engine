@@ -4,6 +4,7 @@
 
 #include <optional>
 
+#include "GLES2/gl2ext.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/gles/gles.h"
@@ -159,6 +160,18 @@ constexpr std::optional<GLenum> ToVertexAttribType(ShaderType type) {
     case ShaderType::kSampledImage:
     case ShaderType::kSampler:
       return std::nullopt;
+  }
+  FML_UNREACHABLE();
+}
+
+constexpr GLenum ToTextureType(TextureType type) {
+  switch (type) {
+    case TextureType::kTexture2D:
+      return GL_TEXTURE_2D;
+    case TextureType::kTexture2DMultisample:
+      return GL_TEXTURE_2D_MULTISAMPLE;
+    case TextureType::kTextureCube:
+      return GL_TEXTURE_CUBE_MAP;
   }
   FML_UNREACHABLE();
 }

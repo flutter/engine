@@ -12,6 +12,7 @@
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -372,6 +373,32 @@ bool TextureGLES::Bind() const {
       break;
   }
   InitializeContentsIfNecessary();
+  return true;
+}
+
+bool TextureGLES::GenerateMipmaps() const {
+  if (!IsValid()) {
+    return false;
+  }
+
+  auto type = GetTextureDescriptor().type;
+  if (type != TextureType::kTexture2D && type != TextureType::kTextureCube) {
+    VALIDATION_LOG << "Could not generate mipmaps for texture type. Only "
+                      "Texture2D and TextureCube are supported for GLES.";
+    return false;
+  }
+
+  if (!Bind()) {
+    return false;
+  }
+
+  auto handle = reactor_->GetGLHandle(handle_);
+  if (!handle.has_value()) {
+    return false;
+  }
+
+  const auto& gl = reactor_->GetProcTable();
+  gl.GenerateMipmap(ToTextureType(type));
   return true;
 }
 
