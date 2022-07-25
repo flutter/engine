@@ -2151,10 +2151,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)startLiveTextInput {
-  if (_activeView == nil || !_activeView.isFirstResponder) {
-    return;
-  }
   if (@available(iOS 15.0, *)) {
+    if (_activeView == nil || !_activeView.isFirstResponder) {
+      return;
+    }
     [_activeView captureTextFromCamera:nil];
   }
 }
