@@ -96,7 +96,7 @@ void ResetAnchor(CALayer* layer) {
   if (![[gaussianFilter valueForKey:@"inputRadius"]
           isKindOfClass:[NSNumber class]]) {  // TODO EMILY: is there another way to check that
                                               // inputRadius key is valid? -> DOCUMENT ATTEMPTS
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to access the Gaussian blur filter's properties.";
+    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation access the Gaussian blur filter's properties.";
     return nil;
   }
 
