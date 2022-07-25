@@ -20,17 +20,18 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto* prev = static_cast<const ImageFilterLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     FML_DCHECK(prev);
-    if (NotEquals(filter_,  prev->filter_)) {
+    if (NotEquals(filter_, prev->filter_)) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
 
   if (filter_) {
-    auto filter = filter_->skia_object()->makeWithLocalMatrix(context->GetTransform());
+    auto filter =
+        filter_->skia_object()->makeWithLocalMatrix(context->GetTransform());
     if (filter) {
       // This transform will be applied to every child rect in the subtree
       context->PushFilterBoundsAdjustment([filter](SkRect rect) {
-         return SkRect::Make(
+        return SkRect::Make(
             filter->filterBounds(rect.roundOut(), SkMatrix::I(),
                                  SkImageFilter::kForward_MapDirection));
       });
@@ -63,7 +64,8 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
   const SkIRect filter_target_bounds = child_bounds.roundOut();
   SkIRect filter_input_bounds;
-  filter_->map_device_bounds(filter_target_bounds, SkMatrix::I(), filter_input_bounds);
+  filter_->map_device_bounds(filter_target_bounds, SkMatrix::I(),
+                             filter_input_bounds);
   child_bounds = SkRect::Make(filter_input_bounds);
 
   set_paint_bounds(child_bounds);
@@ -94,7 +96,8 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
 
   if (context.leaf_nodes_builder) {
     cache_paint.setImageFilter(filter_.get());
-    context.leaf_nodes_builder->saveLayer(&child_paint_bounds(), cache_paint.dl_paint());
+    context.leaf_nodes_builder->saveLayer(&child_paint_bounds(),
+                                          cache_paint.dl_paint());
     PaintChildren(context);
     context.leaf_nodes_builder->restore();
   } else {

@@ -77,7 +77,8 @@ class DlImageFilter
   }
 
   std::shared_ptr<DlImageFilter> makeWithLocalMatrix(const SkMatrix&) const {
-    // TODO(Jsoulaing): if need implement this method which used for ImageFilterLayer
+    // TODO(Jsoulaing): if need implement this method which used for
+    // ImageFilterLayer
     return nullptr;
   }
 
