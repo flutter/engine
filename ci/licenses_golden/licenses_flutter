@@ -100,6 +100,8 @@ FILE: ../../../flutter/display_list/display_list_paint_unittests.cc
 FILE: ../../../flutter/display_list/display_list_path_effect.cc
 FILE: ../../../flutter/display_list/display_list_path_effect.h
 FILE: ../../../flutter/display_list/display_list_path_effect_unittests.cc
+FILE: ../../../flutter/display_list/display_list_rtree.cc
+FILE: ../../../flutter/display_list/display_list_rtree.h
 FILE: ../../../flutter/display_list/display_list_sampling_options.h
 FILE: ../../../flutter/display_list/display_list_test_utils.cc
 FILE: ../../../flutter/display_list/display_list_test_utils.h
@@ -881,12 +883,6 @@ FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
 FILE: ../../../flutter/lib/snapshot/snapshot.h
-FILE: ../../../flutter/lib/spirv/lib/spirv.dart
-FILE: ../../../flutter/lib/spirv/lib/src/constants.dart
-FILE: ../../../flutter/lib/spirv/lib/src/function.dart
-FILE: ../../../flutter/lib/spirv/lib/src/instructions.dart
-FILE: ../../../flutter/lib/spirv/lib/src/transpiler.dart
-FILE: ../../../flutter/lib/spirv/lib/src/types.dart
 FILE: ../../../flutter/lib/ui/annotations.dart
 FILE: ../../../flutter/lib/ui/channel_buffers.dart
 FILE: ../../../flutter/lib/ui/compositing.dart

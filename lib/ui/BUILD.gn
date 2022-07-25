@@ -148,6 +148,7 @@ source_set("ui") {
     "//flutter/common",
     "//flutter/display_list",
     "//flutter/fml",
+    "//flutter/impeller/runtime_stage",
     "//flutter/runtime:dart_plugin_registrant",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",
@@ -182,6 +183,7 @@ source_set("ui") {
 
 if (enable_unittests) {
   test_fixtures("ui_unittests_fixtures") {
+    deps = [ "fixtures/shaders" ]
     dart_main = "fixtures/ui_test.dart"
     fixtures = [
       "fixtures/DashInNooglerHat.jpg",

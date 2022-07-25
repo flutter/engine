@@ -4032,85 +4032,75 @@ class ImageShader extends Shader {
 /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/main/lib/spirv/README.md)
 ///
 class FragmentProgram extends NativeFieldWrapperClass1 {
+  // TODO(zra): Document custom shaders on the website and add a link to it
+  // here. https://github.com/flutter/flutter/issues/107929.
+  /// Creates a fragment program from the asset with key [assetKey].
+  ///
+  /// The asset must be a file produced as the output of the `impellerc`
+  /// compiler. The constructed object should then be reused via the [shader]
+  /// method to create [Shader] objects that can be used by [Shader.paint].
+  static FragmentProgram fromAsset(String assetKey) {
+    FragmentProgram? program = _shaderRegistry[assetKey]?.target;
+    if (program == null) {
+      program = FragmentProgram._fromAsset(assetKey);
+      _shaderRegistry[assetKey] = WeakReference<FragmentProgram>(program);
+    }
 
-  /// Creates a fragment program from SPIR-V byte data as an input.
-  ///
-  /// One instance should be created per SPIR-V input. The constructed object
-  /// should then be reused via the [shader] method to create [Shader] objects
-  /// that can be used by [Shader.paint].
-  ///
-  /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
-  /// SPIR-V not meeting this specification will throw an exception.
-  static Future<FragmentProgram> compile({
-    ByteBuffer? spirv,
-    ByteBuffer? raw,
-    int? uniformFloatCount,
-    int? samplerCount,
-    bool debugPrint = false,
-  }) {
-    final bool spirvNull = spirv == null;
-    final bool rawNull = raw == null;
-    if (spirvNull && rawNull) {
-      throw ArgumentError(
-        'FragmentProgram.compile must be passed either the "spirv" or the '
-        '"raw" argument.',
-      );
-    }
-    if (!spirvNull && !rawNull) {
-      throw ArgumentError(
-        'FragmentProgram.compile must be passed only one of the "spirv" or the '
-        '"raw" arguments.',
-      );
-    }
-    if (!rawNull && uniformFloatCount == null && samplerCount == null) {
-      throw ArgumentError(
-        'FragmentProgram.compile requires the "uniformFloatCount" or the '
-        '"samplerCount" argument when passing the "raw" argument.',
-      );
-    }
-    // Delay compilation without creating a timer, which interacts poorly with the
-    // flutter test framework. See: https://github.com/flutter/flutter/issues/104084
-    return Future<FragmentProgram>.microtask(() => FragmentProgram._(
-      spirv: spirv,
-      raw: raw,
-      uniformFloatCount: uniformFloatCount ?? 0,
-      samplerCount: samplerCount ?? 0,
-      debugPrint: debugPrint,
-    ));
+    return program;
+  }
+
+  static Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
+      <String, WeakReference<FragmentProgram>>{};
+
+  FragmentProgram._() {
+    assert(
+      false,
+      'FragmentProgram should only be initialized via "fromAsset".',
+    );
   }
 
   @pragma('vm:entry-point')
-  FragmentProgram._({
-    ByteBuffer? spirv,
-    ByteBuffer? raw,
-    required int uniformFloatCount,
-    required int samplerCount,
-    bool debugPrint = false,
-  }) {
+  FragmentProgram._fromAsset(String assetKey) {
     _constructor();
-    if (raw == null) {
-      final spv.TranspileResult result = spv.transpile(
-        spirv!,
-        spv.TargetLanguage.sksl,
-      );
-      _init(result.src, debugPrint);
-      _uniformFloatCount = result.uniformFloatCount;
-      _samplerCount = result.samplerCount;
-    } else {
-      _init(utf8.decode(raw.asUint8List()), debugPrint);
-      _uniformFloatCount = uniformFloatCount;
-      _samplerCount = samplerCount;
+    final String result = _initFromAsset(assetKey);
+    if (result.isNotEmpty) {
+      throw result;
     }
   }
 
-  late final int _uniformFloatCount;
-  late final int _samplerCount;
+  static void _reinitializeShader(String assetKey) {
+    // If a shader for the assent isn't already registered, then there's no
+    // need to reinitialize it. The new shader will be loaded and initialized
+    // the next time the program access it.
+    final WeakReference<FragmentProgram>? programRef = _shaderRegistry == null
+      ? null
+      : _shaderRegistry[assetKey];
+    if (programRef == null) {
+      return;
+    }
+
+    final FragmentProgram? program = programRef.target;
+    if (program == null) {
+      return;
+    }
+
+    final result = program._initFromAsset(assetKey);
+    if (result.isNotEmpty) {
+      throw result;
+    }
+  }
+
+  @pragma('vm:entry-point')
+  late int _uniformFloatCount;
+
+  @pragma('vm:entry-point')
+  late int _samplerCount;
 
   @FfiNative<Void Function(Handle)>('FragmentProgram::Create')
   external void _constructor();
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>('FragmentProgram::init')
-  external void _init(String sksl, bool debugPrint);
+  @FfiNative<Handle Function(Pointer<Void>, Handle)>('FragmentProgram::initFromAsset')
+  external String _initFromAsset(String assetKey);
 
   /// Constructs a [Shader] object suitable for use by [Paint.shader] with
   /// the given uniforms.
