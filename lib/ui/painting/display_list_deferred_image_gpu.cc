@@ -6,14 +6,27 @@
 
 namespace flutter {
 
-sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::Make(SkISize size) {
-  return sk_sp<DlDeferredImageGPU>(new DlDeferredImageGPU(size));
+sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::Make(
+    SkISize size,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner) {
+  return sk_sp<DlDeferredImageGPU>(
+      new DlDeferredImageGPU(size, std::move(raster_task_runner)));
 }
 
-DlDeferredImageGPU::DlDeferredImageGPU(SkISize size) : size_(size) {}
+DlDeferredImageGPU::DlDeferredImageGPU(
+    SkISize size,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner)
+    : size_(size), raster_task_runner_(std::move(raster_task_runner)) {}
 
 // |DlImage|
-DlDeferredImageGPU::~DlDeferredImageGPU() = default;
+DlDeferredImageGPU::~DlDeferredImageGPU() {
+  fml::TaskRunner::RunNowOrPostTask(
+      raster_task_runner_, [image = std::move(image_)]() {
+        FML_LOG(ERROR) << "Here "
+                       << (image ? std::to_string(image->unique()) : "no refs");
+        FML_CHECK(!image || image->unique());
+      });
+}
 
 // |DlImage|
 sk_sp<SkImage> DlDeferredImageGPU::skia_image() const {

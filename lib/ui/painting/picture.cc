@@ -64,7 +64,8 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
 
   auto image = CanvasImage::Create();
-  auto dl_image = DlDeferredImageGPU::Make(SkISize::Make(width, height));
+  auto dl_image = DlDeferredImageGPU::Make(SkISize::Make(width, height),
+                                           raster_task_runner);
   image->set_image(dl_image);
 
   fml::TaskRunner::RunNowOrPostTask(

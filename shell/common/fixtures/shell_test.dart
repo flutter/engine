@@ -342,5 +342,13 @@ Future<void> toImageSync() async {
   final ByteData data = (await image.toByteData())!;
   expect(data.lengthInBytes, 20 * 25 * 4);
   expect(data.buffer.asUint32List().every((int byte) => byte == 0xFFAAAAAA), true);
+
+  final PictureRecorder recorder2 = PictureRecorder();
+  final Canvas canvas2 = Canvas(recorder2);
+  canvas2.drawImage(image, Offset.zero, Paint());
+  final Picture picture2 = recorder2.endRecording();
+
+  picture.dispose();
+  picture2.dispose();
   notifyNative();
 }

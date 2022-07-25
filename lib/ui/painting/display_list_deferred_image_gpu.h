@@ -15,7 +15,9 @@ namespace flutter {
 
 class DlDeferredImageGPU final : public DlImage {
  public:
-  static sk_sp<DlDeferredImageGPU> Make(SkISize size);
+  static sk_sp<DlDeferredImageGPU> Make(
+      SkISize size,
+      fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
   // |DlImage|
   ~DlDeferredImageGPU() override;
@@ -52,12 +54,22 @@ class DlDeferredImageGPU final : public DlImage {
   }
 
  private:
-  sk_sp<SkImage> image_;
+  void internal_dispose() const override {
+#ifdef SK_DEBUG
+    SkASSERT(0 == this->getRefCnt());
+    fRefCnt.store(1, std::memory_order_relaxed);
+#endif
+    delete this;
+  }
+
   SkISize size_;
+  fml::RefPtr<fml::TaskRunner> raster_task_runner_;
+  sk_sp<SkImage> image_;
   mutable std::mutex error_mutex_;
   std::optional<std::string> error_;
 
-  explicit DlDeferredImageGPU(SkISize size);
+  DlDeferredImageGPU(SkISize size,
+                     fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DlDeferredImageGPU);
 };
