@@ -24,8 +24,8 @@ bool AndroidSurfaceMock::GLContextPresent(const GLPresentInfo& present_info) {
 }
 
 GLFBOInfo AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
-  return GLFBOInfo {
-    .fbo_id = 0,
+  return GLFBOInfo{
+      .fbo_id = 0,
   };
 }
 
