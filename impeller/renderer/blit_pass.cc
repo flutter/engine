@@ -57,8 +57,8 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
   return true;
 }
 
-bool BlitPass::GenerateMipmaps(std::shared_ptr<Texture> texture,
-                               std::string label) {
+bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,
+                              std::string label) {
   if (!texture) {
     VALIDATION_LOG << "Attempted to add an invalid mipmap generation command "
                       "with no texture.";

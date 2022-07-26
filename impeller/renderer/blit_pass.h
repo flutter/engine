@@ -66,8 +66,7 @@ class BlitPass {
   ///
   /// @return     If the command was valid for subsequent commitment.
   ///
-  bool GenerateMipmaps(std::shared_ptr<Texture> texture,
-                       std::string label = "");
+  bool GenerateMipmap(std::shared_ptr<Texture> texture, std::string label = "");
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.

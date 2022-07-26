@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <optional>
 #include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
@@ -524,15 +523,14 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     if (first_frame) {
-      first_frame = false;
       ImGui::SetNextWindowSize({400, 80});
       ImGui::SetNextWindowPos({20, 20});
     }
 
-    static int lod = 0;
+    static int lod = 4;
 
     ImGui::Begin("Controls");
-    ImGui::SliderInt("LOD", &lod, 0, boston->GetSize().MipCount());
+    ImGui::SliderInt("LOD", &lod, 0, boston->GetMipCount() - 1);
     ImGui::End();
 
     auto buffer = context->CreateRenderCommandBuffer();
@@ -548,10 +546,12 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       }
       pass->SetLabel("Playground Blit Pass");
 
-      pass->GenerateMipmaps(boston, "Boston Mipmaps");
+      pass->GenerateMipmap(boston, "Boston Mipmap");
 
       pass->EncodeCommands(context->GetTransientsAllocator());
     }
+
+    first_frame = false;
 
     {
       auto pass = buffer->CreateRenderPass(render_target);
