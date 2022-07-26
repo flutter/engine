@@ -16,7 +16,7 @@ def main():
   )
 
   parser.add_argument('--dst', type=str, required=True)
-  parser.add_argument('--clang-dir', type=str, required=True)
+  parser.add_argument('--clang-dir', type=str, default='clang_x64')
   parser.add_argument('--x64-out-dir', type=str)
   parser.add_argument('--arm64-out-dir', type=str)
   parser.add_argument('--armv7-out-dir', type=str)
