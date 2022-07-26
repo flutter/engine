@@ -2,13 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
 #include "flutter/display_list/display_list_attributes_testing.h"
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_color.h"
+#include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/display_list/display_list_sampling_options.h"
+#include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "gtest/gtest.h"
+#include "include/core/SkColorFilter.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkSamplingOptions.h"
 
 namespace flutter {
 namespace testing {
@@ -757,6 +766,23 @@ TEST(DisplayListImageFilter, UnknownContents) {
 
   ASSERT_EQ(filter.skia_object(), sk_filter);
   ASSERT_EQ(filter.skia_object().get(), sk_filter.get());
+}
+
+TEST(DisplayListImageFilter, LocalImageFilterBounds) {
+  auto blur_filter =
+      SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr);
+  auto local_filter = blur_filter->makeWithLocalMatrix(SkMatrix::Scale(2, 2));
+  auto inputBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
+  auto rect = local_filter->filterBounds(
+      inputBounds, SkMatrix::I(),
+      SkImageFilter::MapDirection::kForward_MapDirection);
+  auto dl_color_filter =
+      std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat);
+  auto local_matrix_filter =
+      DlLocalMatrixImageFilter(SkMatrix::Scale(2, 2), dl_color_filter);
+  SkIRect out_bounds;
+  local_matrix_filter.map_device_bounds(inputBounds, SkMatrix::I(), out_bounds);
+  ASSERT_EQ(out_bounds, rect);
 }
 
 TEST(DisplayListImageFilter, UnknownEquals) {
