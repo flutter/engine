@@ -390,6 +390,9 @@ FILE: ../../../flutter/fml/thread.h
 FILE: ../../../flutter/fml/thread_local.cc
 FILE: ../../../flutter/fml/thread_local.h
 FILE: ../../../flutter/fml/thread_local_unittests.cc
+FILE: ../../../flutter/fml/thread_pool.cc
+FILE: ../../../flutter/fml/thread_pool.h
+FILE: ../../../flutter/fml/thread_pool_unittests.cc
 FILE: ../../../flutter/fml/thread_unittests.cc
 FILE: ../../../flutter/fml/time/chrono_timestamp_provider.cc
 FILE: ../../../flutter/fml/time/chrono_timestamp_provider.h
