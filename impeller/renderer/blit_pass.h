@@ -35,7 +35,9 @@ class BlitPass {
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command to copy the contents of one texture to
-  ///             another texture.
+  ///             another texture. The blit area is limited by the intersection
+  ///             of the texture coverage with respect the source region and
+  ///             destination origin.
   ///             No work is encoded into the command buffer at this time.
   ///
   /// @param[in]  source              The texture to read for copying.

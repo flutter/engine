@@ -445,9 +445,29 @@ TEST_P(RendererTest, CanRenderInstanced) {
 }
 #endif  // IMPELLER_ENABLE_METAL
 
-TEST_P(RendererTest, CanBlit) {
+TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto context = GetContext();
   ASSERT_TRUE(context);
+
+  using VS = MipmapsVertexShader;
+  using FS = MipmapsFragmentShader;
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto mipmaps_pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+  ASSERT_TRUE(mipmaps_pipeline);
+
+  TextureDescriptor texture_desc;
+  texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_desc.size = {800, 600};
+  texture_desc.mip_count = 1u;
+  texture_desc.usage =
+      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
+      static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
+  auto texture = context->GetPermanentsAllocator()->CreateTexture(
+      StorageMode::kHostVisible, texture_desc);
+  ASSERT_TRUE(texture);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
@@ -455,29 +475,78 @@ TEST_P(RendererTest, CanBlit) {
   auto sampler = context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
-  Renderer::RenderCallback callback = [context = GetContext(),
-                                       &bridge](RenderTarget& render_target) {
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  auto size = Point(boston->GetSize());
+  vertex_builder.AddVertices({
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, 0}, {1.0, 0.0}},       // 2
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, size.y}, {0.0, 1.0}},       // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetTransientsAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     auto buffer = context->CreateRenderCommandBuffer();
     if (!buffer) {
       return false;
     }
     buffer->SetLabel("Playground Command Buffer");
 
-    auto pass = buffer->CreateBlitPass();
-    if (!pass) {
-      return false;
+    {
+      auto pass = buffer->CreateBlitPass();
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Blit Pass");
+
+      if (render_target.GetColorAttachments().empty()) {
+        return false;
+      }
+
+      // Blit `bridge` to the top left corner of the texture.
+      pass->AddCopy(bridge, texture);
+
+      pass->EncodeCommands(context->GetTransientsAllocator());
     }
-    pass->SetLabel("Playground Blit Pass");
 
-    if (render_target.GetColorAttachments().empty()) {
-      return false;
+    {
+      auto pass = buffer->CreateRenderPass(render_target);
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Render Pass");
+      {
+        Command cmd;
+        cmd.label = "Image";
+        cmd.pipeline = mipmaps_pipeline;
+
+        cmd.BindVertices(vertex_buffer);
+
+        VS::VertInfo vert_info;
+        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                        Matrix::MakeScale(GetContentScale());
+        VS::BindVertInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+
+        FS::FragInfo frag_info;
+        frag_info.lod = 0;
+        FS::BindFragInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
+
+        auto sampler = context->GetSamplerLibrary()->GetSampler({});
+        FS::BindTex(cmd, texture, sampler);
+
+        pass->AddCommand(std::move(cmd));
+      }
+      pass->EncodeCommands(context->GetTransientsAllocator());
     }
-    auto color0 = render_target.GetColorAttachments().find(0)->second;
 
-    // Blit `bridge` to the top left corner of the on-screen texture.
-    pass->AddCopy(bridge, color0.texture);
-
-    pass->EncodeCommands(context->GetTransientsAllocator());
     if (!buffer->SubmitCommands()) {
       return false;
     }
@@ -569,7 +638,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       if (!pass) {
         return false;
       }
-      pass->SetLabel("Playground Blit Pass");
+      pass->SetLabel("Playground Render Pass");
       {
         Command cmd;
         cmd.label = "Image LOD";

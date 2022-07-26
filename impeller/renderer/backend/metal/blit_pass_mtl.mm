@@ -85,7 +85,7 @@ bool BlitPassMTL::EncodeCommands(id<MTLBlitCommandEncoder> encoder) const {
       }
 
       auto destination =
-          TextureMTL::Cast(*copy_command->source).GetMTLTexture();
+          TextureMTL::Cast(*copy_command->destination).GetMTLTexture();
       if (!destination) {
         return false;
       }

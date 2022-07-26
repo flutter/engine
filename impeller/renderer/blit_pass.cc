@@ -34,12 +34,39 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
                        IPoint destination_origin,
                        std::string label) {
   if (!source) {
-    VALIDATION_LOG << "Attempted to add an invalid copy with no source.";
+    VALIDATION_LOG << "Attempted to add a texture blit with no source.";
     return false;
   }
   if (!destination) {
-    VALIDATION_LOG << "Attempted to add an invalid copy with no destination.";
+    VALIDATION_LOG << "Attempted to add a texture blit with no destination.";
     return false;
+  }
+
+  if (source->GetTextureDescriptor().sample_count !=
+      destination->GetTextureDescriptor().sample_count) {
+    VALIDATION_LOG << SPrintF(
+        "The source sample count (%d) must match the destination sample count "
+        "(%d) for blits.",
+        source->GetTextureDescriptor().sample_count,
+        destination->GetTextureDescriptor().sample_count);
+  }
+
+  if (!source_region.has_value()) {
+    source_region = IRect::MakeSize(source->GetSize());
+  }
+
+  // Clip the source image.
+  source_region =
+      source_region->Intersection(IRect::MakeSize(source->GetSize()));
+  if (!source_region.has_value()) {
+    return true;  // Nothing to blit.
+  }
+
+  // Clip the destination image.
+  source_region = source_region->Intersection(
+      IRect(-destination_origin, destination->GetSize()));
+  if (!source_region.has_value()) {
+    return true;  // Nothing to blit.
   }
 
   commands_.emplace_back(BlitCommand{
@@ -48,9 +75,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
           BlitCommand::CopyTextureToTexture{
               .source = source,
               .destination = destination,
-              .source_region = source_region.has_value()
-                                   ? source_region.value()
-                                   : IRect::MakeSize(source->GetSize()),
+              .source_region = source_region.value(),
               .destination_origin = destination_origin,
           },
   });
