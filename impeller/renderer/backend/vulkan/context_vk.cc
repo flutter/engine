@@ -437,7 +437,8 @@ std::shared_ptr<CommandBuffer> ContextVK::CreateRenderCommandBuffer() const {
   }
 
   vk::CommandBuffer buffer = buffers_ret.value[0];
-  return std::make_shared<CommandBufferVK>(buffer);
+  return std::make_shared<CommandBufferVK>(VULKAN_HPP_DEFAULT_DISPATCHER,
+                                           buffer);
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateTransferCommandBuffer() const {

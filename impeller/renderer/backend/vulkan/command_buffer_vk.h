@@ -12,7 +12,8 @@ namespace impeller {
 
 class CommandBufferVK final : public CommandBuffer {
  public:
-  explicit CommandBufferVK(vk::CommandBuffer buffer);
+  CommandBufferVK(VULKAN_HPP_DEFAULT_DISPATCHER_TYPE& dispatch,
+                  vk::CommandBuffer buffer);
 
   // |CommandBuffer|
   ~CommandBufferVK() override;
@@ -20,6 +21,7 @@ class CommandBufferVK final : public CommandBuffer {
  private:
   friend class ContextVK;
 
+  const VULKAN_HPP_DEFAULT_DISPATCHER_TYPE& dispatch_;
   vk::CommandBuffer buffer_;
 
   // |CommandBuffer|
