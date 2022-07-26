@@ -224,7 +224,7 @@ abstract class FormatChecker {
     );
     final List<WorkerJob> jobs = patches.map<WorkerJob>((String patch) {
       return WorkerJob(
-        <String>['patch', '-p0'],
+        <String>['git', 'apply', '--ignore-space-change'],
         stdinRaw: codeUnitsAsStream(patch.codeUnits),
         failOk: true,
       );
@@ -404,8 +404,8 @@ class ClangFormatChecker extends FormatChecker {
             'git',
             'diff',
             '--no-index',
-            '-U0',
             '--no-color',
+            '--ignore-cr-at-eol',
             '--',
             completedJob.command.last,
             '-'
@@ -441,9 +441,11 @@ class ClangFormatChecker extends FormatChecker {
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
         stdout.writeln('To fix, run:');
         stdout.writeln();
-        stdout.writeln('patch -p0 <<DONE');
+        stdout.writeln('git apply <<DONE');
         for (final WorkerJob job in failed) {
-          stdout.write(job.result.stdout);
+          stdout.write(job.result.stdout
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}'));
         }
         stdout.writeln('DONE');
         stdout.writeln();
@@ -452,7 +454,9 @@ class ClangFormatChecker extends FormatChecker {
       message('Completed checking ${diffJobs.length} C++/ObjC files with no formatting problems.');
     }
     return failed.map<String>((WorkerJob job) {
-      return job.result.stdout;
+      return job.result.stdout
+          .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
+          .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}');
     }).toList();
   }
 }
@@ -567,8 +571,8 @@ class JavaFormatChecker extends FormatChecker {
               'git',
               'diff',
               '--no-index',
-              '-U0',
               '--no-color',
+              '--ignore-cr-at-eol',
               '--',
               completedJob.command.last,
               '-'
@@ -605,9 +609,11 @@ class JavaFormatChecker extends FormatChecker {
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
         stdout.writeln('To fix, run:');
         stdout.writeln();
-        stdout.writeln('patch -p0 <<DONE');
+        stdout.writeln('git apply <<DONE');
         for (final WorkerJob job in failed) {
-          stdout.write(job.result.stdout);
+          stdout.write(job.result.stdout
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}'));
         }
         stdout.writeln('DONE');
         stdout.writeln();
@@ -616,7 +622,9 @@ class JavaFormatChecker extends FormatChecker {
       message('Completed checking ${diffJobs.length} Java files with no formatting problems.');
     }
     return failed.map<String>((WorkerJob job) {
-      return job.result.stdout;
+      return job.result.stdout
+          .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
+          .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}');
     }).toList();
   }
 }
@@ -700,8 +708,8 @@ class GnFormatChecker extends FormatChecker {
               'git',
               'diff',
               '--no-index',
-              '-U0',
               '--no-color',
+              '--ignore-cr-at-eol',
               '--',
               completedJob.name.split(' ').last,
               '-'
@@ -738,9 +746,11 @@ class GnFormatChecker extends FormatChecker {
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
         stdout.writeln('To fix, run:');
         stdout.writeln();
-        stdout.writeln('patch -p0 <<DONE');
+        stdout.writeln('git apply <<DONE');
         for (final WorkerJob job in failed) {
-          stdout.write(job.result.output);
+          stdout.write(job.result.stdout
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}'));
         }
         stdout.writeln('DONE');
         stdout.writeln();
