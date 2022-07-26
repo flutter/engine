@@ -73,8 +73,6 @@ bool ShellTestPlatformViewGL::GLContextPresent(
 GLFBOInfo ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
   return GLFBOInfo{
       .fbo_id = gl_surface_.GetFramebuffer(frame_info.width, frame_info.height),
-      .partial_repaint_enabled = false,
-      .existing_damage = SkIRect::MakeWH(frame_info.width, frame_info.height),
   };
 }
 
