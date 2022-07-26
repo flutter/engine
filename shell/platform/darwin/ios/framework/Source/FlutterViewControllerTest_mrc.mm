@@ -11,8 +11,11 @@
 
 FLUTTER_ASSERT_NOT_ARC
 
-@interface FlutterViewController (Tests)
+@interface FlutterViewController (Testing)
+
 @property(nonatomic, retain) CADisplayLink* displayLink;
+@property(nonatomic, assign) double targetViewInsetBottom;
+
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 @end
 
@@ -32,16 +35,17 @@ FLUTTER_ASSERT_NOT_ARC
   OCMStub([bundleMock objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"])
       .andReturn(@YES);
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
-  double maxFrameRate = 120.0;
+  double maxFrameRate = 120;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
-
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
+  viewController.targetViewInsetBottom = 100;
   [viewController startKeyBoardAnimation:0.25];
   CADisplayLink* link = viewController.displayLink;
+  XCTAssertNotNil(link);
   if (@available(iOS 15.0, *)) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, maxFrameRate);
     XCTAssertEqual(link.preferredFrameRateRange.preferred, maxFrameRate);
