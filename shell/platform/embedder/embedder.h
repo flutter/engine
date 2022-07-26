@@ -433,6 +433,23 @@ typedef struct {
   FlutterSize lower_left_corner_radius;
 } FlutterRoundedRect;
 
+/// The type of damage used.
+typedef enum {
+  kFlutterSingleRectDamage = 1,
+} FlutterDamageKind;
+
+/// A structure to represent a damage region.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterDamage).
+  size_t struct_size;
+  // The type of damage used. Allows for future multi-damage modes.
+  FlutterDamageKind damage_kind;
+  // The actual damage region(s) in question.
+  union {
+    FlutterRect damage;
+  };
+} FlutterDamage;
+
 /// This information is passed to the embedder when requesting a frame buffer
 /// object.
 ///
