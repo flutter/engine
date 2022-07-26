@@ -67,6 +67,8 @@ class GPUSurfaceGLSkia : public Surface {
   sk_sp<SkSurface> onscreen_surface_;
   /// FBO backing the current `onscreen_surface_`.
   uint32_t fbo_id_ = 0;
+  /// Private variable used to keep track of the current FBO's existing damage.
+  SkIRect existing_damage_ = SkIRect::MakeEmpty();
   bool context_owner_ = false;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface. This is a
