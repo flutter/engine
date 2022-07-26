@@ -521,21 +521,26 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     if (first_frame) {
-      ImGui::SetNextWindowSize({400, 80});
-      ImGui::SetNextWindowPos({20, 20});
+      ImGui::SetNextWindowPos({10, 10});
     }
 
     const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
     const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
                                      MipFilter::kLinear};
+    const char* min_filter_names[] = {"Nearest", "Linear"};
+    const MinMagFilter min_filters[] = {MinMagFilter::kNearest,
+                                        MinMagFilter::kLinear};
 
     // UI state.
     static int selected_mip_filter = 2;
-    static float lod = 4;
+    static int selected_min_filter = 0;
+    static float lod = 4.5;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Combo("Mip filter", &selected_mip_filter, mip_filter_names,
                  sizeof(mip_filter_names) / sizeof(char*));
+    ImGui::Combo("Min filter", &selected_min_filter, min_filter_names,
+                 sizeof(min_filter_names) / sizeof(char*));
     ImGui::SliderFloat("LOD", &lod, 0, boston->GetMipCount() - 1);
     ImGui::End();
 
@@ -585,6 +590,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
         SamplerDescriptor sampler_desc;
         sampler_desc.mip_filter = mip_filters[selected_mip_filter];
+        sampler_desc.min_filter = min_filters[selected_min_filter];
         auto sampler = context->GetSamplerLibrary()->GetSampler(sampler_desc);
         FS::BindTex(cmd, boston, sampler);
 

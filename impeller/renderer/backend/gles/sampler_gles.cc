@@ -33,12 +33,12 @@ static GLint ToParam(MinMagFilter minmag_filter, MipFilter mip_filter) {
         case MinMagFilter::kNearest:
           return GL_NEAREST_MIPMAP_NEAREST;
         case MinMagFilter::kLinear:
-          return GL_NEAREST_MIPMAP_LINEAR;
+          return GL_LINEAR_MIPMAP_NEAREST;
       }
     case MipFilter::kLinear:
       switch (minmag_filter) {
         case MinMagFilter::kNearest:
-          return GL_LINEAR_MIPMAP_NEAREST;
+          return GL_NEAREST_MIPMAP_LINEAR;
         case MinMagFilter::kLinear:
           return GL_LINEAR_MIPMAP_LINEAR;
       }
@@ -74,7 +74,7 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
   gl.TexParameteri(target.value(), GL_TEXTURE_MIN_FILTER,
                    ToParam(desc.min_filter, desc.mip_filter));
   gl.TexParameteri(target.value(), GL_TEXTURE_MAG_FILTER,
-                   ToParam(desc.mag_filter, desc.mip_filter));
+                   ToParam(desc.mag_filter, MipFilter::kNone));
   gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_S,
                    ToAddressMode(desc.width_address_mode));
   gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_T,
