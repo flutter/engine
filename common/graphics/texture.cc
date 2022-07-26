@@ -19,6 +19,17 @@ void TextureRegistry::RegisterTexture(std::shared_ptr<Texture> texture) {
   mapping_[texture->Id()] = texture;
 }
 
+void TextureRegistry::RegisterGpuImage(sk_sp<DlDeferredImageGPU> image) {
+  if (!image) {
+    return;
+  }
+  auto* skia_image = image->skia_image();
+  if (!skia_image) {
+    return;
+  }
+  images_[skia_image->uniqueID()] = skia_image;
+}
+
 void TextureRegistry::UnregisterTexture(int64_t id) {
   auto found = mapping_.find(id);
   if (found == mapping_.end()) {
@@ -26,6 +37,14 @@ void TextureRegistry::UnregisterTexture(int64_t id) {
   }
   found->second->OnTextureUnregistered();
   mapping_.erase(found);
+}
+
+void TextureRegistry::UnregisterGpuImage(uint32_t id) {
+  auto found = images_.find(id);
+  if (found == images_.end()) {
+    return;
+  }
+  images_.erase(found);
 }
 
 void TextureRegistry::OnGrContextCreated() {
@@ -37,6 +56,10 @@ void TextureRegistry::OnGrContextCreated() {
 void TextureRegistry::OnGrContextDestroyed() {
   for (auto& it : mapping_) {
     it.second->OnGrContextDestroyed();
+  }
+
+  for (auto& it : images_) {
+    it.second->OnGrContextCreated();
   }
 }
 

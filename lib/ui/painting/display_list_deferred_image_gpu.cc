@@ -20,12 +20,8 @@ DlDeferredImageGPU::DlDeferredImageGPU(
 
 // |DlImage|
 DlDeferredImageGPU::~DlDeferredImageGPU() {
-  fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner_, [image = std::move(image_)]() {
-        FML_LOG(ERROR) << "Here "
-                       << (image ? std::to_string(image->unique()) : "no refs");
-        FML_CHECK(!image || image->unique());
-      });
+  fml::TaskRunner::RunNowOrPostTask(raster_task_runner_,
+                                    [image = std::move(image_)]() {});
 }
 
 // |DlImage|
@@ -78,6 +74,12 @@ void DlDeferredImageGPU::set_error(const std::string& error) {
 std::optional<std::string> DlDeferredImageGPU::get_error() const {
   std::scoped_lock lock(error_mutex_);
   return error_;
+}
+
+void DlDeferredImageGPU::OnGrContextDestroyed() {
+  fml::TaskRunner::RunNowOrPostTask(raster_task_runner_,
+                                    [image = std::move(image_)]() {});
+  set_error("context destroyed");
 }
 
 }  // namespace flutter

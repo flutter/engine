@@ -7,13 +7,15 @@
 
 #include <mutex>
 
+#include "flutter/common/graphics/texture.h"
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
 
 namespace flutter {
 
-class DlDeferredImageGPU final : public DlImage {
+class DlDeferredImageGPU final : public DlImage,
+                                 public ContextDestroyedListener {
  public:
   static sk_sp<DlDeferredImageGPU> Make(
       SkISize size,
@@ -53,15 +55,9 @@ class DlDeferredImageGPU final : public DlImage {
     return OwningContext::kRaster;
   }
 
- private:
-  void internal_dispose() const override {
-#ifdef SK_DEBUG
-    SkASSERT(0 == this->getRefCnt());
-    fRefCnt.store(1, std::memory_order_relaxed);
-#endif
-    delete this;
-  }
+  void OnGrContextDestroyed();
 
+ private:
   SkISize size_;
   fml::RefPtr<fml::TaskRunner> raster_task_runner_;
   sk_sp<SkImage> image_;
