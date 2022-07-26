@@ -6,13 +6,13 @@
 
 #include <algorithm>
 
-#include "GLES2/gl2.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
+#include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
 #include "impeller/renderer/formats.h"
 
@@ -34,6 +34,56 @@ bool BlitPassGLES::IsValid() const {
 void BlitPassGLES::OnSetLabel(std::string label) {
   label_ = std::move(label);
 }
+
+static void DeleteFBO(const ProcTableGLES& gl, GLuint fbo, GLenum type) {
+  if (fbo != GL_NONE) {
+    gl.BindFramebuffer(type, GL_NONE);
+    gl.DeleteFramebuffers(1u, &fbo);
+  }
+};
+
+static std::optional<GLuint> BindFBO(const ProcTableGLES& gl,
+                                     const std::shared_ptr<Texture>& texture,
+                                     GLenum type) {
+  auto handle = TextureGLES::Cast(texture.get())->GetGLHandle();
+  if (!handle.has_value()) {
+    return std::nullopt;
+  }
+
+  if (TextureGLES::Cast(*texture).IsWrapped()) {
+    gl.BindFramebuffer(type, 0);
+    return 0;  // The texture is attached to the default FBO.
+  }
+
+  GLuint fbo;
+  gl.GenFramebuffers(1u, &fbo);
+  gl.BindFramebuffer(type, fbo);
+  switch (TextureGLES::Cast(*texture).GetType()) {
+    case TextureGLES::Type::kTexture:
+      gl.FramebufferTexture2D(type,                  // target
+                              GL_COLOR_ATTACHMENT0,  // attachment
+                              GL_TEXTURE_2D,         // textarget
+                              handle.value(),        // texture
+                              0                      // level
+      );
+      break;
+    case TextureGLES::Type::kRenderBuffer:
+      gl.FramebufferRenderbuffer(type,                  // target
+                                 GL_COLOR_ATTACHMENT0,  // attachment
+                                 GL_RENDERBUFFER,       // render-buffer target
+                                 handle.value()         // render-buffer
+      );
+      break;
+  }
+
+  if (gl.CheckFramebufferStatus(type) != GL_FRAMEBUFFER_COMPLETE) {
+    VALIDATION_LOG << "Could not create a complete frambuffer.";
+    DeleteFBO(gl, fbo, type);
+    return std::nullopt;
+  }
+
+  return fbo;
+};
 
 [[nodiscard]] bool EncodeCommandsInReactor(
     const std::shared_ptr<Allocator>& transients_allocator,
@@ -67,14 +117,49 @@ void BlitPassGLES::OnSetLabel(std::string label) {
 
     if (auto* copy_command =
             std::get_if<BlitCommand::CopyTextureToTexture>(&command.data)) {
-      if (!gl.BindFramebuffer.IsAvailable()) {
+      // glBlitFramebuffer is a GLES3 proc. Since we target GLES2, we need to
+      // emulate the blit when it's not available in the driver.
+      if (!gl.BlitFramebuffer.IsAvailable()) {
         // TODO(bdero): Emulate the blit using a raster draw call here.
         return true;
       }
+
+      GLuint read_fbo = GL_NONE;
+      GLuint draw_fbo = GL_NONE;
+      fml::ScopedCleanupClosure delete_fbos([&gl, &read_fbo, &draw_fbo]() {
+        DeleteFBO(gl, read_fbo, GL_READ_FRAMEBUFFER);
+        DeleteFBO(gl, draw_fbo, GL_DRAW_FRAMEBUFFER);
+      });
+
+      {
+        auto read = BindFBO(gl, copy_command->source, GL_READ_FRAMEBUFFER);
+        if (!read.has_value()) {
+          return false;
+        }
+        read_fbo = read.value();
+        auto draw = BindFBO(gl, copy_command->destination, GL_DRAW_FRAMEBUFFER);
+        if (!draw.has_value()) {
+          return false;
+        }
+        read_fbo = read.value();
+        draw_fbo = draw.value();
+      }
+
       gl.Disable(GL_SCISSOR_TEST);
       gl.Disable(GL_DEPTH_TEST);
       gl.Disable(GL_STENCIL_TEST);
-      auto source = TextureGLES::Cast(copy_command->source.get());
+
+      gl.BlitFramebuffer(copy_command->source_region.origin.x,     // srcX0
+                         copy_command->source_region.origin.y,     // srcY0
+                         copy_command->source_region.size.width,   // srcX1
+                         copy_command->source_region.size.height,  // srcY1
+                         copy_command->destination_origin.x,       // dstX0
+                         copy_command->destination_origin.y,       // dstY0
+                         copy_command->source_region.size.width,   // dstX1
+                         copy_command->source_region.size.height,  // dstY1
+                         GL_COLOR_BUFFER_BIT,                      // mask
+                         GL_NEAREST                                // filter
+      );
 
     }
 

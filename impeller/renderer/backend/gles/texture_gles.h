@@ -33,6 +33,8 @@ class TextureGLES final : public Texture,
   // |Texture|
   ~TextureGLES() override;
 
+  std::optional<GLuint> GetGLHandle() const;
+
   [[nodiscard]] bool Bind() const;
 
   [[nodiscard]] bool GenerateMipmaps() const;

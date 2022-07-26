@@ -4,7 +4,6 @@
 
 #include <optional>
 
-#include "GLES2/gl2ext.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/gles/gles.h"

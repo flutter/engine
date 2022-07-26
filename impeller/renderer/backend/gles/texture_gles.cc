@@ -350,11 +350,15 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 }
 
-bool TextureGLES::Bind() const {
+std::optional<GLuint> TextureGLES::GetGLHandle() const {
   if (!IsValid()) {
-    return false;
+    return std::nullopt;
   }
-  auto handle = reactor_->GetGLHandle(handle_);
+  return reactor_->GetGLHandle(handle_);
+}
+
+bool TextureGLES::Bind() const {
+  auto handle = GetGLHandle();
   if (!handle.has_value()) {
     return false;
   }
@@ -392,7 +396,7 @@ bool TextureGLES::GenerateMipmaps() const {
     return false;
   }
 
-  auto handle = reactor_->GetGLHandle(handle_);
+  auto handle = GetGLHandle();
   if (!handle.has_value()) {
     return false;
   }
@@ -423,7 +427,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
     return false;
   }
   InitializeContentsIfNecessary();
-  auto handle = reactor_->GetGLHandle(handle_);
+  auto handle = GetGLHandle();
   if (!handle.has_value()) {
     return false;
   }
