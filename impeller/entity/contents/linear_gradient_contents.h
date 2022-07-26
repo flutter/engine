@@ -9,20 +9,20 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
-#include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/path_contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 
 namespace impeller {
 
-class LinearGradientContents final : public Contents {
+class LinearGradientContents final : public PathContents {
  public:
   LinearGradientContents();
 
   ~LinearGradientContents() override;
 
-  void SetPath(Path path);
+  void SetPath(Path path) override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;

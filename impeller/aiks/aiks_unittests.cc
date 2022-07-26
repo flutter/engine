@@ -203,6 +203,23 @@ TEST_P(AiksTest, CanSaveLayerStandalone) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderRadialGradient) {
+  Canvas canvas;
+
+  Paint paint;
+  auto contents = std::make_shared<RadialGradientContents>();
+  contents->SetCenterAndRadius({125, 125}, 100);
+  std::vector<Color> colors = {Color{0.9019, 0.3921, 0.3960, 1.0},
+                               Color{0.5686, 0.5960, 0.8980, 1.0}};
+  contents->SetColors(std::move(colors));
+  paint.contents = contents;
+
+  canvas.DrawRect({25, 25, 200, 200}, paint);
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderGroupOpacity) {
   Canvas canvas;
 
@@ -769,8 +786,8 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
           Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
 
       auto screen_to_canvas = canvas.GetCurrentTransformation().Invert();
-      Point point_a = screen_to_canvas * handle_a;
-      Point point_b = screen_to_canvas * handle_b;
+      Point point_a = screen_to_canvas * handle_a * GetContentScale();
+      Point point_b = screen_to_canvas * handle_b * GetContentScale();
 
       Point middle = (point_a + point_b) / 2;
       auto radius = point_a.GetDistance(middle);
@@ -798,8 +815,10 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
 }
 
 TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
-  auto callback = [](AiksContext& renderer, RenderTarget& render_target) {
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
     Canvas canvas;
+    canvas.Scale(GetContentScale());
+
     Paint alpha;
     alpha.color = Color::Red().WithAlpha(0.5);
 

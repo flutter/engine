@@ -9,10 +9,8 @@
 /// This library exposes the lowest-level services that Flutter frameworks use
 /// to bootstrap applications, such as classes for driving the input, graphics
 /// text, layout, and rendering subsystems.
-// @dart = 2.14
 library dart.ui;
 
-import 'dart:_spirv' as spv;
 import 'dart:async';
 import 'dart:collection' as collection;
 import 'dart:convert';

@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "flutter/testing/testing.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -708,6 +709,8 @@ TEST_P(EntityTest, BlendingModeOptions) {
                          Rect rect, Color color,
                          Entity::BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
+      using FS = SolidFillPipeline::FragmentShader;
+
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
         auto r = rect.GetLTRB();
@@ -729,12 +732,16 @@ TEST_P(EntityTest, BlendingModeOptions) {
       cmd.BindVertices(
           vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-      VS::FrameInfo frame_info;
+      VS::VertInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
-      frame_info.color = color.Premultiply();
-      VS::BindFrameInfo(cmd,
-                        pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+      VS::BindVertInfo(cmd,
+                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+
+      FS::FragInfo frag_info;
+      frag_info.color = color.Premultiply();
+      FS::BindFragInfo(cmd,
+                       pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
       cmd.primitive_type = PrimitiveType::kTriangle;
 
@@ -1048,13 +1055,31 @@ TEST_P(EntityTest, BorderMaskBlurCoverageIsCorrect) {
   }
 }
 
-TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithoutIndex) {
-  std::vector<Point> points = {Point(0, 0), Point(0, 1), Point(1, 0)};
-  std::vector<uint16_t> indexes;
+TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
+  std::vector<Point> positions = {Point(100, 300), Point(200, 100),
+                                  Point(300, 300)};
   std::vector<Color> colors = {Color::White(), Color::White(), Color::White()};
 
-  Vertices vertices = Vertices(points, indexes, colors, VertexMode::kTriangle,
-                               Rect(0, 0, 4, 4));
+  Vertices vertices = Vertices(positions, {} /* indices */, colors,
+                               VertexMode::kTriangle, Rect(100, 100, 300, 300));
+
+  std::shared_ptr<VerticesContents> contents =
+      std::make_shared<VerticesContents>(vertices);
+  contents->SetColor(Color::White());
+  Entity e;
+  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(e));
+}
+
+TEST_P(EntityTest, DrawVerticesSolidColorTrianglesWithIndices) {
+  std::vector<Point> positions = {Point(100, 300), Point(200, 100),
+                                  Point(300, 300), Point(200, 500)};
+  std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
+
+  Vertices vertices = Vertices(positions, indices, {} /* colors */,
+                               VertexMode::kTriangle, Rect(100, 100, 300, 300));
 
   std::shared_ptr<VerticesContents> contents =
       std::make_shared<VerticesContents>(vertices);
@@ -1105,6 +1130,49 @@ TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
 
     auto coverage = fill->GetCoverage({});
     ASSERT_FALSE(coverage.has_value());
+  }
+}
+
+TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
+  // No path.
+  {
+    auto fill = std::make_shared<SolidColorContents>();
+    fill->SetColor(Color::CornflowerBlue());
+    ASSERT_FALSE(fill->ShouldRender(Entity{}, {100, 100}));
+  }
+
+  // With path.
+  {
+    auto fill = std::make_shared<SolidColorContents>();
+    fill->SetColor(Color::CornflowerBlue());
+    fill->SetPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath());
+    ASSERT_TRUE(fill->ShouldRender(Entity{}, {100, 100}));
+  }
+
+  // With paint cover.
+  {
+    auto fill = std::make_shared<SolidColorContents>();
+    fill->SetColor(Color::CornflowerBlue());
+    fill->SetCover(true);
+    ASSERT_TRUE(fill->ShouldRender(Entity{}, {100, 100}));
+  }
+}
+
+TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
+  // Clip.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    ASSERT_TRUE(clip->ShouldRender(Entity{}, {100, 100}));
+    clip->SetPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath());
+    ASSERT_TRUE(clip->ShouldRender(Entity{}, {100, 100}));
+  }
+
+  // Clip restore.
+  {
+    auto restore = std::make_shared<ClipRestoreContents>();
+    ASSERT_TRUE(restore->ShouldRender(Entity{}, {100, 100}));
   }
 }
 
