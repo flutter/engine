@@ -277,8 +277,10 @@ InferOpenGLPlatformViewCreationCallback(
       /// Format the frame and buffer damages accordingly.
       FlutterDamage frame_damage;
       FlutterDamage buffer_damage;
-      frame_damage.damage = SkIRectToFlutterRect(*(gl_present_info.frame_damage));
-      buffer_damage.damage = SkIRectToFlutterRect(*(gl_present_info.buffer_damage));
+      frame_damage.damage =
+          SkIRectToFlutterRect(*(gl_present_info.frame_damage));
+      buffer_damage.damage =
+          SkIRectToFlutterRect(*(gl_present_info.buffer_damage));
       present_info.frame_damage = frame_damage;
       present_info.buffer_damage = buffer_damage;
 
@@ -298,13 +300,17 @@ InferOpenGLPlatformViewCreationCallback(
       FlutterFrameInfo frame_info = {};
       frame_info.struct_size = sizeof(FlutterFrameInfo);
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
-      return flutter::GLFBOInfo{fbo_with_frame_info_callback(user_data, &frame_info), SkIRect::MakeEmpty()};
+      return flutter::GLFBOInfo{
+          fbo_with_frame_info_callback(user_data, &frame_info),
+          SkIRect::MakeEmpty()};
     } else {
       FlutterFrameInfo frame_info = {};
       frame_info.struct_size = sizeof(FlutterFrameInfo);
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
       FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, &frame_info);
-      return flutter::GLFBOInfo{static_cast<uint32_t>(fbo.fbo_id), FlutterRectToSkIRect(fbo.existing_damage.damage)};
+      return flutter::GLFBOInfo{
+          static_cast<uint32_t>(fbo.fbo_id),
+          FlutterRectToSkIRect(fbo.existing_damage.damage)};
     }
   };
 
