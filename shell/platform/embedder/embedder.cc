@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "include/core/SkRect.h"
+#include "shell/gpu/gpu_surface_gl_delegate.h"
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
 
@@ -232,6 +234,16 @@ FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
   return flutter_rect;
 }
 
+/// Auxiliar function used to translate rectangles of type FlutterRect to
+/// SkIRect.
+const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
+                  static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.right),
+                  static_cast<int32_t>(flutter_rect.bottom)};
+  return rect;
+}
+
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
@@ -265,8 +277,8 @@ InferOpenGLPlatformViewCreationCallback(
       /// Format the frame and buffer damages accordingly.
       FlutterDamage frame_damage;
       FlutterDamage buffer_damage;
-      frame_damage.damage = SkIRectToFlutterRect(gl_present_info.frame_damage);
-      buffer_damage.damage = SkIRectToFlutterRect(gl_present_info.buffer_damage);
+      frame_damage.damage = SkIRectToFlutterRect(*(gl_present_info.frame_damage));
+      buffer_damage.damage = SkIRectToFlutterRect(*(gl_present_info.buffer_damage));
       present_info.frame_damage = frame_damage;
       present_info.buffer_damage = buffer_damage;
 
@@ -278,14 +290,21 @@ InferOpenGLPlatformViewCreationCallback(
       [fbo_callback = config->open_gl.fbo_callback,
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
-       user_data](flutter::GLFrameInfo gl_frame_info) -> intptr_t {
+       fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
+       user_data](flutter::GLFrameInfo gl_frame_info) -> flutter::GLFBOInfo {
     if (fbo_callback) {
-      return fbo_callback(user_data);
+      return flutter::GLFBOInfo{fbo_callback(user_data), SkIRect::MakeEmpty()};
+    } else if (fbo_with_frame_info_callback) {
+      FlutterFrameInfo frame_info = {};
+      frame_info.struct_size = sizeof(FlutterFrameInfo);
+      frame_info.size = {gl_frame_info.width, gl_frame_info.height};
+      return flutter::GLFBOInfo{fbo_with_frame_info_callback(user_data, &frame_info), SkIRect::MakeEmpty()};
     } else {
       FlutterFrameInfo frame_info = {};
       frame_info.struct_size = sizeof(FlutterFrameInfo);
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
-      return fbo_with_frame_info_callback(user_data, &frame_info);
+      FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, &frame_info);
+      return flutter::GLFBOInfo{static_cast<uint32_t>(fbo.fbo_id), FlutterRectToSkIRect(fbo.existing_damage.damage)};
     }
   };
 
