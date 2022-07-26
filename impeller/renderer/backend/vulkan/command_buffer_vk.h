@@ -12,6 +12,8 @@ namespace impeller {
 
 class CommandBufferVK final : public CommandBuffer {
  public:
+  explicit CommandBufferVK(vk::CommandBuffer buffer);
+
   // |CommandBuffer|
   ~CommandBufferVK() override;
 
@@ -19,8 +21,6 @@ class CommandBufferVK final : public CommandBuffer {
   friend class ContextVK;
 
   vk::CommandBuffer buffer_;
-
-  explicit CommandBufferVK(vk::CommandBuffer buffer);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;
