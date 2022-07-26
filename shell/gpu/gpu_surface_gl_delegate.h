@@ -22,6 +22,15 @@ struct GLFrameInfo {
   uint32_t height;
 };
 
+// A structure to represent the frame buffer information which is returned to
+// the embedder after requesting a frame buffer object.
+struct GLFBOInfo {
+  // The frame buffer's ID.
+  uint32_t fbo_id;
+  // The frame buffer's existing damage (i.e. damage since it was last used).
+  const SkIRect existing_damage;
+};
+
 // Information passed during presentation of a frame.
 struct GLPresentInfo {
   uint32_t fbo_id;
