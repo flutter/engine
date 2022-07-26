@@ -46,11 +46,11 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
-  return gl_dispatch_table_.gl_present_callback(present_info.fbo_id);
+  return gl_dispatch_table_.gl_present_callback(present_info);
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+GLFBOInfo EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   return gl_dispatch_table_.gl_fbo_callback(frame_info);
 }
 
