@@ -7,12 +7,12 @@ uniform VertInfo {
 }
 vert_info;
 
-in vec3 vertex_position;
+in vec2 vertex_position;
 in vec2 uv;
 
 out vec2 v_uv;
 
 void main() {
-  gl_Position = vert_info.mvp * vec4(vertex_position, 1.0);
+  gl_Position = vert_info.mvp * vec4(vertex_position, 0.0, 1.0);
   v_uv = uv;
 }

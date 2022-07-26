@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <optional>
 #include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
+#include "impeller/base/strings.h"
 #include "impeller/fixtures/box_fade.frag.h"
 #include "impeller/fixtures/box_fade.vert.h"
 #include "impeller/fixtures/colors.frag.h"
@@ -12,6 +14,8 @@
 #include "impeller/fixtures/impeller.vert.h"
 #include "impeller/fixtures/instanced_draw.frag.h"
 #include "impeller/fixtures/instanced_draw.vert.h"
+#include "impeller/fixtures/mipmaps.frag.h"
+#include "impeller/fixtures/mipmaps.vert.h"
 #include "impeller/fixtures/test_texture.frag.h"
 #include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/geometry/path_builder.h"
@@ -487,26 +491,65 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   auto context = GetContext();
   ASSERT_TRUE(context);
 
-  auto boston = CreateTextureForFixture("boston.jpg");
+  using VS = MipmapsVertexShader;
+  using FS = MipmapsFragmentShader;
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto mipmaps_pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+  ASSERT_TRUE(mipmaps_pipeline);
+
+  auto boston = CreateTextureForFixture("boston.jpg", std::nullopt);
   ASSERT_TRUE(boston);
   auto sampler = context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
-  Renderer::RenderCallback callback = [context = GetContext(),
-                                       &boston](RenderTarget& render_target) {
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  auto size = Point(boston->GetSize());
+  vertex_builder.AddVertices({
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, 0}, {1.0, 0.0}},       // 2
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, size.y}, {0.0, 1.0}},       // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetPermanentsAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  bool first_frame = true;
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    if (first_frame) {
+      first_frame = false;
+      ImGui::SetNextWindowSize({400, 80});
+      ImGui::SetNextWindowPos({20, 20});
+    }
+
+    static int lod = 0;
+
+    ImGui::Begin("Controls");
+    ImGui::SliderInt("LOD", &lod, 0, boston->GetSize().MipCount());
+    ImGui::End();
+
     auto buffer = context->CreateRenderCommandBuffer();
     if (!buffer) {
       return false;
     }
     buffer->SetLabel("Playground Command Buffer");
 
-    {
+    if (first_frame) {
       auto pass = buffer->CreateBlitPass();
       if (!pass) {
         return false;
       }
       pass->SetLabel("Playground Blit Pass");
+
       pass->GenerateMipmaps(boston, "Boston Mipmaps");
+
       pass->EncodeCommands(context->GetTransientsAllocator());
     }
 
@@ -518,6 +561,24 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       pass->SetLabel("Playground Blit Pass");
       {
         Command cmd;
+        cmd.label = SPrintF("Image LOD %d", lod);
+        cmd.pipeline = mipmaps_pipeline;
+
+        cmd.BindVertices(vertex_buffer);
+
+        VS::VertInfo vert_info;
+        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                        Matrix::MakeScale(GetContentScale());
+        VS::BindVertInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+
+        FS::FragInfo frag_info;
+        frag_info.lod = lod;
+        FS::BindFragInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
+
+        FS::BindTex(cmd, boston, sampler);
+
         pass->AddCommand(std::move(cmd));
       }
       pass->EncodeCommands(context->GetTransientsAllocator());
