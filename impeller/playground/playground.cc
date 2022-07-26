@@ -334,7 +334,8 @@ std::optional<DecompressedImage> Playground::LoadFixtureImageRGBA(
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureForFixture(
-    const char* fixture_name, size_t mip_count) const {
+    const char* fixture_name,
+    size_t mip_count) const {
   auto image = LoadFixtureImageRGBA(fixture_name);
   if (!image.has_value()) {
     return nullptr;
