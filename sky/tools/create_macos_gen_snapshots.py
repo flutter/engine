@@ -8,7 +8,6 @@ import argparse
 import subprocess
 import sys
 import os
-import platform
 
 
 def main():
@@ -22,9 +21,6 @@ def main():
   parser.add_argument('--armv7-out-dir', type=str)
 
   args = parser.parse_args()
-  machine = platform.machine()
-  if machine == 'x86_64':
-    machine = 'x64'
 
   if args.x64_out_dir:
     generate_gen_snapshot(
@@ -33,13 +29,13 @@ def main():
 
   if args.arm64_out_dir:
     generate_gen_snapshot(
-        os.path.join(args.arm64_out_dir, 'clang_' + machine),
+        os.path.join(args.arm64_out_dir, 'clang_x64'),
         os.path.join(args.dst, 'gen_snapshot_arm64')
     )
 
   if args.armv7_out_dir:
     generate_gen_snapshot(
-        os.path.join(args.armv7_out_dir, 'clang_' + machine),
+        os.path.join(args.armv7_out_dir, 'clang_x64'),
         os.path.join(args.dst, 'gen_snapshot_armv7')
     )
 
