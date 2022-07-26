@@ -227,6 +227,13 @@ def to_gn_args(args):
   gn_args['skia_use_expat'] = args.target_os == 'android'
   gn_args['skia_use_fontconfig'] = args.enable_fontconfig
 
+  if args.target_os == 'ios':
+    gn_args['shell_enable_gl'] = False
+    gn_args['skia_use_gl'] = False
+    gn_args['skia_use_metal'] = True
+  else:
+    gn_args['skia_use_gl'] = args.target_os != 'fuchsia'
+
   if args.enable_skshaper:
     gn_args['skia_use_icu'] = True
     if args.target_os != 'wasm':
