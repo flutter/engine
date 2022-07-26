@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -11,9 +13,21 @@
 
 namespace impeller {
 
-struct PipelineVKCreateInfo {
-  vk::UniquePipeline pipeline;
-  vk::UniqueRenderPass render_pass;
+class PipelineCreateInfoVK {
+ public:
+  PipelineCreateInfoVK(vk::UniquePipeline pipeline,
+                       vk::UniqueRenderPass render_pass);
+
+  bool IsValid() const;
+
+  vk::UniquePipeline GetPipeline();
+
+  vk::UniqueRenderPass GetRenderPass();
+
+ private:
+  bool is_valid_ = false;
+  vk::UniquePipeline pipeline_;
+  vk::UniqueRenderPass render_pass_;
 };
 
 class PipelineVK final : public Pipeline,
@@ -21,10 +35,10 @@ class PipelineVK final : public Pipeline,
  public:
   PipelineVK(std::weak_ptr<PipelineLibrary> library,
              PipelineDescriptor desc,
-             std::unique_ptr<PipelineVKCreateInfo> create_info);
+             std::unique_ptr<PipelineCreateInfoVK> create_info);
 
   // |Pipeline|
-  ~PipelineVK() override = default;
+  ~PipelineVK() override;
 
  private:
   friend class PipelineLibraryVK;
@@ -32,9 +46,7 @@ class PipelineVK final : public Pipeline,
   // |Pipeline|
   bool IsValid() const override;
 
-  bool is_valid_ = false;
-  vk::UniquePipeline pipeline_;
-  vk::UniqueRenderPass render_pass_;
+  std::unique_ptr<PipelineCreateInfoVK> pipeline_info_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineVK);
 };

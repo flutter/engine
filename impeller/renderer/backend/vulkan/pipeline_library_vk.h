@@ -53,7 +53,7 @@ class PipelineLibraryVK final
   // |PipelineLibrary|
   PipelineFuture GetRenderPipeline(PipelineDescriptor descriptor) override;
 
-  std::unique_ptr<PipelineVKCreateInfo> CreatePipeline(
+  std::unique_ptr<PipelineCreateInfoVK> CreatePipeline(
       const PipelineDescriptor& desc);
 
   std::optional<vk::UniqueRenderPass> CreateRenderPass(

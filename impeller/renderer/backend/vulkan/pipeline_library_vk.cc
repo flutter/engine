@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
+
 #include <optional>
 
 #include "flutter/fml/trace_event.h"
@@ -174,7 +175,7 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   return std::move(render_pass.value);
 }
 
-std::unique_ptr<PipelineVKCreateInfo> PipelineLibraryVK::CreatePipeline(
+std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
     const PipelineDescriptor& desc) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   vk::GraphicsPipelineCreateInfo pipeline_info;
@@ -309,10 +310,8 @@ std::unique_ptr<PipelineVKCreateInfo> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  return std::make_unique<PipelineVKCreateInfo>(PipelineVKCreateInfo{
-      .pipeline = std::move(pipeline.value),
-      .render_pass = std::move(render_pass.value()),
-  });
+  return std::make_unique<PipelineCreateInfoVK>(std::move(pipeline.value),
+                                                std::move(render_pass.value()));
 }
 
 }  // namespace impeller
