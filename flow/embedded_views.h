@@ -240,6 +240,7 @@ class EmbeddedViewParams {
   // Clippings are ignored.
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
+  // This method pushes the stored DlImageFilter object to the mutators stack.
   void PushFilter(std::shared_ptr<const DlImageFilter> filter) {
     mutators_stack_.PushBackdropFilter(*filter);
   }
@@ -365,19 +366,16 @@ class ExternalViewEmbedder {
   // 'EndFrame', otherwise returns false.
   bool GetUsedThisFrame() const { return used_this_frame_; }
 
-  void SetFoundPlatformViews(bool found_platform_views) {
-    found_platform_views_ = found_platform_views;
-  }
-
-  bool GetFoundPlatformViews() const { return found_platform_views_; }
-
+  // This method pushes the platform view id of a visited platform view to a
+  // list of visited platform views
   virtual void PushVisitedPlatformView(int64_t view_id) {}
 
+  // This method pushes a DlImageFilter object to each platform view within a 
+  // list of visited platform views
   virtual void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter) {}
 
  private:
-  bool found_platform_views_ = false;
   bool used_this_frame_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
