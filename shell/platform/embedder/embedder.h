@@ -466,6 +466,18 @@ typedef uint32_t (*UIntFrameInfoCallback)(
     void* /* user data */,
     const FlutterFrameInfo* /* frame info */);
 
+/// This information is passed from the user to the embedder upon request of a
+/// new frame buffer. This is used for partial repaint, which requries a
+/// flexible surface size (contrasting with \ref FlutterFrameInfo).
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterFrameBuffer).
+  size_t struct_size;
+  /// The frame buffer's ID.
+  intptr_t fbo_id;
+  /// The frame buffer's existing damage (i.e. damage since it was last used).
+  FlutterDamage existing_damage;
+} FlutterFrameBuffer;
+
 /// This information is passed to the embedder when a surface is presented.
 ///
 /// See: \ref FlutterOpenGLRendererConfig.present_with_info.
