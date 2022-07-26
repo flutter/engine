@@ -501,8 +501,6 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
   auto boston = CreateTextureForFixture("boston.jpg", std::nullopt);
   ASSERT_TRUE(boston);
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
-  ASSERT_TRUE(sampler);
 
   // Vertex buffer.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -527,10 +525,18 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       ImGui::SetNextWindowPos({20, 20});
     }
 
-    static int lod = 4;
+    const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
+    const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
+                                     MipFilter::kLinear};
+
+    // UI state.
+    static int selected_mip_filter = 2;
+    static float lod = 4;
 
     ImGui::Begin("Controls");
-    ImGui::SliderInt("LOD", &lod, 0, boston->GetMipCount() - 1);
+    ImGui::Combo("Mip filter", &selected_mip_filter, mip_filter_names,
+                 sizeof(mip_filter_names) / sizeof(char*));
+    ImGui::SliderFloat("LOD", &lod, 0, boston->GetMipCount() - 1);
     ImGui::End();
 
     auto buffer = context->CreateRenderCommandBuffer();
@@ -561,7 +567,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       pass->SetLabel("Playground Blit Pass");
       {
         Command cmd;
-        cmd.label = SPrintF("Image LOD %d", lod);
+        cmd.label = "Image LOD";
         cmd.pipeline = mipmaps_pipeline;
 
         cmd.BindVertices(vertex_buffer);
@@ -577,6 +583,9 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
         FS::BindFragInfo(cmd,
                          pass->GetTransientsBuffer().EmplaceUniform(frag_info));
 
+        SamplerDescriptor sampler_desc;
+        sampler_desc.mip_filter = mip_filters[selected_mip_filter];
+        auto sampler = context->GetSamplerLibrary()->GetSampler(sampler_desc);
         FS::BindTex(cmd, boston, sampler);
 
         pass->AddCommand(std::move(cmd));
