@@ -27,6 +27,18 @@ NSString* MTLCommandEncoderErrorStateToString(
   return @"unknown";
 }
 
+// NOLINTBEGIN(readability-identifier-naming)
+
+// TODO(dnfield): This can be removed when all bots have been sufficiently
+// upgraded for MAC_OS_VERSION_12_0.
+#if !defined(MAC_OS_VERSION_12_0) || \
+    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_12_0
+constexpr int MTLCommandBufferErrorAccessRevoked = 4;
+constexpr int MTLCommandBufferErrorStackOverflow = 12;
+#endif
+
+// NOLINTEND(readability-identifier-naming)
+
 static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
   switch (code) {
     case MTLCommandBufferErrorNone:
