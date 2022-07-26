@@ -19,6 +19,9 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
+#include <chrono>
+#include <iostream>
+
 // These are common defines present on all OpenGL headers. However, we don't
 // want to perform GL header reasolution on each platform we support. So just
 // define these upfront. It is unlikely we will need more. But, if we do, we can
@@ -274,11 +277,16 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
       .fbo_id = static_cast<intptr_t>(fbo_id_),
       .frame_damage = frame.submit_info().frame_damage,
       .presentation_time = frame.submit_info().presentation_time,
-      .buffer_damage = frame.submit_info().buffer_damage
+      .buffer_damage = frame.submit_info().buffer_damage,
   };
+  auto start = std::chrono::high_resolution_clock::now();
   if (!delegate_->GLContextPresent(present_info)) {
     return false;
   }
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+  std::cout << duration.count() << std::endl;
 
   if (delegate_->GLContextFBOResetAfterPresent()) {
     auto current_size =

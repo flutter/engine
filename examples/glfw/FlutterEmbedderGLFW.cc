@@ -7,6 +7,7 @@
 #include <iostream>
 
 #define GLFW_EXPOSE_NATIVE_EGL
+#define GLFW_INCLUDE_GLEXT
 
 #include <array>
 #include <list>
@@ -138,7 +139,7 @@ bool RunFlutter(GLFWwindow* window,
     EGLDisplay display = glfwGetEGLDisplay();
     EGLSurface surface = glfwGetEGLSurface(window);
 
-    auto buffer_rects = RectToInts(display, surface, info->buffer_damage.damage);
+    auto buffer_rects = RectToInts(display, surface, {0, 0, kInitialWindowWidth, kInitialWindowHeight});
     set_damage_region_(display, surface, buffer_rects.data(), 1);
 
     // Swap buffers with frame damage
@@ -150,7 +151,7 @@ bool RunFlutter(GLFWwindow* window,
     if (damage_history_.size() > kMaxHistorySize) {
       damage_history_.pop_front();
     }
-
+    std::cout << "Buffer Damage: " << info->buffer_damage.damage.left << ", " << info->buffer_damage.damage.top << ", " << info->buffer_damage.damage.right << ", " << info->buffer_damage.damage.bottom << std::endl;
     std::cout << "Frame Damage: " << info->frame_damage.damage.left << ", " << info->frame_damage.damage.top << ", " << info->frame_damage.damage.right << ", " << info->frame_damage.damage.bottom << std::endl;
     return true;
   };
@@ -162,21 +163,30 @@ bool RunFlutter(GLFWwindow* window,
     EGLSurface surface = glfwGetEGLSurface(window);
 
     EGLint age;
-    eglQuerySurface(display, surface, EGL_BUFFER_AGE_EXT, &age);
+    if (glfwExtensionSupported("GL_EXT_buffer_age") == GLFW_TRUE) {
+      eglQuerySurface(display, surface, EGL_BUFFER_AGE_EXT, &age);
+    } else {
+      age = 4;  // Virtually no driver should have a swapchain length > 4.
+    }
     std::cout << "Buffer age: " << age << std::endl;
 
     FlutterDamage existing_damage;
+    existing_damage.damage = {0, 0, kInitialWindowWidth, kInitialWindowHeight};
 
-    if (age == 0) {  // full repaint
-      existing_damage.damage = {0, 0, 0, 0};//{0, 0, kInitialWindowWidth, kInitialWindowHeight};
-    } else {
-      // join up to (age - 1) last rects from damage history
+    if (age > 1) {
       --age;
-      existing_damage.damage = {0, 0, 0, 0};
-      // for (auto i = damage_history_.rbegin();
-      //      i != damage_history_.rend() && age > 0; ++i, --age) {
-      //   JoinFlutterRect(&(existing_damage.damage), *i);
-      // }
+      // join up to (age - 1) last rects from damage history
+      for (auto i = damage_history_.rbegin();
+           i != damage_history_.rend() && age > 0; ++i, --age) {
+        std::cout << "Damage in history: " << i->left << ", " << i->top << ", " << i->right << ", " << i->bottom << std::endl;
+        if (i == damage_history_.rbegin()) {
+          if (i != damage_history_.rend()) {
+           existing_damage.damage = {i->left, i->top, i->right, i->bottom};
+          }
+        } else {
+          JoinFlutterRect(&(existing_damage.damage), *i);
+        }
+      }
     }
 
     FlutterFrameBuffer fbo;
