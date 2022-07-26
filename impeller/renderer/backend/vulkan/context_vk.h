@@ -16,6 +16,7 @@
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -46,6 +47,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::Queue graphics_queue_;
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
+  vk::UniqueCommandPool graphics_command_pool_;
   bool is_valid_ = false;
 
   ContextVK(

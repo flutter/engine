@@ -13,6 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
+#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -371,6 +372,15 @@ ContextVK::ContextVK(
     return;
   }
 
+  vk::CommandPoolCreateInfo command_pool_create_info;
+  command_pool_create_info.setQueueFamilyIndex(graphics_queue->family);
+  auto graphics_command_pool =
+      device.value->createCommandPoolUnique(command_pool_create_info);
+  if (graphics_command_pool.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create graphics command pool";
+    return;
+  }
+
   instance_ = std::move(instance.value);
   debug_messenger_ = std::move(debug_messenger);
   device_ = std::move(device.value);
@@ -384,6 +394,7 @@ ContextVK::ContextVK(
       device_->getQueue(compute_queue->family, compute_queue->index);
   transfer_queue_ =
       device_->getQueue(transfer_queue->family, transfer_queue->index);
+  graphics_command_pool_ = std::move(graphics_command_pool.value);
   is_valid_ = true;
 }
 
@@ -414,7 +425,19 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateRenderCommandBuffer() const {
-  FML_UNREACHABLE();
+  vk::CommandBufferAllocateInfo alloc_info;
+  alloc_info.setCommandPool(graphics_command_pool_.get());
+  alloc_info.setLevel(vk::CommandBufferLevel::ePrimary);
+  alloc_info.setCommandBufferCount(1);
+
+  auto buffers_ret = device_->allocateCommandBuffers(alloc_info);
+  if (buffers_ret.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "unable to allocate render command buffer";
+    return nullptr;
+  }
+
+  vk::CommandBuffer buffer = buffers_ret.value[0];
+  return std::make_shared<CommandBufferVK>(buffer);
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateTransferCommandBuffer() const {

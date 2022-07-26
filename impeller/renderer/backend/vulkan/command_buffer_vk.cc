@@ -9,7 +9,7 @@
 
 namespace impeller {
 
-CommandBufferVK::CommandBufferVK() = default;
+CommandBufferVK::CommandBufferVK(vk::CommandBuffer buffer) : buffer_(buffer) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
 
@@ -18,7 +18,7 @@ void CommandBufferVK::SetLabel(const std::string& label) const {
 }
 
 bool CommandBufferVK::IsValid() const {
-  FML_UNREACHABLE();
+  return buffer_;
 }
 
 bool CommandBufferVK::SubmitCommands(CompletionCallback callback) {

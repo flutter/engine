@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
@@ -15,9 +16,11 @@ class CommandBufferVK final : public CommandBuffer {
   ~CommandBufferVK() override;
 
  private:
-  friend class ContextMTL;
+  friend class ContextVK;
 
-  CommandBufferVK();
+  vk::CommandBuffer buffer_;
+
+  explicit CommandBufferVK(vk::CommandBuffer buffer);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;
