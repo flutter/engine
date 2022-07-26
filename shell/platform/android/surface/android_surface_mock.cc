@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/surface/android_surface_mock.h"
+#include "shell/gpu/gpu_surface_gl_delegate.h"
 
 namespace flutter {
 
@@ -22,8 +23,10 @@ bool AndroidSurfaceMock::GLContextPresent(const GLPresentInfo& present_info) {
   return true;
 }
 
-intptr_t AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
-  return 0;
+GLFBOInfo AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
+  return GLFBOInfo {
+    .fbo_id = 0,
+  };
 }
 
 }  // namespace flutter
