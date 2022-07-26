@@ -270,19 +270,24 @@ InferOpenGLPlatformViewCreationCallback(
     if (present) {
       return present(user_data);
     } else {
-      FlutterPresentInfo present_info = {};
-      present_info.struct_size = sizeof(FlutterPresentInfo);
-      present_info.fbo_id = gl_present_info.fbo_id;
-
       /// Format the frame and buffer damages accordingly.
-      FlutterDamage frame_damage;
-      FlutterDamage buffer_damage;
-      frame_damage.damage =
-          SkIRectToFlutterRect(*(gl_present_info.frame_damage));
-      buffer_damage.damage =
-          SkIRectToFlutterRect(*(gl_present_info.buffer_damage));
-      present_info.frame_damage = frame_damage;
-      present_info.buffer_damage = buffer_damage;
+      FlutterDamage frame_damage {
+        .struct_size = sizeof(FlutterDamage),
+        .damage_kind = kFlutterSingleRectDamage,
+        .damage = SkIRectToFlutterRect(*(gl_present_info.frame_damage)),
+      };
+      FlutterDamage buffer_damage {
+        .struct_size = sizeof(FlutterDamage),
+        .damage_kind = kFlutterSingleRectDamage,
+        .damage = SkIRectToFlutterRect(*(gl_present_info.buffer_damage)),
+      };
+
+      FlutterPresentInfo present_info = {
+        .struct_size = sizeof(FlutterPresentInfo),
+        .fbo_id = gl_present_info.fbo_id,
+        .frame_damage = frame_damage,
+        .buffer_damage = buffer_damage,
+      };
 
       return present_with_info(user_data, &present_info);
     }
@@ -292,25 +297,34 @@ InferOpenGLPlatformViewCreationCallback(
       [fbo_callback = config->open_gl.fbo_callback,
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
-       fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
        user_data](flutter::GLFrameInfo gl_frame_info) -> flutter::GLFBOInfo {
     if (fbo_callback) {
-      return flutter::GLFBOInfo{fbo_callback(user_data), SkIRect::MakeEmpty()};
-    } else if (fbo_with_frame_info_callback) {
-      FlutterFrameInfo frame_info = {};
-      frame_info.struct_size = sizeof(FlutterFrameInfo);
-      frame_info.size = {gl_frame_info.width, gl_frame_info.height};
-      return flutter::GLFBOInfo{
-          fbo_with_frame_info_callback(user_data, &frame_info),
-          SkIRect::MakeEmpty()};
+      flutter::GLFBOInfo gl_fbo = {
+        .fbo_id = fbo_callback(user_data),
+        .existing_damage = SkIRect::MakeEmpty(),
+      };
+
+      return gl_fbo;
     } else {
-      FlutterFrameInfo frame_info = {};
-      frame_info.struct_size = sizeof(FlutterFrameInfo);
-      frame_info.size = {gl_frame_info.width, gl_frame_info.height};
-      FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, &frame_info);
-      return flutter::GLFBOInfo{
-          static_cast<uint32_t>(fbo.fbo_id),
-          FlutterRectToSkIRect(fbo.existing_damage.damage)};
+      FlutterDamage existing_damage = {
+        .struct_size = sizeof(FlutterDamage),
+        .damage_kind = kFlutterSingleRectDamage,
+        .damage = {0, 0, 0, 0},
+      };
+
+      FlutterFrameInfo frame_info = {
+        .struct_size = sizeof(FlutterFrameInfo),
+        .size = {gl_frame_info.width, gl_frame_info.height},
+        .fbo_id = 0,
+        .existing_damage = existing_damage,
+      };
+
+      flutter::GLFBOInfo gl_fbo = {
+        .fbo_id = fbo_with_frame_info_callback(user_data, &frame_info),
+        .existing_damage = FlutterRectToSkIRect(frame_info.existing_damage.damage),
+      };
+
+      return gl_fbo;
     }
   };
 

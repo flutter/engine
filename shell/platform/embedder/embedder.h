@@ -459,27 +459,14 @@ typedef struct {
   size_t struct_size;
   /// The size of the surface that will be backed by the fbo.
   FlutterUIntSize size;
-} FlutterFrameInfo;
-
-/// Callback for when a frame buffer object is requested.
-typedef uint32_t (*UIntFrameInfoCallback)(
-    void* /* user data */,
-    const FlutterFrameInfo* /* frame info */);
-
-/// This information is passed from the user to the embedder upon request of a
-/// new frame buffer. This is used for partial repaint, which requries a
-/// flexible surface size (contrasting with \ref FlutterFrameInfo).
-typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterFrameBuffer).
-  size_t struct_size;
   /// The frame buffer's ID.
   intptr_t fbo_id;
   /// The frame buffer's existing damage (i.e. damage since it was last used).
   FlutterDamage existing_damage;
-} FlutterFrameBuffer;
+} FlutterFrameInfo;
 
-/// Callback for when a frame buffer object is requested with partial repaint.
-typedef FlutterFrameBuffer (*FlutterFrameBufferFrameInfoCallback)(
+/// Callback for when a frame buffer object is requested.
+typedef uint32_t (*UIntFrameInfoCallback)(
     void* /* user data */,
     const FlutterFrameInfo* /* frame info */);
 
@@ -511,11 +498,11 @@ typedef struct {
   /// required. Specifying both is an error and engine initialization will be
   /// terminated. The return value indicates success of the present call.
   BoolCallback present;
-  /// Specifying one (and only one) of the `fbo_callback`,
-  /// `fbo_with_frame_info_callback`, or `fbo_with_damage_callback` is required.
-  /// Specifying more than one is an error and engine intialization will be
-  /// terminated. The return value indicates the id of the frame buffer object
-  /// that flutter will obtain the gl surface from.
+  /// Specifying one (and only one) of the `fbo_callback` or
+  /// `fbo_with_frame_info_callback` is required. Specifying both is an error
+  /// and engine intialization will be terminated. The return value indicates
+  /// the id of the frame buffer object that flutter will obtain the gl surface
+  /// from.
   UIntCallback fbo_callback;
   /// This is an optional callback. Flutter will ask the emebdder to create a GL
   /// context current on a background thread. If the embedder is able to do so,
@@ -546,13 +533,16 @@ typedef struct {
   /// that external texture details can be supplied to the engine for subsequent
   /// composition.
   TextureFrameCallback gl_external_texture_frame_callback;
-  /// Specifying one (and only one) of the `fbo_callback`,
-  /// `fbo_with_frame_info_callback`, or `fbo_with_damage_callback` is required.
-  /// Specifying more than one is an error and engine intialization will be
-  /// terminated. The return value indicates the id of the frame buffer object
-  /// that flutter will obtain the gl surface from. When using this variant, the
-  /// embedder is passed a `FlutterFrameInfo` struct that indicates the
-  /// properties of the surface that flutter will acquire from the returned fbo.
+  /// Specifying one (and only one) of the `fbo_callback` or
+  /// `fbo_with_frame_info_callback` is required. Specifying both is an error
+  /// and engine intialization will be terminated. The return value indicates
+  /// the id of the frame buffer object (fbo) that flutter will obtain the gl
+  /// surface from. When using this variant, the embedder is passed a
+  /// `FlutterFrameInfo` struct that indicates the properties of the surface
+  /// that flutter will acquire from the returned fbo. When performing partial
+  /// repaint, this callback is responsible for also filling in the values of
+  /// the frame_info that is passed to it by reference such as buffer existing
+  /// damage and buffer id.
   UIntFrameInfoCallback fbo_with_frame_info_callback;
   /// Specifying one (and only one) of `present` or `present_with_info` is
   /// required. Specifying both is an error and engine initialization will be
@@ -560,15 +550,6 @@ typedef struct {
   /// `FlutterPresentInfo` struct that the embedder can use to release any
   /// resources. The return value indicates success of the present call.
   BoolPresentInfoCallback present_with_info;
-  /// Specifying one (and only one) of the `fbo_callback`,
-  /// `fbo_with_frame_info_callback`, or `fbo_with_damage_callback` is required.
-  /// Specifying more than one is an error and engine intialization will be
-  /// terminated. The return value indicates the a struct containing both the id
-  /// of the frame buffer object that flutter will obtain the gl surface from
-  /// and the existing damage to it. When using this variant, the embedder can
-  /// also pass a `FlutterFrameInfo` struct that indicates the properties of the
-  /// surface that flutter will acquire from the returned fbo.
-  FlutterFrameBufferFrameInfoCallback fbo_with_damage_callback;
 } FlutterOpenGLRendererConfig;
 
 /// Alias for id<MTLDevice>.
