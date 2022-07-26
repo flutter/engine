@@ -49,6 +49,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
         "(%d) for blits.",
         source->GetTextureDescriptor().sample_count,
         destination->GetTextureDescriptor().sample_count);
+    return false;
   }
 
   if (!source_region.has_value()) {

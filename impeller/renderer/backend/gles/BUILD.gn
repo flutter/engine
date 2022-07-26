@@ -63,6 +63,9 @@ impeller_component("gles") {
     public_configs = [ ":gles_config" ]
     sources += [
       "//third_party/angle/include/GLES2/gl2ext.h",
+
+      # The GLES3 API is a superset of GLES2. Although we target GLES2, we use
+      # some GLES3 features if the driver supports them.
       "//third_party/angle/include/GLES3/gl3.h",
     ]
   }

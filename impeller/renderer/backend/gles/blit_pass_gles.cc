@@ -42,43 +42,36 @@ static void DeleteFBO(const ProcTableGLES& gl, GLuint fbo, GLenum type) {
   }
 };
 
-static std::optional<GLuint> BindFBO(const ProcTableGLES& gl,
-                                     const std::shared_ptr<Texture>& texture,
-                                     GLenum type) {
+static std::optional<GLuint> ConfigureFBO(
+    const ProcTableGLES& gl,
+    const std::shared_ptr<Texture>& texture,
+    GLenum fbo_type) {
   auto handle = TextureGLES::Cast(texture.get())->GetGLHandle();
   if (!handle.has_value()) {
     return std::nullopt;
   }
 
   if (TextureGLES::Cast(*texture).IsWrapped()) {
-    gl.BindFramebuffer(type, 0);
-    return 0;  // The texture is attached to the default FBO.
+    // The texture is attached to the default FBO, so there's no need to
+    // create/configure one.
+    gl.BindFramebuffer(fbo_type, 0);
+    return 0;
   }
 
   GLuint fbo;
   gl.GenFramebuffers(1u, &fbo);
-  gl.BindFramebuffer(type, fbo);
-  switch (TextureGLES::Cast(*texture).GetType()) {
-    case TextureGLES::Type::kTexture:
-      gl.FramebufferTexture2D(type,                  // target
-                              GL_COLOR_ATTACHMENT0,  // attachment
-                              GL_TEXTURE_2D,         // textarget
-                              handle.value(),        // texture
-                              0                      // level
-      );
-      break;
-    case TextureGLES::Type::kRenderBuffer:
-      gl.FramebufferRenderbuffer(type,                  // target
-                                 GL_COLOR_ATTACHMENT0,  // attachment
-                                 GL_RENDERBUFFER,       // render-buffer target
-                                 handle.value()         // render-buffer
-      );
-      break;
+  gl.BindFramebuffer(fbo_type, fbo);
+
+  if (!TextureGLES::Cast(*texture).SetAsFramebufferAttachment(
+          fbo_type, fbo, TextureGLES::AttachmentPoint::kColor0)) {
+    VALIDATION_LOG << "Could not attach texture to framebuffer.";
+    DeleteFBO(gl, fbo, fbo_type);
+    return std::nullopt;
   }
 
-  if (gl.CheckFramebufferStatus(type) != GL_FRAMEBUFFER_COMPLETE) {
+  if (gl.CheckFramebufferStatus(fbo_type) != GL_FRAMEBUFFER_COMPLETE) {
     VALIDATION_LOG << "Could not create a complete frambuffer.";
-    DeleteFBO(gl, fbo, type);
+    DeleteFBO(gl, fbo, fbo_type);
     return std::nullopt;
   }
 
@@ -132,16 +125,19 @@ static std::optional<GLuint> BindFBO(const ProcTableGLES& gl,
       });
 
       {
-        auto read = BindFBO(gl, copy_command->source, GL_READ_FRAMEBUFFER);
+        auto read = ConfigureFBO(gl, copy_command->source, GL_READ_FRAMEBUFFER);
         if (!read.has_value()) {
           return false;
         }
         read_fbo = read.value();
-        auto draw = BindFBO(gl, copy_command->destination, GL_DRAW_FRAMEBUFFER);
+      }
+
+      {
+        auto draw =
+            ConfigureFBO(gl, copy_command->destination, GL_DRAW_FRAMEBUFFER);
         if (!draw.has_value()) {
           return false;
         }
-        read_fbo = read.value();
         draw_fbo = draw.value();
       }
 

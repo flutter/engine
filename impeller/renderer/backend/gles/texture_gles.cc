@@ -386,10 +386,15 @@ bool TextureGLES::GenerateMipmaps() const {
   }
 
   auto type = GetTextureDescriptor().type;
-  if (type != TextureType::kTexture2D && type != TextureType::kTextureCube) {
-    VALIDATION_LOG << "Could not generate mipmaps for texture type. Only "
-                      "Texture2D and TextureCube are supported for GLES.";
-    return false;
+  switch (type) {
+    case TextureType::kTexture2D:
+      break;
+    case TextureType::kTexture2DMultisample:
+      VALIDATION_LOG << "Generating mipmaps for multisample textures is not "
+                        "supported in the GLES backend.";
+      return false;
+    case TextureType::kTextureCube:
+      break;
   }
 
   if (!Bind()) {
@@ -421,7 +426,8 @@ static GLenum ToAttachmentPoint(TextureGLES::AttachmentPoint point) {
   }
 }
 
-bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
+bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
+                                             GLuint fbo,
                                              AttachmentPoint point) const {
   if (!IsValid()) {
     return false;
@@ -434,7 +440,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
     case Type::kTexture:
-      gl.FramebufferTexture2D(GL_FRAMEBUFFER,            // target
+      gl.FramebufferTexture2D(target,                    // target
                               ToAttachmentPoint(point),  // attachment
                               GL_TEXTURE_2D,             // textarget
                               handle.value(),            // texture
@@ -442,7 +448,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLuint fbo,
       );
       break;
     case Type::kRenderBuffer:
-      gl.FramebufferRenderbuffer(GL_FRAMEBUFFER,            // target
+      gl.FramebufferRenderbuffer(target,                    // target
                                  ToAttachmentPoint(point),  // attachment
                                  GL_RENDERBUFFER,  // render-buffer target
                                  handle.value()    // render-buffer
