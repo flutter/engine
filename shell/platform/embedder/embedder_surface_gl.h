@@ -9,6 +9,7 @@
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "shell/gpu/gpu_surface_gl_delegate.h"
 
 namespace flutter {
 
@@ -16,14 +17,14 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
                                 public GPUSurfaceGLDelegate {
  public:
   struct GLDispatchTable {
-    std::function<bool(void)> gl_make_current_callback;           // required
-    std::function<bool(void)> gl_clear_current_callback;          // required
-    std::function<bool(uint32_t)> gl_present_callback;            // required
-    std::function<intptr_t(GLFrameInfo)> gl_fbo_callback;         // required
-    std::function<bool(void)> gl_make_resource_current_callback;  // optional
+    std::function<bool(void)> gl_make_current_callback;              // required
+    std::function<bool(void)> gl_clear_current_callback;             // required
+    std::function<bool(GLPresentInfo)> gl_present_callback;          // required
+    std::function<GLFBOInfo(GLFrameInfo)> gl_fbo_callback;           // required
+    std::function<bool(void)> gl_make_resource_current_callback;     // optional
     std::function<SkMatrix(void)>
-        gl_surface_transformation_callback;              // optional
-    std::function<void*(const char*)> gl_proc_resolver;  // optional
+        gl_surface_transformation_callback;                          // optional
+    std::function<void*(const char*)> gl_proc_resolver;              // optional
   };
 
   EmbedderSurfaceGL(
@@ -59,7 +60,7 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextFBOResetAfterPresent() const override;
