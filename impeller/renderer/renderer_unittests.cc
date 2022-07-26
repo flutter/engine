@@ -442,6 +442,95 @@ TEST_P(RendererTest, CanRenderInstanced) {
 }
 #endif  // IMPELLER_ENABLE_METAL
 
+TEST_P(RendererTest, CanBlit) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(bridge && boston);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  Renderer::RenderCallback callback = [context = GetContext(),
+                                       &bridge](RenderTarget& render_target) {
+    auto buffer = context->CreateRenderCommandBuffer();
+    if (!buffer) {
+      return false;
+    }
+    buffer->SetLabel("Playground Command Buffer");
+
+    auto pass = buffer->CreateBlitPass();
+    if (!pass) {
+      return false;
+    }
+    pass->SetLabel("Playground Blit Pass");
+
+    if (render_target.GetColorAttachments().empty()) {
+      return false;
+    }
+    auto color0 = render_target.GetColorAttachments().find(0)->second;
+
+    // Blit `bridge` to the top left corner of the on-screen texture.
+    pass->AddCopy(bridge, color0.texture);
+
+    pass->EncodeCommands(context->GetTransientsAllocator());
+    if (!buffer->SubmitCommands()) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanGenerateMipmaps) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(boston);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  Renderer::RenderCallback callback = [context = GetContext(),
+                                       &boston](RenderTarget& render_target) {
+    auto buffer = context->CreateRenderCommandBuffer();
+    if (!buffer) {
+      return false;
+    }
+    buffer->SetLabel("Playground Command Buffer");
+
+    {
+      auto pass = buffer->CreateBlitPass();
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Blit Pass");
+      pass->GenerateMipmaps(boston, "Boston Mipmaps");
+      pass->EncodeCommands(context->GetTransientsAllocator());
+    }
+
+    {
+      auto pass = buffer->CreateRenderPass(render_target);
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Blit Pass");
+      {
+        Command cmd;
+        pass->AddCommand(std::move(cmd));
+      }
+      pass->EncodeCommands(context->GetTransientsAllocator());
+    }
+
+    if (!buffer->SubmitCommands()) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
 TEST_P(RendererTest, TheImpeller) {
   using VS = ImpellerVertexShader;
   using FS = ImpellerFragmentShader;
