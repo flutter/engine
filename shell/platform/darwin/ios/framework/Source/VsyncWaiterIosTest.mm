@@ -17,7 +17,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto runner = thread->GetTaskRunner();
   return runner;
 }
-}
+}  // namespace
 
 @interface VSyncClient (Testing)
 
