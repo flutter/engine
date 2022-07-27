@@ -327,6 +327,7 @@ struct DisplayListInvocationGroup {
   std::vector<DisplayListInvocation> variants;
 };
 
+extern std::vector<DisplayListInvocationGroup> allRenderingOps;
 extern std::vector<DisplayListInvocationGroup> allGroups;
 
 }  // namespace testing
