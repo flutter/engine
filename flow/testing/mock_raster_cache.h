@@ -72,7 +72,7 @@ class MockRasterCache : public RasterCache {
   MutatorsStack mutators_stack_;
   FixedRefreshRateStopwatch raster_time_;
   FixedRefreshRateStopwatch ui_time_;
-  TextureRegistry texture_registry_;
+  std::shared_ptr<TextureRegistry> texture_registry_;
   PrerollContext preroll_context_ = {
       // clang-format off
       .raster_cache                  = this,

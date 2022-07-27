@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
+#include "display_list_deferred_image_gpu.h"
 
 namespace flutter {
 
@@ -24,16 +25,15 @@ DlDeferredImageGPU::DlDeferredImageGPU(
 
 // |DlImage|
 DlDeferredImageGPU::~DlDeferredImageGPU() {
+  std::scoped_lock lock(image_wrapper_mutex_);
   fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner_,
-      [image = std::move(image_), unref_queue = std::move(unref_queue_),
-       texture_registry = std::move(texture_registry_)]() {
+      raster_task_runner_, [image_wrapper = std::move(image_wrapper_),
+                            unref_queue = std::move(unref_queue_)]() {
+        if (!image_wrapper) {
+          return;
+        }
+        auto image = image_wrapper->image;
         if (image) {
-          if (texture_registry) {
-            texture_registry->UnregisterContextDestroyedListener(
-                image->uniqueID());
-          }
-
           GrBackendTexture texture = image->releaseBackendTexture(true);
           if (!texture.isValid()) {
             return;
@@ -46,7 +46,8 @@ DlDeferredImageGPU::~DlDeferredImageGPU() {
 
 // |DlImage|
 sk_sp<SkImage> DlDeferredImageGPU::skia_image() const {
-  return image_;
+  std::scoped_lock lock(image_wrapper_mutex_);
+  return image_wrapper_ ? image_wrapper_->image : nullptr;
 };
 
 // |DlImage|
@@ -79,13 +80,17 @@ size_t DlDeferredImageGPU::GetApproximateByteSize() const {
   return sizeof(this) + size_.width() * size_.height() * 4;
 }
 
-void DlDeferredImageGPU::set_image(sk_sp<SkImage> image,
-                                   TextureRegistry* texture_registry) {
+void DlDeferredImageGPU::set_image(
+    sk_sp<SkImage> image,
+    std::shared_ptr<TextureRegistry> texture_registry) {
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(image);
   FML_DCHECK(image->dimensions() == size_);
-  image_ = std::move(image);
-  texture_registry_ = texture_registry;
+  std::scoped_lock lock(image_wrapper_mutex_);
+  image_wrapper_ = std::make_shared<ImageWrapper>(
+      std::move(image), raster_task_runner_, unref_queue_);
+  texture_registry_ = std::move(texture_registry);
+  texture_registry_->RegisterContextDestroyedListener(image_wrapper_);
 }
 
 void DlDeferredImageGPU::set_error(const std::string& error) {
@@ -98,18 +103,24 @@ std::optional<std::string> DlDeferredImageGPU::get_error() const {
   return error_;
 }
 
-void DlDeferredImageGPU::OnGrContextDestroyed() {
-  FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
-  if (image_) {
-    set_error("context destroyed");
-    GrBackendTexture texture = image_->releaseBackendTexture(true);
-    image_.reset();
+DlDeferredImageGPU::ImageWrapper::ImageWrapper(
+    sk_sp<SkImage> p_image,
+    fml::RefPtr<fml::TaskRunner> p_raster_task_runner,
+    fml::RefPtr<SkiaUnrefQueue> p_unref_queue)
+    : image(std::move(p_image)),
+      raster_task_runner(std::move(p_raster_task_runner)),
+      unref_queue(std::move(p_unref_queue)) {}
+
+void DlDeferredImageGPU::ImageWrapper::OnGrContextDestroyed() {
+  FML_DCHECK(raster_task_runner->RunsTasksOnCurrentThread());
+  if (image) {
+    GrBackendTexture texture = image->releaseBackendTexture(true);
+    image.reset();
     if (!texture.isValid()) {
       return;
     }
-    unref_queue_->DeleteTexture(std::move(texture));
+    unref_queue->DeleteTexture(std::move(texture));
   }
-  unref();  // balance call in Picture::RasterizeToImageSync. Might delete this.
 }
 
 }  // namespace flutter

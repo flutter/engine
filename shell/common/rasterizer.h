@@ -213,7 +213,7 @@ class Rasterizer final : public SnapshotDelegate,
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   // |SnapshotDelegate|
-  flutter::TextureRegistry* GetTextureRegistry() override;
+  std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
   using LayerTreeDiscardCallback = std::function<bool(flutter::LayerTree&)>;
 
@@ -464,8 +464,7 @@ class Rasterizer final : public SnapshotDelegate,
   // |SnapshotDelegate|
   std::pair<sk_sp<SkImage>, std::string> MakeGpuImage(
       sk_sp<DisplayList> display_list,
-      SkISize picture_size,
-      ContextDestroyedListener* listener = nullptr) override;
+      SkISize picture_size) override;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(

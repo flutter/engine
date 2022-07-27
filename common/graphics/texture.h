@@ -65,14 +65,11 @@ class TextureRegistry {
   void RegisterTexture(std::shared_ptr<Texture> texture);
 
   // Called from raster thread.
-  void RegisterContextDestroyedListener(uint32_t id,
-                                        ContextDestroyedListener* image);
+  void RegisterContextDestroyedListener(
+      std::weak_ptr<ContextDestroyedListener> image);
 
   // Called from raster thread.
   void UnregisterTexture(int64_t id);
-
-  // Called from raster thread.
-  void UnregisterContextDestroyedListener(uint32_t id);
 
   // Called from raster thread.
   std::shared_ptr<Texture> GetTexture(int64_t id);
@@ -85,7 +82,7 @@ class TextureRegistry {
 
  private:
   std::map<int64_t, std::shared_ptr<Texture>> mapping_;
-  std::map<uint32_t, ContextDestroyedListener*> images_;
+  std::vector<std::weak_ptr<ContextDestroyedListener>> images_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextureRegistry);
 };

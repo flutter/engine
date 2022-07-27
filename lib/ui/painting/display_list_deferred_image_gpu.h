@@ -16,8 +16,7 @@
 
 namespace flutter {
 
-class DlDeferredImageGPU final : public DlImage,
-                                 public ContextDestroyedListener {
+class DlDeferredImageGPU final : public DlImage {
  public:
   static sk_sp<DlDeferredImageGPU> Make(
       SkISize size,
@@ -44,7 +43,8 @@ class DlDeferredImageGPU final : public DlImage,
   virtual size_t GetApproximateByteSize() const override;
 
   // This method must only be called from the raster thread.
-  void set_image(sk_sp<SkImage> image, TextureRegistry* texture_registry);
+  void set_image(sk_sp<SkImage> image,
+                 std::shared_ptr<TextureRegistry> texture_registry);
 
   // This method is safe to call from any thread.
   void set_error(const std::string& error);
@@ -58,15 +58,26 @@ class DlDeferredImageGPU final : public DlImage,
     return OwningContext::kRaster;
   }
 
-  // |ContextDestroyedListener|
-  void OnGrContextDestroyed() override;
-
  private:
+  struct ImageWrapper final : public ContextDestroyedListener {
+    ImageWrapper(sk_sp<SkImage> p_image,
+                 fml::RefPtr<fml::TaskRunner> p_raster_task_runner,
+                 fml::RefPtr<SkiaUnrefQueue> p_unref_queue);
+
+    sk_sp<SkImage> image;
+    fml::RefPtr<fml::TaskRunner> raster_task_runner;
+    fml::RefPtr<SkiaUnrefQueue> unref_queue;
+
+    // |ContextDestroyedListener|
+    void OnGrContextDestroyed() override;
+  };
+
   SkISize size_;
   fml::RefPtr<fml::TaskRunner> raster_task_runner_;
   fml::RefPtr<SkiaUnrefQueue> unref_queue_;
-  sk_sp<SkImage> image_;
-  TextureRegistry* texture_registry_ = nullptr;
+  mutable std::mutex image_wrapper_mutex_;
+  std::shared_ptr<ImageWrapper> image_wrapper_;
+  std::shared_ptr<TextureRegistry> texture_registry_;
   mutable std::mutex error_mutex_;
   std::optional<std::string> error_;
 

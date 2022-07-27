@@ -77,10 +77,8 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
         sk_sp<SkImage> sk_image;
         std::string error;
         std::tie(sk_image, error) = snapshot_delegate->MakeGpuImage(
-            display_list, dl_image->dimensions(), dl_image.get());
+            display_list, dl_image->dimensions());
         if (sk_image) {
-          // balanced in DlDeferredImageGpu::OnGrContextDestroyed
-          dl_image->ref();
           dl_image->set_image(std::move(sk_image),
                               snapshot_delegate->GetTextureRegistry());
         } else {

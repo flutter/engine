@@ -85,27 +85,26 @@ PrerollContextHolder GetSamplePrerollContextHolder(RasterCache* raster_cache) {
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   MutatorsStack mutators_stack;
-  TextureRegistry texture_registry;
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
 
   PrerollContextHolder holder = {
       {
           // clang-format off
           .raster_cache                  = raster_cache,
-          .gr_context                    =  nullptr,
-          .view_embedder                 =  nullptr,
+          .gr_context                    = nullptr,
+          .view_embedder                 = nullptr,
           .mutators_stack                = mutators_stack,
-          .dst_color_space               =  srgb.get(),
-          .cull_rect                     =  kGiantRect,
+          .dst_color_space               = srgb.get(),
+          .cull_rect                     = kGiantRect,
           .surface_needs_readback        = false,
           .raster_time                   = raster_time,
           .ui_time                       = ui_time,
-          .texture_registry              = texture_registry,
-          .checkerboard_offscreen_layers =  false,
-          .frame_device_pixel_ratio      =  1.0f,
-          .has_platform_view             =  false,
+          .texture_registry              = nullptr,
+          .checkerboard_offscreen_layers = false,
+          .frame_device_pixel_ratio      = 1.0f,
+          .has_platform_view             = false,
           .has_texture_layer             = false,
-          .raster_cached_entries         =  &raster_cache_items_,
+          .raster_cached_entries         = &raster_cache_items_,
           // clang-format on
       },
       srgb};
@@ -117,7 +116,6 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
   FixedRefreshRateStopwatch raster_time;
   FixedRefreshRateStopwatch ui_time;
   MutatorsStack mutators_stack;
-  TextureRegistry texture_registry;
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
   PaintContextHolder holder = {// clang-format off
     {
@@ -128,7 +126,7 @@ PaintContextHolder GetSamplePaintContextHolder(RasterCache* raster_cache) {
           .view_embedder                 = nullptr,
           .raster_time                   = raster_time,
           .ui_time                       = ui_time,
-          .texture_registry              = texture_registry,
+          .texture_registry              = nullptr,
           .raster_cache                  = raster_cache,
           .checkerboard_offscreen_layers = false,
           .frame_device_pixel_ratio      = 1.0f,

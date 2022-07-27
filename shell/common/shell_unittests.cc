@@ -2382,7 +2382,6 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
         MutatorsStack mutators_stack;
-        TextureRegistry texture_registry;
         PaintContext paint_context = {
             // clang-format off
             .internal_nodes_canvas         = nullptr,
@@ -2392,7 +2391,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
-            .texture_registry              = texture_registry,
+            .texture_registry              = nullptr,
             .raster_cache                  = &raster_cache,
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
@@ -2411,7 +2410,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .surface_needs_readback        = false,
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
-            .texture_registry              = texture_registry,
+            .texture_registry              = nullptr,
             .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,

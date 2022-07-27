@@ -204,7 +204,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
   MutatorsStack mock_mutators;
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
-  TextureRegistry mock_registry;
+  std::shared_ptr<TextureRegistry> mock_registry;
 
   auto expect_defaults = [&mock_mutators, &mock_raster_time, &mock_ui_time,
                           &mock_registry](const PrerollContext& context) {
@@ -248,7 +248,7 @@ TEST_F(LayerTreeTest, PaintContextInitialization) {
 
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
-  TextureRegistry mock_registry;
+  std::shared_ptr<TextureRegistry> mock_registry;
 
   auto expect_defaults = [&mock_raster_time, &mock_ui_time,
                           &mock_registry](const PaintContext& context) {

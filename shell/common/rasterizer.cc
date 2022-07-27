@@ -141,8 +141,8 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
-flutter::TextureRegistry* Rasterizer::GetTextureRegistry() {
-  return &compositor_context_->texture_registry();
+std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
+  return compositor_context_->texture_registry();
 }
 
 flutter::LayerTree* Rasterizer::GetLastLayerTree() {
@@ -273,8 +273,7 @@ std::pair<sk_sp<SkImage>, std::string> MakeBitmapImage(
 
 std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
     sk_sp<DisplayList> display_list,
-    SkISize picture_size,
-    ContextDestroyedListener* listener) {
+    SkISize picture_size) {
   TRACE_EVENT0("flutter", "Rasterizer::MakeGpuImage");
   FML_DCHECK(display_list);
 
@@ -287,9 +286,7 @@ std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
           })
           .SetIfFalse([&result, &image_info, &display_list,
                        surface = surface_.get(),
-                       gpu_image_behavior = gpu_image_behavior_,
-                       listener = std::move(listener),
-                       texture_registry = GetTextureRegistry()] {
+                       gpu_image_behavior = gpu_image_behavior_] {
             if (!surface ||
                 gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
               result = MakeBitmapImage(std::move(display_list), image_info);
@@ -316,10 +313,6 @@ std::pair<sk_sp<SkImage>, std::string> Rasterizer::MakeGpuImage(
 
             sk_sp<SkImage> image = sk_surface->makeImageSnapshot();
 
-            if (image && listener && texture_registry) {
-              texture_registry->RegisterContextDestroyedListener(
-                  image->uniqueID(), listener);
-            }
             result = {image, image ? "" : "Unable to create image"};
           }));
   return result;
