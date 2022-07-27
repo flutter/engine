@@ -741,7 +741,7 @@ void main() {
     canvas.clipRect(clipBounds1);
     canvas.translate(0, 10.0);
     canvas.clipRect(clipBounds1);
-    expect(canvas.getDestinationClipBounds(), Rect.fromLTRB(0.0, 0.0, 0.0, 0.0));
+    expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
     canvas.restore();
 
     canvas.save();
@@ -805,7 +805,7 @@ void main() {
     canvas.clipRRect(clip1);
     canvas.translate(0, 10.0);
     canvas.clipRRect(clip1);
-    expect(canvas.getDestinationClipBounds(), Rect.fromLTRB(0.0, 0.0, 0.0, 0.0));
+    expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
     canvas.restore();
 
     canvas.save();
@@ -869,7 +869,7 @@ void main() {
     canvas.clipPath(clip1);
     canvas.translate(0, 10.0);
     canvas.clipPath(clip1);
-    expect(canvas.getDestinationClipBounds(), Rect.fromLTRB(0.0, 0.0, 0.0, 0.0));
+    expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
     canvas.restore();
 
     canvas.save();

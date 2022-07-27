@@ -2124,7 +2124,7 @@ TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
   builder.clipRect(clipBounds1, SkClipOp::kIntersect, false);
   builder.translate(10, 0);
   builder.clipRect(clipBounds1, SkClipOp::kIntersect, false);
-  ASSERT_EQ(builder.getDestinationClipBounds(), SkRect::MakeEmpty());
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
   builder.restore();
 
   builder.save();
@@ -2186,7 +2186,7 @@ TEST(DisplayList, ClipRRectAffectsClipBoundsWithMatrix) {
   builder.clipRRect(clip1, SkClipOp::kIntersect, false);
   builder.translate(10, 0);
   builder.clipRRect(clip1, SkClipOp::kIntersect, false);
-  ASSERT_EQ(builder.getDestinationClipBounds(), SkRect::MakeEmpty());
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
   builder.restore();
 
   builder.save();
@@ -2247,7 +2247,7 @@ TEST(DisplayList, ClipPathAffectsClipBoundsWithMatrix) {
   builder.clipPath(clip1, SkClipOp::kIntersect, false);
   builder.translate(10, 0);
   builder.clipPath(clip1, SkClipOp::kIntersect, false);
-  ASSERT_EQ(builder.getDestinationClipBounds(), SkRect::MakeEmpty());
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
   builder.restore();
 
   builder.save();
@@ -2321,10 +2321,8 @@ TEST(DisplayList, ClipPathWithInvertFillTypeDoesNotAffectClipBounds) {
   clip.setFillType(SkPathFillType::kInverseWinding);
   builder.clipPath(clip, SkClipOp::kIntersect, false);
 
-  SkRect initial_local_bounds = builder.getLocalClipBounds();
-  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
-  ASSERT_EQ(initial_local_bounds, cull_rect);
-  ASSERT_EQ(initial_destination_bounds, cull_rect);
+  ASSERT_EQ(builder.getLocalClipBounds(), cull_rect);
+  ASSERT_EQ(builder.getDestinationClipBounds(), cull_rect);
 }
 
 TEST(DisplayList, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
@@ -2336,10 +2334,8 @@ TEST(DisplayList, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
   SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
   builder.clipPath(clip, SkClipOp::kDifference, false);
 
-  SkRect initial_local_bounds = builder.getLocalClipBounds();
-  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
-  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
-  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+  ASSERT_EQ(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
 }
 
 TEST(DisplayList, FlatDrawPointsProducesBounds) {
