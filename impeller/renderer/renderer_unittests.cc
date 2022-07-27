@@ -17,7 +17,7 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/image/compressed_image.h"
 #include "impeller/image/decompressed_image.h"
-#include "impeller/playground/playground.h"
+#include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
@@ -35,7 +35,7 @@
 namespace impeller {
 namespace testing {
 
-using RendererTest = Playground;
+using RendererTest = PlaygroundTest;
 INSTANTIATE_PLAYGROUND_SUITE(RendererTest);
 
 TEST_P(RendererTest, CanCreateBoxPrimitive) {
