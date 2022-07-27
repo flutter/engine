@@ -224,19 +224,12 @@ void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
         new (pod) DlMatrixImageFilter(matrix_filter);
         break;
       }
-      case DlImageFilterType::kLocalMatrixFilter: {
-        const DlLocalMatrixImageFilter* local_matrix_filter =
-            filter->asLocalMatrix();
-        FML_DCHECK(local_matrix_filter);
-        void* pod = Push<SetPodImageFilterOp>(local_matrix_filter->size(), 0);
-        new (pod) DlLocalMatrixImageFilter(local_matrix_filter);
-        break;
-      }
       case DlImageFilterType::kComposeFilter:
       case DlImageFilterType::kColorFilter: {
         Push<SetSharedImageFilterOp>(0, 0, filter);
         break;
       }
+      case DlImageFilterType::kLocalMatrixFilter:
       case DlImageFilterType::kUnknown: {
         Push<SetSkImageFilterOp>(0, 0, filter->skia_object());
         break;

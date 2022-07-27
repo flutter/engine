@@ -672,16 +672,18 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    if (!image_filter_)
+    if (!image_filter_) {
       return nullptr;
+    }
     return image_filter_->map_local_bounds(input_bounds, output_bounds);
   }
 
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    if (!image_filter_)
+    if (!image_filter_) {
       return nullptr;
+    }
     return image_filter_->map_device_bounds(
         input_bounds, SkMatrix::Concat(ctm, matrix_), output_bounds);
   }
@@ -689,15 +691,17 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
-    if (!image_filter_)
+    if (!image_filter_) {
       return nullptr;
+    }
     return image_filter_->get_input_device_bounds(
         output_bounds, SkMatrix::Concat(ctm, matrix_), input_bounds);
   }
 
   sk_sp<SkImageFilter> skia_object() const override {
-    if (!image_filter_)
+    if (!image_filter_) {
       return nullptr;
+    }
     return image_filter_->skia_object()->makeWithLocalMatrix(matrix_);
   }
 

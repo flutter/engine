@@ -15,9 +15,12 @@
 #include "flutter/display_list/types.h"
 #include "gtest/gtest.h"
 #include "include/core/SkColorFilter.h"
+#include "include/core/SkImageFilter.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkSamplingOptions.h"
+#include "include/core/SkTileMode.h"
 
 namespace flutter {
 namespace testing {
@@ -769,20 +772,61 @@ TEST(DisplayListImageFilter, UnknownContents) {
 }
 
 TEST(DisplayListImageFilter, LocalImageFilterBounds) {
-  auto blur_filter =
-      SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr);
-  auto local_filter = blur_filter->makeWithLocalMatrix(SkMatrix::Scale(2, 2));
   auto inputBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
-  auto rect = local_filter->filterBounds(
-      inputBounds, SkMatrix::I(),
-      SkImageFilter::MapDirection::kForward_MapDirection);
-  auto dl_color_filter =
+  auto filter_matrix = SkMatrix::MakeAll(2.0, 0.0, 10,  //
+                                         0.5, 3.0, 15,  //
+                                         0.0, 0.0, 1);
+
+  auto sk_filter1 =
+      SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr);
+  auto sk_filter2 = SkImageFilters::ColorFilter(
+      SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver), nullptr);
+  auto sk_filter3 = SkImageFilters::Dilate(5.0, 10.0, nullptr);
+  auto sk_filter4 = SkImageFilters::MatrixTransform(
+      filter_matrix, ToSk(DlImageSampling::kLinear), nullptr);
+  // auto sk_filter5 = SkImageFilters::Compose(sk_filter1, sk_filter2);
+  std::vector<sk_sp<SkImageFilter>> sk_filters{
+      sk_filter1, sk_filter2, sk_filter3, sk_filter4 /*, sk_filter5*/};
+
+  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto dl_filter1 =
       std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat);
-  auto local_matrix_filter =
-      DlLocalMatrixImageFilter(SkMatrix::Scale(2, 2), dl_color_filter);
-  SkIRect out_bounds;
-  local_matrix_filter.map_device_bounds(inputBounds, SkMatrix::I(), out_bounds);
-  ASSERT_EQ(out_bounds, rect);
+  auto dl_filter2 =
+      std::make_shared<DlColorFilterImageFilter>(dl_color_filter.shared());
+  auto dl_filter3 = std::make_shared<DlDilateImageFilter>(5, 10);
+  auto dl_filter4 = std::make_shared<DlMatrixImageFilter>(
+      filter_matrix, DlImageSampling::kLinear);
+  // auto dl_filter5 =
+  // std::make_shared<DlComposeImageFilter>(dl_filter1->shared(),
+  // dl_filter2->shared());
+  std::vector<std::shared_ptr<DlImageFilter>> dl_filters{
+      dl_filter1, dl_filter2, dl_filter3, dl_filter4, /* dl_filter5*/};
+
+  auto translate = SkMatrix::Translate(10.0, 10.0);
+  auto scale_translate = SkMatrix::Scale(2.0, 2.0).preTranslate(10.0, 10.0);
+  auto rotate_translate = SkMatrix::RotateDeg(45).preTranslate(5.0, 5.0);
+  auto persp = SkMatrix::I();
+  persp.setPerspY(10);
+  std::vector<SkMatrix> matrixs = {translate, scale_translate, rotate_translate,
+                                   persp};
+
+  for (unsigned i = 0; i < sk_filters.size(); i++) {
+    for (unsigned j = 0; j < matrixs.size(); j++) {
+      auto& m = matrixs[j];
+      auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
+      auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
+      SkIRect sk_rect, dl_rect;
+      if (sk_local_filter) {
+        sk_rect = sk_local_filter->filterBounds(
+            inputBounds, SkMatrix::I(),
+            SkImageFilter::MapDirection::kForward_MapDirection);
+      }
+      if (dl_local_filter) {
+        dl_local_filter->map_device_bounds(inputBounds, SkMatrix::I(), dl_rect);
+      }
+      ASSERT_EQ(sk_rect, dl_rect);
+    }
+  }
 }
 
 TEST(DisplayListImageFilter, UnknownEquals) {
