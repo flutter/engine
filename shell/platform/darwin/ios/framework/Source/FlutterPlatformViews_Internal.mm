@@ -57,8 +57,8 @@ void ResetAnchor(CALayer* layer) {
 }  // namespace flutter
 
 @implementation ChildClippingView {
-//  // The gaussianFilters currently applied to this ChildClippingView.
-//  NSMutableArray* _activeGaussianFilters;  // property, nonatomic retain
+  //  // The gaussianFilters currently applied to this ChildClippingView.
+  //  NSMutableArray* _activeGaussianFilters;  // property, nonatomic retain
 
   // A gaussianFilter from UIVisualEffectView that can be copied for new backdrop filters.
   NSObject* _gaussianFilter;
