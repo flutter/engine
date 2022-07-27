@@ -10,9 +10,12 @@
 #include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
+#include "include/core/SkPathTypes.h"
+#include "include/core/SkRect.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/effects/SkBlenders.h"
@@ -2312,6 +2315,34 @@ TEST(DisplayList, DiffClipPathDoesNotAffectClipBounds) {
   builder.clipPath(diff_clip, SkClipOp::kDifference, false);
   ASSERT_EQ(builder.getLocalClipBounds(), initialLocalBounds);
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
+}
+
+TEST(DisplayList, ClipPathWithInvertFillTypeDoesNotAffectClipBounds) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListBuilder builder(cull_rect);
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, cull_rect);
+  ASSERT_EQ(initial_destination_bounds, cull_rect);
+}
+
+TEST(DisplayList, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListBuilder builder(cull_rect);
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
+  builder.clipPath(clip, SkClipOp::kDifference, false);
+
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
 }
 
 TEST(DisplayList, FlatDrawPointsProducesBounds) {

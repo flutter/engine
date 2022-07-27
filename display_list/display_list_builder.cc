@@ -649,10 +649,15 @@ void DisplayListBuilder::clipPath(const SkPath& path,
   switch (clip_op) {
     case SkClipOp::kIntersect:
       Push<ClipIntersectPathOp>(0, 1, path, is_aa);
-      intersect(path.getBounds());
+      if (!path.isInverseFillType()) {
+        intersect(path.getBounds());
+      }
       break;
     case SkClipOp::kDifference:
       Push<ClipDifferencePathOp>(0, 1, path, is_aa);
+      if (path.isInverseFillType()) {
+        intersect(path.getBounds());
+      }
       break;
   }
 }

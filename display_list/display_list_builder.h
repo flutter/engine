@@ -211,7 +211,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
-  void intersect(const SkRect& rect);
+
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// measured in the coordinate space within which this DisplayList will
   /// be rendered.
@@ -361,6 +361,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   void setAttributesFromDlPaint(const DlPaint& paint,
                                 const DisplayListAttributeFlags flags);
+  void intersect(const SkRect& rect);
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
