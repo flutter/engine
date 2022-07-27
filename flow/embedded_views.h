@@ -241,7 +241,7 @@ class EmbeddedViewParams {
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
   // This method pushes the stored DlImageFilter object to the mutators stack.
-  void PushFilter(std::shared_ptr<const DlImageFilter> filter) {
+  void PushImageFilter(std::shared_ptr<const DlImageFilter> filter) {
     mutators_stack_.PushBackdropFilter(*filter);
   }
 
@@ -367,11 +367,11 @@ class ExternalViewEmbedder {
   bool GetUsedThisFrame() const { return used_this_frame_; }
 
   // This method pushes the platform view id of a visited platform view to a
-  // list of visited platform views
+  // list of visited platform views.
   virtual void PushVisitedPlatformView(int64_t view_id) {}
 
   // This method pushes a DlImageFilter object to each platform view within a
-  // list of visited platform views
+  // list of visited platform views.
   virtual void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter) {}
 
