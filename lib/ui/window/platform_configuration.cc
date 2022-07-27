@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
@@ -201,6 +202,9 @@ void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime,
     return;
   }
   tonic::DartState::Scope scope(dart_state);
+  TRACE_EVENT0("flutter", "PerformanceMode_Latency");
+  Dart_PerformanceMode previous =
+      Dart_SetPerformanceMode(Dart_PerformanceMode_Latency);
 
   int64_t microseconds = (frameTime - fml::TimePoint()).ToMicroseconds();
 
@@ -213,6 +217,8 @@ void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime,
   UIDartState::Current()->FlushMicrotasksNow();
 
   tonic::CheckAndHandleError(tonic::DartInvokeVoid(draw_frame_.Get()));
+
+  Dart_SetPerformanceMode(previous);
 }
 
 void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
