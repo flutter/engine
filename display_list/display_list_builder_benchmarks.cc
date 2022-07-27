@@ -8,9 +8,9 @@
 namespace flutter {
 namespace {
 
-const static int kDefault = 0;
-const static int kBounds = 1;
-const static int kBoundsAndRtree = 2;
+static const int kDefault = 0;
+static const int kBounds = 1;
+static const int kBoundsAndRtree = 2;
 
 static void InvokeAllRenderingOps(DisplayListBuilder& builder) {
   for (auto& group : testing::allRenderingOps) {
