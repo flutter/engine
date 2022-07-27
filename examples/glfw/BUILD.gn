@@ -14,5 +14,9 @@ if (build_embedder_examples) {
       "//flutter/shell/platform/embedder:embedder",
       "//third_party/glfw",
     ]
+
+    libs = [
+      "EGL",
+    ]
   }
 }
