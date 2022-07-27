@@ -163,7 +163,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
           final PlatformView platformView = createPlatformView(request);
 
-          Log.i(TAG, "Using hybrid composition for platform view: " + request.viewId);
+          configureForHybridComposition(platformView, request);
+          // New code should be added to configureForHybridComposition, not here, unless it is
+          // not applicable to fallback from TLHC to HC.
         }
 
         @TargetApi(20)
@@ -195,126 +197,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                 "The Android view returned from PlatformView#getView() was already added to a parent view.");
           }
 
-          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
-          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
 
-          // Case 1. Add the view to a virtual display if the embedded view contains any of the
-          // VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY view types.
-          // These views allow out-of-band graphics operations that aren't notified to the Android
-          // view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
-          // The virtual display is wired up to a GL texture that is composed by the Flutter engine.
-          // Also, use virtual display if the API level is 20, 21 or 22 since the Case 2. requires
-          // at least API level 23.
-          final boolean shouldUseVirtualDisplay =
-              ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY)
-                  || Build.VERSION.SDK_INT < 23;
+          // The newer Texture Layer Hybrid Composition mode isn't suppported if any of the
+          // following are true:
+          // - The embedded view contains any of the VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY view types.
+          //   These views allow out-of-band graphics operations that aren't notified to the Android
+          //   view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
+          // - The API level is <23, due to TLHC implementation API requirements.
+          final boolean supportsTextureLayerMode = Build.VERSION.SDK_INT >= 23 &&
+              !ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY);
 
-          if (!usesSoftwareRendering && shouldUseVirtualDisplay) {
-            Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
-            // API level 20 is required to use VirtualDisplay#setSurface.
-            ensureValidAndroidVersion(20);
-
-            final TextureRegistry.SurfaceTextureEntry textureEntry =
-                textureRegistry.createSurfaceTexture();
-
-            final VirtualDisplayController vdController =
-                VirtualDisplayController.create(
-                    context,
-                    accessibilityEventsDelegate,
-                    platformView,
-                    textureEntry,
-                    physicalWidth,
-                    physicalHeight,
-                    request.viewId,
-                    createParams,
-                    (view, hasFocus) -> {
-                      if (hasFocus) {
-                        platformViewsChannel.invokeViewFocused(request.viewId);
-                      }
-                    });
-
-            if (vdController == null) {
-              throw new IllegalStateException(
-                  "Failed creating virtual display for a "
-                      + request.viewType
-                      + " with id: "
-                      + request.viewId);
-            }
-
-            // If our FlutterEngine is already attached to a Flutter UI, provide that Android
-            // View to this new platform view.
-            if (flutterView != null) {
-              vdController.onFlutterViewAttached(flutterView);
-            }
-
-            vdControllers.put(request.viewId, vdController);
-            contextToEmbeddedView.put(embeddedView.getContext(), embeddedView);
-            return textureEntry.id();
+          // Fall back to Virtual Display when necessary.
+          if (!supportsTextureLayerMode && !usesSoftwareRendering) {
+            return configureForVirtualDisplay(platformView, request);
           }
-
-          // Case 2. Attach the view to the Android view hierarchy and record their drawing
-          // operations, so they can be forwarded to a GL texture that is composed by the
-          // Flutter engine.
-
-          // API level 23 is required to use Surface#lockHardwareCanvas().
-          ensureValidAndroidVersion(23);
-          Log.i(TAG, "Hosting view in view hierarchy for platform view: " + viewId);
-
-          PlatformViewWrapper viewWrapper;
-          long txId;
-          if (usesSoftwareRendering) {
-            viewWrapper = new PlatformViewWrapper(context);
-            txId = -1;
-          } else {
-            final TextureRegistry.SurfaceTextureEntry textureEntry =
-                textureRegistry.createSurfaceTexture();
-            viewWrapper = new PlatformViewWrapper(context, textureEntry);
-            txId = textureEntry.id();
-          }
-          viewWrapper.setTouchProcessor(androidTouchProcessor);
-          viewWrapper.setBufferSize(physicalWidth, physicalHeight);
-
-          final FrameLayout.LayoutParams viewWrapperLayoutParams =
-              new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
-
-          // Size and position the view wrapper.
-          final int physicalTop = toPhysicalPixels(request.logicalTop);
-          final int physicalLeft = toPhysicalPixels(request.logicalLeft);
-          viewWrapperLayoutParams.topMargin = physicalTop;
-          viewWrapperLayoutParams.leftMargin = physicalLeft;
-          viewWrapper.setLayoutParams(viewWrapperLayoutParams);
-
-          // Size the embedded view.
-          // This isn't needed when the virtual display is used because the virtual display itself
-          // is sized.
-          embeddedView.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
-
-          // Accessibility in the embedded view is initially disabled because if a Flutter app
-          // disabled accessibility in the first frame, the embedding won't receive an update to
-          // disable accessibility since the embedding never received an update to enable it.
-          // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas
-          // when the framework sends a new a11y tree to the embedding.
-          // To prevent races, the framework populate the SemanticsNode after the platform view has
-          // been created.
-          embeddedView.setImportantForAccessibility(
-              View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
-
-          // Add the embedded view to the wrapper.
-          viewWrapper.addView(embeddedView);
-
-          // Listen for focus changed in any subview, so the framework is notified when the platform
-          // view is focused.
-          viewWrapper.setOnDescendantFocusChangeListener(
-              (v, hasFocus) -> {
-                if (hasFocus) {
-                  platformViewsChannel.invokeViewFocused(viewId);
-                } else if (textInputPlugin != null) {
-                  textInputPlugin.clearPlatformViewClient(viewId);
-                }
-              });
-          flutterView.addView(viewWrapper);
-          viewWrappers.append(viewId, viewWrapper);
-          return txId;
+          return configureForTextureLayerComposition(platformView, request);
         }
 
         @Override
@@ -595,6 +492,137 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
           platformViews.put(request.viewId, platformView);
           return platformView;
+        }
+
+        // Configures the view for Hybrid Composition mode.
+        private void configureForHybridComposition(
+            @NonNull PlatformView platformView,
+            @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          Log.i(TAG, "Using hybrid composition for platform view: " + request.viewId);
+        }
+
+        // Configures the view for Virtual Display mode, returning the associated texture ID.
+        private int configureForVirtualDisplay(
+            @NonNull PlatformView platformView,
+            @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          // This mode adds the view to a virtual display, which is is wired up to a GL texture that
+          // is composed by the Flutter engine.
+
+          // API level 20 is required to use VirtualDisplay#setSurface.
+          ensureValidAndroidVersion(20);
+
+          Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
+
+          final TextureRegistry.SurfaceTextureEntry textureEntry =
+              textureRegistry.createSurfaceTexture();
+          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
+          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
+          final VirtualDisplayController vdController =
+              VirtualDisplayController.create(
+                  context,
+                  accessibilityEventsDelegate,
+                  platformView,
+                  textureEntry,
+                  physicalWidth,
+                  physicalHeight,
+                  request.viewId,
+                  null,
+                  (view, hasFocus) -> {
+                    if (hasFocus) {
+                      platformViewsChannel.invokeViewFocused(request.viewId);
+                    }
+                  });
+
+          if (vdController == null) {
+            throw new IllegalStateException(
+                "Failed creating virtual display for a "
+                    + request.viewType
+                    + " with id: "
+                    + request.viewId);
+          }
+
+          // If our FlutterEngine is already attached to a Flutter UI, provide that Android
+          // View to this new platform view.
+          if (flutterView != null) {
+            vdController.onFlutterViewAttached(flutterView);
+          }
+
+          vdControllers.put(request.viewId, vdController);
+          contextToEmbeddedView.put(embeddedView.getContext(), embeddedView);
+
+          return textureEntry.id();
+        }
+
+        // Configures the view for Texture Layer Hybrid Composition mode, returning the associated
+        // texture ID.
+        private int configureForTextureLayerComposition(
+            @NonNull PlatformView platformView,
+            @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          // This mode attaches the view to the Android view hierarchy and record its drawing
+          // operations, so they can be forwarded to a GL texture that is composed by the
+          // Flutter engine.
+
+          // API level 23 is required to use Surface#lockHardwareCanvas().
+          ensureValidAndroidVersion(23);
+          Log.i(TAG, "Hosting view in view hierarchy for platform view: " + viewId);
+
+          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
+          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
+          PlatformViewWrapper viewWrapper;
+          long textureId;
+          if (usesSoftwareRendering) {
+            viewWrapper = new PlatformViewWrapper(context);
+            textureId = -1;
+          } else {
+            final TextureRegistry.SurfaceTextureEntry textureEntry =
+                textureRegistry.createSurfaceTexture();
+            viewWrapper = new PlatformViewWrapper(context, textureEntry);
+            textureId = textureEntry.id();
+          }
+          viewWrapper.setTouchProcessor(androidTouchProcessor);
+          viewWrapper.setBufferSize(physicalWidth, physicalHeight);
+
+          final FrameLayout.LayoutParams viewWrapperLayoutParams =
+              new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
+
+          // Size and position the view wrapper.
+          final int physicalTop = toPhysicalPixels(request.logicalTop);
+          final int physicalLeft = toPhysicalPixels(request.logicalLeft);
+          viewWrapperLayoutParams.topMargin = physicalTop;
+          viewWrapperLayoutParams.leftMargin = physicalLeft;
+          viewWrapper.setLayoutParams(viewWrapperLayoutParams);
+
+          // Size the embedded view.
+          // This isn't needed when the virtual display is used because the virtual display itself
+          // is sized.
+          embeddedView.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
+
+          // Accessibility in the embedded view is initially disabled because if a Flutter app
+          // disabled accessibility in the first frame, the embedding won't receive an update to
+          // disable accessibility since the embedding never received an update to enable it.
+          // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas
+          // when the framework sends a new a11y tree to the embedding.
+          // To prevent races, the framework populate the SemanticsNode after the platform view has
+          // been created.
+          embeddedView.setImportantForAccessibility(
+              View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+
+          // Add the embedded view to the wrapper.
+          viewWrapper.addView(embeddedView);
+
+          // Listen for focus changed in any subview, so the framework is notified when the platform
+          // view is focused.
+          viewWrapper.setOnDescendantFocusChangeListener(
+              (v, hasFocus) -> {
+                if (hasFocus) {
+                  platformViewsChannel.invokeViewFocused(viewId);
+                } else if (textInputPlugin != null) {
+                  textInputPlugin.clearPlatformViewClient(viewId);
+                }
+              });
+          flutterView.addView(viewWrapper);
+          viewWrappers.append(viewId, viewWrapper);
+          return textureId;
         }
 
         @Override

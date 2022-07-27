@@ -83,10 +83,6 @@ class SingleViewPresentation extends Presentation {
   // so when we create the platform view we can tell it its view id.
   private int viewId;
 
-  // This is the creation parameters for the platform view, we keep it here
-  // so when we create the platform view we can tell it its view id.
-  private Object createParams;
-
   // The root view for the presentation, it has 2 childs: container which contains the embedded
   // view, and
   // fakeWindowViewGroup which contains views that were added directly to the presentation's window
@@ -119,7 +115,6 @@ class SingleViewPresentation extends Presentation {
     super(new ImmContext(outerContext), display);
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;
     this.viewId = viewId;
-    this.createParams = createParams;
     this.focusChangeListener = focusChangeListener;
     this.outerContext = outerContext;
     state = new PresentationState();
