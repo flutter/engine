@@ -8,34 +8,6 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 
 void main() {
-  test('Scene.toImageSync succeeds', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-    const Color color = Color(0xFF123456);
-    canvas.drawPaint(Paint()..color = color);
-    final Picture picture = recorder.endRecording();
-    final SceneBuilder builder = SceneBuilder();
-    builder.pushOffset(10, 10);
-    builder.addPicture(const Offset(5, 5), picture);
-    final Scene scene = builder.build();
-
-    final Image image = scene.toImageSync(6, 8);
-    picture.dispose();
-    scene.dispose();
-
-    expect(image.width, 6);
-    expect(image.height, 8);
-
-    final ByteData? data = await image.toByteData();
-
-    expect(data, isNotNull);
-    expect(data!.lengthInBytes, 6 * 8 * 4);
-    expect(data.buffer.asUint8List()[0], 0x12);
-    expect(data.buffer.asUint8List()[1], 0x34);
-    expect(data.buffer.asUint8List()[2], 0x56);
-    expect(data.buffer.asUint8List()[3], 0xFF);
-  });
-
   test('addPicture with disposed picture does not crash', () {
     bool assertsEnabled = false;
     assert(() {

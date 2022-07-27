@@ -321,26 +321,3 @@ void scene_with_red_box() {
   };
   PlatformDispatcher.instance.scheduleFrame();
 }
-
-
-@pragma('vm:entry-point')
-Future<void> toImageSync() async {
-  final PictureRecorder recorder = PictureRecorder();
-  final Canvas canvas = Canvas(recorder);
-  canvas.drawPaint(Paint()..color = const Color(0xFFAAAAAA));
-  final Picture picture = recorder.endRecording();
-
-  final Image image = picture.toImageSync(20, 25);
-  void expect(Object? a, Object? b) {
-    if (a != b) {
-      throw 'Expected $a to == $b';
-    }
-  }
-  expect(image.width, 20);
-  expect(image.height, 25);
-
-  final ByteData data = (await image.toByteData())!;
-  expect(data.lengthInBytes, 20 * 25 * 4);
-  expect(data.buffer.asUint32List().every((int byte) => byte == 0xFFAAAAAA), true);
-  notifyNative();
-}

@@ -16,20 +16,4 @@ void main() {
     const Rect rect = Rect.fromLTRB(0, 0, 100, 100);
     testCanvas((Canvas canvas) => canvas.drawRect(rect, paint));
   });
-
-  test('Construct an ImageShader - GPU image', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-    canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
-    final Picture picture = recorder.endRecording();
-    final Image image = picture.toImageSync(50, 50);
-    picture.dispose();
-
-    // TODO(dnfield): this should not throw once
-    // https://github.com/flutter/flutter/issues/105085 is fixed.
-    expect(
-      () => ImageShader(image, TileMode.clamp, TileMode.clamp, Float64List(16)),
-      throwsException,
-    );
-  });
 }

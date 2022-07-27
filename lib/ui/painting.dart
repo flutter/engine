@@ -5554,37 +5554,6 @@ class Picture extends NativeFieldWrapperClass1 {
   @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>('Picture::toImage')
   external String? _toImage(int width, int height, void Function(_Image?) callback);
 
-  /// Synchronously creates a handle to an image of this picture.
-  ///
-  /// {@template dart.ui.painting.Picture.toImageSync}
-  /// The returned image will be `width` pixels wide and `height` pixels high.
-  /// The picture is rasterized within the 0 (left), 0 (top), `width` (right),
-  /// `height` (bottom) bounds. Content outside these bounds is clipped.
-  ///
-  /// The image object is created and returned synchronously, but is rasterized
-  /// asynchronously. If the rasterization fails, an exception will be thrown
-  /// when the image is drawn to a [Canvas].
-  ///
-  /// If a GPU context is available, this image will be created as GPU resident
-  /// and not copied back to the host. This means the image will be more
-  /// efficient to draw.
-  ///
-  /// If no GPU context is available, the image will be rasterized on the CPU.
-  /// {@endtemplate}
-  Image toImageSync(int width, int height) {
-    assert(!_disposed);
-    if (width <= 0 || height <= 0) {
-      throw Exception('Invalid image dimensions.');
-    }
-
-    final _Image image = _Image._();
-    _toImageSync(width, height, image);
-    return Image._(image, image.width, image.height);
-  }
-
-  @FfiNative<Void Function(Pointer<Void>, Uint32, Uint32, Handle)>('Picture::toImageSync')
-  external void _toImageSync(int width, int height, _Image outImage);
-
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() {
@@ -6120,31 +6089,4 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   if (error != null)
     throw Exception(error);
   return completer.future;
-}
-
-/// An exception thrown by [Canvas.drawImage] and related methods when drawing
-/// an [Image] created via [Picture.toImageSync] that is in an invalid state.
-///
-/// This exception may be thrown if the requested image dimensions exceeded the
-/// maximum 2D texture size allowed by the GPU, or if no GPU surface or context
-/// was available for rasterization at request time.
-class PictureRasterizationException implements Exception {
-  const PictureRasterizationException._(this.message, {this.stack});
-
-  /// A string containing details about the failure.
-  final String message;
-
-  /// If available, the stack trace at the time [Picture.toImageSync] was called.
-  final StackTrace? stack;
-
-  @override
-  String toString() {
-    final StringBuffer buffer = StringBuffer('Failed to rasterize a picture: $message.');
-    if (stack != null) {
-      buffer.writeln();
-      buffer.writeln('The callstack when the image was created was:');
-      buffer.writeln(stack!.toString());
-    }
-    return buffer.toString();
-  }
 }

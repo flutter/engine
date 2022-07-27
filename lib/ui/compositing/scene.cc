@@ -60,24 +60,6 @@ void Scene::dispose() {
   ClearDartWrapper();
 }
 
-Dart_Handle Scene::toImageSync(uint32_t width,
-                               uint32_t height,
-                               Dart_Handle raw_image_handle) {
-  TRACE_EVENT0("flutter", "Scene::toImageSync");
-
-  if (!layer_tree_) {
-    return tonic::ToDart("Scene did not contain a layer tree.");
-  }
-
-  auto picture = layer_tree_->Flatten(SkRect::MakeWH(width, height));
-  if (!picture) {
-    return tonic::ToDart("Could not flatten scene into a layer tree.");
-  }
-
-  Picture::RasterizeToImageSync(picture, width, height, raw_image_handle);
-  return Dart_Null();
-}
-
 Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
                            Dart_Handle raw_image_callback) {
