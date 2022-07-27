@@ -98,7 +98,7 @@ class Mutator {
       case kOpacity:
         return alpha_ == other.alpha_;
       case kBackdropFilter:
-        return *filter_ == *other.filter_->shared();
+        return *filter_ == *other.filter_;
     }
 
     return false;
