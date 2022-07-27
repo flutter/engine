@@ -9,10 +9,10 @@
 #define GLFW_EXPOSE_NATIVE_EGL
 #define GLFW_INCLUDE_GLEXT
 
-#include <array>
-#include <list>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include <array>
+#include <list>
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 #include "embedder.h"
@@ -101,8 +101,10 @@ std::array<EGLint, 4> static RectToInts(EGLDisplay display,
   EGLint height;
   eglQuerySurface(display, surface, EGL_HEIGHT, &height);
 
-  std::array<EGLint, 4> res{static_cast<int>(rect.left), height - static_cast<int>(rect.bottom), static_cast<int>(rect.right) - static_cast<int>(rect.left),
-                            static_cast<int>(rect.bottom) - static_cast<int>(rect.top)};
+  std::array<EGLint, 4> res{
+      static_cast<int>(rect.left), height - static_cast<int>(rect.bottom),
+      static_cast<int>(rect.right) - static_cast<int>(rect.left),
+      static_cast<int>(rect.bottom) - static_cast<int>(rect.top)};
   return res;
 }
 
@@ -127,19 +129,21 @@ bool RunFlutter(GLFWwindow* window,
     glfwMakeContextCurrent(nullptr);  // is this even a thing?
     return true;
   };
-  config.open_gl.present_with_info = [](void* userdata, const FlutterPresentInfo* info) -> bool {
+  config.open_gl.present_with_info =
+      [](void* userdata, const FlutterPresentInfo* info) -> bool {
     PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ =
-          reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
-              eglGetProcAddress("eglSetDamageRegionKHR"));
+        reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+            eglGetProcAddress("eglSetDamageRegionKHR"));
     PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage_ =
-          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
-              eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+        reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+            eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
 
     GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
     EGLDisplay display = glfwGetEGLDisplay();
     EGLSurface surface = glfwGetEGLSurface(window);
 
-    auto buffer_rects = RectToInts(display, surface, {0, 0, kInitialWindowWidth, kInitialWindowHeight});
+    auto buffer_rects = RectToInts(
+        display, surface, {0, 0, kInitialWindowWidth, kInitialWindowHeight});
     set_damage_region_(display, surface, buffer_rects.data(), 1);
 
     // Swap buffers with frame damage
@@ -151,11 +155,18 @@ bool RunFlutter(GLFWwindow* window,
     if (damage_history_.size() > kMaxHistorySize) {
       damage_history_.pop_front();
     }
-    std::cout << "Buffer Damage: " << info->buffer_damage.damage.left << ", " << info->buffer_damage.damage.top << ", " << info->buffer_damage.damage.right << ", " << info->buffer_damage.damage.bottom << std::endl;
-    std::cout << "Frame Damage: " << info->frame_damage.damage.left << ", " << info->frame_damage.damage.top << ", " << info->frame_damage.damage.right << ", " << info->frame_damage.damage.bottom << std::endl;
+    std::cout << "Buffer Damage: " << info->buffer_damage.damage.left << ", "
+              << info->buffer_damage.damage.top << ", "
+              << info->buffer_damage.damage.right << ", "
+              << info->buffer_damage.damage.bottom << std::endl;
+    std::cout << "Frame Damage: " << info->frame_damage.damage.left << ", "
+              << info->frame_damage.damage.top << ", "
+              << info->frame_damage.damage.right << ", "
+              << info->frame_damage.damage.bottom << std::endl;
     return true;
   };
-  config.open_gl.fbo_with_frame_info_callback = [](void* userdata, const FlutterFrameInfo* info) -> uint32_t {
+  config.open_gl.fbo_with_frame_info_callback =
+      [](void* userdata, const FlutterFrameInfo* info) -> uint32_t {
     // Given the FBO age, create existing damage region by joining all frame
     // damages since FBO was last used
     GLFWwindow* window = static_cast<GLFWwindow*>(userdata);
@@ -178,10 +189,11 @@ bool RunFlutter(GLFWwindow* window,
       // join up to (age - 1) last rects from damage history
       for (auto i = damage_history_.rbegin();
            i != damage_history_.rend() && age > 0; ++i, --age) {
-        std::cout << "Damage in history: " << i->left << ", " << i->top << ", " << i->right << ", " << i->bottom << std::endl;
+        std::cout << "Damage in history: " << i->left << ", " << i->top << ", "
+                  << i->right << ", " << i->bottom << std::endl;
         if (i == damage_history_.rbegin()) {
           if (i != damage_history_.rend()) {
-           existing_damage.damage = {i->left, i->top, i->right, i->bottom};
+            existing_damage.damage = {i->left, i->top, i->right, i->bottom};
           }
         } else {
           JoinFlutterRect(&(existing_damage.damage), *i);
@@ -190,9 +202,12 @@ bool RunFlutter(GLFWwindow* window,
     }
 
     FlutterFrameInfo* info_copy = const_cast<FlutterFrameInfo*>(info);
-    info_copy->fbo_id = 0; // FBO0
+    info_copy->fbo_id = 0;  // FBO0
     info_copy->existing_damage = std::move(existing_damage);
-    std::cout << "Existing Damage: " << info->existing_damage.damage.left << ", " << info->existing_damage.damage.top << ", " << info->existing_damage.damage.right << ", " << info->existing_damage.damage.bottom << std::endl;
+    std::cout << "Existing Damage: " << info->existing_damage.damage.left
+              << ", " << info->existing_damage.damage.top << ", "
+              << info->existing_damage.damage.right << ", "
+              << info->existing_damage.damage.bottom << std::endl;
     return info->fbo_id;
   };
   config.open_gl.gl_proc_resolver = [](void*, const char* name) -> void* {
