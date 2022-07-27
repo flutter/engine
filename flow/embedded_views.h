@@ -56,7 +56,7 @@ class Mutator {
         alpha_ = other.alpha_;
         break;
       case kBackdropFilter:
-        filter_ = other.filter_->shared();
+        filter_ = other.filter_;
         break;
       default:
         break;
@@ -70,8 +70,8 @@ class Mutator {
   explicit Mutator(const SkMatrix& matrix)
       : type_(kTransform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(kOpacity), alpha_(alpha) {}
-  explicit Mutator(const DlImageFilter& filter)
-      : type_(kBackdropFilter), filter_(filter.shared()) {}
+  explicit Mutator(std::shared_ptr<const DlImageFilter> filter)
+      : type_(kBackdropFilter), filter_(filter) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
@@ -151,7 +151,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
-  void PushBackdropFilter(const DlImageFilter& filter);
+  void PushBackdropFilter(std::shared_ptr<const DlImageFilter> filter);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.
