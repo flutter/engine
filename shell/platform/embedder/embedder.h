@@ -440,7 +440,7 @@ typedef struct {
   // The number of rectangles within the damage region.
   size_t num_rects;
   // The actual damage region(s) in question.
-  FlutterRect damage[1];
+  FlutterRect damage;
 } FlutterDamage;
 
 /// This information is passed to the embedder when requesting a frame buffer

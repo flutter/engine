@@ -269,18 +269,16 @@ InferOpenGLPlatformViewCreationCallback(
     if (present) {
       return present(user_data);
     } else {
-      // TODO(???): Implement support for damage regions composed of multiple
-      // rectangles.
       /// Format the frame and buffer damages accordingly.
       FlutterDamage frame_damage{
           .struct_size = sizeof(FlutterDamage),
           .num_rects = 1,
-          .damage[0] = SkIRectToFlutterRect(*(gl_present_info.frame_damage)),
+          .damage = SkIRectToFlutterRect(*(gl_present_info.frame_damage)),
       };
       FlutterDamage buffer_damage{
           .struct_size = sizeof(FlutterDamage),
           .num_rects = 1,
-          .damage[0] = SkIRectToFlutterRect(*(gl_present_info.buffer_damage)),
+          .damage = SkIRectToFlutterRect(*(gl_present_info.buffer_damage)),
       };
 
       FlutterPresentInfo present_info = {
@@ -335,7 +333,7 @@ InferOpenGLPlatformViewCreationCallback(
         .existing_damage =
             fbo.existing_damage.num_rects == 0
                 ? SkIRect::MakeEmpty()
-                : FlutterRectToSkIRect(fbo.existing_damage.damage[1]),
+                : FlutterRectToSkIRect(fbo.existing_damage.damage),
     };
 
     return gl_fbo;
