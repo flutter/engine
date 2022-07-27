@@ -7,7 +7,7 @@
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 
-#include "flutter/shell/platform/windows/flutter_platform_node_delegate_win32.h"
+#include "flutter/shell/platform/windows/flutter_platform_node_delegate_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
 namespace flutter {
@@ -43,13 +43,13 @@ class AccessibilityBridgeDelegateWin32
   // Dispatches a Windows accessibility event of the specified type, generated
   // by the accessibility node associated with the specified semantics node.
   virtual void DispatchWinAccessibilityEvent(
-      std::shared_ptr<FlutterPlatformNodeDelegateWin32> node_delegate,
+      std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate,
       DWORD event_type);
 
   // Sets the accessibility focus to the accessibility node associated with the
   // specified semantics node.
   virtual void SetFocus(
-      std::shared_ptr<FlutterPlatformNodeDelegateWin32> node_delegate);
+      std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate);
 
  private:
   FlutterWindowsEngine* engine_;

@@ -12,7 +12,7 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
-#include "flutter/shell/platform/windows/flutter_platform_node_delegate_win32.h"
+#include "flutter/shell/platform/windows/flutter_platform_node_delegate_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
@@ -28,7 +28,7 @@ namespace {
 
 // A structure representing a Win32 MSAA event targeting a specified node.
 struct MsaaEvent {
-  std::shared_ptr<FlutterPlatformNodeDelegateWin32> node_delegate;
+  std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate;
   DWORD event_type;
 };
 
@@ -40,12 +40,12 @@ class AccessibilityBridgeDelegateWin32Spy
       : AccessibilityBridgeDelegateWin32(engine) {}
 
   void DispatchWinAccessibilityEvent(
-      std::shared_ptr<FlutterPlatformNodeDelegateWin32> node_delegate,
+      std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate,
       DWORD event_type) override {
     dispatched_events_.push_back({node_delegate, event_type});
   }
 
-  void SetFocus(std::shared_ptr<FlutterPlatformNodeDelegateWin32> node_delegate)
+  void SetFocus(std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate)
       override {
     focused_nodes_.push_back(node_delegate->GetAXNode()->id());
   }
