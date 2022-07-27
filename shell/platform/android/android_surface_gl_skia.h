@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
@@ -67,7 +68,7 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;

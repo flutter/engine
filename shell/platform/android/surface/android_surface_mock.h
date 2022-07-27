@@ -8,6 +8,7 @@
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 #include "gmock/gmock.h"
+#include "shell/gpu/gpu_surface_gl_delegate.h"
 
 namespace flutter {
 
@@ -51,7 +52,7 @@ class AndroidSurfaceMock final : public GPUSurfaceGLDelegate,
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 };
 
 }  // namespace flutter
