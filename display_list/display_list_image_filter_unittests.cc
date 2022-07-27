@@ -648,6 +648,30 @@ TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedInnerAndOuter) {
   TestUnboundedBounds(composed, inputBounds, expectedBounds, expectedBounds);
 }
 
+// See https://github.com/flutter/flutter/issues/108433
+TEST(DisplayListImageFilter, Issue_108433) {
+  auto inputBounds = SkIRect::MakeLTRB(20, 20, 80, 80);
+
+  auto sk_filter = SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver);
+  auto sk_outer = SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr);
+  auto sk_inner = SkImageFilters::ColorFilter(sk_filter, nullptr);
+  auto sk_compose = SkImageFilters::Compose(sk_outer, sk_inner);
+
+  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto dl_outer = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
+  auto dl_inner = DlColorFilterImageFilter(dl_color_filter.shared());
+  auto dl_compose = DlComposeImageFilter(dl_outer, dl_inner);
+
+  auto sk_bounds = sk_compose->filterBounds(
+      inputBounds, SkMatrix::I(),
+      SkImageFilter::MapDirection::kForward_MapDirection);
+
+  SkIRect dl_bounds;
+  EXPECT_EQ(dl_compose.map_device_bounds(inputBounds, SkMatrix::I(), dl_bounds),
+            nullptr);
+  ASSERT_EQ(dl_bounds, sk_bounds);
+}
+
 TEST(DisplayListImageFilter, ColorFilterConstructor) {
   DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter(dl_color_filter);
