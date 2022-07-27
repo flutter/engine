@@ -57,9 +57,9 @@ void ResetAnchor(CALayer* layer) {
 }  // namespace flutter
 
 @implementation ChildClippingView {
-  // The gaussianFilters currently applied to this ChildClippingView.
-  NSMutableArray* _activeGaussianFilters; // property, nonatomic retain
-  
+//  // The gaussianFilters currently applied to this ChildClippingView.
+//  NSMutableArray* _activeGaussianFilters;  // property, nonatomic retain
+
   // A gaussianFilter from UIVisualEffectView that can be copied for new backdrop filters.
   NSObject* _gaussianFilter;
 }
@@ -83,7 +83,8 @@ void ResetAnchor(CALayer* layer) {
   UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
 
-  NSObject* gaussianFilter = [[[visualEffectView.subviews firstObject].layer.filters firstObject] retain];
+  NSObject* gaussianFilter =
+      [[[visualEffectView.subviews firstObject].layer.filters firstObject] retain];
   if (!gaussianFilter || ![[gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                        "access the Gaussian blur filter. ";
@@ -92,8 +93,7 @@ void ResetAnchor(CALayer* layer) {
 
   [visualEffectView release];
 
-  if (![[gaussianFilter valueForKey:@"inputRadius"]
-          isKindOfClass:[NSNumber class]]) {
+  if (![[gaussianFilter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation "
                        "access the Gaussian blur filter's properties.";
     return nil;
@@ -105,7 +105,7 @@ void ResetAnchor(CALayer* layer) {
 - (void)applyBackdropFilters:(NSArray*)blurRadii {
   if (!_activeGaussianFilters) {
     _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
-    
+
     _gaussianFilter = [self extractGaussianFilter];
     if (!_gaussianFilter) {
       return;
@@ -124,7 +124,7 @@ void ResetAnchor(CALayer* layer) {
     [_activeGaussianFilters removeLastObject];
     updatedFilters = true;
   }
-  
+
   for (NSUInteger i = 0; i < [blurRadii count]; i++) {
     if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i]) {
       continue;
@@ -133,7 +133,7 @@ void ResetAnchor(CALayer* layer) {
     updatedFilters = true;
   }
 
-  if(updatedFilters) {
+  if (updatedFilters) {
     self.layer.filters = _activeGaussianFilters;
   }
 }

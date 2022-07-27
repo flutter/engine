@@ -402,12 +402,10 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                CGRectGetWidth(flutter_view.bounds),
                                CGRectGetHeight(flutter_view.bounds))] autorelease];
 
-  NSMutableArray* blurRadii =
-      [[[NSMutableArray alloc] init] autorelease];
-//  NSNumber* blurRadius;
-  
+  NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease];
+
   // TODO EMILY: this line is for visual simulator tests, delete before landing PR
-//      int numFilters = 0;
+//        int numFilters = 0;
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -416,16 +414,17 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
 
-        // TODO EMILY: these lines are for visual simulator tests, delete before landing PR
-//                        if(numFilters < 1) {
-//                          flutter::DlBlurImageFilter filter =
-//                              flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);
+//         TODO EMILY: these lines are for visual simulator tests, delete before landing PR
+//                                if(numFilters < 1) {
+//                                  flutter::DlBlurImageFilter filter =
+//                                      flutter::DlBlurImageFilter(5, 5,
+//                                      flutter::DlTileMode::kDecal);
 //
-//                          NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
-//                          [blurRadii addObject:blurRadius];
+//                                  NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
+//                                  [blurRadii addObject:blurRadius];
 //
-//                          numFilters++;
-//                        }
+//                                  numFilters++;
+//                                }
 
         break;
       }
@@ -443,15 +442,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       case kBackdropFilter: {
         // We only support DlBlurImageFilter for BackdropFilter.
-        if (!(*iter)->GetFilter().asBlur()) {
-          continue;
+        if ((*iter)->GetFilter().asBlur()) {
+          // Sigma X is arbitrarily chosen as the radius value because Quartz only supports 1D
+          // rendering. DlBlurImageFilter's Tile Mode is not supported in Quartz's gaussianBlur
+          // CAFilter, so it is not used to blur the PlatformView.
+          [blurRadii addObject:@((*iter)->GetFilter().asBlur()->sigma_x())];
         }
-
-        // Sigma X is arbitrarily chosen as the radius value because Quartz only supports 1D
-        // rendering. DlBlurImageFilter's Tile Mode is not supported in Quartz's gaussianBlur CAFilter, so it
-        // is not used to blur the PlatformView.
-//        blurRadius = @((*iter)->GetFilter().asBlur()->sigma_x());
-        [blurRadii addObject:@((*iter)->GetFilter().asBlur()->sigma_x())];
         break;
       }
     }

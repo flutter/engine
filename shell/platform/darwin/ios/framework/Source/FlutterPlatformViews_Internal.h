@@ -49,7 +49,8 @@
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
 
-//@property 
+// The gaussianFilters currently applied to this ChildClippingView.
+@property(nonatomic, retain) NSMutableArray* activeGaussianFilters;
 
 // Adds a blur filter to its layers.
 - (void)applyBackdropFilters:(NSArray*)blurRadii;

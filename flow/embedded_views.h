@@ -56,7 +56,7 @@ class Mutator {
         alpha_ = other.alpha_;
         break;
       case kBackdropFilter:
-        filter_ = other.filter_;
+        filter_ = other.filter_->shared();
         break;
       default:
         break;
@@ -71,7 +71,11 @@ class Mutator {
       : type_(kTransform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(kOpacity), alpha_(alpha) {}
   explicit Mutator(DlImageFilter& filter)
-      : type_(kBackdropFilter), filter_(new DlBlurImageFilter(filter.asBlur())) {} // TODO EMILY: originally filter_(filter), hack for pushing different filters to the stack
+      : type_(kBackdropFilter),
+        filter_(filter.shared()) {
+  }  // TODO EMILY: originally filter_(filter), hack for pushing different
+     // filters to the stack
+     // Chris' idea: filter.shared().get()
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
@@ -114,10 +118,14 @@ class Mutator {
     if (type_ == kClipPath) {
       delete path_;
     }
+    // if(type_ == kBackdropFilter) {
+    //   delete filter_;
+    // }
   };
 
  private:
   MutatorType type_;
+  std::shared_ptr<DlImageFilter> filter_;
 
   union {
     SkRect rect_;
@@ -125,7 +133,7 @@ class Mutator {
     SkMatrix matrix_;
     SkPath* path_;
     int alpha_;
-    DlImageFilter* filter_; //TODO EMILY const
+    // DlImageFilter* filter_; //TODO EMILY const
   };
 
 };  // Mutator
