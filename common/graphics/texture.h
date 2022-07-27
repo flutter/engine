@@ -9,7 +9,6 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSamplingOptions.h"
 
@@ -18,12 +17,16 @@ class GrDirectContext;
 namespace flutter {
 
 class ContextDestroyedListener {
+ public:
+  ContextDestroyedListener();
+  ~ContextDestroyedListener();
+
   // Called from raster thread.
   virtual void OnGrContextDestroyed() = 0;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(ContextedDestroyedListener);
-}
+  FML_DISALLOW_COPY_AND_ASSIGN(ContextDestroyedListener);
+};
 
 class Texture : public ContextDestroyedListener {
  public:

@@ -59,13 +59,19 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
                                    uint32_t height,
                                    Dart_Handle raw_image_handle) {
   auto* dart_state = UIDartState::Current();
+  if (!dart_state) {
+    return;
+  }
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
+  auto io_task_runner = dart_state->GetTaskRunners().GetIOTaskRunner();
+  auto io_manager = dart_state->GetIOManager();
 
   auto image = CanvasImage::Create();
-  auto dl_image = DlDeferredImageGPU::Make(SkISize::Make(width, height),
-                                           raster_task_runner);
+  auto dl_image = DlDeferredImageGPU::Make(
+      SkISize::Make(width, height), raster_task_runner,
+      std::move(io_task_runner), std::move(io_manager));
   image->set_image(dl_image);
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -75,9 +81,12 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
         sk_sp<SkImage> sk_image;
         std::string error;
         std::tie(sk_image, error) = snapshot_delegate->MakeGpuImage(
-            display_list, dl_image->dimensions());
+            display_list, dl_image->dimensions(), dl_image.get());
         if (sk_image) {
-          dl_image->set_image(std::move(sk_image));
+          dl_image->ref();  // balanced when we remove the listener in
+                            // DisplayListDeferredImageGPU DeleteImage
+          dl_image->set_image(std::move(sk_image),
+                              snapshot_delegate->GetTextureRegistry());
         } else {
           dl_image->set_error(std::move(error));
         }

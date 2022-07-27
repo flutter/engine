@@ -11,6 +11,8 @@
 #include "flutter/display_list/display_list_image.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/io_manager.h"
 
 namespace flutter {
 
@@ -19,7 +21,9 @@ class DlDeferredImageGPU final : public DlImage,
  public:
   static sk_sp<DlDeferredImageGPU> Make(
       SkISize size,
-      fml::RefPtr<fml::TaskRunner> raster_task_runner);
+      fml::RefPtr<fml::TaskRunner> raster_task_runner,
+      fml::RefPtr<fml::TaskRunner> io_task_runner,
+      fml::WeakPtr<IOManager> io_manager);
 
   // |DlImage|
   ~DlDeferredImageGPU() override;
@@ -41,7 +45,7 @@ class DlDeferredImageGPU final : public DlImage,
   virtual size_t GetApproximateByteSize() const override;
 
   // This method must only be called from the raster thread.
-  void set_image(sk_sp<SkImage> image);
+  void set_image(sk_sp<SkImage> image, TextureRegistry* texture_registry);
 
   // This method is safe to call from any thread.
   void set_error(const std::string& error);
@@ -55,17 +59,23 @@ class DlDeferredImageGPU final : public DlImage,
     return OwningContext::kRaster;
   }
 
-  void OnGrContextDestroyed();
+  // |ContextDestroyedListener|
+  void OnGrContextDestroyed() override;
 
  private:
   SkISize size_;
   fml::RefPtr<fml::TaskRunner> raster_task_runner_;
+  fml::RefPtr<fml::TaskRunner> io_task_runner_;
+  fml::WeakPtr<IOManager> io_manager_;
   sk_sp<SkImage> image_;
+  TextureRegistry* texture_registry_ = nullptr;
   mutable std::mutex error_mutex_;
   std::optional<std::string> error_;
 
   DlDeferredImageGPU(SkISize size,
-                     fml::RefPtr<fml::TaskRunner> raster_task_runner);
+                     fml::RefPtr<fml::TaskRunner> raster_task_runner,
+                     fml::RefPtr<fml::TaskRunner> io_task_runner,
+                     fml::WeakPtr<IOManager> io_manager);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DlDeferredImageGPU);
 };

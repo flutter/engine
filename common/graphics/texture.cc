@@ -6,6 +6,10 @@
 
 namespace flutter {
 
+ContextDestroyedListener::ContextDestroyedListener() = default;
+
+ContextDestroyedListener::~ContextDestroyedListener() = default;
+
 Texture::Texture(int64_t id) : id_(id) {}
 
 Texture::~Texture() = default;
@@ -19,15 +23,13 @@ void TextureRegistry::RegisterTexture(std::shared_ptr<Texture> texture) {
   mapping_[texture->Id()] = texture;
 }
 
-void TextureRegistry::RegisterGpuImage(sk_sp<DlDeferredImageGPU> image) {
+void TextureRegistry::RegisterContextDestroyedListener(
+    uint32_t id,
+    ContextDestroyedListener* image) {
   if (!image) {
     return;
   }
-  auto* skia_image = image->skia_image();
-  if (!skia_image) {
-    return;
-  }
-  images_[skia_image->uniqueID()] = skia_image;
+  images_[id] = image;
 }
 
 void TextureRegistry::UnregisterTexture(int64_t id) {
@@ -39,7 +41,7 @@ void TextureRegistry::UnregisterTexture(int64_t id) {
   mapping_.erase(found);
 }
 
-void TextureRegistry::UnregisterGpuImage(uint32_t id) {
+void TextureRegistry::UnregisterContextDestroyedListener(uint32_t id) {
   auto found = images_.find(id);
   if (found == images_.end()) {
     return;
@@ -59,8 +61,9 @@ void TextureRegistry::OnGrContextDestroyed() {
   }
 
   for (auto& it : images_) {
-    it.second->OnGrContextCreated();
+    it.second->OnGrContextDestroyed();
   }
+  images_.clear();
 }
 
 std::shared_ptr<Texture> TextureRegistry::GetTexture(int64_t id) {

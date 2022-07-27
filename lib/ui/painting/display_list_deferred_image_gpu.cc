@@ -8,20 +8,78 @@ namespace flutter {
 
 sk_sp<DlDeferredImageGPU> DlDeferredImageGPU::Make(
     SkISize size,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner) {
+    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    fml::RefPtr<fml::TaskRunner> io_task_runner,
+    fml::WeakPtr<IOManager> io_manager) {
   return sk_sp<DlDeferredImageGPU>(
-      new DlDeferredImageGPU(size, std::move(raster_task_runner)));
+      new DlDeferredImageGPU(size, std::move(raster_task_runner),
+                             std::move(io_task_runner), std::move(io_manager)));
 }
 
 DlDeferredImageGPU::DlDeferredImageGPU(
     SkISize size,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner)
-    : size_(size), raster_task_runner_(std::move(raster_task_runner)) {}
+    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    fml::RefPtr<fml::TaskRunner> io_task_runner,
+    fml::WeakPtr<IOManager> io_manager)
+    : size_(size),
+      raster_task_runner_(std::move(raster_task_runner)),
+      io_task_runner_(std::move(io_task_runner)),
+      io_manager_(std::move(io_manager)) {}
+
+namespace {
+// Call on the Raster task runner.
+void DeleteImage(sk_sp<SkImage> image,
+                 fml::RefPtr<fml::TaskRunner> io_task_runner,
+                 fml::WeakPtr<IOManager> io_manager) {
+  FML_DCHECK(io_task_runner);
+  if (!image) {
+    return;
+  }
+
+  GrBackendTexture texture = image->releaseBackendTexture(true);
+  image->unref();  // balance call in Picture::RasterizeToImageSync
+  if (!texture.isValid()) {
+    return;
+  }
+  // Need to latch on the IO runner so that during shutdown, the IO Manager
+  // and its resource context do not get collected.
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      io_task_runner, [&latch, texture = std::move(texture),
+                       io_manager = std::move(io_manager)]() {
+        if (!io_manager) {
+          FML_DCHECK(false);
+          latch.Signal();
+          return;
+        }
+        auto resource_context = io_manager->GetResourceContext();
+        if (!resource_context) {
+          FML_DCHECK(false);
+          latch.Signal();
+          return;
+        }
+        resource_context.get()->deleteBackendTexture(texture);
+        latch.Signal();
+      });
+  latch.Wait();
+}
+}  // namespace
 
 // |DlImage|
 DlDeferredImageGPU::~DlDeferredImageGPU() {
-  fml::TaskRunner::RunNowOrPostTask(raster_task_runner_,
-                                    [image = std::move(image_)]() {});
+  fml::TaskRunner::RunNowOrPostTask(
+      raster_task_runner_,
+      [image = std::move(image_), io_task_runner = std::move(io_task_runner_),
+       io_manager = std::move(io_manager_),
+       texture_registry = std::move(texture_registry_)]() {
+        if (texture_registry && image) {
+          texture_registry->UnregisterContextDestroyedListener(
+              image->uniqueID());
+        }
+
+        DeleteImage(std::move(image), std::move(io_task_runner),
+                    std::move(io_manager));
+      });
 }
 
 // |DlImage|
@@ -59,14 +117,16 @@ size_t DlDeferredImageGPU::GetApproximateByteSize() const {
   return sizeof(this) + size_.width() * size_.height() * 4;
 }
 
-void DlDeferredImageGPU::set_image(sk_sp<SkImage> image) {
+void DlDeferredImageGPU::set_image(sk_sp<SkImage> image,
+                                   TextureRegistry* texture_registry) {
+  FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(image);
   FML_DCHECK(image->dimensions() == size_);
   image_ = std::move(image);
+  texture_registry_ = texture_registry;
 }
 
 void DlDeferredImageGPU::set_error(const std::string& error) {
-  FML_DCHECK(!image_);
   std::scoped_lock lock(error_mutex_);
   error_ = std::move(error);
 }
@@ -77,9 +137,9 @@ std::optional<std::string> DlDeferredImageGPU::get_error() const {
 }
 
 void DlDeferredImageGPU::OnGrContextDestroyed() {
-  fml::TaskRunner::RunNowOrPostTask(raster_task_runner_,
-                                    [image = std::move(image_)]() {});
+  FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
   set_error("context destroyed");
+  DeleteImage(std::move(image_), io_task_runner_, io_manager_);
 }
 
 }  // namespace flutter
