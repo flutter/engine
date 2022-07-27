@@ -433,21 +433,14 @@ typedef struct {
   FlutterSize lower_left_corner_radius;
 } FlutterRoundedRect;
 
-/// The type of damage used.
-typedef enum {
-  kFlutterSingleRectDamage = 1,
-} FlutterDamageKind;
-
 /// A structure to represent a damage region.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterDamage).
   size_t struct_size;
-  // The type of damage used. Allows for future multi-damage modes.
-  FlutterDamageKind damage_kind;
+  // The number of rectangles within the damage region.
+  const size_t num_rects = 0;
   // The actual damage region(s) in question.
-  union {
-    FlutterRect damage;
-  };
+  FlutterRect damage[1];
 } FlutterDamage;
 
 /// This information is passed to the embedder when requesting a frame buffer
@@ -459,16 +452,28 @@ typedef struct {
   size_t struct_size;
   /// The size of the surface that will be backed by the fbo.
   FlutterUIntSize size;
-  /// The frame buffer's ID.
-  intptr_t fbo_id;
-  /// The frame buffer's existing damage (i.e. damage since it was last used).
-  FlutterDamage existing_damage;
 } FlutterFrameInfo;
 
 /// Callback for when a frame buffer object is requested.
 typedef uint32_t (*UIntFrameInfoCallback)(
     void* /* user data */,
     const FlutterFrameInfo* /* frame info */);
+
+/// A struct to represent information about the current back buffer.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterFrameBuffer).
+  size_t struct_size;
+  /// The frame buffer's ID.
+  intptr_t fbo_id;
+  /// The frame buffer's existing damage (i.e. damage since it was last used).
+  FlutterDamage existing_damage;
+} FlutterFrameBuffer;
+
+/// Callback for when a frame buffer object is requested with necessary
+/// information for partial repaint.
+typedef FlutterFrameBuffer (*FlutterFrameBufferWithDamageCallback)(
+    void* /* user data */,
+    const intptr_t id);
 
 /// This information is passed to the embedder when a surface is presented.
 ///
@@ -539,10 +544,7 @@ typedef struct {
   /// the id of the frame buffer object (fbo) that flutter will obtain the gl
   /// surface from. When using this variant, the embedder is passed a
   /// `FlutterFrameInfo` struct that indicates the properties of the surface
-  /// that flutter will acquire from the returned fbo. When performing partial
-  /// repaint, this callback is responsible for also filling in the values of
-  /// the frame_info that is passed to it by reference such as buffer existing
-  /// damage and buffer id.
+  /// that flutter will acquire from the returned fbo.
   UIntFrameInfoCallback fbo_with_frame_info_callback;
   /// Specifying one (and only one) of `present` or `present_with_info` is
   /// required. Specifying both is an error and engine initialization will be
@@ -550,6 +552,10 @@ typedef struct {
   /// `FlutterPresentInfo` struct that the embedder can use to release any
   /// resources. The return value indicates success of the present call.
   BoolPresentInfoCallback present_with_info;
+  /// Specifying this callback is a requirement for dirty region management. The
+  /// callback will return a FlutterFrameBuffer containing information about the
+  /// buffer whose ID was passed to it. 
+  FlutterFrameBufferWithDamageCallback fbo_with_damage_callback;
 } FlutterOpenGLRendererConfig;
 
 /// Alias for id<MTLDevice>.
