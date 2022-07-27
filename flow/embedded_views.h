@@ -70,8 +70,8 @@ class Mutator {
   explicit Mutator(const SkMatrix& matrix)
       : type_(kTransform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(kOpacity), alpha_(alpha) {}
-  explicit Mutator(const DlImageFilter& filter)
-      : type_(kBackdropFilter), filter_(&filter) {}
+  explicit Mutator(DlImageFilter& filter)
+      : type_(kBackdropFilter), filter_(new DlBlurImageFilter(filter.asBlur())) {} // TODO EMILY: originally filter_(filter), hack for pushing different filters to the stack
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
@@ -125,7 +125,7 @@ class Mutator {
     SkMatrix matrix_;
     SkPath* path_;
     int alpha_;
-    const DlImageFilter* filter_;
+    DlImageFilter* filter_; //TODO EMILY const
   };
 
 };  // Mutator
@@ -148,7 +148,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
-  void PushBackdropFilter(const DlImageFilter& filter);
+  void PushBackdropFilter(DlImageFilter& filter);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.

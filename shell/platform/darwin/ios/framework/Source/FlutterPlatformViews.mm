@@ -384,7 +384,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   if (flutter_view_ == nullptr) {
     return;
   }
-
   FML_DCHECK(CATransform3DEqualToTransform(embedded_view.layer.transform, CATransform3DIdentity));
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
@@ -404,10 +403,11 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                CGRectGetHeight(flutter_view.bounds))] autorelease];
 
   NSMutableArray* blurRadii =
-      [[NSMutableArray alloc] init];  // TODO EMILY: is autorelease the best option?
-  NSNumber* blurRadius;
-
-  //    int numFilters = 0;
+      [[[NSMutableArray alloc] init] autorelease];
+//  NSNumber* blurRadius;
+  
+  // TODO EMILY: this line is for visual simulator tests, delete before landing PR
+//      int numFilters = 0;
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -417,15 +417,15 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         finalTransform = CATransform3DConcat(transform, finalTransform);
 
         // TODO EMILY: these lines are for visual simulator tests, delete before landing PR
-        //                if(numFilters < 1) {
-        //                  flutter::DlBlurImageFilter filter =
-        //                      flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);
-        //
-        //                  NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
-        //                  [blurRadii addObject:blurRadius];
-        //
-        //                  numFilters++;
-        //                }
+//                        if(numFilters < 1) {
+//                          flutter::DlBlurImageFilter filter =
+//                              flutter::DlBlurImageFilter(5, 5, flutter::DlTileMode::kDecal);
+//
+//                          NSNumber* blurRadius = @(filter.asBlur()->sigma_x());
+//                          [blurRadii addObject:blurRadius];
+//
+//                          numFilters++;
+//                        }
 
         break;
       }
@@ -443,22 +443,22 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       case kBackdropFilter: {
         // We only support DlBlurImageFilter for BackdropFilter.
-        if (!(*iter)->GetFilter().asBlur())
+        if (!(*iter)->GetFilter().asBlur()) {
           continue;
+        }
 
         // Sigma X is arbitrarily chosen as the radius value because Quartz only supports 1D
-        // rendering. DlBlurImageFilter's Tile Mode is not supported in CIGaussianBlurFilter so it
+        // rendering. DlBlurImageFilter's Tile Mode is not supported in Quartz's gaussianBlur CAFilter, so it
         // is not used to blur the PlatformView.
-        blurRadius = @((*iter)->GetFilter().asBlur()->sigma_x());
-        [blurRadii addObject:blurRadius];
+//        blurRadius = @((*iter)->GetFilter().asBlur()->sigma_x());
+        [blurRadii addObject:@((*iter)->GetFilter().asBlur()->sigma_x())];
         break;
       }
     }
     ++iter;
   }
 
-  [clipView applyBackdropFilters:blurRadii];  // TODO EMILY: pass pointer/reference?
-  [blurRadii release];
+  [clipView applyBackdropFilters:blurRadii];
 
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.

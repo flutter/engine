@@ -57,7 +57,11 @@ void ResetAnchor(CALayer* layer) {
 }  // namespace flutter
 
 @implementation ChildClippingView {
-  NSMutableArray* _gaussianFilters;
+  // The gaussianFilters currently applied to this ChildClippingView.
+  NSMutableArray* _activeGaussianFilters; // property, nonatomic retain
+  
+  // A gaussianFilter from UIVisualEffectView that can be copied for new backdrop filters.
+  NSObject* _gaussianFilter;
 }
 
 // The ChildClippingView's frame is the bounding rect of the platform view. we only want touches to
@@ -79,14 +83,7 @@ void ResetAnchor(CALayer* layer) {
   UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
       initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
 
-  UIView* view = [visualEffectView.subviews firstObject];
-  if (!view || ![view isKindOfClass:NSClassFromString(@"_UIVisualEffectBackdropView")]) {
-    FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
-                       "access its subviews.";
-    return nil;
-  }
-
-  NSObject* gaussianFilter = [[view.layer.filters firstObject] retain];
+  NSObject* gaussianFilter = [[[visualEffectView.subviews firstObject].layer.filters firstObject] retain];
   if (!gaussianFilter || ![[gaussianFilter valueForKey:@"name"] isEqual:@"gaussianBlur"]) {
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                        "access the Gaussian blur filter. ";
@@ -96,8 +93,7 @@ void ResetAnchor(CALayer* layer) {
   [visualEffectView release];
 
   if (![[gaussianFilter valueForKey:@"inputRadius"]
-          isKindOfClass:[NSNumber class]]) {  // TODO EMILY: is there another way to check that
-                                              // inputRadius key is valid? -> DOCUMENT ATTEMPTS
+          isKindOfClass:[NSNumber class]]) {
     FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation "
                        "access the Gaussian blur filter's properties.";
     return nil;
@@ -107,37 +103,47 @@ void ResetAnchor(CALayer* layer) {
 }
 
 - (void)applyBackdropFilters:(NSArray*)blurRadii {
-  NSObject* gaussianFilter;
-  if (!_gaussianFilters) {
-    _gaussianFilters = [[[NSMutableArray alloc] init] retain];
-  }
-
-  if ([blurRadii count] > [_gaussianFilters count]) {
-    gaussianFilter = [self extractGaussianFilter];
-    if (!gaussianFilter)
+  if (!_activeGaussianFilters) {
+    _activeGaussianFilters = [[[NSMutableArray alloc] init] retain];
+    
+    _gaussianFilter = [self extractGaussianFilter];
+    if (!_gaussianFilter) {
       return;
+    }
   }
 
-  if ([blurRadii count] < [_gaussianFilters count]) {
-    [_gaussianFilters removeObjectsInRange:(NSRange){[blurRadii count],
-                                                     [_gaussianFilters count] - [blurRadii count]}];
-  }
+  bool updatedFilters = false;
 
-  for (int i = 0; i < (int)[blurRadii count]; i++) {
-    if (i >= (int)[_gaussianFilters count]) {
-      [_gaussianFilters addObject:[gaussianFilter copy]];
-    } else if ([_gaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i])
+  // Update the size of _activeGaussianFilters to match the number of applied backdrop filters.
+  while ([blurRadii count] > [_activeGaussianFilters count]) {
+    // copy returns a deep copy of _gaussianFilter
+    [_activeGaussianFilters addObject:[_gaussianFilter copy]];
+    updatedFilters = true;
+  }
+  while ([blurRadii count] < [_activeGaussianFilters count]) {
+    [_activeGaussianFilters removeLastObject];
+    updatedFilters = true;
+  }
+  
+  for (NSUInteger i = 0; i < [blurRadii count]; i++) {
+    if ([_activeGaussianFilters[i] valueForKey:@"inputRadius"] == blurRadii[i]) {
       continue;
-
-    [_gaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
+    }
+    [_activeGaussianFilters[i] setValue:blurRadii[i] forKey:@"inputRadius"];
+    updatedFilters = true;
   }
 
-  self.layer.filters = _gaussianFilters;
+  if(updatedFilters) {
+    self.layer.filters = _activeGaussianFilters;
+  }
 }
 
 - (void)dealloc {
-  [_gaussianFilters release];
-  _gaussianFilters = nil;
+  [_activeGaussianFilters release];
+  _activeGaussianFilters = nil;
+
+  [_gaussianFilter release];
+  _gaussianFilter = nil;
   [super dealloc];
 }
 

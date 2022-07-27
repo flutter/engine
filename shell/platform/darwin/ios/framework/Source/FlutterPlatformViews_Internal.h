@@ -49,6 +49,8 @@
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
 
+//@property 
+
 // Adds a blur filter to its layers.
 - (void)applyBackdropFilters:(NSArray*)blurRadii;
 
