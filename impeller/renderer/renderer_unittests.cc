@@ -381,7 +381,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
 
 #if IMPELLER_ENABLE_METAL
 TEST_P(RendererTest, CanRenderInstanced) {
-  if (GetBackend() != PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
     GTEST_SKIP_("Instancing is only supported on Metal.");
   }
   using VS = InstancedDrawVertexShader;

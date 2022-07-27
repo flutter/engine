@@ -38,8 +38,6 @@ class Playground {
 
   void TeardownWindow();
 
-  PlaygroundBackend GetBackend() const;
-
   Point GetCursorPosition() const;
 
   ISize GetWindowSize() const;
@@ -76,7 +74,6 @@ class Playground {
 #endif  // IMPELLER_ENABLE_PLAYGROUND
 
   struct GLFWInitializer;
-  PlaygroundBackend backend_;
   std::unique_ptr<GLFWInitializer> glfw_initializer_;
   std::unique_ptr<PlaygroundImpl> impl_;
   std::unique_ptr<Renderer> renderer_;

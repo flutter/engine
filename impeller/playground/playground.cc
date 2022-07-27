@@ -75,10 +75,6 @@ Playground::Playground()
 
 Playground::~Playground() = default;
 
-PlaygroundBackend Playground::GetBackend() const {
-  return backend_;
-}
-
 std::shared_ptr<Context> Playground::GetContext() const {
   return renderer_ ? renderer_->GetContext() : nullptr;
 }
