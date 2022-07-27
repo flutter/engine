@@ -438,7 +438,7 @@ typedef struct {
   /// The size of this struct. Must be sizeof(FlutterDamage).
   size_t struct_size;
   // The number of rectangles within the damage region.
-  size_t num_rects = 0;
+  size_t num_rects;
   // The actual damage region(s) in question.
   FlutterRect damage[1];
 } FlutterDamage;
