@@ -70,16 +70,9 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
     return true;  // Nothing to blit.
   }
 
-  commands_.emplace_back(BlitCommand{
-      .label = label,
-      .data =
-          BlitCommand::CopyTextureToTexture{
-              .source = source,
-              .destination = destination,
-              .source_region = source_region.value(),
-              .destination_origin = destination_origin,
-          },
-  });
+  OnCopyTextureToTextureCommand(std::move(source), std::move(destination),
+                                source_region.value(), destination_origin,
+                                label);
   return true;
 }
 
@@ -91,13 +84,7 @@ bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,
     return false;
   }
 
-  commands_.emplace_back(BlitCommand{
-      .label = label,
-      .data =
-          BlitCommand::GenerateMipmaps{
-              .texture = texture,
-          },
-  });
+  OnGenerateMipmapCommand(std::move(texture), label);
   return true;
 }
 

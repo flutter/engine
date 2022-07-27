@@ -83,11 +83,20 @@ class BlitPass {
 
  protected:
   std::shared_ptr<HostBuffer> transients_buffer_;
-  std::vector<BlitCommand> commands_;
 
   explicit BlitPass();
 
   virtual void OnSetLabel(std::string label) = 0;
+
+  virtual void OnCopyTextureToTextureCommand(
+      std::shared_ptr<Texture> source,
+      std::shared_ptr<Texture> destination,
+      IRect source_region,
+      IPoint destination_origin,
+      std::string label) = 0;
+
+  virtual void OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
+                                       std::string label) = 0;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(BlitPass);

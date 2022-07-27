@@ -29,6 +29,17 @@ class BlitPassVK final : public BlitPass {
   bool EncodeCommands(
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
+  // |BlitPass|
+  void OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
+                                     std::shared_ptr<Texture> destination,
+                                     IRect source_region,
+                                     IPoint destination_origin,
+                                     std::string label) override;
+
+  // |BlitPass|
+  void OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
+                               std::string label) override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(BlitPassVK);
 };
 

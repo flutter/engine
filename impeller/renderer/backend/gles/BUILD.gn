@@ -16,6 +16,8 @@ impeller_component("gles") {
   sources = [
     "allocator_gles.cc",
     "allocator_gles.h",
+    "blit_command_gles.cc",
+    "blit_command_gles.h",
     "blit_pass_gles.cc",
     "blit_pass_gles.h",
     "buffer_bindings_gles.cc",

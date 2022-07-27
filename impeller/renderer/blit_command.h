@@ -4,27 +4,23 @@
 
 #pragma once
 
-#include <variant>
-
 #include "impeller/renderer/texture.h"
 
 namespace impeller {
 
 struct BlitCommand {
-  struct CopyTextureToTexture {
-    std::shared_ptr<Texture> source;
-    std::shared_ptr<Texture> destination;
-    IRect source_region;
-    IPoint destination_origin;
-  };
-
-  struct GenerateMipmaps {
-    std::shared_ptr<Texture> texture;
-  };
-
-  using Variant = std::variant<CopyTextureToTexture, GenerateMipmaps>;
-
   std::string label;
-  Variant data;
 };
+
+struct BlitCopyTextureToTextureCommand : public BlitCommand {
+  std::shared_ptr<Texture> source;
+  std::shared_ptr<Texture> destination;
+  IRect source_region;
+  IPoint destination_origin;
+};
+
+struct BlitGenerateMipmapCommand : public BlitCommand {
+  std::shared_ptr<Texture> texture;
+};
+
 }  // namespace impeller

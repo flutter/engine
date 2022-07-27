@@ -7,6 +7,7 @@
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/metal/blit_command_mtl.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
@@ -19,23 +20,35 @@ class BlitPassMTL final : public BlitPass {
  private:
   friend class CommandBufferMTL;
 
+  std::vector<std::unique_ptr<BlitEncodeMTL>> commands_;
   id<MTLCommandBuffer> buffer_ = nil;
   std::string label_;
   bool is_valid_ = false;
 
   explicit BlitPassMTL(id<MTLCommandBuffer> buffer);
 
-  // |RenderPass|
+  // |BlitPass|
   bool IsValid() const override;
 
-  // |RenderPass|
+  // |BlitPass|
   void OnSetLabel(std::string label) override;
 
-  // |RenderPass|
+  // |BlitPass|
   bool EncodeCommands(
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
   bool EncodeCommands(id<MTLBlitCommandEncoder> pass) const;
+
+  // |BlitPass|
+  void OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
+                                     std::shared_ptr<Texture> destination,
+                                     IRect source_region,
+                                     IPoint destination_origin,
+                                     std::string label) override;
+
+  // |BlitPass|
+  void OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
+                               std::string label) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BlitPassMTL);
 };

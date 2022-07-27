@@ -671,6 +671,8 @@ FILE: ../../../flutter/impeller/renderer/allocator.cc
 FILE: ../../../flutter/impeller/renderer/allocator.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/allocator_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/allocator_gles.h
+FILE: ../../../flutter/impeller/renderer/backend/gles/blit_command_gles.cc
+FILE: ../../../flutter/impeller/renderer/backend/gles/blit_command_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/blit_pass_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/blit_pass_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/buffer_bindings_gles.cc
@@ -714,6 +716,8 @@ FILE: ../../../flutter/impeller/renderer/backend/gles/texture_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/texture_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/allocator_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/allocator_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/blit_command_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/blit_command_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.h

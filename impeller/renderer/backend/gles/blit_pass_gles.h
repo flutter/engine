@@ -7,6 +7,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/renderer/backend/gles/reactor_gles.h"
 #include "flutter/impeller/renderer/blit_pass.h"
+#include "impeller/renderer/backend/gles/blit_command_gles.h"
 
 namespace impeller {
 
@@ -18,6 +19,7 @@ class BlitPassGLES final : public BlitPass {
  private:
   friend class CommandBufferGLES;
 
+  std::vector<std::unique_ptr<BlitEncodeGLES>> commands_;
   ReactorGLES::Ref reactor_;
   std::string label_;
   bool is_valid_ = false;
@@ -33,6 +35,17 @@ class BlitPassGLES final : public BlitPass {
   // |BlitPass|
   bool EncodeCommands(
       const std::shared_ptr<Allocator>& transients_allocator) const override;
+
+  // |BlitPass|
+  void OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
+                                     std::shared_ptr<Texture> destination,
+                                     IRect source_region,
+                                     IPoint destination_origin,
+                                     std::string label) override;
+
+  // |BlitPass|
+  void OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
+                               std::string label) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BlitPassGLES);
 };
