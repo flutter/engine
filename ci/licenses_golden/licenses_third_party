@@ -1,4 +1,4 @@
-Signature: d906fa77feb14cc75ed59c9cd96baffa
+Signature: 505cca9048590327c6f2856a882e6450
 
 UNUSED LICENSES:
 
@@ -10578,6 +10578,9 @@ ORIGIN: ../../../third_party/dart/benchmarks/AsyncLiveVars/dart/AsyncLiveVars.da
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/AsyncLiveVars/dart/AsyncLiveVars.dart
 FILE: ../../../third_party/dart/benchmarks/AsyncLiveVars/dart2/AsyncLiveVars.dart
+FILE: ../../../third_party/dart/benchmarks/InstantiateTypeArgs/dart/InstantiateTypeArgs.dart
+FILE: ../../../third_party/dart/benchmarks/InstantiateTypeArgs/dart2/InstantiateTypeArgs.dart
+FILE: ../../../third_party/dart/benchmarks/InstantiateTypeArgs/generate.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateBaseOverhead/dart/IsolateBaseOverhead.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateBaseOverhead/dart2/IsolateBaseOverhead.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateSendExitLatency/dart/IsolateSendExitLatency.dart
@@ -10633,6 +10636,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/print_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/stack_trace_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/symbol_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/timer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/type.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/c_type.dart
