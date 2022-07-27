@@ -91,7 +91,8 @@ TEST(MutatorsStack, PushOpacity) {
 
 TEST(MutatorsStack, PushBackdropFilter) {
   MutatorsStack stack;
-  for (int i = 0; i < 10; i++) {
+  const int num_of_mutators = 10;
+  for (int i = 0; i < num_of_mutators; i++) {
     auto filter = std::make_shared<DlBlurImageFilter>(i, 5, DlTileMode::kClamp);
     stack.PushBackdropFilter(filter);
   }
@@ -99,11 +100,12 @@ TEST(MutatorsStack, PushBackdropFilter) {
   auto iter = stack.Begin();
   int i = 0;
   while (iter != stack.End()) {
-    ASSERT_TRUE(iter->get()->GetType() == MutatorType::kBackdropFilter);
+    ASSERT_EQ(iter->get()->GetType(), MutatorType::kBackdropFilter);
     ASSERT_EQ(iter->get()->GetFilter().asBlur()->sigma_x(), i);
     ++iter;
     ++i;
   }
+  ASSERT_EQ(i, num_of_mutators);
 }
 
 TEST(MutatorsStack, Pop) {
