@@ -128,6 +128,7 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
       !SAFE_EXISTS(open_gl_config, clear_current) ||
       !SAFE_EXISTS_ONE_OF(open_gl_config, fbo_callback,
                           fbo_with_frame_info_callback) ||
+      !SAFE_EXISTS(open_gl_config, fbo_with_damage_callback) ||
       !SAFE_EXISTS_ONE_OF(open_gl_config, present, present_with_info)) {
     return false;
   }
@@ -268,16 +269,17 @@ InferOpenGLPlatformViewCreationCallback(
     if (present) {
       return present(user_data);
     } else {
+      // TODO(???): Implement support for damage regions composed of multiple rectangles.
       /// Format the frame and buffer damages accordingly.
       FlutterDamage frame_damage{
           .struct_size = sizeof(FlutterDamage),
-          .damage_kind = kFlutterSingleRectDamage,
-          .damage = SkIRectToFlutterRect(*(gl_present_info.frame_damage)),
+          .num_rects = 1,
+          .damage[0] = SkIRectToFlutterRect(*(gl_present_info.frame_damage)),
       };
       FlutterDamage buffer_damage{
           .struct_size = sizeof(FlutterDamage),
-          .damage_kind = kFlutterSingleRectDamage,
-          .damage = SkIRectToFlutterRect(*(gl_present_info.buffer_damage)),
+          .num_rects = 1,
+          .damage[0] = SkIRectToFlutterRect(*(gl_present_info.buffer_damage)),
       };
 
       FlutterPresentInfo present_info = {
@@ -295,36 +297,39 @@ InferOpenGLPlatformViewCreationCallback(
       [fbo_callback = config->open_gl.fbo_callback,
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
-       user_data](flutter::GLFrameInfo gl_frame_info) -> flutter::GLFBOInfo {
+       user_data](flutter::GLFrameInfo gl_frame_info) -> intptr_t {
     if (fbo_callback) {
-      flutter::GLFBOInfo gl_fbo = {
-          .fbo_id = fbo_callback(user_data),
-          .existing_damage = SkIRect::MakeEmpty(),
-      };
-
-      return gl_fbo;
+      return fbo_callback(user_data);
     } else {
-      FlutterDamage existing_damage = {
-          .struct_size = sizeof(FlutterDamage),
-          .damage_kind = kFlutterSingleRectDamage,
-          .damage = {0, 0, 0, 0},
-      };
-
       FlutterFrameInfo frame_info = {
           .struct_size = sizeof(FlutterFrameInfo),
           .size = {gl_frame_info.width, gl_frame_info.height},
-          .fbo_id = 0,
-          .existing_damage = existing_damage,
       };
 
-      flutter::GLFBOInfo gl_fbo = {
-          .fbo_id = fbo_with_frame_info_callback(user_data, &frame_info),
-          .existing_damage =
-              FlutterRectToSkIRect(frame_info.existing_damage.damage),
-      };
-
-      return gl_fbo;
+      return fbo_with_frame_info_callback(user_data, &frame_info);
     }
+  };
+
+  auto gl_fbo_with_damage_callback = [fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback, user_data](intptr_t id) -> flutter::GLFBOInfo {
+    // Given the FBO's ID, get its existing damage.
+    const FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, id);
+
+    if (fbo.existing_damage.num_rects == 0) {
+      FML_LOG(ERROR) << "No damage was provided. Setting the damage to an empty rectangle.";
+    }
+
+    // TODO(???): Implement support for damage regions composed of multiple rectangles.
+    if (fbo.existing_damage.num_rects > 1) {
+      FML_LOG(ERROR) << "Damage with multiple rectangles not yet supported. Setting first rectangle as default.";
+    }
+
+    // Construct the GLFBOInfo that will be passed to the rendering backend.
+    flutter::GLFBOInfo gl_fbo = {
+      .fbo_id = static_cast<uint32_t>(fbo.fbo_id),
+      .existing_damage = fbo.existing_damage.num_rects == 0 ? SkIRect::MakeEmpty() : FlutterRectToSkIRect(fbo.existing_damage.damage[1]),
+    };
+    
+    return gl_fbo;
   };
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
@@ -384,6 +389,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
+      gl_fbo_with_damage_callback,         // gl_fbo_with_damage_callback
   };
 
   return fml::MakeCopyable(
