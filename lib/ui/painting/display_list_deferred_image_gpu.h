@@ -22,8 +22,7 @@ class DlDeferredImageGPU final : public DlImage,
   static sk_sp<DlDeferredImageGPU> Make(
       SkISize size,
       fml::RefPtr<fml::TaskRunner> raster_task_runner,
-      fml::RefPtr<fml::TaskRunner> io_task_runner,
-      fml::WeakPtr<IOManager> io_manager);
+      fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
   // |DlImage|
   ~DlDeferredImageGPU() override;
@@ -65,8 +64,7 @@ class DlDeferredImageGPU final : public DlImage,
  private:
   SkISize size_;
   fml::RefPtr<fml::TaskRunner> raster_task_runner_;
-  fml::RefPtr<fml::TaskRunner> io_task_runner_;
-  fml::WeakPtr<IOManager> io_manager_;
+  fml::RefPtr<SkiaUnrefQueue> unref_queue_;
   sk_sp<SkImage> image_;
   TextureRegistry* texture_registry_ = nullptr;
   mutable std::mutex error_mutex_;
@@ -74,8 +72,7 @@ class DlDeferredImageGPU final : public DlImage,
 
   DlDeferredImageGPU(SkISize size,
                      fml::RefPtr<fml::TaskRunner> raster_task_runner,
-                     fml::RefPtr<fml::TaskRunner> io_task_runner,
-                     fml::WeakPtr<IOManager> io_manager);
+                     fml::RefPtr<SkiaUnrefQueue> unref_queue);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DlDeferredImageGPU);
 };
