@@ -83,8 +83,8 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
         std::tie(sk_image, error) = snapshot_delegate->MakeGpuImage(
             display_list, dl_image->dimensions(), dl_image.get());
         if (sk_image) {
-          dl_image->ref();  // balanced when we remove the listener in
-                            // DisplayListDeferredImageGPU DeleteImage
+          // balanced in DlDeferredImageGpu::OnGrContextDestroyed
+          dl_image->ref();
           dl_image->set_image(std::move(sk_image),
                               snapshot_delegate->GetTextureRegistry());
         } else {

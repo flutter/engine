@@ -37,7 +37,6 @@ void DeleteImage(sk_sp<SkImage> image,
   }
 
   GrBackendTexture texture = image->releaseBackendTexture(true);
-  image->unref();  // balance call in Picture::RasterizeToImageSync
   if (!texture.isValid()) {
     return;
   }
@@ -140,6 +139,7 @@ void DlDeferredImageGPU::OnGrContextDestroyed() {
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
   set_error("context destroyed");
   DeleteImage(std::move(image_), io_task_runner_, io_manager_);
+  unref();  // balance call in Picture::RasterizeToImageSync. Might delete this.
 }
 
 }  // namespace flutter
