@@ -568,7 +568,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
   ASSERT_TRUE(mipmaps_pipeline);
 
-  auto boston = CreateTextureForFixture("boston.jpg", std::nullopt);
+  auto boston = CreateTextureForFixture("boston.jpg", true);
   ASSERT_TRUE(boston);
 
   // Vertex buffer.

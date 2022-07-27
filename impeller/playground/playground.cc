@@ -335,7 +335,7 @@ std::optional<DecompressedImage> Playground::LoadFixtureImageRGBA(
 
 std::shared_ptr<Texture> Playground::CreateTextureForFixture(
     const char* fixture_name,
-    std::optional<size_t> mip_count) const {
+    bool enable_mipmapping) const {
   auto image = LoadFixtureImageRGBA(fixture_name);
   if (!image.has_value()) {
     return nullptr;
@@ -345,7 +345,7 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_descriptor.size = image->GetSize();
   texture_descriptor.mip_count =
-      mip_count.has_value() ? mip_count.value() : image->GetSize().MipCount();
+      enable_mipmapping ? image->GetSize().MipCount() : 1u;
 
   auto texture =
       renderer_->GetContext()->GetPermanentsAllocator()->CreateTexture(
