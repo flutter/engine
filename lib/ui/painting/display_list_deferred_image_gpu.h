@@ -75,7 +75,8 @@ class DlDeferredImageGPU final : public DlImage {
   SkISize size_;
   fml::RefPtr<fml::TaskRunner> raster_task_runner_;
   fml::RefPtr<SkiaUnrefQueue> unref_queue_;
-  mutable std::mutex image_wrapper_mutex_;
+  // Must be accessed using atomics.
+  // TODO(dnfield): When c++20 is available use std::atomic<std::shared_ptr>
   std::shared_ptr<ImageWrapper> image_wrapper_;
   std::shared_ptr<TextureRegistry> texture_registry_;
   mutable std::mutex error_mutex_;

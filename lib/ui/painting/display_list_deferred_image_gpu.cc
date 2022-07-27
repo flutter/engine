@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu.h"
-#include "display_list_deferred_image_gpu.h"
+
+#include <atomic>
 
 namespace flutter {
 
@@ -25,9 +26,9 @@ DlDeferredImageGPU::DlDeferredImageGPU(
 
 // |DlImage|
 DlDeferredImageGPU::~DlDeferredImageGPU() {
-  std::scoped_lock lock(image_wrapper_mutex_);
+  auto image_wrapper = std::atomic_load(&image_wrapper_);
   fml::TaskRunner::RunNowOrPostTask(
-      raster_task_runner_, [image_wrapper = std::move(image_wrapper_),
+      raster_task_runner_, [image_wrapper = std::move(image_wrapper),
                             unref_queue = std::move(unref_queue_)]() {
         if (!image_wrapper) {
           return;
@@ -46,8 +47,8 @@ DlDeferredImageGPU::~DlDeferredImageGPU() {
 
 // |DlImage|
 sk_sp<SkImage> DlDeferredImageGPU::skia_image() const {
-  std::scoped_lock lock(image_wrapper_mutex_);
-  return image_wrapper_ ? image_wrapper_->image : nullptr;
+  auto image_wrapper = std::atomic_load(&image_wrapper_);
+  return image_wrapper ? image_wrapper->image : nullptr;
 };
 
 // |DlImage|
@@ -86,11 +87,12 @@ void DlDeferredImageGPU::set_image(
   FML_DCHECK(raster_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(image);
   FML_DCHECK(image->dimensions() == size_);
-  std::scoped_lock lock(image_wrapper_mutex_);
-  image_wrapper_ = std::make_shared<ImageWrapper>(
+
+  auto image_wrapper = std::make_shared<ImageWrapper>(
       std::move(image), raster_task_runner_, unref_queue_);
   texture_registry_ = std::move(texture_registry);
-  texture_registry_->RegisterContextDestroyedListener(image_wrapper_);
+  texture_registry_->RegisterContextDestroyedListener(image_wrapper);
+  std::atomic_store(&image_wrapper_, image_wrapper);
 }
 
 void DlDeferredImageGPU::set_error(const std::string& error) {
