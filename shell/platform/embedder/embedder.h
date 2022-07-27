@@ -554,7 +554,7 @@ typedef struct {
   BoolPresentInfoCallback present_with_info;
   /// Specifying this callback is a requirement for dirty region management. The
   /// callback will return a FlutterFrameBuffer containing information about the
-  /// buffer whose ID was passed to it. 
+  /// buffer whose ID was passed to it.
   FlutterFrameBufferWithDamageCallback fbo_with_damage_callback;
 } FlutterOpenGLRendererConfig;
 

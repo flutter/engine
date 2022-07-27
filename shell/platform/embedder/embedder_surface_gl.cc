@@ -51,7 +51,8 @@ bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
 
 // |GPUSurfaceGLDelegate|
 GLFBOInfo EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
-  return gl_dispatch_table_.gl_fbo_with_damage_callback(gl_dispatch_table_.gl_fbo_callback(frame_info));
+  return gl_dispatch_table_.gl_fbo_with_damage_callback(
+      gl_dispatch_table_.gl_fbo_callback(frame_info));
 }
 
 // |GPUSurfaceGLDelegate|
