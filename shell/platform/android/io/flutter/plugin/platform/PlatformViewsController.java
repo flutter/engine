@@ -159,50 +159,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           // API level 19 is required for `android.graphics.ImageReader`.
           ensureValidAndroidVersion(19);
+          ensureValidRequest(request);
 
-          final int viewId = request.viewId;
-          if (!validateDirection(request.direction)) {
-            throw new IllegalStateException(
-                "Trying to create a view with unknown direction value: "
-                    + request.direction
-                    + "(view id: "
-                    + viewId
-                    + ")");
-          }
+          final PlatformView platformView = createPlatformView(request);
 
-          final PlatformViewFactory factory = registry.getFactory(request.viewType);
-          if (factory == null) {
-            throw new IllegalStateException(
-                "Trying to create a platform view of unregistered type: " + request.viewType);
-          }
-
-          Object createParams = null;
-          if (request.params != null) {
-            createParams = factory.getCreateArgsCodec().decodeMessage(request.params);
-          }
-
-          final PlatformView platformView = factory.create(context, viewId, createParams);
-          platformView.getView().setLayoutDirection(request.direction);
-          platformViews.put(viewId, platformView);
-          Log.i(TAG, "Using hybrid composition for platform view: " + viewId);
+          Log.i(TAG, "Using hybrid composition for platform view: " + request.viewId);
         }
 
         @TargetApi(20)
         @Override
         public long createForTextureLayer(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          ensureValidRequest(request);
           final int viewId = request.viewId;
           if (viewWrappers.get(viewId) != null) {
             throw new IllegalStateException(
                 "Trying to create an already created platform view, view id: " + viewId);
-          }
-          if (!validateDirection(request.direction)) {
-            throw new IllegalStateException(
-                "Trying to create a view with unknown direction value: "
-                    + request.direction
-                    + "(view id: "
-                    + viewId
-                    + ")");
           }
           if (textureRegistry == null) {
             throw new IllegalStateException(
@@ -214,32 +186,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                 "Flutter view is null. This means the platform views controller doesn't have an attached view, view id: "
                     + viewId);
           }
-          final PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
-          if (viewFactory == null) {
-            throw new IllegalStateException(
-                "Trying to create a platform view of unregistered type: " + request.viewType);
-          }
-          Object createParams = null;
-          if (request.params != null) {
-            createParams = viewFactory.getCreateArgsCodec().decodeMessage(request.params);
-          }
 
-          // The virtual display controller will change the embedded view context.
-          final Context embeddedViewContext = new MutableContextWrapper(context);
-          final PlatformView platformView =
-              viewFactory.create(embeddedViewContext, viewId, createParams);
-          platformViews.put(viewId, platformView);
+          final PlatformView platformView = createPlatformView(request);
 
           final View embeddedView = platformView.getView();
-          if (embeddedView == null) {
-            throw new IllegalStateException(
-                "PlatformView#getView() returned null, but an Android view reference was expected.");
-          } else if (embeddedView.getParent() != null) {
+          if (embeddedView.getParent() != null) {
             throw new IllegalStateException(
                 "The Android view returned from PlatformView#getView() was already added to a parent view.");
           }
-
-          embeddedView.setLayoutDirection(request.direction);
 
           final int physicalWidth = toPhysicalPixels(request.logicalWidth);
           final int physicalHeight = toPhysicalPixels(request.logicalHeight);
@@ -596,6 +550,51 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + ", required API level is: "
                     + minSdkVersion);
           }
+        }
+
+        private void ensureValidRequest(
+            @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          if (!validateDirection(request.direction)) {
+            throw new IllegalStateException(
+                "Trying to create a view with unknown direction value: "
+                    + request.direction
+                    + "(view id: "
+                    + request.viewId
+                    + ")");
+          }
+        }
+
+        // Creates a platform view based on `request`, performs configuration that's common to
+        // all display modes, and adds it to `platformViews`.
+        private PlatformView createPlatformView(
+            @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
+          final PlatformViewFactory factory = registry.getFactory(request.viewType);
+          if (factory == null) {
+            throw new IllegalStateException(
+                "Trying to create a platform view of unregistered type: " + request.viewType);
+          }
+
+          Object createParams = null;
+          if (request.params != null) {
+            createParams = factory.getCreateArgsCodec().decodeMessage(request.params);
+          }
+
+          // In some display modes, the context needs to be modified during display.
+          final Context mutableContext = new MutableContextWrapper(context);
+          final PlatformView platformView =
+              viewFactory.create(mutableContext, request.viewId, createParams);
+          final PlatformView platformView = factory.create(context, request.viewId, createParams);
+
+          // Configure the view to match the requested layout direction.
+          final View embeddedView = platformView.getView();
+          if (embeddedView == null) {
+            throw new IllegalStateException(
+                "PlatformView#getView() returned null, but an Android view reference was expected.");
+          }
+          embeddedView.setLayoutDirection(request.direction);
+
+          platformViews.put(request.viewId, platformView);
+          return platformView;
         }
 
         @Override
