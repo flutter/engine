@@ -11,7 +11,7 @@
 
 namespace impeller {
 
-/// Mixin for dispatching metal commands.
+/// Mixin for dispatching Metal commands.
 struct BlitEncodeMTL : BackendCast<BlitEncodeMTL, BlitCommand> {
   virtual ~BlitEncodeMTL();
 

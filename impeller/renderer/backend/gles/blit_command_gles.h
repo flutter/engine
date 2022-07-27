@@ -10,7 +10,7 @@
 
 namespace impeller {
 
-/// Mixin for dispatching metal commands.
+/// Mixin for dispatching GLES commands.
 struct BlitEncodeGLES : BackendCast<BlitEncodeGLES, BlitCommand> {
   virtual ~BlitEncodeGLES();
 
