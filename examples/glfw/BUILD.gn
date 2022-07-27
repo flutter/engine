@@ -15,8 +15,6 @@ if (build_embedder_examples) {
       "//third_party/glfw",
     ]
 
-    libs = [
-      "EGL",
-    ]
+    libs = [ "EGL" ]
   }
 }
