@@ -253,8 +253,8 @@ static void TestBounds(const DlImageFilter& filter,
         ASSERT_TRUE(matrix.invert(nullptr));
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
-        matrix.setPerspX(0.01);
-        matrix.setPerspY(0.01);
+        matrix.setPerspX(0.001);
+        matrix.setPerspY(0.001);
         ASSERT_TRUE(matrix.invert(nullptr));
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
@@ -589,6 +589,63 @@ TEST(DisplayListImageFilter, ComposeBounds) {
   SkRect inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
   SkRect expectOutputBounds = inputBounds.makeOutset(36, 15).makeOutset(5, 10);
   TestBounds(filter, inputBounds, expectOutputBounds);
+}
+
+static void TestUnboundedBounds(DlImageFilter& filter,
+                                const SkRect& sourceBounds,
+                                const SkRect& expectedOutputBounds,
+                                const SkRect& expectedInputBounds) {
+  SkRect bounds;
+  EXPECT_EQ(filter.map_local_bounds(sourceBounds, bounds), nullptr);
+  EXPECT_EQ(bounds, expectedOutputBounds);
+
+  SkIRect ibounds;
+  EXPECT_EQ(
+      filter.map_device_bounds(sourceBounds.roundOut(), SkMatrix::I(), ibounds),
+      nullptr);
+  EXPECT_EQ(ibounds, expectedOutputBounds.roundOut());
+
+  EXPECT_EQ(filter.get_input_device_bounds(sourceBounds.roundOut(),
+                                           SkMatrix::I(), ibounds),
+            nullptr);
+  EXPECT_EQ(ibounds, expectedInputBounds.roundOut());
+}
+
+TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedInner) {
+  auto inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  auto expectedBounds = SkRect::MakeLTRB(5, 2, 95, 98);
+
+  DlBlendColorFilter color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto outer = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
+  auto inner = DlColorFilterImageFilter(color_filter.shared());
+  auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
+
+  TestUnboundedBounds(composed, inputBounds, expectedBounds, expectedBounds);
+}
+
+TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedOuter) {
+  auto inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  auto expectedBounds = SkRect::MakeLTRB(5, 2, 95, 98);
+
+  DlBlendColorFilter color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto outer = DlColorFilterImageFilter(color_filter.shared());
+  auto inner = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
+  auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
+
+  TestUnboundedBounds(composed, inputBounds, expectedBounds, expectedBounds);
+}
+
+TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedInnerAndOuter) {
+  auto inputBounds = SkRect::MakeLTRB(20, 20, 80, 80);
+  auto expectedBounds = inputBounds;
+
+  DlBlendColorFilter color_filter1(DlColor::kRed(), DlBlendMode::kSrcOver);
+  DlBlendColorFilter color_filter2(DlColor::kBlue(), DlBlendMode::kSrcOver);
+  auto outer = DlColorFilterImageFilter(color_filter1.shared());
+  auto inner = DlColorFilterImageFilter(color_filter2.shared());
+  auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
+
+  TestUnboundedBounds(composed, inputBounds, expectedBounds, expectedBounds);
 }
 
 TEST(DisplayListImageFilter, ColorFilterConstructor) {
