@@ -56,7 +56,7 @@ class Mutator {
         alpha_ = other.alpha_;
         break;
       case kBackdropFilter:
-        filter_ = other.filter_;
+        filter_ = other.filter_->shared();
         break;
       default:
         break;
@@ -71,7 +71,7 @@ class Mutator {
       : type_(kTransform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(kOpacity), alpha_(alpha) {}
   explicit Mutator(const DlImageFilter& filter)
-      : type_(kBackdropFilter), filter_(&filter) {}
+      : type_(kBackdropFilter), filter_(filter.shared()) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
@@ -98,7 +98,7 @@ class Mutator {
       case kOpacity:
         return alpha_ == other.alpha_;
       case kBackdropFilter:
-        return *filter_ == *other.filter_;
+        return *filter_ == *other.filter_->shared();
     }
 
     return false;
@@ -119,14 +119,17 @@ class Mutator {
  private:
   MutatorType type_;
 
+  // TODO(cyanglaz): Remove union.
+  //  https://github.com/flutter/flutter/issues/108470
   union {
     SkRect rect_;
     SkRRect rrect_;
     SkMatrix matrix_;
     SkPath* path_;
     int alpha_;
-    const DlImageFilter* filter_;
   };
+
+  std::shared_ptr<const DlImageFilter> filter_;
 
 };  // Mutator
 
