@@ -14,7 +14,7 @@
 
 #include <cstring>
 
-#include "dpi_utils_win32.h"
+#include "dpi_utils.h"
 #include "keyboard_win32_common.h"
 
 namespace flutter {

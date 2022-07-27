@@ -15,7 +15,7 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/shell/platform/windows/dpi_utils_win32.h"
+#include "flutter/shell/platform/windows/dpi_utils.h"
 #include "flutter/shell/platform/windows/flutter_window_win32.h"
 
 // Returns the engine corresponding to the given opaque API handle.
