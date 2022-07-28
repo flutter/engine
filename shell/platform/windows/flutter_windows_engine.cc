@@ -183,7 +183,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
   surface_manager_ = AngleSurfaceManager::Create();
   window_proc_delegate_manager_ =
-      std::make_unique<WindowProcDelegateManagerWin32>();
+      std::make_unique<WindowProcDelegateManager>();
 
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See

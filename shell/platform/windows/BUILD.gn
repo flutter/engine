@@ -106,8 +106,8 @@ source_set("flutter_windows_source") {
     "window.h",
     "window_binding_handler.h",
     "window_binding_handler_delegate.h",
-    "window_proc_delegate_manager_win32.cc",
-    "window_proc_delegate_manager_win32.h",
+    "window_proc_delegate_manager.cc",
+    "window_proc_delegate_manager.h",
     "window_state.h",
   ]
 
@@ -207,7 +207,7 @@ executable("flutter_windows_unittests") {
     "testing/wm_builders.cc",
     "testing/wm_builders.h",
     "text_input_plugin_unittest.cc",
-    "window_proc_delegate_manager_win32_unittests.cc",
+    "window_proc_delegate_manager_unittests.cc",
     "window_unittests.cc",
   ]
 
