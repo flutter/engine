@@ -784,9 +784,9 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
   auto sk_filter3 = SkImageFilters::Dilate(5.0, 10.0, nullptr);
   auto sk_filter4 = SkImageFilters::MatrixTransform(
       filter_matrix, ToSk(DlImageSampling::kLinear), nullptr);
-  // auto sk_filter5 = SkImageFilters::Compose(sk_filter1, sk_filter2);
+  auto sk_filter5 = SkImageFilters::Compose(sk_filter1, sk_filter2);
   std::vector<sk_sp<SkImageFilter>> sk_filters{
-      sk_filter1, sk_filter2, sk_filter3, sk_filter4 /*, sk_filter5*/};
+      sk_filter1, sk_filter2, sk_filter3, sk_filter4, sk_filter5};
 
   DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
   auto dl_filter1 =
@@ -796,11 +796,10 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
   auto dl_filter3 = std::make_shared<DlDilateImageFilter>(5, 10);
   auto dl_filter4 = std::make_shared<DlMatrixImageFilter>(
       filter_matrix, DlImageSampling::kLinear);
-  // auto dl_filter5 =
-  // std::make_shared<DlComposeImageFilter>(dl_filter1->shared(),
-  // dl_filter2->shared());
+  auto dl_filter5 = std::make_shared<DlComposeImageFilter>(
+      dl_filter1->shared(), dl_filter2->shared());
   std::vector<std::shared_ptr<DlImageFilter>> dl_filters{
-      dl_filter1, dl_filter2, dl_filter3, dl_filter4, /* dl_filter5*/};
+      dl_filter1, dl_filter2, dl_filter3, dl_filter4, dl_filter5};
 
   auto translate = SkMatrix::Translate(10.0, 10.0);
   auto scale_translate = SkMatrix::Scale(2.0, 2.0).preTranslate(10.0, 10.0);

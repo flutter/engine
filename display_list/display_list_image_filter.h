@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 
 #include <memory>
+#include <vector>
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_comparable.h"
@@ -152,9 +153,25 @@ class DlImageFilter
                                            const SkMatrix& ctm,
                                            SkIRect& input_bounds) const = 0;
 
-  virtual MatrixCapability get_matrix_capability() const {
+  MatrixCapability get_matrix_capability() const {
+    MatrixCapability result = this->matrix_capability();
+    // CropRects need to apply in the source coordinate system, but are not
+    // aware of complex CTMs when performing clipping. For a simple fix, any
+    // filter with a crop rect set cannot support more than scale+translate CTMs
+    // until that's updated. if (this->cropRectIsSet()) {
+    //     result = std::min(result, MatrixCapability::kScaleTranslate);
+    // }
+    for (auto* filter : filters()) {
+      result = std::min(result, filter->matrix_capability());
+    }
+    return result;
+  }
+
+  virtual MatrixCapability matrix_capability() const {
     return MatrixCapability::kScaleTranslate;
   }
+
+  virtual std::vector<const DlImageFilter*> filters() const { return {this}; }
 
  protected:
   static SkVector map_vectors_affine(const SkMatrix& ctm,
@@ -553,8 +570,12 @@ class DlComposeImageFilter final : public DlImageFilter {
                                    inner_->skia_object());
   }
 
-  MatrixCapability get_matrix_capability() const override {
+  MatrixCapability matrix_capability() const override {
     return MatrixCapability::kComplex;
+  }
+
+  virtual std::vector<const DlImageFilter*> filters() const override {
+    return {outer_.get(), inner_.get()};
   }
 
  protected:
@@ -629,7 +650,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
     return SkImageFilters::ColorFilter(color_filter_->skia_object(), nullptr);
   }
 
-  MatrixCapability get_matrix_capability() const override {
+  MatrixCapability matrix_capability() const override {
     return MatrixCapability::kComplex;
   }
 
