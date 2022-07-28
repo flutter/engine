@@ -6,7 +6,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/allocator.h"
-#include "impeller/renderer/backend/vulkan/debug_context_vk.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #include <memory>
@@ -22,10 +22,11 @@ class AllocatorVK final : public Allocator {
   friend class ContextVK;
 
   VmaAllocator allocator_ = {};
-  std::unique_ptr<DebugContextVK> debug_context_ = nullptr;
+  ContextVK& context_;
   bool is_valid_ = false;
 
-  AllocatorVK(uint32_t vulkan_api_version,
+  AllocatorVK(ContextVK& context,
+              uint32_t vulkan_api_version,
               const vk::PhysicalDevice& physical_device,
               const vk::Device& logical_device,
               const vk::Instance& instance,

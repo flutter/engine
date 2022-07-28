@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/backend/vulkan/debug_context_vk.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/device_buffer.h"
 
 namespace impeller {
@@ -22,13 +24,15 @@ class DeviceBufferAllocationVK {
 
   vk::Buffer GetBufferHandle() const;
 
-  void* GetMappedPtr() const;
+  void* GetMapping() const;
 
  private:
   const VmaAllocator& allocator_;
   vk::Buffer buffer_;
   VmaAllocation allocation_;
   VmaAllocationInfo allocation_info_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(DeviceBufferAllocationVK);
 };
 
 class DeviceBufferVK final : public DeviceBuffer,
@@ -36,17 +40,17 @@ class DeviceBufferVK final : public DeviceBuffer,
  public:
   DeviceBufferVK(size_t size,
                  StorageMode mode,
-                 const DebugContextVK& debug_context,
+                 ContextVK& context,
                  std::unique_ptr<DeviceBufferAllocationVK> device_allocation);
 
   // |DeviceBuffer|
   ~DeviceBufferVK() override;
 
  private:
-  const DebugContextVK& debug_context_;
-  std::unique_ptr<DeviceBufferAllocationVK> device_allocation_;
-
   friend class AllocatorVK;
+
+  ContextVK& context_;
+  std::unique_ptr<DeviceBufferAllocationVK> device_allocation_;
 
   // |DeviceBuffer|
   bool CopyHostBuffer(const uint8_t* source,

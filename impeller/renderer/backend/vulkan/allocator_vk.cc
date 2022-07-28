@@ -17,12 +17,14 @@ _Pragma("GCC diagnostic pop");
 
 namespace impeller {
 
-AllocatorVK::AllocatorVK(uint32_t vulkan_api_version,
+AllocatorVK::AllocatorVK(ContextVK& context,
+                         uint32_t vulkan_api_version,
                          const vk::PhysicalDevice& physical_device,
                          const vk::Device& logical_device,
                          const vk::Instance& instance,
                          PFN_vkGetInstanceProcAddr get_instance_proc_address,
-                         PFN_vkGetDeviceProcAddr get_device_proc_address) {
+                         PFN_vkGetDeviceProcAddr get_device_proc_address)
+    : context_(context) {
   VmaVulkanFunctions proc_table = {};
   proc_table.vkGetInstanceProcAddr = get_instance_proc_address;
   proc_table.vkGetDeviceProcAddr = get_device_proc_address;
@@ -33,8 +35,6 @@ AllocatorVK::AllocatorVK(uint32_t vulkan_api_version,
   allocator_info.device = logical_device;
   allocator_info.instance = instance;
   allocator_info.pVulkanFunctions = &proc_table;
-
-  debug_context_ = std::make_unique<DebugContextVK>(logical_device);
 
   VmaAllocator allocator = {};
   auto result = vk::Result{::vmaCreateAllocator(&allocator_info, &allocator)};
@@ -98,7 +98,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
   auto device_allocation = std::make_unique<DeviceBufferAllocationVK>(
       allocator_, buffer, buffer_allocation, buffer_allocation_info);
 
-  return std::make_shared<DeviceBufferVK>(length, mode, *debug_context_,
+  return std::make_shared<DeviceBufferVK>(length, mode, context_,
                                           std::move(device_allocation));
 }
 
