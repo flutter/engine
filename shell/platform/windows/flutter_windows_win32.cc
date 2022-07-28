@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "flutter/shell/platform/windows/dpi_utils.h"
-#include "flutter/shell/platform/windows/flutter_window_win32.h"
+#include "flutter/shell/platform/windows/flutter_window.h"
 
 // Returns the engine corresponding to the given opaque API handle.
 static flutter::FlutterWindowsEngine* EngineFromHandle(
@@ -29,7 +29,7 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
     int height,
     FlutterDesktopEngineRef engine) {
   std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
-      std::make_unique<flutter::FlutterWindowWin32>(width, height);
+      std::make_unique<flutter::FlutterWindow>(width, height);
 
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->view =
