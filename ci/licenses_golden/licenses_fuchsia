@@ -1,4 +1,4 @@
-Signature: 732c64ddd83abecd85509809b7e89cbb
+Signature: 93184f2d4ea74f2c5ca113086d2d6a17
 
 UNUSED LICENSES:
 
@@ -3343,6 +3343,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.testing/test_harness.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/annotation.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story_shell_factory.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/countdown.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/factory_reset.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/prediction_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/launcher.fidl
@@ -3694,7 +3695,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_absolute.shard.
 FILE: ../../../fuchsia/sdk/linux/pkg/sys/component/realm_builder_base.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/internal/convert.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog/client.shard.cml
-FILE: ../../../fuchsia/sdk/linux/pkg/syslog/elf_stdio.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/tree_service_common/include/lib/sys/inspect/tree_handler_settings.h
 FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml
 ----------------------------------------------------------------------------------------------------

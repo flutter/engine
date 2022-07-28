@@ -835,8 +835,12 @@ class ImageDescriptor {
 }
 
 class FragmentProgram {
-  static FragmentProgram fromAsset(String assetKey) {
+  static Future<FragmentProgram> fromAsset(String assetKey) {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
+  }
+
+  static Future<FragmentProgram> fromAssetAsync(String assetKey) {
+    return Future<FragmentProgram>.microtask(() => FragmentProgram.fromAsset(assetKey));
   }
 
   FragmentProgram._();

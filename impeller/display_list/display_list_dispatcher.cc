@@ -15,12 +15,14 @@
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
+#include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_stroke_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vertices.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 
 #include "third_party/skia/include/core/SkColor.h"
@@ -218,8 +220,22 @@ void DisplayListDispatcher::setColorSource(
       paint_.contents = std::move(contents);
       return;
     }
+    case flutter::DlColorSourceType::kRadialGradient: {
+      const flutter::DlRadialGradientColorSource* radialGradient =
+          source->asRadialGradient();
+      FML_CHECK(radialGradient);
+      auto contents = std::make_shared<RadialGradientContents>();
+      contents->SetCenterAndRadius(ToPoint(radialGradient->center()),
+                                   radialGradient->radius());
+      std::vector<Color> colors;
+      for (auto i = 0; i < radialGradient->stop_count(); i++) {
+        colors.emplace_back(ToColor(radialGradient->colors()[i]));
+      }
+      contents->SetColors(std::move(colors));
+      paint_.contents = std::move(contents);
+      return;
+    }
     case flutter::DlColorSourceType::kImage:
-    case flutter::DlColorSourceType::kRadialGradient:
     case flutter::DlColorSourceType::kConicalGradient:
     case flutter::DlColorSourceType::kSweepGradient:
     case flutter::DlColorSourceType::kUnknown:
@@ -762,6 +778,11 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
     case flutter::DlImageSampling::kLinear:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.label = "Linear Sampler";
+      break;
+    case flutter::DlImageSampling::kMipmapLinear:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.mip_filter = impeller::MipFilter::kLinear;
+      desc.label = "Mipmap Linear Sampler";
       break;
     default:
       break;

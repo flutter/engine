@@ -13,6 +13,12 @@
         },
     ],
     use: [
+        // This is used by the Dart VM to load i18n data.
+        {
+            directory: "config-data",
+            rights: [ "r*" ],
+            path: "/config/data",
+        },
         {
             protocol: [
                 "fuchsia.device.NameProvider",  // For fdio uname()
