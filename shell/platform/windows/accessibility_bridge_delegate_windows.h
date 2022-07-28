@@ -21,11 +21,11 @@ class FlutterWindowsEngine;
 // the framework to Windows, routing native Windows accessibility events to the
 // framework, and creating Windows-specific FlutterPlatformNodeDelegate objects
 // for each node in the semantics tree.
-class AccessibilityBridgeDelegateWin32
+class AccessibilityBridgeDelegateWindows
     : public AccessibilityBridge::AccessibilityBridgeDelegate {
  public:
-  explicit AccessibilityBridgeDelegateWin32(FlutterWindowsEngine* engine);
-  virtual ~AccessibilityBridgeDelegateWin32() = default;
+  explicit AccessibilityBridgeDelegateWindows(FlutterWindowsEngine* engine);
+  virtual ~AccessibilityBridgeDelegateWindows() = default;
 
   // |AccessibilityBridge::AccessibilityBridgeDelegate|
   void OnAccessibilityEvent(

@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include <dwmapi.h>
+
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -11,12 +13,10 @@
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/path_utils.h"
+#include "flutter/shell/platform/windows/accessibility_bridge_delegate_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
-
-#include <dwmapi.h>
-#include "flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h"
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -523,8 +523,6 @@ bool FlutterWindowsEngine::DispatchSemanticsAction(
 }
 
 void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
-  using AccessibilityBridgeDelegateWindows = AccessibilityBridgeDelegateWin32;
-
   if (engine_ && semantics_enabled_ != enabled) {
     semantics_enabled_ = enabled;
     embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
