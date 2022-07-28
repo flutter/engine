@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_builder.h"
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_ops.h"
 
@@ -413,12 +414,29 @@ void DisplayListBuilder::setAttributesFromPaint(
   }
 }
 
-void DisplayListBuilder::save() {
+void DisplayListBuilder::checkForDeferredSave() {
+  if (current_layer_->deferred_save_count_ > 0) {
+    doSave();
+  }
+}
+
+void DisplayListBuilder::doSave() {
   Push<SaveOp>(0, 1);
+  save_count_ += 1;
+  current_layer_->deferred_save_count_ -= 1;
   layer_stack_.emplace_back(current_layer_);
   current_layer_ = &layer_stack_.back();
 }
+
+void DisplayListBuilder::save() {
+  current_layer_->deferred_save_count_ += 1;
+}
+
 void DisplayListBuilder::restore() {
+  if (current_layer_->deferred_save_count_ > 0) {
+    current_layer_->deferred_save_count_ -= 1;
+    return;
+  }
   if (layer_stack_.size() > 1) {
     // Grab the current layer info before we push the restore
     // on the stack.
@@ -504,6 +522,7 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
 void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
   if (SkScalarIsFinite(tx) && SkScalarIsFinite(ty) &&
       (tx != 0.0 || ty != 0.0)) {
+    checkForDeferredSave();
     Push<TranslateOp>(0, 1, tx, ty);
     current_layer_->matrix.preTranslate(tx, ty);
   }
@@ -511,12 +530,14 @@ void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
 void DisplayListBuilder::scale(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 1.0 || sy != 1.0)) {
+    checkForDeferredSave();
     Push<ScaleOp>(0, 1, sx, sy);
     current_layer_->matrix.preScale(sx, sy);
   }
 }
 void DisplayListBuilder::rotate(SkScalar degrees) {
   if (SkScalarMod(degrees, 360.0) != 0.0) {
+    checkForDeferredSave();
     Push<RotateOp>(0, 1, degrees);
     current_layer_->matrix.preConcat(SkMatrix::RotateDeg(degrees));
   }
@@ -524,6 +545,7 @@ void DisplayListBuilder::rotate(SkScalar degrees) {
 void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 0.0 || sy != 0.0)) {
+    checkForDeferredSave();
     Push<SkewOp>(0, 1, sx, sy);
     current_layer_->matrix.preConcat(SkMatrix::Skew(sx, sy));
   }
@@ -540,6 +562,7 @@ void DisplayListBuilder::transform2DAffine(
       SkScalarsAreFinite(mxt, myt) &&
       !(mxx == 1 && mxy == 0 && mxt == 0 &&
         myx == 0 && myy == 1 && myt == 0)) {
+    checkForDeferredSave();
     Push<Transform2DAffineOp>(0, 1,
                               mxx, mxy, mxt,
                               myx, myy, myt);
@@ -599,6 +622,10 @@ void DisplayListBuilder::transform(const SkM44* m44) {
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   SkClipOp clip_op,
                                   bool is_aa) {
+  if (!rect.isFinite()) {
+    return;
+  }
+  checkForDeferredSave();
   switch (clip_op) {
     case SkClipOp::kIntersect:
       Push<ClipIntersectRectOp>(0, 1, rect, is_aa);
@@ -612,6 +639,7 @@ void DisplayListBuilder::clipRect(const SkRect& rect,
 void DisplayListBuilder::clipRRect(const SkRRect& rrect,
                                    SkClipOp clip_op,
                                    bool is_aa) {
+  checkForDeferredSave();
   if (rrect.isRect()) {
     clipRect(rrect.rect(), clip_op, is_aa);
   } else {
@@ -629,6 +657,7 @@ void DisplayListBuilder::clipRRect(const SkRRect& rrect,
 void DisplayListBuilder::clipPath(const SkPath& path,
                                   SkClipOp clip_op,
                                   bool is_aa) {
+  checkForDeferredSave();
   if (!path.isInverseFillType()) {
     SkRect rect;
     if (path.isRect(&rect)) {

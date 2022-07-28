@@ -559,6 +559,19 @@ class DisplayListBoundsCalculator final
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override;
+  void transform2DAffine(SkScalar mxx,
+                         SkScalar mxy,
+                         SkScalar mxt,
+                         SkScalar myx,
+                         SkScalar myy,
+                         SkScalar myt) override;
+  void translate(SkScalar tx, SkScalar ty) override;
+  void scale(SkScalar sx, SkScalar sy) override;
+  void rotate(SkScalar degrees) override;
+  void skew(SkScalar sx, SkScalar sy) override;
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
+  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
+  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
 
   // The DisplayList had an unbounded call with no cull rect or clip
   // to contain it. Should only be called after the stream is fully
@@ -576,6 +589,9 @@ class DisplayListBoundsCalculator final
 
  private:
   BoundsAccumulator& accumulator_;
+
+  void doSave();
+  void checkForDeferredSave();
 
   // A class that remembers the information kept for a single
   // |save| or |saveLayer|.
@@ -630,6 +646,7 @@ class DisplayListBoundsCalculator final
       *output = input;
       return true;
     }
+    unsigned deferred_save_count_ = 0;
 
    private:
     std::shared_ptr<DlImageFilter> filter_;
@@ -637,6 +654,8 @@ class DisplayListBoundsCalculator final
 
     FML_DISALLOW_COPY_AND_ASSIGN(LayerData);
   };
+
+  auto* current_layer() const { return layer_infos_.back().get(); }
 
   std::vector<std::unique_ptr<LayerData>> layer_infos_;
 

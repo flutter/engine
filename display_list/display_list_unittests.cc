@@ -1259,6 +1259,7 @@ TEST(DisplayList, ClipRectAffectsClipBounds) {
   // save/restore returned the values to their original values
   ASSERT_EQ(builder.getLocalClipBounds(), initialLocalBounds);
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
+  ASSERT_EQ(builder.save_count(), 2u);
 }
 
 TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
@@ -1278,6 +1279,7 @@ TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
   builder.clipRect(clipBounds2, SkClipOp::kIntersect, false);
   ASSERT_EQ(builder.getDestinationClipBounds(), clipBounds1);
   builder.restore();
+  ASSERT_EQ(builder.save_count(), 2u);
 }
 
 TEST(DisplayList, ClipRRectAffectsClipBounds) {
@@ -1318,6 +1320,7 @@ TEST(DisplayList, ClipRRectAffectsClipBounds) {
   // save/restore returned the values to their original values
   ASSERT_EQ(builder.getLocalClipBounds(), initialLocalBounds);
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
+  ASSERT_EQ(builder.save_count(), 2u);
 }
 
 TEST(DisplayList, ClipRRectAffectsClipBoundsWithMatrix) {
@@ -1340,6 +1343,7 @@ TEST(DisplayList, ClipRRectAffectsClipBoundsWithMatrix) {
   builder.clipRRect(clip2, SkClipOp::kIntersect, false);
   ASSERT_EQ(builder.getDestinationClipBounds(), clipBounds1);
   builder.restore();
+  ASSERT_EQ(builder.save_count(), 2u);
 }
 
 TEST(DisplayList, ClipPathAffectsClipBounds) {
@@ -1380,6 +1384,7 @@ TEST(DisplayList, ClipPathAffectsClipBounds) {
   // save/restore returned the values to their original values
   ASSERT_EQ(builder.getLocalClipBounds(), initialLocalBounds);
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
+  ASSERT_EQ(builder.save_count(), 2u);
 }
 
 TEST(DisplayList, ClipPathAffectsClipBoundsWithMatrix) {
@@ -1401,6 +1406,7 @@ TEST(DisplayList, ClipPathAffectsClipBoundsWithMatrix) {
   builder.clipPath(clip2, SkClipOp::kIntersect, false);
   ASSERT_EQ(builder.getDestinationClipBounds(), clipBounds);
   builder.restore();
+  ASSERT_EQ(builder.save_count(), 2u);
 }
 
 TEST(DisplayList, DiffClipRectDoesNotAffectClipBounds) {
@@ -1586,6 +1592,7 @@ TEST(DisplayList, RTreeOfSaveRestoreScene) {
   builder.save();
   builder.drawRect({50, 50, 60, 60});
   builder.restore();
+  ASSERT_EQ(builder.save_count(), 0u);
   auto display_list = builder.Build();
   auto rtree = display_list->rtree();
   std::vector<SkRect> rects = {
@@ -1642,6 +1649,32 @@ TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
 
   // Hitting both drawRect calls
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RemoveUnnecessarySaveRestorePairs) {
+  {
+    DisplayListBuilder builder;
+    builder.drawRect({10, 10, 20, 20});
+    builder.save();  // This save op is unnecessary
+    builder.drawRect({50, 50, 60, 60});
+    builder.restore();
+    ASSERT_EQ(builder.save_count(), 0u);
+  }
+
+  {
+    DisplayListBuilder builder;
+    builder.drawRect({10, 10, 20, 20});
+    builder.save();
+    builder.translate(1.0, 1.0);
+    {
+      builder.save();  // unnecessary
+      builder.drawRect({50, 50, 60, 60});
+      builder.restore();
+    }
+
+    builder.restore();
+    ASSERT_EQ(builder.save_count(), 1u);
+  }
 }
 
 TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
