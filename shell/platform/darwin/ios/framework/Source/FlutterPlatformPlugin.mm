@@ -17,7 +17,7 @@ namespace {
 constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
 
-}  // namespaces
+}  // namespace
 
 namespace flutter {
 
@@ -37,6 +37,8 @@ using namespace flutter;
 
 @implementation FlutterPlatformPlugin {
   fml::WeakPtr<FlutterEngine> _engine;
+  // Used to detect whether this device has live text input ability or not.
+  UITextField* _textField;
 }
 
 - (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
@@ -88,6 +90,8 @@ using namespace flutter;
     result(nil);
   } else if ([method isEqualToString:@"Clipboard.hasStrings"]) {
     result([self clipboardHasStrings]);
+  } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
+    result(@([self isLiveTextInputAvailable]));
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -107,19 +111,17 @@ using namespace flutter;
     return;
   }
 
-  if (@available(iOS 10, *)) {
-    if ([@"HapticFeedbackType.lightImpact" isEqualToString:feedbackType]) {
-      [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] autorelease]
-          impactOccurred];
-    } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString:feedbackType]) {
-      [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] autorelease]
-          impactOccurred];
-    } else if ([@"HapticFeedbackType.heavyImpact" isEqualToString:feedbackType]) {
-      [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] autorelease]
-          impactOccurred];
-    } else if ([@"HapticFeedbackType.selectionClick" isEqualToString:feedbackType]) {
-      [[[[UISelectionFeedbackGenerator alloc] init] autorelease] selectionChanged];
-    }
+  if ([@"HapticFeedbackType.lightImpact" isEqualToString:feedbackType]) {
+    [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] autorelease]
+        impactOccurred];
+  } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString:feedbackType]) {
+    [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] autorelease]
+        impactOccurred];
+  } else if ([@"HapticFeedbackType.heavyImpact" isEqualToString:feedbackType]) {
+    [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] autorelease]
+        impactOccurred];
+  } else if ([@"HapticFeedbackType.selectionClick" isEqualToString:feedbackType]) {
+    [[[[UISelectionFeedbackGenerator alloc] init] autorelease] selectionChanged];
   }
 }
 
@@ -276,15 +278,22 @@ using namespace flutter;
 }
 
 - (NSDictionary*)clipboardHasStrings {
-  bool hasStrings = false;
-  UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
-  if (@available(iOS 10, *)) {
-    hasStrings = pasteboard.hasStrings;
-  } else {
-    NSString* stringInPasteboard = pasteboard.string;
-    hasStrings = stringInPasteboard != nil;
-  }
-  return @{@"value" : @(hasStrings)};
+  return @{@"value" : @([UIPasteboard generalPasteboard].hasStrings)};
 }
 
+- (BOOL)isLiveTextInputAvailable {
+  return [[self textField] canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
+}
+
+- (UITextField*)textField {
+  if (_textField == nil) {
+    _textField = [[UITextField alloc] init];
+  }
+  return _textField;
+}
+
+- (void)dealloc {
+  [_textField release];
+  [super dealloc];
+}
 @end

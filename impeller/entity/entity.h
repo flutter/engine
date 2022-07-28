@@ -81,6 +81,8 @@ class Entity {
 
   std::optional<Rect> GetCoverage() const;
 
+  bool ShouldRender(const ISize& target_size) const;
+
   void SetContents(std::shared_ptr<Contents> contents);
 
   const std::shared_ptr<Contents>& GetContents() const;

@@ -3,10 +3,12 @@
 // found in the LICENSE file.
 
 #include <memory>
+
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_utils.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
@@ -2114,6 +2116,25 @@ TEST(DisplayList, ClipRectAffectsClipBounds) {
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
 }
 
+TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
+  DisplayListBuilder builder;
+  SkRect clipBounds1 = SkRect::MakeLTRB(0, 0, 10, 10);
+  SkRect clipBounds2 = SkRect::MakeLTRB(10, 10, 20, 20);
+  builder.save();
+  builder.clipRect(clipBounds1, SkClipOp::kIntersect, false);
+  builder.translate(10, 0);
+  builder.clipRect(clipBounds1, SkClipOp::kIntersect, false);
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
+  builder.restore();
+
+  builder.save();
+  builder.clipRect(clipBounds1, SkClipOp::kIntersect, false);
+  builder.translate(-10, -10);
+  builder.clipRect(clipBounds2, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clipBounds1);
+  builder.restore();
+}
+
 TEST(DisplayList, ClipRRectAffectsClipBounds) {
   DisplayListBuilder builder;
   SkRect clipBounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
@@ -2154,6 +2175,28 @@ TEST(DisplayList, ClipRRectAffectsClipBounds) {
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
 }
 
+TEST(DisplayList, ClipRRectAffectsClipBoundsWithMatrix) {
+  DisplayListBuilder builder;
+  SkRect clipBounds1 = SkRect::MakeLTRB(0, 0, 10, 10);
+  SkRect clipBounds2 = SkRect::MakeLTRB(10, 10, 20, 20);
+  SkRRect clip1 = SkRRect::MakeRectXY(clipBounds1, 3, 2);
+  SkRRect clip2 = SkRRect::MakeRectXY(clipBounds2, 3, 2);
+
+  builder.save();
+  builder.clipRRect(clip1, SkClipOp::kIntersect, false);
+  builder.translate(10, 0);
+  builder.clipRRect(clip1, SkClipOp::kIntersect, false);
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
+  builder.restore();
+
+  builder.save();
+  builder.clipRRect(clip1, SkClipOp::kIntersect, false);
+  builder.translate(-10, -10);
+  builder.clipRRect(clip2, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clipBounds1);
+  builder.restore();
+}
+
 TEST(DisplayList, ClipPathAffectsClipBounds) {
   DisplayListBuilder builder;
   SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
@@ -2192,6 +2235,27 @@ TEST(DisplayList, ClipPathAffectsClipBounds) {
   // save/restore returned the values to their original values
   ASSERT_EQ(builder.getLocalClipBounds(), initialLocalBounds);
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
+}
+
+TEST(DisplayList, ClipPathAffectsClipBoundsWithMatrix) {
+  DisplayListBuilder builder;
+  SkRect clipBounds = SkRect::MakeLTRB(0, 0, 10, 10);
+  SkPath clip1 = SkPath().addCircle(2.5, 2.5, 2.5).addCircle(7.5, 7.5, 2.5);
+  SkPath clip2 = SkPath().addCircle(12.5, 12.5, 2.5).addCircle(17.5, 17.5, 2.5);
+
+  builder.save();
+  builder.clipPath(clip1, SkClipOp::kIntersect, false);
+  builder.translate(10, 0);
+  builder.clipPath(clip1, SkClipOp::kIntersect, false);
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
+  builder.restore();
+
+  builder.save();
+  builder.clipPath(clip1, SkClipOp::kIntersect, false);
+  builder.translate(-10, -10);
+  builder.clipPath(clip2, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clipBounds);
+  builder.restore();
 }
 
 TEST(DisplayList, DiffClipRectDoesNotAffectClipBounds) {
@@ -2250,6 +2314,30 @@ TEST(DisplayList, DiffClipPathDoesNotAffectClipBounds) {
   ASSERT_EQ(builder.getDestinationClipBounds(), initialDestinationBounds);
 }
 
+TEST(DisplayList, ClipPathWithInvertFillTypeDoesNotAffectClipBounds) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListBuilder builder(cull_rect);
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+
+  ASSERT_EQ(builder.getLocalClipBounds(), cull_rect);
+  ASSERT_EQ(builder.getDestinationClipBounds(), cull_rect);
+}
+
+TEST(DisplayList, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListBuilder builder(cull_rect);
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
+  builder.clipPath(clip, SkClipOp::kDifference, false);
+
+  ASSERT_EQ(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
 TEST(DisplayList, FlatDrawPointsProducesBounds) {
   SkPoint horizontal_points[2] = {{10, 10}, {20, 10}};
   SkPoint vertical_points[2] = {{10, 10}, {10, 20}};
@@ -2301,6 +2389,151 @@ TEST(DisplayList, FlatDrawPointsProducesBounds) {
     EXPECT_TRUE(bounds.contains(10, 10));
     EXPECT_EQ(bounds, SkRect::MakeLTRB(9, 9, 11, 11));
   }
+}
+
+static void test_rtree(sk_sp<const DlRTree> rtree,
+                       const SkRect& query,
+                       std::vector<SkRect> expected_rects,
+                       std::vector<int> expected_indices) {
+  std::vector<int> indices;
+  rtree->search(query, &indices);
+  EXPECT_EQ(indices, expected_indices);
+  EXPECT_EQ(indices.size(), expected_indices.size());
+  std::list<SkRect> rects = rtree->searchNonOverlappingDrawnRects(query);
+  // ASSERT_EQ(rects.size(), expected_indices.size());
+  auto iterator = rects.cbegin();
+  for (int i : expected_indices) {
+    EXPECT_TRUE(iterator != rects.cend());
+    EXPECT_EQ(*iterator++, expected_rects[i]);
+  }
+}
+
+TEST(DisplayList, RTreeOfSimpleScene) {
+  DisplayListBuilder builder;
+  builder.drawRect({10, 10, 20, 20});
+  builder.drawRect({50, 50, 60, 60});
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeOfSaveRestoreScene) {
+  DisplayListBuilder builder;
+  builder.drawRect({10, 10, 20, 20});
+  builder.save();
+  builder.drawRect({50, 50, 60, 60});
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
+  DisplayListBuilder builder;
+  // blur filter with sigma=1 expands by 3 on all sides
+  auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
+  DlPaint default_paint = DlPaint();
+  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  builder.drawRect({10, 10, 20, 20}, default_paint);
+  builder.saveLayer(nullptr, &filter_paint);
+  // the following rectangle will be expanded to 50,50,60,60
+  // by the saveLayer filter during the restore operation
+  builder.drawRect({53, 53, 57, 57}, default_paint);
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
+  DisplayListBuilder builder;
+  // blur filter with sigma=1 expands by 30 on all sides
+  auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
+  DlPaint default_paint = DlPaint();
+  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  builder.drawRect({10, 10, 20, 20}, default_paint);
+  builder.clipRect({50, 50, 60, 60}, SkClipOp::kIntersect, false);
+  builder.saveLayer(nullptr, &filter_paint);
+  // the following rectangle will be expanded to 23,23,87,87
+  // by the saveLayer filter during the restore operation
+  // but it will then be clipped to 50,50,60,60
+  builder.drawRect({53, 53, 57, 57}, default_paint);
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
 }  // namespace testing

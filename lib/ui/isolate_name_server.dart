@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-// @dart = 2.12
 part of dart.ui;
 
 /// Static methods to allow for simple sharing of [SendPort]s across [Isolate]s.
@@ -72,10 +70,12 @@ class IsolateNameServer {
     return _removePortNameMapping(name);
   }
 
-  static SendPort? _lookupPortByName(String name)
-      native 'IsolateNameServerNatives_LookupPortByName';
-  static bool _registerPortWithName(SendPort port, String name)
-      native 'IsolateNameServerNatives_RegisterPortWithName';
-  static bool _removePortNameMapping(String name)
-      native 'IsolateNameServerNatives_RemovePortNameMapping';
+  @FfiNative<Handle Function(Handle)>('IsolateNameServerNatives::LookupPortByName')
+  external static SendPort? _lookupPortByName(String name);
+
+  @FfiNative<Bool Function(Handle, Handle)>('IsolateNameServerNatives::RegisterPortWithName')
+  external static bool _registerPortWithName(SendPort port, String name);
+
+  @FfiNative<Bool Function(Handle)>('IsolateNameServerNatives::RemovePortNameMapping')
+  external static bool _removePortNameMapping(String name);
 }

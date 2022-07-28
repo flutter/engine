@@ -5,9 +5,12 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_test_utils.h"
+#include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/display_list_layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
+#include "flutter/flow/testing/skia_gpu_object_layer_test.h"
 #include "gtest/gtest.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
@@ -41,36 +44,36 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
 
   // 1st access.
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
+  cache.EndFrame();
   ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
   ASSERT_EQ(cache.picture_metrics().total_bytes(), 0u);
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   // 2nd access.
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
+  cache.EndFrame();
   ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
   ASSERT_EQ(cache.picture_metrics().total_bytes(), 0u);
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   // Now Prepare should cache it.
-  ASSERT_TRUE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_TRUE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_TRUE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
+  cache.EndFrame();
   ASSERT_EQ(cache.picture_metrics().total_count(), 1u);
   // 150w * 100h * 4bpp
   ASSERT_EQ(cache.picture_metrics().total_bytes(), 25600u);
@@ -93,29 +96,29 @@ TEST(RasterCache, ThresholdIsRespectedForDisplayList) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
 
   // 1st access.
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
+  cache.EndFrame();
+  cache.BeginFrame();
 
   // 2nd access.
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
+  cache.EndFrame();
+  cache.BeginFrame();
 
   // Now Prepare should cache it.
-  ASSERT_TRUE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_TRUE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_TRUE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
@@ -171,10 +174,10 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
@@ -196,11 +199,11 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
@@ -223,17 +226,17 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
@@ -255,32 +258,32 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForDisplayList) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
   // 1st access.
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
   // 2nd access.
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
   // the picture_cache_limit_per_frame = 0, so don't cache it
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
 
-TEST(RasterCache, SweepsRemoveUnusedSkPictures) {
+TEST(RasterCache, EvitUnusedCacheEntries) {
   size_t threshold = 1;
   flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
 
-  auto display_list = GetSampleDisplayList();
-  ;
+  auto display_list_1 = GetSampleDisplayList();
+  auto display_list_2 = GetSampleDisplayList();
 
   SkCanvas dummy_canvas;
   SkPaint paint;
@@ -291,73 +294,78 @@ TEST(RasterCache, SweepsRemoveUnusedSkPictures) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  DisplayListRasterCacheItem display_item(display_list.get(), SkPoint(), true,
-                                          false);
-  // 1.
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
-      display_item, preroll_context, paint_context, matrix));
-  ASSERT_FALSE(display_item.Draw(paint_context, &dummy_canvas, &paint));
+  DisplayListRasterCacheItem display_list_item_1(display_list_1.get(),
+                                                 SkPoint(), true, false);
+  DisplayListRasterCacheItem display_list_item_2(display_list_2.get(),
+                                                 SkPoint(), true, false);
 
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
-  // 2.
-  ASSERT_TRUE(DisplayListRasterCacheItemTryToRasterCache(
-      display_item, preroll_context, paint_context, matrix));
-  ASSERT_TRUE(display_item.Draw(paint_context, &dummy_canvas, &paint));
-
-  cache.CleanupAfterFrame();
-
-  cache.PrepareNewFrame();
-  cache.CleanupAfterFrame();  // Extra frame without a Get image access.
-
-  cache.PrepareNewFrame();
-
-  ASSERT_FALSE(cache.Draw(display_item.GetId().value(), dummy_canvas, &paint));
-  ASSERT_FALSE(display_item.Draw(paint_context, &dummy_canvas, &paint));
-}
-
-TEST(RasterCache, SweepsRemoveUnusedDisplayLists) {
-  size_t threshold = 1;
-  flutter::RasterCache cache(threshold);
-
-  SkMatrix matrix = SkMatrix::I();
-
-  auto display_list = GetSampleDisplayList();
-
-  SkCanvas dummy_canvas;
-  SkPaint paint;
-
-  PrerollContextHolder preroll_context_holder =
-      GetSamplePrerollContextHolder(&cache);
-  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(&cache);
-  auto& preroll_context = preroll_context_holder.preroll_context;
-  auto& paint_context = paint_context_holder.paint_context;
-
-  cache.PrepareNewFrame();
-
-  DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
-                                               true, false);
-
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
-
-  ASSERT_TRUE(DisplayListRasterCacheItemTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_TRUE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-
-  cache.CleanupAfterFrame();
-
-  cache.PrepareNewFrame();
-  cache.CleanupAfterFrame();  // Extra frame without a Get image access.
-
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
+  RasterCacheItemPreroll(display_list_item_1, preroll_context, matrix);
+  RasterCacheItemPreroll(display_list_item_2, preroll_context, matrix);
+  cache.EvictUnusedCacheEntries();
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 0u);
   ASSERT_FALSE(
-      cache.Draw(display_list_item.GetId().value(), dummy_canvas, &paint));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
+      RasterCacheItemTryToRasterCache(display_list_item_1, paint_context));
+  ASSERT_FALSE(
+      RasterCacheItemTryToRasterCache(display_list_item_2, paint_context));
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 0u);
+  ASSERT_FALSE(display_list_item_1.Draw(paint_context, &dummy_canvas, &paint));
+  ASSERT_FALSE(display_list_item_2.Draw(paint_context, &dummy_canvas, &paint));
+  cache.EndFrame();
+
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 0u);
+  ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
+  ASSERT_EQ(cache.picture_metrics().total_bytes(), 0u);
+
+  cache.BeginFrame();
+  RasterCacheItemPreroll(display_list_item_1, preroll_context, matrix);
+  RasterCacheItemPreroll(display_list_item_2, preroll_context, matrix);
+  cache.EvictUnusedCacheEntries();
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 0u);
+  ASSERT_TRUE(
+      RasterCacheItemTryToRasterCache(display_list_item_1, paint_context));
+  ASSERT_TRUE(
+      RasterCacheItemTryToRasterCache(display_list_item_2, paint_context));
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 51200u);
+  ASSERT_TRUE(display_list_item_1.Draw(paint_context, &dummy_canvas, &paint));
+  ASSERT_TRUE(display_list_item_2.Draw(paint_context, &dummy_canvas, &paint));
+  cache.EndFrame();
+
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 51200u);
+  ASSERT_EQ(cache.picture_metrics().total_count(), 2u);
+  ASSERT_EQ(cache.picture_metrics().total_bytes(), 51200u);
+
+  cache.BeginFrame();
+  RasterCacheItemPreroll(display_list_item_1, preroll_context, matrix);
+  cache.EvictUnusedCacheEntries();
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 25600u);
+  ASSERT_TRUE(
+      RasterCacheItemTryToRasterCache(display_list_item_1, paint_context));
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 25600u);
+  ASSERT_TRUE(display_list_item_1.Draw(paint_context, &dummy_canvas, &paint));
+  cache.EndFrame();
+
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 25600u);
+  ASSERT_EQ(cache.picture_metrics().total_count(), 1u);
+  ASSERT_EQ(cache.picture_metrics().total_bytes(), 25600u);
+
+  cache.BeginFrame();
+  cache.EvictUnusedCacheEntries();
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 0u);
+  cache.EndFrame();
+
+  ASSERT_EQ(cache.EstimatePictureCacheByteSize(), 0u);
+  ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
+  ASSERT_EQ(cache.picture_metrics().total_bytes(), 0u);
+
+  cache.BeginFrame();
+  ASSERT_FALSE(
+      cache.Draw(display_list_item_1.GetId().value(), dummy_canvas, &paint));
+  ASSERT_FALSE(display_list_item_1.Draw(paint_context, &dummy_canvas, &paint));
+  ASSERT_FALSE(
+      cache.Draw(display_list_item_2.GetId().value(), dummy_canvas, &paint));
+  ASSERT_FALSE(display_list_item_2.Draw(paint_context, &dummy_canvas, &paint));
+  cache.EndFrame();
 }
 
 TEST(RasterCache, ComputeDeviceRectBasedOnFractionalTranslation) {
@@ -392,18 +400,18 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                true, false);
 
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, ctm));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &canvas, &paint));
 
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
+  cache.EndFrame();
+  cache.BeginFrame();
 
-  ASSERT_TRUE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_TRUE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, ctm));
   ASSERT_TRUE(display_list_item.Draw(paint_context, &canvas, &paint));
 
@@ -431,19 +439,19 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                false, false);
 
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
+  cache.EndFrame();
+  cache.BeginFrame();
 
-  ASSERT_TRUE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_TRUE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_TRUE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
@@ -474,19 +482,19 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
   auto& preroll_context = preroll_context_holder.preroll_context;
   auto& paint_context = paint_context_holder.paint_context;
 
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   DisplayListRasterCacheItem display_list_item(display_list.get(), SkPoint(),
                                                false, false);
 
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
+  cache.EndFrame();
+  cache.BeginFrame();
 
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 
@@ -500,16 +508,16 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
 
   DisplayListRasterCacheItem display_list_item_2 =
       DisplayListRasterCacheItem(display_list.get(), SkPoint(), false, false);
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
-  ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item_2, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item_2.Draw(paint_context, &dummy_canvas, &paint));
 
-  cache.CleanupAfterFrame();
-  cache.PrepareNewFrame();
+  cache.EndFrame();
+  cache.BeginFrame();
 
-  ASSERT_TRUE(DisplayListRasterCacheItemTryToRasterCache(
+  ASSERT_TRUE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item_2, preroll_context, paint_context, matrix));
   ASSERT_TRUE(display_list_item_2.Draw(paint_context, &dummy_canvas, &paint));
 }
@@ -540,11 +548,11 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
                                                true, false);
 
   for (int i = 0; i < 10; i++) {
-    cache.PrepareNewFrame();
+    cache.BeginFrame();
 
     for (int j = 0; j < matrixCount; j++) {
       display_list_item.set_matrix(matrices[j]);
-      ASSERT_FALSE(DisplayListRasterCacheItemTryToRasterCache(
+      ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
           display_list_item, preroll_context, paint_context, matrices[j]));
     }
 
@@ -554,7 +562,7 @@ TEST(RasterCache, DisplayListWithSingularMatrixIsNotCached) {
           display_list_item.Draw(paint_context, &dummy_canvas, &paint));
     }
 
-    cache.CleanupAfterFrame();
+    cache.EndFrame();
   }
 }
 
@@ -638,12 +646,15 @@ TEST(RasterCache, RasterCacheKeySameType) {
   ASSERT_EQ(map[display_list_third_key], 450);
 
   type = RasterCacheKeyType::kLayerChildren;
-  RasterCacheKey layer_children_first_key(RasterCacheKeyID({1, 2, 3}, type),
-                                          matrix);
-  RasterCacheKey layer_children_second_key(RasterCacheKeyID({2, 3, 1}, type),
-                                           matrix);
-  RasterCacheKey layer_children_third_key(RasterCacheKeyID({3, 2, 1}, type),
-                                          matrix);
+  RasterCacheKeyID foo = RasterCacheKeyID(10, RasterCacheKeyType::kLayer);
+  RasterCacheKeyID bar = RasterCacheKeyID(20, RasterCacheKeyType::kLayer);
+  RasterCacheKeyID baz = RasterCacheKeyID(30, RasterCacheKeyType::kLayer);
+  RasterCacheKey layer_children_first_key(
+      RasterCacheKeyID({foo, bar, baz}, type), matrix);
+  RasterCacheKey layer_children_second_key(
+      RasterCacheKeyID({foo, baz, bar}, type), matrix);
+  RasterCacheKey layer_children_third_key(
+      RasterCacheKeyID({baz, bar, foo}, type), matrix);
   map[layer_children_first_key] = 100;
   map[layer_children_second_key] = 200;
   map[layer_children_third_key] = 300;
@@ -654,45 +665,80 @@ TEST(RasterCache, RasterCacheKeySameType) {
 
 TEST(RasterCache, RasterCacheKeyID_Equal) {
   RasterCacheKeyID first = RasterCacheKeyID(1, RasterCacheKeyType::kLayer);
-  RasterCacheKeyID second =
+  RasterCacheKeyID second = RasterCacheKeyID(2, RasterCacheKeyType::kLayer);
+  RasterCacheKeyID third =
       RasterCacheKeyID(1, RasterCacheKeyType::kLayerChildren);
-  RasterCacheKeyID third = RasterCacheKeyID(2, RasterCacheKeyType::kLayer);
+
   ASSERT_NE(first, second);
   ASSERT_NE(first, third);
   ASSERT_NE(second, third);
 
   RasterCacheKeyID fourth =
-      RasterCacheKeyID({1, 2}, RasterCacheKeyType::kLayer);
+      RasterCacheKeyID({first, second}, RasterCacheKeyType::kLayer);
   RasterCacheKeyID fifth =
-      RasterCacheKeyID({1, 2}, RasterCacheKeyType::kLayerChildren);
+      RasterCacheKeyID({first, second}, RasterCacheKeyType::kLayerChildren);
   RasterCacheKeyID sixth =
-      RasterCacheKeyID({2, 1}, RasterCacheKeyType::kLayerChildren);
+      RasterCacheKeyID({second, first}, RasterCacheKeyType::kLayerChildren);
   ASSERT_NE(fourth, fifth);
   ASSERT_NE(fifth, sixth);
-}
-
-size_t HashIds(std::vector<uint64_t> ids, RasterCacheKeyType type) {
-  std::size_t seed = fml::HashCombine();
-  for (auto id : ids) {
-    fml::HashCombineSeed(seed, id);
-  }
-  return fml::HashCombine(seed, type);
 }
 
 TEST(RasterCache, RasterCacheKeyID_HashCode) {
   uint64_t foo = 1;
   uint64_t bar = 2;
   RasterCacheKeyID first = RasterCacheKeyID(foo, RasterCacheKeyType::kLayer);
-  RasterCacheKeyID second =
-      RasterCacheKeyID({foo, bar}, RasterCacheKeyType::kLayerChildren);
-  RasterCacheKeyID third =
-      RasterCacheKeyID({bar, foo}, RasterCacheKeyType::kLayerChildren);
+  RasterCacheKeyID second = RasterCacheKeyID(bar, RasterCacheKeyType::kLayer);
+  std::size_t first_hash = first.GetHash();
+  std::size_t second_hash = second.GetHash();
 
-  ASSERT_EQ(first.GetHash(), HashIds({foo}, RasterCacheKeyType::kLayer));
-  ASSERT_EQ(second.GetHash(),
-            HashIds({foo, bar}, RasterCacheKeyType::kLayerChildren));
-  ASSERT_EQ(third.GetHash(),
-            HashIds({bar, foo}, RasterCacheKeyType::kLayerChildren));
+  ASSERT_EQ(first_hash, fml::HashCombine(foo, RasterCacheKeyType::kLayer));
+  ASSERT_EQ(second_hash, fml::HashCombine(bar, RasterCacheKeyType::kLayer));
+
+  RasterCacheKeyID third =
+      RasterCacheKeyID({first, second}, RasterCacheKeyType::kLayerChildren);
+  RasterCacheKeyID fourth =
+      RasterCacheKeyID({second, first}, RasterCacheKeyType::kLayerChildren);
+  std::size_t third_hash = third.GetHash();
+  std::size_t fourth_hash = fourth.GetHash();
+
+  ASSERT_EQ(third_hash, fml::HashCombine(RasterCacheKeyID::kDefaultUniqueID,
+                                         RasterCacheKeyType::kLayerChildren,
+                                         first.GetHash(), second.GetHash()));
+  ASSERT_EQ(fourth_hash, fml::HashCombine(RasterCacheKeyID::kDefaultUniqueID,
+                                          RasterCacheKeyType::kLayerChildren,
+                                          second.GetHash(), first.GetHash()));
+
+  // Verify that the cached hash code is correct.
+  ASSERT_EQ(first_hash, first.GetHash());
+  ASSERT_EQ(second_hash, second.GetHash());
+  ASSERT_EQ(third_hash, third.GetHash());
+  ASSERT_EQ(fourth_hash, fourth.GetHash());
+}
+
+using RasterCacheTest = SkiaGPUObjectLayerTest;
+
+TEST_F(RasterCacheTest, RasterCacheKeyID_LayerChildrenIds) {
+  auto layer = std::make_shared<ContainerLayer>();
+
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  layer->Add(mock_layer);
+
+  auto display_list = GetSampleDisplayList();
+  auto display_list_layer = std::make_shared<DisplayListLayer>(
+      SkPoint::Make(0.0f, 0.0f),
+      SkiaGPUObject<DisplayList>(display_list, unref_queue()), false, false);
+  layer->Add(display_list_layer);
+
+  auto ids = RasterCacheKeyID::LayerChildrenIds(layer.get()).value();
+  std::vector<RasterCacheKeyID> expected_ids;
+  expected_ids.emplace_back(
+      RasterCacheKeyID(mock_layer->unique_id(), RasterCacheKeyType::kLayer));
+  expected_ids.emplace_back(RasterCacheKeyID(display_list->unique_id(),
+                                             RasterCacheKeyType::kDisplayList));
+  ASSERT_EQ(expected_ids[0], mock_layer->caching_key_id());
+  ASSERT_EQ(expected_ids[1], display_list_layer->caching_key_id());
+  ASSERT_EQ(ids, expected_ids);
 }
 
 }  // namespace testing
