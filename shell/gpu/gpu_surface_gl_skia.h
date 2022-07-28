@@ -76,6 +76,7 @@ class GPUSurfaceGLSkia : public Surface {
   // external view embedder is present.
   const bool render_to_surface_ = true;
   bool valid_ = false;
+  bool supports_partial_repaint_ = true;
 
   // WeakPtrFactory must be the last member.
   fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGLSkia> weak_factory_;

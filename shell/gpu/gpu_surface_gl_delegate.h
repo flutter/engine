@@ -27,6 +27,7 @@ struct GLFrameInfo {
 struct GLFBOInfo {
   // The frame buffer's ID.
   uint32_t fbo_id;
+  const bool partial_repaint_enabled;
   // The frame buffer's existing damage (i.e. damage since it was last used).
   const SkIRect existing_damage;
 };
