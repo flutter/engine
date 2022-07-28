@@ -3,6 +3,13 @@
 // found in the LICENSE file.
 part of dart.ui;
 
+// Examples can assume:
+// // (for the example in Color)
+// // ignore_for_file: use_full_hex_values_for_flutter_colors
+// late ui.Image _image;
+// dynamic _cacheImage(dynamic _, [dynamic __]) { }
+// dynamic _drawImage(dynamic _, [dynamic __]) { }
+
 // Some methods in this file assert that their arguments are not null. These
 // asserts are just to improve the error messages; they should only cover
 // arguments that are either dereferenced _in Dart_, before being passed to the
@@ -68,10 +75,10 @@ Color _scaleAlpha(Color a, double factor) {
 /// Here are some ways it could be constructed:
 ///
 /// ```dart
-/// Color c = const Color(0xFF42A5F5);
-/// Color c = const Color.fromARGB(0xFF, 0x42, 0xA5, 0xF5);
-/// Color c = const Color.fromARGB(255, 66, 165, 245);
-/// Color c = const Color.fromRGBO(66, 165, 245, 1.0);
+/// Color c1 = const Color(0xFF42A5F5);
+/// Color c2 = const Color.fromARGB(0xFF, 0x42, 0xA5, 0xF5);
+/// Color c3 = const Color.fromARGB(255, 66, 165, 245);
+/// Color c4 = const Color.fromRGBO(66, 165, 245, 1.0);
 /// ```
 ///
 /// If you are having a problem with `Color` wherein it seems your color is just
@@ -1426,15 +1433,11 @@ class Paint {
   /// [ImageFilter.blur]:
   ///
   /// ```dart
-  /// import 'dart:ui' as ui;
-  ///
-  /// ui.Image image;
-  ///
   /// void paint(Canvas canvas, Size size) {
   ///   canvas.drawImage(
-  ///     image,
-  ///     Offset.zero,
-  ///     Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: .5, sigmaY: .5),
+  ///     _image,
+  ///     ui.Offset.zero,
+  ///     Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: 0.5, sigmaY: 0.5),
   ///   );
   /// }
   /// ```
@@ -1746,6 +1749,8 @@ class Image {
   ///
   /// ```dart
   /// import 'dart:async';
+  /// import 'dart:typed_data';
+  /// import 'dart:ui';
   ///
   /// Future<Image> _loadImage(int width, int height) {
   ///   final Completer<Image> completer = Completer<Image>();
@@ -1783,7 +1788,7 @@ class Image {
   /// }
   ///
   /// class MyImageHolder {
-  ///   MyImageLoader(this.image);
+  ///   MyImageHolder(this.image);
   ///
   ///   final Image image;
   ///
@@ -1898,8 +1903,8 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// ```dart
 /// /// BAD
-/// Future<void> nextFrameRoutine(Codec codec) async {
-///   final FrameInfo frameInfo = await codec.getNextFrame();
+/// Future<void> nextFrameRoutine(ui.Codec codec) async {
+///   final ui.FrameInfo frameInfo = await codec.getNextFrame();
 ///   _cacheImage(frameInfo);
 ///   // ERROR - _cacheImage is now responsible for disposing the image, and
 ///   // the image may not be available any more for this drawing routine.
@@ -1914,8 +1919,8 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// ```dart
 /// /// GOOD
-/// Future<void> nextFrameRoutine(Codec codec) async {
-///   final FrameInfo frameInfo = await codec.getNextFrame();
+/// Future<void> nextFrameRoutine(ui.Codec codec) async {
+///   final ui.FrameInfo frameInfo = await codec.getNextFrame();
 ///   _cacheImage(frameInfo.image.clone(), frameInfo.duration);
 ///   _drawImage(frameInfo.image.clone(), frameInfo.duration);
 ///   // This method is done with its handle, and has passed handles to its
@@ -3113,18 +3118,16 @@ class ColorFilter implements ImageFilter {
   /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
-  /// ```text
-  /// | R' |   | a00 a01 a02 a03 a04 |   | R |
-  /// | G' |   | a10 a11 a22 a33 a44 |   | G |
-  /// | B' | = | a20 a21 a22 a33 a44 | * | B |
-  /// | A' |   | a30 a31 a22 a33 a44 |   | A |
-  /// | 1  |   |  0   0   0   0   1  |   | 1 |
-  /// ```
+  ///     | R' |   | a00 a01 a02 a03 a04 |   | R |
+  ///     | G' |   | a10 a11 a22 a33 a44 |   | G |
+  ///     | B' | = | a20 a21 a22 a33 a44 | * | B |
+  ///     | A' |   | a30 a31 a22 a33 a44 |   | A |
+  ///     | 1  |   |  0   0   0   0   1  |   | 1 |
   ///
   /// The matrix is in row-major order and the translation column is specified
   /// in unnormalized, 0...255, space. For example, the identity matrix is:
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter identity = ColorFilter.matrix(<double>[
   ///   1, 0, 0, 0, 0,
   ///   0, 1, 0, 0, 0,
@@ -3137,7 +3140,7 @@ class ColorFilter implements ImageFilter {
   ///
   /// An inversion color matrix:
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter invert = ColorFilter.matrix(<double>[
   ///   -1,  0,  0, 0, 255,
   ///    0, -1,  0, 0, 255,
@@ -3148,7 +3151,7 @@ class ColorFilter implements ImageFilter {
   ///
   /// A sepia-toned color matrix (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent)):
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter sepia = ColorFilter.matrix(<double>[
   ///   0.393, 0.769, 0.189, 0, 0,
   ///   0.349, 0.686, 0.168, 0, 0,
@@ -3159,7 +3162,7 @@ class ColorFilter implements ImageFilter {
   ///
   /// A greyscale color filter (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent)):
   ///
-  /// ```
+  /// ```dart
   /// const ColorFilter greyscale = ColorFilter.matrix(<double>[
   ///   0.2126, 0.7152, 0.0722, 0, 0,
   ///   0.2126, 0.7152, 0.0722, 0, 0,
@@ -4124,7 +4127,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   ///
   /// Consider the following snippit of GLSL code.
   ///
-  /// ```
+  /// ```glsl
   /// layout (location = 0) uniform float a;
   /// layout (location = 1) uniform vec2 b;
   /// layout (location = 2) uniform vec3 c;
@@ -4148,7 +4151,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   ///
   /// Consider the following snippit of GLSL code.
   ///
-  /// ```
+  /// ```glsl
   /// layout (location = 0) uniform sampler2D a;
   /// layout (location = 1) uniform sampler2D b;
   /// ```
@@ -4726,12 +4729,15 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// following two clip method calls:
   ///
   /// ```dart
-  ///    clipPath(Path()
-  ///      ..addRect(const Rect.fromLTRB(10, 10, 20, 20))
-  ///      ..addRect(const Rect.fromLTRB(80, 80, 100, 100)));
-  ///    clipPath(Path()
-  ///      ..addRect(const Rect.fromLTRB(80, 10, 100, 20))
-  ///      ..addRect(const Rect.fromLTRB(10, 80, 20, 100)));
+  /// void draw(Canvas canvas) {
+  ///   canvas.clipPath(Path()
+  ///     ..addRect(const Rect.fromLTRB(10, 10, 20, 20))
+  ///     ..addRect(const Rect.fromLTRB(80, 80, 100, 100)));
+  ///   canvas.clipPath(Path()
+  ///     ..addRect(const Rect.fromLTRB(80, 10, 100, 20))
+  ///     ..addRect(const Rect.fromLTRB(10, 80, 20, 100)));
+  ///   ...
+  /// }
   /// ```
   ///
   /// After executing both of those calls there is no area left in which to draw
@@ -5179,12 +5185,14 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5201,8 +5209,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///           anchorX: 5.0,
   ///           anchorY: 5.0,
   ///           // Location at which to draw the center of the sprite
-  ///           translateX: sprite.centerX,
-  ///           translateY: sprite.centerY,
+  ///           translateX: sprite.center.dx,
+  ///           translateY: sprite.center.dy,
   ///         ),
   ///     ], <Rect>[
   ///       for (Sprite sprite in allSprites)
@@ -5218,14 +5226,16 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center, this.alpha, this.rotation);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   ///   int alpha;
   ///   double rotation;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5242,8 +5252,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///           anchorX: 5.0,
   ///           anchorY: 5.0,
   ///           // Location at which to draw the center of the sprite
-  ///           translateX: sprite.centerX,
-  ///           translateY: sprite.centerY,
+  ///           translateX: sprite.center.dx,
+  ///           translateY: sprite.center.dy,
   ///         ),
   ///     ], <Rect>[
   ///       for (Sprite sprite in allSprites)
@@ -5349,12 +5359,14 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5368,7 +5380,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     Float32List rectList = Float32List(allSprites.length * 4);
   ///     Float32List transformList = Float32List(allSprites.length * 4);
   ///     for (int i = 0; i < allSprites.length; i++) {
-  ///       final double rectX = sprite.spriteIndex * 10.0;
+  ///       Sprite sprite = allSprites[i];
+  ///       final double rectX = sprite.index * 10.0;
   ///       rectList[i * 4 + 0] = rectX;
   ///       rectList[i * 4 + 1] = 0.0;
   ///       rectList[i * 4 + 2] = rectX + 10.0;
@@ -5380,11 +5393,11 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///       // the necessary values or do the same math directly.
   ///       transformList[i * 4 + 0] = 1.0;
   ///       transformList[i * 4 + 1] = 0.0;
-  ///       transformList[i * 4 + 2] = sprite.centerX - 5.0;
-  ///       transformList[i * 4 + 3] = sprite.centerY - 5.0;
+  ///       transformList[i * 4 + 2] = sprite.center.dx - 5.0;
+  ///       transformList[i * 4 + 3] = sprite.center.dy - 5.0;
   ///     }
   ///     Paint paint = Paint();
-  ///     canvas.drawAtlas(spriteAtlas, transformList, rectList, null, null, null, paint);
+  ///     canvas.drawRawAtlas(spriteAtlas, transformList, rectList, null, null, null, paint);
   ///   }
   ///
   ///   ...
@@ -5395,14 +5408,16 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// ```dart
   /// class Sprite {
+  ///   Sprite(this.index, this.center, this.alpha, this.rotation);
   ///   int index;
-  ///   double centerX;
-  ///   double centerY;
+  ///   Offset center;
   ///   int alpha;
   ///   double rotation;
   /// }
   ///
   /// class MyPainter extends CustomPainter {
+  ///   MyPainter(this.spriteAtlas, this.allSprites);
+  ///
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
   ///   ui.Image spriteAtlas;
   ///   List<Sprite> allSprites;
@@ -5417,7 +5432,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///     Float32List transformList = Float32List(allSprites.length * 4);
   ///     Int32List colorList = Int32List(allSprites.length);
   ///     for (int i = 0; i < allSprites.length; i++) {
-  ///       final double rectX = sprite.spriteIndex * 10.0;
+  ///       Sprite sprite = allSprites[i];
+  ///       final double rectX = sprite.index * 10.0;
   ///       rectList[i * 4 + 0] = rectX;
   ///       rectList[i * 4 + 1] = 0.0;
   ///       rectList[i * 4 + 2] = rectX + 10.0;
@@ -5435,8 +5451,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///         anchorX: 5.0,
   ///         anchorY: 5.0,
   ///         // Location at which to draw the center of the sprite
-  ///         translateX: sprite.centerX,
-  ///         translateY: sprite.centerY,
+  ///         translateX: sprite.center.dx,
+  ///         translateY: sprite.center.dy,
   ///       );
   ///       transformList[i * 4 + 0] = transform.scos;
   ///       transformList[i * 4 + 1] = transform.ssin;
@@ -5450,7 +5466,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///       colorList[i] = sprite.alpha << 24;
   ///     }
   ///     Paint paint = Paint();
-  ///     canvas.drawAtlas(spriteAtlas, transformList, rectList, colorList, BlendMode.srcIn, null, paint);
+  ///     canvas.drawRawAtlas(spriteAtlas, transformList, rectList, colorList, BlendMode.srcIn, null, paint);
   ///   }
   ///
   ///   ...
@@ -6082,30 +6098,33 @@ typedef _Callback<T> = void Function(T result);
 /// failure.
 typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
 
-/// Converts a method that receives a value-returning callback to a method that
-/// returns a Future.
-///
-/// Return a [String] to cause an [Exception] to be synchronously thrown with
-/// that string as a message.
-///
-/// If the callback is called with null, the future completes with an error.
-///
-/// Example usage:
-///
-/// ```dart
-/// typedef IntCallback = void Function(int result);
-///
-/// String _doSomethingAndCallback(IntCallback callback) {
-///   Timer(Duration(seconds: 1), () { callback(1); });
-/// }
-///
-/// Future<int> doSomething() {
-///   return _futurize(_doSomethingAndCallback);
-/// }
-/// ```
-// Note: this function is not directly tested so that it remains private, instead an exact
-// copy of it has been inlined into the test at lib/ui/fixtures/ui_test.dart. if you change
-// this function, then you  must update the test.
+// Converts a method that receives a value-returning callback to a method that
+// returns a Future.
+//
+// Return a [String] to cause an [Exception] to be synchronously thrown with
+// that string as a message.
+//
+// If the callback is called with null, the future completes with an error.
+//
+// Example usage:
+//
+// ```dart
+// typedef IntCallback = void Function(int result);
+//
+// String? _doSomethingAndCallback(IntCallback callback) {
+//   Timer(const Duration(seconds: 1), () { callback(1); });
+// }
+//
+// Future<int> doSomething() {
+//   return _futurize(_doSomethingAndCallback);
+// }
+// ```
+//
+// This function is private and so not directly tested. Instead, an exact copy of it
+// has been inlined into the test at lib/ui/fixtures/ui_test.dart. if you change this
+// function, then you must update the test.
+//
+// TODO(ianh): We should either automate the code duplication or just make it public.
 Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
   // If the callback synchronously throws an error, then synchronously
