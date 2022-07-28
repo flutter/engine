@@ -409,7 +409,6 @@ def to_gn_args(args):
   else:
     gn_args['skia_use_gl'] = args.target_os != 'fuchsia'
 
-
   if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia',
                                                          'wasm']:
     # OpenGL is deprecated on macOS > 10.11.
