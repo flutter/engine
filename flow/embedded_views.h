@@ -245,7 +245,7 @@ class EmbeddedViewParams {
 
   // This method pushes the stored DlImageFilter object to the mutators stack.
   void PushImageFilter(std::shared_ptr<const DlImageFilter> filter) {
-    mutators_stack_.PushBackdropFilter(*filter);
+    mutators_stack_.PushBackdropFilter(filter);
   }
 
   bool operator==(const EmbeddedViewParams& other) const {
