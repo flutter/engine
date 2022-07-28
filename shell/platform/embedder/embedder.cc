@@ -320,9 +320,9 @@ InferOpenGLPlatformViewCreationCallback(
     if (!fbo_with_damage_callback) {
       // If no callback was provided, disable partial repaint.
       flutter::GLFBOInfo gl_fbo = {
-        .fbo_id = static_cast<uint32_t>(id),
-        .partial_repaint_enabled = false,
-        .existing_damage = SkIRect::MakeEmpty(),
+          .fbo_id = static_cast<uint32_t>(id),
+          .partial_repaint_enabled = false,
+          .existing_damage = SkIRect::MakeEmpty(),
       };
 
       return gl_fbo;
