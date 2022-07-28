@@ -11,6 +11,7 @@
 #include "flutter/impeller/toolkit/egl/context.h"
 #include "flutter/impeller/toolkit/egl/surface.h"
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
+#include "include/core/SkRect.h"
 
 namespace flutter {
 
@@ -299,6 +300,8 @@ GLFBOInfo AndroidSurfaceGLImpeller::GLContextFBO(GLFrameInfo frame_info) const {
   // FBO0 is the default window bound framebuffer in EGL environments.
   return GLFBOInfo{
       .fbo_id = 0,
+      .partial_repaint_enabled = true,
+      .existing_damage = SkIRect::MakeWH(frame_info.width, frame_info.height),
   };
 }
 

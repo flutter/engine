@@ -55,10 +55,14 @@ GLFBOInfo IOSSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   if (IsValid()) {
     return GLFBOInfo{
         .fbo_id = static_cast<uint32_t>(render_target_->GetFramebuffer()),
+        .partial_repaint_enabled = true,
+        .existing_damage = SkIRect::MakeWH(frame_info.width, frame_info.height),
     };
   } else {
     return GLFBOInfo{
         .fbo_id = GL_NONE,
+        .partial_repaint_enabled = false,
+        .existing_damage = SkIRect::MakeWH(frame_info.width, frame_info.height),
     };
   }
 }
