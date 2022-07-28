@@ -9,6 +9,9 @@ _Pragma("GCC diagnostic ignored \"-Wthread-safety-analysis\"");
 
 #define VMA_IMPLEMENTATION
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
+#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
+
+#include <memory>
 
 _Pragma("GCC diagnostic pop");
 
@@ -30,6 +33,8 @@ AllocatorVK::AllocatorVK(uint32_t vulkan_api_version,
   allocator_info.device = logical_device;
   allocator_info.instance = instance;
   allocator_info.pVulkanFunctions = &proc_table;
+
+  debug_context_ = std::make_unique<DebugContextVK>(logical_device);
 
   VmaAllocator allocator = {};
   auto result = vk::Result{::vmaCreateAllocator(&allocator_info, &allocator)};
@@ -62,7 +67,39 @@ std::shared_ptr<Texture> AllocatorVK::CreateTexture(
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::CreateBuffer(StorageMode mode,
                                                         size_t length) {
-  FML_UNREACHABLE();
+  // TODO (kaushikiska): consider optimizing  the usage flags based on
+  // StorageMode.
+  auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
+      vk::BufferCreateInfo()
+          .setUsage(vk::BufferUsageFlagBits::eStorageBuffer |
+                    vk::BufferUsageFlagBits::eTransferSrc |
+                    vk::BufferUsageFlagBits::eTransferDst)
+          .setSize(length)
+          .setSharingMode(vk::SharingMode::eExclusive));
+
+  VmaAllocationCreateInfo allocCreateInfo = {};
+  allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+  allocCreateInfo.flags =
+      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+      VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+  VkBuffer buffer;
+  VmaAllocation buffer_allocation;
+  VmaAllocationInfo buffer_allocation_info;
+  auto result = vk::Result{
+      vmaCreateBuffer(allocator_, &buffer_create_info, &allocCreateInfo,
+                      &buffer, &buffer_allocation, &buffer_allocation_info)};
+
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Unable to allocate a device buffer";
+    return nullptr;
+  }
+
+  auto device_allocation = std::make_unique<DeviceBufferAllocationVK>(
+      allocator_, buffer, buffer_allocation, buffer_allocation_info);
+
+  return std::make_shared<DeviceBufferVK>(length, mode, *debug_context_,
+                                          std::move(device_allocation));
 }
 
 }  // namespace impeller

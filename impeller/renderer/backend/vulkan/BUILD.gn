@@ -14,6 +14,8 @@ impeller_component("vulkan") {
     "command_buffer_vk.h",
     "context_vk.cc",
     "context_vk.h",
+    "debug_context_vk.cc",
+    "debug_context_vk.h",
     "device_buffer_vk.cc",
     "device_buffer_vk.h",
     "formats_vk.cc",

@@ -6,7 +6,10 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/allocator.h"
+#include "impeller/renderer/backend/vulkan/debug_context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+
+#include <memory>
 
 namespace impeller {
 
@@ -19,6 +22,7 @@ class AllocatorVK final : public Allocator {
   friend class ContextVK;
 
   VmaAllocator allocator_ = {};
+  std::unique_ptr<DebugContextVK> debug_context_ = nullptr;
   bool is_valid_ = false;
 
   AllocatorVK(uint32_t vulkan_api_version,
