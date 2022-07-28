@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/testing/mock_text_input_manager_win32.h"
+#include "flutter/shell/platform/windows/testing/mock_text_input_manager.h"
 #include "flutter/shell/platform/windows/testing/mock_window.h"
 #include "gtest/gtest.h"
 
@@ -37,9 +37,9 @@ TEST(MockWindow, VerticalScroll) {
 }
 
 TEST(MockWindow, OnImeCompositionCompose) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
+  MockTextInputManager* text_input_manager =
+      new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(
       text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
   EXPECT_CALL(*text_input_manager, GetComposingString())
@@ -63,9 +63,9 @@ TEST(MockWindow, OnImeCompositionCompose) {
 }
 
 TEST(MockWindow, OnImeCompositionResult) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
+  MockTextInputManager* text_input_manager =
+      new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(
       text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
   EXPECT_CALL(*text_input_manager, GetComposingString())
@@ -89,9 +89,9 @@ TEST(MockWindow, OnImeCompositionResult) {
 }
 
 TEST(MockWindow, OnImeCompositionResultAndCompose) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
+  MockTextInputManager* text_input_manager =
+      new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(
       text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
 
@@ -127,9 +127,9 @@ TEST(MockWindow, OnImeCompositionResultAndCompose) {
 }
 
 TEST(MockWindow, OnImeCompositionClearChange) {
-  MockTextInputManagerWin32* text_input_manager =
-      new MockTextInputManagerWin32();
-  std::unique_ptr<TextInputManagerWin32> text_input_manager_ptr(
+  MockTextInputManager* text_input_manager =
+      new MockTextInputManager();
+  std::unique_ptr<TextInputManager> text_input_manager_ptr(
       text_input_manager);
   MockWindow window(std::move(text_input_manager_ptr));
   EXPECT_CALL(window, OnComposeChange(std::u16string(u""), 0)).Times(1);
