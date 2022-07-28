@@ -4039,22 +4039,23 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// The asset must be a file produced as the output of the `impellerc`
   /// compiler. The constructed object should then be reused via the [shader]
   /// method to create [Shader] objects that can be used by [Shader.paint].
-  static FragmentProgram fromAsset(String assetKey) {
+  static Future<FragmentProgram> fromAsset(String assetKey) {
     FragmentProgram? program = _shaderRegistry[assetKey]?.target;
-    if (program == null) {
-      program = FragmentProgram._fromAsset(assetKey);
-      _shaderRegistry[assetKey] = WeakReference<FragmentProgram>(program);
+    if (program != null) {
+      return Future<FragmentProgram>.value(program);
     }
-
-    return program;
+    return Future<FragmentProgram>.microtask(() {
+      final FragmentProgram program = FragmentProgram._fromAsset(assetKey);
+      _shaderRegistry[assetKey] = WeakReference<FragmentProgram>(program);
+      return program;
+    });
   }
 
-  // TODO(zra): This is part of a soft transition of the framework to this
-  // API, which pushes the asset load to an asynchronous operation.
-  static Future<FragmentProgram> fromAssetAsync(String assetKey) {
-    return Future<FragmentProgram>.microtask(() => FragmentProgram.fromAsset(assetKey));
-  }
-
+  // This is a cache of shaders that have been loaded by
+  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
+  // so that the case where an in-use program is requested again can be fast,
+  // but programs that are no longer referenced are not retained because of the
+  // cache.
   static Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
       <String, WeakReference<FragmentProgram>>{};
 
