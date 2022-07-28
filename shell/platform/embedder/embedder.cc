@@ -339,32 +339,36 @@ InferOpenGLPlatformViewCreationCallback(
       };
     }
 
+    FML_LOG(ERROR) << "No segfault here";
+
     // Given the FBO's ID, get its existing damage.
-    FlutterDamage* existing_damage_ptr = nullptr;
-    fbo_with_damage_callback(user_data, id, existing_damage_ptr);
+    FlutterDamage existing_damage;
+    fbo_with_damage_callback(user_data, id, &existing_damage);
 
     // Verify that at least one damage rectangle was provided.
-    if (existing_damage_ptr->num_rects <= 0 ||
-        existing_damage_ptr->damage == nullptr) {
+    if (existing_damage.num_rects <= 0 ||
+        existing_damage.damage == nullptr) {
       FML_LOG(ERROR) << "No damage was provided. Setting the damage to an "
                         "empty rectangle.";
     }
 
     // Log message notifying users that multi-damage is not yet available in
     // case they try to make use of it.
-    if (existing_damage_ptr->num_rects > 1) {
+    if (existing_damage.num_rects > 1) {
       FML_LOG(ERROR) << "Damage with multiple rectangles not yet supported. "
                         "Setting first rectangle as default.";
     }
+
+    FML_LOG(ERROR) << "Did that work?";
 
     // Pass the information about this FBO to the rendering backend.
     return flutter::GLFBOInfo{
         .fbo_id = static_cast<uint32_t>(id),
         .partial_repaint_enabled = true,
         .existing_damage =
-            existing_damage_ptr->num_rects == 0
+            existing_damage.num_rects == 0
                 ? SkIRect::MakeEmpty()
-                : FlutterRectToSkIRect(*(existing_damage_ptr->damage)),
+                : FlutterRectToSkIRect(*(existing_damage.damage)),
     };
   };
 
