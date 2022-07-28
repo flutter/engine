@@ -25,12 +25,6 @@ class LayerScene implements ui.Scene {
     final ui.Picture picture = layerTree.flatten();
     return picture.toImage(width, height);
   }
-
-  @override
-  ui.Image toImageSync(int width, int height) {
-    final ui.Picture picture = layerTree.flatten();
-    return picture.toImageSync(width, height);
-  }
 }
 
 class LayerSceneBuilder implements ui.SceneBuilder {

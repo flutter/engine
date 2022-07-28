@@ -88,11 +88,6 @@ class EnginePicture implements ui.Picture {
     return onImageLoaded.future;
   }
 
-  @override
-  ui.Image toImageSync(int width, int height) {
-    throw UnsupportedError('toImageSync is not supported on the HTML backend. Use drawPicture instead, or toImage.');
-  }
-
   bool _disposed = false;
 
   @override
