@@ -17,7 +17,7 @@ void IncomingMessageDispatcher::HandleMessage(
     const FlutterDesktopMessage& message,
     const std::function<void(void)>& input_block_cb,
     const std::function<void(void)>& input_unblock_cb) {
-  const std::string& channel = message.channel;
+  std::string channel(message.channel);
 
   auto callback_iterator = callbacks_.find(channel);
   // Find the handler for the channel; if there isn't one, report the failure.
