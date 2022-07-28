@@ -13,4 +13,4 @@ REM --------------------------------------------------------------------------
 
 SET yapf_path=%~dp0\..\..\third_party\yapf
 
-cmd /V /C "SET PYTHONPATH=%yapf_path%&& python3 %yapf_path%\yapf %*"
+cmd /V /C "SET PYTHONPATH=%yapf_path%&& vpython3 %yapf_path%\yapf %*"
