@@ -26,7 +26,7 @@ FlutterPlatformNodeDelegateWindows::~FlutterPlatformNodeDelegateWindows() {
 
 // |ui::AXPlatformNodeDelegate|
 void FlutterPlatformNodeDelegateWindows::Init(std::weak_ptr<OwnerBridge> bridge,
-                                            ui::AXNode* node) {
+                                              ui::AXNode* node) {
   FlutterPlatformNodeDelegate::Init(bridge, node);
   ax_platform_node_ = ui::AXPlatformNode::Create(this);
   assert(ax_platform_node_);

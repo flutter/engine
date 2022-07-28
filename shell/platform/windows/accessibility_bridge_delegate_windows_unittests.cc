@@ -45,8 +45,8 @@ class AccessibilityBridgeDelegateWindowsSpy
     dispatched_events_.push_back({node_delegate, event_type});
   }
 
-  void SetFocus(std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate)
-      override {
+  void SetFocus(std::shared_ptr<FlutterPlatformNodeDelegateWindows>
+                    node_delegate) override {
     focused_nodes_.push_back(node_delegate->GetAXNode()->id());
   }
 
@@ -257,7 +257,8 @@ TEST(AccessibilityBridgeDelegateWindows, OnAccessibilityEventIgnoredChanged) {
                             EVENT_OBJECT_HIDE);
 }
 
-TEST(AccessibilityBridgeDelegateWindows, OnAccessibilityImageAnnotationChanged) {
+TEST(AccessibilityBridgeDelegateWindows,
+     OnAccessibilityImageAnnotationChanged) {
   ExpectWinEventFromAXEvent(
       1, ui::AXEventGenerator::Event::IMAGE_ANNOTATION_CHANGED,
       EVENT_OBJECT_NAMECHANGE);
@@ -290,7 +291,8 @@ TEST(AccessibilityBridgeDelegateWindows, OnAccessibilitySelectedChanged) {
                             EVENT_OBJECT_VALUECHANGE);
 }
 
-TEST(AccessibilityBridgeDelegateWindows, OnAccessibilitySelectedChildrenChanged) {
+TEST(AccessibilityBridgeDelegateWindows,
+     OnAccessibilitySelectedChildrenChanged) {
   ExpectWinEventFromAXEvent(
       2, ui::AXEventGenerator::Event::SELECTED_CHILDREN_CHANGED,
       EVENT_OBJECT_SELECTIONWITHIN);

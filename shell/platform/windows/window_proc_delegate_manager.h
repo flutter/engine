@@ -22,10 +22,9 @@ class WindowProcDelegateManager {
   ~WindowProcDelegateManager();
 
   // Prevent copying.
-  WindowProcDelegateManager(WindowProcDelegateManager const&) =
+  WindowProcDelegateManager(WindowProcDelegateManager const&) = delete;
+  WindowProcDelegateManager& operator=(WindowProcDelegateManager const&) =
       delete;
-  WindowProcDelegateManager& operator=(
-      WindowProcDelegateManager const&) = delete;
 
   // Adds |delegate| as a delegate to be called for |OnTopLevelWindowProc|.
   //

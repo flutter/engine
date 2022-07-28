@@ -582,8 +582,7 @@ TEST(FlutterWindowsViewTest, WindowRepaintTests) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
 
-  FlutterWindowsView view(
-      std::make_unique<flutter::FlutterWindow>(100, 100));
+  FlutterWindowsView view(std::make_unique<flutter::FlutterWindow>(100, 100));
   view.SetEngine(std::move(engine));
   view.CreateRenderSurface();
 

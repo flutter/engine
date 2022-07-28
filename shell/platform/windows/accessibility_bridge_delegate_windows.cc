@@ -28,7 +28,8 @@ void AccessibilityBridgeDelegateWindows::OnAccessibilityEvent(
       bridge->GetFlutterPlatformNodeDelegateFromID(ax_node->id()).lock();
   assert(node_delegate);
   std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
-      std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(node_delegate);
+      std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
+          node_delegate);
 
   switch (event_type) {
     case ui::AXEventGenerator::Event::ALERT:

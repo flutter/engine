@@ -142,17 +142,17 @@ void FlutterWindow::OnPaint() {
 }
 
 void FlutterWindow::OnPointerMove(double x,
-                                       double y,
-                                       FlutterPointerDeviceKind device_kind,
-                                       int32_t device_id) {
+                                  double y,
+                                  FlutterPointerDeviceKind device_kind,
+                                  int32_t device_id) {
   binding_handler_delegate_->OnPointerMove(x, y, device_kind, device_id);
 }
 
 void FlutterWindow::OnPointerDown(double x,
-                                       double y,
-                                       FlutterPointerDeviceKind device_kind,
-                                       int32_t device_id,
-                                       UINT button) {
+                                  double y,
+                                  FlutterPointerDeviceKind device_kind,
+                                  int32_t device_id,
+                                  UINT button) {
   uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);
   if (flutter_button != 0) {
     binding_handler_delegate_->OnPointerDown(
@@ -162,10 +162,10 @@ void FlutterWindow::OnPointerDown(double x,
 }
 
 void FlutterWindow::OnPointerUp(double x,
-                                     double y,
-                                     FlutterPointerDeviceKind device_kind,
-                                     int32_t device_id,
-                                     UINT button) {
+                                double y,
+                                FlutterPointerDeviceKind device_kind,
+                                int32_t device_id,
+                                UINT button) {
   uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);
   if (flutter_button != 0) {
     binding_handler_delegate_->OnPointerUp(
@@ -175,9 +175,9 @@ void FlutterWindow::OnPointerUp(double x,
 }
 
 void FlutterWindow::OnPointerLeave(double x,
-                                        double y,
-                                        FlutterPointerDeviceKind device_kind,
-                                        int32_t device_id) {
+                                   double y,
+                                   FlutterPointerDeviceKind device_kind,
+                                   int32_t device_id) {
   binding_handler_delegate_->OnPointerLeave(x, y, device_kind, device_id);
 }
 
@@ -190,12 +190,12 @@ void FlutterWindow::OnText(const std::u16string& text) {
 }
 
 void FlutterWindow::OnKey(int key,
-                               int scancode,
-                               int action,
-                               char32_t character,
-                               bool extended,
-                               bool was_down,
-                               KeyEventCallback callback) {
+                          int scancode,
+                          int action,
+                          char32_t character,
+                          bool extended,
+                          bool was_down,
+                          KeyEventCallback callback) {
   binding_handler_delegate_->OnKey(key, scancode, action, character, extended,
                                    was_down, std::move(callback));
 }
@@ -213,7 +213,7 @@ void FlutterWindow::OnComposeEnd() {
 }
 
 void FlutterWindow::OnComposeChange(const std::u16string& text,
-                                         int cursor_pos) {
+                                    int cursor_pos) {
   binding_handler_delegate_->OnComposeChange(text, cursor_pos);
 }
 
@@ -222,9 +222,9 @@ void FlutterWindow::OnUpdateSemanticsEnabled(bool enabled) {
 }
 
 void FlutterWindow::OnScroll(double delta_x,
-                                  double delta_y,
-                                  FlutterPointerDeviceKind device_kind,
-                                  int32_t device_id) {
+                             double delta_y,
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id) {
   POINT point;
   GetCursorPos(&point);
 
@@ -247,8 +247,8 @@ void FlutterWindow::OnResetImeComposing() {
 }
 
 bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
-                                                size_t row_bytes,
-                                                size_t height) {
+                                           size_t row_bytes,
+                                           size_t height) {
   HDC dc = ::GetDC(GetWindowHandle());
   BITMAPINFO bmi;
   memset(&bmi, 0, sizeof(bmi));

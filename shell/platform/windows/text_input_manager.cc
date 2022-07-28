@@ -119,8 +119,7 @@ long TextInputManager::GetComposingCursorPosition() const {
   return -1;
 }
 
-std::optional<std::u16string> TextInputManager::GetComposingString()
-    const {
+std::optional<std::u16string> TextInputManager::GetComposingString() const {
   return GetString(GCS_COMPSTR);
 }
 
