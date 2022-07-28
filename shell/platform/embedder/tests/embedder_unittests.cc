@@ -2166,20 +2166,22 @@ TEST_F(EmbedderTest, EmbedderThreadHostUseCustomThreadConfig) {
 }
 #endif
 
-
 // Test if Known Scene is rendered correctly with partial repaint
 
 // Render known scene twice and check if the anything was rerendered
 
-// Render known scene and change part of it and check if only that part was rerendered
+// Render known scene and change part of it and check if only that part was
+// rerendered
 
 // Test if the entire screen is rerendered when resized
 
-// Test by tricking the embedder into the doing the wrong thing and make sure the current implementation accounts for that
+// Test by tricking the embedder into the doing the wrong thing and make sure
+// the current implementation accounts for that
 
 // TEST_F(EmbedderTest,
 //        CompositorMustBeAbleToRenderKnownSceneWithSoftwareCompositor) {
-//   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+//   auto& context =
+//   GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
 //   EmbedderConfigBuilder builder(context);
 //   builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));

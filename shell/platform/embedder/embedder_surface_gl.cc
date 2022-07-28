@@ -19,7 +19,8 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(
   if (!gl_dispatch_table_.gl_make_current_callback ||
       !gl_dispatch_table_.gl_clear_current_callback ||
       !gl_dispatch_table_.gl_present_callback ||
-      !gl_dispatch_table_.gl_fbo_callback) {
+      !gl_dispatch_table_.gl_fbo_callback ||
+      !gl_dispatch_table_.gl_fbo_with_damage_callback) {
     return;
   }
 

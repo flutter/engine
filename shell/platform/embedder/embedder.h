@@ -440,7 +440,7 @@ typedef struct {
   // The number of rectangles within the damage region.
   size_t num_rects;
   // The actual damage region(s) in question.
-  FlutterRect damage;
+  FlutterRect* damage;
 } FlutterDamage;
 
 /// This information is passed to the embedder when requesting a frame buffer
@@ -459,21 +459,12 @@ typedef uint32_t (*UIntFrameInfoCallback)(
     void* /* user data */,
     const FlutterFrameInfo* /* frame info */);
 
-/// A struct to represent information about the current back buffer.
-typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterFrameBuffer).
-  size_t struct_size;
-  /// The frame buffer's ID.
-  intptr_t fbo_id;
-  /// The frame buffer's existing damage (i.e. damage since it was last used).
-  FlutterDamage existing_damage;
-} FlutterFrameBuffer;
-
 /// Callback for when a frame buffer object is requested with necessary
 /// information for partial repaint.
-typedef FlutterFrameBuffer (*FlutterFrameBufferWithDamageCallback)(
+typedef void (*FlutterFrameBufferWithDamageCallback)(
     void* /* user data */,
-    const intptr_t id);
+    const intptr_t id,
+    FlutterDamage* existing_damage);
 
 /// This information is passed to the embedder when a surface is presented.
 ///

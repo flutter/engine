@@ -274,18 +274,31 @@ InferOpenGLPlatformViewCreationCallback(
     if (present) {
       return present(user_data);
     } else {
-      /// Format the frame and buffer damages accordingly.
+      /// Format the frame and buffer damages accordingly. Note that, since the
+      /// current compute damage algorithm only returns one rectangle for damage
+      /// we are assuming the number of rectangles provided in frame and buffer
+      /// damage are always 1. Once the function that computes damage implements
+      /// support for multiple damage rectangles, GLPresentInfo should also
+      /// contain the number of damage rectangles.
+      const size_t num_rects = 1;
+
+      FlutterRect frame_damage_rect[num_rects] = {
+          SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
+      FlutterRect buffer_damage_rect[num_rects] = {
+          SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
+
       FlutterDamage frame_damage{
           .struct_size = sizeof(FlutterDamage),
-          .num_rects = 1,
-          .damage = SkIRectToFlutterRect(*(gl_present_info.frame_damage)),
+          .num_rects = num_rects,
+          .damage = frame_damage_rect,
       };
       FlutterDamage buffer_damage{
           .struct_size = sizeof(FlutterDamage),
-          .num_rects = 1,
-          .damage = SkIRectToFlutterRect(*(gl_present_info.buffer_damage)),
+          .num_rects = num_rects,
+          .damage = buffer_damage_rect,
       };
 
+      /// Construct the present information concerning the frame being rendered.
       FlutterPresentInfo present_info = {
           .struct_size = sizeof(FlutterPresentInfo),
           .fbo_id = gl_present_info.fbo_id,
@@ -317,43 +330,42 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_fbo_with_damage_callback =
       [fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
        user_data](intptr_t id) -> flutter::GLFBOInfo {
+    // If no fbo_with_damage_callback was provided, disable partial repaint.
     if (!fbo_with_damage_callback) {
-      // If no callback was provided, disable partial repaint.
-      flutter::GLFBOInfo gl_fbo = {
+      return flutter::GLFBOInfo{
           .fbo_id = static_cast<uint32_t>(id),
           .partial_repaint_enabled = false,
           .existing_damage = SkIRect::MakeEmpty(),
       };
-
-      return gl_fbo;
-    } else {
-      // Given the FBO's ID, get its existing damage.
-      const FlutterFrameBuffer fbo = fbo_with_damage_callback(user_data, id);
-
-      if (fbo.existing_damage.num_rects == 0) {
-        FML_LOG(ERROR) << "No damage was provided. Setting the damage to an "
-                          "empty rectangle.";
-      }
-
-      // TODO(???): Implement support for damage regions composed of multiple
-      // rectangles.
-      if (fbo.existing_damage.num_rects > 1) {
-        FML_LOG(ERROR) << "Damage with multiple rectangles not yet supported. "
-                          "Setting first rectangle as default.";
-      }
-
-      // Construct the GLFBOInfo that will be passed to the rendering backend.
-      flutter::GLFBOInfo gl_fbo = {
-          .fbo_id = static_cast<uint32_t>(fbo.fbo_id),
-          .partial_repaint_enabled = true,
-          .existing_damage =
-              fbo.existing_damage.num_rects == 0
-                  ? SkIRect::MakeEmpty()
-                  : FlutterRectToSkIRect(fbo.existing_damage.damage),
-      };
-
-      return gl_fbo;
     }
+
+    // Given the FBO's ID, get its existing damage.
+    FlutterDamage* existing_damage_ptr = nullptr;
+    fbo_with_damage_callback(user_data, id, existing_damage_ptr);
+
+    // Verify that at least one damage rectangle was provided.
+    if (existing_damage_ptr->num_rects <= 0 ||
+        existing_damage_ptr->damage == nullptr) {
+      FML_LOG(ERROR) << "No damage was provided. Setting the damage to an "
+                        "empty rectangle.";
+    }
+
+    // Log message notifying users that multi-damage is not yet available in
+    // case they try to make use of it.
+    if (existing_damage_ptr->num_rects > 1) {
+      FML_LOG(ERROR) << "Damage with multiple rectangles not yet supported. "
+                        "Setting first rectangle as default.";
+    }
+
+    // Pass the information about this FBO to the rendering backend.
+    return flutter::GLFBOInfo {
+        .fbo_id = static_cast<uint32_t>(id),
+        .partial_repaint_enabled = true,
+        .existing_damage =
+            existing_damage_ptr->num_rects == 0
+                ? SkIRect::MakeEmpty()
+                : FlutterRectToSkIRect(*(existing_damage_ptr->damage)),
+    };
   };
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
