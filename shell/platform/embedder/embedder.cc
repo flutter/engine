@@ -358,7 +358,7 @@ InferOpenGLPlatformViewCreationCallback(
     }
 
     // Pass the information about this FBO to the rendering backend.
-    return flutter::GLFBOInfo {
+    return flutter::GLFBOInfo{
         .fbo_id = static_cast<uint32_t>(id),
         .partial_repaint_enabled = true,
         .existing_damage =

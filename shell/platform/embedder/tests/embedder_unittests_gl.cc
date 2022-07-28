@@ -90,7 +90,8 @@ TEST_F(EmbedderTest, EngineMustStillRunWhenFBOWithDamageIsNotProvided) {
 }
 
 // TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsProvided) {
-//   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+//   auto& context =
+//   GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 //   EmbedderConfigBuilder builder(context);
 //   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
 //   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
@@ -111,7 +112,8 @@ TEST_F(EmbedderTest, EngineMustStillRunWhenFBOWithDamageIsNotProvided) {
 // }
 
 // TEST_F(EmbedderTest, EngineMustRunWithFBOWithDamageAndFBOCallback) {
-//   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+//   auto& context =
+//   GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 //   EmbedderConfigBuilder builder(context);
 //   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
 //   builder.GetRendererConfig().open_gl.fbo_callback =
@@ -136,7 +138,8 @@ TEST_F(EmbedderTest, EngineMustStillRunWhenFBOWithDamageIsNotProvided) {
 
 // TEST_F(EmbedderTest,
 //        EngineMustRunWhenFBOWithDamageAndFBOWithFrameInfoCallback) {
-//   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+//   auto& context =
+//   GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 //   EmbedderConfigBuilder builder(context);
 //   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
 //   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback =
@@ -161,8 +164,10 @@ TEST_F(EmbedderTest, EngineMustStillRunWhenFBOWithDamageIsNotProvided) {
 //   ASSERT_TRUE(engine.is_valid());
 // }
 
-// TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
-//   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+// TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback)
+// {
+//   auto& context =
+//   GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 //   EmbedderConfigBuilder builder(context);
 //   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
 //   builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
