@@ -207,9 +207,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final boolean supportsTextureLayerMode = Build.VERSION.SDK_INT >= 23 &&
               !ViewUtils.hasChildViewOfType(embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY);
 
-          // Fall back to Virtual Display when necessary.
-          if (!supportsTextureLayerMode && !usesSoftwareRendering) {
-            return configureForVirtualDisplay(platformView, request);
+          // Fall back to Hybrid Composition or Virtual Display when necessary, depending on which
+          // fallback mode is requested.
+          if (!supportsTextureLayerMode) {
+            if (request.displayMode == RequestedDisplayMode.TEXTURE_WITH_HYBRID_FALLBACK) {
+              configureForHybridComposition(platformView, request);
+              return NON_TEXTURE_FALLBACK;
+            } else if (!usesSoftwareRendering) { // Virtual Display doesn't support software mode.
+              return configureForVirtualDisplay(platformView, request);
+            }
+            // TODO(stuartmorgan): Consider throwing a specific exception here as a breaking change.
+            // For now, preserve the 3.0 behavior of falling through to Texture Layer mode even
+            // though it won't work correctly.
           }
           return configureForTextureLayerComposition(platformView, request);
         }
