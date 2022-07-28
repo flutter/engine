@@ -210,9 +210,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // Fall back to Hybrid Composition or Virtual Display when necessary, depending on which
           // fallback mode is requested.
           if (!supportsTextureLayerMode) {
-            if (request.displayMode == RequestedDisplayMode.TEXTURE_WITH_HYBRID_FALLBACK) {
+            if (request.displayMode ==
+                PlatformViewsChannel.PlatformViewCreationRequest.RequestedDisplayMode.TEXTURE_WITH_HYBRID_FALLBACK) {
               configureForHybridComposition(platformView, request);
-              return NON_TEXTURE_FALLBACK;
+              return PlatformViewsChannel.PlatformViewsHandler.NON_TEXTURE_FALLBACK;
             } else if (!usesSoftwareRendering) { // Virtual Display doesn't support software mode.
               return configureForVirtualDisplay(platformView, request);
             }
@@ -474,22 +475,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         // all display modes, and adds it to `platformViews`.
         private PlatformView createPlatformView(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
-          final PlatformViewFactory factory = registry.getFactory(request.viewType);
-          if (factory == null) {
+          final PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
+          if (viewFactory == null) {
             throw new IllegalStateException(
                 "Trying to create a platform view of unregistered type: " + request.viewType);
           }
 
           Object createParams = null;
           if (request.params != null) {
-            createParams = factory.getCreateArgsCodec().decodeMessage(request.params);
+            createParams = viewFactory.getCreateArgsCodec().decodeMessage(request.params);
           }
 
           // In some display modes, the context needs to be modified during display.
           final Context mutableContext = new MutableContextWrapper(context);
           final PlatformView platformView =
               viewFactory.create(mutableContext, request.viewId, createParams);
-          final PlatformView platformView = factory.create(context, request.viewId, createParams);
 
           // Configure the view to match the requested layout direction.
           final View embeddedView = platformView.getView();
@@ -511,7 +511,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         // Configures the view for Virtual Display mode, returning the associated texture ID.
-        private int configureForVirtualDisplay(
+        private long configureForVirtualDisplay(
             @NonNull PlatformView platformView,
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           // This mode adds the view to a virtual display, which is is wired up to a GL texture that
@@ -520,7 +520,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // API level 20 is required to use VirtualDisplay#setSurface.
           ensureValidAndroidVersion(20);
 
-          Log.i(TAG, "Hosting view in a virtual display for platform view: " + viewId);
+          Log.i(TAG, "Hosting view in a virtual display for platform view: " + request.viewId);
 
           final TextureRegistry.SurfaceTextureEntry textureEntry =
               textureRegistry.createSurfaceTexture();
@@ -556,7 +556,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             vdController.onFlutterViewAttached(flutterView);
           }
 
+          // The embedded view doesn't need to be sized in Virtual Display mode because the
+          // virtual display itself is sized.
+
           vdControllers.put(request.viewId, vdController);
+          final View embeddedView = platformView.getView();
           contextToEmbeddedView.put(embeddedView.getContext(), embeddedView);
 
           return textureEntry.id();
@@ -564,7 +568,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         // Configures the view for Texture Layer Hybrid Composition mode, returning the associated
         // texture ID.
-        private int configureForTextureLayerComposition(
+        private long configureForTextureLayerComposition(
             @NonNull PlatformView platformView,
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           // This mode attaches the view to the Android view hierarchy and record its drawing
@@ -573,7 +577,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
           // API level 23 is required to use Surface#lockHardwareCanvas().
           ensureValidAndroidVersion(23);
-          Log.i(TAG, "Hosting view in view hierarchy for platform view: " + viewId);
+          Log.i(TAG, "Hosting view in view hierarchy for platform view: " + request.viewId);
 
           final int physicalWidth = toPhysicalPixels(request.logicalWidth);
           final int physicalHeight = toPhysicalPixels(request.logicalHeight);
@@ -602,8 +606,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           viewWrapper.setLayoutParams(viewWrapperLayoutParams);
 
           // Size the embedded view.
-          // This isn't needed when the virtual display is used because the virtual display itself
-          // is sized.
+          final View embeddedView = platformView.getView();
           embeddedView.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
 
           // Accessibility in the embedded view is initially disabled because if a Flutter app
@@ -624,13 +627,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           viewWrapper.setOnDescendantFocusChangeListener(
               (v, hasFocus) -> {
                 if (hasFocus) {
-                  platformViewsChannel.invokeViewFocused(viewId);
+                  platformViewsChannel.invokeViewFocused(request.viewId);
                 } else if (textInputPlugin != null) {
-                  textInputPlugin.clearPlatformViewClient(viewId);
+                  textInputPlugin.clearPlatformViewClient(request.viewId);
                 }
               });
           flutterView.addView(viewWrapper);
-          viewWrappers.append(viewId, viewWrapper);
+          viewWrappers.append(request.viewId, viewWrapper);
           return textureId;
         }
 

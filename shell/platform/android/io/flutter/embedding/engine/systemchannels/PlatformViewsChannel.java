@@ -105,17 +105,17 @@ public class PlatformViewsChannel {
                       0,
                       0,
                       (int) createArgs.get("direction"),
-                      RequestedDisplayMode.HYBRID_ONLY,
+                      PlatformViewCreationRequest.RequestedDisplayMode.HYBRID_ONLY,
                       additionalParams);
               handler.createForPlatformViewLayer(request);
               result.success(null);
             } else {
-              final bool hybridFallback =
+              final boolean hybridFallback =
                   createArgs.containsKey("hybridFallback") &&
                   (boolean) createArgs.get("hybridFallback");
-              final RequestedDisplayMode displayMode = hybridFallback ?
-                  RequestedDisplayMode.TEXTURE_WITH_HYBRID_FALLBACK :
-                  RequestedDisplayMode.TEXTURE_WITH_VIRTUAL_FALLBACK;
+              final PlatformViewCreationRequest.RequestedDisplayMode displayMode = hybridFallback ?
+                  PlatformViewCreationRequest.RequestedDisplayMode.TEXTURE_WITH_HYBRID_FALLBACK :
+                  PlatformViewCreationRequest.RequestedDisplayMode.TEXTURE_WITH_VIRTUAL_FALLBACK;
               final PlatformViewCreationRequest request =
                   new PlatformViewCreationRequest(
                       (int) createArgs.get("id"),
@@ -128,7 +128,7 @@ public class PlatformViewsChannel {
                       displayMode,
                       additionalParams);
               long textureId = handler.createForTextureLayer(request);
-              if (textureId == NON_TEXTURE_FALLBACK) {
+              if (textureId == PlatformViewsHandler.NON_TEXTURE_FALLBACK) {
                 if (!hybridFallback) {
                   throw new AssertionError(
         "Platform view attempted to fall back to hybrid mode when not requested.");
@@ -281,18 +281,6 @@ public class PlatformViewsChannel {
   }
 
   /**
-   * Platform view display modes that can be requested at creation time.
-   */
-  enum RequestedDisplayMode {
-    /** Use Texture Layer if possible, falling back to Virtual Display if not. */
-    TEXTURE_WITH_VIRTUAL_FALLBACK,
-    /** Use Texture Layer if possible, falling back to Hybrid Composition if not. */
-    TEXTURE_WITH_HYBRID_FALLBACK,
-    /** Use Hybrid Composition in all cases. */
-    HYBRID_ONLY,
-  }
-
-  /**
    * Handler that receives platform view messages sent from Flutter to Android through a given
    * {@link PlatformViewsChannel}.
    *
@@ -378,6 +366,18 @@ public class PlatformViewsChannel {
 
   /** Request sent from Flutter to create a new platform view. */
   public static class PlatformViewCreationRequest {
+    /**
+     * Platform view display modes that can be requested at creation time.
+     */
+    public enum RequestedDisplayMode {
+      /** Use Texture Layer if possible, falling back to Virtual Display if not. */
+      TEXTURE_WITH_VIRTUAL_FALLBACK,
+      /** Use Texture Layer if possible, falling back to Hybrid Composition if not. */
+      TEXTURE_WITH_HYBRID_FALLBACK,
+      /** Use Hybrid Composition in all cases. */
+      HYBRID_ONLY,
+    }
+
     /** The ID of the platform view as seen by the Flutter side. */
     public final int viewId;
 
