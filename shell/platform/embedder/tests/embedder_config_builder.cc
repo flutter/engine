@@ -365,6 +365,10 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
   return compositor_;
 }
 
+FlutterRendererConfig& EmbedderConfigBuilder::GetRendererConfig() {
+  return renderer_config_;
+}
+
 void EmbedderConfigBuilder::SetRenderTargetType(
     EmbedderTestBackingStoreProducer::RenderTargetType type,
     FlutterSoftwarePixelFormat software_pixfmt) {

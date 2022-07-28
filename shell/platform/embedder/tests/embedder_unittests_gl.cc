@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstddef>
+#include "embedder.h"
+#include "include/core/SkRect.h"
 #include "tests/embedder_test_context.h"
 #define FML_USED_ON_EMBEDDER
 
@@ -74,6 +77,116 @@ TEST_F(EmbedderTest,
   auto engine = builder.LaunchEngine();
   ASSERT_FALSE(engine.is_valid());
 }
+
+/// This test was made to make sure that existing embedders that do not specify
+/// this callback can still run.
+TEST_F(EmbedderTest, EngineMustStillRunWhenFBOWithDamageIsNotProvided) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback = nullptr;
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsProvided) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id) -> FlutterFrameBuffer {
+    FlutterDamage existing_damage = {
+        .struct_size = sizeof(FlutterDamage),
+        .num_rects = 1,
+        .damage = FlutterRect{0, 0, 0, 0},
+    };
+    return FlutterFrameBuffer{
+        .struct_size = sizeof(FlutterFrameBuffer),
+        .fbo_id = id,
+        .existing_damage = existing_damage,
+    };
+  };
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageAndFBOCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_callback =
+      [](void* context) -> uint32_t { return 0; };
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id) -> FlutterFrameBuffer {
+    FlutterDamage existing_damage = {
+        .struct_size = sizeof(FlutterDamage),
+        .num_rects = 1,
+        .damage = FlutterRect{0, 0, 0, 0},
+    };
+    return FlutterFrameBuffer{
+        .struct_size = sizeof(FlutterFrameBuffer),
+        .fbo_id = id,
+        .existing_damage = existing_damage,
+    };
+  };
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest,
+       EngineMustRunWhenFBOWithDamageAndFBOWithFrameInfoCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback =
+      [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
+    return 0;
+  };
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id) -> FlutterFrameBuffer {
+    FlutterDamage existing_damage = {
+        .struct_size = sizeof(FlutterDamage),
+        .num_rects = 1,
+        .damage = FlutterRect{0, 0, 0, 0},
+    };
+    return FlutterFrameBuffer{
+        .struct_size = sizeof(FlutterFrameBuffer),
+        .fbo_id = id,
+        .existing_damage = existing_damage,
+    };
+  };
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id) -> FlutterFrameBuffer {
+    FlutterDamage existing_damage = {
+        .struct_size = sizeof(FlutterDamage),
+        .num_rects = 1,
+        .damage = FlutterRect{0, 0, 0, 0},
+    };
+    return FlutterFrameBuffer{
+        .struct_size = sizeof(FlutterFrameBuffer),
+        .fbo_id = id,
+        .existing_damage = existing_damage,
+    };
+  };
+  auto engine = builder.LaunchEngine();
+  ASSERT_FALSE(engine.is_valid());
+}
+
+/// TODO Add test that makes sure that when fbo_with_damage_callback is not
+/// provided it should not run partial repaint.
+
+/// TODO Add test that makes sure that when fbo_with_damage_callback is provided
+/// it should run partial repaint.
 
 //------------------------------------------------------------------------------
 /// Must be able to render to a custom compositor whose render targets are fully
