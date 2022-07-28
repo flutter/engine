@@ -110,12 +110,13 @@ TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsProvided) {
   ASSERT_TRUE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageAndFBOCallback) {
+TEST_F(EmbedderTest, EngineMustRunWithFBOWithDamageAndFBOCallback) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_callback =
       [](void* context) -> uint32_t { return 0; };
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
       [](void* context, const intptr_t id) -> FlutterFrameBuffer {
     FlutterDamage existing_damage = {
@@ -142,6 +143,7 @@ TEST_F(EmbedderTest,
       [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
     return 0;
   };
+  builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
       [](void* context, const intptr_t id) -> FlutterFrameBuffer {
     FlutterDamage existing_damage = {
