@@ -166,9 +166,7 @@ GLFBOInfo AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
   FML_DCHECK(IsValid());
   // The default window bound framebuffer on Android.
   return GLFBOInfo{
-      .fbo_id = 0,
-      .partial_repaint_enabled = true,
-      .existing_damage = SkIRect::MakeWH(frame_info.width, frame_info.height),
+    .fbo_id = 0,
   };
 }
 

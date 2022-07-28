@@ -299,9 +299,7 @@ bool AndroidSurfaceGLImpeller::GLContextPresent(
 GLFBOInfo AndroidSurfaceGLImpeller::GLContextFBO(GLFrameInfo frame_info) const {
   // FBO0 is the default window bound framebuffer in EGL environments.
   return GLFBOInfo{
-      .fbo_id = 0,
-      .partial_repaint_enabled = true,
-      .existing_damage = SkIRect::MakeWH(frame_info.width, frame_info.height),
+    .fbo_id = 0,
   };
 }
 
