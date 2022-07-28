@@ -177,7 +177,8 @@ TEST(MutatorsStack, Equality) {
   stackOther.PushClipPath(otherPath);
   int otherAlpha = 240;
   stackOther.PushOpacity(otherAlpha);
-  auto otherFilter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto otherFilter =
+      std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
   stackOther.PushBackdropFilter(otherFilter);
 
   ASSERT_TRUE(stack == stackOther);
@@ -296,7 +297,8 @@ TEST(Mutator, UnEquality) {
   ASSERT_TRUE(mutator2 != otherMutator2);
 
   auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-  auto filter2 = std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
+  auto filter2 =
+      std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
   Mutator mutator3 = Mutator(filter);
   Mutator otherMutator3 = Mutator(filter2);
   ASSERT_TRUE(mutator3 != otherMutator3);
