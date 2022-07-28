@@ -439,8 +439,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* flutterViewController =
       [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
   [flutterViewController setSplashScreenView:[[UIView alloc] init]];
-  UIView* nilView = nil;
-  [flutterViewController setSplashScreenView:nilView];
+  [flutterViewController setSplashScreenView:nil];
 }
 
 - (void)testInternalPluginsWeakPtrNotCrash {
