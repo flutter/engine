@@ -18,7 +18,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   using GLGetFBOWithDamageCallback =
       std::function<void(intptr_t id, FlutterDamage* existing_damage)>;
   using GLPresentCallback =
-      std::function<void(FlutterPresentInfo* present_info)>;
+      std::function<void(FlutterPresentInfo present_info)>;
 
   explicit EmbedderTestContextGL(std::string assets_path = "");
 

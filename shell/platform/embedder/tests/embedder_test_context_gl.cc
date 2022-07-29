@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
 
-#include "embedder.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
@@ -51,7 +50,7 @@ bool EmbedderTestContextGL::GLPresent(FlutterPresentInfo present_info) {
   }
 
   if (callback) {
-    callback(&present_info);
+    callback(present_info);
   }
 
   FireRootSurfacePresentCallbackIfPresent(
