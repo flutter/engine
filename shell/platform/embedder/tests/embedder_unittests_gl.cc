@@ -3126,12 +3126,14 @@ TEST_F(EmbedderTest, MustRunWhenFBOWithDamageIsProvided) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
 
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback([](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-      const size_t num_rects = 1;
-      FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
-      existing_damage_ptr->num_rects = num_rects;
-      existing_damage_ptr->damage = existing_damage_rects;
-    });
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+        const size_t num_rects = 1;
+        FlutterRect existing_damage_rects[num_rects] = {
+            FlutterRect{0, 0, 0, 0}};
+        existing_damage_ptr->num_rects = num_rects;
+        existing_damage_ptr->damage = existing_damage_rects;
+      });
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -3146,12 +3148,14 @@ TEST_F(EmbedderTest, MustRunWithFBOWithDamageAndFBOCallback) {
       [](void* context) -> uint32_t { return 0; };
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
 
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback([](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-      const size_t num_rects = 1;
-      FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
-      existing_damage_ptr->num_rects = num_rects;
-      existing_damage_ptr->damage = existing_damage_rects;
-    });
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+        const size_t num_rects = 1;
+        FlutterRect existing_damage_rects[num_rects] = {
+            FlutterRect{0, 0, 0, 0}};
+        existing_damage_ptr->num_rects = num_rects;
+        existing_damage_ptr->damage = existing_damage_rects;
+      });
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -3165,12 +3169,14 @@ TEST_F(EmbedderTest, MustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
   builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
 
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback([](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-      const size_t num_rects = 1;
-      FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
-      existing_damage_ptr->num_rects = num_rects;
-      existing_damage_ptr->damage = existing_damage_rects;
-    });
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+        const size_t num_rects = 1;
+        FlutterRect existing_damage_rects[num_rects] = {
+            FlutterRect{0, 0, 0, 0}};
+        existing_damage_ptr->num_rects = num_rects;
+        existing_damage_ptr->damage = existing_damage_rects;
+      });
 
   auto engine = builder.LaunchEngine();
   ASSERT_FALSE(engine.is_valid());
@@ -3226,12 +3232,14 @@ TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
   builder.SetDartEntrypoint("push_frames_over_and_over");
 
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback([](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-      const size_t num_rects = 1;
-      FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
-      existing_damage_ptr->num_rects = num_rects;
-      existing_damage_ptr->damage = existing_damage_rects;
-    });
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+        const size_t num_rects = 1;
+        FlutterRect existing_damage_rects[num_rects] = {
+            FlutterRect{0, 0, 0, 0}};
+        existing_damage_ptr->num_rects = num_rects;
+        existing_damage_ptr->damage = existing_damage_rects;
+      });
 
   auto engine = builder.LaunchEngine();
 

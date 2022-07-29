@@ -92,7 +92,8 @@ uint32_t EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
   return gl_surface_->GetFramebuffer(size.width, size.height);
 }
 
-void EmbedderTestContextGL::GLGetFBOWithDamage(const intptr_t id, FlutterDamage* existing_damage) {
+void EmbedderTestContextGL::GLGetFBOWithDamage(const intptr_t id,
+                                               FlutterDamage* existing_damage) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
 
   GLGetFBOWithDamageCallback callback;
