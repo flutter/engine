@@ -8,7 +8,6 @@
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 #include "gmock/gmock.h"
-#include "shell/gpu/gpu_surface_gl_delegate.h"
 
 namespace flutter {
 
