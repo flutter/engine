@@ -102,7 +102,7 @@ void main() {
       final ReceivePort testReceivePort = ReceivePort();
       final Completer<void> testPortCompleter = Completer<void>();
       testReceivePort.listen(expectAsync1<void, dynamic>((dynamic response) {
-        final List<Object> typedResponse = response as List<Object>;
+        final List<dynamic> typedResponse = response as List<dynamic>;
         final int code = typedResponse[0] as int;
         final String message = typedResponse[1] as String;
         switch (code) {
