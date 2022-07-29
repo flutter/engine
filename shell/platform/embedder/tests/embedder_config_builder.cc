@@ -312,6 +312,10 @@ void EmbedderConfigBuilder::SetupVsyncCallback() {
   };
 }
 
+FlutterRendererConfig& EmbedderConfigBuilder::GetRendererConfig() {
+  return renderer_config_;
+}
+
 void EmbedderConfigBuilder::SetRenderTaskRunner(
     const FlutterTaskRunnerDescription* runner) {
   if (runner == nullptr) {
