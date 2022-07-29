@@ -64,6 +64,12 @@ void EmbedderTestContextGL::SetGLGetFBOCallback(GLGetFBOCallback callback) {
   gl_get_fbo_callback_ = callback;
 }
 
+void EmbedderTestContextGL::SetGLGetFBOWithDamageCallback(
+    GLGetFBOWithDamageCallback callback) {
+  std::scoped_lock lock(gl_callback_mutex_);
+  gl_get_fbo_with_damage_callback_ = callback;
+}
+
 void EmbedderTestContextGL::SetGLPresentCallback(GLPresentCallback callback) {
   std::scoped_lock lock(gl_callback_mutex_);
   gl_present_callback_ = callback;

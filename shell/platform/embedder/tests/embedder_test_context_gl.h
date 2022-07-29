@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_GL_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_GL_H_
 
+#include <functional>
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 #include "flutter/testing/test_gl_surface.h"
 
@@ -14,7 +15,10 @@ namespace testing {
 class EmbedderTestContextGL : public EmbedderTestContext {
  public:
   using GLGetFBOCallback = std::function<void(FlutterFrameInfo frame_info)>;
-  using GLPresentCallback = std::function<void(uint32_t fbo_id)>;
+  using GLGetFBOWithDamageCallback =
+      std::function<void(intptr_t id, FlutterDamage* existing_damage)>;
+  using GLPresentCallback =
+      std::function<void(FlutterPresentInfo* present_info)>;
 
   explicit EmbedderTestContextGL(std::string assets_path = "");
 
@@ -37,6 +41,8 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   ///                       un-registered.
   ///
   void SetGLGetFBOCallback(GLGetFBOCallback callback);
+
+  void SetGLGetFBOWithDamageCallback(GLGetFBOWithDamageCallback callback);
 
   uint32_t GetWindowFBOId() const;
 
@@ -64,6 +70,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   size_t gl_surface_present_count_ = 0;
   std::mutex gl_callback_mutex_;
   GLGetFBOCallback gl_get_fbo_callback_;
+  GLGetFBOWithDamageCallback gl_get_fbo_with_damage_callback_;
   GLPresentCallback gl_present_callback_;
 
   void SetupSurface(SkISize surface_size) override;

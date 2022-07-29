@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstddef>
+#include "embedder.h"
 #include "tests/embedder_test_context.h"
 #define FML_USED_ON_EMBEDDER
 
@@ -3140,8 +3142,8 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
   const uint32_t window_fbo_id =
       static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [window_fbo_id = window_fbo_id](uint32_t fbo_id) {
-        ASSERT_EQ(fbo_id, window_fbo_id);
+      [window_fbo_id = window_fbo_id](FlutterPresentInfo* present_info) {
+        ASSERT_EQ(present_info->fbo_id, window_fbo_id);
 
         frame_latch.CountDown();
       });
@@ -3702,15 +3704,6 @@ TEST_F(EmbedderTest, EngineMustStillRunWhenFBOWithDamageIsNotProvided) {
   ASSERT_TRUE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsNotProvided) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
-  EmbedderConfigBuilder builder(context);
-  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback = nullptr;
-  auto engine = builder.LaunchEngine();
-  ASSERT_FALSE(engine.is_valid());
-}
-
 TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsProvided) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
@@ -3746,28 +3739,6 @@ TEST_F(EmbedderTest, EngineMustRunWithFBOWithDamageAndFBOCallback) {
   ASSERT_TRUE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest,
-       EngineMustRunWhenFBOWithDamageAndFBOWithFrameInfoCallback) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
-  EmbedderConfigBuilder builder(context);
-  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
-  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback =
-      [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
-    return 0;
-  };
-  builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
-  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
-      [](void* context, const intptr_t id,
-         FlutterDamage* existing_damage_ptr) -> void {
-    const size_t num_rects = 1;
-    FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
-    existing_damage_ptr->num_rects = num_rects;
-    existing_damage_ptr->damage = existing_damage_rects;
-  };
-  auto engine = builder.LaunchEngine();
-  ASSERT_TRUE(engine.is_valid());
-}
-
 TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
@@ -3784,6 +3755,96 @@ TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
   };
   auto engine = builder.LaunchEngine();
   ASSERT_FALSE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+  builder.SetDartEntrypoint("push_frames_over_and_over");
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 600;
+  event.height = 1024;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  static fml::CountDownLatch frame_latch(10);
+
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              /* Nothing to do. */
+                            }));
+
+  const size_t num_rects = 1;
+  FlutterRect frame_damage_rect[num_rects] = {{0, 0, 600, 1024}};
+  FlutterRect buffer_damage_rect[num_rects] = {{0, 0, 600, 1024}};
+  const FlutterDamage frame_damage = {
+      .struct_size = sizeof(FlutterDamage),
+      .num_rects = 1,
+      .damage = frame_damage_rect,
+  };
+  const FlutterDamage buffer_damage = {
+      .struct_size = sizeof(FlutterDamage),
+      .num_rects = 1,
+      .damage = buffer_damage_rect,
+  };
+  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+      [frame_damage = frame_damage,
+       buffer_damage = buffer_damage](FlutterPresentInfo* present_info) {
+        ASSERT_EQ(present_info->frame_damage, frame_damage);
+        ASSERT_EQ(present_info->buffer_damage, buffer_damage);
+        frame_latch.CountDown();
+      });
+
+  frame_latch.Wait();
+}
+
+TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+  builder.SetDartEntrypoint("push_frames_over_and_over");
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  static FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 600;
+  event.height = 1024;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  static fml::CountDownLatch frame_latch(10);
+
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              /* Nothing to do. */
+                            }));
+
+  const uint32_t window_fbo_id =
+      static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [window_fbo_id = window_fbo_id](intptr_t id,
+                                      FlutterDamage* existing_damage) {
+        // width and height are rotated by 90 deg
+        ASSERT_EQ(id, window_fbo_id);
+
+        frame_latch.CountDown();
+      });
+
+  frame_latch.Wait();
 }
 
 // CompositorMustRenderTheEntireFrameWhenTheExistingDamageEqualsTheScreenSize
