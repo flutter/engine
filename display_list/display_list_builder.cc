@@ -415,27 +415,21 @@ void DisplayListBuilder::setAttributesFromPaint(
 }
 
 void DisplayListBuilder::checkForDeferredSave() {
-  if (current_layer_->deferred_save_count_ > 0) {
-    doSave();
+  if (current_layer_->has_deferred_save_op_) {
+    Push<SaveOp>(0, 1);
+    current_layer_->has_deferred_save_op_ = false;
   }
 }
 
-void DisplayListBuilder::doSave() {
-  Push<SaveOp>(0, 1);
-  save_count_ += 1;
-  current_layer_->deferred_save_count_ -= 1;
+void DisplayListBuilder::save() {
   layer_stack_.emplace_back(current_layer_);
   current_layer_ = &layer_stack_.back();
-}
-
-void DisplayListBuilder::save() {
-  current_layer_->deferred_save_count_ += 1;
+  current_layer_->has_deferred_save_op_ = true;
 }
 
 void DisplayListBuilder::restore() {
-  if (current_layer_->deferred_save_count_ > 0) {
-    current_layer_->deferred_save_count_ -= 1;
-    return;
+  if (!current_layer_->has_deferred_save_op_) {
+    Push<RestoreOp>(0, 1);
   }
   if (layer_stack_.size() > 1) {
     // Grab the current layer info before we push the restore
@@ -443,7 +437,6 @@ void DisplayListBuilder::restore() {
     LayerInfo layer_info = layer_stack_.back();
     layer_stack_.pop_back();
     current_layer_ = &layer_stack_.back();
-    Push<RestoreOp>(0, 1);
     if (layer_info.has_layer) {
       if (layer_info.is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer

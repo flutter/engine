@@ -342,10 +342,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   sk_sp<DisplayList> Build();
 
-  unsigned save_count() const { return save_count_; }
-
  private:
-  void doSave();
   void checkForDeferredSave();
 
   SkAutoTMalloc<uint8_t> storage_;
@@ -402,7 +399,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
     // This offset is only valid if |has_layer| is true.
     size_t save_layer_offset;
 
-    unsigned deferred_save_count_ = 0;
+    bool has_deferred_save_op_ = false;
 
     bool has_layer;
     bool cannot_inherit_opacity;
@@ -433,7 +430,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   std::vector<LayerInfo> layer_stack_;
   LayerInfo* current_layer_;
-  unsigned save_count_ = 0;
 
   // This flag indicates whether or not the current rendering attributes
   // are compatible with rendering ops applying an inherited opacity.

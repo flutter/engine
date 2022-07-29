@@ -428,20 +428,21 @@ void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
 void DisplayListBoundsCalculator::doSave() {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  current_layer()->deferred_save_count_ -= 1;
   layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
   accumulator_.save();
 }
 
 void DisplayListBoundsCalculator::checkForDeferredSave() {
-  if (current_layer()->deferred_save_count_ > 0) {
+  if (current_layer()->has_deferred_save_op_) {
+    current_layer()->has_deferred_save_op_ = false;
     doSave();
   }
 }
 
 void DisplayListBoundsCalculator::save() {
-  current_layer()->deferred_save_count_ += 1;
+  current_layer()->has_deferred_save_op_ = true;
 }
+
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
                                             const SaveLayerOptions options,
                                             const DlImageFilter* backdrop) {
@@ -476,8 +477,8 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   }
 }
 void DisplayListBoundsCalculator::restore() {
-  if (current_layer()->deferred_save_count_ > 0) {
-    current_layer()->deferred_save_count_ -= 1;
+  if (current_layer()->has_deferred_save_op_) {
+    current_layer()->has_deferred_save_op_ = false;
     return;
   }
   if (layer_infos_.size() > 1) {

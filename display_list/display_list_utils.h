@@ -606,7 +606,7 @@ class DisplayListBoundsCalculator final
     // |DlImageFilter| when they are restored, but for most
     // saveLayer (and all save) calls the filter will be null.
     explicit LayerData(std::shared_ptr<DlImageFilter> filter = nullptr)
-        : filter_(filter), is_unbounded_(false) {}
+        : has_deferred_save_op_(false), filter_(filter), is_unbounded_(false) {}
     ~LayerData() = default;
 
     // The filter to apply to the layer bounds when it is restored
@@ -646,7 +646,8 @@ class DisplayListBoundsCalculator final
       *output = input;
       return true;
     }
-    unsigned deferred_save_count_ = 0;
+
+    bool has_deferred_save_op_ = true;
 
    private:
     std::shared_ptr<DlImageFilter> filter_;
