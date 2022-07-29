@@ -12,10 +12,17 @@ import os
 
 from create_xcframework import create_xcframework
 
+
+buildroot_dir = os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '..', '..', '..')
+)
+
 DSYMUTIL = os.path.join(
     os.path.dirname(__file__), '..', '..', '..', 'buildtools', 'mac-x64',
     'clang', 'bin', 'dsymutil'
 )
+
+out_dir = os.path.join(buildroot_dir, 'out')
 
 
 def main():
@@ -31,8 +38,18 @@ def main():
 
   args = parser.parse_args()
 
-  fat_framework = os.path.join(args.dst, 'FlutterMacOS.framework')
-  arm64_framework = os.path.join(args.arm64_out_dir, 'FlutterMacOS.framework')
+  dst = args.dst if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
+  arm64_out_dir = (
+          arm64_out_dir if os.path.isabs(args.arm64_out_dir)
+          else os.path.join(buildroot_dir, args.arm64_out_dir)
+  )
+  x64_out_dir = (
+          x64_out_dir if os.path.isabs(args.x64_out_dir)
+          else os.path.join(buildroot_dir, args.x64_out_dir)
+  )
+
+  fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
+  arm64_framework = os.path.join(arm64_out_dir, 'FlutterMacOS.framework')
   x64_framework = os.path.join(args.x64_out_dir, 'FlutterMacOS.framework')
 
   arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
