@@ -22,6 +22,17 @@ struct GLFrameInfo {
   uint32_t height;
 };
 
+// A structure to represent the frame buffer information which is returned to
+// the rendering backend after requesting a frame buffer object.
+struct GLFBOInfo {
+  // The frame buffer's ID.
+  uint32_t fbo_id;
+  // This boolean flags whether the returned FBO supports partial repaint.
+  const bool partial_repaint_enabled;
+  // The frame buffer's existing damage (i.e. damage since it was last used).
+  const SkIRect existing_damage;
+};
+
 // Information passed during presentation of a frame.
 struct GLPresentInfo {
   uint32_t fbo_id;
