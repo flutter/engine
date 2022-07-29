@@ -6,7 +6,6 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_GL_H_
 
 #include <functional>
-#include "embedder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 #include "flutter/testing/test_gl_surface.h"
 
@@ -83,6 +82,8 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   bool GLPresent(FlutterPresentInfo present_info);
 
   uint32_t GLGetFramebuffer(FlutterFrameInfo frame_info);
+
+  void GLGetFBOWithDamage(const intptr_t id, FlutterDamage* existing_damage);
 
   bool GLMakeResourceCurrent();
 

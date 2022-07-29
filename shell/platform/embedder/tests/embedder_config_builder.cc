@@ -59,6 +59,10 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         *frame_info);
   };
+  opengl_renderer_config_.fbo_with_damage_callback =
+      [](void* context, const intptr_t id, FlutterDamage* existing_damage) -> void {
+    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFBOWithDamage(id, existing_damage);
+  };
   opengl_renderer_config_.make_resource_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
         ->GLMakeResourceCurrent();
