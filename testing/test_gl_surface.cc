@@ -14,6 +14,7 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -263,6 +264,41 @@ bool TestGLSurface::Present() {
   }
 
   return result == EGL_TRUE;
+}
+
+std::array<EGLint, 4> TestGLSurface::RectToInts(const FlutterRect rect) {
+  EGLint height;
+  ::eglQuerySurface(display_, onscreen_surface_, EGL_HEIGHT, &height);
+
+  std::array<EGLint, 4> res{
+      static_cast<int>(rect.left), height - static_cast<int>(rect.bottom),
+      static_cast<int>(rect.right) - static_cast<int>(rect.left),
+      static_cast<int>(rect.bottom) - static_cast<int>(rect.top)};
+  return res;
+}
+
+bool TestGLSurface::PresentWithInfo(const FlutterPresentInfo* info) {
+  PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ =
+      reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+          ::eglGetProcAddress("eglSetDamageRegionKHR"));
+  PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage_ =
+      reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+          ::eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+
+  auto buffer_rects = RectToInts(display_, onscreen_surface_, *(info->buffer_damage.damage));
+  auto result_set_damage_region = set_damage_region_(display_, onscreen_surface_, buffer_rects.data(), 1);
+
+  // Swap buffers with frame damage
+  auto frame_rects = RectToInts(display_, onscreen_surface_, *(info->frame_damage.damage));
+  auto result_swap_buffers = swap_buffers_with_damage_(display_, onscreen_surface_, frame_rects.data(), 1);
+
+  // Add frame damage to damage history
+  damage_history_.push_back(*(info->frame_damage.damage));
+  if (damage_history_.size() > max_history_size_) {
+    damage_history_.pop_front();
+  }
+  
+  return result_set_damage_region == EGL_TRUE && result_swap_buffers == EGL_TRUE;
 }
 
 uint32_t TestGLSurface::GetFramebuffer(uint32_t width, uint32_t height) const {

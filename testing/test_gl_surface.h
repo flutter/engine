@@ -6,8 +6,11 @@
 #define FLUTTER_TESTING_TEST_GL_SURFACE_H_
 
 #include <cstdint>
+#include <list>
+#include <EGL/egl.h>
 
 #include "flutter/fml/macros.h"
+#include "shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -26,6 +29,8 @@ class TestGLSurface {
   bool ClearCurrent();
 
   bool Present();
+
+  bool PresentWithInfo(const FlutterPresentInfo* info);
 
   uint32_t GetFramebuffer(uint32_t width, uint32_t height) const;
 
@@ -59,6 +64,10 @@ class TestGLSurface {
   EGLSurface onscreen_surface_;
   EGLSurface offscreen_surface_;
   sk_sp<GrDirectContext> context_;
+  const int max_history_size_ = 10;
+  std::list<FlutterRect> damage_history_;
+
+  std::array<EGLint, 4> RectToInts(const FlutterRect rect);
 
   FML_DISALLOW_COPY_AND_ASSIGN(TestGLSurface);
 };

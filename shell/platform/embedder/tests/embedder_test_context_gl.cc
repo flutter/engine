@@ -109,6 +109,11 @@ uint32_t EmbedderTestContextGL::GetWindowFBOId() const {
   return gl_surface_->GetWindowFBOId();
 }
 
+uint32_t EmbedderTestContextGL::GetWindowFrameDamage() const {
+  FML_CHECK(gl_surface_);
+  return gl_surface_->GetWindowFrameDamage();
+}
+
 void EmbedderTestContextGL::SetupCompositor() {
   FML_CHECK(!compositor_) << "Already set up a compositor in this context.";
   FML_CHECK(gl_surface_)

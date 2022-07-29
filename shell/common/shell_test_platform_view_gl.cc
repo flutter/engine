@@ -66,6 +66,9 @@ bool ShellTestPlatformViewGL::GLContextClearCurrent() {
 // |GPUSurfaceGLDelegate|
 bool ShellTestPlatformViewGL::GLContextPresent(
     const GLPresentInfo& present_info) {
+  if (present_info.buffer_damage && present_info.frame_damage) {
+    return gl_surface_.PresentWithInfo(&present_info);
+  }
   return gl_surface_.Present();
 }
 
