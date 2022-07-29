@@ -339,8 +339,6 @@ InferOpenGLPlatformViewCreationCallback(
       };
     }
 
-    FML_LOG(ERROR) << "No segfault here";
-
     // Given the FBO's ID, get its existing damage.
     FlutterDamage existing_damage;
     fbo_with_damage_callback(user_data, id, &existing_damage);
@@ -358,8 +356,6 @@ InferOpenGLPlatformViewCreationCallback(
       FML_LOG(ERROR) << "Damage with multiple rectangles not yet supported. "
                         "Setting first rectangle as default.";
     }
-
-    FML_LOG(ERROR) << "Did that work?";
 
     // Pass the information about this FBO to the rendering backend.
     return flutter::GLFBOInfo{
