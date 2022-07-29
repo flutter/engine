@@ -106,4 +106,3 @@ def process_framework(args, fat_framework, fat_framework_binary):
 
 if __name__ == '__main__':
   sys.exit(main())
-
