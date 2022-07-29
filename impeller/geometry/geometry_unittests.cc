@@ -837,6 +837,36 @@ TEST(GeometryTest, CanConvertBetweenDegressAndRadians) {
   }
 }
 
+TEST(GeometryTest, RectMakeSize) {
+  {
+    Size s(100, 200);
+    Rect r = Rect::MakeSize(s);
+    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_RECT_NEAR(r, expected);
+  }
+
+  {
+    ISize s(100, 200);
+    Rect r = Rect::MakeSize(s);
+    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_RECT_NEAR(r, expected);
+  }
+
+  {
+    Size s(100, 200);
+    IRect r = IRect::MakeSize(s);
+    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_EQ(r, expected);
+  }
+
+  {
+    ISize s(100, 200);
+    IRect r = IRect::MakeSize(s);
+    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
+    ASSERT_EQ(r, expected);
+  }
+}
+
 TEST(GeometryTest, RectUnion) {
   {
     Rect a(100, 100, 100, 100);
@@ -1203,7 +1233,7 @@ TEST(GeometryTest, VerticesConstructorAndGetters) {
                                Rect(0, 0, 4, 4));
 
   ASSERT_EQ(vertices.GetBoundingBox().value(), Rect(0, 0, 4, 4));
-  ASSERT_EQ(vertices.GetPoints(), points);
+  ASSERT_EQ(vertices.GetPositions(), points);
   ASSERT_EQ(vertices.GetIndices(), indices);
   ASSERT_EQ(vertices.GetColors(), colors);
   ASSERT_EQ(vertices.GetMode(), VertexMode::kTriangle);

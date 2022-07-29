@@ -108,6 +108,28 @@ static std::string StringToShaderStage(std::string str) {
   return "ShaderStage::kUnknown";
 }
 
+static std::string StringToVkShaderStage(std::string str) {
+  if (str == "vertex") {
+    return "VK_SHADER_STAGE_VERTEX_BIT";
+  }
+  if (str == "fragment") {
+    return "VK_SHADER_STAGE_FRAGMENT_BIT";
+  }
+
+  if (str == "tessellation_control") {
+    return "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT";
+  }
+
+  if (str == "tessellation_evaluation") {
+    return "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT";
+  }
+
+  if (str == "compute") {
+    return "VK_SHADER_STAGE_COMPUTE_BIT";
+  }
+  return "VK_SHADER_STAGE_ALL_GRAPHICS";
+}
+
 Reflector::Reflector(Options options,
                      std::shared_ptr<const spirv_cross::ParsedIR> ir,
                      std::shared_ptr<fml::Mapping> shader_data,
@@ -331,6 +353,7 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
         uniform_description.type = spir_type.basetype;
         uniform_description.rows = spir_type.vecsize;
         uniform_description.columns = spir_type.columns;
+        uniform_description.bit_width = spir_type.width;
         data->AddUniformDescription(std::move(uniform_description));
       });
   return data;
@@ -366,6 +389,10 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
                    [type = compiler_.GetType()](inja::Arguments& args) {
                      return ToString(type);
                    });
+  env.add_callback(
+      "to_vk_shader_stage_flag_bits", 1u, [](inja::Arguments& args) {
+        return StringToVkShaderStage(args.at(0u)->get<std::string>());
+      });
 
   auto inflated_template =
       std::make_shared<std::string>(env.render(tmpl, *template_arguments_));

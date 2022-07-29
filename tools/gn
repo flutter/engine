@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env vpython3
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -398,12 +398,16 @@ def to_gn_args(args):
 
   # Enable Metal on iOS builds.
   if args.target_os == 'ios':
-    gn_args['skia_use_metal'] = True
+    gn_args['shell_enable_gl'] = False
+    gn_args['skia_use_gl'] = False
     gn_args['shell_enable_metal'] = True
+    gn_args['skia_use_metal'] = True
     # Bitcode enabled builds using the current version of the toolchain leak
     # C++ symbols decorated with the availability attribute. Disable these
     # attributes in release modes till the toolchain is updated.
     gn_args['skia_enable_api_available_macro'] = args.runtime_mode != 'release'
+  else:
+    gn_args['skia_use_gl'] = args.target_os != 'fuchsia'
 
   if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia',
                                                          'wasm']:
@@ -525,6 +529,12 @@ def to_gn_args(args):
 
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
+
+  # Vulkan support is WIP, see: https://github.com/flutter/flutter/issues/107357
+  if args.enable_impeller_vulkan:
+    gn_args['impeller_enable_opengles'] = False
+    gn_args['impeller_enable_vulkan'] = True
+    gn_args['skia_use_vma'] = False
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
@@ -848,6 +858,13 @@ def parse_args(args):
       type=str,
       help='Absolute path to a prebuilt impellerc. ' +
       'Do not use this outside of CI or with impellerc from a different engine version.'
+  )
+  parser.add_argument(
+      '--enable-impeller-vulkan',
+      default=False,
+      action='store_true',
+      help='Enables WIP impeller support for vulkan. ' +
+      'https://github.com/flutter/flutter/issues/107357'
   )
 
   # Sanitizers.
