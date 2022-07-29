@@ -12,7 +12,6 @@ import os
 
 from create_xcframework import create_xcframework
 
-
 buildroot_dir = os.path.abspath(
     os.path.join(os.path.realpath(__file__), '..', '..', '..')
 )
@@ -38,14 +37,16 @@ def main():
 
   args = parser.parse_args()
 
-  dst = args.dst if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
+  dst = (
+      args.dst if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst
+  )
   arm64_out_dir = (
-          args.arm64_out_dir if os.path.isabs(args.arm64_out_dir)
-          else os.path.join(buildroot_dir, args.arm64_out_dir)
+      args.arm64_out_dir if os.path.isabs(args.arm64_out_dir)
+      else os.path.join(buildroot_dir, args.arm64_out_dir)
   )
   x64_out_dir = (
-          args.x64_out_dir if os.path.isabs(args.x64_out_dir)
-          else os.path.join(buildroot_dir, args.x64_out_dir)
+      args.x64_out_dir if os.path.isabs(args.x64_out_dir)
+      else os.path.join(buildroot_dir, args.x64_out_dir)
   )
 
   fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
@@ -104,3 +105,4 @@ def process_framework(args, fat_framework, fat_framework_binary):
 
 if __name__ == '__main__':
   sys.exit(main())
+
