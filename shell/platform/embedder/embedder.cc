@@ -423,6 +423,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
+      gl_fbo_with_damage_callback,         // gl_fbo_with_damage_callback
   };
 
   return fml::MakeCopyable(
