@@ -3174,7 +3174,7 @@ TEST_F(EmbedderTest, MustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
     existing_damage_ptr->num_rects = num_rects;
     existing_damage_ptr->damage = existing_damage_rects;
   };
-  
+
   auto engine = builder.LaunchEngine();
   ASSERT_FALSE(engine.is_valid());
 }
@@ -3264,8 +3264,18 @@ TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
       [frame_damage = frame_damage,
        buffer_damage = buffer_damage](FlutterPresentInfo* present_info) {
-        ASSERT_EQ(present_info->frame_damage, frame_damage);
-        ASSERT_EQ(present_info->buffer_damage, buffer_damage);
+        ASSERT_EQ(present_info->frame_damage.num_rects, frame_damage.num_rects);
+        ASSERT_EQ(present_info->frame_damage.damage->left, frame_damage.damage->left);
+        ASSERT_EQ(present_info->frame_damage.damage->top, frame_damage.damage->top);
+        ASSERT_EQ(present_info->frame_damage.damage->right, frame_damage.damage->right);
+        ASSERT_EQ(present_info->frame_damage.damage->bottom, frame_damage.damage->bottom);
+
+        ASSERT_EQ(present_info->buffer_damage.num_rects, buffer_damage.num_rects);
+        ASSERT_EQ(present_info->buffer_damage.damage->left, buffer_damage.damage->left);
+        ASSERT_EQ(present_info->buffer_damage.damage->top, buffer_damage.damage->top);
+        ASSERT_EQ(present_info->buffer_damage.damage->right, buffer_damage.damage->right);
+        ASSERT_EQ(present_info->buffer_damage.damage->bottom, buffer_damage.damage->bottom);
+
         frame_latch.CountDown();
       });
 

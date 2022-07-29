@@ -50,7 +50,10 @@ bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
   }
 
   if (callback) {
-    callback(fbo_id);
+    FlutterPresentInfo present_info = {
+      .fbo_id = fbo_id,
+    };
+    callback(&present_info);
   }
 
   FireRootSurfacePresentCallbackIfPresent(
