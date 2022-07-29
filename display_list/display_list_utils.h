@@ -559,19 +559,6 @@ class DisplayListBoundsCalculator final
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override;
-  void transform2DAffine(SkScalar mxx,
-                         SkScalar mxy,
-                         SkScalar mxt,
-                         SkScalar myx,
-                         SkScalar myy,
-                         SkScalar myt) override;
-  void translate(SkScalar tx, SkScalar ty) override;
-  void scale(SkScalar sx, SkScalar sy) override;
-  void rotate(SkScalar degrees) override;
-  void skew(SkScalar sx, SkScalar sy) override;
-  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
-  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
-  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
 
   // The DisplayList had an unbounded call with no cull rect or clip
   // to contain it. Should only be called after the stream is fully
@@ -590,9 +577,6 @@ class DisplayListBoundsCalculator final
  private:
   BoundsAccumulator& accumulator_;
 
-  void doSave();
-  void checkForDeferredSave();
-
   // A class that remembers the information kept for a single
   // |save| or |saveLayer|.
   // Each save or saveLayer will maintain its own bounds accumulator
@@ -606,7 +590,7 @@ class DisplayListBoundsCalculator final
     // |DlImageFilter| when they are restored, but for most
     // saveLayer (and all save) calls the filter will be null.
     explicit LayerData(std::shared_ptr<DlImageFilter> filter = nullptr)
-        : has_deferred_save_op_(false), filter_(filter), is_unbounded_(false) {}
+        : filter_(filter), is_unbounded_(false) {}
     ~LayerData() = default;
 
     // The filter to apply to the layer bounds when it is restored
@@ -647,16 +631,12 @@ class DisplayListBoundsCalculator final
       return true;
     }
 
-    bool has_deferred_save_op_ = true;
-
    private:
     std::shared_ptr<DlImageFilter> filter_;
     bool is_unbounded_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(LayerData);
   };
-
-  auto* current_layer() const { return layer_infos_.back().get(); }
 
   std::vector<std::unique_ptr<LayerData>> layer_infos_;
 

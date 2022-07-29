@@ -165,7 +165,6 @@ void SkMatrixDispatchHelper::transformReset() {
 void SkMatrixDispatchHelper::save() {
   saved_.push_back(matrix_);
 }
-
 void SkMatrixDispatchHelper::restore() {
   if (saved_.empty()) {
     return;
@@ -424,25 +423,12 @@ void DisplayListBoundsCalculator::setPathEffect(const DlPathEffect* effect) {
 void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
   mask_filter_ = filter ? filter->shared() : nullptr;
 }
-
-void DisplayListBoundsCalculator::doSave() {
+void DisplayListBoundsCalculator::save() {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
   accumulator_.save();
 }
-
-void DisplayListBoundsCalculator::checkForDeferredSave() {
-  if (current_layer()->has_deferred_save_op_) {
-    current_layer()->has_deferred_save_op_ = false;
-    doSave();
-  }
-}
-
-void DisplayListBoundsCalculator::save() {
-  current_layer()->has_deferred_save_op_ = true;
-}
-
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
                                             const SaveLayerOptions options,
                                             const DlImageFilter* backdrop) {
@@ -477,10 +463,6 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   }
 }
 void DisplayListBoundsCalculator::restore() {
-  if (current_layer()->has_deferred_save_op_) {
-    current_layer()->has_deferred_save_op_ = false;
-    return;
-  }
   if (layer_infos_.size() > 1) {
     SkMatrixDispatchHelper::restore();
     ClipBoundsDispatchHelper::restore();
@@ -519,52 +501,6 @@ void DisplayListBoundsCalculator::restore() {
       AccumulateUnbounded();
     }
   }
-}
-
-void DisplayListBoundsCalculator::transform2DAffine(SkScalar mxx,
-                                                    SkScalar mxy,
-                                                    SkScalar mxt,
-                                                    SkScalar myx,
-                                                    SkScalar myy,
-                                                    SkScalar myt) {
-  checkForDeferredSave();
-  SkMatrixDispatchHelper::transform2DAffine(mxx, mxy, mxt, myx, myy, myt);
-}
-
-void DisplayListBoundsCalculator::translate(SkScalar tx, SkScalar ty) {
-  checkForDeferredSave();
-  SkMatrixDispatchHelper::translate(tx, ty);
-}
-
-void DisplayListBoundsCalculator::scale(SkScalar sx, SkScalar sy) {
-  checkForDeferredSave();
-  SkMatrixDispatchHelper::scale(sx, sy);
-}
-void DisplayListBoundsCalculator::rotate(SkScalar degrees) {
-  checkForDeferredSave();
-  SkMatrixDispatchHelper::rotate(degrees);
-}
-void DisplayListBoundsCalculator::skew(SkScalar sx, SkScalar sy) {
-  checkForDeferredSave();
-  SkMatrixDispatchHelper::skew(sx, sy);
-}
-void DisplayListBoundsCalculator::clipRect(const SkRect& rect,
-                                           SkClipOp clip_op,
-                                           bool is_aa) {
-  checkForDeferredSave();
-  ClipBoundsDispatchHelper::clipRect(rect, clip_op, is_aa);
-}
-void DisplayListBoundsCalculator::clipRRect(const SkRRect& rrect,
-                                            SkClipOp clip_op,
-                                            bool is_aa) {
-  checkForDeferredSave();
-  ClipBoundsDispatchHelper::clipRRect(rrect, clip_op, is_aa);
-}
-void DisplayListBoundsCalculator::clipPath(const SkPath& path,
-                                           SkClipOp clip_op,
-                                           bool is_aa) {
-  checkForDeferredSave();
-  ClipBoundsDispatchHelper::clipPath(path, clip_op, is_aa);
 }
 
 void DisplayListBoundsCalculator::drawPaint() {

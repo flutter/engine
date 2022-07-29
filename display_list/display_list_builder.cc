@@ -428,10 +428,10 @@ void DisplayListBuilder::save() {
 }
 
 void DisplayListBuilder::restore() {
-  if (!current_layer_->has_deferred_save_op_) {
-    Push<RestoreOp>(0, 1);
-  }
   if (layer_stack_.size() > 1) {
+    if (!current_layer_->has_deferred_save_op_) {
+      Push<RestoreOp>(0, 1);
+    }
     // Grab the current layer info before we push the restore
     // on the stack.
     LayerInfo layer_info = layer_stack_.back();
