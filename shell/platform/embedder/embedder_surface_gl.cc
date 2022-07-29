@@ -47,11 +47,14 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
+  // Pass the present information to the embedder present callback.
   return gl_dispatch_table_.gl_present_callback(present_info);
 }
 
 // |GPUSurfaceGLDelegate|
 GLFBOInfo EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+  // Get the FBO ID using the gl_fbo_callback and then get exiting damage by
+  // passing that ID to the gl_fbo_with_damage_callback.
   return gl_dispatch_table_.gl_fbo_with_damage_callback(
       gl_dispatch_table_.gl_fbo_callback(frame_info));
 }

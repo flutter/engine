@@ -228,8 +228,8 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
-/// Auxiliar function used to translate rectangles of type SkIRect to
-/// FlutterRect.
+// Auxiliar function used to translate rectangles of type SkIRect to
+// FlutterRect.
 FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
   FlutterRect flutter_rect = {static_cast<double>(sk_rect.fLeft),
                               static_cast<double>(sk_rect.fTop),
@@ -238,8 +238,8 @@ FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
   return flutter_rect;
 }
 
-/// Auxiliar function used to translate rectangles of type FlutterRect to
-/// SkIRect.
+// Auxiliar function used to translate rectangles of type FlutterRect to
+// SkIRect.
 const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
   SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
                   static_cast<int32_t>(flutter_rect.top),
@@ -274,12 +274,12 @@ InferOpenGLPlatformViewCreationCallback(
     if (present) {
       return present(user_data);
     } else {
-      /// Format the frame and buffer damages accordingly. Note that, since the
-      /// current compute damage algorithm only returns one rectangle for damage
-      /// we are assuming the number of rectangles provided in frame and buffer
-      /// damage are always 1. Once the function that computes damage implements
-      /// support for multiple damage rectangles, GLPresentInfo should also
-      /// contain the number of damage rectangles.
+      // Format the frame and buffer damages accordingly. Note that, since the
+      // current compute damage algorithm only returns one rectangle for damage
+      // we are assuming the number of rectangles provided in frame and buffer
+      // damage are always 1. Once the function that computes damage implements
+      // support for multiple damage rectangles, GLPresentInfo should also
+      // contain the number of damage rectangles.
       const size_t num_rects = 1;
 
       FlutterRect frame_damage_rect[num_rects] = {
@@ -298,7 +298,7 @@ InferOpenGLPlatformViewCreationCallback(
           .damage = buffer_damage_rect,
       };
 
-      /// Construct the present information concerning the frame being rendered.
+      // Construct the present information concerning the frame being rendered.
       FlutterPresentInfo present_info = {
           .struct_size = sizeof(FlutterPresentInfo),
           .fbo_id = gl_present_info.fbo_id,
