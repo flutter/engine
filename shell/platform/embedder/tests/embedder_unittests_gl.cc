@@ -3261,7 +3261,7 @@ TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
                             }));
 
   const size_t num_rects = 1;
-  FlutterRect frame_damage_rect[num_rects] = {{0, 0, 1024, 600}};
+  FlutterRect frame_damage_rect[num_rects] = {{0, 0, 1024, 1024}};
   FlutterRect buffer_damage_rect[num_rects] = {{0, 0, 1024, 600}};
   const FlutterDamage frame_damage = {
       .struct_size = sizeof(FlutterDamage),
@@ -3302,6 +3302,20 @@ TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
 
   frame_latch.Wait();
 }
+
+// The test above sends one frame and checks if the damage that was received is
+// valid (i.e. represents the entire frame)
+
+// Can I create a test that sends the same frame twice and checks if the second
+// time the damage is empty? (given that the existing damage was empty)
+
+// And another test that sends the frame twice and checks if in the second time
+// the damage is still the entire screen (assuming the existing damage is the
+// entire screen)
+
+// Finally, same thing again but not existing damage is only part of the screen
+// and we need to then check if it the damage received is only that part of the
+// screen
 
 TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
@@ -3355,7 +3369,6 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesInvalidID) {
       [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
     return 123;
   };
-  ;
 
   auto engine = builder.LaunchEngine();
 
