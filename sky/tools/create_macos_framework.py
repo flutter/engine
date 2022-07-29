@@ -38,16 +38,17 @@ def main():
   args = parser.parse_args()
 
   dst = (
-      args.dst if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
+      args.dst
+      if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
   )
   arm64_out_dir = (
       args.arm64_out_dir
-      if os.path.isabs(args.arm64_out_dir)
-      else os.path.join(buildroot_dir, args.arm64_out_dir)
+      if os.path.isabs(args.arm64_out_dir) else
+      os.path.join(buildroot_dir, args.arm64_out_dir)
   )
   x64_out_dir = (
-      args.x64_out_dir if os.path.isabs(args.x64_out_dir)
-      else os.path.join(buildroot_dir, args.x64_out_dir)
+      args.x64_out_dir if os.path.isabs(args.x64_out_dir) else
+      os.path.join(buildroot_dir, args.x64_out_dir)
   )
 
   fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
