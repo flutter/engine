@@ -170,20 +170,32 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
                             task_runners_.GetPlatformTaskRunner(),
                         view_id = view_id_raw](
                            fuchsia::ui::composition::ContentId content_id,
-                           fuchsia::ui::composition::ChildViewWatcherPtr
-                               child_view_watcher) {
+                           fuchsia::ui::composition::ChildViewWatcherHandle
+                               child_view_watcher_handle) {
     FML_CHECK(weak);
     FML_CHECK(weak->child_view_info_.count(content_id.value) == 0);
+
+    // Bind the child view watcher to the platform thread so that the FIDL calls
+    // are handled on the platform thread.
+    fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher =
+        child_view_watcher_handle.Bind();
     FML_CHECK(child_view_watcher);
 
-    child_view_watcher.set_error_handler([&weak, view_id](zx_status_t status) {
-      FML_LOG(ERROR) << "Interface error on: ChildViewWatcher status: "
-                     << status;
-      FML_CHECK(weak);
+    child_view_watcher.set_error_handler(
+        [weak, view_id](zx_status_t status) {
+          FML_LOG(ERROR) << "Interface error on: ChildViewWatcher status: "
+                         << status;
 
-      // Disconnected views cannot listen to pointer events.
-      weak->pointer_injector_delegate_->OnDestroyView(view_id);
-    });
+          if (!weak) {
+            FML_LOG(WARNING)
+                << "Flatland View bound to PlatformView after PlatformView was "
+                   "destroyed; ignoring.";
+            return;
+          }
+
+          // Disconnected views cannot listen to pointer events.
+          weak->pointer_injector_delegate_->OnDestroyView(view_id);
+        });
 
     platform_task_runner->PostTask(
         fml::MakeCopyable([weak, view_id, content_id,

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-// @dart = 2.12
 part of dart.ui;
 
 /// Base class for [Size] and [Offset], which are both ways to describe
@@ -1722,13 +1720,13 @@ class RSTransform {
   /// The `translateX` and `translateY` parameters give the coordinate of the
   /// offset by which to translate.
   ///
-  /// This constructor computes the arguments of the [new RSTransform]
+  /// This constructor computes the arguments of the [RSTransform.new]
   /// constructor and then defers to that constructor to actually create the
   /// object. If many [RSTransform] objects are being created and there is a way
   /// to factor out the computations of the sine and cosine of the rotation
   /// (which are computed each time this constructor is called) and reuse them
   /// over multiple [RSTransform] objects, it may be more efficient to directly
-  /// use the more direct [new RSTransform] constructor instead.
+  /// use the more direct [RSTransform.new] constructor instead.
   factory RSTransform.fromComponents({
     required double rotation,
     required double scale,

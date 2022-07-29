@@ -101,20 +101,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 @end
 
-// The following conditional compilation defines an API 13 concept on earlier API targets so that
-// a compiler compiling against API 12 or below does not blow up due to non-existent members.
-#if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
-typedef enum UIAccessibilityContrast : NSInteger {
-  UIAccessibilityContrastUnspecified = 0,
-  UIAccessibilityContrastNormal = 1,
-  UIAccessibilityContrastHigh = 2
-} UIAccessibilityContrast;
-
-@interface UITraitCollection (MethodsFromNewerSDK)
-- (UIAccessibilityContrast)accessibilityContrast;
-@end
-#endif
-
 @interface FlutterKeyboardManager (Tests)
 @property(nonatomic, retain, readonly)
     NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
@@ -144,6 +130,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)invalidateDisplayLink;
 - (void)addInternalPlugins;
 - (flutter::PointerData)generatePointerDataForFake;
+- (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
+                  initialRoute:(nullable NSString*)initialRoute;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -427,7 +415,31 @@ typedef enum UIAccessibilityContrast : NSInteger {
   mockEngine.viewController = viewController;
   UIView* view = viewController.view;
   XCTAssertNotNil(view);
-  OCMVerify([mockEngine attachView]);
+  OCMVerify(times(1), [mockEngine attachView]);
+}
+
+- (void)testViewDidLoadDoesntInvokeEngineAttachViewWhenEngineNeedsLaunch {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  // sharedSetupWithProject sets the engine needs to be launched.
+  [viewController sharedSetupWithProject:nil initialRoute:nil];
+  mockEngine.viewController = viewController;
+  UIView* view = viewController.view;
+  XCTAssertNotNil(view);
+  OCMVerify(never(), [mockEngine attachView]);
+}
+
+- (void)testSplashScreenViewRemoveNotCrash {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"engine" project:nil];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* flutterViewController =
+      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  [flutterViewController setSplashScreenView:[[UIView alloc] init]];
+  [flutterViewController setSplashScreenView:nil];
 }
 
 - (void)testInternalPluginsWeakPtrNotCrash {
@@ -455,6 +467,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
+  UIView* view = viewController.view;
+  // The implementation in viewDidLoad requires the viewControllers.viewLoaded is true.
+  // Accessing the view to make sure the view loads in the memory,
+  // which makes viewControllers.viewLoaded true.
+  XCTAssertNotNil(view);
   [viewController viewDidLoad];
   OCMVerify([viewController addInternalPlugins]);
 }
@@ -1127,4 +1144,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   XCTAssertTrue(interval_micros / 1000 < tolerance_millis,
                 @"PointerData.time_stamp should be equal to NSProcessInfo.systemUptime");
 }
+
+- (void)testSplashScreenViewCanSetNil {
+  FlutterViewController* flutterViewController =
+      [[FlutterViewController alloc] initWithProject:nil nibName:nil bundle:nil];
+  [flutterViewController setSplashScreenView:nil];
+}
+
 @end

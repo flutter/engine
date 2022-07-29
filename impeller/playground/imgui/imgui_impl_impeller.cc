@@ -224,8 +224,8 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         {
           // Clamp the clip to ensure it never goes outside of the render
           // target.
-          auto visible_clip = clip_rect.Intersection(impeller::Rect::MakeSize(
-              impeller::Size(render_pass.GetRenderTargetSize())));
+          auto visible_clip = clip_rect.Intersection(
+              impeller::Rect::MakeSize(render_pass.GetRenderTargetSize()));
           if (!visible_clip.has_value()) {
             continue;  // Nothing to render.
           }
@@ -239,7 +239,6 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         cmd.viewport = viewport;
         cmd.scissor = impeller::IRect(clip_rect);
 
-        cmd.winding = impeller::WindingOrder::kClockwise;
         cmd.pipeline = bd->pipeline;
         VS::BindUniformBuffer(cmd, vtx_uniforms);
         FS::BindTex(cmd, bd->font_texture, bd->sampler);

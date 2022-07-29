@@ -14,7 +14,7 @@
 
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
-#include "flutter/shell/platform/windows/flutter_window_win32.h"
+#include "flutter/shell/platform/windows/flutter_window.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
@@ -582,28 +582,19 @@ TEST(FlutterWindowsViewTest, WindowRepaintTests) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
 
-  FlutterWindowsView view(
-      std::make_unique<flutter::FlutterWindowWin32>(100, 100));
+  FlutterWindowsView view(std::make_unique<flutter::FlutterWindow>(100, 100));
   view.SetEngine(std::move(engine));
   view.CreateRenderSurface();
 
-  bool send_window_metrics_event_called = false;
-  size_t width = 0;
-  size_t height = 0;
-  modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
-      SendWindowMetricsEvent,
-      ([&send_window_metrics_event_called, &width, &height](
-           auto engine, const FlutterWindowMetricsEvent* event) {
-        send_window_metrics_event_called = true;
-        width = event->width;
-        height = event->height;
-        return kSuccess;
-      }));
+  bool schedule_frame_called = false;
+  modifier.embedder_api().ScheduleFrame =
+      MOCK_ENGINE_PROC(ScheduleFrame, ([&schedule_frame_called](auto engine) {
+                         schedule_frame_called = true;
+                         return kSuccess;
+                       }));
 
   view.OnWindowRepaint();
-  EXPECT_TRUE(send_window_metrics_event_called);
-  EXPECT_EQ(width, 100);
-  EXPECT_EQ(height, 100);
+  EXPECT_TRUE(schedule_frame_called);
 }
 
 }  // namespace testing

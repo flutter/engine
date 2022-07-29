@@ -34,8 +34,17 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 
   SkRect bounds =
       RasterCacheUtil::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
-  FML_DCHECK(std::abs(bounds.width() - image_->dimensions().width()) <= 1 &&
-             std::abs(bounds.height() - image_->dimensions().height()) <= 1);
+#ifndef NDEBUG
+  // The image dimensions should always be larger than the device bounds and
+  // smaller than the device bounds plus one pixel, at the same time, we must
+  // introduce epsilon to solve the round-off error. The value of epsilon is
+  // 1/512, which represents half of an AA sample.
+  float epsilon = 1 / 512.0;
+  FML_DCHECK(image_->dimensions().width() - bounds.width() > -epsilon &&
+             image_->dimensions().height() - bounds.height() > -epsilon &&
+             image_->dimensions().width() - bounds.width() < 1 + epsilon &&
+             image_->dimensions().height() - bounds.height() < 1 + epsilon);
+#endif
   canvas.resetMatrix();
   flow_.Step();
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
@@ -51,7 +60,9 @@ RasterCache::RasterCache(size_t access_threshold,
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
-    const std::function<void(SkCanvas*)>& draw_function) {
+    const std::function<void(SkCanvas*)>& draw_function,
+    const std::function<void(SkCanvas*, const SkRect& rect)>& draw_checkerboard)
+    const {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
   SkRect dest_rect =
@@ -78,8 +89,8 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   canvas->concat(context.matrix);
   draw_function(canvas);
 
-  if (context.checkerboard) {
-    DrawCheckerboard(canvas, context.logical_rect);
+  if (checkerboard_images_) {
+    draw_checkerboard(canvas, context.logical_rect);
   }
 
   return std::make_unique<RasterCacheResult>(
@@ -93,7 +104,8 @@ bool RasterCache::UpdateCacheEntry(
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
   if (!entry.image) {
-    entry.image = Rasterize(raster_cache_context, render_function);
+    entry.image =
+        Rasterize(raster_cache_context, render_function, DrawCheckerboard);
     if (entry.image != nullptr) {
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {
@@ -159,58 +171,47 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
   return false;
 }
 
-void RasterCache::PrepareNewFrame() {
+void RasterCache::BeginFrame() {
   display_list_cached_this_frame_ = 0;
+  picture_metrics_ = {};
+  layer_metrics_ = {};
 }
 
-void RasterCache::SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
-                                          RasterCacheMetrics& picture_metrics,
-                                          RasterCacheMetrics& layer_metrics) {
-  std::vector<RasterCacheKey::Map<Entry>::iterator> dead;
-
-  for (auto it = cache.begin(); it != cache.end(); ++it) {
+void RasterCache::UpdateMetrics() {
+  for (auto it = cache_.begin(); it != cache_.end(); ++it) {
     Entry& entry = it->second;
-
-    if (!entry.encountered_this_frame) {
-      dead.push_back(it);
-    } else if (entry.image) {
-      RasterCacheKeyKind kind = it->first.kind();
-      switch (kind) {
-        case RasterCacheKeyKind::kDisplayListMetrics:
-          picture_metrics.in_use_count++;
-          picture_metrics.in_use_bytes += entry.image->image_bytes();
-          break;
-        case RasterCacheKeyKind::kLayerMetrics:
-          layer_metrics.in_use_count++;
-          layer_metrics.in_use_bytes += entry.image->image_bytes();
-          break;
-      }
+    FML_DCHECK(entry.encountered_this_frame);
+    if (entry.image) {
+      RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
+      metrics.in_use_count++;
+      metrics.in_use_bytes += entry.image->image_bytes();
     }
     entry.encountered_this_frame = false;
+  }
+}
+
+void RasterCache::EvictUnusedCacheEntries() {
+  std::vector<RasterCacheKey::Map<Entry>::iterator> dead;
+
+  for (auto it = cache_.begin(); it != cache_.end(); ++it) {
+    Entry& entry = it->second;
+    if (!entry.encountered_this_frame) {
+      dead.push_back(it);
+    }
   }
 
   for (auto it : dead) {
     if (it->second.image) {
-      RasterCacheKeyKind kind = it->first.kind();
-      switch (kind) {
-        case RasterCacheKeyKind::kDisplayListMetrics:
-          picture_metrics.eviction_count++;
-          picture_metrics.eviction_bytes += it->second.image->image_bytes();
-          break;
-        case RasterCacheKeyKind::kLayerMetrics:
-          layer_metrics.eviction_count++;
-          layer_metrics.eviction_bytes += it->second.image->image_bytes();
-          break;
-      }
+      RasterCacheMetrics& metrics = GetMetricsForKind(it->first.kind());
+      metrics.eviction_count++;
+      metrics.eviction_bytes += it->second.image->image_bytes();
     }
-    cache.erase(it);
+    cache_.erase(it);
   }
 }
 
-void RasterCache::CleanupAfterFrame() {
-  picture_metrics_ = {};
-  layer_metrics_ = {};
-  SweepOneCacheAfterFrame(cache_, picture_metrics_, layer_metrics_);
+void RasterCache::EndFrame() {
+  UpdateMetrics();
   TraceStatsToTimeline();
 }
 
@@ -289,6 +290,15 @@ size_t RasterCache::EstimatePictureCacheByteSize() const {
     }
   }
   return picture_cache_bytes;
+}
+
+RasterCacheMetrics& RasterCache::GetMetricsForKind(RasterCacheKeyKind kind) {
+  switch (kind) {
+    case RasterCacheKeyKind::kDisplayListMetrics:
+      return picture_metrics_;
+    case RasterCacheKeyKind::kLayerMetrics:
+      return layer_metrics_;
+  }
 }
 
 }  // namespace flutter
