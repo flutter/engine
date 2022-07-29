@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
 
+#include "embedder.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
@@ -39,7 +40,7 @@ bool EmbedderTestContextGL::GLClearCurrent() {
   return gl_surface_->ClearCurrent();
 }
 
-bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
+bool EmbedderTestContextGL::GLPresent(FlutterPresentInfo present_info) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
   gl_surface_present_count_++;
 
@@ -50,9 +51,6 @@ bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
   }
 
   if (callback) {
-    FlutterPresentInfo present_info = {
-        .fbo_id = fbo_id,
-    };
     callback(&present_info);
   }
 
