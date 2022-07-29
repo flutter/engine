@@ -3327,13 +3327,14 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
   // First frame should be entirely rerendered.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
       [](FlutterPresentInfo present_info) {
-        ASSERT_EQ(present_info.frame_damage.num_rects, 1);
+        const size_t num_rects = 1;
+        ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
         ASSERT_EQ(present_info.frame_damage.damage->top, 0);
         ASSERT_EQ(present_info.frame_damage.damage->right, 800);
         ASSERT_EQ(present_info.frame_damage.damage->bottom, 600);
 
-        ASSERT_EQ(present_info.buffer_damage.num_rects, 1);
+        ASSERT_EQ(present_info.buffer_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.buffer_damage.damage->left, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
@@ -3353,13 +3354,14 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
   // rerendered assuming there is no existing damage.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
       [](FlutterPresentInfo present_info) {
-        ASSERT_EQ(present_info.frame_damage.num_rects, 1);
+        const size_t num_rects = 1;
+        ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
         ASSERT_EQ(present_info.frame_damage.damage->top, 0);
         ASSERT_EQ(present_info.frame_damage.damage->right, 0);
         ASSERT_EQ(present_info.frame_damage.damage->bottom, 0);
 
-        ASSERT_EQ(present_info.buffer_damage.num_rects, 1);
+        ASSERT_EQ(present_info.buffer_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.buffer_damage.damage->left, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 0);
