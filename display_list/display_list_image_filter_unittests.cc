@@ -806,22 +806,21 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
   auto rotate_translate = SkMatrix::RotateDeg(45).preTranslate(5.0, 5.0);
   auto persp = SkMatrix::I();
   persp.setPerspY(10);
-  std::vector<SkMatrix> matrixs = {translate, scale_translate, rotate_translate,
-                                   persp};
+  std::vector<SkMatrix> matrices = {translate, scale_translate,
+                                    rotate_translate, persp};
 
   for (unsigned i = 0; i < sk_filters.size(); i++) {
-    for (unsigned j = 0; j < matrixs.size(); j++) {
-      auto& m = matrixs[j];
+    for (unsigned j = 0; j < matrices.size(); j++) {
+      auto& m = matrices[j];
       auto sk_local_filter = sk_filters[i]->makeWithLocalMatrix(m);
       auto dl_local_filter = dl_filters[i]->makeWithLocalMatrix(m);
       SkIRect sk_rect, dl_rect;
       if (sk_local_filter) {
         sk_rect = sk_local_filter->filterBounds(
-            inputBounds, SkMatrix::I(),
-            SkImageFilter::MapDirection::kForward_MapDirection);
+            inputBounds, m, SkImageFilter::MapDirection::kForward_MapDirection);
       }
       if (dl_local_filter) {
-        dl_local_filter->map_device_bounds(inputBounds, SkMatrix::I(), dl_rect);
+        dl_local_filter->map_device_bounds(inputBounds, m, dl_rect);
       }
       ASSERT_EQ(sk_rect, dl_rect);
     }

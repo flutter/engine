@@ -5,6 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_FILTER_H_
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 #include "flutter/display_list/display_list_attributes.h"
@@ -154,17 +155,14 @@ class DlImageFilter
                                            SkIRect& input_bounds) const = 0;
 
   MatrixCapability get_matrix_capability() const {
-    MatrixCapability result = this->matrix_capability();
     // CropRects need to apply in the source coordinate system, but are not
     // aware of complex CTMs when performing clipping. For a simple fix, any
     // filter with a crop rect set cannot support more than scale+translate CTMs
-    // until that's updated. if (this->cropRectIsSet()) {
+    // until that's updated.
+    // if (this->cropRectIsSet()) {
     //     result = std::min(result, MatrixCapability::kScaleTranslate);
     // }
-    for (auto* filter : filters()) {
-      result = std::min(result, filter->matrix_capability());
-    }
-    return result;
+    return this->matrix_capability();
   }
 
   virtual MatrixCapability matrix_capability() const {
@@ -571,11 +569,7 @@ class DlComposeImageFilter final : public DlImageFilter {
   }
 
   MatrixCapability matrix_capability() const override {
-    return MatrixCapability::kComplex;
-  }
-
-  virtual std::vector<const DlImageFilter*> filters() const override {
-    return {outer_.get(), inner_.get()};
+    return std::min(outer_->matrix_capability(), inner_->matrix_capability());
   }
 
  protected:

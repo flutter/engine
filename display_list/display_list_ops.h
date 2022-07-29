@@ -11,6 +11,7 @@
 #include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/macros.h"
+#include "include/core/SkMatrix.h"
 
 namespace flutter {
 
