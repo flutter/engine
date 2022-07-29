@@ -3261,8 +3261,8 @@ TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
                             }));
 
   const size_t num_rects = 1;
-  FlutterRect frame_damage_rect[num_rects] = {{0, 0, 600, 1024}};
-  FlutterRect buffer_damage_rect[num_rects] = {{0, 0, 600, 1024}};
+  FlutterRect frame_damage_rect[num_rects] = {{0, 0, 1024, 600}};
+  FlutterRect buffer_damage_rect[num_rects] = {{0, 0, 1024, 600}};
   const FlutterDamage frame_damage = {
       .struct_size = sizeof(FlutterDamage),
       .num_rects = 1,
@@ -3336,6 +3336,52 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
                                       FlutterDamage* existing_damage) {
         // width and height are rotated by 90 deg
         ASSERT_EQ(id, window_fbo_id);
+
+        frame_latch.CountDown();
+      });
+
+  frame_latch.Wait();
+}
+
+TEST_F(EmbedderTest, FBOWithDamageReceivesInvalidID) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+  builder.SetDartEntrypoint("push_frames_over_and_over");
+
+  // Return a bad FBO ID on purpose.
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback =
+      [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
+    return 123;
+  };
+  ;
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  static FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 600;
+  event.height = 1024;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  static fml::CountDownLatch frame_latch(10);
+
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              /* Nothing to do. */
+                            }));
+
+  const uint32_t window_fbo_id =
+      static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [window_fbo_id = window_fbo_id](intptr_t id,
+                                      FlutterDamage* existing_damage) {
+        ASSERT_NE(id, window_fbo_id);
 
         frame_latch.CountDown();
       });
