@@ -1608,9 +1608,7 @@ void _paragraphTests() {
 
   test('TextHeightBehavior', () {
     expect(
-      toSkTextHeightBehavior(const ui.TextHeightBehavior(
-        
-      )),
+      toSkTextHeightBehavior(const ui.TextHeightBehavior()),
       canvasKit.TextHeightBehavior.All,
     );
     expect(

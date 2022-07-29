@@ -12,9 +12,7 @@ import 'package:ui/ui.dart' as ui;
 
 import 'semantics_tester.dart';
 
-final InputConfiguration singlelineConfig = InputConfiguration(
-  
-);
+final InputConfiguration singlelineConfig = InputConfiguration();
 
 final InputConfiguration multilineConfig = InputConfiguration(
   inputType: EngineInputType.multiline,

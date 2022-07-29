@@ -36,9 +36,7 @@ EditingState? lastEditingState;
 TextEditingDeltaState? editingDeltaState;
 String? lastInputAction;
 
-final InputConfiguration singlelineConfig = InputConfiguration(
-  
-);
+final InputConfiguration singlelineConfig = InputConfiguration();
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
 
@@ -179,9 +177,7 @@ Future<void> testMain() async {
     });
 
     test('Knows to turn autocorrect on', () {
-      final InputConfiguration config = InputConfiguration(
-        
-      );
+      final InputConfiguration config = InputConfiguration();
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,
@@ -196,9 +192,7 @@ Future<void> testMain() async {
     });
 
     test('Knows to turn autofill off', () {
-      final InputConfiguration config = InputConfiguration(
-        
-      );
+      final InputConfiguration config = InputConfiguration();
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,
@@ -332,9 +326,7 @@ Future<void> testMain() async {
     });
 
     test('Triggers input action', () {
-      final InputConfiguration config = InputConfiguration(
-        
-      );
+      final InputConfiguration config = InputConfiguration();
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,

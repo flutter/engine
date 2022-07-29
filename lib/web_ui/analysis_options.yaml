@@ -17,4 +17,3 @@ linter:
     public_member_api_docs: false
     unawaited_futures: true
     use_setters_to_change_properties: false
-    
