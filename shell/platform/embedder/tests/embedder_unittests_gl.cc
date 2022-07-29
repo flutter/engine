@@ -3186,6 +3186,15 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
   builder.SetDartEntrypoint("push_frames_over_and_over");
 
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
+    const size_t num_rects = 1;
+    FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
+    existing_damage_ptr->num_rects = num_rects;
+    existing_damage_ptr->damage = existing_damage_rects;
+  };
+
   const auto root_surface_transformation =
       SkMatrix().preTranslate(0, 1024).preRotate(-90, 0, 0);
 
@@ -3228,6 +3237,15 @@ TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
   builder.SetDartEntrypoint("push_frames_over_and_over");
+
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
+    const size_t num_rects = 1;
+    FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
+    existing_damage_ptr->num_rects = num_rects;
+    existing_damage_ptr->damage = existing_damage_rects;
+  };
 
   auto engine = builder.LaunchEngine();
 
