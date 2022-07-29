@@ -160,7 +160,10 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
     // passing a placeholder fbo_id.
-    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(FlutterPresentInfo{.fbo_id = 0,});
+    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
+        FlutterPresentInfo{
+            .fbo_id = 0,
+        });
   };
 #endif
 }
