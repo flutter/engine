@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include "embedder.h"
+#include "include/core/SkSize.h"
 #include "tests/embedder_test_context.h"
 #define FML_USED_ON_EMBEDDER
 
@@ -3847,10 +3848,154 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
   frame_latch.Wait();
 }
 
-// CompositorMustRenderTheEntireFrameWhenTheExistingDamageEqualsTheScreenSize
-// CompositorMustRenderTheEntireFrameWhenScreenSizeChangesEvenIfNoExistingDamage
-// CompositorMustNotRenderAtAllWhenThereIsNoExistingDamage
-// CompositorMustOnlyRenderDamagedRegion
+TEST_F(EmbedderTest, RendersEntireScreenWhenDamageIsTheWholeFrame) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  // This must match the transformation provided in the
+  // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
+  // transforms are consistent respected.
+  const auto root_surface_transformation =
+      SkMatrix().preTranslate(0, 800).preRotate(-90, 0, 0);
+
+  context.SetRootSurfaceTransformation(root_surface_transformation);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
+    const size_t num_rects = 1;
+    FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 800, 600}};
+    existing_damage_ptr->num_rects = num_rects;
+    existing_damage_ptr->damage = existing_damage_rects;
+  };
+
+  // builder.GetRendererConfig().open_gl.present_with_info = [](void* user_data, FlutterPresentInfo* present_info) -> bool {
+
+  // }
+
+  builder.SetDartEntrypoint("render_gradient");
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  // Flutter still thinks it is 800 x 600.
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
+}
+
+
+TEST_F(EmbedderTest, DontRenderAnythingWhenDamageIsEmpty) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  // This must match the transformation provided in the
+  // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
+  // transforms are consistent respected.
+  const auto root_surface_transformation =
+      SkMatrix().preTranslate(0, 800).preRotate(-90, 0, 0);
+
+  context.SetRootSurfaceTransformation(root_surface_transformation);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
+    const size_t num_rects = 1;
+    FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
+    existing_damage_ptr->num_rects = num_rects;
+    existing_damage_ptr->damage = existing_damage_rects;
+  };
+
+  builder.SetDartEntrypoint("render_gradient");
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  // Flutter still thinks it is 800 x 600.
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  ASSERT_FALSE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
+
+  auto rendered_scene_info = rendered_scene.get()->imageInfo();
+  ASSERT_EQ(rendered_scene_info.dimensions(), SkISize::MakeEmpty());
+}
+
+TEST_F(EmbedderTest, RenderOnlyDamagedRegionWhenDamageIsNotTheEntireFrame) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  // This must match the transformation provided in the
+  // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
+  // transforms are consistent respected.
+  const auto root_surface_transformation =
+      SkMatrix().preTranslate(0, 800).preRotate(-90, 0, 0);
+
+  context.SetRootSurfaceTransformation(root_surface_transformation);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
+    const size_t num_rects = 1;
+    FlutterRect existing_damage_rects[num_rects] = {FlutterRect{200, 150, 400, 300}};
+    existing_damage_ptr->num_rects = num_rects;
+    existing_damage_ptr->damage = existing_damage_rects;
+  };
+
+  builder.SetDartEntrypoint("render_gradient");
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  // Flutter still thinks it is 800 x 600.
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  ASSERT_FALSE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
+
+  auto rendered_scene_info = rendered_scene.get()->imageInfo();
+  ASSERT_EQ(rendered_scene_info.dimensions(), SkISize::Make(200, 150));
+}
 
 INSTANTIATE_TEST_SUITE_P(
     EmbedderTestGlVk,
