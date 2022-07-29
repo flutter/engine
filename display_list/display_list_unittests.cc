@@ -18,6 +18,9 @@
 namespace flutter {
 namespace testing {
 
+static std::vector<testing::DisplayListInvocationGroup> allGroups =
+    CreateAllGroups();
+
 TEST(DisplayList, SingleOpSizes) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {

@@ -1116,9 +1116,5 @@ std::vector<DisplayListInvocationGroup> CreateAllGroups() {
   return result;
 }
 
-std::vector<DisplayListInvocationGroup> allRenderingOps =
-    CreateAllRenderingOps();
-std::vector<DisplayListInvocationGroup> allGroups = CreateAllGroups();
-
 }  // namespace testing
 }  // namespace flutter

@@ -327,8 +327,8 @@ struct DisplayListInvocationGroup {
   std::vector<DisplayListInvocation> variants;
 };
 
-extern std::vector<DisplayListInvocationGroup> allRenderingOps;
-extern std::vector<DisplayListInvocationGroup> allGroups;
+std::vector<DisplayListInvocationGroup> CreateAllRenderingOps();
+std::vector<DisplayListInvocationGroup> CreateAllGroups();
 
 }  // namespace testing
 }  // namespace flutter
