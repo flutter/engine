@@ -8,6 +8,7 @@
 
 #include "flutter/fml/logging.h"
 #include "impeller/aiks/paint_pass_delegate.h"
+#include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -317,6 +318,41 @@ void Canvas::DrawVertices(Vertices vertices,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(std::move(contents), true));
+
+  GetCurrentPass().AddEntity(std::move(entity));
+}
+
+void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
+                       std::vector<Matrix> xform,
+                       std::vector<Rect> tex,
+                       std::vector<Color> colors,
+                       int count,
+                       Entity::BlendMode blend_mode,
+                       SamplerDescriptor sampler,
+                       std::optional<Rect> cull_rect,
+                       Paint paint) {
+  if (!atlas) {
+    return;
+  }
+  auto size = atlas->GetSize();
+
+  if (size.IsEmpty()) {
+    return;
+  }
+
+  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
+  contents->SetColors(std::move(colors));
+  contents->SetXForm(std::move(xform));
+  contents->SetTextureCoordinates(std::move(tex));
+  contents->SetTexture(atlas->GetTexture());
+  contents->SetSamplerDescriptor(std::move(sampler));
+  contents->ComputeCoverage();
+
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(contents, false));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }

@@ -97,6 +97,16 @@ class Canvas {
                     Entity::BlendMode blend_mode,
                     Paint paint);
 
+  void DrawAtlas(std::shared_ptr<Image> atlas,
+                 std::vector<Matrix> xform,
+                 std::vector<Rect> tex,
+                 std::vector<Color> colors,
+                 int count,
+                 Entity::BlendMode blend_mode,
+                 SamplerDescriptor sampler,
+                 std::optional<Rect> cull_rect,
+                 Paint paint);
+
   Picture EndRecordingAsPicture();
 
  private:
