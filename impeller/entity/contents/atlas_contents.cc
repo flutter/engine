@@ -103,35 +103,42 @@ bool AtlasContents::Render(const ContentContext& renderer,
     for (size_t i = 0; i < texture_coords_.size(); i++) {
       auto sample_rect = texture_coords_[i];
       auto matrix = xform_[i];
+      auto color =
+          (colors_.size() > 0 ? colors_[i] : Color::Black()).Premultiply();
       auto tps = sample_rect.GetTransformedPoints(matrix);
 
       VS::PerVertexData data1;
       data1.position = tps[0];
       data1.texture_coords = sample_rect.origin / texture_size;
+      data1.color = color;
       vertex_builder.AppendVertex(data1);
 
       VS::PerVertexData data2;
       data2.position = tps[1];
       data2.texture_coords =
           sample_rect.origin + Point(0, sample_rect.size.width) / texture_size;
+      data2.color = color;
       vertex_builder.AppendVertex(data2);
 
       VS::PerVertexData data3;
       data3.position = tps[2];
       data3.texture_coords =
           sample_rect.origin + Point(0, sample_rect.size.height) / texture_size;
+      data3.color = color;
       vertex_builder.AppendVertex(data3);
 
       VS::PerVertexData data4;
       data4.position = tps[1];
       data4.texture_coords =
           sample_rect.origin + Point(sample_rect.size.width, 0) / texture_size;
+      data4.color = color;
       vertex_builder.AppendVertex(data4);
 
       VS::PerVertexData data5;
       data5.position = tps[2];
       data5.texture_coords =
           sample_rect.origin + Point(0, sample_rect.size.height) / texture_size;
+      data5.color = color;
       vertex_builder.AppendVertex(data5);
 
       VS::PerVertexData data6;
@@ -139,6 +146,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
       data6.texture_coords =
           sample_rect.origin +
           Point(sample_rect.size.width, sample_rect.size.height) / texture_size;
+      data6.color = color;
       vertex_builder.AppendVertex(data6);
     }
   }
