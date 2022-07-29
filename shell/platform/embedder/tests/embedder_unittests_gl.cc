@@ -3265,16 +3265,25 @@ TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
       [frame_damage = frame_damage,
        buffer_damage = buffer_damage](FlutterPresentInfo* present_info) {
         ASSERT_EQ(present_info->frame_damage.num_rects, frame_damage.num_rects);
-        ASSERT_EQ(present_info->frame_damage.damage->left, frame_damage.damage->left);
-        ASSERT_EQ(present_info->frame_damage.damage->top, frame_damage.damage->top);
-        ASSERT_EQ(present_info->frame_damage.damage->right, frame_damage.damage->right);
-        ASSERT_EQ(present_info->frame_damage.damage->bottom, frame_damage.damage->bottom);
+        ASSERT_EQ(present_info->frame_damage.damage->left,
+                  frame_damage.damage->left);
+        ASSERT_EQ(present_info->frame_damage.damage->top,
+                  frame_damage.damage->top);
+        ASSERT_EQ(present_info->frame_damage.damage->right,
+                  frame_damage.damage->right);
+        ASSERT_EQ(present_info->frame_damage.damage->bottom,
+                  frame_damage.damage->bottom);
 
-        ASSERT_EQ(present_info->buffer_damage.num_rects, buffer_damage.num_rects);
-        ASSERT_EQ(present_info->buffer_damage.damage->left, buffer_damage.damage->left);
-        ASSERT_EQ(present_info->buffer_damage.damage->top, buffer_damage.damage->top);
-        ASSERT_EQ(present_info->buffer_damage.damage->right, buffer_damage.damage->right);
-        ASSERT_EQ(present_info->buffer_damage.damage->bottom, buffer_damage.damage->bottom);
+        ASSERT_EQ(present_info->buffer_damage.num_rects,
+                  buffer_damage.num_rects);
+        ASSERT_EQ(present_info->buffer_damage.damage->left,
+                  buffer_damage.damage->left);
+        ASSERT_EQ(present_info->buffer_damage.damage->top,
+                  buffer_damage.damage->top);
+        ASSERT_EQ(present_info->buffer_damage.damage->right,
+                  buffer_damage.damage->right);
+        ASSERT_EQ(present_info->buffer_damage.damage->bottom,
+                  buffer_damage.damage->bottom);
 
         frame_latch.CountDown();
       });

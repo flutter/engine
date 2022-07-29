@@ -51,7 +51,7 @@ bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
 
   if (callback) {
     FlutterPresentInfo present_info = {
-      .fbo_id = fbo_id,
+        .fbo_id = fbo_id,
     };
     callback(&present_info);
   }
