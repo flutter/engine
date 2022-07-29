@@ -132,6 +132,12 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
     return false;
   }
 
+  if (!SAFE_EXISTS(open_gl_config, fbo_with_damage_callback)) {
+    FML_LOG(ERROR) << "fbo_with_damage_callback was not defined, disabling "
+                      "partial repaint. If you wish to enable partial repaint, "
+                      "please define this callback.";
+  }
+
   return true;
 }
 
