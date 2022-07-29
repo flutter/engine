@@ -159,7 +159,7 @@ bool AndroidSurfaceGLSkia::GLContextPresent(const GLPresentInfo& present_info) {
   if (present_info.presentation_time) {
     onscreen_surface_->SetPresentationTime(*present_info.presentation_time);
   }
-  return onscreen_surface_->SwapBuffers(present_info.damage);
+  return onscreen_surface_->SwapBuffers(present_info.frame_damage);
 }
 
 GLFBOInfo AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
