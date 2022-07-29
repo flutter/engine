@@ -195,7 +195,7 @@ import java.util.List;
  * screen until the Android application is initialized.
  *
  * <p>Flutter also requires initialization time. To specify a splash screen for Flutter
- * initialization, DO NOT subclass {@code FlutterActivity} and override {@link
+ * initialization, Do not subclass {@code FlutterActivity} and override {@link
  * #provideSplashScreen()}. Instead, use the instructions above to specify a launch screen that
  * Flutter will automatically display until the Flutter UI is initialized.
  *
