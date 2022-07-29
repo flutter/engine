@@ -24,7 +24,7 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
     skiaObject.setFillType(toSkFillType(_fillType));
   }
 
-  CkPath.fromSkPath(SkPath skPath, this._fillType) : super(skPath) {
+  CkPath.fromSkPath(SkPath super.skPath, this._fillType) {
     skiaObject.setFillType(toSkFillType(_fillType));
   }
 

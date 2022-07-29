@@ -304,7 +304,7 @@ class GradientLinear extends EngineGradient {
     // We compute location based on gl_FragCoord to center distance which
     // returns 0.0 at center. To make sure we align center of gradient to this
     // point, we shift by 0.5 to get st value for center of gradient.
-    gradientTransform.translate(0.5, 0);
+    gradientTransform.translate(0.5);
     if (length > kFltEpsilon) {
       gradientTransform.scale(1.0 / length);
     }
@@ -717,8 +717,9 @@ class _BlurEngineImageFilter extends EngineImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _BlurEngineImageFilter &&
         other.tileMode == tileMode &&
         other.sigmaX == sigmaX &&
@@ -748,8 +749,9 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is _MatrixEngineImageFilter
         && other.filterQuality == filterQuality
         && listEquals<double>(other.webMatrix, webMatrix);

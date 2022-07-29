@@ -133,7 +133,7 @@ class SingleFrameInfo implements ui.FrameInfo {
   SingleFrameInfo(this.image);
 
   @override
-  Duration get duration => const Duration(milliseconds: 0);
+  Duration get duration => const Duration();
 
   @override
   final ui.Image image;
@@ -197,7 +197,7 @@ class HtmlImage implements ui.Image {
           final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
           return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
         } else {
-          return Future<ByteData?>.value(null);
+          return Future<ByteData?>.value();
         }
     }
   }

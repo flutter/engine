@@ -174,7 +174,7 @@ class FontManager {
         notPunctuation.stringMatch(family) != family) {
       // Load a font family name with special characters once here wrapped in
       // quotes.
-      _loadFontFace('\'$family\'', asset, descriptors);
+      _loadFontFace("'$family'", asset, descriptors);
     }
     // Load all fonts, without quoted family names.
     _loadFontFace(family, asset, descriptors);
@@ -267,14 +267,14 @@ class _PolyfillFontManager extends FontManager {
 
     final Completer<void> completer = Completer<void>();
 
-    late DateTime _fontLoadStart;
+    late DateTime fontLoadStart;
 
     void _watchWidth() {
       if (paragraph.offsetWidth != sansSerifWidth) {
         paragraph.remove();
         completer.complete();
       } else {
-        if (DateTime.now().difference(_fontLoadStart) > _fontLoadTimeout) {
+        if (DateTime.now().difference(fontLoadStart) > _fontLoadTimeout) {
           // Let application waiting for fonts continue with fallback.
           completer.complete();
           // Throw unhandled exception for logging.
@@ -310,7 +310,7 @@ class _PolyfillFontManager extends FontManager {
       return;
     }
 
-    _fontLoadStart = DateTime.now();
+    fontLoadStart = DateTime.now();
     _watchWidth();
 
     _fontLoadingFutures.add(completer.future);

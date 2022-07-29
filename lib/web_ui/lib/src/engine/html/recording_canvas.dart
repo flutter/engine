@@ -684,9 +684,9 @@ class RecordingCanvas {
 
   /// Prints the commands recorded by this canvas to the console.
   void debugDumpCommands() {
-    print('/' * 40 + ' CANVAS COMMANDS ' + '/' * 40);
+    print('${'/' * 40} CANVAS COMMANDS ${'/' * 40}');
     _commands.forEach(print);
-    print('/' * 37 + ' END OF CANVAS COMMANDS ' + '/' * 36);
+    print('${'/' * 37} END OF CANVAS COMMANDS ${'/' * 36}');
   }
 }
 

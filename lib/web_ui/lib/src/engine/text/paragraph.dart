@@ -346,7 +346,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontFamily: ${fontFamily ?? "unspecified"}, '
           'fontSize: ${fontSize != null ? fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
-          'ellipsis: ${ellipsis != null ? "\"$ellipsis\"" : "unspecified"}, '
+          'ellipsis: ${ellipsis != null ? '"$ellipsis"' : "unspecified"}, '
           'locale: ${locale ?? "unspecified"}'
           ')';
     } else {

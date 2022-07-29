@@ -332,9 +332,8 @@ class CkCanvas {
 }
 
 class RecordingCkCanvas extends CkCanvas {
-  RecordingCkCanvas(SkCanvas skCanvas, ui.Rect bounds)
-      : pictureSnapshot = CkPictureSnapshot(bounds),
-        super(skCanvas);
+  RecordingCkCanvas(super.skCanvas, ui.Rect bounds)
+      : pictureSnapshot = CkPictureSnapshot(bounds);
 
   @override
   final CkPictureSnapshot pictureSnapshot;
