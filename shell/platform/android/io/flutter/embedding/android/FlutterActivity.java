@@ -195,15 +195,9 @@ import java.util.List;
  * screen until the Android application is initialized.
  *
  * <p>Flutter also requires initialization time. To specify a splash screen for Flutter
- * initialization, subclass {@code FlutterActivity} and override {@link #provideSplashScreen()}. See
- * {@link SplashScreen} for details on implementing a splash screen.
- *
- * <p>Flutter ships with a splash screen that automatically displays the exact same {@code
- * windowBackground} as the launch theme discussed previously. To use that splash screen, include
- * the following metadata in AndroidManifest.xml for this {@code FlutterActivity}:
- *
- * <p>{@code <meta-data android:name="io.flutter.embedding.android.SplashScreenDrawable"
- * android:resource="@drawable/launch_background" /> }
+ * initialization, DO NOT subclass {@code FlutterActivity} and override {@link
+ * #provideSplashScreen()}. Instead, use the instructions above to specify a launch screen that
+ * Flutter will automatically display until the Flutter UI is initialized.
  *
  * <p><strong>Alternative Activity</strong> {@link FlutterFragmentActivity} is also available, which
  * is similar to {@code FlutterActivity} but it extends {@code FragmentActivity}. You should use
