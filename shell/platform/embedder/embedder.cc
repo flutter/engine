@@ -267,15 +267,45 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  auto gl_present = [present = config->open_gl.present,
-                     present_with_info = config->open_gl.present_with_info,
-                     user_data](uint32_t fbo_id) -> bool {
+  auto gl_present =
+      [present = config->open_gl.present,
+       present_with_info = config->open_gl.present_with_info,
+       user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {
-      FlutterPresentInfo present_info = {};
-      present_info.struct_size = sizeof(FlutterPresentInfo);
-      present_info.fbo_id = fbo_id;
+      /// Format the frame and buffer damages accordingly. Note that, since the
+      /// current compute damage algorithm only returns one rectangle for damage
+      /// we are assuming the number of rectangles provided in frame and buffer
+      /// damage are always 1. Once the function that computes damage implements
+      /// support for multiple damage rectangles, GLPresentInfo should also
+      /// contain the number of damage rectangles.
+      const size_t num_rects = 1;
+
+      FlutterRect frame_damage_rect[num_rects] = {
+          SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
+      FlutterRect buffer_damage_rect[num_rects] = {
+          SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
+
+      FlutterDamage frame_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = num_rects,
+          .damage = frame_damage_rect,
+      };
+      FlutterDamage buffer_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = num_rects,
+          .damage = buffer_damage_rect,
+      };
+
+      /// Construct the present information concerning the frame being rendered.
+      FlutterPresentInfo present_info = {
+          .struct_size = sizeof(FlutterPresentInfo),
+          .fbo_id = gl_present_info.fbo_id,
+          .frame_damage = frame_damage,
+          .buffer_damage = buffer_damage,
+      };
+      
       return present_with_info(user_data, &present_info);
     }
   };
