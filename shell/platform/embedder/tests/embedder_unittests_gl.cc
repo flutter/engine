@@ -3703,8 +3703,7 @@ TEST_F(EmbedderTest, EngineMustStillRunWhenFBOWithDamageIsNotProvided) {
 }
 
 TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsNotProvided) {
-  auto& context =
-  GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback = nullptr;
@@ -3713,12 +3712,12 @@ TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsNotProvided) {
 }
 
 TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsProvided) {
-  auto& context =
-  GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
-      [](void* context, const intptr_t id, FlutterDamage* existing_damage_ptr) -> void {
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
     const size_t num_rects = 1;
     FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
     existing_damage_ptr->num_rects = num_rects;
@@ -3729,15 +3728,15 @@ TEST_F(EmbedderTest, EngineMustRunWhenFBOWithDamageIsProvided) {
 }
 
 TEST_F(EmbedderTest, EngineMustRunWithFBOWithDamageAndFBOCallback) {
-  auto& context =
-  GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_callback =
       [](void* context) -> uint32_t { return 0; };
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
-      [](void* context, const intptr_t id, FlutterDamage* existing_damage_ptr) -> void {
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
     const size_t num_rects = 1;
     FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
     existing_damage_ptr->num_rects = num_rects;
@@ -3749,8 +3748,7 @@ TEST_F(EmbedderTest, EngineMustRunWithFBOWithDamageAndFBOCallback) {
 
 TEST_F(EmbedderTest,
        EngineMustRunWhenFBOWithDamageAndFBOWithFrameInfoCallback) {
-  auto& context =
-  GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback =
@@ -3759,7 +3757,8 @@ TEST_F(EmbedderTest,
   };
   builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
-      [](void* context, const intptr_t id, FlutterDamage* existing_damage_ptr) -> void {
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
     const size_t num_rects = 1;
     FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
     existing_damage_ptr->num_rects = num_rects;
@@ -3769,16 +3768,15 @@ TEST_F(EmbedderTest,
   ASSERT_TRUE(engine.is_valid());
 }
 
-TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback)
-{
-  auto& context =
-  GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
-      [](void* context, const intptr_t id, FlutterDamage* existing_damage_ptr) -> void {
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage_ptr) -> void {
     const size_t num_rects = 1;
     FlutterRect existing_damage_rects[num_rects] = {FlutterRect{0, 0, 0, 0}};
     existing_damage_ptr->num_rects = num_rects;
@@ -3792,7 +3790,6 @@ TEST_F(EmbedderTest, EngineMustNotRunWhenFBOWithDamageButNoOtherFBOCallback)
 // CompositorMustRenderTheEntireFrameWhenScreenSizeChangesEvenIfNoExistingDamage
 // CompositorMustNotRenderAtAllWhenThereIsNoExistingDamage
 // CompositorMustOnlyRenderDamagedRegion
-
 
 INSTANTIATE_TEST_SUITE_P(
     EmbedderTestGlVk,

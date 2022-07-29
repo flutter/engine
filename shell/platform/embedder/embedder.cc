@@ -305,7 +305,7 @@ InferOpenGLPlatformViewCreationCallback(
           .frame_damage = frame_damage,
           .buffer_damage = buffer_damage,
       };
-      
+
       return present_with_info(user_data, &present_info);
     }
   };
@@ -342,8 +342,7 @@ InferOpenGLPlatformViewCreationCallback(
     fbo_with_damage_callback(user_data, id, &existing_damage);
 
     // Verify that at least one damage rectangle was provided.
-    if (existing_damage.num_rects <= 0 ||
-        existing_damage.damage == nullptr) {
+    if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
       FML_LOG(ERROR) << "No damage was provided. Setting the damage to an "
                         "empty rectangle.";
     }
