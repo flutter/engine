@@ -59,6 +59,8 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   ///
   void SetGLPresentCallback(GLPresentCallback callback);
 
+  void GLGetFBOWithDamage(const intptr_t id, FlutterDamage* existing_damage);
+
  protected:
   virtual void SetupCompositor() override;
 
@@ -82,8 +84,6 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   bool GLPresent(FlutterPresentInfo present_info);
 
   uint32_t GLGetFramebuffer(FlutterFrameInfo frame_info);
-
-  void GLGetFBOWithDamage(const intptr_t id, FlutterDamage* existing_damage);
 
   bool GLMakeResourceCurrent();
 
