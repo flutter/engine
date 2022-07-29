@@ -3389,8 +3389,8 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
-  builder.SetDartEntrypoint("push_frames_over_and_over");
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetDartEntrypoint("render_gradient");
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
@@ -3399,16 +3399,16 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
   };
 
   auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
 
   // Send a window metrics events so frames may be scheduled.
-  static FlutterWindowMetricsEvent event = {};
+  FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = 600;
-  event.height = 1024;
+  event.width = 800;
+  event.height = 600;
   event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
-  ASSERT_TRUE(engine.is_valid());
 
   static fml::CountDownLatch frame_latch(10);
 
@@ -3435,8 +3435,8 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesInvalidID) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
-  builder.SetDartEntrypoint("push_frames_over_and_over");
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetDartEntrypoint("render_gradient");
   builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
@@ -3451,16 +3451,16 @@ TEST_F(EmbedderTest, FBOWithDamageReceivesInvalidID) {
   };
 
   auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
 
   // Send a window metrics events so frames may be scheduled.
-  static FlutterWindowMetricsEvent event = {};
+  FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = 600;
-  event.height = 1024;
+  event.width = 800;
+  event.height = 600;
   event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
-  ASSERT_TRUE(engine.is_valid());
 
   static fml::CountDownLatch frame_latch(10);
 
