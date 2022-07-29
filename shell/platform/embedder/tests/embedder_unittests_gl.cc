@@ -3225,84 +3225,153 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
   frame_latch.Wait();
 }
 
-TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+// TEST_F(EmbedderTest, PresentInfoContainsValidDamages) {
+//   auto& context =
+//   GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
-  EmbedderConfigBuilder builder(context);
-  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
-  builder.SetDartEntrypoint("push_frames_over_and_over");
+//   EmbedderConfigBuilder builder(context);
+//   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+//   builder.SetDartEntrypoint("push_frames_over_and_over");
 
-  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
-      [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
-        const size_t num_rects = 1;
-        FlutterRect existing_damage_rects[num_rects] = {
-            FlutterRect{0, 0, 0, 0}};
-        existing_damage_ptr->num_rects = num_rects;
-        existing_damage_ptr->damage = existing_damage_rects;
-      });
+//   static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+//       [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+//         const size_t num_rects = 1;
+//         FlutterRect existing_damage_rects[num_rects] = {
+//             FlutterRect{0, 0, 0, 0}};
+//         existing_damage_ptr->num_rects = num_rects;
+//         existing_damage_ptr->damage = existing_damage_rects;
+//       });
 
-  auto engine = builder.LaunchEngine();
+//   auto engine = builder.LaunchEngine();
 
-  // Send a window metrics events so frames may be scheduled.
-  FlutterWindowMetricsEvent event = {};
-  event.struct_size = sizeof(event);
-  event.width = 600;
-  event.height = 1024;
-  event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
-  ASSERT_TRUE(engine.is_valid());
+//   // Send a window metrics events so frames may be scheduled.
+//   FlutterWindowMetricsEvent event = {};
+//   event.struct_size = sizeof(event);
+//   event.width = 600;
+//   event.height = 1024;
+//   event.pixel_ratio = 1.0;
+//   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+//             kSuccess);
+//   ASSERT_TRUE(engine.is_valid());
 
-  static fml::CountDownLatch frame_latch(10);
+//   static fml::CountDownLatch frame_latch(10);
 
-  context.AddNativeCallback("SignalNativeTest",
-                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
-                              /* Nothing to do. */
-                            }));
+//   context.AddNativeCallback("SignalNativeTest",
+//                             CREATE_NATIVE_ENTRY([&](Dart_NativeArguments
+//                             args) {
+//                               /* Nothing to do. */
+//                             }));
 
-  const size_t num_rects = 1;
-  FlutterRect frame_damage_rect[num_rects] = {{0, 0, 1024, 1024}};
-  FlutterRect buffer_damage_rect[num_rects] = {{0, 0, 1024, 600}};
-  const FlutterDamage frame_damage = {
-      .struct_size = sizeof(FlutterDamage),
-      .num_rects = 1,
-      .damage = frame_damage_rect,
-  };
-  const FlutterDamage buffer_damage = {
-      .struct_size = sizeof(FlutterDamage),
-      .num_rects = 1,
-      .damage = buffer_damage_rect,
-  };
-  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [frame_damage = frame_damage,
-       buffer_damage = buffer_damage](FlutterPresentInfo present_info) {
-        ASSERT_EQ(present_info.frame_damage.num_rects, frame_damage.num_rects);
-        ASSERT_EQ(present_info.frame_damage.damage->left,
-                  frame_damage.damage->left);
-        ASSERT_EQ(present_info.frame_damage.damage->top,
-                  frame_damage.damage->top);
-        ASSERT_EQ(present_info.frame_damage.damage->right,
-                  frame_damage.damage->right);
-        ASSERT_EQ(present_info.frame_damage.damage->bottom,
-                  frame_damage.damage->bottom);
+//   const size_t num_rects = 1;
+//   FlutterRect frame_damage_rect[num_rects] = {{0, 0, 1024, 1024}};
+//   FlutterRect buffer_damage_rect[num_rects] = {{0, 0, 1024, 600}};
+//   const FlutterDamage frame_damage = {
+//       .struct_size = sizeof(FlutterDamage),
+//       .num_rects = 1,
+//       .damage = frame_damage_rect,
+//   };
+//   const FlutterDamage buffer_damage = {
+//       .struct_size = sizeof(FlutterDamage),
+//       .num_rects = 1,
+//       .damage = buffer_damage_rect,
+//   };
+//   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+//       [frame_damage = frame_damage,
+//        buffer_damage = buffer_damage](FlutterPresentInfo present_info) {
+//         ASSERT_EQ(present_info.frame_damage.num_rects,
+//         frame_damage.num_rects);
+//         ASSERT_EQ(present_info.frame_damage.damage->left,
+//                   frame_damage.damage->left);
+//         ASSERT_EQ(present_info.frame_damage.damage->top,
+//                   frame_damage.damage->top);
+//         ASSERT_EQ(present_info.frame_damage.damage->right,
+//                   frame_damage.damage->right);
+//         ASSERT_EQ(present_info.frame_damage.damage->bottom,
+//                   frame_damage.damage->bottom);
 
-        ASSERT_EQ(present_info.buffer_damage.num_rects,
-                  buffer_damage.num_rects);
-        ASSERT_EQ(present_info.buffer_damage.damage->left,
-                  buffer_damage.damage->left);
-        ASSERT_EQ(present_info.buffer_damage.damage->top,
-                  buffer_damage.damage->top);
-        ASSERT_EQ(present_info.buffer_damage.damage->right,
-                  buffer_damage.damage->right);
-        ASSERT_EQ(present_info.buffer_damage.damage->bottom,
-                  buffer_damage.damage->bottom);
+//         ASSERT_EQ(present_info.buffer_damage.num_rects,
+//                   buffer_damage.num_rects);
+//         ASSERT_EQ(present_info.buffer_damage.damage->left,
+//                   buffer_damage.damage->left);
+//         ASSERT_EQ(present_info.buffer_damage.damage->top,
+//                   buffer_damage.damage->top);
+//         ASSERT_EQ(present_info.buffer_damage.damage->right,
+//                   buffer_damage.damage->right);
+//         ASSERT_EQ(present_info.buffer_damage.damage->bottom,
+//                   buffer_damage.damage->bottom);
 
-        frame_latch.CountDown();
-      });
+//         frame_latch.CountDown();
+//       });
 
-  frame_latch.Wait();
-}
+//   frame_latch.Wait();
+// }
 
+// TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
+//   auto& context =
+//   GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+//   EmbedderConfigBuilder builder(context);
+//   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+//   builder.SetDartEntrypoint("render_gradient");
+
+//   // Return no existing damage on purpose.
+//   static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+//       [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+//         const size_t num_rects = 1;
+//         FlutterRect existing_damage_rects[num_rects] = {
+//             FlutterRect{0, 0, 0, 0}};
+//         existing_damage_ptr->num_rects = num_rects;
+//         existing_damage_ptr->damage = existing_damage_rects;
+//       });
+
+//   auto engine = builder.LaunchEngine();
+//   ASSERT_TRUE(engine.is_valid());
+
+//   // First frame should be entirely rerendered.
+//   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+//       [](FlutterPresentInfo present_info) {
+//         ASSERT_EQ(present_info.frame_damage.num_rects, 1);
+//         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
+//         ASSERT_EQ(present_info.frame_damage.damage->top, 0);
+//         ASSERT_EQ(present_info.frame_damage.damage->right, 800);
+//         ASSERT_EQ(present_info.frame_damage.damage->bottom, 600);
+
+//         ASSERT_EQ(present_info.buffer_damage.num_rects, 1);
+//         ASSERT_EQ(present_info.buffer_damage.damage->left, 0);
+//         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
+//         ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
+//         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+//       });
+
+//   // Send a window metrics events so frames may be scheduled.
+//   FlutterWindowMetricsEvent event = {};
+//   event.struct_size = sizeof(event);
+//   event.width = 800;
+//   event.height = 600;
+//   event.pixel_ratio = 1.0;
+//   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+//             kSuccess);
+
+//   // Because it's the same as the first frame, the second frame should not be
+//   rerendered assuming there is no existing damage.
+//   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+//       [](FlutterPresentInfo present_info) {
+//         ASSERT_EQ(present_info.frame_damage.num_rects, 1);
+//         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
+//         ASSERT_EQ(present_info.frame_damage.damage->top, 0);
+//         ASSERT_EQ(present_info.frame_damage.damage->right, 0);
+//         ASSERT_EQ(present_info.frame_damage.damage->bottom, 0);
+
+//         ASSERT_EQ(present_info.buffer_damage.num_rects, 1);
+//         ASSERT_EQ(present_info.buffer_damage.damage->left, 0);
+//         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
+//         ASSERT_EQ(present_info.buffer_damage.damage->right, 0);
+//         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 0);
+//       });
+
+//     ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+//             kSuccess);
+// }
 // The test above sends one frame and checks if the damage that was received is
 // valid (i.e. represents the entire frame)
 
