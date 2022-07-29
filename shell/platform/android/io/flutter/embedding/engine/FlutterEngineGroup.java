@@ -203,13 +203,13 @@ public class FlutterEngineGroup {
       boolean automaticallyRegisterPlugins,
       boolean waitForRestorationData) {
     return new FlutterEngine(
-        context,
-        null,
-        null,
-        platformViewsController,
-        null,
-        automaticallyRegisterPlugins,
-        waitForRestorationData);
+        context, // Context.
+        null, // FlutterLoader.
+        null, // FlutterJNI.
+        platformViewsController, // PlatformViewsController.
+        null, // String[]. The Dart VM has already started, this arguments will have no effect.
+        automaticallyRegisterPlugins, // boolean.
+        waitForRestorationData); // boolean.
   }
 
   /** Options that control how a FlutterEngine should be created. */
