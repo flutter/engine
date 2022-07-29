@@ -358,7 +358,7 @@ class KeyboardConverter {
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
     final String? character = logicalKeyIsCharacter ? eventKey : null;
     final int logicalKey = () {
-      if (kWebLogicalLocationMap.containsKey(event.key!)) {
+      if (kWebLogicalLocationMap.containsKey(event.key)) {
         final int? result = kWebLogicalLocationMap[event.key!]?[event.location!];
         assert(result != null, 'Invalid modifier location: ${event.key}, ${event.location}');
         return result!;

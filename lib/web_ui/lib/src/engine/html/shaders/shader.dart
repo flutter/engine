@@ -150,7 +150,7 @@ class GradientSweep extends EngineGradient {
         'float angle = atan(-localCoord.y, -localCoord.x) + ${math.pi};');
     method.addStatement('float sweep = angle_range.y - angle_range.x;');
     method.addStatement('angle = (angle - angle_range.x) / sweep;');
-    method.addStatement(''
+    method.addStatement(
         'float st = angle;');
 
     final String probeName =
@@ -588,7 +588,7 @@ class GradientRadial extends EngineGradient {
     method.addStatement(
         'vec4 localCoord = vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1) * m_gradient;');
     method.addStatement('float dist = length(localCoord);');
-    method.addStatement(''
+    method.addStatement(
         'float st = abs(dist / u_radius);');
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
@@ -619,7 +619,7 @@ class GradientConical extends GradientRadial {
       ui.Rect? shaderBounds, double density) {
     if ((tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) &&
         focalRadius == 0.0 &&
-        focal == const ui.Offset(0, 0)) {
+        focal == ui.Offset.zero) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
       initWebGl();

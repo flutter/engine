@@ -49,7 +49,7 @@ class RawRecordingCanvas extends BitmapCanvas implements ui.PictureRecorder {
   @override
   ui.Picture endRecording() => throw UnsupportedError('');
 
-  RecordingCanvas? _canvas; // ignore: unused_field
+  late RecordingCanvas _canvas; // ignore: unused_field
 
   bool _isRecording = true; // ignore: unused_field
 

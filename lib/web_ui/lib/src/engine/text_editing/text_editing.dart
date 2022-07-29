@@ -573,8 +573,8 @@ class TextEditingDeltaState {
     }
 
     // Update selection of the delta using information from the new editing state.
-    newTextEditingDeltaState.baseOffset = newEditingState.baseOffset!;
-    newTextEditingDeltaState.extentOffset = newEditingState.extentOffset!;
+    newTextEditingDeltaState.baseOffset = newEditingState.baseOffset;
+    newTextEditingDeltaState.extentOffset = newEditingState.extentOffset;
 
     return newTextEditingDeltaState;
   }
@@ -1770,7 +1770,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // inside the blur event, therefore we postpone the focus.
     // Calling focus inside a Timer for `0` milliseconds guarantee that it is
     // called after blur event propagation is completed.
-    Timer(const Duration(), () {
+    Timer(Duration.zero, () {
       activeDomElement.focus();
     });
   }

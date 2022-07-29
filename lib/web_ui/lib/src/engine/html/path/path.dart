@@ -795,7 +795,7 @@ class SurfacePath implements ui.Path {
 
     // The arc may be slightly bigger than 1/4 circle, so allow up to 1/3rd.
     final int segments =
-        (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil().toInt();
+        (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil();
     final double thetaWidth = thetaArc / segments;
     final double t = math.tan(thetaWidth / 2.0);
     if (!t.isFinite) {

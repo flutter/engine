@@ -101,7 +101,7 @@ class HtmlCodec implements ui.Codec {
       if (chunkCallback != null) {
         chunkCallback!(100, 100);
       }
-      imgElement.removeEventListener('load', loadListener!);
+      imgElement.removeEventListener('load', loadListener);
       imgElement.removeEventListener('error', errorListener);
       final HtmlImage image = HtmlImage(
         imgElement,
@@ -133,7 +133,7 @@ class SingleFrameInfo implements ui.FrameInfo {
   SingleFrameInfo(this.image);
 
   @override
-  Duration get duration => const Duration();
+  Duration get duration => Duration.zero;
 
   @override
   final ui.Image image;
@@ -193,7 +193,7 @@ class HtmlImage implements ui.Image {
         final DomImageData imageData = ctx.getImageData(0, 0, width, height);
         return Future<ByteData?>.value(imageData.data.buffer.asByteData());
       default:
-        if (imgElement.src?.startsWith('data:') == true) {
+        if (imgElement.src?.startsWith('data:') ?? false) {
           final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
           return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
         } else {

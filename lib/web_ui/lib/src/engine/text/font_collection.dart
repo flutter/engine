@@ -269,7 +269,7 @@ class _PolyfillFontManager extends FontManager {
 
     late DateTime fontLoadStart;
 
-    void _watchWidth() {
+    void watchWidth() {
       if (paragraph.offsetWidth != sansSerifWidth) {
         paragraph.remove();
         completer.complete();
@@ -280,7 +280,7 @@ class _PolyfillFontManager extends FontManager {
           // Throw unhandled exception for logging.
           throw Exception('Timed out trying to load font: $family');
         } else {
-          Timer(_fontLoadRetryDuration, _watchWidth);
+          Timer(_fontLoadRetryDuration, watchWidth);
         }
       }
     }
@@ -311,7 +311,7 @@ class _PolyfillFontManager extends FontManager {
     }
 
     fontLoadStart = DateTime.now();
-    _watchWidth();
+    watchWidth();
 
     _fontLoadingFutures.add(completer.future);
   }
