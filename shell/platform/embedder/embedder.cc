@@ -132,11 +132,11 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
     return false;
   }
 
-  if (!SAFE_EXISTS(open_gl_config, fbo_with_damage_callback)) {
-    FML_LOG(ERROR) << "fbo_with_damage_callback was not defined, disabling "
-                      "partial repaint. If you wish to enable partial repaint, "
-                      "please define this callback.";
-  }
+  // if (!SAFE_EXISTS(open_gl_config, fbo_with_damage_callback)) {
+  //   FML_LOG(ERROR) << "fbo_with_damage_callback was not defined, disabling "
+  //                     "partial repaint. If you wish to enable partial
+  //                     repaint, " "please define this callback.";
+  // }
 
   return true;
 }
@@ -342,17 +342,18 @@ InferOpenGLPlatformViewCreationCallback(
     fbo_with_damage_callback(user_data, id, &existing_damage);
 
     // Verify that at least one damage rectangle was provided.
-    if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
-      FML_LOG(ERROR) << "No damage was provided. Setting the damage to an "
-                        "empty rectangle.";
-    }
+    // if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr)
+    // {
+    //   FML_LOG(ERROR) << "No damage was provided. Setting the damage to an "
+    //                     "empty rectangle.";
+    // }
 
     // Log message notifying users that multi-damage is not yet available in
     // case they try to make use of it.
-    if (existing_damage.num_rects > 1) {
-      FML_LOG(ERROR) << "Damage with multiple rectangles not yet supported. "
-                        "Setting first rectangle as default.";
-    }
+    // if (existing_damage.num_rects > 1) {
+    //   FML_LOG(ERROR) << "Damage with multiple rectangles not yet supported. "
+    //                     "Setting first rectangle as default.";
+    // }
 
     // Pass the information about this FBO to the rendering backend.
     return flutter::GLFBOInfo{
