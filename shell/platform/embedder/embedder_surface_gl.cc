@@ -19,7 +19,8 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(
   if (!gl_dispatch_table_.gl_make_current_callback ||
       !gl_dispatch_table_.gl_clear_current_callback ||
       !gl_dispatch_table_.gl_present_callback ||
-      !gl_dispatch_table_.gl_fbo_callback) {
+      !gl_dispatch_table_.gl_fbo_callback ||
+      !gl_dispatch_table_.gl_fbo_with_damage_callback) {
     return;
   }
 
@@ -46,12 +47,13 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextPresent(const GLPresentInfo& present_info) {
-  return gl_dispatch_table_.gl_present_callback(present_info.fbo_id);
+  return gl_dispatch_table_.gl_present_callback(present_info);
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
-  return gl_dispatch_table_.gl_fbo_callback(frame_info);
+GLFBOInfo EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+  return gl_dispatch_table_.gl_fbo_with_damage_callback(
+      gl_dispatch_table_.gl_fbo_callback(frame_info));
 }
 
 // |GPUSurfaceGLDelegate|
