@@ -42,8 +42,7 @@ def main():
       if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
   )
   arm64_out_dir = (
-      args.arm64_out_dir
-      if os.path.isabs(args.arm64_out_dir) else
+      args.arm64_out_dir if os.path.isabs(args.arm64_out_dir) else
       os.path.join(buildroot_dir, args.arm64_out_dir)
   )
   x64_out_dir = (
