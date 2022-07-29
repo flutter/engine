@@ -467,6 +467,10 @@ typedef struct {
   size_t struct_size;
   /// Id of the fbo backing the surface that was presented.
   uint32_t fbo_id;
+  /// Damage representing the area that the compositor needs to render.
+  FlutterDamage frame_damage;
+  /// Damage used to set the buffer's damage region.
+  FlutterDamage buffer_damage;
 } FlutterPresentInfo;
 
 /// Callback for when a surface is presented.
