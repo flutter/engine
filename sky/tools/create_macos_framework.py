@@ -40,17 +40,17 @@ def main():
 
   dst = args.dst if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
   arm64_out_dir = (
-          arm64_out_dir if os.path.isabs(args.arm64_out_dir)
+          args.arm64_out_dir if os.path.isabs(args.arm64_out_dir)
           else os.path.join(buildroot_dir, args.arm64_out_dir)
   )
   x64_out_dir = (
-          x64_out_dir if os.path.isabs(args.x64_out_dir)
+          args.x64_out_dir if os.path.isabs(args.x64_out_dir)
           else os.path.join(buildroot_dir, args.x64_out_dir)
   )
 
   fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
   arm64_framework = os.path.join(arm64_out_dir, 'FlutterMacOS.framework')
-  x64_framework = os.path.join(args.x64_out_dir, 'FlutterMacOS.framework')
+  x64_framework = os.path.join(x64_out_dir, 'FlutterMacOS.framework')
 
   arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
   x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
