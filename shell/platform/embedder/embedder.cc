@@ -341,27 +341,28 @@ InferOpenGLPlatformViewCreationCallback(
     FlutterDamage existing_damage;
     fbo_with_damage_callback(user_data, id, &existing_damage);
 
+    SkIRect existing_damage_rect;
+
     // Verify that at least one damage rectangle was provided.
     if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
       FML_LOG(INFO) << "No damage was provided. Setting the damage to an "
                        "empty rectangle.";
-    }
-
-    // Log message notifying users that multi-damage is not yet available in
-    // case they try to make use of it.
-    if (existing_damage.num_rects > 1) {
+      existing_damage_rect = SkIRect::MakeEmpty();
+    } else if (existing_damage.num_rects > 1) {
+      // Log message notifying users that multi-damage is not yet available in
+      // case they try to make use of it.
       FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
                        "Setting first rectangle as default.";
+      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+    } else {
+      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
     }
 
     // Pass the information about this FBO to the rendering backend.
     return flutter::GLFBOInfo{
         .fbo_id = static_cast<uint32_t>(id),
         .partial_repaint_enabled = true,
-        .existing_damage =
-            existing_damage.num_rects == 0
-                ? SkIRect::MakeEmpty()
-                : FlutterRectToSkIRect(*(existing_damage.damage)),
+        .existing_damage = existing_damage_rect,
     };
   };
 
