@@ -13,7 +13,7 @@ import os
 from create_xcframework import create_xcframework
 
 buildroot_dir = os.path.abspath(
-    os.path.join(os.path.realpath(__file__), '..', '..', '..')
+    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
 )
 
 DSYMUTIL = os.path.join(
