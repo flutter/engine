@@ -162,10 +162,12 @@ bool AndroidSurfaceGLSkia::GLContextPresent(const GLPresentInfo& present_info) {
   return onscreen_surface_->SwapBuffers(present_info.frame_damage);
 }
 
-intptr_t AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
+GLFBOInfo AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
   FML_DCHECK(IsValid());
   // The default window bound framebuffer on Android.
-  return 0;
+  return GLFBOInfo{
+      .fbo_id = 0,
+  };
 }
 
 // |GPUSurfaceGLDelegate|
