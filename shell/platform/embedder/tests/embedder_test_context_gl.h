@@ -72,7 +72,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
 
   bool GLClearCurrent();
 
-  bool GLPresent(uint32_t fbo_id);
+  bool GLPresent(FlutterPresentInfo present_info);
 
   uint32_t GLGetFramebuffer(FlutterFrameInfo frame_info);
 
