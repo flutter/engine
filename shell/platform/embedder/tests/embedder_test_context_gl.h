@@ -14,7 +14,8 @@ namespace testing {
 class EmbedderTestContextGL : public EmbedderTestContext {
  public:
   using GLGetFBOCallback = std::function<void(FlutterFrameInfo frame_info)>;
-  using GLPresentCallback = std::function<void(uint32_t fbo_id)>;
+  using GLPresentCallback =
+      std::function<void(FlutterPresentInfo present_info)>;
 
   explicit EmbedderTestContextGL(std::string assets_path = "");
 
