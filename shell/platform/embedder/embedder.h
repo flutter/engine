@@ -459,6 +459,13 @@ typedef uint32_t (*UIntFrameInfoCallback)(
     void* /* user data */,
     const FlutterFrameInfo* /* frame info */);
 
+/// Callback for when a frame buffer object is requested with necessary
+/// information for partial repaint.
+typedef void (*FlutterFrameBufferWithDamageCallback)(
+    void* /* user data */,
+    const intptr_t id,
+    FlutterDamage* existing_damage);
+
 /// This information is passed to the embedder when a surface is presented.
 ///
 /// See: \ref FlutterOpenGLRendererConfig.present_with_info.
@@ -536,6 +543,10 @@ typedef struct {
   /// `FlutterPresentInfo` struct that the embedder can use to release any
   /// resources. The return value indicates success of the present call.
   BoolPresentInfoCallback present_with_info;
+  /// Specifying this callback is a requirement for dirty region management. The
+  /// callback will return a FlutterFrameBuffer containing information about the
+  /// buffer whose ID was passed to it.
+  FlutterFrameBufferWithDamageCallback fbo_with_damage_callback;
 } FlutterOpenGLRendererConfig;
 
 /// Alias for id<MTLDevice>.
