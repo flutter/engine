@@ -305,7 +305,7 @@ InferOpenGLPlatformViewCreationCallback(
           .frame_damage = frame_damage,
           .buffer_damage = buffer_damage,
       };
-      
+
       return present_with_info(user_data, &present_info);
     }
   };
