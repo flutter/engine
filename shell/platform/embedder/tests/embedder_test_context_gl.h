@@ -14,6 +14,8 @@ namespace testing {
 class EmbedderTestContextGL : public EmbedderTestContext {
  public:
   using GLGetFBOCallback = std::function<void(FlutterFrameInfo frame_info)>;
+  using GLGetFBOWithDamageCallback =
+      std::function<void(intptr_t id, FlutterDamage* existing_damage)>;
   using GLPresentCallback =
       std::function<void(FlutterPresentInfo present_info)>;
 
@@ -39,6 +41,8 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   ///
   void SetGLGetFBOCallback(GLGetFBOCallback callback);
 
+  void SetGLGetFBOWithDamageCallback(GLGetFBOWithDamageCallback callback);
+
   uint32_t GetWindowFBOId() const;
 
   //----------------------------------------------------------------------------
@@ -54,6 +58,8 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   ///
   void SetGLPresentCallback(GLPresentCallback callback);
 
+  void GLGetFBOWithDamage(const intptr_t id, FlutterDamage* existing_damage);
+
  protected:
   virtual void SetupCompositor() override;
 
@@ -66,6 +72,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   std::mutex gl_callback_mutex_;
   GLGetFBOCallback gl_get_fbo_callback_;
   GLPresentCallback gl_present_callback_;
+  GLGetFBOWithDamageCallback gl_get_fbo_with_damage_callback_;
 
   void SetupSurface(SkISize surface_size) override;
 
