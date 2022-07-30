@@ -26,5 +26,6 @@ GLFBOInfo AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
   return GLFBOInfo{
       .fbo_id = 0,
   };
+}
 
 }  // namespace flutter
