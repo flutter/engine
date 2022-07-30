@@ -325,6 +325,47 @@ InferOpenGLPlatformViewCreationCallback(
     }
   };
 
+  auto gl_fbo_with_damage_callback =
+      [fbo_with_damage_callback = config->open_gl.fbo_with_damage_callback,
+       user_data](intptr_t id) -> flutter::GLFBOInfo {
+    // If no fbo_with_damage_callback was provided, disable partial repaint.
+    if (!fbo_with_damage_callback) {
+      return flutter::GLFBOInfo{
+          .fbo_id = static_cast<uint32_t>(id),
+          .partial_repaint_enabled = false,
+          .existing_damage = SkIRect::MakeEmpty(),
+      };
+    }
+
+    // Given the FBO's ID, get its existing damage.
+    FlutterDamage existing_damage;
+    fbo_with_damage_callback(user_data, id, &existing_damage);
+
+    SkIRect existing_damage_rect;
+
+    // Verify that at least one damage rectangle was provided.
+    if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
+      FML_LOG(INFO) << "No damage was provided. Setting the damage to an "
+                       "empty rectangle.";
+      existing_damage_rect = SkIRect::MakeEmpty();
+    } else if (existing_damage.num_rects > 1) {
+      // Log message notifying users that multi-damage is not yet available in
+      // case they try to make use of it.
+      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
+                       "Setting first rectangle as default.";
+      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+    } else {
+      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+    }
+
+    // Pass the information about this FBO to the rendering backend.
+    return flutter::GLFBOInfo{
+        .fbo_id = static_cast<uint32_t>(id),
+        .partial_repaint_enabled = true,
+        .existing_damage = existing_damage_rect,
+    };
+  };
+
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
   std::function<bool()> gl_make_resource_current_callback = nullptr;
   if (SAFE_ACCESS(open_gl_config, make_resource_current, nullptr) != nullptr) {
@@ -382,6 +423,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
+      gl_fbo_with_damage_callback,         // gl_fbo_with_damage_callback
   };
 
   return fml::MakeCopyable(
