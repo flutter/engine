@@ -11,12 +11,19 @@
 
 FLUTTER_ASSERT_NOT_ARC
 
+@interface VSyncClient (Testing)
+
+- (CADisplayLink*)getDisplayLink;
+
+@end
+
 @interface FlutterViewController (Testing)
 
-@property(nonatomic, retain) CADisplayLink* displayLink;
 @property(nonatomic, assign) double targetViewInsetBottom;
 
-- (void)startKeyBoardAnimation:(NSTimeInterval)duration;
+- (void)setupKeyboardAnimationVsyncClient;
+- (VSyncClient*)keyboardAnimationVsyncClient;
+
 @end
 
 @interface FlutterViewControllerTest_mrc : XCTestCase
@@ -30,7 +37,7 @@ FLUTTER_ASSERT_NOT_ARC
 - (void)tearDown {
 }
 
-- (void)testKeyboardAnimationDisplayLinkRefreshRateIsCorrect {
+- (void)testSetupKeyboardAnimationVsyncClientWillCreateNewVsyncClientForFlutterViewController {
   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
   OCMStub([bundleMock objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"])
       .andReturn(@YES);
@@ -42,19 +49,17 @@ FLUTTER_ASSERT_NOT_ARC
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  viewController.targetViewInsetBottom = 100;
-  [viewController startKeyBoardAnimation:0.25];
-  CADisplayLink* link = viewController.displayLink;
+  [viewController setupKeyboardAnimationVsyncClient];
+  XCTAssertNotNil([viewController keyboardAnimationVsyncClient]);
+  CADisplayLink* link = [viewController keyboardAnimationVsyncClient].getDisplayLink;
   XCTAssertNotNil(link);
   if (@available(iOS 15.0, *)) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, maxFrameRate);
     XCTAssertEqual(link.preferredFrameRateRange.preferred, maxFrameRate);
     XCTAssertEqual(link.preferredFrameRateRange.minimum, maxFrameRate / 2);
-  } else if (@available(iOS 10.0, *)) {
+  } else {
     XCTAssertEqual(link.preferredFramesPerSecond, maxFrameRate);
   }
-  [viewController release];
-  [engine release];
 }
 
 @end
