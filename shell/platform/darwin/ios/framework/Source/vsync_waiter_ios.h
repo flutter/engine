@@ -35,6 +35,8 @@
 
 - (void)await;
 
+- (void)setAllowPauseAfterVsync:(BOOL)allowPause;
+
 - (void)invalidate;
 
 - (double)getRefreshRate;
