@@ -3106,6 +3106,71 @@ TEST_F(EmbedderTest, MustNotRunWithBothPresentCallbacksSet) {
   ASSERT_FALSE(engine.is_valid());
 }
 
+TEST_F(EmbedderTest, MustStillRunWhenFBOWithDamageIsNotProvided) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback = nullptr;
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, MustRunWhenFBOWithDamageIsProvided) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage) -> void {
+    return reinterpret_cast<EmbedderTestContextGL*>(context)
+        ->GLGetFBOWithDamage(id, existing_damage);
+  };
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, MustRunWithFBOWithDamageAndFBOCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_callback =
+      [](void* context) -> uint32_t { return 0; };
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage) -> void {
+    return reinterpret_cast<EmbedderTestContextGL*>(context)
+        ->GLGetFBOWithDamage(id, existing_damage);
+  };
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, MustNotRunWhenFBOWithDamageButNoOtherFBOCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.GetRendererConfig().open_gl.fbo_callback = nullptr;
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback = nullptr;
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage) -> void {
+    return reinterpret_cast<EmbedderTestContextGL*>(context)
+        ->GLGetFBOWithDamage(id, existing_damage);
+  };
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_FALSE(engine.is_valid());
+}
+
 TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
@@ -3140,8 +3205,8 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
   const uint32_t window_fbo_id =
       static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [window_fbo_id = window_fbo_id](uint32_t fbo_id) {
-        ASSERT_EQ(fbo_id, window_fbo_id);
+      [window_fbo_id = window_fbo_id](FlutterPresentInfo present_info) {
+        ASSERT_EQ(present_info.fbo_id, window_fbo_id);
 
         frame_latch.CountDown();
       });
