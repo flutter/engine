@@ -3439,6 +3439,85 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
             kSuccess);
 }
 
+TEST_F(EmbedderTest, FBOWithDamageReceivesValidID) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetDartEntrypoint("render_gradient");
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage) -> void {
+    return reinterpret_cast<EmbedderTestContextGL*>(context)
+        ->GLGetFBOWithDamage(id, existing_damage);
+  };
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  const uint32_t window_fbo_id =
+      static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [window_fbo_id = window_fbo_id](intptr_t id,
+                                      FlutterDamage* existing_damage) {
+        ASSERT_EQ(id, window_fbo_id);
+      });
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+}
+
+TEST_F(EmbedderTest, FBOWithDamageReceivesInvalidID) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetDartEntrypoint("render_gradient");
+  builder.GetRendererConfig().open_gl.fbo_with_damage_callback =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage) -> void {
+    return reinterpret_cast<EmbedderTestContextGL*>(context)
+        ->GLGetFBOWithDamage(id, existing_damage);
+  };
+
+  // Return a bad FBO ID on purpose.
+  builder.GetRendererConfig().open_gl.fbo_with_frame_info_callback =
+      [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
+    return 123;
+  };
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              /* Nothing to do. */
+                            }));
+
+  const uint32_t window_fbo_id =
+      static_cast<EmbedderTestContextGL&>(context).GetWindowFBOId();
+  static_cast<EmbedderTestContextGL&>(context).SetGLGetFBOWithDamageCallback(
+      [window_fbo_id = window_fbo_id](intptr_t id,
+                                      FlutterDamage* existing_damage) {
+        ASSERT_NE(id, window_fbo_id);
+      });
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+}
+
 TEST_F(EmbedderTest, SetSingleDisplayConfigurationWithDisplayId) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
