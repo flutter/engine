@@ -39,7 +39,7 @@ bool EmbedderTestContextGL::GLClearCurrent() {
   return gl_surface_->ClearCurrent();
 }
 
-bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
+bool EmbedderTestContextGL::GLPresent(FlutterPresentInfo present_info) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
   gl_surface_present_count_++;
 
@@ -50,7 +50,7 @@ bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
   }
 
   if (callback) {
-    callback(fbo_id);
+    callback(present_info);
   }
 
   FireRootSurfacePresentCallbackIfPresent(
